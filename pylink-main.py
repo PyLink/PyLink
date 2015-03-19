@@ -17,6 +17,7 @@ networkobjects = {}
 
 class irc:
     def __init__(self, network):
+        self.connected = False
         self.netname = network
         self.networkdata = conf['networks'][network]
         protoname = self.networkdata['protocol']
