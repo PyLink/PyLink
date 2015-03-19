@@ -1,0 +1,7 @@
+config.yml
+build
+__pycache__/
+*.py[cod]
+*.bak
+*~
+*.save*

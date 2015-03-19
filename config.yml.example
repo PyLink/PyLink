@@ -1,0 +1,20 @@
+bot:
+  # Set nick, user/ident, and real name.
+  nick: pylink
+  user: pylink
+  realname: PyLink Service Client
+
+login:
+  # PyLink administrative login - Change this, or the service will not start!
+  user: admin
+  password: changeme
+
+networks:
+  mynet:
+    # Server name, port, and passwords
+    ip: 127.0.0.1
+    port: 6667
+    recvpass: "abcdefg"
+    sendpass: "gfedcba"
+    # Set protocol module (currently only a null stub is available, but this will change in the future)
+    protocol: stub
