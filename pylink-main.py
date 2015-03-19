@@ -3,8 +3,6 @@
 import yaml
 import imp
 import os
-import importlib
-import sys
 
 print('PyLink starting...')
 
@@ -43,7 +41,5 @@ class irc:
 for network in conf['networks']:
     print('Creating IRC Object for: %s' % network)
     networkobjects[network] = irc(network)
-    
-    # mod = sys.modules[plugin]
     
 
