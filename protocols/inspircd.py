@@ -20,13 +20,45 @@ def authenticate(irc):
     f(':%s ENDBURST' % (irc.sid))
 
 # :7NU PING 7NU 0AL
-def handle_ping(irc, data):
-    m = re.search('\:(\d[A-Z0-9]{1,2}) PING (\d[A-Z0-9]{1,2}) %s' % irc.sid, data)
-    if m:
-        irc.send(':%s PONG %s' % (irc.sid, m.group(0)))
+def handle_ping(irc, servernumeric, command, args):
+    if args[3] == irc.sid:
+        irc.send(':%s PONG %s' % (irc.sid, args[2]))
+
+def handle_privmsg(irc, numeric, command, args):
+    irc.send(':0ALAAAAAA PRIVMSG %s :hello!' % numeric)
+
+def handle_error(irc, numeric, command, args):
+    print('Received an ERROR, killing!')
+    irc.restart()
 
 def handle_events(irc, data):
-    handle_ping(irc, data)
+    try:
+        args = data.split()
+        real_args = []
+        for arg in args:
+            real_args.append(arg)
+            if arg.startswith(':') and args.index(arg) != 0:
+                # : indicates that the argument has multiple words, and lasts until the remainder of the line
+                index = args.index(arg)
+                arg = ' '.join(args[index:])[1:]
+                real_args = args[:index]
+                real_args.append(arg)
+                break
+        real_args[0] = real_args[0].split(':', 1)[1]
+        args = real_args
+        # Strip leading :
+
+        numeric = args[0]
+        command = args[1]
+        print(args)
+    except IndexError:
+        return
+
+    try:
+        func = globals()['handle_'+command.lower()]
+        func(irc, numeric, command, args)
+    except KeyError:  # unhandled event
+        pass
 
 def connect(irc):
     authenticate(irc)

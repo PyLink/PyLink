@@ -5,7 +5,8 @@ import imp
 import os
 import threading
 import socket
-import asyncio
+import multiprocessing
+import time
 
 print('PyLink starting...')
 
@@ -18,13 +19,13 @@ with open("config.yml", 'r') as f:
 global networkobjects
 networkobjects = {}
 
-class irc(asyncio.Protocol):
-    def __init__(self, network, loop):
-        asyncio.Protocol.__init__(self)
+class irc(multiprocessing.Process):
+    def __init__(self, network):
+        multiprocessing.Process.__init__(self)
         self.authenticated = False
         self.connected = False
         self.socket = socket.socket()
-        self.loop = loop
+        self.kill_received = False
 
         self.serverdata = conf['networks'][network]
         ip = self.serverdata["ip"]
@@ -50,23 +51,35 @@ class irc(asyncio.Protocol):
         self.socket.connect((ip, port))
         self.proto.connect(self)
 
-    # def collect_incoming_data(self, data):
-
-    @asyncio.coroutine
-    def handle_read(self):
-        data = self.socket.recv(2048)
-        buf = data.decode("utf-8")
-        for line in buf.split("\n"):
-            print("<- {}".format(line))
-            self.proto.handle_events(self, line)
+    def run(self):
+        while not self.kill_received:
+            try:
+                data = self.socket.recv(1024)
+                if data:
+                    buf = data.decode("utf-8")
+                    for line in buf.split("\n"):
+                        print("<- {}".format(line))
+                        self.proto.handle_events(self, line)
+            except socket.error:
+                self.restart()
+                break
 
     def send(self, data):
         data = data.encode("utf-8") + b"\n"
         print("-> {}".format(data.decode("utf-8").strip("\n")))
         self.socket.send(data)
+    
+    def restart(self):
+        print('Disconnected... Restarting IRC Object for: %s' % network)
+        time.sleep(1)
+        del networkobjects[network]
+        networkobjects[network] = irc(network)
+
+    def relay(self, line):
+        for network in networkobjects.values():
+            self.proto.handle_events(self, line)
 
 for network in conf['networks']:
     print('Creating IRC Object for: %s' % network)
     networkobjects[network] = irc(network)
-    loop = asyncio.get_event_loop()
-    loop.run_forever(networkobjects[network].handle_read())
+    networkobjects[network].start()
