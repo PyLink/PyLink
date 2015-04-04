@@ -19,13 +19,20 @@ with open("config.yml", 'r') as f:
 global networkobjects
 networkobjects = {}
 
-class irc(multiprocessing.Process):
+class IrcUser():
+    def __init__(self, nick, timestamp, data={'uid': None}):
+        self.nick = nick
+        self.data = data
+        self.timestamp = timestamp
+
+class Irc(multiprocessing.Process):
     def __init__(self, network):
         multiprocessing.Process.__init__(self)
-        self.authenticated = False
-        self.connected = False
+        # Initialize some variables
         self.socket = socket.socket()
         self.kill_received = False
+        self.users = {}
+        self.name = network
 
         self.serverdata = conf['networks'][network]
         ip = self.serverdata["ip"]
@@ -33,7 +40,7 @@ class irc(multiprocessing.Process):
         self.sid = self.serverdata["sid"]
         print("[+] New thread started for %s:%s" % (ip, port))
 
-        self.name = network
+        
         protoname = self.serverdata['protocol']
         # With the introduction of Python 3, relative imports are no longer
         # allowed from normal applications ran from the command line. Instead,
@@ -73,7 +80,7 @@ class irc(multiprocessing.Process):
         print('Disconnected... Restarting IRC Object for: %s' % network)
         time.sleep(1)
         del networkobjects[network]
-        networkobjects[network] = irc(network)
+        networkobjects[network] = Irc(network)
 
     def relay(self, line):
         for network in networkobjects.values():
@@ -81,5 +88,5 @@ class irc(multiprocessing.Process):
 
 for network in conf['networks']:
     print('Creating IRC Object for: %s' % network)
-    networkobjects[network] = irc(network)
+    networkobjects[network] = Irc(network)
     networkobjects[network].start()
