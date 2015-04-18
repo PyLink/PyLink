@@ -7,7 +7,6 @@ import threading
 import socket
 import multiprocessing
 import time
-
 print('PyLink starting...')
 
 with open("config.yml", 'r') as f:
@@ -17,10 +16,17 @@ with open("config.yml", 'r') as f:
 #     print("You have not set the login details correctly! Exiting...")
 
 class IrcUser():
-    def __init__(self, nick, timestamp, data={'uid': None}):
+    def __init__(self, nick, ts, uid, ident='null', host='null',
+                 realname='PyLink dummy client', realhost='null',
+                 ip='0.0.0.0'):
         self.nick = nick
-        self.data = data
-        self.timestamp = timestamp
+        self.ts = ts
+        self.uid = uid
+        self.ident = ident
+        self.host = host
+        self.realhost = realhost
+        self.ip = ip
+        self.realname = realname
 
 class Irc():
     def __init__(self):
@@ -28,6 +34,7 @@ class Irc():
         self.socket = socket.socket()
         self.connected = False
         self.users = {}
+        self.channels = {}
         self.name = conf['server']['netname']
 
         self.serverdata = conf['server']
@@ -56,17 +63,22 @@ class Irc():
         self.run()
 
     def run(self):
+        buf = ""
+        data = ""
         while self.connected:
             try:
-                data = self.socket.recv(1024)
-                if data:
-                    buf = data.decode("utf-8")
-                    for line in buf.split("\n"):
-                        print("<- {}".format(line))
-                        self.proto.handle_events(self, line)
+                data += self.socket.recv(1024).decode("utf-8")
+                if not data:
+                    break
+                buf += data
+                while '\n' in buf:
+                    line, buf = buf.split('\n', 1)
+                    print("<- {}".format(line))
+                    self.proto.handle_events(self, line)
             except socket.error:
                 print('Received socket.error: %s, exiting.' % str(e))
                 self.connected = False
+                sys.exit(1)
 
     def send(self, data):
         data = data.encode("utf-8") + b"\n"
