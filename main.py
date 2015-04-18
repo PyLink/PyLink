@@ -16,31 +16,26 @@ with open("config.yml", 'r') as f:
 # if conf['login']['password'] == 'changeme':
 #     print("You have not set the login details correctly! Exiting...")
 
-global networkobjects
-networkobjects = {}
-
 class IrcUser():
     def __init__(self, nick, timestamp, data={'uid': None}):
         self.nick = nick
         self.data = data
         self.timestamp = timestamp
 
-class Irc(multiprocessing.Process):
-    def __init__(self, network):
-        multiprocessing.Process.__init__(self)
+class Irc():
+    def __init__(self):
         # Initialize some variables
         self.socket = socket.socket()
-        self.kill_received = False
+        self.connected = False
         self.users = {}
-        self.name = network
+        self.name = conf['server']['netname']
 
-        self.serverdata = conf['networks'][network]
+        self.serverdata = conf['server']
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         self.sid = self.serverdata["sid"]
-        print("[+] New thread started for %s:%s" % (ip, port))
+        print("Connecting to network %r on %s:%s" % (self.name, ip, port))
 
-        
         protoname = self.serverdata['protocol']
         # With the introduction of Python 3, relative imports are no longer
         # allowed from normal applications ran from the command line. Instead,
@@ -57,9 +52,11 @@ class Irc(multiprocessing.Process):
         self.socket = socket.socket()
         self.socket.connect((ip, port))
         self.proto.connect(self)
+        self.connected = True
+        self.run()
 
     def run(self):
-        while not self.kill_received:
+        while self.connected:
             try:
                 data = self.socket.recv(1024)
                 if data:
@@ -68,25 +65,12 @@ class Irc(multiprocessing.Process):
                         print("<- {}".format(line))
                         self.proto.handle_events(self, line)
             except socket.error:
-                self.restart()
-                break
+                print('Received socket.error: %s, exiting.' % str(e))
+                self.connected = False
 
     def send(self, data):
         data = data.encode("utf-8") + b"\n"
         print("-> {}".format(data.decode("utf-8").strip("\n")))
         self.socket.send(data)
-    
-    def restart(self):
-        print('Disconnected... Restarting IRC Object for: %s' % network)
-        time.sleep(1)
-        del networkobjects[network]
-        networkobjects[network] = Irc(network)
 
-    def relay(self, line):
-        for network in networkobjects.values():
-            self.proto.handle_events(self, line)
-
-for network in conf['networks']:
-    print('Creating IRC Object for: %s' % network)
-    networkobjects[network] = Irc(network)
-    networkobjects[network].start()
+irc_obj = Irc()

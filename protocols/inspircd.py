@@ -70,7 +70,6 @@ def handle_events(irc, data):
 
         numeric = args[0]
         command = args[1]
-        print(args)
     except IndexError:
         return
 

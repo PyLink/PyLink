@@ -1,6 +1,6 @@
 # PyLink
 
-PyLink is an IRC PseudoService written in Python that *might one day* be a replacement for the now defunct Janus.
+PyLink is an IRC PseudoService written in Python.
 
 ## Dependencies
 
