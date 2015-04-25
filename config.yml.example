@@ -3,6 +3,7 @@ bot:
   nick: pylink
   user: pylink
   realname: PyLink Service Client
+  prefix: "@"
 
 login:
   # PyLink administrative login - Change this, or the service will not start!
@@ -21,6 +22,8 @@ server:
     # SID - required for InspIRCd and TS6 based servers. This must be three characters long.
     # The first char must be a digit [0-9], and the remaining two chars may be letters [A-Z] or digits.
     sid: "0AL"
-    # Set protocol module
-    protocol: inspircd
     channel: "#pylink"
+
+# Plugins to load (omit the .py extension)
+plugins:
+    - hello

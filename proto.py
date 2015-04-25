@@ -2,26 +2,29 @@ import threading
 import socket
 import time
 import re
-import string
 import sys
+from utils import *
 
-# TODO: make PyLink a package so I don't have to hack the import system
-# like this.
-from os import sys, path
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from main import IrcUser
+global bot_commands
+# This should be a mapping of command names to functions
+bot_commands = {}
 
-# From http://www.inspircd.org/wiki/Modules/spanningtree/UUIDs.html
-chars = string.digits + string.ascii_uppercase
-iters = [iter(chars) for _ in range(6)]
-a = [next(i) for i in iters]
+class IrcUser():
+    def __init__(self, nick, ts, uid, ident='null', host='null',
+                 realname='PyLink dummy client', realhost='null',
+                 ip='0.0.0.0'):
+        self.nick = nick
+        self.ts = ts
+        self.uid = uid
+        self.ident = ident
+        self.host = host
+        self.realhost = realhost
+        self.ip = ip
+        self.realname = realname
 
-def next_uid(sid, level=-1):
-    try:
-        a[level] = next(iters[level])
-        return sid + ''.join(a)
-    except StopIteration:
-        return UID(level-1)
+    def __repr__(self):
+        keys = [k for k in dir(self) if not k.startswith("__")]
+        return ','.join(["%s=%s" % (k, getattr(self, k)) for k in keys])
 
 def _sendFromServer(irc, msg):
     irc.send(':%s %s' % (irc.sid, msg))
@@ -32,7 +35,7 @@ def _sendFromUser(irc, msg, user=None):
     irc.send(':%s %s' % (user, msg))
 
 def _join(irc, channel):
-    _sendFromUser(irc, "FJOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
+    _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
              ts=int(time.time()), uid=irc.pseudoclient.uid, channel=channel))
 
 def _uidToNick(irc, uid):
@@ -47,7 +50,7 @@ def connect(irc):
     irc.pseudoclient = IrcUser('PyLink', ts, uid, 'pylink', host,
                                'PyLink Client')
     irc.users['PyLink'] = irc.pseudoclient
-    
+
     f = irc.send
     f('CAPAB START 1203')
     # This is hard coded atm... We should fix it eventually...
@@ -71,13 +74,24 @@ def connect(irc):
 
 # :7NU PING 7NU 0AL
 def handle_ping(irc, servernumeric, command, args):
-    if args[3] == irc.sid:
-        _sendFromServer(irc, 'PONG %s' % args[2])
+    if args[1] == irc.sid:
+        _sendFromServer(irc, 'PONG %s' % args[1])
 
-def handle_privmsg(irc, numeric, command, args):
+def handle_privmsg(irc, source, command, args):
     # _sendFromUser(irc, 'PRIVMSG %s :hello!' % numeric)
     print(irc.users)
-    print(irc.channels)
+    prefix = irc.conf['bot']['prefix']
+    if args[0] == irc.pseudoclient.uid:
+        cmd_args = args[1].split(' ', 1)
+        cmd = cmd_args[0]
+        try:
+            cmd_args = cmd_args[1]
+        except IndexError:
+            cmd_args = []
+        try:
+            bot_commands[cmd](irc, source, command, args)
+        except KeyError:
+            _sendFromUser(irc, 'PRIVMSG %s :unknown command %r' % (source, cmd))
 
 def handle_error(irc, numeric, command, args):
     print('Received an ERROR, killing!')
@@ -89,11 +103,9 @@ def handle_fjoin(irc, servernumeric, command, args):
     channel = args[0]
     # tl;dr InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
     # We'll save each user in this format too, at least for now.
-    print(args)
     users = args[-1].split()
     users = [x.split(',') for x in users]
-    print(users)
-    
+
     '''
     if channel not in irc.channels.keys():
         irc.channels[channel]['users'] = users
@@ -103,7 +115,7 @@ def handle_fjoin(irc, servernumeric, command, args):
     '''
 
 def handle_uid(irc, numeric, command, args):
-    # :1SR UID 1SRAAAAAU 1428974823 synnero ow.my.eye.rs ow.my.eye.rs GLolol 2604:180:1::d34d:d87b 1425951245 +Wiosw +ACGKNOQXacfgklnoqvx :move along, nothing to see here!
+    # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
     realname = args[-1]
     irc.users[nick] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
@@ -112,11 +124,13 @@ def handle_quit(irc, numeric, command, args):
     # :1SRAAGB4T QUIT :Quit: quit message goes here
     nick = _uidToNick(irc, numeric)
     del irc.users[nick]
+    '''
     for k, v in irc.channels.items():
         try:
             del irc.channels[k][users][v]
         except KeyError:
             pass
+    '''
 
 def handle_events(irc, data):
     # Each server message looks something like this:
@@ -146,6 +160,8 @@ def handle_events(irc, data):
 
         numeric = args[0]
         command = args[1]
+        args = args[2:]
+        print(args)
     except IndexError:
         return
 
@@ -155,3 +171,6 @@ def handle_events(irc, data):
         func(irc, numeric, command, args)
     except KeyError:  # unhandled event
         pass
+
+def add_cmd(func):
+    bot_commands[func.__name__.lower()] = func
