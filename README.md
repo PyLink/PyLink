@@ -4,7 +4,7 @@ PyLink is an IRC PseudoService written in Python.
 
 ## Dependencies
 
-PyLink is a serious WIP right now (it doesn't even understand the concept of users yet). Dependencies currently include:
+PyLink is a serious WIP right now. Dependencies currently include:
 
 * Python 3.4
 * PyYAML (`pip install pyyaml` or `apt-get install python3-yaml`)
