@@ -78,18 +78,16 @@ def handle_ping(irc, servernumeric, command, args):
         _sendFromServer(irc, 'PONG %s' % args[1])
 
 def handle_privmsg(irc, source, command, args):
-    # _sendFromUser(irc, 'PRIVMSG %s :hello!' % numeric)
-    print(irc.users)
     prefix = irc.conf['bot']['prefix']
     if args[0] == irc.pseudoclient.uid:
-        cmd_args = args[1].split(' ', 1)
+        cmd_args = args[1].split(' ')
         cmd = cmd_args[0]
         try:
-            cmd_args = cmd_args[1]
+            cmd_args = cmd_args[1:]
         except IndexError:
             cmd_args = []
         try:
-            bot_commands[cmd](irc, source, command, args)
+            bot_commands[cmd](irc, source, cmd_args)
         except KeyError:
             _sendFromUser(irc, 'PRIVMSG %s :unknown command %r' % (source, cmd))
 
@@ -161,7 +159,6 @@ def handle_events(irc, data):
         numeric = args[0]
         command = args[1]
         args = args[2:]
-        print(args)
     except IndexError:
         return
 
