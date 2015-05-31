@@ -1,4 +1,5 @@
 import string
+import proto
 
 # From http://www.inspircd.org/wiki/Modules/spanningtree/UUIDs.html
 chars = string.digits + string.ascii_uppercase
@@ -11,3 +12,7 @@ def next_uid(sid, level=-1):
         return sid + ''.join(a)
     except StopIteration:
         return UID(level-1)
+
+def _msg(irc, target, text, notice=True):
+    command = 'NOTICE' if notice else 'PRIVMSG'
+    proto._sendFromUser(irc, '%s %s :%s' % (command, target, text))

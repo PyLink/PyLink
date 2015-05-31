@@ -159,10 +159,10 @@ def handle_squit(irc, numeric, command, args):
     old_servers = copy(irc.servers)
     for sid, data in old_servers.items():
         if data.uplink == split_server:
-            print('Server %s also hosts server %s, splitting that too?!' % (split_server, sid))
+            print('Server %s also hosts server %s, splitting that too...' % (split_server, sid))
             handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
     for user in irc.servers[split_server].users:
-        print("Removing user %s from server %s" % (user, split_server))
+        print("Removing user %s (%s) from server %s" % (user, user.nick, split_server))
         del irc.users[user]
     del irc.servers[split_server]
 

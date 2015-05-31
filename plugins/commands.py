@@ -2,21 +2,23 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import proto
+import utils
 
 @proto.add_cmd
 def tell(irc, source, args):
     try:
         target, text = args[0], ' '.join(args[1:])
     except IndexError:
-        proto._sendFromUser(irc, 'PRIVMSG %s :Error: not enough arguments' % source)
+        utils._msg(irc, source, 'Error: not enough arguments.', notice=False)
         return
-    try:
-        proto._sendFromUser(irc, 'NOTICE %s :%s' % (irc.users[target], text))
-    except KeyError:
-        proto._sendFromUser(irc, 'PRIVMSG %s :unknown user %r' % (source, target))
+    targetuid = proto._nicktoUid(irc, target)
+    if targetuid is None:
+        utils._msg(irc, source, 'Error: unknown user %r' % target, notice=False)
+        return
+    utils._msg(irc, target, text)
 
 @proto.add_cmd
 def debug(irc, source, args):
-    proto._sendFromUser(irc, 'NOTICE %s :Debug info printed to console.' % (source))
+    utils._msg(irc, source, 'Debug info printed to console.')
     print(irc.users)
     print(irc.servers)
