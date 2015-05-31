@@ -3,10 +3,7 @@ import time
 import sys
 from utils import *
 from copy import copy
-
-global bot_commands
-# This should be a mapping of command names to functions
-bot_commands = {}
+import traceback
 
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
@@ -20,6 +17,8 @@ class IrcUser():
         self.realhost = realhost
         self.ip = ip
         self.realname = realname
+
+        self.identified = False
 
     def __repr__(self):
         return repr(self.__dict__)
@@ -48,12 +47,12 @@ def _nicktoUid(irc, nick):
         if v.nick == nick:
             return k
 
-def introduceUser(irc, nick, user, host):
+def spawnClient(irc, nick, user, host, *args):
     uid = next_uid(irc.sid)
     _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {user} 0.0.0.0 {ts} +o +"
                     " :PyLink Client".format(ts=int(time.time()), host=host,
                                              nick=nick, user=user, uid=uid))
-    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, *args)
     irc.servers[irc.sid].users.append(uid)
 
 def connect(irc):
@@ -96,15 +95,22 @@ def handle_privmsg(irc, source, command, args):
     prefix = irc.conf['bot']['prefix']
     if args[0] == irc.pseudoclient.uid:
         cmd_args = args[1].split(' ')
-        cmd = cmd_args[0]
+        cmd = cmd_args[0].lower()
         try:
             cmd_args = cmd_args[1:]
         except IndexError:
             cmd_args = []
         try:
-            bot_commands[cmd](irc, source, cmd_args)
+            func = bot_commands[cmd]
         except KeyError:
-            _sendFromUser(irc, 'PRIVMSG %s :unknown command %r' % (source, cmd))
+            msg(irc, source, 'Unknown command %r.' % cmd)
+            return
+        try:
+            func(irc, source, cmd_args)
+        except Exception as e:
+            traceback.print_exc()
+            msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+            return
 
 def handle_error(irc, numeric, command, args):
     print('Received an ERROR, killing!')
@@ -214,6 +220,3 @@ def handle_events(irc, data):
         func(irc, numeric, command, args)
     except KeyError:  # unhandled event
         pass
-
-def add_cmd(func):
-    bot_commands[func.__name__.lower()] = func

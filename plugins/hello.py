@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import proto
+import utils
 
-@proto.add_cmd
+@utils.add_cmd
 def hello(irc, source, args):
-    proto._sendFromUser(irc, 'PRIVMSG %s :hello!' % source)
+   utils.msg(irc, source, 'hello!')

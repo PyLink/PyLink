@@ -1,20 +1,17 @@
 #!/usr/bin/python3
 
-import yaml
 import imp
 import os
 import socket
 import time
 import sys
 
+from conf import conf
 import proto
-print('PyLink starting...')
 
-with open("config.yml", 'r') as f:
-    conf = yaml.load(f)
-
-# if conf['login']['password'] == 'changeme':
-#     print("You have not set the login details correctly! Exiting...")
+if conf['login']['password'] == 'changeme':
+     print("You have not set the login details correctly! Exiting...")
+     sys.exit(2)
 
 class Irc():
     def __init__(self):
@@ -74,5 +71,6 @@ class Irc():
             self.loaded.append(imp.load_source(plugin, moduleinfo[1]))
         print("loaded plugins: %s" % self.loaded)
 
-
-irc_obj = Irc()
+if __name__ == '__main__':
+    print('PyLink starting...')
+    irc_obj = Irc()
