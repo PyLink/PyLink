@@ -48,6 +48,14 @@ def _nicktoUid(irc, nick):
         if v.nick == nick:
             return k
 
+def introduceUser(irc, nick, user, host):
+    uid = next_uid(irc.sid)
+    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {user} 0.0.0.0 {ts} +o +"
+                    " :PyLink Client".format(ts=int(time.time()), host=host,
+                                             nick=nick, user=user, uid=uid))
+    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    irc.servers[irc.sid].users.append(uid)
+
 def connect(irc):
     ts = int(time.time())
     host = irc.serverdata["hostname"]
@@ -55,6 +63,8 @@ def connect(irc):
     irc.pseudoclient = IrcUser('PyLink', ts, uid, 'pylink', host,
                                'PyLink Client')
     irc.users[uid] = irc.pseudoclient
+    irc.servers[irc.sid] = IrcServer(None)
+    irc.servers[irc.sid].users = [uid]
 
     f = irc.send
     f('CAPAB START 1203')
@@ -70,7 +80,7 @@ def connect(irc):
     # :751 UID 751AAAAAA 1220196319 Brain brainwave.brainbox.cc
     # netadmin.chatspike.net brain 192.168.1.10 1220196324 +Siosw
     # +ACKNOQcdfgklnoqtx :Craig Edwards
-    f(":{sid} UID {uid} {ts} PyLink {host} {host} pylink 127.0.0.1 {ts} +o +"
+    f(":{sid} UID {uid} {ts} PyLink {host} {host} pylink 0.0.0.0 {ts} +o +"
       " :PyLink Client".format(sid=irc.sid, ts=ts,
                                host=host,
                                uid=uid))
@@ -154,15 +164,14 @@ def handle_nick(irc, numeric, command, args):
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
     split_server = args[0]
-    print('Splitting server %s' % split_server)
+    print('Netsplit on server %s' % split_server)
     # Prevent RuntimeError: dictionary changed size during iteration
     old_servers = copy(irc.servers)
     for sid, data in old_servers.items():
         if data.uplink == split_server:
-            print('Server %s also hosts server %s, splitting that too...' % (split_server, sid))
+            print('Server %s also hosts server %s, removing those users too...' % (split_server, sid))
             handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
     for user in irc.servers[split_server].users:
-        print("Removing user %s (%s) from server %s" % (user, user.nick, split_server))
         del irc.users[user]
     del irc.servers[split_server]
 
