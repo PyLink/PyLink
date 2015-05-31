@@ -1,7 +1,12 @@
 # commands.py: base PyLink commands
-import sys, os
+import sys
+import os
+import logging
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import proto
+
+logger = logging.getLogger('pylinklogger')
 
 @proto.add_cmd
 def tell(irc, source, args):
@@ -18,5 +23,5 @@ def tell(irc, source, args):
 @proto.add_cmd
 def debug(irc, source, args):
     proto._sendFromUser(irc, 'NOTICE %s :Debug info printed to console.' % (source))
-    print(irc.users)
-    print(irc.servers)
+    logger.debug(irc.users)
+    logger.debug(irc.servers)

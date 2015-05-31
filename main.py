@@ -3,17 +3,19 @@
 import yaml
 import imp
 import os
-import threading
 import socket
-import multiprocessing
 import time
 import sys
+import logging
 
 import proto
-print('PyLink starting...')
 
 with open("config.yml", 'r') as f:
     conf = yaml.load(f)
+
+logger = logging.getLogger('pylinklogger')
+# logger.setLevel(getattr(logging, conf['bot']['loglevel']))
+logger.info('PyLink starting...')
 
 # if conf['login']['password'] == 'changeme':
 #     print("You have not set the login details correctly! Exiting...")
@@ -33,7 +35,7 @@ class Irc():
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         self.sid = self.serverdata["sid"]
-        print("Connecting to network %r on %s:%s" % (self.name, ip, port))
+        logger.info("Connecting to network %r on %s:%s" % (self.name, ip, port))
 
         self.socket = socket.socket()
         self.socket.connect((ip, port))
@@ -54,16 +56,16 @@ class Irc():
                     break
                 while '\n' in buf:
                     line, buf = buf.split('\n', 1)
-                    print("<- {}".format(line))
+                    logger.debug("<- {}".format(line))
                     proto.handle_events(self, line)
             except socket.error as e:
-                print('Received socket.error: %s, exiting.' % str(e))
+                logger.error('Received socket.error: %s, exiting.' % str(e))
                 break
         sys.exit(1)
 
     def send(self, data):
         data = data.encode("utf-8") + b"\n"
-        print("-> {}".format(data.decode("utf-8").strip("\n")))
+        logger.debug("-> {}".format(data.decode("utf-8").strip("\n")))
         self.socket.send(data)
 
     def load_plugins(self):
@@ -74,7 +76,7 @@ class Irc():
         for plugin in to_load:
             moduleinfo = imp.find_module(plugin, plugins_folder)
             self.loaded.append(imp.load_source(plugin, moduleinfo[1]))
-        print("loaded plugins: %s" % self.loaded)
+        logger.info("loaded plugins: %s" % self.loaded)
 
 
 irc_obj = Irc()

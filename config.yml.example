@@ -4,6 +4,8 @@ bot:
   user: pylink
   realname: PyLink Service Client
   prefix: "@"
+  # Console log verbosity: see https://docs.python.org/3/library/logging.html#logging-levels
+  loglevel: DEBUG
 
 login:
   # PyLink administrative login - Change this, or the service will not start!

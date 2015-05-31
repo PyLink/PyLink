@@ -1,10 +1,11 @@
-import threading
 import socket
 import time
-import re
 import sys
 from utils import *
+import logging
 from copy import copy
+
+logger = logging.getLogger('pylinklogger')
 
 global bot_commands
 # This should be a mapping of command names to functions
@@ -99,7 +100,7 @@ def handle_privmsg(irc, source, command, args):
             _sendFromUser(irc, 'PRIVMSG %s :unknown command %r' % (source, cmd))
 
 def handle_error(irc, numeric, command, args):
-    print('Received an ERROR, killing!')
+    logger.error('Received an ERROR, killing!')
     irc.connected = False
     sys.exit(1)
 
@@ -156,15 +157,15 @@ def handle_nick(irc, numeric, command, args):
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
     split_server = args[0]
-    print('Splitting server %s' % split_server)
+    logger.info('Splitting server %s' % split_server)
     # Prevent RuntimeError: dictionary changed size during iteration
     old_servers = copy(irc.servers)
     for sid, data in old_servers.items():
         if data.uplink == split_server:
-            print('Server %s also hosts server %s, splitting that too?!' % (split_server, sid))
+            logger.info('Server %s also hosts server %s, splitting that too...' % (split_server, sid))
             handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
     for user in irc.servers[split_server].users:
-        print("Removing user %s from server %s" % (user, split_server))
+        logger.debug("Removing user %s from server %s" % (user, split_server))
         del irc.users[user]
     del irc.servers[split_server]
 
