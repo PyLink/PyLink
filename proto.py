@@ -4,6 +4,7 @@ import time
 import re
 import sys
 from utils import *
+from copy import copy
 
 global bot_commands
 # This should be a mapping of command names to functions
@@ -23,8 +24,14 @@ class IrcUser():
         self.realname = realname
 
     def __repr__(self):
-        keys = [k for k in dir(self) if not k.startswith("__")]
-        return ','.join(["%s=%s" % (k, getattr(self, k)) for k in keys])
+        return repr(self.__dict__)
+
+class IrcServer():
+    def __init__(self, uplink):
+        self.uplink = uplink
+        self.users = []
+    def __repr__(self):
+        return repr(self.__dict__)
 
 def _sendFromServer(irc, msg):
     irc.send(':%s %s' % (irc.sid, msg))
@@ -38,9 +45,9 @@ def _join(irc, channel):
     _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
              ts=int(time.time()), uid=irc.pseudoclient.uid, channel=channel))
 
-def _uidToNick(irc, uid):
+def _nicktoUid(irc, nick):
     for k, v in irc.users.items():
-        if v.uid == uid:
+        if v.nick == nick:
             return k
 
 def connect(irc):
@@ -49,7 +56,7 @@ def connect(irc):
     uid = next_uid(irc.sid)
     irc.pseudoclient = IrcUser('PyLink', ts, uid, 'pylink', host,
                                'PyLink Client')
-    irc.users['PyLink'] = irc.pseudoclient
+    irc.users[uid] = irc.pseudoclient
 
     f = irc.send
     f('CAPAB START 1203')
@@ -116,12 +123,14 @@ def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
     realname = args[-1]
-    irc.users[nick] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    irc.servers[numeric].users.append(uid)
 
 def handle_quit(irc, numeric, command, args):
     # :1SRAAGB4T QUIT :Quit: quit message goes here
-    nick = _uidToNick(irc, numeric)
-    del irc.users[nick]
+    del irc.users[numeric]
+    sid = numeric[:3]
+    irc.servers[sid].users.remove(numeric)
     '''
     for k, v in irc.channels.items():
         try:
@@ -129,6 +138,35 @@ def handle_quit(irc, numeric, command, args):
         except KeyError:
             pass
     '''
+
+def handle_burst(irc, numeric, command, args):
+    # :70M BURST 1433044587
+    irc.servers[numeric] = IrcServer(None)
+
+def handle_server(irc, numeric, command, args):
+    # :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
+    servername = args[0]
+    sid = args[3]
+    irc.servers[sid] = IrcServer(numeric)
+
+def handle_nick(irc, numeric, command, args):
+    newnick = args[0]
+    irc.users[numeric].nick = newnick
+
+def handle_squit(irc, numeric, command, args):
+    # :70M SQUIT 1ML :Server quit by GL!gl@0::1
+    split_server = args[0]
+    print('Splitting server %s' % split_server)
+    # Prevent RuntimeError: dictionary changed size during iteration
+    old_servers = copy(irc.servers)
+    for sid, data in old_servers.items():
+        if data.uplink == split_server:
+            print('Server %s also hosts server %s, splitting that too?!' % (split_server, sid))
+            handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
+    for user in irc.servers[split_server].users:
+        print("Removing user %s from server %s" % (user, split_server))
+        del irc.users[user]
+    del irc.servers[split_server]
 
 def handle_events(irc, data):
     # Each server message looks something like this:
@@ -145,11 +183,12 @@ def handle_events(irc, data):
                 # : is used for multi-word arguments that last until the end
                 # of the message. We can use list splicing here to turn them all
                 # into one argument.
-                index = args.index(arg)  # Get array index of arg
-                # Replace it with everything left on that line
-                arg = ' '.join(args[index:])[1:]
-                # Cut the original argument list at before multi-line one, and
-                # merge them together.
+                index = args.index(arg)  # Get the array index of the multi-word arg
+                # Set the last arg to a joined version of the remaining args
+                arg = args[index:]
+                arg = ' '.join(arg)[1:]
+                # Cut the original argument list right before the multi-word arg,
+                # and then append the multi-word arg.
                 real_args = args[:index]
                 real_args.append(arg)
                 break

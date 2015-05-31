@@ -27,6 +27,7 @@ class Irc():
         self.channels = {}
         self.name = conf['server']['netname']
         self.conf = conf
+        self.servers = {}
 
         self.serverdata = conf['server']
         ip = self.serverdata["ip"]
@@ -47,7 +48,7 @@ class Irc():
         data = ""
         while self.connected:
             try:
-                data = self.socket.recv(4096).decode("utf-8")
+                data = self.socket.recv(2048).decode("utf-8")
                 buf += data
                 if not data:
                     break

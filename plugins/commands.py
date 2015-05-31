@@ -11,7 +11,7 @@ def tell(irc, source, args):
         proto._sendFromUser(irc, 'PRIVMSG %s :Error: not enough arguments' % source)
         return
     try:
-        proto._sendFromUser(irc, 'NOTICE %s :%s' % (irc.users[target].uid, text))
+        proto._sendFromUser(irc, 'NOTICE %s :%s' % (irc.users[target], text))
     except KeyError:
         proto._sendFromUser(irc, 'PRIVMSG %s :unknown user %r' % (source, target))
 
@@ -19,3 +19,4 @@ def tell(irc, source, args):
 def debug(irc, source, args):
     proto._sendFromUser(irc, 'NOTICE %s :Debug info printed to console.' % (source))
     print(irc.users)
+    print(irc.servers)
