@@ -1,7 +1,5 @@
-import threading
 import socket
 import time
-import re
 import sys
 from utils import *
 from copy import copy

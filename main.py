@@ -3,9 +3,7 @@
 import yaml
 import imp
 import os
-import threading
 import socket
-import multiprocessing
 import time
 import sys
 
