@@ -38,10 +38,6 @@ def _sendFromUser(irc, msg, user=None):
         user = irc.pseudoclient.uid
     irc.send(':%s %s' % (user, msg))
 
-def _join(irc, channel):
-    _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
-             ts=int(time.time()), uid=irc.pseudoclient.uid, channel=channel))
-
 def _nicktoUid(irc, nick):
     for k, v in irc.users.items():
         if v.nick == nick:
@@ -56,7 +52,7 @@ def spawnClient(irc, nick, user, host, *args):
     irc.servers[irc.sid].users.append(uid)
 
 def connect(irc):
-    ts = int(time.time())
+    irc.start_ts = ts = int(time.time())
     host = irc.serverdata["hostname"]
     uid = next_uid(irc.sid)
     irc.pseudoclient = IrcUser('PyLink', ts, uid, 'pylink', host,
@@ -84,7 +80,8 @@ def connect(irc):
                                host=host,
                                uid=uid))
     f(':%s ENDBURST' % (irc.sid))
-    _join(irc, irc.serverdata["channel"])
+    _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
+             ts=int(time.time()), uid=irc.pseudoclient.uid, channel=irc.serverdata['channel']))
 
 # :7NU PING 7NU 0AL
 def handle_ping(irc, servernumeric, command, args):
@@ -180,6 +177,15 @@ def handle_squit(irc, numeric, command, args):
     for user in irc.servers[split_server].users:
         del irc.users[user]
     del irc.servers[split_server]
+
+def handle_idle(irc, numeric, command, args):
+    """Handle the IDLE command, sent between servers in remote WHOIS queries."""
+    # <- :70MAAAAAA IDLE 1MLAAAAIG
+    # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
+    sourceuser = numeric
+    targetuser = args[0]
+    _sendFromUser(irc, 'IDLE %s %s 0' % (sourceuser, irc.start_ts),
+                  user=targetuser)
 
 def handle_events(irc, data):
     # Each server message looks something like this:
