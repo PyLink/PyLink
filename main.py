@@ -33,9 +33,9 @@ class Irc():
         self.socket = socket.socket()
         self.socket.connect((ip, port))
         proto.connect(self)
-        self.connected = True
         self.loaded = []
         self.load_plugins()
+        self.connected = True
         self.run()
 
     def run(self):
