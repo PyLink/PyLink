@@ -27,5 +27,4 @@ server:
 
 # Plugins to load (omit the .py extension)
 plugins:
-    - hello
     - commands
