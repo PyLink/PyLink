@@ -80,8 +80,9 @@ def connect(irc):
                                host=host,
                                uid=uid))
     f(':%s ENDBURST' % (irc.sid))
-    _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
-             ts=int(time.time()), uid=irc.pseudoclient.uid, channel=irc.serverdata['channel']))
+    for channel in irc.serverdata['channels']:
+        _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
+            ts=int(time.time()), uid=irc.pseudoclient.uid, channel=channel))
 
 # :7NU PING 7NU 0AL
 def handle_ping(irc, servernumeric, command, args):
