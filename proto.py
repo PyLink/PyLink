@@ -35,6 +35,21 @@ def joinClient(irc, client, channel):
     _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
             ts=int(time.time()), uid=client.uid, channel=channel))
 
+def removeClient(irc, numeric):
+    """<irc object> <client numeric>
+    
+    Removes a client from our internal databases, regardless
+    of whether it's one of our pseudoclients or not."""
+    for k, v in irc.channels.items():
+        if numeric in irc.channels[k].users:
+            print('Removing client %s from channel %s' % (numeric, k))
+            irc.channels[k].users.remove(numeric)
+    sid = numeric[:3]
+    print('Removing client %s from irc.users' % numeric)
+    del irc.users[numeric]
+    print('Removing client %s from irc.servers[%s]' % (numeric, sid))
+    irc.servers[sid].users.remove(numeric)
+
 def connect(irc):
     irc.start_ts = ts = int(time.time())
     host = irc.serverdata["hostname"]
@@ -92,18 +107,25 @@ def handle_error(irc, numeric, command, args):
 def handle_fjoin(irc, servernumeric, command, args):
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
     channel = args[0]
-    # tl;dr InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
-    # We'll save each user in this format too, at least for now.
-    users = args[-1].split()
-    users = [x.split(',') for x in users]
-
-    '''
     if channel not in irc.channels.keys():
-        irc.channels[channel]['users'] = users
-    else:
-        old_users = irc.channels[channel]['users'].copy()
-        old_users.update(users)
-    '''
+        irc.channels[channel] = IrcChannel()
+    # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
+    userlist = args[-1].split()
+    for user in userlist:
+        modeprefix, user = user.split(',', 1)
+        for mode in modeprefix:
+            # Note that a user can have more than one mode prefix (e.g. they have both +o and +v),
+            # so they would be added to both lists.
+            '''
+            # left to right: m_ojoin, m_operprefix, owner (~/+q), admin (&/+a), and op (!/+o)
+            if mode in 'Yyqao':
+                irc.channels[channel].ops.append(user)
+            if mode == 'h':
+                irc.channels[channel].halfops.append(user)
+            if mode == 'v':
+                irc.channels[channel].voices.append(user)
+            '''
+        irc.channels[channel].users.append(user)
 
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
@@ -114,16 +136,7 @@ def handle_uid(irc, numeric, command, args):
 
 def handle_quit(irc, numeric, command, args):
     # :1SRAAGB4T QUIT :Quit: quit message goes here
-    del irc.users[numeric]
-    sid = numeric[:3]
-    irc.servers[sid].users.remove(numeric)
-    '''
-    for k, v in irc.channels.items():
-        try:
-            del irc.channels[k][users][v]
-        except KeyError:
-            pass
-    '''
+    removeClient(irc, numeric)
 
 def handle_burst(irc, numeric, command, args):
     # :70M BURST 1433044587
@@ -139,6 +152,12 @@ def handle_nick(irc, numeric, command, args):
     newnick = args[0]
     irc.users[numeric].nick = newnick
 
+def handle_fmode(irc, numeric, command, args):
+    # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
+    # Oh god, how are we going to handle this?!
+    channel = args[0]
+    modestrings = args[3:]
+
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
     split_server = args[0]
@@ -150,7 +169,8 @@ def handle_squit(irc, numeric, command, args):
             print('Server %s also hosts server %s, removing those users too...' % (split_server, sid))
             handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
     for user in irc.servers[split_server].users:
-        del irc.users[user]
+        print('Removing client %s (%s)' % (user, irc.users[user].nick))
+        removeClient(irc, user)
     del irc.servers[split_server]
 
 def handle_idle(irc, numeric, command, args):
