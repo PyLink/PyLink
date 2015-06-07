@@ -100,6 +100,12 @@ def handle_privmsg(irc, source, command, args):
             msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 
+def handle_kick(irc, source, command, args):
+    # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
+    channel = args[0]
+    kicked = args[1]
+    irc.channels[channel].users.discard(kicked)
+
 def handle_part(irc, source, command, args):
     channel = args[0]
     # We should only get PART commands for channels that exist, right??
