@@ -55,14 +55,3 @@ def listcommands(irc, source, args):
     cmds.sort()
     utils.msg(irc, source, 'Available commands include: %s' % ', '.join(cmds))
 utils.add_cmd(listcommands, 'list')
-
-@utils.add_cmd
-def eval(irc, source, args):
-    if not irc.users[source].identified:
-        utils.msg(irc, source, 'You are not authenticated!')
-        return
-    args = ' '.join(args)
-    if not args.strip():
-        utils.msg(irc, source, 'No code entered!')
-        return
-    exec(args)
