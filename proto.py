@@ -40,10 +40,13 @@ def removeClient(irc, numeric):
     
     Removes a client from our internal databases, regardless
     of whether it's one of our pseudoclients or not."""
-    for k, v in irc.channels.items():
+    for k, v in copy(irc.channels).items():
         if numeric in irc.channels[k].users:
             print('Removing client %s from channel %s' % (numeric, k))
             irc.channels[k].users.remove(numeric)
+        if not irc.channels[k].users:
+            # Clear empty channels
+            del irc.channels[k]
     sid = numeric[:3]
     print('Removing client %s from irc.users' % numeric)
     del irc.users[numeric]
@@ -168,7 +171,7 @@ def handle_squit(irc, numeric, command, args):
         if data.uplink == split_server:
             print('Server %s also hosts server %s, removing those users too...' % (split_server, sid))
             handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
-    for user in irc.servers[split_server].users:
+    for user in copy(irc.servers[split_server].users):
         print('Removing client %s (%s)' % (user, irc.users[user].nick))
         removeClient(irc, user)
     del irc.servers[split_server]

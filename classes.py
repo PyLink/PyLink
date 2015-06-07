@@ -26,8 +26,10 @@ class IrcServer():
 class IrcChannel():
     def __init__(self):
         self.users = []
+        '''
         self.ops = []
         self.halfops = []
         self.voices = []
+        '''
     def __repr__(self):
         return repr(self.__dict__)
