@@ -25,7 +25,7 @@ class IrcServer():
 
 class IrcChannel():
     def __init__(self):
-        self.users = []
+        self.users = set()
         '''
         self.ops = []
         self.halfops = []

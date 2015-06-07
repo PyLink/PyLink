@@ -41,9 +41,7 @@ def removeClient(irc, numeric):
     Removes a client from our internal databases, regardless
     of whether it's one of our pseudoclients or not."""
     for k, v in copy(irc.channels).items():
-        if numeric in irc.channels[k].users:
-            print('Removing client %s from channel %s' % (numeric, k))
-            irc.channels[k].users.remove(numeric)
+        irc.channels[k].users.discard(numeric)
         if not irc.channels[k].users:
             # Clear empty channels
             del irc.channels[k]
@@ -102,6 +100,11 @@ def handle_privmsg(irc, source, command, args):
             msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 
+def handle_part(irc, source, command, args):
+    channel = args[0]
+    # We should only get PART commands for channels that exist, right??
+    irc.channels[channel].users.discard(source)
+
 def handle_error(irc, numeric, command, args):
     print('Received an ERROR, killing!')
     irc.connected = False
@@ -128,7 +131,7 @@ def handle_fjoin(irc, servernumeric, command, args):
             if mode == 'v':
                 irc.channels[channel].voices.append(user)
             '''
-        irc.channels[channel].users.append(user)
+        irc.channels[channel].users.add(user)
 
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
