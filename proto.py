@@ -4,31 +4,7 @@ import sys
 from utils import *
 from copy import copy
 import traceback
-
-class IrcUser():
-    def __init__(self, nick, ts, uid, ident='null', host='null',
-                 realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0'):
-        self.nick = nick
-        self.ts = ts
-        self.uid = uid
-        self.ident = ident
-        self.host = host
-        self.realhost = realhost
-        self.ip = ip
-        self.realname = realname
-
-        self.identified = False
-
-    def __repr__(self):
-        return repr(self.__dict__)
-
-class IrcServer():
-    def __init__(self, uplink):
-        self.uplink = uplink
-        self.users = []
-    def __repr__(self):
-        return repr(self.__dict__)
+from classes import *
 
 def _sendFromServer(irc, msg):
     irc.send(':%s %s' % (irc.sid, msg))
@@ -43,23 +19,26 @@ def _nicktoUid(irc, nick):
         if v.nick == nick:
             return k
 
-def spawnClient(irc, nick, user, host, *args):
+def spawnClient(irc, nick, ident, host, *args):
     uid = next_uid(irc.sid)
-    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {user} 0.0.0.0 {ts} +o +"
-                    " :PyLink Client".format(ts=int(time.time()), host=host,
-                                             nick=nick, user=user, uid=uid))
-    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, *args)
+    ts = int(time.time())
+    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 {ts} +o +"
+                    " :PyLink Client".format(ts=ts, host=host,
+                                             nick=nick, ident=ident, uid=uid))
+    u = irc.users[uid] = IrcUser(nick, ts, uid, ident, host, *args)
     irc.servers[irc.sid].users.append(uid)
+    return u
+
+def joinClient(irc, client, channel):
+    # Channel list can be a comma-separated list of channels, per the
+    # IRC specification.
+    _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
+            ts=int(time.time()), uid=client.uid, channel=channel))
 
 def connect(irc):
     irc.start_ts = ts = int(time.time())
     host = irc.serverdata["hostname"]
-    uid = next_uid(irc.sid)
-    irc.pseudoclient = IrcUser('PyLink', ts, uid, 'pylink', host,
-                               'PyLink Client')
-    irc.users[uid] = irc.pseudoclient
     irc.servers[irc.sid] = IrcServer(None)
-    irc.servers[irc.sid].users = [uid]
 
     f = irc.send
     f('CAPAB START 1203')
@@ -75,14 +54,9 @@ def connect(irc):
     # :751 UID 751AAAAAA 1220196319 Brain brainwave.brainbox.cc
     # netadmin.chatspike.net brain 192.168.1.10 1220196324 +Siosw
     # +ACKNOQcdfgklnoqtx :Craig Edwards
-    f(":{sid} UID {uid} {ts} PyLink {host} {host} pylink 0.0.0.0 {ts} +o +"
-      " :PyLink Client".format(sid=irc.sid, ts=ts,
-                               host=host,
-                               uid=uid))
+    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host)
     f(':%s ENDBURST' % (irc.sid))
-    for channel in irc.serverdata['channels']:
-        _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
-            ts=int(time.time()), uid=irc.pseudoclient.uid, channel=channel))
+    joinClient(irc, irc.pseudoclient, ','.join(irc.serverdata['channels']))
 
 # :7NU PING 7NU 0AL
 def handle_ping(irc, servernumeric, command, args):
