@@ -67,8 +67,14 @@ class Irc():
         # Here, we override the module lookup and import the plugins
         # dynamically depending on which were configured.
         for plugin in to_load:
-            moduleinfo = imp.find_module(plugin, plugins_folder)
-            self.loaded.append(imp.load_source(plugin, moduleinfo[1]))
+            try:
+                moduleinfo = imp.find_module(plugin, plugins_folder)
+                self.loaded.append(imp.load_source(plugin, moduleinfo[1]))
+            except ImportError as e:
+                if str(e).startswith('No module named'):
+                    print('Failed to load plugin %r: the plugin could not be found.' % plugin)
+                else:
+                    print('Failed to load plugin %r: import error %s' (plugin, str(e)))
         print("loaded plugins: %s" % self.loaded)
 
 if __name__ == '__main__':
