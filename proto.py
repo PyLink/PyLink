@@ -32,6 +32,8 @@ def spawnClient(irc, nick, ident, host, *args):
 def joinClient(irc, client, channel):
     # Channel list can be a comma-separated list of channels, per the
     # IRC specification.
+    if not isInternalClient(irc, client):
+        raise LookupError('No user/PyLink PseudoClient %r exists.' % client)
     _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
             ts=int(time.time()), uid=client.uid, channel=channel))
 
@@ -50,6 +52,42 @@ def removeClient(irc, numeric):
     del irc.users[numeric]
     print('Removing client %s from irc.servers[%s]' % (numeric, sid))
     irc.servers[sid].users.remove(numeric)
+
+def isInternalClient(irc, numeric):
+    """<irc object> <client numeric>
+
+    Returns whether <client numeric> is a PyLink PseudoClient.
+    """
+    return numeric in irc.servers[irc.sid].users
+
+def quitClient(irc, numeric):
+    """<irc object> <client numeric>
+
+    Quits a PyLink PseudoClient."""
+    if isInternalClient(irc, numeric):
+        _sendFromUser(irc, numeric, "QUIT :Client quit")
+    else:
+        raise LookupError("No user %r exists. If you're trying to remove "
+                          "a user that's not a PyLink PseudoClient from "
+                          "the internal state, use removeClient() instead.")
+
+def kickClient(irc, channel, numeric, target, reason=None):
+    """<irc object> <kicker client numeric>
+
+    Sends a kick from a PyLink PseudoClient."""
+    if not isInternalClient(irc, numeric):
+        raise LookupError('No user/PyLink PseudoClient %r exists.' % numeric)
+    if reason is None:
+        reason = irc.users[target].nick
+    _sendFromUser(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
+
+def nickClient(irc, numeric, newnick, reason=None):
+    """<irc object> <client numeric> <new nickname>
+
+    Changes the nick of a PyLink PseudoClient."""
+    if not isInternalClient(irc, numeric):
+        raise LookupError('No user/PyLink PseudoClient %r exists.' % numeric)
+    _sendFromUser(irc, numeric, 'NICK %s' % newnick)
 
 def connect(irc):
     irc.start_ts = ts = int(time.time())
