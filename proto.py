@@ -37,7 +37,7 @@ def joinClient(irc, client, channel):
 
 def removeClient(irc, numeric):
     """<irc object> <client numeric>
-    
+
     Removes a client from our internal databases, regardless
     of whether it's one of our pseudoclients or not."""
     for k, v in copy(irc.channels).items():
@@ -100,11 +100,20 @@ def handle_privmsg(irc, source, command, args):
             msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 
+def handle_kill(irc, source, command, args):
+    killed = args[0]
+    removeClient(irc, killed)
+    if killed == irc.pseudoclient.uid:
+        irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', irc.serverdata["hostname"])
+        joinClient(irc, irc.pseudoclient, ','.join(irc.serverdata['channels']))
+
 def handle_kick(irc, source, command, args):
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
     channel = args[0]
     kicked = args[1]
     irc.channels[channel].users.discard(kicked)
+    if kicked == irc.pseudoclient.uid:
+        joinClient(irc, irc.pseudoclient, channel)
 
 def handle_part(irc, source, command, args):
     channel = args[0]
