@@ -38,10 +38,10 @@ def quitclient(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 1: nick.")
         return
-    if irc.pseudoclient.uid == utils._nicktoUid(irc, nick):
+    if irc.pseudoclient.uid == utils.nickToUid(irc, nick):
         utils.msg(irc, source, "Error: cannot quit the main PyLink PseudoClient!")
         return
-    u = utils._nicktoUid(irc, nick)
+    u = utils.nickToUid(irc, nick)
     quitmsg =  ' '.join(args[1:]) or 'Client quit'
     proto.quitClient(irc, u, quitmsg)
 
@@ -56,7 +56,7 @@ def joinclient(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
-    u = utils._nicktoUid(irc, nick)
+    u = utils.nickToUid(irc, nick)
     for channel in clist:
         if not channel.startswith('#'):
             utils.msg(irc, source, "Error: channel names must start with #.")
@@ -72,7 +72,7 @@ def nickclient(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, newnick.")
         return
-    u = utils._nicktoUid(irc, nick)
+    u = utils.nickToUid(irc, nick)
     proto.nickClient(irc, u, newnick)
 
 @utils.add_cmd
@@ -85,7 +85,7 @@ def partclient(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
-    u = utils._nicktoUid(irc, nick)
+    u = utils.nickToUid(irc, nick)
     for channel in clist:
         if not channel.startswith('#'):
             utils.msg(irc, source, "Error: channel names must start with #.")
@@ -103,8 +103,8 @@ def kickclient(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 3-4: nick, channel, target, reason (optional).")
         return
-    u = utils._nicktoUid(irc, nick)
-    targetu = utils._nicktoUid(irc, target)
+    u = utils.nickToUid(irc, nick)
+    targetu = utils.nickToUid(irc, target)
     if not channel.startswith('#'):
         utils.msg(irc, source, "Error: channel names must start with #.")
         return

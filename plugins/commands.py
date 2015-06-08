@@ -12,7 +12,7 @@ def tell(irc, source, args):
     except IndexError:
         utils.msg(irc, source, 'Error: not enough arguments.')
         return
-    targetuid = proto._nicktoUid(irc, target)
+    targetuid = utils.nickToUid(irc, target)
     if targetuid is None:
         utils.msg(irc, source, 'Error: unknown user %r' % target)
         return

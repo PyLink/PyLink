@@ -27,7 +27,7 @@ def add_cmd(func, name=None):
     name = name.lower()
     bot_commands[name] = func
 
-def _nicktoUid(irc, nick):
+def nickToUid(irc, nick):
     for k, v in irc.users.items():
         if v.nick == nick:
             return k
