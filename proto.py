@@ -9,15 +9,8 @@ from classes import *
 def _sendFromServer(irc, msg):
     irc.send(':%s %s' % (irc.sid, msg))
 
-def _sendFromUser(irc, msg, user=None):
-    if user is None:
-        user = irc.pseudoclient.uid
-    irc.send(':%s %s' % (user, msg))
-
-def _nicktoUid(irc, nick):
-    for k, v in irc.users.items():
-        if v.nick == nick:
-            return k
+def _sendFromUser(irc, numeric, msg):
+    irc.send(':%s %s' % (numeric, msg))
 
 def spawnClient(irc, nick, ident, host, *args):
     uid = next_uid(irc.sid)
@@ -30,12 +23,19 @@ def spawnClient(irc, nick, ident, host, *args):
     return u
 
 def joinClient(irc, client, channel):
-    # Channel list can be a comma-separated list of channels, per the
-    # IRC specification.
+    # One channel per line here!
     if not isInternalClient(irc, client):
-        raise LookupError('No user/PyLink PseudoClient %r exists.' % client)
-    _sendFromUser(irc, "JOIN {channel} {ts} +nt :,{uid}".format(sid=irc.sid,
-            ts=int(time.time()), uid=client.uid, channel=channel))
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromServer(irc, "FJOIN {channel} {ts} + :,{uid}".format(
+            ts=int(time.time()), uid=client, channel=channel))
+
+def partClient(irc, client, channel, reason=None):
+    if not isInternalClient(irc, client):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    msg = "PART %s" % channel
+    if reason:
+        msg += " :%s" % reason
+    _sendFromUser(irc, client, msg)
 
 def removeClient(irc, numeric):
     """<irc object> <client numeric>
@@ -60,34 +60,36 @@ def isInternalClient(irc, numeric):
     """
     return numeric in irc.servers[irc.sid].users
 
-def quitClient(irc, numeric):
+def quitClient(irc, numeric, reason):
     """<irc object> <client numeric>
 
     Quits a PyLink PseudoClient."""
     if isInternalClient(irc, numeric):
-        _sendFromUser(irc, numeric, "QUIT :Client quit")
+        _sendFromUser(irc, numeric, "QUIT :%s" % reason)
+        removeClient(irc, numeric)
     else:
-        raise LookupError("No user %r exists. If you're trying to remove "
+        raise LookupError("No such PyLink PseudoClient exists. If you're trying to remove "
                           "a user that's not a PyLink PseudoClient from "
                           "the internal state, use removeClient() instead.")
 
-def kickClient(irc, channel, numeric, target, reason=None):
+def kickClient(irc, numeric, channel, target, reason=None):
     """<irc object> <kicker client numeric>
 
     Sends a kick from a PyLink PseudoClient."""
     if not isInternalClient(irc, numeric):
-        raise LookupError('No user/PyLink PseudoClient %r exists.' % numeric)
-    if reason is None:
-        reason = irc.users[target].nick
+        raise LookupError('No such PyLink PseudoClient exists.')
+    if not reason:
+        reason = 'No reason given'
     _sendFromUser(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
 
-def nickClient(irc, numeric, newnick, reason=None):
+def nickClient(irc, numeric, newnick):
     """<irc object> <client numeric> <new nickname>
 
     Changes the nick of a PyLink PseudoClient."""
     if not isInternalClient(irc, numeric):
-        raise LookupError('No user/PyLink PseudoClient %r exists.' % numeric)
-    _sendFromUser(irc, numeric, 'NICK %s' % newnick)
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromUser(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
+    irc.users[numeric].nick = newnick
 
 def connect(irc):
     irc.start_ts = ts = int(time.time())
@@ -110,7 +112,8 @@ def connect(irc):
     # +ACKNOQcdfgklnoqtx :Craig Edwards
     irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host)
     f(':%s ENDBURST' % (irc.sid))
-    joinClient(irc, irc.pseudoclient, ','.join(irc.serverdata['channels']))
+    for chan in irc.serverdata['channels']:
+        joinClient(irc, irc.pseudoclient.uid, chan)
 
 # :7NU PING 7NU 0AL
 def handle_ping(irc, servernumeric, command, args):
@@ -143,7 +146,8 @@ def handle_kill(irc, source, command, args):
     removeClient(irc, killed)
     if killed == irc.pseudoclient.uid:
         irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', irc.serverdata["hostname"])
-        joinClient(irc, irc.pseudoclient, ','.join(irc.serverdata['channels']))
+        for chan in irc.serverdata['channels']:
+            joinClient(irc, irc.pseudoclient.uid, chan)
 
 def handle_kick(irc, source, command, args):
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
@@ -151,7 +155,7 @@ def handle_kick(irc, source, command, args):
     kicked = args[1]
     irc.channels[channel].users.discard(kicked)
     if kicked == irc.pseudoclient.uid:
-        joinClient(irc, irc.pseudoclient, channel)
+        joinClient(irc, irc.pseudoclient.uid, channel)
 
 def handle_part(irc, source, command, args):
     channel = args[0]
@@ -211,11 +215,24 @@ def handle_nick(irc, numeric, command, args):
     newnick = args[0]
     irc.users[numeric].nick = newnick
 
+def handle_save(irc, numeric, command, args):
+    # This is used to handle nick collisions. Here, the client Derp_ already exists,
+    # so trying to change nick to it will cause a nick collision. On InspIRCd,
+    # this will simply set the collided user's nick to its UID.
+
+    # <- :70MAAAAAA PRIVMSG 0AL000001 :nickclient PyLink Derp_
+    # -> :0AL000001 NICK Derp_ 1433728673
+    # <- :70M SAVE 0AL000001 1433728673
+    user = args[0]
+    irc.users[user].nick = user
+
+'''
 def handle_fmode(irc, numeric, command, args):
     # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
     # Oh god, how are we going to handle this?!
     channel = args[0]
     modestrings = args[3:]
+'''
 
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
@@ -238,8 +255,7 @@ def handle_idle(irc, numeric, command, args):
     # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
     sourceuser = numeric
     targetuser = args[0]
-    _sendFromUser(irc, 'IDLE %s %s 0' % (sourceuser, irc.start_ts),
-                  user=targetuser)
+    _sendFromUser(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.start_ts))
 
 def handle_events(irc, data):
     # Each server message looks something like this:

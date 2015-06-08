@@ -31,19 +31,19 @@ def spawnclient(irc, source, args):
     proto.spawnClient(irc, nick, ident, host)
 
 @utils.add_cmd
-def removeclient(irc, source, args):
+def quitclient(irc, source, args):
     checkauthenticated(irc, source)
     try:
-        nick = args[0].lower()
+        nick = args[0]
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 1: nick.")
         return
-    u = _nicktoUid(nick)
-    if u is None or u not in irc.server[irc.sid].users:
-        utils.msg(irc, source, "Error: user %r not found." % nick)
+    if irc.pseudoclient.uid == utils._nicktoUid(irc, nick):
+        utils.msg(irc, source, "Error: cannot quit the main PyLink PseudoClient!")
         return
-    _sendFromUser(irc, u, "QUIT :Client Quit")
-    proto.removeClient(irc, nick, ident, host)
+    u = utils._nicktoUid(irc, nick)
+    quitmsg =  ' '.join(args[1:]) or 'Client quit'
+    proto.quitClient(irc, u, quitmsg)
 
 @utils.add_cmd
 def joinclient(irc, source, args):
@@ -56,12 +56,56 @@ def joinclient(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
-    u = _nicktoUid(nick)
-    if u is None or u not in irc.server[irc.sid].users:
-        utils.msg(irc, source, "Error: user %r not found." % nick)
-        return
+    u = utils._nicktoUid(irc, nick)
     for channel in clist:
         if not channel.startswith('#'):
             utils.msg(irc, source, "Error: channel names must start with #.")
             return
-    joinClient(irc, ','.join(clist))
+        proto.joinClient(irc, u, channel)
+
+@utils.add_cmd
+def nickclient(irc, source, args):
+    checkauthenticated(irc, source)
+    try:
+        nick = args[0]
+        newnick = args[1]
+    except IndexError:
+        utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, newnick.")
+        return
+    u = utils._nicktoUid(irc, nick)
+    proto.nickClient(irc, u, newnick)
+
+@utils.add_cmd
+def partclient(irc, source, args):
+    checkauthenticated(irc, source)
+    try:
+        nick = args[0]
+        clist = args[1].split(',')
+        reason = ' '.join(args[2:])
+    except IndexError:
+        utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, comma separated list of channels.")
+        return
+    u = utils._nicktoUid(irc, nick)
+    for channel in clist:
+        if not channel.startswith('#'):
+            utils.msg(irc, source, "Error: channel names must start with #.")
+            return
+        proto.partClient(irc, u, channel, reason)
+
+@utils.add_cmd
+def kickclient(irc, source, args):
+    checkauthenticated(irc, source)
+    try:
+        nick = args[0]
+        channel = args[1]
+        target = args[2]
+        reason = ' '.join(args[3:])
+    except IndexError:
+        utils.msg(irc, source, "Error: not enough arguments. Needs 3-4: nick, channel, target, reason (optional).")
+        return
+    u = utils._nicktoUid(irc, nick)
+    targetu = utils._nicktoUid(irc, target)
+    if not channel.startswith('#'):
+        utils.msg(irc, source, "Error: channel names must start with #.")
+        return
+    proto.kickClient(irc, u, channel, targetu, reason)

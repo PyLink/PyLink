@@ -19,10 +19,15 @@ def next_uid(sid, level=-1):
 
 def msg(irc, target, text, notice=False):
     command = 'NOTICE' if notice else 'PRIVMSG'
-    proto._sendFromUser(irc, '%s %s :%s' % (command, target, text))
+    proto._sendFromUser(irc, irc.pseudoclient.uid, '%s %s :%s' % (command, target, text))
 
 def add_cmd(func, name=None):
     if name is None:
         name = func.__name__
     name = name.lower()
     bot_commands[name] = func
+
+def _nicktoUid(irc, nick):
+    for k, v in irc.users.items():
+        if v.nick == nick:
+            return k
