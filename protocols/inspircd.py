@@ -17,6 +17,8 @@ def _sendFromUser(irc, numeric, msg):
 def spawnClient(irc, nick, ident, host, *args):
     uid = next_uid(irc.sid)
     ts = int(time.time())
+    if not isNick(nick):
+        raise ValueError('Invalid nickname %r.' % nick)
     _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 {ts} +o +"
                     " :PyLink Client".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid))
@@ -28,6 +30,8 @@ def joinClient(irc, client, channel):
     # One channel per line here!
     if not isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
+    if not isChannel(channel):
+        raise ValueError('Invalid channel name %r.' % channel)
     _sendFromServer(irc, "FJOIN {channel} {ts} + :,{uid}".format(
             ts=int(time.time()), uid=client, channel=channel))
 
@@ -35,6 +39,8 @@ def partClient(irc, client, channel, reason=None):
     if not isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
     msg = "PART %s" % channel
+    if not isChannel(channel):
+        raise ValueError('Invalid channel name %r.' % channel)
     if reason:
         msg += " :%s" % reason
     _sendFromUser(irc, client, msg)
@@ -90,6 +96,8 @@ def nickClient(irc, numeric, newnick):
     Changes the nick of a PyLink PseudoClient."""
     if not isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
+    if not isNick(newnick):
+        raise ValueError('Invalid nickname %r.' % nick)
     _sendFromUser(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
 

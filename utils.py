@@ -1,4 +1,5 @@
 import string
+import re
 
 global bot_commands
 # This should be a mapping of command names to functions
@@ -30,3 +31,13 @@ def nickToUid(irc, nick):
     for k, v in irc.users.items():
         if v.nick == nick:
             return k
+
+# A+ regex
+_nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
+def isNick(s, nicklen=None):
+    if nicklen and len(s) > nicklen:
+        return False
+    return bool(re.match(_nickregex, s))
+
+def isChannel(s):
+    return bool(s.startswith('#'))
