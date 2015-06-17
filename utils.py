@@ -6,16 +6,16 @@ global bot_commands
 bot_commands = {}
 
 # From http://www.inspircd.org/wiki/Modules/spanningtree/UUIDs.html
-chars = string.digits + string.ascii_uppercase
+chars = string.ascii_uppercase + string.digits
 iters = [iter(chars) for _ in range(6)]
-a = [next(i) for i in iters]
+uidchars = [next(char) for char in iters]
 
 def next_uid(sid, level=-1):
     try:
-        a[level] = next(iters[level])
-        return sid + ''.join(a)
+        uidchars[level] = next(iters[level])
+        return sid + ''.join(uidchars)
     except StopIteration:
-        return UID(level-1)
+        return next_uid(sid, level-1)
 
 def msg(irc, target, text, notice=False):
     command = 'NOTICE' if notice else 'PRIVMSG'
