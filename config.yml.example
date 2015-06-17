@@ -24,6 +24,7 @@ server:
     sid: "0AL"
     # Autojoin channels
     channels: ["#pylink"]
+    protocol: "inspircd"
 
 # Plugins to load (omit the .py extension)
 plugins:

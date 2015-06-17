@@ -1,25 +1,8 @@
 # commands.py: base PyLink commands
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import proto
 import utils
 from conf import conf
-
-@utils.add_cmd
-def tell(irc, source, args):
-    try:
-        target, text = args[0], ' '.join(args[1:])
-    except IndexError:
-        utils.msg(irc, source, 'Error: not enough arguments.')
-        return
-    targetuid = utils.nickToUid(irc, target)
-    if targetuid is None:
-        utils.msg(irc, source, 'Error: unknown user %r' % target)
-        return
-    if not text:
-        utils.msg(irc, source, "Error: can't send an empty message!")
-        return
-    utils.msg(irc, target, text, notice=True)
 
 @utils.add_cmd
 def debug(irc, source, args):

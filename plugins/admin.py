@@ -1,7 +1,6 @@
 # admin.py: PyLink administrative commands
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import proto
 import utils
 
 class NotAuthenticatedError(Exception):
@@ -28,7 +27,7 @@ def spawnclient(irc, source, args):
     except ValueError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 3: nick, user, host.")
         return
-    proto.spawnClient(irc, nick, ident, host)
+    irc.proto.spawnClient(irc, nick, ident, host)
 
 @utils.add_cmd
 def quitclient(irc, source, args):
@@ -43,7 +42,7 @@ def quitclient(irc, source, args):
         return
     u = utils.nickToUid(irc, nick)
     quitmsg =  ' '.join(args[1:]) or 'Client quit'
-    proto.quitClient(irc, u, quitmsg)
+    irc.proto.quitClient(irc, u, quitmsg)
 
 @utils.add_cmd
 def joinclient(irc, source, args):
@@ -61,7 +60,7 @@ def joinclient(irc, source, args):
         if not channel.startswith('#'):
             utils.msg(irc, source, "Error: channel names must start with #.")
             return
-        proto.joinClient(irc, u, channel)
+        irc.proto.joinClient(irc, u, channel)
 
 @utils.add_cmd
 def nickclient(irc, source, args):
@@ -73,7 +72,7 @@ def nickclient(irc, source, args):
         utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, newnick.")
         return
     u = utils.nickToUid(irc, nick)
-    proto.nickClient(irc, u, newnick)
+    irc.proto.nickClient(irc, u, newnick)
 
 @utils.add_cmd
 def partclient(irc, source, args):
@@ -90,7 +89,7 @@ def partclient(irc, source, args):
         if not channel.startswith('#'):
             utils.msg(irc, source, "Error: channel names must start with #.")
             return
-        proto.partClient(irc, u, channel, reason)
+        irc.proto.partClient(irc, u, channel, reason)
 
 @utils.add_cmd
 def kickclient(irc, source, args):
@@ -108,4 +107,21 @@ def kickclient(irc, source, args):
     if not channel.startswith('#'):
         utils.msg(irc, source, "Error: channel names must start with #.")
         return
-    proto.kickClient(irc, u, channel, targetu, reason)
+    irc.proto.kickClient(irc, u, channel, targetu, reason)
+
+@utils.add_cmd
+def tell(irc, source, args):
+    checkauthenticated(irc, source)
+    try:
+        source, target, text = args[0], args[1], ' '.join(args[2:])
+    except IndexError:
+        utils.msg(irc, source, 'Error: not enough arguments.')
+        return
+    targetuid = utils.nickToUid(irc, target)
+    if targetuid is None:
+        utils.msg(irc, source, 'Error: unknown user %r' % target)
+        return
+    if not text:
+        utils.msg(irc, source, "Error: can't send an empty message!")
+        return
+    utils.msg(irc, target, text, notice=True)

@@ -7,14 +7,9 @@ import time
 import sys
 
 from conf import conf
-import proto
-
-if conf['login']['password'] == 'changeme':
-     print("You have not set the login details correctly! Exiting...")
-     sys.exit(2)
 
 class Irc():
-    def __init__(self):
+    def __init__(self, proto):
         # Initialize some variables
         self.socket = socket.socket()
         self.connected = False
@@ -32,6 +27,7 @@ class Irc():
 
         self.socket = socket.socket()
         self.socket.connect((ip, port))
+        self.proto = proto
         proto.connect(self)
         self.loaded = []
         self.load_plugins()
@@ -74,9 +70,24 @@ class Irc():
                 if str(e).startswith('No module named'):
                     print('Failed to load plugin %r: the plugin could not be found.' % plugin)
                 else:
-                    print('Failed to load plugin %r: import error %s' (plugin, str(e)))
+                    print('Failed to load plugin %r: import error %s' % (plugin, str(e)))
         print("loaded plugins: %s" % self.loaded)
 
 if __name__ == '__main__':
     print('PyLink starting...')
-    irc_obj = Irc()
+    if conf['login']['password'] == 'changeme':
+        print("You have not set the login details correctly! Exiting...")
+        sys.exit(2)
+
+    protoname = conf['server']['protocol']
+    protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
+    try:
+        moduleinfo = imp.find_module(protoname, protocols_folder)
+        proto = imp.load_source(protoname, moduleinfo[1])
+    except ImportError as e:
+        if str(e).startswith('No module named'):
+            print('Failed to load protocol module %r: the file could not be found.' % protoname)
+        else:
+            print('Failed to load protocol module: import error %s' % (protoname, str(e)))
+    else:
+        irc_obj = Irc(proto)

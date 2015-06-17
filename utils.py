@@ -1,5 +1,4 @@
 import string
-import proto
 
 global bot_commands
 # This should be a mapping of command names to functions
@@ -19,7 +18,7 @@ def next_uid(sid, level=-1):
 
 def msg(irc, target, text, notice=False):
     command = 'NOTICE' if notice else 'PRIVMSG'
-    proto._sendFromUser(irc, irc.pseudoclient.uid, '%s %s :%s' % (command, target, text))
+    irc.proto._sendFromUser(irc, irc.pseudoclient.uid, '%s %s :%s' % (command, target, text))
 
 def add_cmd(func, name=None):
     if name is None:
