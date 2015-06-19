@@ -224,8 +224,8 @@ def handle_server(irc, numeric, command, args):
     irc.servers[sid] = IrcServer(numeric)
 
 def handle_nick(irc, numeric, command, args):
-    newnick = args[0]
-    irc.users[numeric].nick = newnick
+    # <- :70MAAAAAA NICK GL-devel 1434744242
+    irc.users[numeric].nick = args[0]
 
 def handle_save(irc, numeric, command, args):
     # This is used to handle nick collisions. Here, the client Derp_ already exists,
@@ -267,7 +267,7 @@ def handle_idle(irc, numeric, command, args):
     # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
     sourceuser = numeric
     targetuser = args[0]
-    _sendFromUser(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.start_ts))
+    _sendFromUser(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.users[targetuser].ts))
 
 def handle_events(irc, data):
     # Each server message looks something like this:
