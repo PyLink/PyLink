@@ -10,14 +10,14 @@ def checkauthenticated(irc, source):
     if not irc.users[source].identified:
         raise NotAuthenticatedError("You are not authenticated!")
 
-@utils.add_cmd
-def eval(irc, source, args):
+def _exec(irc, source, args):
     checkauthenticated(irc, source)
     args = ' '.join(args)
     if not args.strip():
         utils.msg(irc, source, 'No code entered!')
         return
-    exec(args)
+    exec(args, globals(), locals())
+utils.add_cmd(_exec, 'exec')
 
 @utils.add_cmd
 def spawnclient(irc, source, args):
