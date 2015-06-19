@@ -110,6 +110,22 @@ def kickclient(irc, source, args):
     irc.proto.kickClient(irc, u, channel, targetu, reason)
 
 @utils.add_cmd
+def showuser(irc, source, args):
+    checkauthenticated(irc, source)
+    try:
+        target = args[0]
+    except IndexError:
+        utils.msg(irc, source, "Error: not enough arguments. Needs 1: nick.")
+        return
+    u = utils.nickToUid(irc, target)
+    if u is None:
+        utils.msg(irc, source, 'Error: unknown user %r' % target)
+        return
+    s = ['\x02%s\x02: %s' % (k, v) for k, v in irc.users[u].__dict__.items()]
+    s = 'Information on user %s: %s' % (target, '; '.join(s))
+    utils.msg(irc, source, s)
+
+@utils.add_cmd
 def tell(irc, source, args):
     checkauthenticated(irc, source)
     try:
