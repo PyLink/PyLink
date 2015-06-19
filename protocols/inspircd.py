@@ -8,6 +8,8 @@ from copy import copy
 import traceback
 from classes import *
 
+uidgen = TS6UIDGenerator()
+
 def _sendFromServer(irc, msg):
     irc.send(':%s %s' % (irc.sid, msg))
 
@@ -15,7 +17,7 @@ def _sendFromUser(irc, numeric, msg):
     irc.send(':%s %s' % (numeric, msg))
 
 def spawnClient(irc, nick, ident, host, *args):
-    uid = next_uid(irc.sid)
+    uid = uidgen.next_uid(irc.sid)
     ts = int(time.time())
     if not isNick(nick):
         raise ValueError('Invalid nickname %r.' % nick)
