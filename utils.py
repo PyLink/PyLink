@@ -57,3 +57,39 @@ def isNick(s, nicklen=None):
 
 def isChannel(s):
     return bool(s.startswith('#'))
+
+def parseModes(args):
+    """['+mitl-o', '3', 'person'] => ['+m', '+i', '+t', '-o']
+
+    TODO: handle modes with extra arguments (mainly channel modes like +beIqlk)
+    """
+    modes = args[0]
+    extramodes = args[1:]
+    if not modes:
+        return ValueError('No modes supplied in parseModes query: %r' % modes)
+    res = []
+    for mode in modes:
+        if mode in '+-':
+            prefix = mode
+        else:
+            res.append(prefix + mode)
+    return res
+
+def applyModes(modelist, changedmodes):
+    modelist = modelist.copy()
+    print('Initial modelist: %s' % modelist)
+    print('Changedmodes: %r' % changedmodes)
+    for mode in changedmodes:
+        if mode[0] == '+':
+            # We're adding a mode
+            modelist.add(mode)
+            print('Adding mode %r' % mode)
+        else:
+            # We're removing a mode
+            modelist.discard(mode)
+            print('Removing mode %r' % mode)
+    print('Final modelist: %s' % modelist)
+    return modelist
+
+def joinModes(modes):
+    return '+' + ''.join(mode[1] for mode in modes)

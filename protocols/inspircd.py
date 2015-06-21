@@ -3,12 +3,12 @@ import time
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import *
+import utils
 from copy import copy
 import traceback
 from classes import *
 
-uidgen = TS6UIDGenerator()
+uidgen = utils.TS6UIDGenerator()
 
 def _sendFromServer(irc, msg):
     irc.send(':%s %s' % (irc.sid, msg))
@@ -16,14 +16,19 @@ def _sendFromServer(irc, msg):
 def _sendFromUser(irc, numeric, msg):
     irc.send(':%s %s' % (numeric, msg))
 
-def spawnClient(irc, nick, ident, host, *args):
+def spawnClient(irc, nick, ident, host, modes=[], *args):
     uid = uidgen.next_uid(irc.sid)
     ts = int(time.time())
-    if not isNick(nick):
+    if modes:
+        modes = utils.joinModes(modes)
+    else:
+        modes = '+'
+    if not utils.isNick(nick):
         raise ValueError('Invalid nickname %r.' % nick)
-    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 {ts} +o +"
-                    " :PyLink Client".format(ts=ts, host=host,
-                                             nick=nick, ident=ident, uid=uid))
+    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 "
+                    "{ts} {modes} + :PyLink Client".format(ts=ts, host=host,
+                                             nick=nick, ident=ident, uid=uid,
+                                             modes=modes))
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident, host, *args)
     irc.servers[irc.sid].users.append(uid)
     return u
@@ -32,7 +37,7 @@ def joinClient(irc, client, channel):
     # One channel per line here!
     if not isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
-    if not isChannel(channel):
+    if not utils.isChannel(channel):
         raise ValueError('Invalid channel name %r.' % channel)
     _sendFromServer(irc, "FJOIN {channel} {ts} + :,{uid}".format(
             ts=int(time.time()), uid=client, channel=channel))
@@ -41,7 +46,7 @@ def partClient(irc, client, channel, reason=None):
     if not isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
     msg = "PART %s" % channel
-    if not isChannel(channel):
+    if not utils.isChannel(channel):
         raise ValueError('Invalid channel name %r.' % channel)
     if reason:
         msg += " :%s" % reason
@@ -98,7 +103,7 @@ def nickClient(irc, numeric, newnick):
     Changes the nick of a PyLink PseudoClient."""
     if not isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    if not isNick(newnick):
+    if not utils.isNick(newnick):
         raise ValueError('Invalid nickname %r.' % nick)
     _sendFromUser(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
@@ -122,7 +127,7 @@ def connect(irc):
     # :751 UID 751AAAAAA 1220196319 Brain brainwave.brainbox.cc
     # netadmin.chatspike.net brain 192.168.1.10 1220196324 +Siosw
     # +ACKNOQcdfgklnoqtx :Craig Edwards
-    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host)
+    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=set(["+o"]))
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
         joinClient(irc, irc.pseudoclient.uid, chan)
@@ -142,15 +147,15 @@ def handle_privmsg(irc, source, command, args):
         except IndexError:
             cmd_args = []
         try:
-            func = bot_commands[cmd]
+            func = utils.bot_commands[cmd]
         except KeyError:
-            msg(irc, source, 'Unknown command %r.' % cmd)
+            utils.msg(irc, source, 'Unknown command %r.' % cmd)
             return
         try:
             func(irc, source, cmd_args)
         except Exception as e:
             traceback.print_exc()
-            msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+            utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 
 def handle_kill(irc, source, command, args):
@@ -207,6 +212,9 @@ def handle_uid(irc, numeric, command, args):
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
     realname = args[-1]
     irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    parsedmodes = utils.parseModes(args[8:9])
+    print('Applying modes %s for %s' % (parsedmodes, uid))
+    irc.users[uid].modes = utils.applyModes(irc.users[uid].modes, parsedmodes)
     irc.servers[numeric].users.append(uid)
 
 def handle_quit(irc, numeric, command, args):
@@ -245,6 +253,15 @@ def handle_fmode(irc, numeric, command, args):
     channel = args[0]
     modestrings = args[3:]
 '''
+
+def handle_mode(irc, numeric, command, args):
+    # In InspIRCd, MODE is used for setting user modes and
+    # FMODE is used for channel modes:
+    # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
+    target = args[0]
+    modestrings = args[1:]
+    changedmodes = utils.parseModes(modestrings)
+    irc.users[numeric].modes = utils.applyModes(irc.users[numeric].modes, changedmodes)
 
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
