@@ -127,7 +127,7 @@ def connect(irc):
     # :751 UID 751AAAAAA 1220196319 Brain brainwave.brainbox.cc
     # netadmin.chatspike.net brain 192.168.1.10 1220196324 +Siosw
     # +ACKNOQcdfgklnoqtx :Craig Edwards
-    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=["+o"])
+    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=set(["+o"]))
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
         joinClient(irc, irc.pseudoclient.uid, chan)

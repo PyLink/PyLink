@@ -1,7 +1,7 @@
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0', modes=[]):
+                 ip='0.0.0.0', modes=set()):
         self.nick = nick
         self.ts = ts
         self.uid = uid
