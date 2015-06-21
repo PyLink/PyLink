@@ -3,12 +3,12 @@ import time
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import *
+import utils
 from copy import copy
 import traceback
 from classes import *
 
-uidgen = TS6UIDGenerator()
+uidgen = utils.TS6UIDGenerator()
 
 def _sendFromServer(irc, msg):
     irc.send(':%s %s' % (irc.sid, msg))
@@ -19,7 +19,7 @@ def _sendFromUser(irc, numeric, msg):
 def spawnClient(irc, nick, ident, host, *args):
     uid = uidgen.next_uid(irc.sid)
     ts = int(time.time())
-    if not isNick(nick):
+    if not utils.isNick(nick):
         raise ValueError('Invalid nickname %r.' % nick)
     _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 {ts} +o +"
                     " :PyLink Client".format(ts=ts, host=host,
@@ -32,7 +32,7 @@ def joinClient(irc, client, channel):
     # One channel per line here!
     if not isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
-    if not isChannel(channel):
+    if not utils.isChannel(channel):
         raise ValueError('Invalid channel name %r.' % channel)
     _sendFromServer(irc, "FJOIN {channel} {ts} + :,{uid}".format(
             ts=int(time.time()), uid=client, channel=channel))
@@ -41,7 +41,7 @@ def partClient(irc, client, channel, reason=None):
     if not isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
     msg = "PART %s" % channel
-    if not isChannel(channel):
+    if not utils.isChannel(channel):
         raise ValueError('Invalid channel name %r.' % channel)
     if reason:
         msg += " :%s" % reason
@@ -98,7 +98,7 @@ def nickClient(irc, numeric, newnick):
     Changes the nick of a PyLink PseudoClient."""
     if not isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    if not isNick(newnick):
+    if not utils.isNick(newnick):
         raise ValueError('Invalid nickname %r.' % nick)
     _sendFromUser(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
@@ -142,15 +142,15 @@ def handle_privmsg(irc, source, command, args):
         except IndexError:
             cmd_args = []
         try:
-            func = bot_commands[cmd]
+            func = utils.bot_commands[cmd]
         except KeyError:
-            msg(irc, source, 'Unknown command %r.' % cmd)
+            utils.msg(irc, source, 'Unknown command %r.' % cmd)
             return
         try:
             func(irc, source, cmd_args)
         except Exception as e:
             traceback.print_exc()
-            msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+            utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 
 def handle_kill(irc, source, command, args):
@@ -205,8 +205,9 @@ def handle_fjoin(irc, servernumeric, command, args):
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
+    modes = utils.parseModes(args[8:9])
     realname = args[-1]
-    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip, modes)
     irc.servers[numeric].users.append(uid)
 
 def handle_quit(irc, numeric, command, args):
@@ -245,6 +246,15 @@ def handle_fmode(irc, numeric, command, args):
     channel = args[0]
     modestrings = args[3:]
 '''
+
+def handle_mode(irc, numeric, command, args):
+    # In InspIRCd, MODE is used for setting user modes and
+    # FMODE is used for channel modes:
+    # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
+    target = args[0]
+    modestrings = args[1:]
+    changedmodes = utils.parseModes(modestrings)
+    utils.applyModes(irc.users[numeric].modes, changedmodes)
 
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
