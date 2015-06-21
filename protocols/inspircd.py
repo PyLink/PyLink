@@ -16,14 +16,19 @@ def _sendFromServer(irc, msg):
 def _sendFromUser(irc, numeric, msg):
     irc.send(':%s %s' % (numeric, msg))
 
-def spawnClient(irc, nick, ident, host, *args):
+def spawnClient(irc, nick, ident, host, modes=[], *args):
     uid = uidgen.next_uid(irc.sid)
     ts = int(time.time())
+    if modes:
+        modes = utils.joinModes(modes)
+    else:
+        modes = '+'
     if not utils.isNick(nick):
         raise ValueError('Invalid nickname %r.' % nick)
-    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 {ts} +o +"
-                    " :PyLink Client".format(ts=ts, host=host,
-                                             nick=nick, ident=ident, uid=uid))
+    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 "
+                    "{ts} {modes} + :PyLink Client".format(ts=ts, host=host,
+                                             nick=nick, ident=ident, uid=uid,
+                                             modes=modes))
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident, host, *args)
     irc.servers[irc.sid].users.append(uid)
     return u
@@ -122,7 +127,7 @@ def connect(irc):
     # :751 UID 751AAAAAA 1220196319 Brain brainwave.brainbox.cc
     # netadmin.chatspike.net brain 192.168.1.10 1220196324 +Siosw
     # +ACKNOQcdfgklnoqtx :Craig Edwards
-    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host)
+    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=["+o"])
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
         joinClient(irc, irc.pseudoclient.uid, chan)
@@ -205,9 +210,9 @@ def handle_fjoin(irc, servernumeric, command, args):
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
-    modes = utils.parseModes(args[8:9])
     realname = args[-1]
-    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip, modes)
+    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    utils.applyModes(irc.users[uid].modes, utils.parseModes(args[8:9]))
     irc.servers[numeric].users.append(uid)
 
 def handle_quit(irc, numeric, command, args):

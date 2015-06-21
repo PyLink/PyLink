@@ -83,7 +83,10 @@ def applyModes(modelist, changedmodes):
         else:
             # We're removing a mode
             try:
-                modelist.remove(mode.replace('-', '+'))
+                modelist.remove(mode)
             except ValueError:
                 print('Attempted to remove modes %r not in %s\'s modes' % (mode, numeric))
     return modelist
+
+def joinModes(modes):
+    return '+' + ''.join(mode[1] for mode in modes)
