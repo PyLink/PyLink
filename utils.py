@@ -76,13 +76,19 @@ def parseModes(args):
     return res
 
 def applyModes(modelist, changedmodes):
+    modelist = modelist.copy()
+    print('Initial modelist: %s' % modelist)
+    print('Changedmodes: %r' % changedmodes)
     for mode in changedmodes:
         if mode[0] == '+':
             # We're adding a mode
             modelist.add(mode)
+            print('Adding mode %r' % mode)
         else:
             # We're removing a mode
             modelist.discard(mode)
+            print('Removing mode %r' % mode)
+    print('Final modelist: %s' % modelist)
     return modelist
 
 def joinModes(modes):

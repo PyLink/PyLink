@@ -212,7 +212,9 @@ def handle_uid(irc, numeric, command, args):
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
     realname = args[-1]
     irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
-    utils.applyModes(irc.users[uid].modes, utils.parseModes(args[8:9]))
+    parsedmodes = utils.parseModes(args[8:9])
+    print('Applying modes %s for %s' % (parsedmodes, uid))
+    irc.users[uid].modes = utils.applyModes(irc.users[uid].modes, parsedmodes)
     irc.servers[numeric].users.append(uid)
 
 def handle_quit(irc, numeric, command, args):
@@ -259,7 +261,7 @@ def handle_mode(irc, numeric, command, args):
     target = args[0]
     modestrings = args[1:]
     changedmodes = utils.parseModes(modestrings)
-    utils.applyModes(irc.users[numeric].modes, changedmodes)
+    irc.users[numeric].modes = utils.applyModes(irc.users[numeric].modes, changedmodes)
 
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
