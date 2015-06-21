@@ -150,10 +150,11 @@ def connect(irc):
     for chan in irc.serverdata['channels']:
         joinClient(irc, irc.pseudoclient.uid, chan)
 
-# :7NU PING 7NU 0AL
-def handle_ping(irc, servernumeric, command, args):
-    if args[1] == irc.sid:
-        _sendFromServer(irc, 'PONG %s' % args[1])
+def handle_ping(irc, source, command, args):
+    # <- :70M PING 70M 0AL
+    # -> :0AL PONG 0AL 70M
+    if isInternalServer(irc, args[1]):
+        _sendFromServer(irc, args[1], 'PONG %s %s' % (args[1], source))
 
 def handle_privmsg(irc, source, command, args):
     prefix = irc.conf['bot']['prefix']
