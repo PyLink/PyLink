@@ -48,6 +48,14 @@ def nickToUid(irc, nick):
         if v.nick == nick:
             return k
 
+def clientToServer(irc, numeric):
+    """<irc object> <numeric>
+
+    Finds the server SID of user <numeric> and returns it."""
+    for server in irc.servers:
+        if numeric in irc.servers[server].users:
+            return server
+
 # A+ regex
 _nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
 def isNick(s, nicklen=None):
@@ -56,7 +64,14 @@ def isNick(s, nicklen=None):
     return bool(re.match(_nickregex, s))
 
 def isChannel(s):
-    return bool(s.startswith('#'))
+    return s.startswith('#')
+
+def _isASCIIPrintable(s):
+    return all(char in string.printable for char in s)
+
+def isServerName(s):
+    return _isASCIIPrintable(s) and '.' in s and not s.startswith('.') \
+        and not s.endswith('.')
 
 def parseModes(args):
     """['+mitl-o', '3', 'person'] => ['+m', '+i', '+t', '-o']

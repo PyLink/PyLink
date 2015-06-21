@@ -18,9 +18,18 @@ class IrcUser():
         return repr(self.__dict__)
 
 class IrcServer():
-    def __init__(self, uplink):
+    """PyLink IRC Server class.
+
+    uplink: The SID of this IrcServer instance's uplink. This is set to None
+            for the main PyLink PseudoServer!
+    name: The name of the server.
+    internal: Whether the server is an internal PyLink PseudoServer.
+    """
+    def __init__(self, uplink, name, internal=False):
         self.uplink = uplink
         self.users = []
+        self.internal = internal
+        self.name = name.lower()
     def __repr__(self):
         return repr(self.__dict__)
 

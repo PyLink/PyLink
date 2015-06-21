@@ -8,16 +8,23 @@ from copy import copy
 import traceback
 from classes import *
 
-uidgen = utils.TS6UIDGenerator()
+uidgen = {}
 
-def _sendFromServer(irc, msg):
-    irc.send(':%s %s' % (irc.sid, msg))
+def _sendFromServer(irc, sid, msg):
+    irc.send(':%s %s' % (sid, msg))
 
 def _sendFromUser(irc, numeric, msg):
     irc.send(':%s %s' % (numeric, msg))
 
-def spawnClient(irc, nick, ident, host, modes=[], *args):
-    uid = uidgen.next_uid(irc.sid)
+def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
+    server = server or irc.sid
+    if not isInternalServer(irc, server):
+        raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
+    # We need a separate UID generator instance for every PseudoServer
+    # we spawn. Otherwise, things won't wrap around properly.
+    if server not in uidgen:
+        uidgen[server] = utils.TS6UIDGenerator()
+    uid = uidgen[server].next_uid(server)
     ts = int(time.time())
     if modes:
         modes = utils.joinModes(modes)
@@ -25,21 +32,22 @@ def spawnClient(irc, nick, ident, host, modes=[], *args):
         modes = '+'
     if not utils.isNick(nick):
         raise ValueError('Invalid nickname %r.' % nick)
-    _sendFromServer(irc, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 "
+    _sendFromServer(irc, server, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 "
                     "{ts} {modes} + :PyLink Client".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid,
                                              modes=modes))
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident, host, *args)
-    irc.servers[irc.sid].users.append(uid)
+    irc.servers[server].users.append(uid)
     return u
 
 def joinClient(irc, client, channel):
-    # One channel per line here!
-    if not isInternalClient(irc, client):
+    server = isInternalClient(irc, client)
+    if not server:
         raise LookupError('No such PyLink PseudoClient exists.')
     if not utils.isChannel(channel):
         raise ValueError('Invalid channel name %r.' % channel)
-    _sendFromServer(irc, "FJOIN {channel} {ts} + :,{uid}".format(
+    # One channel per line here!
+    _sendFromServer(irc, server, "FJOIN {channel} {ts} + :,{uid}".format(
             ts=int(time.time()), uid=client, channel=channel))
 
 def partClient(irc, client, channel, reason=None):
@@ -71,9 +79,19 @@ def removeClient(irc, numeric):
 def isInternalClient(irc, numeric):
     """<irc object> <client numeric>
 
-    Returns whether <client numeric> is a PyLink PseudoClient.
+    Checks whether <client numeric> is a PyLink PseudoClient,
+    returning the SID of the PseudoClient's server if True.
     """
-    return numeric in irc.servers[irc.sid].users
+    for sid in irc.servers:
+        if irc.servers[sid].internal and numeric in irc.servers[sid].users:
+            return sid
+
+def isInternalServer(irc, sid):
+    """<irc object> <sid>
+
+    Returns whether <sid> is an internal PyLink PseudoServer.
+    """
+    return (sid in irc.servers and irc.servers[sid].internal)
 
 def quitClient(irc, numeric, reason):
     """<irc object> <client numeric>
@@ -111,7 +129,7 @@ def nickClient(irc, numeric, newnick):
 def connect(irc):
     irc.start_ts = ts = int(time.time())
     host = irc.serverdata["hostname"]
-    irc.servers[irc.sid] = IrcServer(None)
+    irc.servers[irc.sid] = IrcServer(None, host, internal=True)
 
     f = irc.send
     f('CAPAB START 1203')
@@ -218,18 +236,25 @@ def handle_uid(irc, numeric, command, args):
     irc.servers[numeric].users.append(uid)
 
 def handle_quit(irc, numeric, command, args):
-    # :1SRAAGB4T QUIT :Quit: quit message goes here
+    # <- :1SRAAGB4T QUIT :Quit: quit message goes here
     removeClient(irc, numeric)
 
 def handle_burst(irc, numeric, command, args):
-    # :70M BURST 1433044587
-    irc.servers[numeric] = IrcServer(None)
+    # BURST is sent by our uplink when we link.
+    # <- :70M BURST 1433044587
+
+    # This is handled in handle_events, since our uplink
+    # only sends its name in the initial authentication phase,
+    # not in any following BURST commands.
+    pass
 
 def handle_server(irc, numeric, command, args):
-    # :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
+    # SERVER is sent by our uplink or any other server to introduce others.
+    # <- :00A SERVER test.server * 1 00C :testing raw message syntax
+    # <- :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
     servername = args[0]
     sid = args[3]
-    irc.servers[sid] = IrcServer(numeric)
+    irc.servers[sid] = IrcServer(numeric, servername)
 
 def handle_nick(irc, numeric, command, args):
     # <- :70MAAAAAA NICK GL-devel 1434744242
@@ -294,10 +319,12 @@ def handle_events(irc, data):
     if args and args[0] == 'SERVER':
        # SERVER whatever.net abcdefgh 0 10X :something
        servername = args[1]
+       numeric = args[4]
        if args[2] != irc.serverdata['recvpass']:
             # Check if recvpass is correct
             print('Error: recvpass from uplink server %s does not match configuration!' % servername)
             sys.exit(1)
+       irc.servers[numeric] = IrcServer(None, servername)
        return
     try:
         real_args = []
@@ -333,3 +360,20 @@ def handle_events(irc, data):
         func(irc, numeric, command, args)
     except KeyError:  # unhandled event
         pass
+
+def spawnServer(irc, name, sid, uplink=None, desc='PyLink Server'):
+    # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
+    uplink = uplink or irc.sid
+    name = name.lower()
+    if sid in irc.servers:
+        raise ValueError('A server with SID %r already exists!' % sid)
+    for server in irc.servers.values():
+        if name == server.name:
+            raise ValueError('A server named %r already exists!' % name)
+    if not isInternalServer(irc, uplink):
+        raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
+    if not utils.isServerName(name):
+        raise ValueError('Invalid server name %r' % name)
+    _sendFromServer(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
+    _sendFromServer(irc, uplink, 'ENDBURST')
+    irc.servers[sid] = IrcServer(uplink, name, internal=True)
