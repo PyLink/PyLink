@@ -12,10 +12,10 @@ class TS6UIDGenerator():
 
     def __init__(self):
         # TS6 UIDs are 6 characters in length (9 including the SID).
-        # They wrap from ABCDEFGHIJKLMNOPQRSTUVWXYZ -> 1234567890 -> wrap around:
-        # (e.g. AAAAAA, AAAAAB ..., AAAAA8, AAAAA9, AAAAB0)
+        # They wrap from ABCDEFGHIJKLMNOPQRSTUVWXYZ -> 0123456789 -> wrap around:
+        # (e.g. AAAAAA, AAAAAB ..., AAAAA8, AAAAA9, AAAABA)
         self.allowedchars = string.ascii_uppercase + string.digits
-        self.uidchars = [self.allowedchars[-1]]*6
+        self.uidchars = [self.allowedchars[0]]*6
 
     def increment(self, pos=5):
         # If we're at the last character in the list of allowed ones, reset
@@ -30,8 +30,9 @@ class TS6UIDGenerator():
             self.uidchars[pos] = self.allowedchars[idx+1]
 
     def next_uid(self, sid):
+        uid = sid + ''.join(self.uidchars)
         self.increment()
-        return sid + ''.join(self.uidchars)
+        return uid
 
 def msg(irc, target, text, notice=False):
     command = 'NOTICE' if notice else 'PRIVMSG'
