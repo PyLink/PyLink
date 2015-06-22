@@ -23,8 +23,8 @@ def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
     # We need a separate UID generator instance for every PseudoServer
     # we spawn. Otherwise, things won't wrap around properly.
     if server not in uidgen:
-        uidgen[server] = utils.TS6UIDGenerator()
-    uid = uidgen[server].next_uid(server)
+        uidgen[server] = utils.TS6UIDGenerator(server)
+    uid = uidgen[server].next_uid()
     ts = int(time.time())
     if modes:
         modes = utils.joinModes(modes)

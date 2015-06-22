@@ -10,12 +10,13 @@ class TS6UIDGenerator():
     https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156
     """
 
-    def __init__(self):
+    def __init__(self, sid):
         # TS6 UIDs are 6 characters in length (9 including the SID).
         # They wrap from ABCDEFGHIJKLMNOPQRSTUVWXYZ -> 0123456789 -> wrap around:
         # (e.g. AAAAAA, AAAAAB ..., AAAAA8, AAAAA9, AAAABA)
         self.allowedchars = string.ascii_uppercase + string.digits
         self.uidchars = [self.allowedchars[0]]*6
+        self.sid = sid
 
     def increment(self, pos=5):
         # If we're at the last character in the list of allowed ones, reset
@@ -29,8 +30,8 @@ class TS6UIDGenerator():
             idx = self.allowedchars.find(self.uidchars[pos])
             self.uidchars[pos] = self.allowedchars[idx+1]
 
-    def next_uid(self, sid):
-        uid = sid + ''.join(self.uidchars)
+    def next_uid(self):
+        uid = self.sid + ''.join(self.uidchars)
         self.increment()
         return uid
 
