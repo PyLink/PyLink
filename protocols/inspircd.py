@@ -23,7 +23,7 @@ def _sendFromUser(irc, numeric, msg):
 
 def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
     server = server or irc.sid
-    if not isInternalServer(irc, server):
+    if not utils.isInternalServer(irc, server):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
     # We need a separate UID generator instance for every PseudoServer
     # we spawn. Otherwise, things won't wrap around properly.
@@ -46,7 +46,7 @@ def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
     return u
 
 def joinClient(irc, client, channel):
-    server = isInternalClient(irc, client)
+    server = utils.isInternalClient(irc, client)
     if not server:
         raise LookupError('No such PyLink PseudoClient exists.')
     if not utils.isChannel(channel):
@@ -54,9 +54,10 @@ def joinClient(irc, client, channel):
     # One channel per line here!
     _sendFromServer(irc, server, "FJOIN {channel} {ts} + :,{uid}".format(
             ts=int(time.time()), uid=client, channel=channel))
+    irc.channels[channel].users.add(client)
 
 def partClient(irc, client, channel, reason=None):
-    if not isInternalClient(irc, client):
+    if not utils.isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
     msg = "PART %s" % channel
     if not utils.isChannel(channel):
@@ -64,6 +65,7 @@ def partClient(irc, client, channel, reason=None):
     if reason:
         msg += " :%s" % reason
     _sendFromUser(irc, client, msg)
+    handle_part(irc, client, 'PART', channel)
 
 def removeClient(irc, numeric):
     """<irc object> <client numeric>
@@ -81,28 +83,11 @@ def removeClient(irc, numeric):
     print('Removing client %s from irc.servers[%s]' % (numeric, sid))
     irc.servers[sid].users.remove(numeric)
 
-def isInternalClient(irc, numeric):
-    """<irc object> <client numeric>
-
-    Checks whether <client numeric> is a PyLink PseudoClient,
-    returning the SID of the PseudoClient's server if True.
-    """
-    for sid in irc.servers:
-        if irc.servers[sid].internal and numeric in irc.servers[sid].users:
-            return sid
-
-def isInternalServer(irc, sid):
-    """<irc object> <sid>
-
-    Returns whether <sid> is an internal PyLink PseudoServer.
-    """
-    return (sid in irc.servers and irc.servers[sid].internal)
-
 def quitClient(irc, numeric, reason):
     """<irc object> <client numeric>
 
     Quits a PyLink PseudoClient."""
-    if isInternalClient(irc, numeric):
+    if utils.isInternalClient(irc, numeric):
         _sendFromUser(irc, numeric, "QUIT :%s" % reason)
         removeClient(irc, numeric)
     else:
@@ -114,7 +99,7 @@ def kickClient(irc, numeric, channel, target, reason=None):
     """<irc object> <kicker client numeric>
 
     Sends a kick from a PyLink PseudoClient."""
-    if not isInternalClient(irc, numeric):
+    if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     if not reason:
         reason = 'No reason given'
@@ -124,7 +109,7 @@ def nickClient(irc, numeric, newnick):
     """<irc object> <client numeric> <new nickname>
 
     Changes the nick of a PyLink PseudoClient."""
-    if not isInternalClient(irc, numeric):
+    if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     if not utils.isNick(newnick):
         raise ValueError('Invalid nickname %r.' % nick)
@@ -158,7 +143,7 @@ def connect(irc):
 def handle_ping(irc, source, command, args):
     # <- :70M PING 70M 0AL
     # -> :0AL PONG 0AL 70M
-    if isInternalServer(irc, args[1]):
+    if utils.isInternalServer(irc, args[1]):
         _sendFromServer(irc, args[1], 'PONG %s %s' % (args[1], source))
 
 def handle_privmsg(irc, source, command, args):
@@ -202,6 +187,8 @@ def handle_part(irc, source, command, args):
     channel = args[0]
     # We should only get PART commands for channels that exist, right??
     irc.channels[channel].users.discard(source)
+    if not irc.channels[channel].users:
+        del irc.channels[channel]
 
 def handle_error(irc, numeric, command, args):
     print('Received an ERROR, killing!')
@@ -211,8 +198,6 @@ def handle_error(irc, numeric, command, args):
 def handle_fjoin(irc, servernumeric, command, args):
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
     channel = args[0]
-    if channel not in irc.channels.keys():
-        irc.channels[channel] = IrcChannel()
     # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
     userlist = args[-1].split()
     for user in userlist:
@@ -318,7 +303,7 @@ def handle_rsquit(irc, numeric, command, args):
     for (sid, server) in irc.servers.items():
         if server.name == target:
             target = sid
-    if isInternalServer(irc, target):
+    if utils.isInternalServer(irc, target):
         if irc.users[numeric].identified:
             uplink = irc.servers[target].uplink
             reason = 'Requested by %s' % irc.users[numeric].nick
@@ -405,7 +390,7 @@ def spawnServer(irc, name, sid, uplink=None, desc='PyLink Server'):
     for server in irc.servers.values():
         if name == server.name:
             raise ValueError('A server named %r already exists!' % name)
-    if not isInternalServer(irc, uplink):
+    if not utils.isInternalServer(irc, uplink):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)

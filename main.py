@@ -5,8 +5,10 @@ import os
 import socket
 import time
 import sys
+from collections import defaultdict
 
 from conf import conf
+import classes
 
 class Irc():
     def __init__(self, proto):
@@ -14,7 +16,7 @@ class Irc():
         self.socket = socket.socket()
         self.connected = False
         self.users = {}
-        self.channels = {}
+        self.channels = defaultdict(classes.IrcChannel)
         self.name = conf['server']['netname']
         self.conf = conf
         self.servers = {}

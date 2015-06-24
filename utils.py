@@ -117,3 +117,20 @@ def applyModes(modelist, changedmodes):
 
 def joinModes(modes):
     return '+' + ''.join(mode[1] for mode in modes)
+
+def isInternalClient(irc, numeric):
+    """<irc object> <client numeric>
+
+    Checks whether <client numeric> is a PyLink PseudoClient,
+    returning the SID of the PseudoClient's server if True.
+    """
+    for sid in irc.servers:
+        if irc.servers[sid].internal and numeric in irc.servers[sid].users:
+            return sid
+
+def isInternalServer(irc, sid):
+    """<irc object> <sid>
+
+    Returns whether <sid> is an internal PyLink PseudoServer.
+    """
+    return (sid in irc.servers and irc.servers[sid].internal)
