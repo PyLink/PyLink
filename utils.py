@@ -1,9 +1,11 @@
 import string
 import re
+from collections import defaultdict
 
-global bot_commands
+global bot_commands, command_hooks
 # This should be a mapping of command names to functions
 bot_commands = {}
+command_hooks = defaultdict(list)
 
 class TS6UIDGenerator():
     """TS6 UID Generator module, adapted from InspIRCd source
@@ -44,6 +46,11 @@ def add_cmd(func, name=None):
         name = func.__name__
     name = name.lower()
     bot_commands[name] = func
+
+def add_hook(func, command):
+    """Add a hook <func> for command <command>."""
+    command = command.lower()
+    command_hooks[command].append(func)
 
 def nickToUid(irc, nick):
     for k, v in irc.users.items():

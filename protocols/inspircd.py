@@ -9,6 +9,11 @@ import traceback
 from classes import *
 
 uidgen = {}
+# Map raw commands to protocol-independent hooks
+hook_map = {'FJOIN': 'join',
+            'PART': 'part',
+            'QUIT': 'quit',
+            'PRIVMSG': 'msg',}
 
 def _sendFromServer(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -373,12 +378,23 @@ def handle_events(irc, data):
     except IndexError:
         return
 
-    # We will do wildcard event handling here. Unhandled events are just ignored, yay!
+    cmd = command.lower()
+    # We will do wildcard event handling here. Unhandled events are just ignored.
     try:
-        func = globals()['handle_'+command.lower()]
+        func = globals()['handle_'+cmd]
         func(irc, numeric, command, args)
     except KeyError:  # unhandled event
         pass
+    else:
+        # All is well; we'll let our hooks do work now.
+        if command in hook_map:  # If this is a hook-enabled event
+            # Iterate over hooked functions, catching errors accordingly
+            for hook_func in utils.command_hooks[hook_map[command]]:
+                try:
+                    hook_func(irc, numeric, command, args)
+                except Exception:
+                    traceback.print_exc()
+                    continue
 
 def spawnServer(irc, name, sid, uplink=None, desc='PyLink Server'):
     # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
