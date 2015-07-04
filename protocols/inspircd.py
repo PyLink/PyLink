@@ -187,7 +187,7 @@ def handle_kick(irc, source, command, args):
     channel = args[0]
     channel = channel.lower()
     kicked = args[1]
-    irc.channels[channel].users.discard(kicked)
+    handle_part(irc, kicked, 'KICK', [channel, args[2]])
     if kicked == irc.pseudoclient.uid:
         joinClient(irc, irc.pseudoclient.uid, channel)
 

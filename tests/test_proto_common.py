@@ -83,8 +83,12 @@ class Test_TestProtoCommon(unittest.TestCase):
         msgs = self.irc.takeMsgs()
         self.assertEqual(['ADD this message', ':add THIS message too'],
             msgs)
+        # takeMsgs() clears cached messages queue, so the next call should
+        # return an empty list.
+        msgs = self.irc.takeMsgs()
+        self.assertEqual([], msgs)
 
-    def testFakeIRC_takeMsgs(self):
+    def testFakeIRCtakeCommands(self):
         msgs = ['ADD this message', ':9PY THIS message too']
         self.assertEqual(['ADD', 'THIS'], self.irc.takeCommands(msgs))
 

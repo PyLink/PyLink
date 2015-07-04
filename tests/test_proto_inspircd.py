@@ -32,7 +32,7 @@ class TestInspIRCdProtocol(unittest.TestCase):
         self.assertIn('UID', commands)
         self.assertIn('FJOIN', commands)
 
-    def test_checkRecvpass(self):
+    def testCheckRecvpass(self):
         # Correct recvpass here.
         self.irc.run('SERVER somehow.someday abcd 0 0AL :Somehow Server - McMurdo Station, Antarctica')
         # Incorrect recvpass here; should raise ProtocolError.
@@ -134,6 +134,39 @@ class TestInspIRCdProtocol(unittest.TestCase):
         self.irc.run(':%s RSQUIT level1.pylink :some reason' % u.uid)
         self.assertIn('SQUIT', self.irc.takeCommands(self.irc.takeMsgs()))
         self.assertNotIn('34P', self.irc.servers)
+
+    def testHandleServer(self):
+        self.irc.run('SERVER whatever.net abcd 0 10X :something')
+        self.assertIn('10X', self.irc.servers)
+        self.assertEqual('whatever.net', self.irc.servers['10X'].name)
+        self.irc.run(':10X SERVER test.server * 1 0AL :testing raw message syntax')
+        self.assertIn('0AL', self.irc.servers)
+        self.assertEqual('test.server', self.irc.servers['0AL'].name)
+
+    def testHandleUID(self):
+        self.irc.run('SERVER whatever.net abcd 0 10X :something')
+        self.irc.run(':10X UID 10XAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname')
+        self.assertIn('10XAAAAAB', self.irc.servers['10X'].users)
+        self.assertIn('10XAAAAAB', self.irc.users)
+        u = self.irc.users['10XAAAAAB']
+        self.assertEqual('GL', u.nick)
+
+    def testHandleKill(self):
+        self.irc.takeMsgs()  # Ignore the initial connect messages
+        self.irc.run(':9PYAAAAAA KILL 9PYAAAAAA :killed')
+        msgs = self.irc.takeMsgs()
+        commands = self.irc.takeCommands(msgs)
+        # Make sure we're respawning our PseudoClient when its killed
+        self.assertIn('UID', commands)
+        self.assertIn('FJOIN', commands)
+
+    def testHandleKick(self):
+        self.irc.takeMsgs()  # Ignore the initial connect messages
+        self.irc.run(':9PYAAAAAA KICK #pylink 9PYAAAAAA :kicked')
+        # Ditto above
+        msgs = self.irc.takeMsgs()
+        commands = self.irc.takeCommands(msgs)
+        self.assertIn('FJOIN', commands)
 
 if __name__ == '__main__':
     unittest.main()
