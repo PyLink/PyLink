@@ -83,5 +83,57 @@ class TestInspIRCdProtocol(unittest.TestCase):
         self.proto.nickClient(self.irc, self.u, 'NotPyLink')
         self.assertEqual('NotPyLink', self.irc.users[self.u].nick)
 
+    def testSpawnServer(self):
+        # Incorrect SID length
+        self.assertRaises(Exception, self.proto.spawnServer, self.irc, 'subserver.pylink', '34Q0')
+        self.proto.spawnServer(self.irc, 'subserver.pylink', '34Q')
+        # Duplicate server name
+        self.assertRaises(Exception, self.proto.spawnServer, self.irc, 'Subserver.PyLink', '34Z')
+        # Duplicate SID
+        self.assertRaises(Exception, self.proto.spawnServer, self.irc, 'another.Subserver.PyLink', '34Q')
+        self.assertIn('34Q', self.irc.servers)
+        # Are we bursting properly?
+        self.assertIn(':34Q ENDBURST', self.irc.takeMsgs())
+
+    def testSpawnClientOnServer(self):
+        self.proto.spawnServer(self.irc, 'subserver.pylink', '34Q')
+        u = self.proto.spawnClient(self.irc, 'person1', 'person', 'users.overdrive.pw', server='34Q')
+        # We're spawning clients on the right server, hopefully...
+        self.assertIn(u.uid, self.irc.servers['34Q'].users)
+        self.assertNotIn(u.uid, self.irc.servers[self.irc.sid].users)
+
+    def testSquit(self):
+        # Spawn a messy network map, just because!
+        self.proto.spawnServer(self.irc, 'level1.pylink', '34P')
+        self.proto.spawnServer(self.irc, 'level2.pylink', '34Q', uplink='34P')
+        self.proto.spawnServer(self.irc, 'level3.pylink', '34Z', uplink='34Q')
+        self.proto.spawnServer(self.irc, 'level4.pylink', '34Y', uplink='34Z')
+        self.assertEqual(self.irc.servers['34Y'].uplink, '34Z')
+        s4u = self.proto.spawnClient(self.irc, 'person1', 'person', 'users.overdrive.pw', server='34Y').uid
+        s3u = self.proto.spawnClient(self.irc, 'person2', 'person', 'users.overdrive.pw', server='34Z').uid
+        self.proto.joinClient(self.irc, s3u, '#pylink')
+        self.proto.joinClient(self.irc, s4u, '#pylink')
+        self.proto.handle_squit(self.irc, '9PY', 'SQUIT', ['34Y'])
+        self.assertNotIn(s4u, self.irc.users)
+        self.assertNotIn('34Y', self.irc.servers)
+        # Netsplits are obviously recursive, so all these should be removed.
+        self.proto.handle_squit(self.irc, '9PY', 'SQUIT', ['34P'])
+        self.assertNotIn(s3u, self.irc.users)
+        self.assertNotIn('34P', self.irc.servers)
+        self.assertNotIn('34Q', self.irc.servers)
+        self.assertNotIn('34Z', self.irc.servers)
+
+    def testRSquit(self):
+        u = self.proto.spawnClient(self.irc, 'person1', 'person', 'users.overdrive.pw')
+        u.identified = 'admin'
+        self.proto.spawnServer(self.irc, 'level1.pylink', '34P')
+        self.irc.run(':%s RSQUIT level1.pylink :some reason' % self.u)
+        # No SQUIT yet, since the 'PyLink' client isn't identified
+        self.assertNotIn('SQUIT', self.irc.takeCommands(self.irc.takeMsgs()))
+        # The one we just spawned however, is.
+        self.irc.run(':%s RSQUIT level1.pylink :some reason' % u.uid)
+        self.assertIn('SQUIT', self.irc.takeCommands(self.irc.takeMsgs()))
+        self.assertNotIn('34P', self.irc.servers)
+
 if __name__ == '__main__':
     unittest.main()

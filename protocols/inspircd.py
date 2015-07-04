@@ -250,7 +250,7 @@ def handle_server(irc, numeric, command, args):
     # SERVER is sent by our uplink or any other server to introduce others.
     # <- :00A SERVER test.server * 1 00C :testing raw message syntax
     # <- :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
-    servername = args[0]
+    servername = args[0].lower()
     sid = args[3]
     irc.servers[sid] = IrcServer(numeric, servername)
 
@@ -304,8 +304,11 @@ def handle_squit(irc, numeric, command, args):
 def handle_rsquit(irc, numeric, command, args):
     # <- :1MLAAAAIG RSQUIT :ayy.lmao
     # <- :1MLAAAAIG RSQUIT ayy.lmao :some reason
-    # If we receive a remote SQUIT from an oper, split the target server
-    # only if they're identified with us.
+    # RSQUIT is sent by opers to squit remote servers.
+    # Strangely, it takes a server name instead of a SID, and is
+    # allowed to be ignored entirely.
+    # If we receive a remote SQUIT, split the target server
+    # ONLY if the sender is identified with us.
     target = args[0]
     for (sid, server) in irc.servers.items():
         if server.name == target:
@@ -334,7 +337,7 @@ def handle_events(irc, data):
     args = data.split()
     if args and args[0] == 'SERVER':
        # SERVER whatever.net abcdefgh 0 10X :something
-       servername = args[1]
+       servername = args[1].lower()
        numeric = args[4]
        if args[2] != irc.serverdata['recvpass']:
             # Check if recvpass is correct
