@@ -385,6 +385,7 @@ def spawnServer(irc, name, sid, uplink=None, desc='PyLink Server'):
     # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
+    assert len(sid) == 3, "Incorrect SID length"
     if sid in irc.servers:
         raise ValueError('A server with SID %r already exists!' % sid)
     for server in irc.servers.values():
@@ -395,5 +396,5 @@ def spawnServer(irc, name, sid, uplink=None, desc='PyLink Server'):
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)
     _sendFromServer(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
-    _sendFromServer(irc, uplink, 'ENDBURST')
+    _sendFromServer(irc, sid, 'ENDBURST')
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
