@@ -4,7 +4,7 @@ sys.path += [os.getcwd(), os.path.join(os.getcwd(), 'protocols')]
 import unittest
 
 import inspircd
-import test_proto_common
+from . import test_proto_common
 from classes import ProtocolError
 
 class TestInspIRCdProtocol(unittest.TestCase):
