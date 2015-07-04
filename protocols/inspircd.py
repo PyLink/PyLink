@@ -106,6 +106,10 @@ def kickClient(irc, numeric, channel, target, reason=None):
     if not reason:
         reason = 'No reason given'
     _sendFromUser(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
+    # We can pretend the target left by its own will; all we really care about
+    # is that the target gets removed from the channel userlist, and calling
+    # handle_part() does that just fine.
+    handle_part(irc, target, 'KICK', [channel])
 
 def nickClient(irc, numeric, newnick):
     """<irc object> <client numeric> <new nickname>

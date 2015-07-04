@@ -71,5 +71,17 @@ class TestInspIRCdProtocol(unittest.TestCase):
         self.assertNotIn(u, self.irc.servers[self.irc.sid].users)
         pass
 
+    def testKickClient(self):
+        target = self.proto.spawnClient(self.irc, 'soccerball', 'soccerball', 'abcd').uid
+        self.proto.joinClient(self.irc, target, '#pylink')
+        self.assertIn(self.u, self.irc.channels['#pylink'].users)
+        self.assertIn(target, self.irc.channels['#pylink'].users)
+        self.proto.kickClient(self.irc, self.u, '#pylink', target, 'Pow!')
+        self.assertNotIn(target, self.irc.channels['#pylink'].users)
+
+    def testNickClient(self):
+        self.proto.nickClient(self.irc, self.u, 'NotPyLink')
+        self.assertEqual('NotPyLink', self.irc.users[self.u].nick)
+
 if __name__ == '__main__':
     unittest.main()
