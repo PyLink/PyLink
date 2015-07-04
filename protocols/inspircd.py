@@ -191,9 +191,8 @@ def handle_part(irc, source, command, args):
         del irc.channels[channel]
 
 def handle_error(irc, numeric, command, args):
-    print('Received an ERROR, killing!')
     irc.connected = False
-    sys.exit(1)
+    raise ProtocolError('Received an ERROR, killing!')
 
 def handle_fjoin(irc, servernumeric, command, args):
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
@@ -331,8 +330,7 @@ def handle_events(irc, data):
        numeric = args[4]
        if args[2] != irc.serverdata['recvpass']:
             # Check if recvpass is correct
-            print('Error: recvpass from uplink server %s does not match configuration!' % servername)
-            sys.exit(1)
+            raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
        irc.servers[numeric] = IrcServer(None, servername)
        return
     try:
