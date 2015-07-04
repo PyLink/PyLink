@@ -8,7 +8,6 @@ from copy import copy
 import traceback
 from classes import *
 
-uidgen = {}
 # Map raw commands to protocol-independent hooks
 hook_map = {'FJOIN': 'join',
             'PART': 'part',
@@ -27,9 +26,9 @@ def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
     # We need a separate UID generator instance for every PseudoServer
     # we spawn. Otherwise, things won't wrap around properly.
-    if server not in uidgen:
-        uidgen[server] = utils.TS6UIDGenerator(server)
-    uid = uidgen[server].next_uid()
+    if server not in irc.uidgen:
+        irc.uidgen[server] = utils.TS6UIDGenerator(server)
+    uid = irc.uidgen[server].next_uid()
     ts = int(time.time())
     if modes:
         modes = utils.joinModes(modes)
@@ -46,6 +45,7 @@ def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
     return u
 
 def joinClient(irc, client, channel):
+    channel = channel.lower()
     server = utils.isInternalClient(irc, client)
     if not server:
         raise LookupError('No such PyLink PseudoClient exists.')
@@ -57,6 +57,7 @@ def joinClient(irc, client, channel):
     irc.channels[channel].users.add(client)
 
 def partClient(irc, client, channel, reason=None):
+    channel = channel.lower()
     if not utils.isInternalClient(irc, client):
         raise LookupError('No such PyLink PseudoClient exists.')
     msg = "PART %s" % channel
@@ -65,7 +66,7 @@ def partClient(irc, client, channel, reason=None):
     if reason:
         msg += " :%s" % reason
     _sendFromUser(irc, client, msg)
-    handle_part(irc, client, 'PART', channel)
+    handle_part(irc, client, 'PART', [channel])
 
 def removeClient(irc, numeric):
     """<irc object> <client numeric>
@@ -99,6 +100,7 @@ def kickClient(irc, numeric, channel, target, reason=None):
     """<irc object> <kicker client numeric>
 
     Sends a kick from a PyLink PseudoClient."""
+    channel = channel.lower()
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     if not reason:
@@ -118,6 +120,7 @@ def nickClient(irc, numeric, newnick):
 
 def connect(irc):
     irc.start_ts = ts = int(time.time())
+    irc.uidgen = {}
     host = irc.serverdata["hostname"]
     irc.servers[irc.sid] = IrcServer(None, host, internal=True)
 
@@ -178,15 +181,16 @@ def handle_kill(irc, source, command, args):
 def handle_kick(irc, source, command, args):
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
     channel = args[0]
+    channel = channel.lower()
     kicked = args[1]
     irc.channels[channel].users.discard(kicked)
     if kicked == irc.pseudoclient.uid:
         joinClient(irc, irc.pseudoclient.uid, channel)
 
 def handle_part(irc, source, command, args):
-    channel = args[0]
+    channel = args[0].lower()
     # We should only get PART commands for channels that exist, right??
-    irc.channels[channel].users.discard(source)
+    irc.channels[channel].users.remove(source)
     if not irc.channels[channel].users:
         del irc.channels[channel]
 
@@ -196,7 +200,7 @@ def handle_error(irc, numeric, command, args):
 
 def handle_fjoin(irc, servernumeric, command, args):
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
-    channel = args[0]
+    channel = args[0].lower()
     # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
     userlist = args[-1].split()
     for user in userlist:
