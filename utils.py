@@ -75,11 +75,12 @@ def isNick(s, nicklen=None):
 def isChannel(s):
     return s.startswith('#')
 
-def _isASCIIPrintable(s):
-    return all(char in string.printable for char in s)
+def _isASCII(s):
+    chars = string.ascii_letters + string.digits + string.punctuation
+    return all(char in chars for char in s)
 
 def isServerName(s):
-    return _isASCIIPrintable(s) and '.' in s and not s.startswith('.') \
+    return _isASCII(s) and '.' in s and not s.startswith('.') \
         and not s.endswith('.')
 
 def parseModes(args):
