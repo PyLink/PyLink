@@ -13,7 +13,6 @@ import classes
 class Irc():
     def __init__(self, proto):
         # Initialize some variables
-        self.socket = socket.socket()
         self.connected = False
         self.users = {}
         self.channels = defaultdict(classes.IrcChannel)
