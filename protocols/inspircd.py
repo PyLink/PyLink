@@ -423,7 +423,6 @@ def handle_events(irc, data):
         pass
     else:
         parsed_args = func(irc, numeric, command, args)
-    else:
         # Only call our hooks if there's data to process. Handlers that support
         # hooks will return a dict of parsed arguments, which can be passed on
         # to plugins and the like. For example, the JOIN handler will return
