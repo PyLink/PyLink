@@ -49,7 +49,7 @@ def add_cmd(func, name=None):
 
 def add_hook(func, command):
     """Add a hook <func> for command <command>."""
-    command = command.lower()
+    command = command.upper()
     command_hooks[command].append(func)
 
 def nickToUid(irc, nick):

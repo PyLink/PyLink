@@ -8,11 +8,10 @@ from copy import copy
 import traceback
 from classes import *
 
-# Map raw commands to protocol-independent hooks
-hook_map = {'FJOIN': 'join',
-            'PART': 'part',
-            'QUIT': 'quit',
-            'PRIVMSG': 'msg',}
+# Raw commands sent from servers vary from protocol to protocol. Here, we map
+# non-standard names to our hook handlers, so plugins get the information they need.
+hook_map = {'FJOIN': 'JOIN', 'SAVE': 'NICK',
+            'RSQUIT': 'SQUIT'}
 
 def _sendFromServer(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -173,6 +172,7 @@ def handle_privmsg(irc, source, command, args):
             traceback.print_exc()
             utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
+    return {'target': args[0], 'text': args[1]}
 
 def handle_kill(irc, source, command, args):
     killed = args[0]
@@ -181,15 +181,16 @@ def handle_kill(irc, source, command, args):
         irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', irc.serverdata["hostname"])
         for chan in irc.serverdata['channels']:
             joinClient(irc, irc.pseudoclient.uid, chan)
+    return {'target': killed, 'reason': args[1]}
 
 def handle_kick(irc, source, command, args):
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
-    channel = args[0]
-    channel = channel.lower()
+    channel = args[0].lower()
     kicked = args[1]
     handle_part(irc, kicked, 'KICK', [channel, args[2]])
     if kicked == irc.pseudoclient.uid:
         joinClient(irc, irc.pseudoclient.uid, channel)
+    return {'channel': channel, 'target': kicked, 'reason': args[2]}
 
 def handle_part(irc, source, command, args):
     channel = args[0].lower()
@@ -197,6 +198,7 @@ def handle_part(irc, source, command, args):
     irc.channels[channel].users.remove(source)
     if not irc.channels[channel].users:
         del irc.channels[channel]
+    return {'channel': channel, 'reason': args[1]}
 
 def handle_error(irc, numeric, command, args):
     irc.connected = False
@@ -207,8 +209,10 @@ def handle_fjoin(irc, servernumeric, command, args):
     channel = args[0].lower()
     # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
     userlist = args[-1].split()
+    namelist = []
     for user in userlist:
         modeprefix, user = user.split(',', 1)
+        namelist.append(user)
         for mode in modeprefix:
             # Note that a user can have more than one mode prefix (e.g. they have both +o and +v),
             # so they would be added to both lists.
@@ -222,6 +226,7 @@ def handle_fjoin(irc, servernumeric, command, args):
                 irc.channels[channel].voices.append(user)
             '''
         irc.channels[channel].users.add(user)
+    return {'channel': channel, 'users': namelist}
 
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
@@ -232,10 +237,12 @@ def handle_uid(irc, numeric, command, args):
     print('Applying modes %s for %s' % (parsedmodes, uid))
     irc.users[uid].modes = utils.applyModes(irc.users[uid].modes, parsedmodes)
     irc.servers[numeric].users.append(uid)
+    return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
 def handle_quit(irc, numeric, command, args):
     # <- :1SRAAGB4T QUIT :Quit: quit message goes here
     removeClient(irc, numeric)
+    return {'reason': args[0]}
 
 def handle_burst(irc, numeric, command, args):
     # BURST is sent by our uplink when we link.
@@ -256,7 +263,8 @@ def handle_server(irc, numeric, command, args):
 
 def handle_nick(irc, numeric, command, args):
     # <- :70MAAAAAA NICK GL-devel 1434744242
-    irc.users[numeric].nick = args[0]
+    n = irc.users[numeric].nick = args[0]
+    return {'target': n, 'ts': args[1]}
 
 def handle_save(irc, numeric, command, args):
     # This is used to handle nick collisions. Here, the client Derp_ already exists,
@@ -268,6 +276,7 @@ def handle_save(irc, numeric, command, args):
     # <- :70M SAVE 0AL000001 1433728673
     user = args[0]
     irc.users[user].nick = user
+    return {'target': user, 'ts': args[1]}
 
 '''
 def handle_fmode(irc, numeric, command, args):
@@ -285,6 +294,7 @@ def handle_mode(irc, numeric, command, args):
     modestrings = args[1:]
     changedmodes = utils.parseModes(modestrings)
     irc.users[numeric].modes = utils.applyModes(irc.users[numeric].modes, changedmodes)
+    return {'target': user, 'modes': changedmodes}
 
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
@@ -300,6 +310,7 @@ def handle_squit(irc, numeric, command, args):
         print('Removing client %s (%s)' % (user, irc.users[user].nick))
         removeClient(irc, user)
     del irc.servers[split_server]
+    return {'target': split_server}
 
 def handle_rsquit(irc, numeric, command, args):
     # <- :1MLAAAAIG RSQUIT :ayy.lmao
@@ -318,7 +329,7 @@ def handle_rsquit(irc, numeric, command, args):
             uplink = irc.servers[target].uplink
             reason = 'Requested by %s' % irc.users[numeric].nick
             _sendFromServer(irc, uplink, 'SQUIT %s :%s' % (target, reason))
-            handle_squit(irc, numeric, 'SQUIT', [target, reason])
+            return handle_squit(irc, numeric, 'SQUIT', [target, reason])
         else:
             utils.msg(irc, numeric, 'Error: you are not authorized to split servers!', notice=True)
 
@@ -372,21 +383,30 @@ def handle_events(irc, data):
     except IndexError:
         return
 
-    cmd = command.lower()
     # We will do wildcard event handling here. Unhandled events are just ignored.
     try:
-        func = globals()['handle_'+cmd]
-        func(irc, numeric, command, args)
+        func = globals()['handle_'+command.lower()]
+        parsed_args = func(irc, numeric, command, args)
     except KeyError:  # unhandled event
         pass
     else:
-        # All is well; we'll let our hooks do work now.
-        if command in hook_map:  # If this is a hook-enabled event
+        # Only call our hooks if there's data to process. Handlers that support
+        # hooks will return a dict of parsed arguments, which can be passed on
+        # to plugins and the like. For example, the JOIN handler will return
+        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
+        # 'UID3']}, etc.
+        if parsed_args:
+            hook_cmd = command
+            if command in hook_map:
+                hook_cmd = hook_map[command]
+            print('Parsed args %r received from %s handler (calling hook %s)' % (parsed_args, command, hook_cmd))
             # Iterate over hooked functions, catching errors accordingly
-            for hook_func in utils.command_hooks[hook_map[command]]:
+            for hook_func in utils.command_hooks[hook_cmd]:
                 try:
-                    hook_func(irc, numeric, command, args)
+                    print('Calling function %s' % hook_func)
+                    hook_func(irc, numeric, command, parsed_args)
                 except Exception:
+                    # We don't want plugins to crash our servers...
                     traceback.print_exc()
                     continue
 
