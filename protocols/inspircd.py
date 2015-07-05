@@ -198,7 +198,11 @@ def handle_part(irc, source, command, args):
     irc.channels[channel].users.remove(source)
     if not irc.channels[channel].users:
         del irc.channels[channel]
-    return {'channel': channel, 'reason': args[1]}
+    try:
+        reason = args[1]
+    except IndexError:
+        reason = ''
+    return {'channel': channel, 'reason': reason}
 
 def handle_error(irc, numeric, command, args):
     irc.connected = False
