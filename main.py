@@ -14,11 +14,21 @@ class Irc():
     def __init__(self, proto):
         # Initialize some variables
         self.connected = False
-        self.users = {}
-        self.channels = defaultdict(classes.IrcChannel)
         self.name = conf['server']['netname']
         self.conf = conf
+        # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {}
+        self.users = {}
+        self.channels = defaultdict(classes.IrcChannel)
+        # Sets flags such as whether to use halfops, etc. The default RFC1459
+        # modes are implied.
+        self.cmodes = {'op': 'o', 'secret': 's', 'private': 'p',
+                       'noextmsg': 'n', 'moderated': 'm', 'inviteonly': 'i',
+                       'topiclock': 't', 'limit': 'l', 'ban': 'b',
+                       'voice': 'v', 'key': 'k'}
+        self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
+                       'oper': 'o'}
+        self.maxnicklen = 30
 
         self.serverdata = conf['server']
         ip = self.serverdata["ip"]

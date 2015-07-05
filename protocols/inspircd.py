@@ -128,19 +128,12 @@ def connect(irc):
     irc.servers[irc.sid] = IrcServer(None, host, internal=True)
 
     f = irc.send
-    f('CAPAB START 1203')
-    # This is hard coded atm... We should fix it eventually...
-    f('CAPAB CAPABILITIES :NICKMAX=32 HALFOP=0 CHANMAX=65 MAXMODES=20'
-      ' IDENTMAX=12 MAXQUIT=255 PROTOCOL=1203')
+    f('CAPAB START 1202')
+    f('CAPAB CAPABILITIES :PROTOCOL=1202')
     f('CAPAB END')
-    # TODO: check recvpass here
     f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=host,
       Pass=irc.serverdata["sendpass"], sid=irc.sid))
     f(':%s BURST %s' % (irc.sid, ts))
-    # InspIRCd documentation:
-    # :751 UID 751AAAAAA 1220196319 Brain brainwave.brainbox.cc
-    # netadmin.chatspike.net brain 192.168.1.10 1220196324 +Siosw
-    # +ACKNOQcdfgklnoqtx :Craig Edwards
     irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=set(["+o"]))
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
@@ -350,7 +343,10 @@ def handle_events(irc, data):
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :v,1SRAAESWE
     # :<sid> <command> <argument1> <argument2> ... :final multi word argument
     args = data.split()
-    if args and args[0] == 'SERVER':
+    if not args:
+        # No data??
+        return
+    if args[0] == 'SERVER':
        # SERVER whatever.net abcdefgh 0 10X :something
        servername = args[1].lower()
        numeric = args[4]
@@ -359,6 +355,33 @@ def handle_events(irc, data):
             raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
        irc.servers[numeric] = IrcServer(None, servername)
        return
+    elif args[0] == 'CAPAB':
+        # Capability negotiation with our uplink
+        if args[1] == 'CHANMODES':
+            # CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b banexception=e blockcolor=c c_registered=r exemptchanops=X filter=g flood=f halfop=%h history=H invex=I inviteonly=i joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T official-join=!Y op=@o operonly=O opmoderated=U owner=~q permanent=P private=p redirect=L reginvite=R regmoderated=M secret=s sslonly=z stripcolor=S topiclock=t voice=+v
+
+            # Named modes are essential for a cross-protocol IRC service. We
+            # can use InspIRCd as a model here and assign their mode map to our cmodes list.
+            for modepair in args[2:]:
+                name, char = modepair.split('=')
+                # We don't really care about mode prefixes; just the mode char
+                irc.cmodes[name.lstrip(':')] = char[-1]
+        elif args[1] == 'USERMODES':
+            # Ditto above.
+            for modepair in args[2:]:
+                name, char = modepair.split('=')
+                irc.umodes[name.lstrip(':')] = char
+        elif args[1] == 'CAPABILITIES':
+            caps = dict([x.lstrip(':').split('=') for x in args[2:]])
+            irc.maxnicklen = caps['NICKMAX']
+            irc.maxchanlen = caps['CHANMAX']
+            # Modes are divided into A, B, C, and D classes
+            # See http://www.irc.org/tech_docs/005.html
+            # FIXME: Find a better way to assign/store this.
+            irc.cmodes['*A'], irc.cmodes['*B'], irc.cmodes['*C'], irc.cmodes['*D'] \
+                = caps['CHANMODES'].split(',')
+            irc.umodes['*A'], irc.umodes['*B'], irc.umodes['*C'], irc.umodes['*D'] \
+                = caps['USERMODES'].split(',')
     try:
         real_args = []
         for arg in args:
