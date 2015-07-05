@@ -117,7 +117,8 @@ def parseModes(irc, args, usermodes=False):
             elif mode in irc.prefixmodes and not usermodes:
                 # We're setting a prefix mode on someone (e.g. +o user1)
                 print('%s: prefixmode.' % mode)
-                arg = args.pop(0)
+                # TODO: handle this properly (issue #16).
+                continue
             elif prefix == '+' and mode in supported_modes['*C']:
                 # Only has parameter when setting.
                 print('%s: Only has parameter when setting.' % mode)
@@ -136,6 +137,7 @@ def applyModes(modelist, changedmodes):
             print('Adding mode %r' % str(mode))
         else:
             # We're removing a mode
+            mode[0] = mode[0].replace('-', '+')
             modelist.discard(mode)
             print('Removing mode %r' % str(mode))
     print('Final modelist: %s' % modelist)

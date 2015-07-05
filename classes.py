@@ -36,6 +36,7 @@ class IrcServer():
 class IrcChannel():
     def __init__(self):
         self.users = set()
+        self.modes = set()
         '''
         self.ops = []
         self.halfops = []

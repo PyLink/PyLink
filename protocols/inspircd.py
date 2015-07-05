@@ -12,7 +12,7 @@ from classes import *
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
 # non-standard names to our hook handlers, so plugins get the information they need.
 hook_map = {'FJOIN': 'JOIN', 'SAVE': 'NICK',
-            'RSQUIT': 'SQUIT'}
+            'RSQUIT': 'SQUIT', 'FMODE': 'MODE'}
 
 def _sendFromServer(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -207,14 +207,18 @@ def handle_fjoin(irc, servernumeric, command, args):
     channel = args[0].lower()
     # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
     userlist = args[-1].split()
+    ts = args[1]
+    modestring = args[2:-1] or args[2]
+    irc.channels[channel].modes = utils.applyModes(irc.channels[channel].modes, utils.parseModes(irc, modestring))
     namelist = []
     for user in userlist:
         modeprefix, user = user.split(',', 1)
         namelist.append(user)
+        '''
         for mode in modeprefix:
             # Note that a user can have more than one mode prefix (e.g. they have both +o and +v),
             # so they would be added to both lists.
-            '''
+
             # left to right: m_ojoin, m_operprefix, owner (~/+q), admin (&/+a), and op (!/+o)
             if mode in 'Yyqao':
                 irc.channels[channel].ops.append(user)
@@ -276,13 +280,13 @@ def handle_save(irc, numeric, command, args):
     irc.users[user].nick = user
     return {'target': user, 'ts': args[1]}
 
-'''
 def handle_fmode(irc, numeric, command, args):
     # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
-    # Oh god, how are we going to handle this?!
-    channel = args[0]
-    modestrings = args[3:]
-'''
+    channel = args[0].lower()
+    modes = args[2:]
+    changedmodes = utils.parseModes(irc, modes)
+    irc.channels[channel].modes = utils.applyModes(irc.channels[channel].modes, changedmodes)
+    return {'target': channel, 'modes': changedmodes}
 
 def handle_mode(irc, numeric, command, args):
     # In InspIRCd, MODE is used for setting user modes and
