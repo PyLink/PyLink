@@ -83,21 +83,46 @@ def isServerName(s):
     return _isASCII(s) and '.' in s and not s.startswith('.') \
         and not s.endswith('.')
 
-def parseModes(args):
-    """['+mitl-o', '3', 'person'] => ['+m', '+i', '+t', '-o']
-
-    TODO: handle modes with extra arguments (mainly channel modes like +beIqlk)
+def parseModes(irc, args, usermodes=False):
+    """Parses a mode string into a list of (mode, argument) tuples.
+    ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
     """
-    modes = args[0]
-    extramodes = args[1:]
-    if not modes:
+    # http://www.irc.org/tech_docs/005.html
+    # A = Mode that adds or removes a nick or address to a list. Always has a parameter. 
+    # B = Mode that changes a setting and always has a parameter. 
+    # C = Mode that changes a setting and only has a parameter when set.
+    # D = Mode that changes a setting and never has a parameter.
+    print(args)
+    modestring = args[0]
+    if not modestring:
         return ValueError('No modes supplied in parseModes query: %r' % modes)
+    args = args[1:]
+    if usermodes:
+        supported_modes = irc.umodes 
+    else:
+        supported_modes = irc.cmodes
+    print('supported modes: %s' % supported_modes)
     res = []
-    for mode in modes:
+    for x in ('A', 'B', 'C', 'D'):
+        print('%s modes: %s' % (x, supported_modes['*'+x]))
+    for mode in modestring:
         if mode in '+-':
             prefix = mode
         else:
-            res.append(prefix + mode)
+            arg = None
+            if mode in (supported_modes['*A'] + supported_modes['*B']):
+                # Must have parameter.
+                print('%s: Must have parameter.' % mode)
+                arg = args.pop(0)
+            elif mode in irc.prefixmodes and not usermodes:
+                # We're setting a prefix mode on someone (e.g. +o user1)
+                print('%s: prefixmode.' % mode)
+                arg = args.pop(0)
+            elif prefix == '+' and mode in supported_modes['*C']:
+                # Only has parameter when setting.
+                print('%s: Only has parameter when setting.' % mode)
+                arg = args.pop(0)
+            res.append((prefix + mode, arg))
     return res
 
 def applyModes(modelist, changedmodes):
@@ -105,19 +130,27 @@ def applyModes(modelist, changedmodes):
     print('Initial modelist: %s' % modelist)
     print('Changedmodes: %r' % changedmodes)
     for mode in changedmodes:
-        if mode[0] == '+':
+        if mode[0][0] == '+':
             # We're adding a mode
             modelist.add(mode)
-            print('Adding mode %r' % mode)
+            print('Adding mode %r' % str(mode))
         else:
             # We're removing a mode
             modelist.discard(mode)
-            print('Removing mode %r' % mode)
+            print('Removing mode %r' % str(mode))
     print('Final modelist: %s' % modelist)
     return modelist
 
 def joinModes(modes):
-    return '+' + ''.join(mode[1] for mode in modes)
+    modelist = ''
+    args = []
+    for modepair in modes:
+        mode, arg = modepair
+        modelist += mode[1]
+        if arg is not None:
+            args.append(arg)
+    s = '+%s %s' % (modelist, ' '.join(args))
+    return s
 
 def isInternalClient(irc, numeric):
     """<irc object> <client numeric>

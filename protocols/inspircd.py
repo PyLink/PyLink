@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 from copy import copy
 import traceback
+import re
 from classes import *
 
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
@@ -134,7 +135,7 @@ def connect(irc):
     f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=host,
       Pass=irc.serverdata["sendpass"], sid=irc.sid))
     f(':%s BURST %s' % (irc.sid, ts))
-    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=set(["+o"]))
+    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=set([("+o", None)]))
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
         joinClient(irc, irc.pseudoclient.uid, chan)
@@ -230,7 +231,7 @@ def handle_uid(irc, numeric, command, args):
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
     realname = args[-1]
     irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
-    parsedmodes = utils.parseModes(args[8:9])
+    parsedmodes = utils.parseModes(irc, [args[8], args[9]], usermodes=True)
     print('Applying modes %s for %s' % (parsedmodes, uid))
     irc.users[uid].modes = utils.applyModes(irc.users[uid].modes, parsedmodes)
     irc.servers[numeric].users.append(uid)
@@ -289,7 +290,7 @@ def handle_mode(irc, numeric, command, args):
     # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
     target = args[0]
     modestrings = args[1:]
-    changedmodes = utils.parseModes(modestrings)
+    changedmodes = utils.parseModes(irc, modestrings, usermodes=True)
     irc.users[numeric].modes = utils.applyModes(irc.users[numeric].modes, changedmodes)
     return {'target': target, 'modes': changedmodes}
 
@@ -382,6 +383,7 @@ def handle_events(irc, data):
                 = caps['CHANMODES'].split(',')
             irc.umodes['*A'], irc.umodes['*B'], irc.umodes['*C'], irc.umodes['*D'] \
                 = caps['USERMODES'].split(',')
+            irc.prefixmodes = re.search(r'\((.*?)\)', caps['PREFIX']).group(1)
     try:
         real_args = []
         for arg in args:
