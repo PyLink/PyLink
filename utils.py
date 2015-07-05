@@ -155,6 +155,8 @@ def applyModes(irc, target, changedmodes):
                     pmodelist.discard(mode[1])
                     print('-')
                 print('Final pmodelist: %s' % pmodelist)
+            if mode[0][1] in irc.prefixmodes:
+                # Ignore other prefix modes such as InspIRCd's +Yy
                 continue
         if mode[0][0] == '+':
             # We're adding a mode
