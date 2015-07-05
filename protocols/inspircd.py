@@ -419,9 +419,10 @@ def handle_events(irc, data):
     # We will do wildcard event handling here. Unhandled events are just ignored.
     try:
         func = globals()['handle_'+command.lower()]
-        parsed_args = func(irc, numeric, command, args)
     except KeyError:  # unhandled event
         pass
+    else:
+        parsed_args = func(irc, numeric, command, args)
     else:
         # Only call our hooks if there's data to process. Handlers that support
         # hooks will return a dict of parsed arguments, which can be passed on
