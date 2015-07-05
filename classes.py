@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
@@ -37,13 +39,16 @@ class IrcChannel():
     def __init__(self):
         self.users = set()
         self.modes = set()
-        '''
-        self.ops = []
-        self.halfops = []
-        self.voices = []
-        '''
+        self.prefixmodes = {'ops': set(), 'halfops': set(), 'voices': set(),
+                            'owners': set(), 'admins': set()}
+
     def __repr__(self):
         return repr(self.__dict__)
+
+    def removeuser(self, target):
+        for s in self.prefixmodes.values():
+            s.discard(target)
+        self.users.discard(target)
 
 class ProtocolError(Exception):
     pass

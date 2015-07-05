@@ -73,11 +73,8 @@ def removeClient(irc, numeric):
 
     Removes a client from our internal databases, regardless
     of whether it's one of our pseudoclients or not."""
-    for k, v in copy(irc.channels).items():
-        irc.channels[k].users.discard(numeric)
-        if not irc.channels[k].users:
-            # Clear empty channels
-            del irc.channels[k]
+    for v in irc.channels.values():
+        v.removeuser(source)
     sid = numeric[:3]
     print('Removing client %s from irc.users' % numeric)
     del irc.users[numeric]
@@ -189,9 +186,7 @@ def handle_kick(irc, source, command, args):
 def handle_part(irc, source, command, args):
     channel = args[0].lower()
     # We should only get PART commands for channels that exist, right??
-    irc.channels[channel].users.remove(source)
-    if not irc.channels[channel].users:
-        del irc.channels[channel]
+    irc.channels[channel].removeuser(source)
     try:
         reason = args[1]
     except IndexError:
@@ -209,24 +204,12 @@ def handle_fjoin(irc, servernumeric, command, args):
     userlist = args[-1].split()
     ts = args[1]
     modestring = args[2:-1] or args[2]
-    irc.channels[channel].modes = utils.applyModes(irc.channels[channel].modes, utils.parseModes(irc, modestring))
+    utils.applyModes(irc, channel, utils.parseModes(irc, channel, modestring))
     namelist = []
     for user in userlist:
         modeprefix, user = user.split(',', 1)
         namelist.append(user)
-        '''
-        for mode in modeprefix:
-            # Note that a user can have more than one mode prefix (e.g. they have both +o and +v),
-            # so they would be added to both lists.
-
-            # left to right: m_ojoin, m_operprefix, owner (~/+q), admin (&/+a), and op (!/+o)
-            if mode in 'Yyqao':
-                irc.channels[channel].ops.append(user)
-            if mode == 'h':
-                irc.channels[channel].halfops.append(user)
-            if mode == 'v':
-                irc.channels[channel].voices.append(user)
-            '''
+        utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
         irc.channels[channel].users.add(user)
     return {'channel': channel, 'users': namelist}
 
@@ -235,9 +218,9 @@ def handle_uid(irc, numeric, command, args):
     uid, ts, nick, realhost, host, ident, ip = args[0:7]
     realname = args[-1]
     irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
-    parsedmodes = utils.parseModes(irc, [args[8], args[9]], usermodes=True)
+    parsedmodes = utils.parseModes(irc, uid, [args[8], args[9]])
     print('Applying modes %s for %s' % (parsedmodes, uid))
-    irc.users[uid].modes = utils.applyModes(irc.users[uid].modes, parsedmodes)
+    utils.applyModes(irc, uid, parsedmodes)
     irc.servers[numeric].users.append(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -284,8 +267,8 @@ def handle_fmode(irc, numeric, command, args):
     # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
     channel = args[0].lower()
     modes = args[2:]
-    changedmodes = utils.parseModes(irc, modes)
-    irc.channels[channel].modes = utils.applyModes(irc.channels[channel].modes, changedmodes)
+    changedmodes = utils.parseModes(irc, channel, modes)
+    utils.applyModes(irc, channel, changedmodes)
     return {'target': channel, 'modes': changedmodes}
 
 def handle_mode(irc, numeric, command, args):
@@ -294,8 +277,8 @@ def handle_mode(irc, numeric, command, args):
     # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
     target = args[0]
     modestrings = args[1:]
-    changedmodes = utils.parseModes(irc, modestrings, usermodes=True)
-    irc.users[numeric].modes = utils.applyModes(irc.users[numeric].modes, changedmodes)
+    changedmodes = utils.parseModes(irc, numeric, modestrings)
+    utils.applyModes(irc, numeric, changedmodes)
     return {'target': target, 'modes': changedmodes}
 
 def handle_squit(irc, numeric, command, args):

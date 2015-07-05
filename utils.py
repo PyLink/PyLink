@@ -83,7 +83,7 @@ def isServerName(s):
     return _isASCII(s) and '.' in s and not s.startswith('.') \
         and not s.endswith('.')
 
-def parseModes(irc, args, usermodes=False):
+def parseModes(irc, target, args):
     """Parses a mode string into a list of (mode, argument) tuples.
     ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
     """
@@ -92,7 +92,7 @@ def parseModes(irc, args, usermodes=False):
     # B = Mode that changes a setting and always has a parameter. 
     # C = Mode that changes a setting and only has a parameter when set.
     # D = Mode that changes a setting and never has a parameter.
-    print(args)
+    usermodes = not isChannel(target)
     modestring = args[0]
     if not modestring:
         return ValueError('No modes supplied in parseModes query: %r' % modes)
@@ -117,8 +117,7 @@ def parseModes(irc, args, usermodes=False):
             elif mode in irc.prefixmodes and not usermodes:
                 # We're setting a prefix mode on someone (e.g. +o user1)
                 print('%s: prefixmode.' % mode)
-                # TODO: handle this properly (issue #16).
-                continue
+                arg = args.pop(0)
             elif prefix == '+' and mode in supported_modes['*C']:
                 # Only has parameter when setting.
                 print('%s: Only has parameter when setting.' % mode)
@@ -126,11 +125,37 @@ def parseModes(irc, args, usermodes=False):
             res.append((prefix + mode, arg))
     return res
 
-def applyModes(modelist, changedmodes):
-    modelist = modelist.copy()
+def applyModes(irc, target, changedmodes):
+    usermodes = not isChannel(target)
+    print('usermodes? %s' % usermodes)
+    if usermodes:
+        modelist = irc.users[target].modes
+    else:
+        modelist = irc.channels[target].modes
     print('Initial modelist: %s' % modelist)
     print('Changedmodes: %r' % changedmodes)
     for mode in changedmodes:
+        if not usermodes:
+            pmode = ''
+            for m in ('owner', 'admin', 'op', 'halfop', 'voice'):
+                if m in irc.cmodes and mode[0][1] == irc.cmodes[m]:
+                    pmode = m+'s'
+            print('pmode? %s' % pmode)
+            if pmode:
+                print('pmode == True')
+                print(mode)
+                print(irc.channels[target].prefixmodes)
+                pmodelist = irc.channels[target].prefixmodes[pmode]
+                print(pmodelist)
+                print('Initial pmodelist: %s' % pmodelist)
+                if mode[0][0] == '+':
+                    pmodelist.add(mode[1])
+                    print('+')
+                else:
+                    pmodelist.discard(mode[1])
+                    print('-')
+                print('Final pmodelist: %s' % pmodelist)
+                continue
         if mode[0][0] == '+':
             # We're adding a mode
             modelist.add(mode)
@@ -141,7 +166,6 @@ def applyModes(modelist, changedmodes):
             modelist.discard(mode)
             print('Removing mode %r' % str(mode))
     print('Final modelist: %s' % modelist)
-    return modelist
 
 def joinModes(modes):
     modelist = ''
