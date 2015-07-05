@@ -291,7 +291,7 @@ def handle_mode(irc, numeric, command, args):
     modestrings = args[1:]
     changedmodes = utils.parseModes(modestrings)
     irc.users[numeric].modes = utils.applyModes(irc.users[numeric].modes, changedmodes)
-    return {'target': user, 'modes': changedmodes}
+    return {'target': target, 'modes': changedmodes}
 
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
