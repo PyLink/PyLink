@@ -74,7 +74,7 @@ def removeClient(irc, numeric):
     Removes a client from our internal databases, regardless
     of whether it's one of our pseudoclients or not."""
     for v in irc.channels.values():
-        v.removeuser(source)
+        v.removeuser(numeric)
     sid = numeric[:3]
     print('Removing client %s from irc.users' % numeric)
     del irc.users[numeric]
