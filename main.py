@@ -35,7 +35,7 @@ class Irc():
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         self.sid = self.serverdata["sid"]
-        log.info("Connecting to network %r on %s:%s" % (self.name, ip, port))
+        log.info("Connecting to network %r on %s:%s", self.name, ip, port)
 
         self.socket = socket.socket()
         self.socket.connect((ip, port))
@@ -57,16 +57,16 @@ class Irc():
                     break
                 while '\n' in buf:
                     line, buf = buf.split('\n', 1)
-                    log.debug("<- {}".format(line))
+                    log.debug("<- %s", line)
                     proto.handle_events(self, line)
             except socket.error as e:
-                log.error('Received socket.error: %s, exiting.' % str(e))
+                log.error('Received socket.error: %s, exiting.', str(e))
                 break
         sys.exit(1)
 
     def send(self, data):
         data = data.encode("utf-8") + b"\n"
-        log.debug("-> {}".format(data.decode("utf-8").strip("\n")))
+        log.debug("-> %s", data.decode("utf-8").strip("\n"))
         self.socket.send(data)
 
     def load_plugins(self):
@@ -80,9 +80,9 @@ class Irc():
                 self.loaded.append(imp.load_source(plugin, moduleinfo[1]))
             except ImportError as e:
                 if str(e).startswith('No module named'):
-                    log.error('Failed to load plugin %r: the plugin could not be found.' % plugin)
+                    log.error('Failed to load plugin %r: the plugin could not be found.', plugin)
                 else:
-                    log.error('Failed to load plugin %r: import error %s' % (plugin, str(e)))
+                    log.error('Failed to load plugin %r: import error %s', plugin, str(e))
         print("loaded plugins: %s" % self.loaded)
 
 if __name__ == '__main__':
@@ -98,9 +98,9 @@ if __name__ == '__main__':
         proto = imp.load_source(protoname, moduleinfo[1])
     except ImportError as e:
         if str(e).startswith('No module named'):
-            log.critical('Failed to load protocol module %r: the file could not be found.' % protoname)
+            log.critical('Failed to load protocol module %r: the file could not be found.', protoname)
         else:
-            log.critical('Failed to load protocol module: import error %s' % (protoname, str(e)))
+            log.critical('Failed to load protocol module: import error %s', protoname, str(e))
         sys.exit(2)
     else:
         irc_obj = Irc(proto)

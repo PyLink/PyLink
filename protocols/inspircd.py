@@ -78,9 +78,9 @@ def removeClient(irc, numeric):
     for v in irc.channels.values():
         v.removeuser(numeric)
     sid = numeric[:3]
-    print('Removing client %s from irc.users' % numeric)
+    log.debug('Removing client %s from irc.users', numeric)
     del irc.users[numeric]
-    print('Removing client %s from irc.servers[%s]' % (numeric, sid))
+    log.debug('Removing client %s from irc.servers[%s]', numeric, sid)
     irc.servers[sid].users.remove(numeric)
 
 def quitClient(irc, numeric, reason):
@@ -221,7 +221,7 @@ def handle_uid(irc, numeric, command, args):
     realname = args[-1]
     irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
     parsedmodes = utils.parseModes(irc, uid, [args[8], args[9]])
-    print('Applying modes %s for %s' % (parsedmodes, uid))
+    log.debug('Applying modes %s for %s', parsedmodes, uid)
     utils.applyModes(irc, uid, parsedmodes)
     irc.servers[numeric].users.append(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
@@ -286,15 +286,15 @@ def handle_mode(irc, numeric, command, args):
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
     split_server = args[0]
-    print('Netsplit on server %s' % split_server)
+    log.info('(%s) Netsplit on server %s', irc.name, split_server)
     # Prevent RuntimeError: dictionary changed size during iteration
     old_servers = copy(irc.servers)
     for sid, data in old_servers.items():
         if data.uplink == split_server:
-            print('Server %s also hosts server %s, removing those users too...' % (split_server, sid))
+            log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
             handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
     for user in copy(irc.servers[split_server].users):
-        print('Removing client %s (%s)' % (user, irc.users[user].nick))
+        log.debug('Removing client %s (%s)', user, irc.users[user].nick)
         removeClient(irc, user)
     del irc.servers[split_server]
     return {'target': split_server}
