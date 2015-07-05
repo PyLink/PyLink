@@ -6,12 +6,13 @@ import logging
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 from conf import conf
+from log import log
 
 @utils.add_cmd
 def debug(irc, source, args):
-    print('user index: %s' % irc.users)
-    print('server index: %s' % irc.servers)
-    print('channels index: %s' % irc.channels)
+    log.debug('user index: %s' % irc.users)
+    log.debug('server index: %s' % irc.servers)
+    log.debug('channels index: %s' % irc.channels)
     utils.msg(irc, source, 'Debug info printed to console.')
 
 @utils.add_cmd

@@ -2,6 +2,8 @@ import string
 import re
 from collections import defaultdict
 
+from log import log
+
 global bot_commands, command_hooks
 # This should be a mapping of command names to functions
 bot_commands = {}
@@ -98,13 +100,12 @@ def parseModes(irc, target, args):
         return ValueError('No modes supplied in parseModes query: %r' % modes)
     args = args[1:]
     if usermodes:
+        log.debug('Using irc.umodes for this query: %s', irc.umodes)
         supported_modes = irc.umodes 
     else:
+        log.debug('Using irc.cmodes for this query: %s', irc.cmodes)
         supported_modes = irc.cmodes
-    print('supported modes: %s' % supported_modes)
     res = []
-    for x in ('A', 'B', 'C', 'D'):
-        print('%s modes: %s' % (x, supported_modes['*'+x]))
     for mode in modestring:
         if mode in '+-':
             prefix = mode
@@ -112,62 +113,54 @@ def parseModes(irc, target, args):
             arg = None
             if mode in (supported_modes['*A'] + supported_modes['*B']):
                 # Must have parameter.
-                print('%s: Must have parameter.' % mode)
+                log.debug('%s: This mode must have parameter.', mode)
                 arg = args.pop(0)
             elif mode in irc.prefixmodes and not usermodes:
                 # We're setting a prefix mode on someone (e.g. +o user1)
-                print('%s: prefixmode.' % mode)
+                log.debug('%s: This mode is a prefix mode.', mode)
                 arg = args.pop(0)
             elif prefix == '+' and mode in supported_modes['*C']:
                 # Only has parameter when setting.
-                print('%s: Only has parameter when setting.' % mode)
+                log.debug('%s: Only has parameter when setting.', mode)
                 arg = args.pop(0)
             res.append((prefix + mode, arg))
     return res
 
 def applyModes(irc, target, changedmodes):
     usermodes = not isChannel(target)
-    print('usermodes? %s' % usermodes)
+    log.debug('usermodes? %s' % usermodes)
     if usermodes:
         modelist = irc.users[target].modes
     else:
         modelist = irc.channels[target].modes
-    print('Initial modelist: %s' % modelist)
-    print('Changedmodes: %r' % changedmodes)
+    log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
     for mode in changedmodes:
         if not usermodes:
             pmode = ''
             for m in ('owner', 'admin', 'op', 'halfop', 'voice'):
                 if m in irc.cmodes and mode[0][1] == irc.cmodes[m]:
                     pmode = m+'s'
-            print('pmode? %s' % pmode)
             if pmode:
-                print('pmode == True')
-                print(mode)
-                print(irc.channels[target].prefixmodes)
                 pmodelist = irc.channels[target].prefixmodes[pmode]
-                print(pmodelist)
-                print('Initial pmodelist: %s' % pmodelist)
+                log.debug('(%s) Initial prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
                 if mode[0][0] == '+':
                     pmodelist.add(mode[1])
-                    print('+')
                 else:
                     pmodelist.discard(mode[1])
-                    print('-')
-                print('Final pmodelist: %s' % pmodelist)
+                log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
             if mode[0][1] in irc.prefixmodes:
                 # Ignore other prefix modes such as InspIRCd's +Yy
                 continue
         if mode[0][0] == '+':
             # We're adding a mode
             modelist.add(mode)
-            print('Adding mode %r' % str(mode))
+            log.debug('(%s) Adding mode %r on %s', irc.name, mode, target)
         else:
             # We're removing a mode
             mode[0] = mode[0].replace('-', '+')
             modelist.discard(mode)
-            print('Removing mode %r' % str(mode))
-    print('Final modelist: %s' % modelist)
+            log.debug('(%s) Removing mode %r on %s', irc.name, mode, target)
+    log.debug('Final modelist: %s' % modelist)
 
 def joinModes(modes):
     modelist = ''

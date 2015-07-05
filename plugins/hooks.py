@@ -2,11 +2,12 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
+from log import log
 
 def hook_join(irc, source, command, args):
     channel = args['channel']
     users = args['users']
-    print('%s joined channel %s (JOIN hook caught)' % (users, channel))
+    log.info('%s joined channel %s (JOIN hook caught)' % (users, channel))
 utils.add_hook(hook_join, 'JOIN')
 
 def hook_privmsg(irc, source, command, args):
@@ -14,5 +15,5 @@ def hook_privmsg(irc, source, command, args):
     text = args['text']
     if utils.isChannel(channel) and irc.pseudoclient.nick in text:
         utils.msg(irc, channel, 'hi there!')
-        print('%s said my name on channel %s (PRIVMSG hook caught)' % (source, channel))
+        log.info('%s said my name on channel %s (PRIVMSG hook caught)' % (source, channel))
 utils.add_hook(hook_privmsg, 'PRIVMSG')

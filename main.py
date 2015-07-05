@@ -83,12 +83,12 @@ class Irc():
                     log.error('Failed to load plugin %r: the plugin could not be found.', plugin)
                 else:
                     log.error('Failed to load plugin %r: import error %s', plugin, str(e))
-        print("loaded plugins: %s" % self.loaded)
+        log.info("loaded plugins: %s", self.loaded)
 
 if __name__ == '__main__':
-    print('PyLink starting...')
+    log.info('PyLink starting...')
     if conf['login']['password'] == 'changeme':
-        print("You have not set the login details correctly! Exiting...")
+        log.critical("You have not set the login details correctly! Exiting...")
         sys.exit(2)
 
     protoname = conf['server']['protocol']

@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from log import log
 
 import main
 import classes
@@ -35,12 +36,12 @@ class FakeIRC(main.Irc):
         
     def run(self, data):
         """Queues a message to the fake IRC server."""
-        print('-> ' + data)
+        log.debug('-> ' + data)
         self.proto.handle_events(self, data)
 
     def send(self, data):
         self.messages.append(data)
-        print('<- ' + data)
+        log.debug('<- ' + data)
 
     def takeMsgs(self):
         """Returns a list of messages sent by the protocol module since
