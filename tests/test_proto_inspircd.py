@@ -182,19 +182,19 @@ class TestInspIRCdProtocol(unittest.TestCase):
 
     def testHandleFjoinModes(self):
         self.irc.run(':70M FJOIN #Chat 1423790411 +nt :,10XAAAAAA ,10XAAAAAB')
-        self.assertEqual({('+n', None), ('+t', None)}, self.irc.channels['#chat'].modes)
+        self.assertEqual({('n', None), ('t', None)}, self.irc.channels['#chat'].modes)
         # Sequential FJOINs must NOT remove existing modes
         self.irc.run(':70M FJOIN #Chat 1423790412 + :,10XAAAAAC')
-        self.assertEqual({('+n', None), ('+t', None)}, self.irc.channels['#chat'].modes)
+        self.assertEqual({('n', None), ('t', None)}, self.irc.channels['#chat'].modes)
 
     def testHandleFjoinModesWithArgs(self):
         self.irc.run(':70M FJOIN #Chat 1423790414 +nlks 10 t0psekrit :,10XAAAAAA ,10XAAAAAB')
-        self.assertEqual({('+n', None), ('+s', None), ('+l', '10'), ('+k', 't0psekrit')},
+        self.assertEqual({('n', None), ('s', None), ('l', '10'), ('k', 't0psekrit')},
                          self.irc.channels['#chat'].modes)
 
     def testHandleFjoinPrefixes(self):
         self.irc.run(':70M FJOIN #Chat 1423790418 +nt :ov,10XAAAAAA v,10XAAAAAB ,10XAAAAAC')
-        self.assertEqual({('+n', None), ('+t', None)}, self.irc.channels['#chat'].modes)
+        self.assertEqual({('n', None), ('t', None)}, self.irc.channels['#chat'].modes)
         self.assertEqual({'10XAAAAAA', '10XAAAAAB', '10XAAAAAC'}, self.irc.channels['#chat'].users)
         self.assertIn('10XAAAAAA', self.irc.channels['#chat'].prefixmodes['ops'])
         self.assertEqual({'10XAAAAAA', '10XAAAAAB'}, self.irc.channels['#chat'].prefixmodes['voices'])
@@ -202,18 +202,18 @@ class TestInspIRCdProtocol(unittest.TestCase):
     def testHandleFmode(self):
         self.irc.run(':70M FJOIN #pylink 1423790411 +n :o,10XAAAAAA ,10XAAAAAB')
         self.irc.run(':70M FMODE #pylink 1423790412 +ikl herebedragons 100')
-        self.assertEqual({('+i', None), ('+k', 'herebedragons'), ('+l', '100'), ('+n', None)}, self.irc.channels['#pylink'].modes)
+        self.assertEqual({('i', None), ('k', 'herebedragons'), ('l', '100'), ('n', None)}, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790413 -ilk+m herebedragons')
-        self.assertEqual({('+m', None), ('+n', None)}, self.irc.channels['#pylink'].modes)
+        self.assertEqual({('m', None), ('n', None)}, self.irc.channels['#pylink'].modes)
 
     def testHandleFmodeWithPrefixes(self):
         self.irc.run(':70M FJOIN #pylink 1423790411 +n :o,10XAAAAAA ,10XAAAAAB')
         # Prefix modes are stored separately, so they should never show up in .modes
-        self.assertNotIn(('+o', '10XAAAAAA'), self.irc.channels['#pylink'].modes)
+        self.assertNotIn(('o', '10XAAAAAA'), self.irc.channels['#pylink'].modes)
         self.assertEqual({'10XAAAAAA'}, self.irc.channels['#pylink'].prefixmodes['ops'])
         self.irc.run(':70M FMODE #pylink 1423790412 +lot 50 %s' % self.u)
         self.assertIn(self.u, self.irc.channels['#pylink'].prefixmodes['ops'])
-        modes = {('+l', '50'), ('+n', None), ('+t', None)}
+        modes = {('l', '50'), ('n', None), ('t', None)}
         self.assertEqual(modes, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790413 -o %s' % self.u)
         self.assertEqual(modes, self.irc.channels['#pylink'].modes)

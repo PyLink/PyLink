@@ -128,6 +128,10 @@ def parseModes(irc, target, args):
     return res
 
 def applyModes(irc, target, changedmodes):
+    """<target> <changedmodes>
+    
+    Takes a list of parsed IRC modes (<changedmodes>, in the format of parseModes()), and applies them on <target>.
+    <target> can be either a channel or a user; this is handled automatically."""
     usermodes = not isChannel(target)
     log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
     if usermodes:
@@ -136,10 +140,12 @@ def applyModes(irc, target, changedmodes):
         modelist = irc.channels[target].modes
     log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
     for mode in changedmodes:
+        # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
+        real_mode = (mode[0][1], mode[1])
         if not usermodes:
             pmode = ''
             for m in ('owner', 'admin', 'op', 'halfop', 'voice'):
-                if m in irc.cmodes and mode[0][1] == irc.cmodes[m]:
+                if m in irc.cmodes and real_mode[0] == irc.cmodes[m]:
                     pmode = m+'s'
             if pmode:
                 pmodelist = irc.channels[target].prefixmodes[pmode]
@@ -149,26 +155,25 @@ def applyModes(irc, target, changedmodes):
                 else:
                     pmodelist.discard(mode[1])
                 log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
-            if mode[0][1] in irc.prefixmodes:
+            if real_mode[0] in irc.prefixmodes:
                 # Ignore other prefix modes such as InspIRCd's +Yy
                 log.debug('(%s) Not adding mode %s to IrcChannel.modes because it\'s a prefix mode', irc.name, str(mode))
                 continue
         if mode[0][0] == '+':
             # We're adding a mode
-            modelist.add(mode)
+            modelist.add(real_mode)
             log.debug('(%s) Adding mode %r on %s', irc.name, mode, target)
         else:
             log.debug('(%s) Removing mode %r on %s', irc.name, mode, target)
             # We're removing a mode
-            if mode[1] is None:
+            if real_mode[1] is None:
                 # We're removing a mode that only takes arguments when setting.
                 for oldmode in modelist.copy():
-                    if oldmode[0][1] == mode[0][1]:
+                    if oldmode[0] == real_mode[0]:
                         modelist.discard(oldmode)
             else:
                 # Swap the - for a + and then remove it from the list.
-                mode = ('+' + mode[0][1], mode[1])
-                modelist.discard(mode)
+                modelist.discard(real_mode)
     log.debug('(%s) Final modelist: %s', irc.name, modelist)
 
 def joinModes(modes):
