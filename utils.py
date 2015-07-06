@@ -136,8 +136,10 @@ def applyModes(irc, target, changedmodes):
     log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
     if usermodes:
         modelist = irc.users[target].modes
+        supported_modes = irc.umodes
     else:
         modelist = irc.channels[target].modes
+        supported_modes = irc.cmodes
     log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
     for mode in changedmodes:
         # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
@@ -157,10 +159,20 @@ def applyModes(irc, target, changedmodes):
                 log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
             if real_mode[0] in irc.prefixmodes:
                 # Ignore other prefix modes such as InspIRCd's +Yy
-                log.debug('(%s) Not adding mode %s to IrcChannel.modes because it\'s a prefix mode', irc.name, str(mode))
+                log.debug('(%s) Not adding mode %s to IrcChannel.modes because '
+                          'it\'s a prefix mode we don\'t care about.', irc.name, str(mode))
                 continue
         if mode[0][0] == '+':
             # We're adding a mode
+            existing = [m for m in modelist if m[0] == real_mode[0]]
+            if existing and real_mode[1] and mode[0] not in irc.cmodes['*A']:
+                # The mode we're setting takes a parameter, but is not a list mode (like +beI).
+                # Therefore, only one version of it can exist at a time, and we must remove
+                # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
+                # for example, someone sets mode "+l 30" on a channel already set "+l 25".
+                log.debug('(%s) Old modes for mode %r exist on %s, removing them: %s',
+                          irc.name, mode, target, str(existing))
+                [modelist.discard(oldmode) for oldmode in existing]
             modelist.add(real_mode)
             log.debug('(%s) Adding mode %r on %s', irc.name, mode, target)
         else:
@@ -168,6 +180,8 @@ def applyModes(irc, target, changedmodes):
             # We're removing a mode
             if real_mode[1] is None:
                 # We're removing a mode that only takes arguments when setting.
+                # Remove all mode entries that use the same letter as the one
+                # we're unsetting.
                 for oldmode in modelist.copy():
                     if oldmode[0] == real_mode[0]:
                         modelist.discard(oldmode)

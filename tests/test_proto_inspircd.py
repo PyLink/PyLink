@@ -218,5 +218,12 @@ class TestInspIRCdProtocol(unittest.TestCase):
         self.irc.run(':70M FMODE #pylink 1423790413 -o %s' % self.u)
         self.assertEqual(modes, self.irc.channels['#pylink'].modes)
         self.assertNotIn(self.u, self.irc.channels['#pylink'].prefixmodes['ops'])
+
+    def testFmodeRemovesOldParams(self):
+        self.irc.run(':70M FMODE #pylink 1423790412 +l 50')
+        self.assertEqual({('l', '50')}, self.irc.channels['#pylink'].modes)
+        self.irc.run(':70M FMODE #pylink 1423790412 +l 30')
+        self.assertEqual({('l', '30')}, self.irc.channels['#pylink'].modes)
+
 if __name__ == '__main__':
     unittest.main()
