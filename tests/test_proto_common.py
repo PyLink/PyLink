@@ -68,7 +68,7 @@ class FakeProto():
 # Yes, we're going to even test the testing classes. Testception? I think so.
 class Test_TestProtoCommon(unittest.TestCase):
     def setUp(self):
-        self.irc = FakeIRC(FakeProto())
+        self.irc = FakeIRC(FakeProto(), testconf)
 
     def testFakeIRC(self):
         self.irc.run('this should do nothing')

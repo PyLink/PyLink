@@ -337,7 +337,7 @@ def handle_events(irc, data):
         # No data??
         return
     if args[0] == 'SERVER':
-       # SERVER whatever.net abcdefgh 0 10X :something
+       # <- SERVER whatever.net abcdefgh 0 10X :something
        servername = args[1].lower()
        numeric = args[4]
        if args[2] != irc.serverdata['recvpass']:
@@ -348,7 +348,7 @@ def handle_events(irc, data):
     elif args[0] == 'CAPAB':
         # Capability negotiation with our uplink
         if args[1] == 'CHANMODES':
-            # CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b banexception=e blockcolor=c c_registered=r exemptchanops=X filter=g flood=f halfop=%h history=H invex=I inviteonly=i joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T official-join=!Y op=@o operonly=O opmoderated=U owner=~q permanent=P private=p redirect=L reginvite=R regmoderated=M secret=s sslonly=z stripcolor=S topiclock=t voice=+v
+            # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b banexception=e blockcolor=c c_registered=r exemptchanops=X filter=g flood=f halfop=%h history=H invex=I inviteonly=i joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T official-join=!Y op=@o operonly=O opmoderated=U owner=~q permanent=P private=p redirect=L reginvite=R regmoderated=M secret=s sslonly=z stripcolor=S topiclock=t voice=+v
 
             # Named modes are essential for a cross-protocol IRC service. We
             # can use InspIRCd as a model here and assign their mode map to our cmodes list.
@@ -362,6 +362,7 @@ def handle_events(irc, data):
                 name, char = modepair.split('=')
                 irc.umodes[name.lstrip(':')] = char
         elif args[1] == 'CAPABILITIES':
+            # <- CAPAB CAPABILITIES :NICKMAX=21 CHANMAX=64 MAXMODES=20 IDENTMAX=11 MAXQUIT=255 MAXTOPIC=307 MAXKICK=255 MAXGECOS=128 MAXAWAY=200 IP6SUPPORT=1 PROTOCOL=1202 PREFIX=(Yqaohv)!~&@%+ CHANMODES=IXbegw,k,FHJLfjl,ACKMNOPQRSTUcimnprstz USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
             caps = dict([x.lstrip(':').split('=') for x in args[2:]])
             irc.maxnicklen = caps['NICKMAX']
             irc.maxchanlen = caps['CHANMAX']
