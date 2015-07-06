@@ -8,32 +8,25 @@ import classes
 from collections import defaultdict
 import unittest
 
-class FakeIRC(main.Irc):
-    def __init__(self, proto):
-        self.connected = False
-        self.users = {}
-        self.channels = defaultdict(classes.IrcChannel)
-        self.name = 'fakeirc'
-        self.servers = {}
-        self.proto = proto
+global testconf
+testconf = {'server': 
+            {'netname': 'fakeirc',
+             'ip': '0.0.0.0',
+             'port': 7000,
+             'recvpass': "abcd",
+             'sendpass': "abcd",
+             'protocol': "null",
+             'hostname': "pylink.unittest",
+             'sid': "9PY",
+             'channels': ["#pylink"],
+            }
+       }
 
-        self.serverdata = {'netname': 'fakeirc',
-                             'ip': '0.0.0.0',
-                             'port': 7000,
-                             'recvpass': "abcd",
-                             'sendpass': "abcd",
-                             'protocol': "testingonly",
-                             'hostname': "pylink.unittest",
-                             'sid': "9PY",
-                             'channels': ["#pylink"],
-                          }
-        self.conf = {'server': self.serverdata}
-        ip = self.serverdata["ip"]
-        port = self.serverdata["port"]
-        self.sid = self.serverdata["sid"]
-        self.socket = None
+class FakeIRC(main.Irc):
+    def connect(self):
         self.messages = []
-        
+        self.socket = None
+
     def run(self, data):
         """Queues a message to the fake IRC server."""
         log.debug('-> ' + data)

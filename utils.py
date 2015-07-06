@@ -90,8 +90,8 @@ def parseModes(irc, target, args):
     ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
     """
     # http://www.irc.org/tech_docs/005.html
-    # A = Mode that adds or removes a nick or address to a list. Always has a parameter. 
-    # B = Mode that changes a setting and always has a parameter. 
+    # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
+    # B = Mode that changes a setting and always has a parameter.
     # C = Mode that changes a setting and only has a parameter when set.
     # D = Mode that changes a setting and never has a parameter.
     usermodes = not isChannel(target)
@@ -101,7 +101,7 @@ def parseModes(irc, target, args):
     args = args[1:]
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
-        supported_modes = irc.umodes 
+        supported_modes = irc.umodes
     else:
         log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
         supported_modes = irc.cmodes
@@ -111,6 +111,7 @@ def parseModes(irc, target, args):
             prefix = mode
         else:
             arg = None
+            log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
             if mode in (supported_modes['*A'] + supported_modes['*B']):
                 # Must have parameter.
                 log.debug('Mode %s: This mode must have parameter.', mode)
@@ -150,16 +151,24 @@ def applyModes(irc, target, changedmodes):
                 log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
             if mode[0][1] in irc.prefixmodes:
                 # Ignore other prefix modes such as InspIRCd's +Yy
+                log.debug('(%s) Not adding mode %s to IrcChannel.modes because it\'s a prefix mode', irc.name, str(mode))
                 continue
         if mode[0][0] == '+':
             # We're adding a mode
             modelist.add(mode)
             log.debug('(%s) Adding mode %r on %s', irc.name, mode, target)
         else:
-            # We're removing a mode
-            mode[0] = mode[0].replace('-', '+')
-            modelist.discard(mode)
             log.debug('(%s) Removing mode %r on %s', irc.name, mode, target)
+            # We're removing a mode
+            if mode[1] is None:
+                # We're removing a mode that only takes arguments when setting.
+                for oldmode in modelist.copy():
+                    if oldmode[0][1] == mode[0][1]:
+                        modelist.discard(oldmode)
+            else:
+                # Swap the - for a + and then remove it from the list.
+                mode = ('+' + mode[0][1], mode[1])
+                modelist.discard(mode)
     log.debug('(%s) Final modelist: %s', irc.name, modelist)
 
 def joinModes(modes):

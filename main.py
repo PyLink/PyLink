@@ -8,11 +8,11 @@ import sys
 from collections import defaultdict
 
 from log import log
-from conf import conf
+import conf
 import classes
 
 class Irc():
-    def __init__(self, proto):
+    def __init__(self, proto, conf):
         # Initialize some variables
         self.connected = False
         self.name = conf['server']['netname']
@@ -26,21 +26,30 @@ class Irc():
         self.cmodes = {'op': 'o', 'secret': 's', 'private': 'p',
                        'noextmsg': 'n', 'moderated': 'm', 'inviteonly': 'i',
                        'topiclock': 't', 'limit': 'l', 'ban': 'b',
-                       'voice': 'v', 'key': 'k'}
+                       'voice': 'v', 'key': 'k',
+                       # Type A, B, and C modes
+                       '*A': 'b',
+                       '*B': 'k',
+                       '*C': 'l',
+                       '*D': 'imnpstr'}
         self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
-                       'oper': 'o'}
+                       'oper': 'o',
+                       '*A': '', '*B': '', '*C': 's', '*D': 'iow'}
         self.maxnicklen = 30
+        self.prefixmodes = 'ov'
 
         self.serverdata = conf['server']
+        self.sid = self.serverdata["sid"]
+        self.proto = proto
+        self.connect()
+
+    def connect(self):
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
-        self.sid = self.serverdata["sid"]
         log.info("Connecting to network %r on %s:%s", self.name, ip, port)
-
         self.socket = socket.socket()
         self.socket.connect((ip, port))
-        self.proto = proto
-        proto.connect(self)
+        self.proto.connect(self)
         self.loaded = []
         self.load_plugins()
         self.connected = True
@@ -70,7 +79,7 @@ class Irc():
         self.socket.send(data)
 
     def load_plugins(self):
-        to_load = conf['plugins']
+        to_load = conf.conf['plugins']
         plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
         # Here, we override the module lookup and import the plugins
         # dynamically depending on which were configured.
@@ -87,11 +96,11 @@ class Irc():
 
 if __name__ == '__main__':
     log.info('PyLink starting...')
-    if conf['login']['password'] == 'changeme':
+    if conf.conf['login']['password'] == 'changeme':
         log.critical("You have not set the login details correctly! Exiting...")
         sys.exit(2)
 
-    protoname = conf['server']['protocol']
+    protoname = conf.conf['server']['protocol']
     protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
     try:
         moduleinfo = imp.find_module(protoname, protocols_folder)
@@ -103,4 +112,4 @@ if __name__ == '__main__':
             log.critical('Failed to load protocol module: import error %s', protoname, str(e))
         sys.exit(2)
     else:
-        irc_obj = Irc(proto)
+        irc_obj = Irc(proto, conf.conf)
