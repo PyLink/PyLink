@@ -13,8 +13,8 @@ from classes import *
 
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
 # non-standard names to our hook handlers, so plugins get the information they need.
-hook_map = {'FJOIN': 'JOIN', 'SAVE': 'NICK',
-            'RSQUIT': 'SQUIT', 'FMODE': 'MODE'}
+hook_map = {'FJOIN': 'JOIN', 'SAVE': 'NICK', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
+            'FTOPIC': 'TOPIC'}
 
 def _sendFromServer(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -252,7 +252,7 @@ def handle_server(irc, numeric, command, args):
 def handle_nick(irc, numeric, command, args):
     # <- :70MAAAAAA NICK GL-devel 1434744242
     n = irc.users[numeric].nick = args[0]
-    return {'target': n, 'ts': args[1]}
+    return {'newnick': n, 'ts': args[1]}
 
 def handle_save(irc, numeric, command, args):
     # This is used to handle nick collisions. Here, the client Derp_ already exists,
@@ -447,3 +447,21 @@ def spawnServer(irc, name, sid, uplink=None, desc='PyLink Server'):
     _sendFromServer(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
     _sendFromServer(irc, sid, 'ENDBURST')
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
+
+def handle_ftopic(irc, numeric, command, args):
+    # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
+    channel = args[0].lower()
+    ts = args[1]
+    setter = args[2]
+    topic = args[-1]
+    irc.channels[channel].topic = topic
+    return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
+
+def handle_topic(irc, numeric, command, args):
+    # <- :70MAAAAAA TOPIC #test :test
+    channel = args[0].lower()
+    topic = args[1]
+    ts = int(time.time())
+    setter = utils.nickToUid(irc, numeric)
+    irc.channels[channel].topic = topic
+    return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}

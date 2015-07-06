@@ -39,6 +39,7 @@ class IrcChannel():
     def __init__(self):
         self.users = set()
         self.modes = set()
+        self.topic = ''
         self.prefixmodes = {'ops': set(), 'halfops': set(), 'voices': set(),
                             'owners': set(), 'admins': set()}
 
