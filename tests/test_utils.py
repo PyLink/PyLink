@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.append(os.getcwd())
 import unittest
+import itertools
 
 import utils
 
@@ -57,6 +58,16 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(utils.isServerName(''))
         self.assertTrue(utils.isServerName('pylink.overdrive.pw'))
         self.assertFalse(utils.isServerName(' i lost the game'))
+
+    def testJoinModes(self):
+        res = utils.joinModes({('l', '50'), ('n', None), ('t', None)})
+        # Sets are orderless, so the end mode could be scrambled in a number of ways.
+        # Basically, we're looking for a string that looks like '+ntl 50' or '+lnt 50'.
+        possible = ['+%s 50' % ''.join(x) for x in itertools.permutations('lnt', 3)]
+        self.assertIn(res, possible)
+        # Without any arguments, make sure there is no trailing space.
+        self.assertEqual(utils.joinModes({('t', None)}), '+t')
+        self.assertEqual(utils.joinModes(set()), '+')
 
 if __name__ == '__main__':
     unittest.main()
