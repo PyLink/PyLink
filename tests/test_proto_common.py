@@ -29,12 +29,12 @@ class FakeIRC(main.Irc):
 
     def run(self, data):
         """Queues a message to the fake IRC server."""
-        log.debug('-> ' + data)
+        log.debug('<- ' + data)
         self.proto.handle_events(self, data)
 
     def send(self, data):
         self.messages.append(data)
-        log.debug('<- ' + data)
+        log.debug('-> ' + data)
 
     def takeMsgs(self):
         """Returns a list of messages sent by the protocol module since
