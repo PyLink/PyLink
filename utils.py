@@ -195,10 +195,12 @@ def joinModes(modes):
     args = []
     for modepair in modes:
         mode, arg = modepair
-        modelist += mode[1]
+        modelist += mode
         if arg is not None:
             args.append(arg)
-    s = '+%s %s' % (modelist, ' '.join(args))
+    s = '+%s' % modelist
+    if args:
+        s += ' %s' % ' '.join(args)
     return s
 
 def isInternalClient(irc, numeric):

@@ -54,8 +54,9 @@ def joinClient(irc, client, channel):
     if not utils.isChannel(channel):
         raise ValueError('Invalid channel name %r.' % channel)
     # One channel per line here!
-    _sendFromServer(irc, server, "FJOIN {channel} {ts} + :,{uid}".format(
-            ts=int(time.time()), uid=client, channel=channel))
+    _sendFromServer(irc, server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
+            ts=int(time.time()), uid=client, channel=channel,
+            modes=utils.joinModes(irc.channels[channel].modes)))
     irc.channels[channel].users.add(client)
 
 def partClient(irc, client, channel, reason=None):
