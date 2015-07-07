@@ -376,6 +376,9 @@ def handle_events(irc, data):
         elif args[1] == 'CAPABILITIES':
             # <- CAPAB CAPABILITIES :NICKMAX=21 CHANMAX=64 MAXMODES=20 IDENTMAX=11 MAXQUIT=255 MAXTOPIC=307 MAXKICK=255 MAXGECOS=128 MAXAWAY=200 IP6SUPPORT=1 PROTOCOL=1202 PREFIX=(Yqaohv)!~&@%+ CHANMODES=IXbegw,k,FHJLfjl,ACKMNOPQRSTUcimnprstz USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
             caps = dict([x.lstrip(':').split('=') for x in args[2:]])
+            protocol_version = int(caps['PROTOCOL'])
+            if protocol_version < 1202:
+                raise ProtocolError("Remote protocol version is too old! At least 1202 (InspIRCd 2.0.x) is needed. (got %s)" % protocol_version)
             irc.maxnicklen = caps['NICKMAX']
             irc.maxchanlen = caps['CHANMAX']
             # Modes are divided into A, B, C, and D classes
