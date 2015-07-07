@@ -3,10 +3,11 @@ import sys
 import os
 import traceback
 import re
+from copy import copy
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
-from copy import copy
+from conf import conf
 from log import log
 
 from classes import *
@@ -22,7 +23,8 @@ def _sendFromServer(irc, sid, msg):
 def _sendFromUser(irc, numeric, msg):
     irc.send(':%s %s' % (numeric, msg))
 
-def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
+def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=[],
+        server=None, ip='0.0.0.0', realname=None):
     server = server or irc.sid
     if not utils.isInternalServer(irc, server):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
@@ -32,17 +34,22 @@ def spawnClient(irc, nick, ident, host, modes=[], server=None, *args):
         irc.uidgen[server] = utils.TS6UIDGenerator(server)
     uid = irc.uidgen[server].next_uid()
     ts = int(time.time())
+    realname = realname or conf['bot']['realname']
+    realhost = realhost or host
     if modes:
-        modes = utils.joinModes(modes)
+        raw_modes = utils.joinModes(modes)
     else:
-        modes = '+'
+        raw_modes = '+'
     if not utils.isNick(nick):
         raise ValueError('Invalid nickname %r.' % nick)
-    _sendFromServer(irc, server, "UID {uid} {ts} {nick} {host} {host} {ident} 0.0.0.0 "
-                    "{ts} {modes} + :PyLink Client".format(ts=ts, host=host,
+    _sendFromServer(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
+                    " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid,
-                                             modes=modes))
-    u = irc.users[uid] = IrcUser(nick, ts, uid, ident, host, *args)
+                                             modes=raw_modes, ip=ip, realname=realname,
+                                             realhost=realhost))
+    # XXX Deduplicate the code here
+    u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+        realhost=realhost, ip=ip, modes=modes)
     irc.servers[server].users.append(uid)
     return u
 
