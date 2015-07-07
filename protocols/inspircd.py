@@ -142,7 +142,9 @@ def connect(irc):
     f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=host,
       Pass=irc.serverdata["sendpass"], sid=irc.sid))
     f(':%s BURST %s' % (irc.sid, ts))
-    irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', host, modes=set([("+o", None)]))
+    nick = conf['bot'].get('nick') or 'PyLink'
+    ident = conf['bot'].get('ident') or 'pylink'
+    irc.pseudoclient = spawnClient(irc, nick, ident, host, modes={("+o", None)})
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
         joinClient(irc, irc.pseudoclient.uid, chan)
