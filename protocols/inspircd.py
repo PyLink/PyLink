@@ -14,8 +14,11 @@ from classes import *
 
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
 # non-standard names to our hook handlers, so plugins get the information they need.
+
+# XXX figure out a way to not force-map ENCAP to KNOCK, since other commands are sent
+# through it too.
 hook_map = {'FJOIN': 'JOIN', 'SAVE': 'NICK', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
-            'FTOPIC': 'TOPIC'}
+            'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK'}
 
 def _sendFromServer(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -480,3 +483,34 @@ def handle_topic(irc, numeric, command, args):
     setter = utils.nickToUid(irc, numeric)
     irc.channels[channel].topic = topic
     return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
+
+def handle_invite(irc, numeric, command, args):
+    # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 0
+    target = args[0]
+    channel = args[1].lower()
+    # We don't actually need to process this; it's just something plugins/hooks can use
+    return {'target': target, 'channel': channel}
+
+def handle_encap(irc, numeric, command, args):
+    # <- :70MAAAAAA ENCAP * KNOCK #blah :agsdfas
+    # From charybdis TS6 docs: https://github.com/grawity/irc-docs/blob/03ba884a54f1cef2193cd62b6a86803d89c1ac41/server/ts6.txt
+
+    # ENCAP
+    # source: any
+    # parameters: target server mask, subcommand, opt. parameters...
+
+    # Sends a command to matching servers. Propagation is independent of
+    # understanding the subcommand.
+
+    targetmask = args[0]
+    real_command = args[1]
+    if targetmask == '*' and real_command == 'KNOCK':
+        channel = args[2].lower()
+        text = args[3]
+        return {'encapcommand': real_command, 'channel': channel,
+                'text': text}
+
+def handle_notice(irc, numeric, command, args):
+    # <- :70MAAAAAA NOTICE #dev :afasfsa
+    # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
+    return {'target': args[0], 'text': args[1]}
