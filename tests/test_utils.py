@@ -51,13 +51,13 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(utils.isChannel('##ABCD'))
 
     def testIsServerName(self):
-        self.assertFalse(utils.isServerName('s'))
-        self.assertFalse(utils.isServerName('s.'))
+        self.assertFalse(utils.isServerName('Invalid'))
+        self.assertTrue(utils.isServerName('services.'))
         self.assertFalse(utils.isServerName('.s.s.s'))
         self.assertTrue(utils.isServerName('Hello.world'))
         self.assertFalse(utils.isServerName(''))
         self.assertTrue(utils.isServerName('pylink.overdrive.pw'))
-        self.assertFalse(utils.isServerName(' i lost the game'))
+        self.assertFalse(utils.isServerName(' i lost th.e game'))
 
     def testJoinModes(self):
         res = utils.joinModes({('l', '50'), ('n', None), ('t', None)})

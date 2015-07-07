@@ -82,8 +82,7 @@ def _isASCII(s):
     return all(char in chars for char in s)
 
 def isServerName(s):
-    return _isASCII(s) and '.' in s and not s.startswith('.') \
-        and not s.endswith('.')
+    return _isASCII(s) and '.' in s and not s.startswith('.')
 
 def parseModes(irc, target, args):
     """Parses a mode string into a list of (mode, argument) tuples.

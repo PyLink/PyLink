@@ -156,7 +156,6 @@ def handle_ping(irc, source, command, args):
         _sendFromServer(irc, args[1], 'PONG %s %s' % (args[1], source))
 
 def handle_privmsg(irc, source, command, args):
-    prefix = irc.conf['bot']['prefix']
     if args[0] == irc.pseudoclient.uid:
         cmd_args = args[1].split(' ')
         cmd = cmd_args[0].lower()
