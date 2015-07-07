@@ -55,7 +55,7 @@ def joinClient(irc, client, channel):
         raise ValueError('Invalid channel name %r.' % channel)
     # One channel per line here!
     _sendFromServer(irc, server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
-            ts=int(time.time()), uid=client, channel=channel,
+            ts=irc.channels[channel].ts, uid=client, channel=channel,
             modes=utils.joinModes(irc.channels[channel].modes)))
     irc.channels[channel].users.add(client)
 
@@ -151,10 +151,7 @@ def handle_privmsg(irc, source, command, args):
     if args[0] == irc.pseudoclient.uid:
         cmd_args = args[1].split(' ')
         cmd = cmd_args[0].lower()
-        try:
-            cmd_args = cmd_args[1:]
-        except IndexError:
-            cmd_args = []
+        cmd_args = cmd_args[1:]
         try:
             func = utils.bot_commands[cmd]
         except KeyError:
@@ -205,7 +202,13 @@ def handle_fjoin(irc, servernumeric, command, args):
     channel = args[0].lower()
     # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
     userlist = args[-1].split()
-    ts = args[1]
+    our_ts = irc.channels[channel].ts
+    their_ts = int(args[1])
+    if their_ts < our_ts:
+        # Channel timestamp was reset on burst
+        log.debug('(%s) Setting channel TS of %s to %s from %s',
+                  irc.name, channel, their_ts, our_ts)
+        irc.channels[channel].ts = their_ts
     modestring = args[2:-1] or args[2]
     utils.applyModes(irc, channel, utils.parseModes(irc, channel, modestring))
     namelist = []

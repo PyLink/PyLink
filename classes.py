@@ -1,4 +1,5 @@
 from collections import defaultdict
+import time
 
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
@@ -40,6 +41,7 @@ class IrcChannel():
         self.users = set()
         self.modes = set()
         self.topic = ''
+        self.ts = int(time.time())
         self.prefixmodes = {'ops': set(), 'halfops': set(), 'voices': set(),
                             'owners': set(), 'admins': set()}
 
