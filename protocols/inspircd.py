@@ -261,8 +261,9 @@ def handle_server(irc, numeric, command, args):
 
 def handle_nick(irc, numeric, command, args):
     # <- :70MAAAAAA NICK GL-devel 1434744242
-    n = irc.users[numeric].nick = args[0]
-    return {'newnick': n, 'ts': args[1]}
+    oldnick = irc.users[numeric].nick
+    newnick = irc.users[numeric].nick = args[0]
+    return {'newnick': newnick, 'oldnick': oldnick, 'ts': args[1]}
 
 def handle_save(irc, numeric, command, args):
     # This is used to handle nick collisions. Here, the client Derp_ already exists,
