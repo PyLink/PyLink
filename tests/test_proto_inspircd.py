@@ -154,10 +154,13 @@ class TestProtoInspIRCd(unittest.TestCase):
 
     def testHandleKill(self):
         self.irc.takeMsgs()  # Ignore the initial connect messages
+        utils.add_hook(self.irc.dummyhook, 'KILL')
         olduid = self.irc.pseudoclient.uid
         self.irc.run(':{u} KILL {u} :killed'.format(u=olduid))
         msgs = self.irc.takeMsgs()
         commands = self.irc.takeCommands(msgs)
+        hookdata = self.irc.takeHooks()[0]
+        self.assertEqual({'target': olduid, 'text': 'killed'}, hookdata)
         # Make sure we're respawning our PseudoClient when its killed
         self.assertIn('UID', commands)
         self.assertIn('FJOIN', commands)
@@ -166,42 +169,56 @@ class TestProtoInspIRCd(unittest.TestCase):
 
     def testHandleKick(self):
         self.irc.takeMsgs()  # Ignore the initial connect messages
+        utils.add_hook(self.irc.dummyhook, 'KICK')
         self.irc.run(':{u} KICK #pylink {u} :kicked'.format(u=self.irc.pseudoclient.uid))
+        hookdata = self.irc.takeHooks()[0]
+        self.assertEqual({'target': self.u, 'text': 'kicked', 'channel': '#pylink'}, hookdata)
+
         # Ditto above
         msgs = self.irc.takeMsgs()
         commands = self.irc.takeCommands(msgs)
         self.assertIn('FJOIN', commands)
 
     def testHandleFjoinUsers(self):
-        self.irc.run(':70M FJOIN #Chat 1423790411 + :,10XAAAAAA ,10XAAAAAB')
+        self.irc.run(':10X FJOIN #Chat 1423790411 + :,10XAAAAAA ,10XAAAAAB')
         self.assertEqual({'10XAAAAAA', '10XAAAAAB'}, self.irc.channels['#chat'].users)
         # self.assertIn('10XAAAAAB', self.irc.channels['#chat'].users)
         # Sequential FJOINs must NOT remove existing users
-        self.irc.run(':70M FJOIN #Chat 1423790412 + :,10XAAAAAC')
+        self.irc.run(':10X FJOIN #Chat 1423790412 + :,10XAAAAAC')
         # Join list can be empty too, in the case of permanent channels with 0 users.
-        self.irc.run(':70M FJOIN #Chat 1423790413 +nt :')
+        self.irc.run(':10X FJOIN #Chat 1423790413 +nt :')
 
     def testHandleFjoinModes(self):
-        self.irc.run(':70M FJOIN #Chat 1423790411 +nt :,10XAAAAAA ,10XAAAAAB')
+        self.irc.run(':10X FJOIN #Chat 1423790411 +nt :,10XAAAAAA ,10XAAAAAB')
         self.assertEqual({('n', None), ('t', None)}, self.irc.channels['#chat'].modes)
         # Sequential FJOINs must NOT remove existing modes
-        self.irc.run(':70M FJOIN #Chat 1423790412 + :,10XAAAAAC')
+        self.irc.run(':10X FJOIN #Chat 1423790412 + :,10XAAAAAC')
         self.assertEqual({('n', None), ('t', None)}, self.irc.channels['#chat'].modes)
 
     def testHandleFjoinModesWithArgs(self):
-        self.irc.run(':70M FJOIN #Chat 1423790414 +nlks 10 t0psekrit :,10XAAAAAA ,10XAAAAAB')
+        self.irc.run(':10X FJOIN #Chat 1423790414 +nlks 10 t0psekrit :,10XAAAAAA ,10XAAAAAB')
         self.assertEqual({('n', None), ('s', None), ('l', '10'), ('k', 't0psekrit')},
                          self.irc.channels['#chat'].modes)
 
     def testHandleFjoinPrefixes(self):
-        self.irc.run(':70M FJOIN #Chat 1423790418 +nt :ov,10XAAAAAA v,10XAAAAAB ,10XAAAAAC')
+        self.irc.run(':10X FJOIN #Chat 1423790418 +nt :ov,10XAAAAAA v,10XAAAAAB ,10XAAAAAC')
         self.assertEqual({('n', None), ('t', None)}, self.irc.channels['#chat'].modes)
         self.assertEqual({'10XAAAAAA', '10XAAAAAB', '10XAAAAAC'}, self.irc.channels['#chat'].users)
         self.assertIn('10XAAAAAA', self.irc.channels['#chat'].prefixmodes['ops'])
         self.assertEqual({'10XAAAAAA', '10XAAAAAB'}, self.irc.channels['#chat'].prefixmodes['voices'])
 
+    def testHandleFjoinHook(self):
+        utils.add_hook(self.irc.dummyhook, 'JOIN')
+        self.irc.run(':10X FJOIN #PyLink 1423790418 +ls 10 :ov,10XAAAAAA v,10XAAAAAB ,10XAAAAAC')
+        hookdata = self.irc.takeHooks()[0]
+        expected = {'modes': [('+l', '10'), ('+s', None)],
+                    'channel': '#pylink',
+                    'users': ['10XAAAAAA', '10XAAAAAB', '10XAAAAAC']}
+        self.assertEqual(expected, hookdata)
+
     def testHandleFmode(self):
-        self.irc.run(':70M FJOIN #pylink 1423790411 +n :o,10XAAAAAA ,10XAAAAAB')
+        # utils.add_hook(self.irc.dummyhook, 'MODE')
+        self.irc.run(':10X FJOIN #pylink 1423790411 +n :o,10XAAAAAA ,10XAAAAAB')
         self.irc.run(':70M FMODE #pylink 1423790412 +ikl herebedragons 100')
         self.assertEqual({('i', None), ('k', 'herebedragons'), ('l', '100'), ('n', None)}, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790413 -ilk+m herebedragons')
@@ -247,6 +264,19 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.assertEqual(type(hookdata['ts']), int)
         self.assertEqual(hookdata['topic'], 'test')
         self.assertEqual(hookdata['channel'], '#pylink')
+
+    def testMsgHooks(self):
+        for m in ('NOTICE', 'PRIVMSG'):
+            utils.add_hook(self.irc.dummyhook, m)
+            self.irc.run(':70MAAAAAA %s #dev :afasfsa' % m)
+            hookdata = self.irc.takeHooks()[0]
+            self.assertEqual({'target': '#dev', 'text': 'afasfsa'}, hookdata)
+
+    def testHandlePart(self):
+        utils.add_hook(self.irc.dummyhook, 'PART')
+        self.irc.run(':9PYAAAAAA PART #pylink')
+        hookdata = self.irc.takeHooks()[0]
+        self.assertEqual({'channel': '#pylink', 'text': ''}, hookdata)
 
 if __name__ == '__main__':
     unittest.main()

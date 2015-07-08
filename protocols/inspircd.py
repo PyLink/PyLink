@@ -180,7 +180,7 @@ def handle_kill(irc, source, command, args):
         irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', irc.serverdata["hostname"])
         for chan in irc.serverdata['channels']:
             joinClient(irc, irc.pseudoclient.uid, chan)
-    return {'target': killed, 'reason': args[1]}
+    return {'target': killed, 'text': args[1]}
 
 def handle_kick(irc, source, command, args):
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
@@ -189,7 +189,7 @@ def handle_kick(irc, source, command, args):
     handle_part(irc, kicked, 'KICK', [channel, args[2]])
     if kicked == irc.pseudoclient.uid:
         joinClient(irc, irc.pseudoclient.uid, channel)
-    return {'channel': channel, 'target': kicked, 'reason': args[2]}
+    return {'channel': channel, 'target': kicked, 'text': args[2]}
 
 def handle_part(irc, source, command, args):
     channel = args[0].lower()
@@ -199,7 +199,7 @@ def handle_part(irc, source, command, args):
         reason = args[1]
     except IndexError:
         reason = ''
-    return {'channel': channel, 'reason': reason}
+    return {'channel': channel, 'text': reason}
 
 def handle_error(irc, numeric, command, args):
     irc.connected = False
@@ -218,14 +218,15 @@ def handle_fjoin(irc, servernumeric, command, args):
                   irc.name, channel, their_ts, our_ts)
         irc.channels[channel].ts = their_ts
     modestring = args[2:-1] or args[2]
-    utils.applyModes(irc, channel, utils.parseModes(irc, channel, modestring))
+    parsedmodes = utils.parseModes(irc, channel, modestring)
+    utils.applyModes(irc, channel, parsedmodes)
     namelist = []
     for user in userlist:
         modeprefix, user = user.split(',', 1)
         namelist.append(user)
         utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
         irc.channels[channel].users.add(user)
-    return {'channel': channel, 'users': namelist}
+    return {'channel': channel, 'users': namelist, 'modes': parsedmodes}
 
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
@@ -241,7 +242,7 @@ def handle_uid(irc, numeric, command, args):
 def handle_quit(irc, numeric, command, args):
     # <- :1SRAAGB4T QUIT :Quit: quit message goes here
     removeClient(irc, numeric)
-    return {'reason': args[0]}
+    return {'text': args[0]}
 
 def handle_burst(irc, numeric, command, args):
     # BURST is sent by our uplink when we link.
