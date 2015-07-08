@@ -128,7 +128,7 @@ def parseModes(irc, target, args):
 
 def applyModes(irc, target, changedmodes):
     """<target> <changedmodes>
-    
+
     Takes a list of parsed IRC modes (<changedmodes>, in the format of parseModes()), and applies them on <target>.
     <target> can be either a channel or a user; this is handled automatically."""
     usermodes = not isChannel(target)
@@ -190,17 +190,41 @@ def applyModes(irc, target, changedmodes):
     log.debug('(%s) Final modelist: %s', irc.name, modelist)
 
 def joinModes(modes):
+    """<mode list>
+
+    Takes a list of (mode, arg) tuples in parseModes() format, and
+    joins them into a string. See testJoinModes in tests/test_utils.py
+    for some examples."""
+    prefix = '+'  # Assume we're adding modes unless told otherwise
     modelist = ''
     args = []
     for modepair in modes:
         mode, arg = modepair
+        assert len(mode) in (1, 2), "Incorrect length of a mode (received %r)" % mode
+        try:
+            # If the mode has a prefix, use that.
+            curr_prefix, mode = mode
+        except ValueError:
+            # If not, the current prefix stays the same; move on to the next
+            # modepair.
+            pass
+        else:
+            # If the prefix of this mode isn't the same as the last one, add
+            # the prefix to the modestring. This prevents '+nt-lk' from turning
+            # into '+n+t-l-k' or '+ntlk'.
+            if prefix != curr_prefix:
+                modelist += curr_prefix
+                prefix = curr_prefix
         modelist += mode
         if arg is not None:
             args.append(arg)
-    s = '+%s' % modelist
+    if not modelist.startswith(('+', '-')):
+        # Our starting mode didn't have a prefix with it. Assume '+'.
+        modelist = '+' + modelist
     if args:
-        s += ' %s' % ' '.join(args)
-    return s
+        # Add the args if there are any.
+        modelist += ' %s' % ' '.join(args)
+    return modelist
 
 def isInternalClient(irc, numeric):
     """<irc object> <client numeric>

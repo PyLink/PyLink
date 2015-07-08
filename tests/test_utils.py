@@ -60,14 +60,40 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(utils.isServerName(' i lost th.e game'))
 
     def testJoinModes(self):
-        res = utils.joinModes({('l', '50'), ('n', None), ('t', None)})
+        res = utils.joinModes({('+l', '50'), ('+n', None), ('+t', None)})
         # Sets are orderless, so the end mode could be scrambled in a number of ways.
         # Basically, we're looking for a string that looks like '+ntl 50' or '+lnt 50'.
         possible = ['+%s 50' % ''.join(x) for x in itertools.permutations('lnt', 3)]
         self.assertIn(res, possible)
+
         # Without any arguments, make sure there is no trailing space.
-        self.assertEqual(utils.joinModes({('t', None)}), '+t')
+        self.assertEqual(utils.joinModes({('+t', None)}), '+t')
+
+        # The +/- in the mode is not required; if it doesn't exist, assume we're
+        # adding modes always.
+        self.assertEqual(utils.joinModes([('t', None), ('n', None)]), '+tn')
+
+        # An empty query should return just '+'
         self.assertEqual(utils.joinModes(set()), '+')
 
+        # More complex query now with both + and - modes being set
+        res = utils.joinModes([('+l', '50'), ('-n', None)])
+        self.assertEqual(res, '+l-n 50')
+
+        # If one modepair in the list lacks a +/- prefix, just follow the
+        # previous one's.
+        res = utils.joinModes([('+l', '50'), ('-n', None), ('m', None)])
+        self.assertEqual(res, '+l-nm 50')
+        res = utils.joinModes([('+l', '50'), ('m', None)])
+        self.assertEqual(res, '+lm 50')
+        res = utils.joinModes([('l', '50'), ('-m', None)])
+        self.assertEqual(res, '+l-m 50')
+
+        # Rarely in real life will we get a mode string this complex.
+        # Let's make sure it works, just in case.
+        res = utils.joinModes([('-o', '9PYAAAAAA'), ('+l', '50'), ('-n', None),
+                               ('-m', None), ('+k', 'hello'),
+                               ('+b', '*!*@*.badisp.net')])
+        self.assertEqual(res, '-o+l-nm+kb 9PYAAAAAA 50 hello *!*@*.badisp.net')
 if __name__ == '__main__':
     unittest.main()
