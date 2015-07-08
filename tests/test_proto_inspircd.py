@@ -328,5 +328,36 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.assertNotIn('10XAAAAAB', self.irc.users)
         self.assertNotIn('10XAAAAAB', self.irc.servers['10X'].users)
 
+    def testHandleServer(self):
+        utils.add_hook(self.irc.dummyhook, 'SERVER')
+        self.irc.run(':00A SERVER test.server * 1 00C :testing raw message syntax')
+        hookdata = self.irc.takeHooks()[0]
+        del hookdata['ts']
+        self.assertEqual(hookdata, {'name': 'test.server', 'sid': '00C',
+                                    'text': 'testing raw message syntax'})
+        self.assertIn('00C', self.irc.servers)
+
+    def testHandleNick(self):
+        utils.add_hook(self.irc.dummyhook, 'NICK')
+        self.irc.run(':9PYAAAAAA NICK PyLink-devel 1434744242')
+        hookdata = self.irc.takeHooks()[0]
+        expected = {'newnick': 'PyLink-devel', 'oldnick': 'PyLink', 'ts': 1434744242}
+        self.assertEqual(hookdata, expected)
+        self.assertEqual('PyLink-devel', self.irc.users['9PYAAAAAA'].nick)
+
+    def testHandleSave(self):
+        utils.add_hook(self.irc.dummyhook, 'SAVE')
+        self.irc.run(':9PYAAAAAA NICK Derp_ 1433728673')
+        self.irc.run(':70M SAVE 9PYAAAAAA 1433728673')
+        hookdata = self.irc.takeHooks()[0]
+        self.assertEqual(hookdata, {'target': '9PYAAAAAA', 'ts': 1433728673})
+        self.assertEqual('9PYAAAAAA', self.irc.users['9PYAAAAAA'].nick)
+
+    def testInviteHook(self):
+        utils.add_hook(self.irc.dummyhook, 'INVITE')
+        self.irc.run(':10XAAAAAA INVITE 9PYAAAAAA #blah 0')
+        hookdata = self.irc.takeHooks()[0]
+        del hookdata['ts']
+        self.assertEqual(hookdata, {'target': '9PYAAAAAA', 'channel': '#blah'})
 if __name__ == '__main__':
     unittest.main()
