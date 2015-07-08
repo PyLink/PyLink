@@ -60,7 +60,14 @@ class ProtocolError(Exception):
     pass
 
 global testconf
-testconf = {'server': 
+testconf = {'bot':
+                {
+                    'nick': 'PyLink',
+                    'user': 'pylink',
+                    'realname': 'PyLink Service Client',
+                    'loglevel': 'DEBUG',
+                },
+            'server':
                 {
                     'netname': 'fakeirc',
                     'ip': '0.0.0.0',
@@ -71,7 +78,7 @@ testconf = {'server':
                     'hostname': "pylink.unittest",
                     'sid': "9PY",
                     'channels': ["#pylink"],
-                }
+                },
            }
 
 class FakeIRC(main.Irc):

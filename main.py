@@ -40,6 +40,7 @@ class Irc():
 
         self.serverdata = conf['server']
         self.sid = self.serverdata["sid"]
+        self.botdata = conf['bot']
         self.proto = proto
         self.connect()
 

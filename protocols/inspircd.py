@@ -7,7 +7,6 @@ from copy import copy
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
-from conf import conf
 from log import log
 
 from classes import *
@@ -17,7 +16,7 @@ from classes import *
 
 # XXX figure out a way to not force-map ENCAP to KNOCK, since other commands are sent
 # through it too.
-hook_map = {'FJOIN': 'JOIN', 'SAVE': 'NICK', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
+hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
             'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK'}
 
 def _sendFromServer(irc, sid, msg):
@@ -37,7 +36,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
         irc.uidgen[server] = utils.TS6UIDGenerator(server)
     uid = irc.uidgen[server].next_uid()
     ts = int(time.time())
-    realname = realname or conf['bot']['realname']
+    realname = realname or irc.botdata['realname']
     realhost = realhost or host
     raw_modes = utils.joinModes(modes)
     if not utils.isNick(nick):
@@ -142,8 +141,8 @@ def connect(irc):
     f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=host,
       Pass=irc.serverdata["sendpass"], sid=irc.sid))
     f(':%s BURST %s' % (irc.sid, ts))
-    nick = conf['bot'].get('nick') or 'PyLink'
-    ident = conf['bot'].get('ident') or 'pylink'
+    nick = irc.botdata.get('nick') or 'PyLink'
+    ident = irc.botdata.get('ident') or 'pylink'
     irc.pseudoclient = spawnClient(irc, nick, ident, host, modes={("o", None)})
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
