@@ -26,7 +26,7 @@ def _sendFromServer(irc, sid, msg):
 def _sendFromUser(irc, numeric, msg):
     irc.send(':%s %s' % (numeric, msg))
 
-def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=[],
+def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
         server=None, ip='0.0.0.0', realname=None):
     server = server or irc.sid
     if not utils.isInternalServer(irc, server):
@@ -39,10 +39,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=[],
     ts = int(time.time())
     realname = realname or conf['bot']['realname']
     realhost = realhost or host
-    if modes:
-        raw_modes = utils.joinModes(modes)
-    else:
-        raw_modes = '+'
+    raw_modes = utils.joinModes(modes)
     if not utils.isNick(nick):
         raise ValueError('Invalid nickname %r.' % nick)
     _sendFromServer(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
@@ -147,7 +144,7 @@ def connect(irc):
     f(':%s BURST %s' % (irc.sid, ts))
     nick = conf['bot'].get('nick') or 'PyLink'
     ident = conf['bot'].get('ident') or 'pylink'
-    irc.pseudoclient = spawnClient(irc, nick, ident, host, modes={("+o", None)})
+    irc.pseudoclient = spawnClient(irc, nick, ident, host, modes={("o", None)})
     f(':%s ENDBURST' % (irc.sid))
     for chan in irc.serverdata['channels']:
         joinClient(irc, irc.pseudoclient.uid, chan)
@@ -480,7 +477,7 @@ def handle_topic(irc, numeric, command, args):
     channel = args[0].lower()
     topic = args[1]
     ts = int(time.time())
-    setter = utils.nickToUid(irc, numeric)
+    setter = irc.users[numeric].nick
     irc.channels[channel].topic = topic
     return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
 
