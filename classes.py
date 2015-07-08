@@ -1,4 +1,7 @@
 from collections import defaultdict
+
+from log import log
+import main
 import time
 
 class IrcUser():
@@ -55,3 +58,75 @@ class IrcChannel():
 
 class ProtocolError(Exception):
     pass
+
+global testconf
+testconf = {'server': 
+                {
+                    'netname': 'fakeirc',
+                    'ip': '0.0.0.0',
+                    'port': 7000,
+                    'recvpass': "abcd",
+                    'sendpass': "abcd",
+                    'protocol': "null",
+                    'hostname': "pylink.unittest",
+                    'sid': "9PY",
+                    'channels': ["#pylink"],
+                }
+           }
+
+class FakeIRC(main.Irc):
+    def connect(self):
+        self.messages = []
+        self.hookargs = []
+        self.hookmsgs = []
+        self.socket = None
+
+    def run(self, data):
+        """Queues a message to the fake IRC server."""
+        log.debug('<- ' + data)
+        self.proto.handle_events(self, data)
+
+    def send(self, data):
+        self.messages.append(data)
+        log.debug('-> ' + data)
+
+    def takeMsgs(self):
+        """Returns a list of messages sent by the protocol module since
+        the last takeMsgs() call, so we can track what has been sent."""
+        msgs = self.messages
+        self.messages = []
+        return msgs
+
+    def takeCommands(self, msgs):
+        """Returns a list of commands parsed from the output of takeMsgs()."""
+        sidprefix = ':' + self.sid
+        commands = []
+        for m in msgs:
+            args = m.split()
+            if m.startswith(sidprefix):
+                commands.append(args[1])
+            else:
+                commands.append(args[0])
+        return commands
+
+    def takeHooks(self):
+        """Returns a list of hook arguments sent by the protocol module since
+        the last takeHooks() call."""
+        hookmsgs = self.hookmsgs
+        self.hookmsgs = []
+        return hookmsgs
+
+    @staticmethod
+    def dummyhook(irc, source, command, parsed_args):
+        """Dummy function to bind to hooks."""
+        irc.hookmsgs.append(parsed_args)
+
+class FakeProto():
+    """Dummy protocol module for testing purposes."""
+    @staticmethod
+    def handle_events(irc, data):
+        pass
+
+    @staticmethod
+    def connect(irc):
+        pass
