@@ -287,7 +287,7 @@ def handle_mode(irc, numeric, command, args):
     target = args[0]
     modestrings = args[1:]
     changedmodes = utils.parseModes(irc, numeric, modestrings)
-    utils.applyModes(irc, numeric, changedmodes)
+    utils.applyModes(irc, target, changedmodes)
     return {'target': target, 'modes': changedmodes}
 
 def handle_squit(irc, numeric, command, args):
