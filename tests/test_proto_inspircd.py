@@ -5,13 +5,12 @@ import unittest
 import time
 
 import inspircd
-from . import test_proto_common
-from classes import ProtocolError
+import classes
 import utils
 
-class TestInspIRCdProtocol(unittest.TestCase):
+class TestProtoInspIRCd(unittest.TestCase):
     def setUp(self):
-        self.irc = test_proto_common.FakeIRC(inspircd, test_proto_common.testconf)
+        self.irc = classes.FakeIRC(inspircd, classes.testconf)
         self.proto = self.irc.proto
         self.sdata = self.irc.serverdata
         # This is to initialize ourself as an internal PseudoServer, so we can spawn clients
@@ -36,7 +35,7 @@ class TestInspIRCdProtocol(unittest.TestCase):
         # Correct recvpass here.
         self.irc.run('SERVER somehow.someday abcd 0 0AL :Somehow Server - McMurdo Station, Antarctica')
         # Incorrect recvpass here; should raise ProtocolError.
-        self.assertRaises(ProtocolError, self.irc.run, 'SERVER somehow.someday BADPASS 0 0AL :Somehow Server - McMurdo Station, Antarctica')
+        self.assertRaises(classes.ProtocolError, self.irc.run, 'SERVER somehow.someday BADPASS 0 0AL :Somehow Server - McMurdo Station, Antarctica')
 
     def testSpawnClient(self):
         u = self.proto.spawnClient(self.irc, 'testuser3', 'moo', 'hello.world').uid
@@ -45,6 +44,8 @@ class TestInspIRCdProtocol(unittest.TestCase):
         self.assertIn(u, self.irc.users)
         # Raise ValueError when trying to spawn a client on a server that's not ours
         self.assertRaises(ValueError, self.proto.spawnClient, self.irc, 'abcd', 'user', 'dummy.user.net', server='44A')
+        # Unfilled args should get placeholder fields and not error.
+        self.proto.spawnClient(self.irc, 'testuser4')
 
     def testJoinClient(self):
         u = self.u
@@ -113,7 +114,7 @@ class TestInspIRCdProtocol(unittest.TestCase):
         s3u = self.proto.spawnClient(self.irc, 'person2', 'person', 'users.overdrive.pw', server='34Z').uid
         self.proto.joinClient(self.irc, s3u, '#pylink')
         self.proto.joinClient(self.irc, s4u, '#pylink')
-        self.proto.handle_squit(self.irc, '9PY', 'SQUIT', ['34Y'])
+        self.irc.run(':34Z SQUIT 34Y :random squit messsage')
         self.assertNotIn(s4u, self.irc.users)
         self.assertNotIn('34Y', self.irc.servers)
         # Netsplits are obviously recursive, so all these should be removed.
@@ -224,6 +225,28 @@ class TestInspIRCdProtocol(unittest.TestCase):
         self.assertEqual({('l', '50')}, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790412 +l 30')
         self.assertEqual({('l', '30')}, self.irc.channels['#pylink'].modes)
+
+    def testFjoinResetsTS(self):
+        curr_ts = self.irc.channels['#pylink'].ts
+        self.irc.run(':70M FJOIN #pylink 5 + :')
+        self.assertEqual(self.irc.channels['#pylink'].ts, 5)
+
+    def testHandleFTopic(self):
+        self.irc.run(':70M FTOPIC #pylink 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic')
+        self.assertEqual(self.irc.channels['#pylink'].topic, 'Some channel topic')
+
+    def testHandleTopic(self):
+        self.irc.connect()
+        utils.add_hook(self.irc.dummyhook, 'TOPIC')
+        self.irc.run(':9PYAAAAAA TOPIC #PyLink :test')
+        self.assertEqual(self.irc.channels['#pylink'].topic, 'test')
+        hookdata = self.irc.takeHooks()[0]
+        # Setter is a nick here, not an UID - this is to be consistent
+        # with FTOPIC above, which sends the nick/prefix of the topic setter.
+        self.assertTrue(utils.isNick(hookdata.get('setter')))
+        self.assertEqual(type(hookdata['ts']), int)
+        self.assertEqual(hookdata['topic'], 'test')
+        self.assertEqual(hookdata['channel'], '#pylink')
 
 if __name__ == '__main__':
     unittest.main()
