@@ -226,7 +226,7 @@ def handle_fjoin(irc, servernumeric, command, args):
         namelist.append(user)
         utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
         irc.channels[channel].users.add(user)
-    return {'channel': channel, 'users': namelist, 'modes': parsedmodes}
+    return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
@@ -244,28 +244,21 @@ def handle_quit(irc, numeric, command, args):
     removeClient(irc, numeric)
     return {'text': args[0]}
 
-def handle_burst(irc, numeric, command, args):
-    # BURST is sent by our uplink when we link.
-    # <- :70M BURST 1433044587
-
-    # This is handled in handle_events, since our uplink
-    # only sends its name in the initial authentication phase,
-    # not in any following BURST commands.
-    pass
-
 def handle_server(irc, numeric, command, args):
     # SERVER is sent by our uplink or any other server to introduce others.
     # <- :00A SERVER test.server * 1 00C :testing raw message syntax
     # <- :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
     servername = args[0].lower()
     sid = args[3]
+    sdesc = args[-1]
     irc.servers[sid] = IrcServer(numeric, servername)
+    return {'name': servername, 'sid': args[3], 'text': sdesc}
 
 def handle_nick(irc, numeric, command, args):
     # <- :70MAAAAAA NICK GL-devel 1434744242
     oldnick = irc.users[numeric].nick
     newnick = irc.users[numeric].nick = args[0]
-    return {'newnick': newnick, 'oldnick': oldnick, 'ts': args[1]}
+    return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
 
 def handle_save(irc, numeric, command, args):
     # This is used to handle nick collisions. Here, the client Derp_ already exists,
@@ -277,7 +270,7 @@ def handle_save(irc, numeric, command, args):
     # <- :70M SAVE 0AL000001 1433728673
     user = args[0]
     irc.users[user].nick = user
-    return {'target': user, 'ts': args[1]}
+    return {'target': user, 'ts': int(args[1])}
 
 def handle_fmode(irc, numeric, command, args):
     # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
@@ -285,7 +278,8 @@ def handle_fmode(irc, numeric, command, args):
     modes = args[2:]
     changedmodes = utils.parseModes(irc, channel, modes)
     utils.applyModes(irc, channel, changedmodes)
-    return {'target': channel, 'modes': changedmodes}
+    ts = int(args[1])
+    return {'target': channel, 'modes': changedmodes, 'ts': ts}
 
 def handle_mode(irc, numeric, command, args):
     # In InspIRCd, MODE is used for setting user modes and
@@ -432,6 +426,9 @@ def handle_events(irc, data):
         # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
         # 'UID3']}, etc.
         if parsed_args:
+            # Always make sure TS is sent.
+            if 'ts' not in parsed_args:
+                parsed_args['ts'] = int(time.time())
             hook_cmd = command
             if command in hook_map:
                 hook_cmd = hook_map[command]

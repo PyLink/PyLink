@@ -3,6 +3,7 @@ import os
 sys.path += [os.getcwd(), os.path.join(os.getcwd(), 'protocols')]
 import unittest
 import time
+from collections import defaultdict
 
 import inspircd
 import classes
@@ -16,8 +17,10 @@ class TestProtoInspIRCd(unittest.TestCase):
         # This is to initialize ourself as an internal PseudoServer, so we can spawn clients
         self.proto.connect(self.irc)
         self.u = self.irc.pseudoclient.uid
+        self.maxDiff = None
+        utils.command_hooks = defaultdict(list)
 
-    def test_connect(self):
+    def testConnect(self):
         initial_messages = self.irc.takeMsgs()
         commands = self.irc.takeCommands(initial_messages)
 
@@ -160,6 +163,7 @@ class TestProtoInspIRCd(unittest.TestCase):
         msgs = self.irc.takeMsgs()
         commands = self.irc.takeCommands(msgs)
         hookdata = self.irc.takeHooks()[0]
+        del hookdata['ts']
         self.assertEqual({'target': olduid, 'text': 'killed'}, hookdata)
         # Make sure we're respawning our PseudoClient when its killed
         self.assertIn('UID', commands)
@@ -172,6 +176,7 @@ class TestProtoInspIRCd(unittest.TestCase):
         utils.add_hook(self.irc.dummyhook, 'KICK')
         self.irc.run(':{u} KICK #pylink {u} :kicked'.format(u=self.irc.pseudoclient.uid))
         hookdata = self.irc.takeHooks()[0]
+        del hookdata['ts']
         self.assertEqual({'target': self.u, 'text': 'kicked', 'channel': '#pylink'}, hookdata)
 
         # Ditto above
@@ -213,19 +218,26 @@ class TestProtoInspIRCd(unittest.TestCase):
         hookdata = self.irc.takeHooks()[0]
         expected = {'modes': [('+l', '10'), ('+s', None)],
                     'channel': '#pylink',
-                    'users': ['10XAAAAAA', '10XAAAAAB', '10XAAAAAC']}
+                    'users': ['10XAAAAAA', '10XAAAAAB', '10XAAAAAC'],
+                    'ts': 1423790418}
         self.assertEqual(expected, hookdata)
 
     def testHandleFmode(self):
-        # utils.add_hook(self.irc.dummyhook, 'MODE')
         self.irc.run(':10X FJOIN #pylink 1423790411 +n :o,10XAAAAAA ,10XAAAAAB')
+        utils.add_hook(self.irc.dummyhook, 'MODE')
         self.irc.run(':70M FMODE #pylink 1423790412 +ikl herebedragons 100')
         self.assertEqual({('i', None), ('k', 'herebedragons'), ('l', '100'), ('n', None)}, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790413 -ilk+m herebedragons')
         self.assertEqual({('m', None), ('n', None)}, self.irc.channels['#pylink'].modes)
+        
+        hookdata = self.irc.takeHooks()
+        expected = [{'target': '#pylink', 'modes': [('+i', None), ('+k', 'herebedragons'), ('+l', '100')], 'ts': 1423790412},
+                    {'target': '#pylink', 'modes': [('-i', None), ('-l', None), ('-k', 'herebedragons'), ('+m', None)], 'ts': 1423790413}]
+        self.assertEqual(expected, hookdata)
 
     def testHandleFmodeWithPrefixes(self):
         self.irc.run(':70M FJOIN #pylink 1423790411 +n :o,10XAAAAAA ,10XAAAAAB')
+        utils.add_hook(self.irc.dummyhook, 'MODE')
         # Prefix modes are stored separately, so they should never show up in .modes
         self.assertNotIn(('o', '10XAAAAAA'), self.irc.channels['#pylink'].modes)
         self.assertEqual({'10XAAAAAA'}, self.irc.channels['#pylink'].prefixmodes['ops'])
@@ -236,12 +248,22 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.irc.run(':70M FMODE #pylink 1423790413 -o %s' % self.u)
         self.assertEqual(modes, self.irc.channels['#pylink'].modes)
         self.assertNotIn(self.u, self.irc.channels['#pylink'].prefixmodes['ops'])
+        # Test hooks
+        hookdata = self.irc.takeHooks()
+        expected = [{'target': '#pylink', 'modes': [('+l', '50'), ('+o', '9PYAAAAAA'), ('+t', None)], 'ts': 1423790412},
+                    {'target': '#pylink', 'modes': [('-o', '9PYAAAAAA')], 'ts': 1423790413}]
+        self.assertEqual(expected, hookdata)
 
     def testFmodeRemovesOldParams(self):
+        utils.add_hook(self.irc.dummyhook, 'MODE')
         self.irc.run(':70M FMODE #pylink 1423790412 +l 50')
         self.assertEqual({('l', '50')}, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790412 +l 30')
         self.assertEqual({('l', '30')}, self.irc.channels['#pylink'].modes)
+        hookdata = self.irc.takeHooks()
+        expected = [{'target': '#pylink', 'modes': [('+l', '50')], 'ts': 1423790412},
+                    {'target': '#pylink', 'modes': [('+l', '30')], 'ts': 1423790412}]
+        self.assertEqual(expected, hookdata)
 
     def testFjoinResetsTS(self):
         curr_ts = self.irc.channels['#pylink'].ts
@@ -270,13 +292,41 @@ class TestProtoInspIRCd(unittest.TestCase):
             utils.add_hook(self.irc.dummyhook, m)
             self.irc.run(':70MAAAAAA %s #dev :afasfsa' % m)
             hookdata = self.irc.takeHooks()[0]
+            del hookdata['ts']
             self.assertEqual({'target': '#dev', 'text': 'afasfsa'}, hookdata)
 
     def testHandlePart(self):
         utils.add_hook(self.irc.dummyhook, 'PART')
         self.irc.run(':9PYAAAAAA PART #pylink')
         hookdata = self.irc.takeHooks()[0]
+        del hookdata['ts']
         self.assertEqual({'channel': '#pylink', 'text': ''}, hookdata)
+
+    def testUIDHook(self):
+        utils.add_hook(self.irc.dummyhook, 'UID')
+        # Create the server so we won't KeyError on processing UID
+        self.irc.run('SERVER whatever. abcd 0 10X :Whatever Server - Hellas Planitia, Mars')
+        self.irc.run(':10X UID 10XAAAAAB 1429934638 GL 0::1 '
+                     'hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 '
+                     '+Wioswx +ACGKNOQXacfgklnoqvx :realname')
+        expected = {'uid': '10XAAAAAB', 'ts': '1429934638', 'nick': 'GL',
+                    'realhost': '0::1', 'ident': 'gl', 'ip': '0::1',
+                    'host': 'hidden-7j810p.9mdf.lrek.0000.0000.IP'}
+        hookdata = self.irc.takeHooks()[0]
+        self.assertEqual(hookdata, expected)
+
+    def testHandleQuit(self):
+        utils.add_hook(self.irc.dummyhook, 'QUIT')
+        self.irc.run('SERVER whatever. abcd 0 10X :Whatever Server - Hellas Planitia, Mars')
+        self.irc.run(':10X UID 10XAAAAAB 1429934638 GL 0::1 '
+                     'hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 '
+                     '+Wioswx +ACGKNOQXacfgklnoqvx :realname')
+        self.irc.run(':10XAAAAAB QUIT :Quit: quit message goes here')
+        hookdata = self.irc.takeHooks()[0]
+        del hookdata['ts']
+        self.assertEqual(hookdata, {'text': 'Quit: quit message goes here'})
+        self.assertNotIn('10XAAAAAB', self.irc.users)
+        self.assertNotIn('10XAAAAAB', self.irc.servers['10X'].users)
 
 if __name__ == '__main__':
     unittest.main()
