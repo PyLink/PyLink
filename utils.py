@@ -143,11 +143,12 @@ def applyModes(irc, target, changedmodes):
     usermodes = not isChannel(target)
     log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
     if usermodes:
-        modelist = irc.users[target].modes
+        old_modelist = irc.users[target].modes
         supported_modes = irc.umodes
     else:
-        modelist = irc.channels[target].modes
+        old_modelist = irc.channels[target].modes
         supported_modes = irc.cmodes
+    modelist = old_modelist.copy()
     log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
     for mode in changedmodes:
         # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
@@ -197,6 +198,10 @@ def applyModes(irc, target, changedmodes):
                 # Swap the - for a + and then remove it from the list.
                 modelist.discard(real_mode)
     log.debug('(%s) Final modelist: %s', irc.name, modelist)
+    if usermodes:
+        irc.users[target].modes = modelist
+    else:
+        irc.channels[target].modes = modelist
 
 def joinModes(modes):
     """<mode list>
