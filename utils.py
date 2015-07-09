@@ -94,6 +94,7 @@ def parseModes(irc, target, args):
     # C = Mode that changes a setting and only has a parameter when set.
     # D = Mode that changes a setting and never has a parameter.
     usermodes = not isChannel(target)
+    prefix = ''
     modestring = args[0]
     if not modestring:
         return ValueError('No modes supplied in parseModes query: %r' % modes)
@@ -109,20 +110,28 @@ def parseModes(irc, target, args):
         if mode in '+-':
             prefix = mode
         else:
+            if not prefix:
+                raise ValueError('Invalid query %r: mode char given without preceding prefix.' % modestring)
             arg = None
             log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
-            if mode in (supported_modes['*A'] + supported_modes['*B']):
-                # Must have parameter.
-                log.debug('Mode %s: This mode must have parameter.', mode)
-                arg = args.pop(0)
-            elif mode in irc.prefixmodes and not usermodes:
-                # We're setting a prefix mode on someone (e.g. +o user1)
-                log.debug('Mode %s: This mode is a prefix mode.', mode)
-                arg = args.pop(0)
-            elif prefix == '+' and mode in supported_modes['*C']:
-                # Only has parameter when setting.
-                log.debug('Mode %s: Only has parameter when setting.', mode)
-                arg = args.pop(0)
+            try:
+                if mode in (supported_modes['*A'] + supported_modes['*B']):
+                    # Must have parameter.
+                    log.debug('Mode %s: This mode must have parameter.', mode)
+                    arg = args.pop(0)
+                elif mode in irc.prefixmodes and not usermodes:
+                    # We're setting a prefix mode on someone (e.g. +o user1)
+                    log.debug('Mode %s: This mode is a prefix mode.', mode)
+                    arg = args.pop(0)
+                elif prefix == '+' and mode in supported_modes['*C']:
+                    # Only has parameter when setting.
+                    log.debug('Mode %s: Only has parameter when setting.', mode)
+                    arg = args.pop(0)
+            except IndexError:
+                log.warning('(%s/%s) Error while parsing mode %r: mode requires an '
+                            'argument but none was found. (modestring: %r)',
+                            irc.name, target, mode, modestring)
+                continue  # Skip this mode; don't error out completely.
             res.append((prefix + mode, arg))
     return res
 
