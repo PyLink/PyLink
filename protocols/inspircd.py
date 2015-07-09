@@ -123,8 +123,10 @@ def nickClient(irc, numeric, newnick):
     Changes the nick of a PyLink PseudoClient."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    if not utils.isNick(newnick):
-        raise ValueError('Invalid nickname %r.' % nick)
+    if newnick == '0':
+        newnick = numeric
+    elif not utils.isNick(newnick):
+        raise ValueError('Invalid nickname %r.' % newnick)
     _sendFromUser(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
 
