@@ -127,7 +127,19 @@ def showuser(irc, source, args):
         utils.msg(irc, source, 'Error: unknown user %r' % target)
         return
     s = ['\x02%s\x02: %s' % (k, v) for k, v in irc.users[u].__dict__.items()]
-    s = 'Information on user %s: %s' % (target, '; '.join(s))
+    s = 'Information on user \x02%s\x02: %s' % (target, '; '.join(s))
+    utils.msg(irc, source, s)
+
+@utils.add_cmd
+def showchan(irc, source, args):
+    checkauthenticated(irc, source)
+    try:
+        channel = args[0].lower()
+    except IndexError:
+        utils.msg(irc, source, "Error: not enough arguments. Needs 1: channel.")
+        return
+    s = ['\x02%s\x02: %s' % (k, v) for k, v in irc.channels[channel].__dict__.items()]
+    s = 'Information on channel \x02%s\x02: %s' % (channel, '; '.join(s))
     utils.msg(irc, source, s)
 
 @utils.add_cmd
@@ -146,3 +158,27 @@ def tell(irc, source, args):
         utils.msg(irc, source, "Error: can't send an empty message!")
         return
     utils.msg(irc, target, text, notice=True)
+
+@utils.add_cmd
+def mode(irc, source, args):
+    checkauthenticated(irc, source)
+    try:
+        modesource, target, modes = args[0], args[1], args[2:]
+    except IndexError:
+        utils.msg(irc, source, 'Error: not enough arguments. Needs 3: source nick, target, modes to set.')
+        return
+    if not modes:
+        utils.msg(irc, source, "Error: no modes given to set!")
+        return
+    parsedmodes = utils.parseModes(irc, target, modes)
+    targetuid = utils.nickToUid(irc, target)
+    if targetuid:
+        target = targetuid
+    elif not utils.isChannel(target):
+        utils.msg(irc, source, "Error: Invalid channel or nick %r." % target)
+        return
+    if utils.isInternalServer(irc, modesource):
+        irc.proto.modeServer(irc, modesource, target, parsedmodes)
+    else:
+        sourceuid = utils.nickToUid(irc, modesource)
+        irc.proto.modeClient(irc, sourceuid, target, parsedmodes)
