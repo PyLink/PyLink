@@ -359,5 +359,14 @@ class TestProtoInspIRCd(unittest.TestCase):
         hookdata = self.irc.takeHooks()[0]
         del hookdata['ts']
         self.assertEqual(hookdata, {'target': '9PYAAAAAA', 'channel': '#blah'})
+
+    def testHandleOpertype(self):
+        self.irc.run('SERVER whatever. abcd 0 10X :Whatever Server - Hellas Planitia, Mars')
+        self.irc.run(':10X UID 10XAAAAAB 1429934638 GL 0::1 '
+                     'hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 '
+                     '+Wioswx +ACGKNOQXacfgklnoqvx :realname')
+        self.irc.run(':10XAAAAAB OPERTYPE Network_Owner')
+        self.assertIn(('o', None), self.irc.users['10XAAAAAB'].modes)
+
 if __name__ == '__main__':
     unittest.main()

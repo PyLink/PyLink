@@ -17,7 +17,7 @@ from classes import *
 # XXX figure out a way to not force-map ENCAP to KNOCK, since other commands are sent
 # through it too.
 hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
-            'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK'}
+            'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK', 'OPERTYPE': 'MODE'}
 
 def _sendFromServer(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -508,3 +508,11 @@ def handle_notice(irc, numeric, command, args):
     # <- :70MAAAAAA NOTICE #dev :afasfsa
     # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
     return {'target': args[0], 'text': args[1]}
+
+def handle_opertype(irc, numeric, command, args):
+    # This is used by InspIRCd to denote an oper up; there is no MODE
+    # command sent for it.
+    # <- :70MAAAAAB OPERTYPE Network_Owner
+    omode = [('+o', None)]
+    utils.applyModes(irc, numeric, omode)
+    return {'target': numeric, 'modes': omode}
