@@ -36,6 +36,9 @@ def identify(irc, source, args):
         utils.msg(irc, source, 'Successfully logged in as %s.' % realuser)
     else:
         utils.msg(irc, source, 'Incorrect credentials.')
+        u = irc.users[source]
+        log.warning("(%s) Failed login to %r from user '%s!%s@%s' (UID %r).",
+                    irc.name, username, u.nick, u.ident, u.host, u.uid)
 
 def listcommands(irc, source, args):
     cmds = list(utils.bot_commands.keys())
