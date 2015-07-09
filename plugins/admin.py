@@ -35,7 +35,7 @@ def quitclient(irc, source, args):
     try:
         nick = args[0]
     except IndexError:
-        utils.msg(irc, source, "Error: not enough arguments. Needs 1: nick.")
+        utils.msg(irc, source, "Error: not enough arguments. Needs 1-2: nick, reason (optional).")
         return
     if irc.pseudoclient.uid == utils.nickToUid(irc, nick):
         utils.msg(irc, source, "Error: cannot quit the main PyLink PseudoClient!")
@@ -44,7 +44,6 @@ def quitclient(irc, source, args):
     quitmsg =  ' '.join(args[1:]) or 'Client quit'
     irc.proto.quitClient(irc, u, quitmsg)
 
-@utils.add_cmd
 def joinclient(irc, source, args):
     checkauthenticated(irc, source)
     try:
@@ -57,13 +56,14 @@ def joinclient(irc, source, args):
         return
     u = utils.nickToUid(irc, nick)
     for channel in clist:
-        if not channel.startswith('#'):
-            utils.msg(irc, source, "Error: channel names must start with #.")
+        if not utils.isChannel(channel):
+            utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
             return
         irc.proto.joinClient(irc, u, channel)
+utils.add_cmd(joinclient, name='join')
 
 @utils.add_cmd
-def nickclient(irc, source, args):
+def nick(irc, source, args):
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -72,10 +72,15 @@ def nickclient(irc, source, args):
         utils.msg(irc, source, "Error: not enough arguments. Needs 2: nick, newnick.")
         return
     u = utils.nickToUid(irc, nick)
+    if newnick in ('0', u):
+        newnick = u
+    elif not utils.isNick(newnick):
+        utils.msg(irc, source, 'Error: Invalid nickname %r.' % newnick)
+        return
     irc.proto.nickClient(irc, u, newnick)
 
 @utils.add_cmd
-def partclient(irc, source, args):
+def part(irc, source, args):
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -86,13 +91,13 @@ def partclient(irc, source, args):
         return
     u = utils.nickToUid(irc, nick)
     for channel in clist:
-        if not channel.startswith('#'):
-            utils.msg(irc, source, "Error: channel names must start with #.")
+        if not utils.isChannel(channel):
+            utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
             return
         irc.proto.partClient(irc, u, channel, reason)
 
 @utils.add_cmd
-def kickclient(irc, source, args):
+def kick(irc, source, args):
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -100,12 +105,12 @@ def kickclient(irc, source, args):
         target = args[2]
         reason = ' '.join(args[3:])
     except IndexError:
-        utils.msg(irc, source, "Error: not enough arguments. Needs 3-4: nick, channel, target, reason (optional).")
+        utils.msg(irc, source, "Error: not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
         return
     u = utils.nickToUid(irc, nick)
     targetu = utils.nickToUid(irc, target)
-    if not channel.startswith('#'):
-        utils.msg(irc, source, "Error: channel names must start with #.")
+    if not utils.isChannel(channel):
+        utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
         return
     irc.proto.kickClient(irc, u, channel, targetu, reason)
 
@@ -129,9 +134,9 @@ def showuser(irc, source, args):
 def tell(irc, source, args):
     checkauthenticated(irc, source)
     try:
-        source, target, text = args[0], args[1], ' '.join(args[2:])
+        target, text = args[0], ' '.join(args[1:])
     except IndexError:
-        utils.msg(irc, source, 'Error: not enough arguments.')
+        utils.msg(irc, source, 'Error: not enough arguments. Needs 2: target, text.')
         return
     targetuid = utils.nickToUid(irc, target)
     if targetuid is None:
