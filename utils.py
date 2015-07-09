@@ -173,19 +173,19 @@ def applyModes(irc, target, changedmodes):
                 continue
         if mode[0][0] == '+':
             # We're adding a mode
-            existing = [m for m in modelist if m[0] == real_mode[0]]
-            if existing and real_mode[1] and mode[0] not in irc.cmodes['*A']:
+            existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
+            if existing and real_mode[1] and real_mode[0] not in irc.cmodes['*A']:
                 # The mode we're setting takes a parameter, but is not a list mode (like +beI).
                 # Therefore, only one version of it can exist at a time, and we must remove
                 # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
                 # for example, someone sets mode "+l 30" on a channel already set "+l 25".
                 log.debug('(%s) Old modes for mode %r exist on %s, removing them: %s',
-                          irc.name, mode, target, str(existing))
+                          irc.name, real_mode, target, str(existing))
                 [modelist.discard(oldmode) for oldmode in existing]
             modelist.add(real_mode)
-            log.debug('(%s) Adding mode %r on %s', irc.name, mode, target)
+            log.debug('(%s) Adding mode %r on %s', irc.name, real_mode, target)
         else:
-            log.debug('(%s) Removing mode %r on %s', irc.name, mode, target)
+            log.debug('(%s) Removing mode %r on %s', irc.name, real_mode, target)
             # We're removing a mode
             if real_mode[1] is None:
                 # We're removing a mode that only takes arguments when setting.
