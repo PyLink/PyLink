@@ -87,6 +87,18 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.proto.nickClient(self.irc, self.u, 'NotPyLink')
         self.assertEqual('NotPyLink', self.irc.users[self.u].nick)
 
+    def testModeClient(self):
+        testuser = self.proto.spawnClient(self.irc, 'testcakes')
+        self.irc.takeMsgs()
+        self.proto.modeClient(self.irc, self.u, testuser.uid, [('+i', None), ('+w', None)])
+        self.assertEqual({('i', None), ('w', None)}, testuser.modes)
+
+        self.proto.modeClient(self.irc, self.u, '#pylink', [('+s', None), ('+l', '30')])
+        self.assertEqual({('s', None), ('l', '30')}, self.irc.channels['#pylink'].modes)
+
+        cmds = self.irc.takeCommands(self.irc.takeMsgs())
+        self.assertEqual(cmds, ['MODE', 'FMODE'])
+
     def testSpawnServer(self):
         # Incorrect SID length
         self.assertRaises(Exception, self.proto.spawnServer, self.irc, 'subserver.pylink', '34Q0')
