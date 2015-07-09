@@ -40,8 +40,10 @@ class TS6UIDGenerator():
         return uid
 
 def msg(irc, target, text, notice=False):
-    command = 'NOTICE' if notice else 'PRIVMSG'
-    irc.proto._sendFromUser(irc, irc.pseudoclient.uid, '%s %s :%s' % (command, target, text))
+    if notice:
+        irc.proto.noticeClient(irc, irc.pseudoclient.uid, target, text)
+    else:
+        irc.proto.messageClient(irc, irc.pseudoclient.uid, target, text)
 
 def add_cmd(func, name=None):
     if name is None:

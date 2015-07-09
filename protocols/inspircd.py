@@ -153,6 +153,22 @@ def modeServer(irc, numeric, target, modes):
         raise LookupError('No such PyLink PseudoClient exists.')
     _sendModes(irc, numeric, target, modes)
 
+def messageClient(irc, numeric, target, text):
+    """<irc object> <client numeric> <text>
+
+    Sends PRIVMSG <text> from PyLink client <client numeric>."""
+    if not utils.isInternalClient(irc, numeric):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromUser(irc, numeric, 'PRIVMSG %s :%s' % (target, text))
+
+def noticeClient(irc, numeric, target, text):
+    """<irc object> <client numeric> <text>
+
+    Sends NOTICE <text> from PyLink client <client numeric>."""
+    if not utils.isInternalClient(irc, numeric):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromUser(irc, numeric, 'NOTICE %s :%s' % (target, text))
+
 def connect(irc):
     irc.start_ts = ts = int(time.time())
     irc.uidgen = {}
