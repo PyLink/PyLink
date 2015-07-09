@@ -169,6 +169,31 @@ def noticeClient(irc, numeric, target, text):
         raise LookupError('No such PyLink PseudoClient exists.')
     _sendFromUser(irc, numeric, 'NOTICE %s :%s' % (target, text))
 
+def topicClient(irc, numeric, target, text):
+    """<irc object> <client numeric> <text>
+
+    Sets the topic for <channel> to <text> from PyLink client <client numeric>."""
+    if not utils.isInternalClient(irc, numeric):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromUser(irc, numeric, 'TOPIC %s :%s' % (target, text))
+
+def inviteClient(irc, numeric, target, channel):
+    """<irc object> <client numeric> <text>
+
+    Invites <target> to <channel> to <text> from PyLink client <client numeric>."""
+    if not utils.isInternalClient(irc, numeric):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromUser(irc, numeric, 'INVITE %s %s' % (target, channel))
+
+def knockClient(irc, numeric, target, text):
+    """<irc object> <client numeric> <text>
+
+    Knocks on <channel> with <text> from PyLink client <client numeric>."""
+    if not utils.isInternalClient(irc, numeric):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromUser(irc, numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
+
+
 def connect(irc):
     irc.start_ts = ts = int(time.time())
     irc.uidgen = {}
