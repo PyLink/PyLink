@@ -11,7 +11,7 @@ import utils
 
 class TestProtoInspIRCd(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC(inspircd, classes.testconf)
+        self.irc = classes.FakeIRC('unittest', inspircd, classes.testconf)
         self.proto = self.irc.proto
         self.sdata = self.irc.serverdata
         # This is to initialize ourself as an internal PseudoServer, so we can spawn clients

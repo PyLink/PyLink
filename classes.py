@@ -67,17 +67,18 @@ testconf = {'bot':
                     'realname': 'PyLink Service Client',
                     'loglevel': 'DEBUG',
                 },
-            'server':
-                {
-                    'netname': 'fakeirc',
-                    'ip': '0.0.0.0',
-                    'port': 7000,
-                    'recvpass': "abcd",
-                    'sendpass': "abcd",
-                    'protocol': "null",
-                    'hostname': "pylink.unittest",
-                    'sid': "9PY",
-                    'channels': ["#pylink"],
+            'servers':
+                {'unittest':
+                    {
+                        'ip': '0.0.0.0',
+                        'port': 7000,
+                        'recvpass': "abcd",
+                        'sendpass': "abcd",
+                        'protocol': "null",
+                        'hostname': "pylink.unittest",
+                        'sid': "9PY",
+                        'channels': ["#pylink"],
+                    },
                 },
            }
 
