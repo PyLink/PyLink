@@ -259,3 +259,10 @@ def isInternalServer(irc, sid):
     Returns whether <sid> is an internal PyLink PseudoServer.
     """
     return (sid in irc.servers and irc.servers[sid].internal)
+
+def isOper(irc, uid):
+    """<irc object> <UID>
+
+    Returns whether <UID> is an opered client.
+    """
+    return (uid in irc.users and ("o", None) in irc.users[uid].modes)
