@@ -126,7 +126,7 @@ def showuser(irc, source, args):
     if u is None:
         utils.msg(irc, source, 'Error: unknown user %r' % target)
         return
-    s = ['\x02%s\x02: %s' % (k, v) for k, v in irc.users[u].__dict__.items()]
+    s = ['\x02%s\x02: %s' % (k, v) for k, v in sorted(irc.users[u].__dict__.items())]
     s = 'Information on user \x02%s\x02: %s' % (target, '; '.join(s))
     utils.msg(irc, source, s)
 
@@ -138,7 +138,10 @@ def showchan(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 1: channel.")
         return
-    s = ['\x02%s\x02: %s' % (k, v) for k, v in irc.channels[channel].__dict__.items()]
+    if channel not in irc.channels:
+        utils.msg(irc, source, 'Error: unknown channel %r' % channel)
+        return
+    s = ['\x02%s\x02: %s' % (k, v) for k, v in sorted(irc.channels[channel].__dict__.items())]
     s = 'Information on channel \x02%s\x02: %s' % (channel, '; '.join(s))
     utils.msg(irc, source, s)
 
