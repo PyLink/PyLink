@@ -11,21 +11,21 @@ login:
     user: admin
     password: changeme
 
-server:
-    # Server name, port, and passwords
-    netname: whatever
-    ip: 127.0.0.1
-    port: 7000
-    recvpass: "abcd"
-    sendpass: "abcd"
-    # Hostname we will use to connect to the remote server
-    hostname: "pylink.yournet"
-    # SID - required for InspIRCd and TS6 based servers. This must be three characters long.
-    # The first char must be a digit [0-9], and the remaining two chars may be letters [A-Z] or digits.
-    sid: "0AL"
-    # Autojoin channels
-    channels: ["#pylink"]
-    protocol: "inspircd"
+servers:
+    yournet:
+        # Server IP, port, and passwords
+        ip: 127.0.0.1
+        port: 7000
+        recvpass: "abcd"
+        sendpass: "abcd"
+        # Hostname we will use to connect to the remote server
+        hostname: "pylink.yournet"
+        # SID - required for InspIRCd and TS6 based servers. This must be three characters long.
+        # The first char must be a digit [0-9], and the remaining two chars may be letters [A-Z] or digits.
+        sid: "0AL"
+        # Autojoin channels
+        channels: ["#pylink"]
+        protocol: "inspircd"
 
 # Plugins to load (omit the .py extension)
 plugins:
