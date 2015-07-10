@@ -56,8 +56,6 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.assertIn(u, self.irc.channels['#channel'].users)
         # Non-existant user.
         self.assertRaises(LookupError, self.proto.joinClient, self.irc, '9PYZZZZZZ', '#test')
-        # Invalid channel.
-        self.assertRaises(ValueError, self.proto.joinClient, self.irc, u, 'aaaa')
 
     def testPartClient(self):
         u = self.u
