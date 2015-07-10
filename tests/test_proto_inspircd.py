@@ -11,7 +11,7 @@ import utils
 
 class TestProtoInspIRCd(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC(inspircd, classes.testconf)
+        self.irc = classes.FakeIRC('unittest', inspircd, classes.testconf)
         self.proto = self.irc.proto
         self.sdata = self.irc.serverdata
         # This is to initialize ourself as an internal PseudoServer, so we can spawn clients
@@ -56,8 +56,6 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.assertIn(u, self.irc.channels['#channel'].users)
         # Non-existant user.
         self.assertRaises(LookupError, self.proto.joinClient, self.irc, '9PYZZZZZZ', '#test')
-        # Invalid channel.
-        self.assertRaises(ValueError, self.proto.joinClient, self.irc, u, 'aaaa')
 
     def testPartClient(self):
         u = self.u

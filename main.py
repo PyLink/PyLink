@@ -6,16 +6,19 @@ import socket
 import time
 import sys
 from collections import defaultdict
+import threading
 
 from log import log
 import conf
 import classes
+import utils
 
 class Irc():
-    def __init__(self, proto, conf):
+    def __init__(self, netname, proto, conf):
+        # threading.Thread.__init__(self)
         # Initialize some variables
         self.connected = False
-        self.name = conf['server']['netname']
+        self.name = netname
         self.conf = conf
         # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {}
@@ -38,7 +41,7 @@ class Irc():
         self.maxnicklen = 30
         self.prefixmodes = 'ov'
 
-        self.serverdata = conf['server']
+        self.serverdata = conf['servers'][netname]
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.proto = proto
@@ -49,12 +52,20 @@ class Irc():
         port = self.serverdata["port"]
         log.info("Connecting to network %r on %s:%s", self.name, ip, port)
         self.socket = socket.socket()
+        self.socket.setblocking(0)
+        self.socket.settimeout(60)
         self.socket.connect((ip, port))
         self.proto.connect(self)
         self.loaded = []
         self.load_plugins()
+        reading_thread = threading.Thread(target = self.run)
         self.connected = True
-        self.run()
+        reading_thread.start()
+
+    def disconnect(self):
+        self.connected = False
+        self.socket.shutdown()
+        self.socket.close()
 
     def run(self):
         buf = ""
@@ -67,19 +78,19 @@ class Irc():
                     break
                 while '\n' in buf:
                     line, buf = buf.split('\n', 1)
-                    log.debug("<- %s", line)
+                    log.debug("(%s) <- %s", self.name, line)
                     proto.handle_events(self, line)
-            except socket.error as e:
-                log.error('Received socket.error: %s, exiting.', str(e))
-                break
-        sys.exit(1)
+            except (socket.error, classes.ProtocolError) as e:
+                log.error('Disconnected from network %r: %s: %s, exiting.',
+                          self.name, type(e).__name__, str(e))
+                self.disconnect()
 
     def send(self, data):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
         data = data.encode("utf-8") + b"\n"
-        log.debug("-> %s", data.decode("utf-8").strip("\n"))
+        log.debug("(%s) -> %s", self.name, data.decode("utf-8").strip("\n"))
         self.socket.send(data)
 
     def load_plugins(self):
@@ -103,17 +114,17 @@ if __name__ == '__main__':
     if conf.conf['login']['password'] == 'changeme':
         log.critical("You have not set the login details correctly! Exiting...")
         sys.exit(2)
-
-    protoname = conf.conf['server']['protocol']
     protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
-    try:
-        moduleinfo = imp.find_module(protoname, protocols_folder)
-        proto = imp.load_source(protoname, moduleinfo[1])
-    except ImportError as e:
-        if str(e).startswith('No module named'):
-            log.critical('Failed to load protocol module %r: the file could not be found.', protoname)
+    for network in conf.conf['servers']:
+        protoname = conf.conf['servers'][network]['protocol']
+        try:
+            moduleinfo = imp.find_module(protoname, protocols_folder)
+            proto = imp.load_source(protoname, moduleinfo[1])
+        except ImportError as e:
+            if str(e).startswith('No module named'):
+                log.critical('Failed to load protocol module %r: the file could not be found.', protoname)
+            else:
+                log.critical('Failed to load protocol module: import error %s', protoname, str(e))
+            sys.exit(2)
         else:
-            log.critical('Failed to load protocol module: import error %s', protoname, str(e))
-        sys.exit(2)
-    else:
-        irc_obj = Irc(proto, conf.conf)
+            utils.networkobjects[network] = Irc(network, proto, conf.conf)
