@@ -150,8 +150,30 @@ def modeServer(irc, numeric, target, modes):
     a list of (mode, arg) tuples, in the format of utils.parseModes() output.
     """
     if not utils.isInternalServer(irc, numeric):
-        raise LookupError('No such PyLink PseudoClient exists.')
+        raise LookupError('No such PyLink PseudoServer exists.')
     _sendModes(irc, numeric, target, modes)
+
+def killServer(irc, numeric, target, reason):
+    """<irc object> <server SID> <target> <reason>
+
+    Sends a kill to <target> from a PyLink PseudoServer.
+    """
+    if not utils.isInternalServer(irc, numeric):
+        raise LookupError('No such PyLink PseudoServer exists.')
+    _sendFromServer(irc, numeric, 'KILL %s :%s' % (target, reason))
+    # We don't need to call removeClient here, since the remote server
+    # will send a QUIT from the target if the command succeeds.
+
+def killClient(irc, numeric, target, reason):
+    """<irc object> <client numeric> <target> <reason>
+
+    Sends a kill to <target> from a PyLink PseudoClient.
+    """
+    if not utils.isInternalClient(irc, numeric):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendFromServer(irc, numeric, 'KILL %s :%s' % (target, reason))
+    # We don't need to call removeClient here, since the remote server
+    # will send a QUIT from the target if the command succeeds.
 
 def messageClient(irc, numeric, target, text):
     """<irc object> <client numeric> <text>
