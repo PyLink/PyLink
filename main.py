@@ -75,6 +75,9 @@ class Irc():
         sys.exit(1)
 
     def send(self, data):
+        # Safeguard against newlines in input!! Otherwise, each line gets
+        # treated as a separate command, which is particularly nasty.
+        data = data.replace('\n', ' ')
         data = data.encode("utf-8") + b"\n"
         log.debug("-> %s", data.decode("utf-8").strip("\n"))
         self.socket.send(data)
