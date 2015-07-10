@@ -30,7 +30,7 @@ def spawnclient(irc, source, args):
     irc.proto.spawnClient(irc, nick, ident, host)
 
 @utils.add_cmd
-def quitclient(irc, source, args):
+def quit(irc, source, args):
     checkauthenticated(irc, source)
     try:
         nick = args[0]
