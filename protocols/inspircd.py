@@ -193,6 +193,22 @@ def knockClient(irc, numeric, target, text):
         raise LookupError('No such PyLink PseudoClient exists.')
     _sendFromUser(irc, numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
+def updateClient(irc, numeric, field, text):
+    """<irc object> <client numeric> <field> <text>
+
+    Changes the <field> field of <target> PyLink PseudoClient <client numeric>."""
+    field = field.upper()
+    if field == 'IDENT':
+        handle_fident(irc, numeric, 'PYLINK_UPDATECLIENT_IDENT', [text])
+        _sendFromUser(irc, numeric, 'FIDENT %s' % text)
+    elif field == 'HOST':
+        handle_fhost(irc, numeric, 'PYLINK_UPDATECLIENT_HOST', [text])
+        _sendFromUser(irc, numeric, 'FHOST %s' % text)
+    elif field in ('REALNAME', 'GECOS'):
+        handle_fname(irc, numeric, 'PYLINK_UPDATECLIENT_GECOS', [text])
+        _sendFromUser(irc, numeric, 'FNAME :%s' % text)
+    else:
+        raise ValueError("Changing field %r of a client is unsupported by this protocol." % field)
 
 def connect(irc):
     irc.start_ts = ts = int(time.time())
@@ -582,3 +598,18 @@ def handle_opertype(irc, numeric, command, args):
     omode = [('+o', None)]
     utils.applyModes(irc, numeric, omode)
     return {'target': numeric, 'modes': omode}
+
+def handle_fident(irc, numeric, command, args):
+    # :70MAAAAAB FHOST test
+    # :70MAAAAAB FNAME :afdsafasf
+    # :70MAAAAAB FIDENT test
+    irc.users[numeric].ident = newident = args[0]
+    return {'target': numeric, 'newident': newident}
+
+def handle_fhost(irc, numeric, command, args):
+    irc.users[numeric].host = newhost = args[0]
+    return {'target': numeric, 'newhost': newhost}
+
+def handle_fname(irc, numeric, command, args):
+    irc.users[numeric].realname = newgecos = args[0]
+    return {'target': numeric, 'newgecos': newgecos}
