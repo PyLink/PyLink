@@ -15,7 +15,6 @@ import utils
 
 class Irc():
     def __init__(self, netname, proto, conf):
-        # threading.Thread.__init__(self)
         # Initialize some variables
         self.connected = False
         self.name = netname
@@ -57,7 +56,6 @@ class Irc():
         self.socket.connect((ip, port))
         self.proto.connect(self)
         self.loaded = []
-        self.load_plugins()
         reading_thread = threading.Thread(target = self.run)
         self.connected = True
         reading_thread.start()
@@ -127,4 +125,5 @@ if __name__ == '__main__':
                 log.critical('Failed to load protocol module: import error %s', protoname, str(e))
             sys.exit(2)
         else:
-            utils.networkobjects[network] = Irc(network, proto, conf.conf)
+            utils.networkobjects[network] = irc = Irc(network, proto, conf.conf)
+            irc.load_plugins()
