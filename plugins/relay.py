@@ -21,11 +21,6 @@ def loadDB():
         log.exception("Relay: failed to load links database %s"
             ", creating a new one in memory...", dbname)
         db = {}
-    else:
-        for chanpair in db:
-            network, channel = chanpair
-            irc = utils.networkobjects[network]
-            irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
 
 def exportDB():
     scheduler.enter(10, 1, exportDB)
@@ -81,12 +76,17 @@ def destroy(irc, source, args):
     else:
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
 
-def main():
+def main(irc):
     global scheduler
     scheduler = sched.scheduler()
     loadDB()
-    scheduler.enter(10, 1, exportDB)
+    scheduler.enter(60, 1, exportDB)
     thread = threading.Thread(target=scheduler.run)
     thread.start()
-
-main()
+    for chanpair in db:
+        network, channel = chanpair
+        ircobj = utils.networkobjects[network]
+        ircobj.proto.joinClient(ircobj, irc.pseudoclient.uid, channel)
+    for network, ircobj in utils.networkobjects.items():
+        if ircobj.name != irc.name:
+            irc.proto.spawnServer(irc, '%s.relay' % network)
