@@ -52,7 +52,7 @@ class Irc():
         log.info("Connecting to network %r on %s:%s", self.name, ip, port)
         self.socket = socket.socket()
         self.socket.setblocking(0)
-        self.socket.settimeout(60)
+        self.socket.settimeout(180)
         self.socket.connect((ip, port))
         self.proto.connect(self)
         self.loaded = []
@@ -62,7 +62,6 @@ class Irc():
 
     def disconnect(self):
         self.connected = False
-        self.socket.shutdown()
         self.socket.close()
 
     def run(self):
