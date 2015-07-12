@@ -39,8 +39,6 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     realname = realname or irc.botdata['realname']
     realhost = realhost or host
     raw_modes = utils.joinModes(modes)
-    if not utils.isNick(nick):
-        raise ValueError('Invalid nickname %r.' % nick)
     _sendFromServer(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                     " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid,
