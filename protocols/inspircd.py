@@ -476,8 +476,8 @@ def handle_events(irc, data):
             protocol_version = int(caps['PROTOCOL'])
             if protocol_version < 1202:
                 raise ProtocolError("Remote protocol version is too old! At least 1202 (InspIRCd 2.0.x) is needed. (got %s)" % protocol_version)
-            irc.maxnicklen = caps['NICKMAX']
-            irc.maxchanlen = caps['CHANMAX']
+            irc.maxnicklen = int(caps['NICKMAX'])
+            irc.maxchanlen = int(caps['CHANMAX'])
             # Modes are divided into A, B, C, and D classes
             # See http://www.irc.org/tech_docs/005.html
             # FIXME: Find a better way to assign/store this.
