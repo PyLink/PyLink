@@ -6,6 +6,7 @@ import pickle
 import sched
 import threading
 import time
+import string
 
 import utils
 from log import log
@@ -22,6 +23,11 @@ def normalizeNick(irc, nick, separator="/"):
         # a protocol violation if there is one.
         separator = separator.replace('/', '|')
         nick = nick.replace('/', '|')
+    if nick.startswith(tuple(string.digits)):
+        # On TS6 IRCd-s, nicks that start with 0-9 are only allowed if
+        # they match the UID of the originating server. Otherwise, you'll
+        # get nasty protocol violations!
+        nick = '_' + nick
     tagnicks = True
 
     suffix = separator + netname
