@@ -22,9 +22,9 @@ def loadDB():
             ", creating a new one in memory...", dbname)
         db = {}
 
-def exportDB():
-    scheduler.enter(10, 1, exportDB)
-    log.debug("Relay: exporting links database to "+dbname)
+def exportDB(scheduler):
+    scheduler.enter(60, 1, exportDB, argument=(scheduler,))
+    log.debug("Relay: exporting links database to %s", dbname)
     with open(dbname, 'wb') as f:
         pickle.dump(db, f, protocol=4)
 
@@ -37,7 +37,7 @@ def create(irc, source, args):
         channel = args[0].lower()
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 1: channel.")
-        return 
+        return
     if not utils.isChannel(channel):
         utils.msg(irc, source, 'Error: invalid channel %r.' % channel)
         return
@@ -60,7 +60,7 @@ def destroy(irc, source, args):
         channel = args[0].lower()
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 1: channel.")
-        return 
+        return
     if not utils.isChannel(channel):
         utils.msg(irc, source, 'Error: invalid channel %r.' % channel)
         return
@@ -77,12 +77,18 @@ def destroy(irc, source, args):
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
 
 def main(irc):
-    global scheduler
-    scheduler = sched.scheduler()
+
     loadDB()
-    scheduler.enter(60, 1, exportDB)
-    thread = threading.Thread(target=scheduler.run)
-    thread.start()
+    # HACK: we only want to schedule this once globally, because
+    # exportDB will otherwise be called by every network that loads this
+    # plugin.
+    if 'relaydb' not in utils.schedulers:
+        utils.schedulers['relaydb'] = scheduler = sched.scheduler()
+        scheduler.enter(30, 1, exportDB, argument=(scheduler,))
+        # Thread this because exportDB() queues itself as part of its
+        # execution, in order to get a repeating loop.
+        thread = threading.Thread(target=scheduler.run)
+        thread.start()
     for chanpair in db:
         network, channel = chanpair
         ircobj = utils.networkobjects[network]

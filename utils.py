@@ -9,6 +9,7 @@ global bot_commands, command_hooks
 bot_commands = {}
 command_hooks = defaultdict(list)
 networkobjects = {}
+schedulers = {}
 
 class TS6UIDGenerator():
     """TS6 UID Generator module, adapted from InspIRCd source
