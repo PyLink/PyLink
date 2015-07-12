@@ -12,6 +12,40 @@ from log import log
 
 dbname = "pylinkrelay.db"
 
+def normalizeNick(irc, nick, separator="/"):
+    orig_nick = nick
+    protoname = irc.proto.__name__
+    maxnicklen = irc.maxnicklen
+    netname = irc.name
+    if protoname == 'charybdis':
+        # Charybdis doesn't allow / in usernames, and will quit with
+        # a protocol violation if there is one.
+        separator = separator.replace('/', '|')
+        nick = nick.replace('/', '|')
+    tagnicks = True
+
+    suffix = separator + netname
+    nick = nick[:maxnicklen]
+    # Maximum allowed length of a nickname.
+    allowedlength = maxnicklen - len(suffix)
+    # If a nick is too long, the real nick portion must be cut off, but the
+    # /network suffix must remain the same.
+
+    nick = nick[:allowedlength]
+    nick += suffix
+    while utils.nickToUid(irc, nick):
+        # The nick we want exists? Darn, create another one then.
+        # Increase the separator length by 1 if the user was already tagged,
+        # but couldn't be created due to a nick conflict.
+        # This can happen when someone steals a relay user's nick.
+        new_sep = separator + separator[-1]
+        nick = normalizeNick(irc, orig_nick, separator=new_sep)
+    finalLength = len(nick)
+    assert finalLength <= maxnicklen, "Normalized nick %r went over max " \
+        "nick length (got: %s, allowed: %s!" % (nick, finalLength, maxnicklen)
+
+    return nick
+
 def loadDB():
     global db
     try:
