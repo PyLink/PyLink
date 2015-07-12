@@ -546,10 +546,13 @@ def handle_events(irc, data):
                     traceback.print_exc()
                     continue
 
-def spawnServer(irc, name, sid, uplink=None, desc='PyLink Server'):
+def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
+    if sid is None:
+        irc.sidgen = utils.TS6SIDGenerator(irc.serverdata["sidrange"])
+        sid = irc.sidgen.next_sid()
     assert len(sid) == 3, "Incorrect SID length"
     if sid in irc.servers:
         raise ValueError('A server with SID %r already exists!' % sid)
