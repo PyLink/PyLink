@@ -98,12 +98,17 @@ class Irc():
         for plugin in to_load:
             try:
                 moduleinfo = imp.find_module(plugin, plugins_folder)
-                self.loaded.append(imp.load_source(plugin, moduleinfo[1]))
+                pl = imp.load_source(plugin, moduleinfo[1])
+                self.loaded.append(pl)
             except ImportError as e:
                 if str(e).startswith('No module named'):
                     log.error('Failed to load plugin %r: the plugin could not be found.', plugin)
                 else:
                     log.error('Failed to load plugin %r: import error %s', plugin, str(e))
+            else:
+                if hasattr(pl, 'main'):
+                    log.debug('Calling main() function of plugin %r', pl)
+                    pl.main(irc)
         log.info("loaded plugins: %s", self.loaded)
 
 if __name__ == '__main__':
@@ -124,5 +129,9 @@ if __name__ == '__main__':
                 log.critical('Failed to load protocol module: import error %s', protoname, str(e))
             sys.exit(2)
         else:
-            utils.networkobjects[network] = irc = Irc(network, proto, conf.conf)
-            irc.load_plugins()
+            utils.networkobjects[network] = Irc(network, proto, conf.conf)
+    # This is a separate loop to make sure that ALL networks have their
+    # Irc objects added into utils.networkobjects, before we load any plugins
+    # that may require them.
+    for irc in utils.networkobjects.values():
+        irc.load_plugins()
