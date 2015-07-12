@@ -1,7 +1,8 @@
 config.yml
-build
+build/
 __pycache__/
 *.py[cod]
 *.bak
 *~
 *.save*
+*.db
