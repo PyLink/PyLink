@@ -40,6 +40,67 @@ class TS6UIDGenerator():
         self.increment()
         return uid
 
+class TS6SIDGenerator():
+    """<query>
+
+    TS6 SID Generator. <query> is a 3 character string with any combination of
+    uppercase letters, digits, and #'s. <query> must contain at least one #,
+    which are used by the generator as a wildcard. On every next_sid() call,
+    the first available wildcard character (from the right) will be
+    incremented to generate the next SID.
+
+    When there are no more available SIDs left (SIDs are not reused, only
+    incremented), RuntimeError is raised.
+
+    Example queries:
+        "1#A" would give: 10A, 11A, 12A ... 19A, 1AA, 1BA ... 1ZA (36 total results)
+        "#BQ" would give: 0BQ, 1BQ, 2BQ ... 9BQ (10 total results)
+        "6##" would give: 600, 601, 602, ... 60Y, 60Z, 610, 611, ... 6ZZ (1296 total results)
+    """
+
+    def __init__(self, query):
+        self.query = list(query)
+        self.iters = self.query.copy()
+        self.output = self.query.copy()
+        self.allowedchars = {}
+        qlen = len(query)
+        assert qlen == 3, 'Incorrect length for a SID (must be 3, got %s)' % qlen
+        assert '#' in query, "Must be at least one wildcard (#) in query"
+        for idx, char in enumerate(query):
+            assert char in (string.digits+string.ascii_uppercase+"#"), \
+                "Invalid character %r found." % char
+            if char == '#':
+                if idx == 0:  # The first char be only digits
+                    self.allowedchars[idx] = string.digits
+                else:
+                    self.allowedchars[idx] = string.digits+string.ascii_uppercase
+                self.iters[idx] = iter(self.allowedchars[idx])
+                self.output[idx] = self.allowedchars[idx][0]
+                next(self.iters[idx])
+
+
+    def increment(self, pos=2):
+        if pos < 0:
+            # Oh no, we've wrapped back to the start!
+            raise RuntimeError('No more available SIDs!')
+        it = self.iters[pos]
+        try:
+            self.output[pos] = next(it)
+        except TypeError:  # This position is not an iterator, but a string.
+            self.increment(pos-1)
+        except StopIteration:
+            self.output[pos] = self.allowedchars[pos][0]
+            self.iters[pos] = iter(self.allowedchars[pos])
+            next(self.iters[pos])
+            self.increment(pos-1)
+        else:
+            print('NEXT')
+
+    def next_sid(self):
+        sid = ''.join(self.output)
+        self.increment()
+        return sid
+
 def msg(irc, target, text, notice=False):
     if notice:
         irc.proto.noticeClient(irc, irc.pseudoclient.uid, target, text)
