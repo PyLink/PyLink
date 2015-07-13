@@ -51,6 +51,9 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     return u
 
 def joinClient(irc, client, channel):
+    # InspIRCd doesn't distinguish between burst joins and regular joins,
+    # so what we're actually doing here is sending FJOIN from the server,
+    # on behalf of the clients that call it.
     channel = channel.lower()
     server = utils.isInternalClient(irc, client)
     if not server:
@@ -61,6 +64,29 @@ def joinClient(irc, client, channel):
             ts=irc.channels[channel].ts, uid=client, channel=channel,
             modes=utils.joinModes(irc.channels[channel].modes)))
     irc.channels[channel].users.add(client)
+
+def sjoinServer(irc, server, channel, users, ts=None, modes=None):
+    channel = channel.lower()
+    server = server or irc.sid
+    assert users, "sjoinServer: No users sent?"
+    if not server:
+        raise LookupError('No such PyLink PseudoClient exists.')
+    if ts is None:
+        ts = irc.channels[channel].ts
+    if modes is None:
+        modes = irc.channels[channel].modes
+    uids = []
+    namelist = []
+    # We take <users> as a list of (prefixmodes, uid) pairs.
+    for userpair in users:
+        assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
+        namelist.append(','.join(userpair))
+        uids.append(userpair[1])
+    namelist = ' '.join(namelist)
+    _sendFromServer(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
+            ts=ts, users=namelist, channel=channel,
+            modes=utils.joinModes(modes)))
+    irc.channels[channel].users.update(uids)
 
 def partClient(irc, client, channel, reason=None):
     channel = channel.lower()
@@ -545,11 +571,11 @@ def handle_events(irc, data):
                     traceback.print_exc()
                     continue
 
-def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
+def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst=True):
     # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
-    if sid is None:
+    if sid is None:  # No sid given; generate one!
         irc.sidgen = utils.TS6SIDGenerator(irc.serverdata["sidrange"])
         sid = irc.sidgen.next_sid()
     assert len(sid) == 3, "Incorrect SID length"
@@ -563,8 +589,14 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)
     _sendFromServer(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
-    _sendFromServer(irc, sid, 'ENDBURST')
+    if endburst:
+        endburstServer(irc, sid)
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
+    return sid
+
+def endburstServer(irc, sid):
+    _sendFromServer(irc, sid, 'ENDBURST')
+    irc.servers[sid].has_bursted = True
 
 def handle_ftopic(irc, numeric, command, args):
     # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
