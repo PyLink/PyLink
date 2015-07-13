@@ -81,13 +81,13 @@ def create(irc, source, args):
     if not utils.isChannel(channel):
         utils.msg(irc, source, 'Error: invalid channel %r.' % channel)
         return
-    if source not in irc.channels[channel]:
+    if source not in irc.channels[channel].users:
         utils.msg(irc, source, 'Error: you must be in %r to complete this operation.' % channel)
         return
     if not utils.isOper(irc, source):
-        utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.' % channel)
+        utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
         return
-    db[(irc.name, channel)] = {'claim': [irc.name], 'links': [], 'blocked_nets': []}
+    db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
     irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
     utils.msg(irc, source, 'Done.')
 
@@ -105,19 +105,116 @@ def destroy(irc, source, args):
         utils.msg(irc, source, 'Error: invalid channel %r.' % channel)
         return
     if not utils.isOper(irc, source):
-        utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.' % channel)
+        utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
         return
 
-    if channel in db:
-        del db[channel]
+    if (irc.name, channel) in db:
+        del db[(irc.name, channel)]
         if channel not in map(str.lower, irc.serverdata['channels']):
             irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
         utils.msg(irc, source, 'Done.')
     else:
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
+        return
+
+@utils.add_cmd
+def link(irc, source, args):
+    """<remotenet> <channel> <local channel>
+
+    Links channel <channel> on <remotenet> over the relay to <local channel>.
+    If <local channel> is not specified, it defaults to the same name as
+    <channel>."""
+    try:
+        channel = args[1].lower()
+        remotenet = args[0].lower()
+    except IndexError:
+        utils.msg(irc, source, "Error: not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
+        return
+    try:
+        localchan = args[2].lower()
+    except IndexError:
+        localchan = channel
+    for c in (channel, localchan):
+        if not utils.isChannel(c):
+            utils.msg(irc, source, 'Error: invalid channel %r.' % c)
+            return
+    if source not in irc.channels[localchan].users:
+        utils.msg(irc, source, 'Error: you must be in %r to complete this operation.' % localchan)
+        return
+    if not utils.isOper(irc, source):
+        utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
+        return
+    if remotenet not in utils.networkobjects:
+        utils.msg(irc, source, 'Error: no network named %r exists.' % remotenet)
+        return
+    if (irc.name, localchan) in db:
+        utils.msg(irc, source, 'Error: channel %r is already part of a relay.' % localchan)
+        return
+    for dbentry in db.values():
+        if (irc.name, localchan) in dbentry['links']:
+            utils.msg(irc, source, 'Error: channel %r is already part of a relay.' % localchan)
+            return
+    try:
+        entry = db[(remotenet, channel)]
+    except KeyError:
+        utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
+        return
+    else:
+        entry['links'].add((irc.name, localchan))
+        utils.msg(irc, source, 'Done.')
+
+@utils.add_cmd
+def delink(irc, source, args):
+    """<local channel> [<network>]
+
+    Delinks channel <local channel>. <network> must and can only be specified
+    if you are on the host network for <local channel>, and allows you to
+    pick which network to delink. To remove all networks from a relay, use the
+    'destroy' command instead."""
+    try:
+        channel = args[0].lower()
+    except IndexError:
+        utils.msg(irc, source, "Error: not enough arguments. Needs 1-2: channel, remote netname (optional).")
+        return
+    try:
+        remotenet = args[1].lower()
+    except IndexError:
+        remotenet = None
+    if not utils.isOper(irc, source):
+        utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
+        return
+    if not utils.isChannel(channel):
+        utils.msg(irc, source, 'Error: invalid channel %r.' % channel)
+        return
+    for dbentry in db.values():
+        if (irc.name, channel) in dbentry['links']:
+            entry = dbentry
+            break
+    if (irc.name, channel) in db:  # We own this channel
+        if remotenet is None:
+            utils.msg(irc, source, "Error: you must select a network to delink, or use the 'destroy' command no remove this relay entirely.")
+            return
+        else:
+            for entry in db.values():
+                for link in entry['links'].copy():
+                    if link[0] == remotenet:
+                        entry['links'].remove(link)
+    else:
+        entry['links'].remove((irc.name, channel))
+    utils.msg(irc, source, 'Done.')
+
+def relay(homeirc, func, args):
+    """<source IRC network object> <function name> <args>
+
+    Relays a call to <function name>(<args>) to every IRC object's protocol
+    module except the source IRC network's."""
+    for name, irc in utils.networkobjects.items():
+        if name == homeirc.name:
+            continue
+        f = getattr(irc.proto, func)
+        f(*args)
 
 def main(irc):
-
     loadDB()
     # HACK: we only want to schedule this once globally, because
     # exportDB will otherwise be called by every network that loads this

@@ -17,7 +17,7 @@ class Irc():
     def __init__(self, netname, proto, conf):
         # Initialize some variables
         self.connected = False
-        self.name = netname
+        self.name = netname.lower()
         self.conf = conf
         # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {}
