@@ -14,6 +14,7 @@ from log import log
 
 dbname = "pylinkrelay.db"
 relayusers = defaultdict(dict)
+relayservers = defaultdict(dict)
 
 def normalizeNick(irc, netname, nick, separator="/"):
     orig_nick = nick
@@ -123,10 +124,27 @@ def relayJoins(irc, channel, users, ts, modes):
         realname = userobj.realname
         log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
         for name, remoteirc in utils.networkobjects.items():
-            nick = normalizeNick(remoteirc, irc.name, userobj.nick)
             if name == irc.name:
                 # Don't relay things to their source network...
                 continue
+            try:  # Spawn our pseudoserver first
+                relayservers[remoteirc.name][irc.name] = sid = \
+                    remoteirc.proto.spawnServer(remoteirc, '%s.relay' % irc.name,
+                                                endburst=False)
+                # We want to wait a little bit for the remote IRCd to send their users,
+                # so we can join them as part of a burst on remote networks.
+                # Because IRC is asynchronous, we can't really control how long
+                # this will take.
+                endburst_timer = threading.Timer(0.5, remoteirc.proto.endburstServer,
+                                                 args=(remoteirc, sid))
+                log.debug('(%s) Setting timer to BURST %s', remoteirc.name, sid)
+                endburst_timer.start()
+            except ValueError:
+                # Server already exists (raised by the protocol module).
+                sid = relayservers[remoteirc.name][irc.name]
+            log.debug('(%s) Have we bursted %s yet? %s', remoteirc.name, sid,
+                      remoteirc.servers[sid].has_bursted)
+            nick = normalizeNick(remoteirc, irc.name, userobj.nick)
             # If the user (stored here as {(netname, UID):
             # {network1: UID1, network2: UID2}}) exists, don't spawn it
             # again!
@@ -135,12 +153,16 @@ def relayJoins(irc, channel, users, ts, modes):
                 u = userpair_index.get(remoteirc.name)
             if u is None:  # .get() returns None if not found
                 u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
-                                                host=host, realname=realname).uid
+                                                host=host, realname=realname,
+                                                server=sid).uid
                 remoteirc.users[u].remote = irc.name
-            log.debug('(%s) Spawning client %s (UID=%s)', irc.name, nick, u)
             relayusers[(irc.name, userobj.uid)][remoteirc.name] = u
             remoteirc.users[u].remote = irc.name
-            remoteirc.proto.joinClient(remoteirc, u, channel)
+            if not remoteirc.servers[sid].has_bursted:
+                # TODO: join users in batches with SJOIN, not one by one.
+                remoteirc.proto.sjoinServer(remoteirc, sid, channel, [('', u)], ts=ts)
+            else:
+                remoteirc.proto.joinClient(remoteirc, u, channel)
 
 def removeChannel(irc, channel):
     if channel not in map(str.lower, irc.serverdata['channels']):
