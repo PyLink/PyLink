@@ -14,7 +14,6 @@ from log import log
 
 dbname = "pylinkrelay.db"
 relayusers = defaultdict(dict)
-queued_users = []
 
 def normalizeNick(irc, netname, nick, separator="/"):
     orig_nick = nick
@@ -78,8 +77,19 @@ def findRelay(chanpair):
         if chanpair in dbentry['links']:
             return name
 
-def initializeChannel(homeirc, channel):
-    homeirc.proto.joinClient(homeirc, homeirc.pseudoclient.uid, channel)
+def initializeChannel(irc, channel):
+    irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
+    c = irc.channels[channel]
+    relay = findRelay((irc.name, channel))
+    users = c.users.copy()
+    for link in db[relay]['links']:
+        try:
+            remotenet, remotechan = link
+            users.update(utils.networkobjects[remotechan].channels[remotechan].users)
+        except KeyError:
+            pass
+    log.debug('(%s) relay users: %s', irc, users)
+    relayJoins(irc, channel, users, c.ts, c.modes)
 
 def handle_join(irc, numeric, command, args):
     channel = args['channel']
@@ -89,7 +99,11 @@ def handle_join(irc, numeric, command, args):
     modes = args['modes']
     ts = args['ts']
     users = set(args['users'])
-    users.update(irc.channels[channel].users)
+    # users.update(irc.channels[channel].users)
+    relayJoins(irc, channel, users, ts, modes)
+utils.add_hook(handle_join, 'JOIN')
+
+def relayJoins(irc, channel, users, ts, modes):
     for user in users:
         try:
             if irc.users[user].remote:
@@ -127,64 +141,6 @@ def handle_join(irc, numeric, command, args):
             relayusers[(irc.name, userobj.uid)][remoteirc.name] = u
             remoteirc.users[u].remote = irc.name
             remoteirc.proto.joinClient(remoteirc, u, channel)
-    '''
-    chanpair = findRelay((homeirc.name, channel))
-    all_links = [chanpair] + list(db[chanpair]['links'])
-    # Iterate through all the (network, channel) pairs related
-    # to the channel.
-    log.debug('all_links: %s', all_links)
-    for link in all_links:
-        network, channel = link
-        if network == homeirc.name:
-            # Don't process our own stuff...
-            continue
-        log.debug('Processing link %s (homeirc=%s)', link, homeirc.name)
-        try:
-            linkednet = utils.networkobjects[network]
-        except KeyError:
-            # Network isn't connected yet.
-            continue
-        # Iterate through each of these links' channels' users
-        for user in linkednet.channels[channel].users.copy():
-            log.debug('Processing user %s/%s (homeirc=%s)', user, linkednet.name, homeirc.name)
-            if user == linkednet.pseudoclient.uid:
-                # We don't need to clone the PyLink pseudoclient... That's
-                # meaningless.
-                continue
-            try:
-                if linkednet.users[user].remote:
-                    # Is the .remote atrribute set? If so, don't relay already
-                    # relayed clients; that'll trigger an endless loop!
-                    continue
-            except AttributeError:  # Nope, it isn't.
-                pass
-            userobj = linkednet.users[user]
-            userpair_index = relayusers.get((linkednet.name, user))
-            ident = userobj.ident
-            host = userobj.host
-            realname = userobj.realname
-            # And a third for loop to spawn+join pseudoclients for
-            # them all.
-            log.debug('Okay, spawning %s/%s everywhere', user, linkednet.name)
-            for name, irc in utils.networkobjects.items():
-                nick = normalizeNick(irc, linkednet.name, userobj.nick)
-                if name == linkednet.name:
-                    # Don't relay things to their source network...
-                    continue
-                # If the user (stored here as {(netname, UID):
-                # {network1: UID1, network2: UID2}}) exists, don't spawn it
-                # again!
-                u = None
-                if userpair_index is not None:
-                    u = userpair_index.get(irc.name)
-                if u is None:  # .get() returns None if not found
-                    u = irc.proto.spawnClient(irc, nick, ident=ident,
-                                          host=host, realname=realname).uid
-                    irc.users[u].remote = linkednet.name
-                log.debug('(%s) Spawning client %s (UID=%s)', irc.name, nick, u)
-                relayusers[(linkednet.name, userobj.uid)][irc.name] = u
-                irc.proto.joinClient(irc, u, channel)
-    '''
 
 def removeChannel(irc, channel):
     if channel not in map(str.lower, irc.serverdata['channels']):
@@ -223,7 +179,6 @@ def create(irc, source, args):
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
     initializeChannel(irc, channel)
     utils.msg(irc, source, 'Done.')
-utils.add_hook(handle_join, 'JOIN')
 
 @utils.add_cmd
 def destroy(irc, source, args):
@@ -339,6 +294,13 @@ def delink(irc, source, args):
         removeChannel(irc, channel)
     utils.msg(irc, source, 'Done.')
 
+def initializeAll(irc):
+    for chanpair, entrydata in db.items():
+        network, channel = chanpair
+        initializeChannel(irc, channel)
+        for link in entrydata['links']:
+            network, channel = link
+            initializeChannel(irc, channel)
 def main():
     loadDB()
     utils.schedulers['relaydb'] = scheduler = sched.scheduler()
@@ -348,6 +310,8 @@ def main():
     thread = threading.Thread(target=scheduler.run)
     thread.daemon = True
     thread.start()
+    for ircobj in utils.networkobjects.values():
+        initializeAll(irc)
     '''
         # Same goes for all the other initialization stuff; we only
         # want it to happen once.
@@ -356,13 +320,6 @@ def main():
                 irc.proto.spawnServer(irc, '%s.relay' % network)
     '''
 
-    for chanpair, entrydata in db.items():
-        network, channel = chanpair
-        try:
-            initializeChannel(utils.networkobjects[network], channel)
-            for link in entrydata['links']:
-                network, channel = link
-                initializeChannel(utils.networkobjects[network], channel)
-        except KeyError:
-            pass  # FIXME: initialize as soon as the network connects,
-                  # not when the next JOIN occurs
+def handle_endburst(irc, numeric, command, args):
+    initializeAll(irc)
+utils.add_hook(handle_endburst, "ENDBURST")
