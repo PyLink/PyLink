@@ -63,10 +63,17 @@ def loadDB():
         db = {}
 
 def exportDB(scheduler):
-    scheduler.enter(60, 1, exportDB, argument=(scheduler,))
+    scheduler.enter(30, 1, exportDB, argument=(scheduler,))
     log.debug("Relay: exporting links database to %s", dbname)
     with open(dbname, 'wb') as f:
         pickle.dump(db, f, protocol=4)
+
+def initializechannel(irc, channel):
+    irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
+
+def removechannel(irc, channel):
+    if channel not in map(str.lower, irc.serverdata['channels']):
+        irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
 
 @utils.add_cmd
 def create(irc, source, args):
@@ -88,7 +95,7 @@ def create(irc, source, args):
         utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
         return
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
-    irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
+    initializechannel(irc, channel)
     utils.msg(irc, source, 'Done.')
 
 @utils.add_cmd
@@ -110,8 +117,7 @@ def destroy(irc, source, args):
 
     if (irc.name, channel) in db:
         del db[(irc.name, channel)]
-        if channel not in map(str.lower, irc.serverdata['channels']):
-            irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
+        removechannel(irc, channel)
         utils.msg(irc, source, 'Done.')
     else:
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
@@ -161,6 +167,7 @@ def link(irc, source, args):
         return
     else:
         entry['links'].add((irc.name, localchan))
+        initializechannel(irc, localchan)
         utils.msg(irc, source, 'Done.')
 
 @utils.add_cmd
@@ -199,8 +206,10 @@ def delink(irc, source, args):
                 for link in entry['links'].copy():
                     if link[0] == remotenet:
                         entry['links'].remove(link)
+                        removechannel(utils.networkobjects[remotenet], link[1])
     else:
         entry['links'].remove((irc.name, channel))
+        removechannel(irc, channel)
     utils.msg(irc, source, 'Done.')
 
 def relay(homeirc, func, args):
@@ -226,10 +235,12 @@ def main(irc):
         # execution, in order to get a repeating loop.
         thread = threading.Thread(target=scheduler.run)
         thread.start()
-    for chanpair in db:
+    for chanpair, entrydata in db.items():
         network, channel = chanpair
-        ircobj = utils.networkobjects[network]
-        ircobj.proto.joinClient(ircobj, irc.pseudoclient.uid, channel)
+        initializechannel(utils.networkobjects[network], channel)
+        for link in entrydata['links']:
+            network, channel = link
+            initializechannel(utils.networkobjects[network], channel)
     for network, ircobj in utils.networkobjects.items():
         if ircobj.name != irc.name:
             irc.proto.spawnServer(irc, '%s.relay' % network)
