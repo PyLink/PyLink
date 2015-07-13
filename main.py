@@ -55,7 +55,6 @@ class Irc():
         self.socket.settimeout(180)
         self.socket.connect((ip, port))
         self.proto.connect(self)
-        self.loaded = []
         reading_thread = threading.Thread(target = self.run)
         self.connected = True
         reading_thread.start()
@@ -90,33 +89,34 @@ class Irc():
         log.debug("(%s) -> %s", self.name, data.decode("utf-8").strip("\n"))
         self.socket.send(data)
 
-    def load_plugins(self):
-        to_load = conf.conf['plugins']
-        plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
-        # Here, we override the module lookup and import the plugins
-        # dynamically depending on which were configured.
-        for plugin in to_load:
-            try:
-                moduleinfo = imp.find_module(plugin, plugins_folder)
-                pl = imp.load_source(plugin, moduleinfo[1])
-                self.loaded.append(pl)
-            except ImportError as e:
-                if str(e).startswith('No module named'):
-                    log.error('Failed to load plugin %r: the plugin could not be found.', plugin)
-                else:
-                    log.error('Failed to load plugin %r: import error %s', plugin, str(e))
-            else:
-                if hasattr(pl, 'main'):
-                    log.debug('Calling main() function of plugin %r', pl)
-                    pl.main(irc)
-        log.info("loaded plugins: %s", self.loaded)
-
 if __name__ == '__main__':
     log.info('PyLink starting...')
     if conf.conf['login']['password'] == 'changeme':
         log.critical("You have not set the login details correctly! Exiting...")
         sys.exit(2)
     protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
+
+    # Import plugins first globally, because they can listen for events
+    # that happen before the connection phase.
+    to_load = conf.conf['plugins']
+    plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
+    # Here, we override the module lookup and import the plugins
+    # dynamically depending on which were configured.
+    for plugin in to_load:
+        try:
+            moduleinfo = imp.find_module(plugin, plugins_folder)
+            pl = imp.load_source(plugin, moduleinfo[1])
+            utils.plugins.append(pl)
+        except ImportError as e:
+            if str(e).startswith('No module named'):
+                log.error('Failed to load plugin %r: the plugin could not be found.', plugin)
+            else:
+                log.error('Failed to load plugin %r: import error %s', plugin, str(e))
+        else:
+            if hasattr(pl, 'main'):
+                log.debug('Calling main() function of plugin %r', pl)
+                pl.main()
+
     for network in conf.conf['servers']:
         protoname = conf.conf['servers'][network]['protocol']
         try:
@@ -130,8 +130,5 @@ if __name__ == '__main__':
             sys.exit(2)
         else:
             utils.networkobjects[network] = Irc(network, proto, conf.conf)
-    # This is a separate loop to make sure that ALL networks have their
-    # Irc objects added into utils.networkobjects, before we load any plugins
-    # that may require them.
-    for irc in utils.networkobjects.values():
-        irc.load_plugins()
+    log.info("loaded plugins: %s", utils.plugins)
+

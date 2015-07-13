@@ -54,6 +54,7 @@ def joinClient(irc, client, channel):
     channel = channel.lower()
     server = utils.isInternalClient(irc, client)
     if not server:
+        log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
         raise LookupError('No such PyLink PseudoClient exists.')
     # One channel per line here!
     _sendFromServer(irc, server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
@@ -526,7 +527,7 @@ def handle_events(irc, data):
         # to plugins and the like. For example, the JOIN handler will return
         # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
         # 'UID3']}, etc.
-        if parsed_args:
+        if parsed_args is not None:
             # Always make sure TS is sent.
             if 'ts' not in parsed_args:
                 parsed_args['ts'] = int(time.time())
@@ -636,3 +637,6 @@ def handle_fhost(irc, numeric, command, args):
 def handle_fname(irc, numeric, command, args):
     irc.users[numeric].realname = newgecos = args[0]
     return {'target': numeric, 'newgecos': newgecos}
+
+def handle_endburst(irc, numeric, command, args):
+    return {}
