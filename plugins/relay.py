@@ -118,7 +118,7 @@ def handle_join(irc, numeric, command, args):
             # again!
             u = None
             if userpair_index is not None:
-                u = userpair_index.get(irc.name)
+                u = userpair_index.get(remoteirc.name)
             if u is None:  # .get() returns None if not found
                 u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
                                                 host=host, realname=realname).uid
