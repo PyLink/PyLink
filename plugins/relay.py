@@ -7,17 +7,19 @@ import sched
 import threading
 import time
 import string
+from collections import defaultdict
 
 import utils
 from log import log
 
 dbname = "pylinkrelay.db"
+relayusers = defaultdict(dict)
+queued_users = []
 
-def normalizeNick(irc, nick, separator="/"):
+def normalizeNick(irc, netname, nick, separator="/"):
     orig_nick = nick
     protoname = irc.proto.__name__
     maxnicklen = irc.maxnicklen
-    netname = irc.name
     if protoname == 'charybdis':
         # Charybdis doesn't allow / in usernames, and will quit with
         # a protocol violation if there is one.
@@ -45,7 +47,7 @@ def normalizeNick(irc, nick, separator="/"):
         # but couldn't be created due to a nick conflict.
         # This can happen when someone steals a relay user's nick.
         new_sep = separator + separator[-1]
-        nick = normalizeNick(irc, orig_nick, separator=new_sep)
+        nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
     finalLength = len(nick)
     assert finalLength <= maxnicklen, "Normalized nick %r went over max " \
         "nick length (got: %s, allowed: %s!" % (nick, finalLength, maxnicklen)
@@ -68,12 +70,136 @@ def exportDB(scheduler):
     with open(dbname, 'wb') as f:
         pickle.dump(db, f, protocol=4)
 
-def initializechannel(irc, channel):
-    irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
+def findRelay(chanpair):
+    if chanpair in db:  # This chanpair is a shared channel; others link to it
+        return chanpair
+    # This chanpair is linked *to* a remote channel
+    for name, dbentry in db.items():
+        if chanpair in dbentry['links']:
+            return name
 
-def removechannel(irc, channel):
+def initializeChannel(homeirc, channel):
+    homeirc.proto.joinClient(homeirc, homeirc.pseudoclient.uid, channel)
+
+def handle_join(irc, numeric, command, args):
+    channel = args['channel']
+    if not findRelay((irc.name, channel)):
+        # No relay here, return.
+        return
+    modes = args['modes']
+    ts = args['ts']
+    users = set(args['users'])
+    users.update(irc.channels[channel].users)
+    for user in users:
+        try:
+            if irc.users[user].remote:
+                # Is the .remote atrribute set? If so, don't relay already
+                # relayed clients; that'll trigger an endless loop!
+                continue
+        except AttributeError:  # Nope, it isn't.
+            pass
+        if user == irc.pseudoclient.uid:
+            # We don't need to clone the PyLink pseudoclient... That's
+            # meaningless.
+            continue
+        userobj = irc.users[user]
+        userpair_index = relayusers.get((irc.name, user))
+        ident = userobj.ident
+        host = userobj.host
+        realname = userobj.realname
+        log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
+        for name, remoteirc in utils.networkobjects.items():
+            nick = normalizeNick(remoteirc, irc.name, userobj.nick)
+            if name == irc.name:
+                # Don't relay things to their source network...
+                continue
+            # If the user (stored here as {(netname, UID):
+            # {network1: UID1, network2: UID2}}) exists, don't spawn it
+            # again!
+            u = None
+            if userpair_index is not None:
+                u = userpair_index.get(irc.name)
+            if u is None:  # .get() returns None if not found
+                u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
+                                                host=host, realname=realname).uid
+                remoteirc.users[u].remote = irc.name
+            log.debug('(%s) Spawning client %s (UID=%s)', irc.name, nick, u)
+            relayusers[(irc.name, userobj.uid)][remoteirc.name] = u
+            remoteirc.users[u].remote = irc.name
+            remoteirc.proto.joinClient(remoteirc, u, channel)
+    '''
+    chanpair = findRelay((homeirc.name, channel))
+    all_links = [chanpair] + list(db[chanpair]['links'])
+    # Iterate through all the (network, channel) pairs related
+    # to the channel.
+    log.debug('all_links: %s', all_links)
+    for link in all_links:
+        network, channel = link
+        if network == homeirc.name:
+            # Don't process our own stuff...
+            continue
+        log.debug('Processing link %s (homeirc=%s)', link, homeirc.name)
+        try:
+            linkednet = utils.networkobjects[network]
+        except KeyError:
+            # Network isn't connected yet.
+            continue
+        # Iterate through each of these links' channels' users
+        for user in linkednet.channels[channel].users.copy():
+            log.debug('Processing user %s/%s (homeirc=%s)', user, linkednet.name, homeirc.name)
+            if user == linkednet.pseudoclient.uid:
+                # We don't need to clone the PyLink pseudoclient... That's
+                # meaningless.
+                continue
+            try:
+                if linkednet.users[user].remote:
+                    # Is the .remote atrribute set? If so, don't relay already
+                    # relayed clients; that'll trigger an endless loop!
+                    continue
+            except AttributeError:  # Nope, it isn't.
+                pass
+            userobj = linkednet.users[user]
+            userpair_index = relayusers.get((linkednet.name, user))
+            ident = userobj.ident
+            host = userobj.host
+            realname = userobj.realname
+            # And a third for loop to spawn+join pseudoclients for
+            # them all.
+            log.debug('Okay, spawning %s/%s everywhere', user, linkednet.name)
+            for name, irc in utils.networkobjects.items():
+                nick = normalizeNick(irc, linkednet.name, userobj.nick)
+                if name == linkednet.name:
+                    # Don't relay things to their source network...
+                    continue
+                # If the user (stored here as {(netname, UID):
+                # {network1: UID1, network2: UID2}}) exists, don't spawn it
+                # again!
+                u = None
+                if userpair_index is not None:
+                    u = userpair_index.get(irc.name)
+                if u is None:  # .get() returns None if not found
+                    u = irc.proto.spawnClient(irc, nick, ident=ident,
+                                          host=host, realname=realname).uid
+                    irc.users[u].remote = linkednet.name
+                log.debug('(%s) Spawning client %s (UID=%s)', irc.name, nick, u)
+                relayusers[(linkednet.name, userobj.uid)][irc.name] = u
+                irc.proto.joinClient(irc, u, channel)
+    '''
+
+def removeChannel(irc, channel):
     if channel not in map(str.lower, irc.serverdata['channels']):
         irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
+
+def relay(homeirc, func, args):
+    """<source IRC network object> <function name> <args>
+
+    Relays a call to <function name>(<args>) to every IRC object's protocol
+    module except the source IRC network's."""
+    for name, irc in utils.networkobjects.items():
+        if name == homeirc.name:
+            continue
+        f = getattr(irc.proto, func)
+        f(*args)
 
 @utils.add_cmd
 def create(irc, source, args):
@@ -95,8 +221,9 @@ def create(irc, source, args):
         utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
         return
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
-    initializechannel(irc, channel)
+    initializeChannel(irc, channel)
     utils.msg(irc, source, 'Done.')
+utils.add_hook(handle_join, 'JOIN')
 
 @utils.add_cmd
 def destroy(irc, source, args):
@@ -117,7 +244,7 @@ def destroy(irc, source, args):
 
     if (irc.name, channel) in db:
         del db[(irc.name, channel)]
-        removechannel(irc, channel)
+        removeChannel(irc, channel)
         utils.msg(irc, source, 'Done.')
     else:
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
@@ -167,7 +294,7 @@ def link(irc, source, args):
         return
     else:
         entry['links'].add((irc.name, localchan))
-        initializechannel(irc, localchan)
+        initializeChannel(irc, localchan)
         utils.msg(irc, source, 'Done.')
 
 @utils.add_cmd
@@ -206,41 +333,36 @@ def delink(irc, source, args):
                 for link in entry['links'].copy():
                     if link[0] == remotenet:
                         entry['links'].remove(link)
-                        removechannel(utils.networkobjects[remotenet], link[1])
+                        removeChannel(utils.networkobjects[remotenet], link[1])
     else:
         entry['links'].remove((irc.name, channel))
-        removechannel(irc, channel)
+        removeChannel(irc, channel)
     utils.msg(irc, source, 'Done.')
 
-def relay(homeirc, func, args):
-    """<source IRC network object> <function name> <args>
-
-    Relays a call to <function name>(<args>) to every IRC object's protocol
-    module except the source IRC network's."""
-    for name, irc in utils.networkobjects.items():
-        if name == homeirc.name:
-            continue
-        f = getattr(irc.proto, func)
-        f(*args)
-
-def main(irc):
+def main():
     loadDB()
-    # HACK: we only want to schedule this once globally, because
-    # exportDB will otherwise be called by every network that loads this
-    # plugin.
-    if 'relaydb' not in utils.schedulers:
-        utils.schedulers['relaydb'] = scheduler = sched.scheduler()
-        scheduler.enter(30, 1, exportDB, argument=(scheduler,))
-        # Thread this because exportDB() queues itself as part of its
-        # execution, in order to get a repeating loop.
-        thread = threading.Thread(target=scheduler.run)
-        thread.start()
+    utils.schedulers['relaydb'] = scheduler = sched.scheduler()
+    scheduler.enter(30, 1, exportDB, argument=(scheduler,))
+    # Thread this because exportDB() queues itself as part of its
+    # execution, in order to get a repeating loop.
+    thread = threading.Thread(target=scheduler.run)
+    thread.daemon = True
+    thread.start()
+    '''
+        # Same goes for all the other initialization stuff; we only
+        # want it to happen once.
+        for network, ircobj in utils.networkobjects.items():
+            if ircobj.name != irc.name:
+                irc.proto.spawnServer(irc, '%s.relay' % network)
+    '''
+
     for chanpair, entrydata in db.items():
         network, channel = chanpair
-        initializechannel(utils.networkobjects[network], channel)
-        for link in entrydata['links']:
-            network, channel = link
-            initializechannel(utils.networkobjects[network], channel)
-    for network, ircobj in utils.networkobjects.items():
-        if ircobj.name != irc.name:
-            irc.proto.spawnServer(irc, '%s.relay' % network)
+        try:
+            initializeChannel(utils.networkobjects[network], channel)
+            for link in entrydata['links']:
+                network, channel = link
+                initializeChannel(utils.networkobjects[network], channel)
+        except KeyError:
+            pass  # FIXME: initialize as soon as the network connects,
+                  # not when the next JOIN occurs
