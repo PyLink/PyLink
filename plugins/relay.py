@@ -295,6 +295,7 @@ def delink(irc, source, args):
     utils.msg(irc, source, 'Done.')
 
 def initializeAll(irc):
+    utils.started.wait()
     for chanpair, entrydata in db.items():
         network, channel = chanpair
         initializeChannel(irc, channel)
@@ -310,9 +311,10 @@ def main():
     thread = threading.Thread(target=scheduler.run)
     thread.daemon = True
     thread.start()
+    '''
     for ircobj in utils.networkobjects.values():
         initializeAll(irc)
-    '''
+
         # Same goes for all the other initialization stuff; we only
         # want it to happen once.
         for network, ircobj in utils.networkobjects.items():
@@ -321,5 +323,6 @@ def main():
     '''
 
 def handle_endburst(irc, numeric, command, args):
-    initializeAll(irc)
+    thread = threading.Thread(target=initializeAll, args=(irc,))
+    thread.start()
 utils.add_hook(handle_endburst, "ENDBURST")

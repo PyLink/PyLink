@@ -1,6 +1,7 @@
 import string
 import re
 from collections import defaultdict
+import threading
 
 from log import log
 
@@ -11,6 +12,7 @@ command_hooks = defaultdict(list)
 networkobjects = {}
 schedulers = {}
 plugins = []
+started = threading.Event()
 
 class TS6UIDGenerator():
     """TS6 UID Generator module, adapted from InspIRCd source

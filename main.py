@@ -130,5 +130,6 @@ if __name__ == '__main__':
             sys.exit(2)
         else:
             utils.networkobjects[network] = Irc(network, proto, conf.conf)
+    utils.started.set()
     log.info("loaded plugins: %s", utils.plugins)
 
