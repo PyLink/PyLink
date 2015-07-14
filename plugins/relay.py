@@ -327,19 +327,22 @@ def link(irc, source, args):
     if remotenet not in utils.networkobjects:
         utils.msg(irc, source, 'Error: no network named %r exists.' % remotenet)
         return
-    if (irc.name, localchan) in db:
+    localentry = findRelay((irc.name, localchan))
+    if localentry:
         utils.msg(irc, source, 'Error: channel %r is already part of a relay.' % localchan)
         return
-    for dbentry in db.values():
-        if (irc.name, localchan) in dbentry['links']:
-            utils.msg(irc, source, 'Error: channel %r is already part of a relay.' % localchan)
-            return
     try:
         entry = db[(remotenet, channel)]
     except KeyError:
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
         return
     else:
+        for link in entry['links']:
+            if link[0] == irc.name:
+                utils.msg(irc, source, "Error: remote channel '%s%s' is already"
+                                       " linked here as %r." % (remotenet,
+                                                                channel, link[1]))
+                return
         entry['links'].add((irc.name, localchan))
         initializeChannel(irc, localchan)
         utils.msg(irc, source, 'Done.')
@@ -367,24 +370,24 @@ def delink(irc, source, args):
     if not utils.isChannel(channel):
         utils.msg(irc, source, 'Error: invalid channel %r.' % channel)
         return
-    for dbentry in db.values():
-        if (irc.name, channel) in dbentry['links']:
-            entry = dbentry
-            break
-    if (irc.name, channel) in db:  # We own this channel
-        if remotenet is None:
-            utils.msg(irc, source, "Error: you must select a network to delink, or use the 'destroy' command no remove this relay entirely.")
-            return
+    entry = findRelay((irc.name, channel))
+    if entry:
+        if entry[0] == irc.name:  # We own this channel.
+            if remotenet is None:
+                utils.msg(irc, source, "Error: you must select a network to delink, or use the 'destroy' command no remove this relay entirely.")
+                return
+            else:
+                for entry in db.values():
+                    for link in entry['links'].copy():
+                        if link[0] == remotenet:
+                            entry['links'].remove(link)
+                            removeChannel(utils.networkobjects[remotenet], link[1])
         else:
-            for entry in db.values():
-                for link in entry['links'].copy():
-                    if link[0] == remotenet:
-                        entry['links'].remove(link)
-                        removeChannel(utils.networkobjects[remotenet], link[1])
+            db[entry]['links'].remove((irc.name, channel))
+            removeChannel(irc, channel)
+        utils.msg(irc, source, 'Done.')
     else:
-        entry['links'].remove((irc.name, channel))
-        removeChannel(irc, channel)
-    utils.msg(irc, source, 'Done.')
+        utils.msg(irc, source, 'Error: no such relay %r.' % channel)
 
 def initializeAll(irc):
     utils.started.wait()
