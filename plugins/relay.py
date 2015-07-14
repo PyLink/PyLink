@@ -15,6 +15,10 @@ from log import log
 dbname = "pylinkrelay.db"
 relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
+# We need to use a synchronization method here, because multiple threads
+# can call getRelaySid at the same time, and we risk spawning the same
+# pseudoserver more than once, which will cause SQUITs.
+relayservers_lock = threading.Lock()
 
 def normalizeNick(irc, netname, nick, separator="/"):
     orig_nick = nick
@@ -79,6 +83,37 @@ def getPrefixModes(irc, remoteirc, channel, user):
             modes += remoteirc.cmodes[pmode]
     return modes
 
+def getRemoteUser(irc, remoteirc, user):
+    # If the user (stored here as {(netname, UID):
+    # {network1: UID1, network2: UID2}}) exists, don't spawn it
+    # again!
+    try:
+        u = relayusers[(irc.name, user)][remoteirc.name]
+    except KeyError:
+        userobj = irc.users[user]
+        nick = normalizeNick(remoteirc, irc.name, userobj.nick)
+        ident = userobj.ident
+        host = userobj.host
+        realname = userobj.realname
+        sid = getRelaySid(irc, remoteirc)
+        u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
+                                        host=host, realname=realname,
+                                        server=sid).uid
+        remoteirc.users[u].remote = irc.name
+    relayusers[(irc.name, user)][remoteirc.name] = u
+    remoteirc.users[u].remote = irc.name
+    return u
+
+def getRelaySid(irc, remoteirc):
+    with relayservers_lock:
+        log.debug('relayservers: %s', relayservers)
+        try:
+            sid = relayservers[remoteirc.name][irc.name]
+        except KeyError:  # hasn't been spawned yet.
+            sid = irc.proto.spawnServer(irc, '%s.relay' % remoteirc.name)
+            relayservers[remoteirc.name][irc.name] = sid
+    return sid
+
 def findRelay(chanpair):
     if chanpair in db:  # This chanpair is a shared channel; others link to it
         return chanpair
@@ -87,7 +122,9 @@ def findRelay(chanpair):
         if chanpair in dbentry['links']:
             return name
 
-def findRemoteChan(remotenetname, query):
+def findRemoteChan(irc, remoteirc, channel):
+    query = (irc.name, channel)
+    remotenetname = remoteirc.name
     chanpair = findRelay(query)
     if chanpair is None:
         return
@@ -106,6 +143,7 @@ def initializeChannel(irc, channel):
     relay = findRelay((irc.name, channel))
     log.debug('(%s) initializeChannel being called on %s', irc.name, channel)
     log.debug('(%s) initializeChannel: relay pair found to be %s', irc.name, relay)
+    queued_users = []
     if relay:
         all_links = db[relay]['links'].copy()
         all_links.update((relay,))
@@ -118,19 +156,18 @@ def initializeChannel(irc, channel):
             remoteirc = utils.networkobjects[remotenet]
             rc = remoteirc.channels[remotechan]
             for user in remoteirc.channels[remotechan].users:
+                # Don't spawn our pseudoclients again.
                 if not utils.isInternalClient(remoteirc, user):
                     log.debug('(%s) initializeChannel: should be joining %s/%s to %s', irc.name, user, remotenet, channel)
-                    remoteuser = relayusers[(remotenet, user)][irc.name]
-                    irc.proto.joinClient(irc, remoteuser, channel)
-                    for m in getPrefixModes(remoteirc, irc, remotechan, user):
-                        mpair = ('+%s' % m, remoteuser)
-                        modes.append(mpair)
-            if modes:
-                sid = relayservers[remotenet][irc.name]
-                irc.proto.modeServer(irc, sid, channel, modes, ts=rc.ts)
-                log.debug('(%s) initializeChannel: syncing modes %r', irc.name, modes)
+                    remoteuser = getRemoteUser(remoteirc, irc, user)
+                    userpair = (getPrefixModes(remoteirc, irc, remotechan, user), remoteuser)
+                    log.debug('(%s) initializeChannel: adding %s to queued_users for %s', irc.name, userpair, channel)
+                    queued_users.append(userpair)
+            if queued_users:
+                sid = getRelaySid(irc, remoteirc)
+                irc.proto.sjoinServer(irc, sid, channel, queued_users, ts=rc.ts)
 
-    log.debug('(%s) initializeChannel: relay users: %s', irc.name, c.users)
+    log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
     relayJoins(irc, channel, c.users, c.ts, c.modes)
 
 def handle_join(irc, numeric, command, args):
@@ -164,8 +201,8 @@ def handle_part(irc, numeric, command, args):
     channel = args['channel']
     text = args['text']
     for netname, user in relayusers[(irc.name, numeric)].items():
-        remotechan = findRemoteChan(netname, (irc.name, channel))
         remoteirc = utils.networkobjects[netname]
+        remotechan = findRemoteChan(irc, remoteirc, channel)
         remoteirc.proto.partClient(remoteirc, user, remotechan, text)
 utils.add_hook(handle_part, 'PART')
 
@@ -183,66 +220,34 @@ def relayJoins(irc, channel, users, ts, modes):
             # We don't need to clone the PyLink pseudoclient... That's
             # meaningless.
             continue
-        userobj = irc.users[user]
-        userpair_index = relayusers.get((irc.name, user))
-        ident = userobj.ident
-        host = userobj.host
-        realname = userobj.realname
         log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
         for name, remoteirc in utils.networkobjects.items():
             if name == irc.name:
                 # Don't relay things to their source network...
                 continue
-            try:  # Spawn our pseudoserver first
-                relayservers[remoteirc.name][irc.name] = sid = \
-                    remoteirc.proto.spawnServer(remoteirc, '%s.relay' % irc.name,
-                                                endburst=False)
-                # We want to wait a little bit for the remote IRCd to send their users,
-                # so we can join them as part of a burst on remote networks.
-                # Because IRC is asynchronous, we can't really control how long
-                # this will take.
-                endburst_timer = threading.Timer(0.5, remoteirc.proto.endburstServer,
-                                                 args=(remoteirc, sid))
-                log.debug('(%s) Setting timer to BURST %s', remoteirc.name, sid)
-                endburst_timer.start()
-            except ValueError:
-                # Server already exists (raised by the protocol module).
-                sid = relayservers[remoteirc.name][irc.name]
+            sid = getRelaySid(remoteirc, irc)
             log.debug('(%s) Have we bursted %s yet? %s', remoteirc.name, sid,
                       remoteirc.servers[sid].has_bursted)
-            nick = normalizeNick(remoteirc, irc.name, userobj.nick)
-            # If the user (stored here as {(netname, UID):
-            # {network1: UID1, network2: UID2}}) exists, don't spawn it
-            # again!
-            u = None
-            if userpair_index is not None:
-                u = userpair_index.get(remoteirc.name)
-            if u is None:  # .get() returns None if not found
-                u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
-                                                host=host, realname=realname,
-                                                server=sid).uid
-                remoteirc.users[u].remote = irc.name
-            relayusers[(irc.name, userobj.uid)][remoteirc.name] = u
-            remoteirc.users[u].remote = irc.name
-            remotechan = findRemoteChan(remoteirc.name, (irc.name, channel))
+            u = getRemoteUser(irc, remoteirc, user)
+            remotechan = findRemoteChan(irc, remoteirc, channel)
             if remotechan is None:
                 continue
-            if not remoteirc.servers[sid].has_bursted:
-                # TODO: join users in batches with SJOIN, not one by one.
-                prefixes = getPrefixModes(irc, remoteirc, channel, user)
-                remoteirc.proto.sjoinServer(remoteirc, sid, remotechan, [(prefixes, u)], ts=ts)
-            else:
-                remoteirc.proto.joinClient(remoteirc, u, remotechan)
+            ts = irc.channels[channel].ts
+            # TODO: join users in batches with SJOIN, not one by one.
+            prefixes = getPrefixModes(irc, remoteirc, channel, user)
+            userpair = (prefixes, u)
+            log.debug('(%s) relayJoin: joining %s to %s%s', irc.name, userpair, remoteirc.name, remotechan)
+            remoteirc.proto.sjoinServer(remoteirc, sid, remotechan, [userpair], ts=ts)
 
 def relayPart(irc, channel, user):
     for name, remoteirc in utils.networkobjects.items():
         if name == irc.name:
             # Don't relay things to their source network...
             continue
-        remotechan = findRemoteChan(remoteirc.name, (irc.name, channel))
+        remotechan = findRemoteChan(irc, remoteirc, channel)
         log.debug('(%s) relayPart: looking for %s/%s on %s', irc.name, user, irc.name, remoteirc.name)
         log.debug('(%s) relayPart: remotechan found as %s', irc.name, remotechan)
-        remoteuser = relayusers[(irc.name, user)][remoteirc.name]
+        remoteuser = getRemoteUser(irc, remoteirc, user)
         log.debug('(%s) relayPart: remoteuser for %s/%s found as %s', irc.name, user, irc.name, remoteuser)
         if remotechan is None:
             continue
