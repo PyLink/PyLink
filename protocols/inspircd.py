@@ -73,6 +73,8 @@ def sjoinServer(irc, server, channel, users, ts=None, modes=None):
         raise LookupError('No such PyLink PseudoClient exists.')
     if ts is None:
         ts = irc.channels[channel].ts
+    log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts, 
+              time.strftime("%c", time.localtime(ts)))
     if modes is None:
         modes = irc.channels[channel].modes
     uids = []
@@ -590,9 +592,9 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)
     _sendFromServer(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
+    irc.servers[sid] = IrcServer(uplink, name, internal=True)
     if endburst:
         endburstServer(irc, sid)
-    irc.servers[sid] = IrcServer(uplink, name, internal=True)
     return sid
 
 def endburstServer(irc, sid):
