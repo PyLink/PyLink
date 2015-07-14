@@ -160,7 +160,15 @@ def relayJoins(irc, channel, users, ts, modes):
             remoteirc.users[u].remote = irc.name
             if not remoteirc.servers[sid].has_bursted:
                 # TODO: join users in batches with SJOIN, not one by one.
-                remoteirc.proto.sjoinServer(remoteirc, sid, channel, [('', u)], ts=ts)
+                prefix = ''
+                for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
+                    if pmode not in remoteirc.cmodes:  # Mode isn't supported by IRCd
+                        continue
+                    # If the user is in the respective list for the prefix
+                    # mode (e.g. the op list)
+                    if user in irc.channels[channel].prefixmodes[pmode+'s']:
+                        prefix += remoteirc.cmodes[pmode]
+                remoteirc.proto.sjoinServer(remoteirc, sid, channel, [(prefix, u)], ts=ts)
             else:
                 remoteirc.proto.joinClient(remoteirc, u, channel)
 
