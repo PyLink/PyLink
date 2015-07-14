@@ -117,7 +117,32 @@ def handle_join(irc, numeric, command, args):
     relayJoins(irc, channel, users, ts, modes)
 utils.add_hook(handle_join, 'JOIN')
 
+def handle_quit(irc, numeric, command, args):
+    ouruser = numeric
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        remoteirc = utils.networkobjects[netname]
+        remoteirc.proto.quitClient(remoteirc, user, args['text'])
+    del relayusers[(irc.name, ouruser)]
+utils.add_hook(handle_quit, 'QUIT')
+
+def handle_nick(irc, numeric, command, args):
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        remoteirc = utils.networkobjects[netname]
+        newnick = normalizeNick(remoteirc, irc.name, args['newnick'])
+        remoteirc.proto.nickClient(remoteirc, user, newnick)
+utils.add_hook(handle_nick, 'NICK')
+
+def handle_part(irc, numeric, command, args):
+    channel = args['channel']
+    text = args['text']
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        remotechan = findRemoteChan(netname, (irc.name, channel))
+        remoteirc = utils.networkobjects[netname]
+        remoteirc.proto.partClient(remoteirc, user, remotechan, text)
+utils.add_hook(handle_part, 'PART')
+
 def relayJoins(irc, channel, users, ts, modes):
+    queued_users = []
     for user in users:
         try:
             if irc.users[user].remote:
