@@ -111,6 +111,7 @@ def initializeChannel(irc, channel):
         all_links.update((relay,))
         log.debug('(%s) initializeChannel: all_links: %s', irc.name, all_links)
         for link in all_links:
+            modes = []
             remotenet, remotechan = link
             if remotenet == irc.name:
                 continue
@@ -121,6 +122,13 @@ def initializeChannel(irc, channel):
                     log.debug('(%s) initializeChannel: should be joining %s/%s to %s', irc.name, user, remotenet, channel)
                     remoteuser = relayusers[(remotenet, user)][irc.name]
                     irc.proto.joinClient(irc, remoteuser, channel)
+                    for m in getPrefixModes(remoteirc, irc, remotechan, user):
+                        mpair = ('+%s' % m, remoteuser)
+                        modes.append(mpair)
+            if modes:
+                sid = relayservers[remotenet][irc.name]
+                irc.proto.modeServer(irc, sid, channel, modes, ts=rc.ts)
+                log.debug('(%s) initializeChannel: syncing modes %r', irc.name, modes)
 
     log.debug('(%s) initializeChannel: relay users: %s', irc.name, c.users)
     relayJoins(irc, channel, c.users, c.ts, c.modes)
@@ -221,8 +229,8 @@ def relayJoins(irc, channel, users, ts, modes):
                 continue
             if not remoteirc.servers[sid].has_bursted:
                 # TODO: join users in batches with SJOIN, not one by one.
-                prefix = getPrefixModes(irc, remoteirc, channel, user)
-                remoteirc.proto.sjoinServer(remoteirc, sid, remotechan, [(prefix, u)], ts=ts)
+                prefixes = getPrefixModes(irc, remoteirc, channel, user)
+                remoteirc.proto.sjoinServer(remoteirc, sid, remotechan, [(prefixes, u)], ts=ts)
             else:
                 remoteirc.proto.joinClient(remoteirc, u, remotechan)
 
