@@ -147,18 +147,18 @@ def nickClient(irc, numeric, newnick):
     _sendFromUser(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
 
-def _sendModes(irc, numeric, target, modes):
+def _sendModes(irc, numeric, target, modes, ts=None):
     # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
     # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
     joinedmodes = utils.joinModes(modes)
     utils.applyModes(irc, target, modes)
     if utils.isChannel(target):
-        ts = irc.channels[target.lower()].ts
+        ts = ts or irc.channels[target.lower()].ts
         _sendFromUser(irc, numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
     else:
         _sendFromUser(irc, numeric, 'MODE %s %s' % (target, joinedmodes))
 
-def modeClient(irc, numeric, target, modes):
+def modeClient(irc, numeric, target, modes, ts=None):
     """<irc object> <client numeric> <list of modes>
 
     Sends modes from a PyLink PseudoClient. <list of modes> should be
@@ -166,9 +166,9 @@ def modeClient(irc, numeric, target, modes):
     """
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendModes(irc, numeric, target, modes)
+    _sendModes(irc, numeric, target, modes, ts=ts)
 
-def modeServer(irc, numeric, target, modes):
+def modeServer(irc, numeric, target, modes, ts=None):
     """<irc object> <server SID> <list of modes>
 
     Sends modes from a PyLink PseudoServer. <list of modes> should be
@@ -176,7 +176,7 @@ def modeServer(irc, numeric, target, modes):
     """
     if not utils.isInternalServer(irc, numeric):
         raise LookupError('No such PyLink PseudoServer exists.')
-    _sendModes(irc, numeric, target, modes)
+    _sendModes(irc, numeric, target, modes, ts=ts)
 
 def killServer(irc, numeric, target, reason):
     """<irc object> <server SID> <target> <reason>
