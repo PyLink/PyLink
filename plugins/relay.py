@@ -70,6 +70,15 @@ def exportDB(scheduler):
     with open(dbname, 'wb') as f:
         pickle.dump(db, f, protocol=4)
 
+def getPrefixModes(irc, remoteirc, channel, user):
+    modes = ''
+    for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
+        if pmode not in remoteirc.cmodes:  # Mode not supported by IRCd
+            continue
+        if user in irc.channels[channel].prefixmodes[pmode+'s']:
+            modes += remoteirc.cmodes[pmode]
+    return modes
+
 def findRelay(chanpair):
     if chanpair in db:  # This chanpair is a shared channel; others link to it
         return chanpair
@@ -90,20 +99,31 @@ def findRemoteChan(remotenetname, query):
                 return link[1]
 
 def initializeChannel(irc, channel):
+    # We're initializing a relay that already exists. This can be done at
+    # ENDBURST, or on the LINK command.
     irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
     c = irc.channels[channel]
     relay = findRelay((irc.name, channel))
-    if relay is None:
-        return
-    users = c.users.copy()
-    for link in db[relay]['links']:
-        try:
+    log.debug('(%s) initializeChannel being called on %s', irc.name, channel)
+    log.debug('(%s) initializeChannel: relay pair found to be %s', irc.name, relay)
+    if relay:
+        all_links = db[relay]['links'].copy()
+        all_links.update((relay,))
+        log.debug('(%s) initializeChannel: all_links: %s', irc.name, all_links)
+        for link in all_links:
             remotenet, remotechan = link
-            users.update(utils.networkobjects[remotechan].channels[remotechan].users)
-        except KeyError:
-            pass
-    log.debug('(%s) relay users: %s', irc, users)
-    relayJoins(irc, channel, users, c.ts, c.modes)
+            if remotenet == irc.name:
+                continue
+            remoteirc = utils.networkobjects[remotenet]
+            rc = remoteirc.channels[remotechan]
+            for user in remoteirc.channels[remotechan].users:
+                if not utils.isInternalClient(remoteirc, user):
+                    log.debug('(%s) initializeChannel: should be joining %s/%s to %s', irc.name, user, remotenet, channel)
+                    remoteuser = relayusers[(remotenet, user)][irc.name]
+                    irc.proto.joinClient(irc, remoteuser, channel)
+
+    log.debug('(%s) initializeChannel: relay users: %s', irc.name, c.users)
+    relayJoins(irc, channel, c.users, c.ts, c.modes)
 
 def handle_join(irc, numeric, command, args):
     channel = args['channel']
@@ -146,7 +166,7 @@ def relayJoins(irc, channel, users, ts, modes):
     for user in users:
         try:
             if irc.users[user].remote:
-                # Is the .remote atrribute set? If so, don't relay already
+                # Is the .remote attribute set? If so, don't relay already
                 # relayed clients; that'll trigger an endless loop!
                 continue
         except AttributeError:  # Nope, it isn't.
@@ -197,16 +217,11 @@ def relayJoins(irc, channel, users, ts, modes):
             relayusers[(irc.name, userobj.uid)][remoteirc.name] = u
             remoteirc.users[u].remote = irc.name
             remotechan = findRemoteChan(remoteirc.name, (irc.name, channel))
+            if remotechan is None:
+                continue
             if not remoteirc.servers[sid].has_bursted:
                 # TODO: join users in batches with SJOIN, not one by one.
-                prefix = ''
-                for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
-                    if pmode not in remoteirc.cmodes:  # Mode isn't supported by IRCd
-                        continue
-                    # If the user is in the respective list for the prefix
-                    # mode (e.g. the op list)
-                    if user in irc.channels[channel].prefixmodes[pmode+'s']:
-                        prefix += remoteirc.cmodes[pmode]
+                prefix = getPrefixModes(irc, remoteirc, channel, user)
                 remoteirc.proto.sjoinServer(remoteirc, sid, remotechan, [(prefix, u)], ts=ts)
             else:
                 remoteirc.proto.joinClient(remoteirc, u, remotechan)
