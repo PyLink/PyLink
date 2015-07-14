@@ -91,6 +91,7 @@ def sjoinServer(irc, server, channel, users, ts=None, modes=None):
 def partClient(irc, client, channel, reason=None):
     channel = channel.lower()
     if not utils.isInternalClient(irc, client):
+        log.error('(%s) Error trying to part client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
         raise LookupError('No such PyLink PseudoClient exists.')
     msg = "PART %s" % channel
     if reason:

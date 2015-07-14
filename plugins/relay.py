@@ -234,9 +234,42 @@ def relayJoins(irc, channel, users, ts, modes):
             else:
                 remoteirc.proto.joinClient(remoteirc, u, remotechan)
 
+def relayPart(irc, channel, user):
+    for name, remoteirc in utils.networkobjects.items():
+        if name == irc.name:
+            # Don't relay things to their source network...
+            continue
+        remotechan = findRemoteChan(remoteirc.name, (irc.name, channel))
+        log.debug('(%s) relayPart: looking for %s/%s on %s', irc.name, user, irc.name, remoteirc.name)
+        log.debug('(%s) relayPart: remotechan found as %s', irc.name, remotechan)
+        remoteuser = relayusers[(irc.name, user)][remoteirc.name]
+        log.debug('(%s) relayPart: remoteuser for %s/%s found as %s', irc.name, user, irc.name, remoteuser)
+        if remotechan is None:
+            continue
+        remoteirc.proto.partClient(remoteirc, remoteuser, remotechan, 'Channel delinked.')
+
 def removeChannel(irc, channel):
     if channel not in map(str.lower, irc.serverdata['channels']):
         irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
+    relay = findRelay((irc.name, channel))
+    if relay:
+        all_links = db[relay]['links'].copy()
+        all_links.update((relay,))
+        log.debug('(%s) removeChannel: all_links: %s', irc.name, all_links)
+        for user in irc.channels[channel].users:
+            if not utils.isInternalClient(irc, user):
+                relayPart(irc, channel, user)
+        for link in all_links:
+            if link[0] == irc.name:
+                # Don't relay things to their source network...
+                continue
+            remotenet, remotechan = link
+            remoteirc = utils.networkobjects[remotenet]
+            rc = remoteirc.channels[remotechan]
+            for user in remoteirc.channels[remotechan].users.copy():
+                log.debug('(%s) removeChannel: part user %s/%s from %s', irc.name, user, remotenet, remotechan)
+                if not utils.isInternalClient(remoteirc, user):
+                    relayPart(remoteirc, remotechan, user)
 
 def relay(homeirc, func, args):
     """<source IRC network object> <function name> <args>
@@ -289,9 +322,12 @@ def destroy(irc, source, args):
         utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
         return
 
-    if (irc.name, channel) in db:
-        del db[(irc.name, channel)]
+    entry = (irc.name, channel)
+    if entry in db:
+        for link in db[entry]['links']:
+            removeChannel(utils.networkobjects[link[0]], link[1])
         removeChannel(irc, channel)
+        del db[entry]
         utils.msg(irc, source, 'Done.')
     else:
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
@@ -380,11 +416,11 @@ def delink(irc, source, args):
                 for entry in db.values():
                     for link in entry['links'].copy():
                         if link[0] == remotenet:
-                            entry['links'].remove(link)
                             removeChannel(utils.networkobjects[remotenet], link[1])
+                            entry['links'].remove(link)
         else:
-            db[entry]['links'].remove((irc.name, channel))
             removeChannel(irc, channel)
+            db[entry]['links'].remove((irc.name, channel))
         utils.msg(irc, source, 'Done.')
     else:
         utils.msg(irc, source, 'Error: no such relay %r.' % channel)
