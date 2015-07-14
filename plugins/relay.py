@@ -78,10 +78,23 @@ def findRelay(chanpair):
         if chanpair in dbentry['links']:
             return name
 
+def findRemoteChan(remotenetname, query):
+    chanpair = findRelay(query)
+    if chanpair is None:
+        return
+    if chanpair[0] == remotenetname:
+        return chanpair[1]
+    else:
+        for link in db[chanpair]['links']:
+            if link[0] == remotenetname:
+                return link[1]
+
 def initializeChannel(irc, channel):
     irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
     c = irc.channels[channel]
     relay = findRelay((irc.name, channel))
+    if relay is None:
+        return
     users = c.users.copy()
     for link in db[relay]['links']:
         try:
@@ -158,6 +171,7 @@ def relayJoins(irc, channel, users, ts, modes):
                 remoteirc.users[u].remote = irc.name
             relayusers[(irc.name, userobj.uid)][remoteirc.name] = u
             remoteirc.users[u].remote = irc.name
+            remotechan = findRemoteChan(remoteirc.name, (irc.name, channel))
             if not remoteirc.servers[sid].has_bursted:
                 # TODO: join users in batches with SJOIN, not one by one.
                 prefix = ''
@@ -168,9 +182,9 @@ def relayJoins(irc, channel, users, ts, modes):
                     # mode (e.g. the op list)
                     if user in irc.channels[channel].prefixmodes[pmode+'s']:
                         prefix += remoteirc.cmodes[pmode]
-                remoteirc.proto.sjoinServer(remoteirc, sid, channel, [(prefix, u)], ts=ts)
+                remoteirc.proto.sjoinServer(remoteirc, sid, remotechan, [(prefix, u)], ts=ts)
             else:
-                remoteirc.proto.joinClient(remoteirc, u, channel)
+                remoteirc.proto.joinClient(remoteirc, u, remotechan)
 
 def removeChannel(irc, channel):
     if channel not in map(str.lower, irc.serverdata['channels']):
