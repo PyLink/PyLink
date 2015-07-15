@@ -188,6 +188,78 @@ def handle_part(irc, numeric, command, args):
         remoteirc.proto.partClient(remoteirc, user, remotechan, text)
 utils.add_hook(handle_part, 'PART')
 
+def handle_kick(irc, source, command, args):
+    channel = args['channel']
+    target = args['target']
+    text = args['text']
+    kicker = source
+    kicker_modes = getPrefixModes(irc, irc, channel, kicker)
+    relay = findRelay((irc.name, channel))
+    if relay is None:
+        return
+    for name, remoteirc in utils.networkobjects.items():
+        if irc.name == name:
+            continue
+        remotechan = findRemoteChan(irc, remoteirc, channel)
+        log.debug('(%s) Relay kick: remotechan for %s on %s is %s', irc.name, channel, name, remotechan)
+        if remotechan is None:
+            continue
+        real_kicker = getRemoteUser(irc, remoteirc, kicker)
+        log.debug('(%s) Relay kick: real kicker for %s on %s is %s', irc.name, kicker, name, real_kicker)
+        if not utils.isInternalClient(irc, target):
+            log.debug('(%s) Relay kick: target %s is NOT an internal client', irc.name, target)
+            # Both the target and kicker are external clients; i.e.
+            # they originate from the same network. We shouldn't have
+            # to process this any further, because the uplink IRCd
+            # will handle this appropriately, and we'll just follow.
+            real_target = getRemoteUser(irc, remoteirc, target)
+            log.debug('(%s) Relay kick: real target for %s is %s', irc.name, target, real_target)
+            remoteirc.proto.kickClient(remoteirc, real_kicker,
+                                       remotechan, real_target, args['text'])
+        else:
+            log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
+            # Our target is an internal client, which means someone
+            # is kicking a remote user over the relay.
+            # We have to find the real target for the KICK. This is like
+            # findRemoteUser, but in reverse.
+            # First, iterate over everyone!
+            for k, v in relayusers.items():
+                log.debug('(%s) Relay kick: processing %s, %s in relayusers', irc.name, k, v)
+                if k[0] == irc.name:
+                    # We don't need to do anything if the target users is on
+                    # the same network as us.
+                    log.debug('(%s) Relay kick: skipping %s since the target network matches the source network.', irc.name, k)
+                    continue
+                if v[irc.name] == target:
+                    # If the stored pseudoclient UID for the kicked user on
+                    # this network matches the target we have, set that user
+                    # as the one we're kicking! It's a handful, but remember
+                    # we're mapping (home network, UID) pairs to their
+                    # respective relay pseudoclients on other networks.
+                    real_target = k[1]
+                    log.debug('(%s) Relay kick: found %s to correspond to %s.', irc.name, v, k)
+                    break
+            log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
+            if irc.name not in db[relay]['links'] and not \
+                    any([mode in kicker_modes for mode in ('q', 'a', 'o', 'h')]):
+                log.debug('(%s) Relay kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
+                # Home network is not in the channel's claim AND the kicker is not
+                # opped. We won't propograte the kick then.
+                # TODO: make the check slightly more advanced: i.e. halfops can't
+                # kick ops, admins can't kick owners, etc.
+                modes = getPrefixModes(remoteirc, irc, remotechan, real_target)
+                # Join the kicked client back with its respective modes.
+                irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, target)])
+                utils.msg(irc, kicker, "This channel is claimed; your kick has "
+                                       "to %s been blocked because you are not "
+                                       "(half)opped." % channel, notice=True)
+            else:
+                # Propogate the kick!
+                log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, real_kicker, kicker, irc.name)
+                remoteirc.proto.kickClient(remoteirc, real_kicker,
+                                           remotechan, real_target, args['text'])                
+utils.add_hook(handle_kick, 'KICK')
+
 def relayJoins(irc, channel, users, ts, modes):
     queued_users = []
     for user in users:
@@ -209,7 +281,7 @@ def relayJoins(irc, channel, users, ts, modes):
                 continue
             u = getRemoteUser(irc, remoteirc, user)
             remotechan = findRemoteChan(irc, remoteirc, channel)
-            if remotechan is None:
+            if remotechan is None or u is None:
                 continue
             ts = irc.channels[channel].ts
             # TODO: join users in batches with SJOIN, not one by one.
