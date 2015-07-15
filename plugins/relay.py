@@ -186,7 +186,7 @@ def initializeChannel(irc, channel):
     topic = remoteirc.channels[relay[1]].topic
     # XXX: find a more elegant way to do this
     # Only update the topic if it's different from what we already have.
-    if topic != irc.channels[channel].topic:
+    if topic and topic != irc.channels[channel].topic:
         irc.proto.topicServer(irc, irc.sid, channel, topic)
 
 def handle_join(irc, numeric, command, args):
@@ -213,7 +213,8 @@ def handle_nick(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
         newnick = normalizeNick(remoteirc, irc.name, args['newnick'])
-        remoteirc.proto.nickClient(remoteirc, user, newnick)
+        if remoteirc.users[user].nick != newnick:
+            remoteirc.proto.nickClient(remoteirc, user, newnick)
 utils.add_hook(handle_nick, 'NICK')
 
 def handle_part(irc, numeric, command, args):
@@ -374,7 +375,8 @@ def handle_topic(irc, numeric, command, args):
                 continue
 
             remotechan = findRemoteChan(irc, remoteirc, channel)
-            if remotechan is None:
+            # Don't send if the remote topic is the same as ours.
+            if remotechan is None or topic == remoteirc.channels[remotechan].topic:
                 continue
             # This might originate from a server too.
             remoteuser = getRemoteUser(irc, remoteirc, numeric)
