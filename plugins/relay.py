@@ -601,11 +601,10 @@ def delink(irc, source, args):
                 utils.msg(irc, source, "Error: you must select a network to delink, or use the 'destroy' command no remove this relay entirely.")
                 return
             else:
-                for entry in db.values():
-                    for link in entry['links'].copy():
-                        if link[0] == remotenet:
-                            removeChannel(utils.networkobjects[remotenet], link[1])
-                            entry['links'].remove(link)
+               for link in db[entry]['links'].copy():
+                    if link[0] == remotenet:
+                        removeChannel(utils.networkobjects[remotenet], link[1])
+                        db[entry]['links'].remove(link)
         else:
             removeChannel(irc, channel)
             db[entry]['links'].remove((irc.name, channel))
