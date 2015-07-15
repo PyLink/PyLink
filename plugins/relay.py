@@ -97,6 +97,29 @@ def getRemoteUser(irc, remoteirc, user):
     remoteirc.users[u].remote = irc.name
     return u
 
+def getLocalUser(irc, user):
+    # Our target is an internal client, which means someone
+    # is kicking a remote user over the relay.
+    # We have to find the real target for the KICK. This is like
+    # findRemoteUser, but in reverse.
+    # First, iterate over everyone!
+    for k, v in relayusers.items():
+        log.debug('(%s) getLocalUser: processing %s, %s in relayusers', irc.name, k, v)
+        if k[0] == irc.name:
+            # We don't need to do anything if the target users is on
+            # the same network as us.
+            log.debug('(%s) getLocalUser: skipping %s since the target network matches the source network.', irc.name, k)
+            continue
+        if v[irc.name] == user:
+            # If the stored pseudoclient UID for the kicked user on
+            # this network matches the target we have, set that user
+            # as the one we're kicking! It's a handful, but remember
+            # we're mapping (home network, UID) pairs to their
+            # respective relay pseudoclients on other networks.
+            remoteuser = k
+            log.debug('(%s) getLocalUser: found %s to correspond to %s.', irc.name, v, k)
+            return remoteuser
+
 def findRelay(chanpair):
     if chanpair in db:  # This chanpair is a shared channel; others link to it
         return chanpair
@@ -148,6 +171,8 @@ def initializeChannel(irc, channel):
                     queued_users.append(userpair)
             if queued_users:
                 irc.proto.sjoinServer(irc, irc.sid, channel, queued_users, ts=rc.ts)
+            relayModes(remoteirc, irc, remoteirc.sid, remotechan)
+            relayModes(irc, remoteirc, irc.sid, channel)
 
     log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
     relayJoins(irc, channel, c.users, c.ts, c.modes)
@@ -188,6 +213,28 @@ def handle_part(irc, numeric, command, args):
         remoteirc.proto.partClient(remoteirc, user, remotechan, text)
 utils.add_hook(handle_part, 'PART')
 
+def handle_privmsg(irc, numeric, command, args):
+    notice = (command == 'NOTICE')
+    target = args['target']
+    text = args['text']
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        remoteirc = utils.networkobjects[netname]
+        if utils.isChannel(target):
+            real_target = findRemoteChan(irc, remoteirc, target)
+            if not real_target:
+                continue
+        else:
+            try:
+                real_target = getLocalUser(irc, target)[1]
+            except TypeError:
+                real_target = getRemoteUser(irc, remoteirc, target)
+        if notice:
+            remoteirc.proto.noticeClient(remoteirc, user, real_target, text)
+        else:
+            remoteirc.proto.messageClient(remoteirc, user, real_target, text)
+utils.add_hook(handle_privmsg, 'PRIVMSG')
+utils.add_hook(handle_privmsg, 'NOTICE')
+
 def handle_kick(irc, source, command, args):
     channel = args['channel']
     target = args['target']
@@ -218,27 +265,7 @@ def handle_kick(irc, source, command, args):
                                        remotechan, real_target, args['text'])
         else:
             log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
-            # Our target is an internal client, which means someone
-            # is kicking a remote user over the relay.
-            # We have to find the real target for the KICK. This is like
-            # findRemoteUser, but in reverse.
-            # First, iterate over everyone!
-            for k, v in relayusers.items():
-                log.debug('(%s) Relay kick: processing %s, %s in relayusers', irc.name, k, v)
-                if k[0] == irc.name:
-                    # We don't need to do anything if the target users is on
-                    # the same network as us.
-                    log.debug('(%s) Relay kick: skipping %s since the target network matches the source network.', irc.name, k)
-                    continue
-                if v[irc.name] == target:
-                    # If the stored pseudoclient UID for the kicked user on
-                    # this network matches the target we have, set that user
-                    # as the one we're kicking! It's a handful, but remember
-                    # we're mapping (home network, UID) pairs to their
-                    # respective relay pseudoclients on other networks.
-                    real_target = k[1]
-                    log.debug('(%s) Relay kick: found %s to correspond to %s.', irc.name, v, k)
-                    break
+            real_target = getLocalUser(irc, target)[1]
             log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
             if irc.name not in db[relay]['claim'] and not \
                     any([mode in kicker_modes for mode in ('q', 'a', 'o', 'h')]):
@@ -257,8 +284,62 @@ def handle_kick(irc, source, command, args):
                 # Propogate the kick!
                 log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, real_kicker, kicker, irc.name)
                 remoteirc.proto.kickClient(remoteirc, real_kicker,
-                                           remotechan, real_target, args['text'])                
+                                           remotechan, real_target, args['text'])
 utils.add_hook(handle_kick, 'KICK')
+
+def relayModes(irc, remoteirc, sender, channel, modes=None):
+    remotechan = findRemoteChan(irc, remoteirc, channel)
+    log.debug('(%s) Relay mode: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
+    if remotechan is None:
+        return
+    if modes is None:
+        modes = remoteirc.channels[remotechan].modes
+        log.debug('(%s) Relay mode: channel data for %s%s: %s', irc.name, remoteirc.name, remotechan, remoteirc.channels[remotechan])
+    supported_modes = []
+    log.debug('(%s) Relay mode: initial modelist for %s is %s', irc.name, channel, modes)
+    for modepair in modes:
+        try:
+            prefix, modechar = modepair[0]
+        except ValueError:
+            modechar = modepair[0]
+            prefix = '+'
+        arg = modepair[1]
+        # Iterate over every mode see whether the remote IRCd supports
+        # this mode, and what its mode char for it is (if it is different).
+        for name, m in irc.cmodes.items():
+            supported_char = None
+            if modechar == m:
+                if modechar in irc.prefixmodes:
+                    # This is a prefix mode (e.g. +o). We must coerse the argument
+                    # so that the target exists on the remote relay network.
+                    try:
+                        arg = getLocalUser(irc, arg)[1]
+                    except TypeError:
+                        # getLocalUser returns None, raises None when trying to
+                        # get [1] from it.
+                        arg = getRemoteUser(irc, remoteirc, arg)
+                supported_char = remoteirc.cmodes.get(name)
+            if supported_char:
+                supported_modes.append((prefix+supported_char, arg))
+    log.debug('(%s) Relay mode: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
+    # Check if the sender is a user; remember servers are allowed to set modes too.
+    if sender in irc.users:
+        u = getRemoteUser(irc, remoteirc, sender)
+        remoteirc.proto.modeClient(remoteirc, u, channel, supported_modes)
+    else:
+        remoteirc.proto.modeServer(remoteirc, remoteirc.sid, channel, supported_modes)
+
+def handle_mode(irc, numeric, command, args):
+    target = args['target']
+    if not utils.isChannel(target):
+        ### TODO: handle user mode changes too
+        return
+    modes = args['modes']
+    for name, remoteirc in utils.networkobjects.items():
+        if irc.name == name:
+            continue
+        relayModes(irc, remoteirc, numeric, target, modes)
+utils.add_hook(handle_mode, 'MODE')
 
 def relayJoins(irc, channel, users, ts, modes):
     queued_users = []
@@ -289,6 +370,7 @@ def relayJoins(irc, channel, users, ts, modes):
             userpair = (prefixes, u)
             log.debug('(%s) relayJoin: joining %s to %s%s', irc.name, userpair, remoteirc.name, remotechan)
             remoteirc.proto.sjoinServer(remoteirc, remoteirc.sid, remotechan, [userpair], ts=ts)
+            relayModes(irc, remoteirc, irc.sid, channel, modes)
 
 def relayPart(irc, channel, user):
     for name, remoteirc in utils.networkobjects.items():
