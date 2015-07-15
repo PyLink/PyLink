@@ -179,6 +179,11 @@ def initializeChannel(irc, channel):
 
     log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
     relayJoins(irc, channel, c.users, c.ts, c.modes)
+    topic = remoteirc.channels[relay[1]].topic
+    # XXX: find a more elegant way to do this
+    # Only update the topic if it's different from what we already have.
+    if topic != irc.channels[channel].topic:
+        irc.proto.topicServer(irc, irc.sid, channel, topic)
 
 def handle_join(irc, numeric, command, args):
     channel = args['channel']
@@ -351,6 +356,29 @@ def handle_mode(irc, numeric, command, args):
             continue
         relayModes(irc, remoteirc, numeric, target, modes)
 utils.add_hook(handle_mode, 'MODE')
+
+def handle_topic(irc, numeric, command, args):
+    channel = args['channel']
+    topic = args['topic']
+    # XXX: find a more elegant way to do this
+    # Topics with content take precedence over empty topics.
+    # This prevents us from overwriting topics on channels with
+    # emptiness just because a leaf network hasn't received it yet.
+    if topic:
+        for name, remoteirc in utils.networkobjects.items():
+            if irc.name == name:
+                continue
+
+            remotechan = findRemoteChan(irc, remoteirc, channel)
+            if remotechan is None:
+                continue
+            # This might originate from a server too.
+            remoteuser = getRemoteUser(irc, remoteirc, numeric)
+            if remoteuser:
+                remoteirc.proto.topicClient(remoteirc, remoteuser, remotechan, topic)
+            else:
+                remoteirc.proto.topicServer(remoteirc, remoteirc.sid, remotechan, topic)
+utils.add_hook(handle_topic, 'TOPIC')
 
 def relayJoins(irc, channel, users, ts, modes):
     queued_users = []
