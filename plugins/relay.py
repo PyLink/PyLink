@@ -380,6 +380,27 @@ def handle_topic(irc, numeric, command, args):
                 remoteirc.proto.topicServer(remoteirc, remoteirc.sid, remotechan, topic)
 utils.add_hook(handle_topic, 'TOPIC')
 
+def handle_kill(irc, numeric, command, args):
+    target = args['target']
+    userdata = args['userdata']
+    # We don't allow killing over the relay, so we must spawn the client.
+    # all over again and rejoin it to its channels.
+    realuser = getLocalUser(irc, target)
+    del relayusers[realuser][irc.name]
+    remoteirc = utils.networkobjects[realuser[0]]
+    for channel in remoteirc.channels:
+        remotechan = findRemoteChan(remoteirc, irc, channel)
+        if remotechan:
+            modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
+            log.debug('(%s) handle_kill: userpair: %s, %s', irc.name, modes, realuser)
+            client = getRemoteUser(remoteirc, irc, realuser[1])
+            irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, client)])
+            utils.msg(irc, numeric, "Your kill has to %s been blocked "
+                                   "because PyLink does not allow killing"
+                                   " users over the relay at this time." % \
+                                   userdata.nick, notice=True)
+utils.add_hook(handle_kill, 'KILL')
+
 def relayJoins(irc, channel, users, ts, modes):
     queued_users = []
     for user in users.copy():
