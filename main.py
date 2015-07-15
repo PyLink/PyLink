@@ -44,24 +44,35 @@ class Irc():
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.proto = proto
-        self.connect()
+        connection_thread = threading.Thread(target = self.connect)
+        connection_thread.start()
 
     def connect(self):
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         log.info("Connecting to network %r on %s:%s", self.name, ip, port)
-        self.socket = socket.socket()
+        # Initial connection timeout is a lot smaller than the timeout after
+        # we've connected; this is intentional.
+        self.socket = socket.create_connection((ip, port), timeout=10)
         self.socket.setblocking(0)
         self.socket.settimeout(180)
-        self.socket.connect((ip, port))
-        self.proto.connect(self)
-        reading_thread = threading.Thread(target = self.run)
+        try:
+            self.proto.connect(self)
+        except (socket.error, socket.timeout):
+            log.error('(%s) Failed to connect to IRC: %s: %s',
+                      self.name, type(e).__name__, str(e))
+            self.disconnect()
         self.connected = True
-        reading_thread.start()
+        self.run()
 
     def disconnect(self):
         self.connected = False
         self.socket.close()
+        autoconnect = self.serverdata.get('autoconnect')
+        if autoconnect is not None and autoconnect >= 0:
+            log.warning('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
+            time.sleep(autoconnect)
+            self.connect()
 
     def run(self):
         buf = ""
@@ -77,7 +88,7 @@ class Irc():
                     log.debug("(%s) <- %s", self.name, line)
                     proto.handle_events(self, line)
             except (socket.error, classes.ProtocolError) as e:
-                log.error('Disconnected from network %r: %s: %s, exiting.',
+                log.error('(%s) Disconnected from IRC: %s: %s',
                           self.name, type(e).__name__, str(e))
                 self.disconnect()
 
