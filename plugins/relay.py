@@ -16,6 +16,10 @@ dbname = "pylinkrelay.db"
 relayusers = defaultdict(dict)
 
 def normalizeNick(irc, netname, nick, separator="/"):
+    # Block until we know the IRC network's nick length (after capabilities
+    # are sent)
+    irc.connected.wait()
+
     orig_nick = nick
     protoname = irc.proto.__name__
     maxnicklen = irc.maxnicklen
@@ -40,8 +44,10 @@ def normalizeNick(irc, netname, nick, separator="/"):
 
     nick = nick[:allowedlength]
     nick += suffix
-    while utils.nickToUid(irc, nick):
-        # The nick we want exists? Darn, create another one then.
+    # TODO: factorize
+    while utils.nickToUid(irc, nick) and not utils.isInternalClient(irc, utils.nickToUid(irc, nick)):
+        # The nick we want exists? Darn, create another one then, but only if
+        # the target isn't an internal client!
         # Increase the separator length by 1 if the user was already tagged,
         # but couldn't be created due to a nick conflict.
         # This can happen when someone steals a relay user's nick.
