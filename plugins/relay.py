@@ -469,17 +469,6 @@ def removeChannel(irc, channel):
                 if not utils.isInternalClient(remoteirc, user):
                     relayPart(remoteirc, remotechan, user)
 
-def relay(homeirc, func, args):
-    """<source IRC network object> <function name> <args>
-
-    Relays a call to <function name>(<args>) to every IRC object's protocol
-    module except the source IRC network's."""
-    for name, irc in utils.networkobjects.items():
-        if name == homeirc.name:
-            continue
-        f = getattr(irc.proto, func)
-        f(*args)
-
 @utils.add_cmd
 def create(irc, source, args):
     """<channel>
