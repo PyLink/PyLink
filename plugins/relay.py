@@ -240,7 +240,7 @@ def handle_kick(irc, source, command, args):
                     log.debug('(%s) Relay kick: found %s to correspond to %s.', irc.name, v, k)
                     break
             log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
-            if irc.name not in db[relay]['links'] and not \
+            if irc.name not in db[relay]['claim'] and not \
                     any([mode in kicker_modes for mode in ('q', 'a', 'o', 'h')]):
                 log.debug('(%s) Relay kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
                 # Home network is not in the channel's claim AND the kicker is not
@@ -262,7 +262,7 @@ utils.add_hook(handle_kick, 'KICK')
 
 def relayJoins(irc, channel, users, ts, modes):
     queued_users = []
-    for user in users:
+    for user in users.copy():
         try:
             if irc.users[user].remote:
                 # Is the .remote attribute set? If so, don't relay already
