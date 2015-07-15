@@ -86,8 +86,9 @@ def getRemoteUser(irc, remoteirc, user):
         u = relayusers[(irc.name, user)][remoteirc.name]
     except KeyError:
         userobj = irc.users.get(user)
-        if userobj is None:
-            # The query wasn't actually a valid user... Oh well!
+        if userobj is None or not remoteirc.connected:
+            # The query wasn't actually a valid user, or the network hasn't
+            # been connected yet... Oh well!
             return
         nick = normalizeNick(remoteirc, irc.name, userobj.nick)
         ident = userobj.ident
@@ -163,6 +164,8 @@ def initializeChannel(irc, channel):
             if remotenet == irc.name:
                 continue
             remoteirc = utils.networkobjects[remotenet]
+            if not remoteirc.connected:
+                continue  # They aren't connected, don't bother!
             rc = remoteirc.channels[remotechan]
             for user in remoteirc.channels[remotechan].users:
                 # Don't spawn our pseudoclients again.
