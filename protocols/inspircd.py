@@ -234,13 +234,21 @@ def noticeClient(irc, numeric, target, text):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'NOTICE %s :%s' % (target, text))
 
-def topicClient(irc, numeric, target, text):
-    """<irc object> <client numeric> <text>
+def _sendTopic(irc, numeric, target, text):
+    """<irc object> <numeric> <text>
 
-    Sets the topic for <channel> to <text> from PyLink client <client numeric>."""
+    Sets the topic for <channel> to <text>."""
+    _send(irc, numeric, 'TOPIC %s :%s' % (target, text))
+
+def topicClient(irc, numeric, target, text):
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _send(irc, numeric, 'TOPIC %s :%s' % (target, text))
+    _sendTopic(irc, numeric, target, text)
+
+def topicServer(irc, numeric, target, text):
+    if not utils.isInternalServer(irc, numeric):
+        raise LookupError('No such PyLink PseudoServer exists.')
+    _sendTopic(irc, numeric, target, text)
 
 def inviteClient(irc, numeric, target, channel):
     """<irc object> <client numeric> <text>
@@ -321,12 +329,13 @@ def handle_privmsg(irc, source, command, args):
 
 def handle_kill(irc, source, command, args):
     killed = args[0]
+    data = irc.users[killed]
     removeClient(irc, killed)
     if killed == irc.pseudoclient.uid:
         irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', irc.serverdata["hostname"])
         for chan in irc.serverdata['channels']:
             joinClient(irc, irc.pseudoclient.uid, chan)
-    return {'target': killed, 'text': args[1]}
+    return {'target': killed, 'text': args[1], 'userdata': data}
 
 def handle_kick(irc, source, command, args):
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
