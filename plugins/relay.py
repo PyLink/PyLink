@@ -85,7 +85,10 @@ def getRemoteUser(irc, remoteirc, user):
     try:
         u = relayusers[(irc.name, user)][remoteirc.name]
     except KeyError:
-        userobj = irc.users[user]
+        userobj = irc.users.get(user)
+        if userobj is None:
+            # The query wasn't actually a valid user... Oh well!
+            return
         nick = normalizeNick(remoteirc, irc.name, userobj.nick)
         ident = userobj.ident
         host = userobj.host
@@ -110,7 +113,7 @@ def getLocalUser(irc, user):
             # the same network as us.
             log.debug('(%s) getLocalUser: skipping %s since the target network matches the source network.', irc.name, k)
             continue
-        if v[irc.name] == user:
+        if v.get(irc.name) == user:
             # If the stored pseudoclient UID for the kicked user on
             # this network matches the target we have, set that user
             # as the one we're kicking! It's a handful, but remember
@@ -253,7 +256,7 @@ def handle_kick(irc, source, command, args):
             continue
         real_kicker = getRemoteUser(irc, remoteirc, kicker)
         log.debug('(%s) Relay kick: real kicker for %s on %s is %s', irc.name, kicker, name, real_kicker)
-        if not utils.isInternalClient(irc, target):
+        if real_kicker is None or not utils.isInternalClient(irc, target):
             log.debug('(%s) Relay kick: target %s is NOT an internal client', irc.name, target)
             # Both the target and kicker are external clients; i.e.
             # they originate from the same network. We shouldn't have
@@ -261,8 +264,16 @@ def handle_kick(irc, source, command, args):
             # will handle this appropriately, and we'll just follow.
             real_target = getRemoteUser(irc, remoteirc, target)
             log.debug('(%s) Relay kick: real target for %s is %s', irc.name, target, real_target)
-            remoteirc.proto.kickClient(remoteirc, real_kicker,
-                                       remotechan, real_target, args['text'])
+            if real_kicker:
+                remoteirc.proto.kickClient(remoteirc, real_kicker,
+                                           remotechan, real_target, text)
+            else: # Kick originated from a server, not a client.
+                try:
+                    text = "(%s@%s) %s" % (irc.servers[kicker].name, irc.name, text)
+                except (KeyError, AttributeError):
+                    text = "(<unknown server>@%s) %s" % (irc.name, text)
+                remoteirc.proto.kickServer(remoteirc, remoteirc.sid,
+                                           remotechan, real_target, text)
         else:
             log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
             real_target = getLocalUser(irc, target)[1]
