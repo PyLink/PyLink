@@ -136,13 +136,11 @@ def quitClient(irc, numeric, reason):
                           "a user that's not a PyLink PseudoClient from "
                           "the internal state, use removeClient() instead.")
 
-def kickClient(irc, numeric, channel, target, reason=None):
+def _sendKick(irc, numeric, channel, target, reason=None):
     """<irc object> <kicker client numeric>
 
     Sends a kick from a PyLink PseudoClient."""
     channel = channel.lower()
-    if not utils.isInternalClient(irc, numeric):
-        raise LookupError('No such PyLink PseudoClient exists.')
     if not reason:
         reason = 'No reason given'
     _sendFromUser(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
@@ -150,6 +148,16 @@ def kickClient(irc, numeric, channel, target, reason=None):
     # is that the target gets removed from the channel userlist, and calling
     # handle_part() does that just fine.
     handle_part(irc, target, 'KICK', [channel])
+
+def kickClient(irc, numeric, channel, target, reason=None):
+    if not utils.isInternalClient(irc, numeric):
+        raise LookupError('No such PyLink PseudoClient exists.')
+    _sendKick(irc, numeric, channel, target, reason=reason)
+
+def kickServer(irc, numeric, channel, target, reason=None):
+    if not utils.isInternalServer(irc, numeric):
+        raise LookupError('No such PyLink PseudoServer exists.')
+    _sendKick(irc, numeric, channel, target, reason=reason)
 
 def nickClient(irc, numeric, newnick):
     """<irc object> <client numeric> <new nickname>
