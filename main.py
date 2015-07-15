@@ -37,6 +37,12 @@ class Irc():
         self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
                        'oper': 'o',
                        '*A': '', '*B': '', '*C': 's', '*D': 'iow'}
+        # This nicklen value is only a default, and SHOULD be set by the
+        # protocol module as soon as the relevant capability information is
+        # received from the uplink. Plugins that depend on maxnicklen being
+        # set MUST call "irc.connected.wait()", which blocks until the
+        # capability information is received. This handling of irc.connected
+        # is also dependent on the protocol module.
         self.maxnicklen = 30
         self.prefixmodes = 'ov'
 
