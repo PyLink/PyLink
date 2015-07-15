@@ -179,6 +179,7 @@ def initializeChannel(irc, channel):
 
     log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
     relayJoins(irc, channel, c.users, c.ts, c.modes)
+    remoteirc = utils.networkobjects[relay[0]]
     topic = remoteirc.channels[relay[1]].topic
     # XXX: find a more elegant way to do this
     # Only update the topic if it's different from what we already have.
