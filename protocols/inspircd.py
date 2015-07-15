@@ -19,11 +19,8 @@ from classes import *
 hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
             'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK', 'OPERTYPE': 'MODE'}
 
-def _sendFromServer(irc, sid, msg):
+def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
-
-def _sendFromUser(irc, numeric, msg):
-    irc.send(':%s %s' % (numeric, msg))
 
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
         server=None, ip='0.0.0.0', realname=None):
@@ -39,7 +36,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     realname = realname or irc.botdata['realname']
     realhost = realhost or host
     raw_modes = utils.joinModes(modes)
-    _sendFromServer(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
+    _send(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                     " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid,
                                              modes=raw_modes, ip=ip, realname=realname,
@@ -60,7 +57,7 @@ def joinClient(irc, client, channel):
         log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
         raise LookupError('No such PyLink PseudoClient exists.')
     # One channel per line here!
-    _sendFromServer(irc, server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
+    _send(irc, server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
             ts=irc.channels[channel].ts, uid=client, channel=channel,
             modes=utils.joinModes(irc.channels[channel].modes)))
     irc.channels[channel].users.add(client)
@@ -95,7 +92,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
             changedmodes.append(('+%s' % m, user))
     utils.applyModes(irc, channel, changedmodes)
     namelist = ' '.join(namelist)
-    _sendFromServer(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
+    _send(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
             ts=ts, users=namelist, channel=channel,
             modes=utils.joinModes(modes)))
     irc.channels[channel].users.update(uids)
@@ -108,7 +105,7 @@ def partClient(irc, client, channel, reason=None):
     msg = "PART %s" % channel
     if reason:
         msg += " :%s" % reason
-    _sendFromUser(irc, client, msg)
+    _send(irc, client, msg)
     handle_part(irc, client, 'PART', [channel])
 
 def removeClient(irc, numeric):
@@ -129,7 +126,7 @@ def quitClient(irc, numeric, reason):
 
     Quits a PyLink PseudoClient."""
     if utils.isInternalClient(irc, numeric):
-        _sendFromUser(irc, numeric, "QUIT :%s" % reason)
+        _send(irc, numeric, "QUIT :%s" % reason)
         removeClient(irc, numeric)
     else:
         raise LookupError("No such PyLink PseudoClient exists. If you're trying to remove "
@@ -143,7 +140,7 @@ def _sendKick(irc, numeric, channel, target, reason=None):
     channel = channel.lower()
     if not reason:
         reason = 'No reason given'
-    _sendFromUser(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
+    _send(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
     # We can pretend the target left by its own will; all we really care about
     # is that the target gets removed from the channel userlist, and calling
     # handle_part() does that just fine.
@@ -165,7 +162,7 @@ def nickClient(irc, numeric, newnick):
     Changes the nick of a PyLink PseudoClient."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendFromUser(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
+    _send(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
 
 def _sendModes(irc, numeric, target, modes, ts=None):
@@ -175,9 +172,9 @@ def _sendModes(irc, numeric, target, modes, ts=None):
     utils.applyModes(irc, target, modes)
     if utils.isChannel(target):
         ts = ts or irc.channels[target.lower()].ts
-        _sendFromUser(irc, numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
+        _send(irc, numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
     else:
-        _sendFromUser(irc, numeric, 'MODE %s %s' % (target, joinedmodes))
+        _send(irc, numeric, 'MODE %s %s' % (target, joinedmodes))
 
 def modeClient(irc, numeric, target, modes, ts=None):
     """<irc object> <client numeric> <list of modes>
@@ -206,7 +203,7 @@ def killServer(irc, numeric, target, reason):
     """
     if not utils.isInternalServer(irc, numeric):
         raise LookupError('No such PyLink PseudoServer exists.')
-    _sendFromServer(irc, numeric, 'KILL %s :%s' % (target, reason))
+    _send(irc, numeric, 'KILL %s :%s' % (target, reason))
     # We don't need to call removeClient here, since the remote server
     # will send a QUIT from the target if the command succeeds.
 
@@ -217,7 +214,7 @@ def killClient(irc, numeric, target, reason):
     """
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendFromServer(irc, numeric, 'KILL %s :%s' % (target, reason))
+    _send(irc, numeric, 'KILL %s :%s' % (target, reason))
     # We don't need to call removeClient here, since the remote server
     # will send a QUIT from the target if the command succeeds.
 
@@ -227,7 +224,7 @@ def messageClient(irc, numeric, target, text):
     Sends PRIVMSG <text> from PyLink client <client numeric>."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendFromUser(irc, numeric, 'PRIVMSG %s :%s' % (target, text))
+    _send(irc, numeric, 'PRIVMSG %s :%s' % (target, text))
 
 def noticeClient(irc, numeric, target, text):
     """<irc object> <client numeric> <text>
@@ -235,7 +232,7 @@ def noticeClient(irc, numeric, target, text):
     Sends NOTICE <text> from PyLink client <client numeric>."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendFromUser(irc, numeric, 'NOTICE %s :%s' % (target, text))
+    _send(irc, numeric, 'NOTICE %s :%s' % (target, text))
 
 def topicClient(irc, numeric, target, text):
     """<irc object> <client numeric> <text>
@@ -243,7 +240,7 @@ def topicClient(irc, numeric, target, text):
     Sets the topic for <channel> to <text> from PyLink client <client numeric>."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendFromUser(irc, numeric, 'TOPIC %s :%s' % (target, text))
+    _send(irc, numeric, 'TOPIC %s :%s' % (target, text))
 
 def inviteClient(irc, numeric, target, channel):
     """<irc object> <client numeric> <text>
@@ -251,7 +248,7 @@ def inviteClient(irc, numeric, target, channel):
     Invites <target> to <channel> to <text> from PyLink client <client numeric>."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendFromUser(irc, numeric, 'INVITE %s %s' % (target, channel))
+    _send(irc, numeric, 'INVITE %s %s' % (target, channel))
 
 def knockClient(irc, numeric, target, text):
     """<irc object> <client numeric> <text>
@@ -259,7 +256,7 @@ def knockClient(irc, numeric, target, text):
     Knocks on <channel> with <text> from PyLink client <client numeric>."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
-    _sendFromUser(irc, numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
+    _send(irc, numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
 def updateClient(irc, numeric, field, text):
     """<irc object> <client numeric> <field> <text>
@@ -268,13 +265,13 @@ def updateClient(irc, numeric, field, text):
     field = field.upper()
     if field == 'IDENT':
         handle_fident(irc, numeric, 'PYLINK_UPDATECLIENT_IDENT', [text])
-        _sendFromUser(irc, numeric, 'FIDENT %s' % text)
+        _send(irc, numeric, 'FIDENT %s' % text)
     elif field == 'HOST':
         handle_fhost(irc, numeric, 'PYLINK_UPDATECLIENT_HOST', [text])
-        _sendFromUser(irc, numeric, 'FHOST %s' % text)
+        _send(irc, numeric, 'FHOST %s' % text)
     elif field in ('REALNAME', 'GECOS'):
         handle_fname(irc, numeric, 'PYLINK_UPDATECLIENT_GECOS', [text])
-        _sendFromUser(irc, numeric, 'FNAME :%s' % text)
+        _send(irc, numeric, 'FNAME :%s' % text)
     else:
         raise ValueError("Changing field %r of a client is unsupported by this protocol." % field)
 
@@ -302,7 +299,7 @@ def handle_ping(irc, source, command, args):
     # <- :70M PING 70M 0AL
     # -> :0AL PONG 0AL 70M
     if utils.isInternalServer(irc, args[1]):
-        _sendFromServer(irc, args[1], 'PONG %s %s' % (args[1], source))
+        _send(irc, args[1], 'PONG %s %s' % (args[1], source))
 
 def handle_privmsg(irc, source, command, args):
     if args[0] == irc.pseudoclient.uid:
@@ -472,7 +469,7 @@ def handle_rsquit(irc, numeric, command, args):
         if irc.users[numeric].identified:
             uplink = irc.servers[target].uplink
             reason = 'Requested by %s' % irc.users[numeric].nick
-            _sendFromServer(irc, uplink, 'SQUIT %s :%s' % (target, reason))
+            _send(irc, uplink, 'SQUIT %s :%s' % (target, reason))
             return handle_squit(irc, numeric, 'SQUIT', [target, reason])
         else:
             utils.msg(irc, numeric, 'Error: you are not authorized to split servers!', notice=True)
@@ -483,7 +480,7 @@ def handle_idle(irc, numeric, command, args):
     # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
     sourceuser = numeric
     targetuser = args[0]
-    _sendFromUser(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.users[targetuser].ts))
+    _send(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.users[targetuser].ts))
 
 def handle_events(irc, data):
     # Each server message looks something like this:
@@ -609,14 +606,14 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)
-    _sendFromServer(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
+    _send(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
     if endburst:
         endburstServer(irc, sid)
     return sid
 
 def endburstServer(irc, sid):
-    _sendFromServer(irc, sid, 'ENDBURST')
+    _send(irc, sid, 'ENDBURST')
     irc.servers[sid].has_bursted = True
 
 def handle_ftopic(irc, numeric, command, args):
