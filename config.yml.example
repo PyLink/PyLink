@@ -36,6 +36,9 @@ servers:
         channels: ["#pylink"]
         protocol: "inspircd"
 
+        # Set autoconnect delay (experimental)
+        autoconnect: 5
+
 # Plugins to load (omit the .py extension)
 plugins:
     - commands
