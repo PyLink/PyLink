@@ -65,7 +65,7 @@ def joinClient(irc, client, channel):
             modes=utils.joinModes(irc.channels[channel].modes)))
     irc.channels[channel].users.add(client)
 
-def sjoinServer(irc, server, channel, users, ts=None, modes=None):
+def sjoinServer(irc, server, channel, users, ts=None):
     channel = channel.lower()
     server = server or irc.sid
     assert users, "sjoinServer: No users sent?"
@@ -75,15 +75,25 @@ def sjoinServer(irc, server, channel, users, ts=None, modes=None):
         ts = irc.channels[channel].ts
     log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts, 
               time.strftime("%c", time.localtime(ts)))
+    ''' TODO: handle this properly!
     if modes is None:
         modes = irc.channels[channel].modes
+    else:
+        utils.applyModes(irc, channel, modes)
+    '''
+    modes = irc.channels[channel].modes
     uids = []
+    changedmodes = []
     namelist = []
     # We take <users> as a list of (prefixmodes, uid) pairs.
     for userpair in users:
         assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
+        prefixes, user = userpair
         namelist.append(','.join(userpair))
-        uids.append(userpair[1])
+        uids.append(user)
+        for m in prefixes:
+            changedmodes.append(('+%s' % m, user))
+    utils.applyModes(irc, channel, changedmodes)
     namelist = ' '.join(namelist)
     _sendFromServer(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
             ts=ts, users=namelist, channel=channel,
