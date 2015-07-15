@@ -540,6 +540,8 @@ def handle_events(irc, data):
             irc.umodes['*A'], irc.umodes['*B'], irc.umodes['*C'], irc.umodes['*D'] \
                 = caps['USERMODES'].split(',')
             irc.prefixmodes = re.search(r'\((.*?)\)', caps['PREFIX']).group(1)
+            # Sanity check: set this AFTER we fetch the capabilities for the network!
+            irc.connected.set()
     try:
         real_args = []
         for arg in args:

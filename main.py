@@ -16,7 +16,7 @@ import utils
 class Irc():
     def __init__(self, netname, proto, conf):
         # Initialize some variables
-        self.connected = False
+        self.connected = threading.Event()
         self.name = netname.lower()
         self.conf = conf
         # Server, channel, and user indexes to be populated by our protocol module
@@ -62,11 +62,10 @@ class Irc():
             log.error('(%s) Failed to connect to IRC: %s: %s',
                       self.name, type(e).__name__, str(e))
             self.disconnect()
-        self.connected = True
         self.run()
 
     def disconnect(self):
-        self.connected = False
+        self.connected.clear()
         self.socket.close()
         autoconnect = self.serverdata.get('autoconnect')
         if autoconnect is not None and autoconnect >= 0:
@@ -77,7 +76,7 @@ class Irc():
     def run(self):
         buf = ""
         data = ""
-        while self.connected:
+        while True:
             try:
                 data = self.socket.recv(2048).decode("utf-8")
                 buf += data
@@ -91,6 +90,7 @@ class Irc():
                 log.error('(%s) Disconnected from IRC: %s: %s',
                           self.name, type(e).__name__, str(e))
                 self.disconnect()
+                break
 
     def send(self, data):
         # Safeguard against newlines in input!! Otherwise, each line gets
