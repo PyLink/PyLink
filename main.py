@@ -75,7 +75,7 @@ class Irc():
         self.socket.close()
         autoconnect = self.serverdata.get('autoconnect')
         if autoconnect is not None and autoconnect >= 0:
-            log.warning('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
+            log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
             time.sleep(autoconnect)
             self.connect()
 
@@ -92,11 +92,11 @@ class Irc():
                     line, buf = buf.split('\n', 1)
                     log.debug("(%s) <- %s", self.name, line)
                     proto.handle_events(self, line)
-            except (socket.error, classes.ProtocolError) as e:
-                log.error('(%s) Disconnected from IRC: %s: %s',
-                          self.name, type(e).__name__, str(e))
-                self.disconnect()
+            except (socket.error, classes.ProtocolError, ConnectionError) as e:
+                log.warning('(%s) Disconnected from IRC: %s: %s',
+                           self.name, type(e).__name__, str(e))
                 break
+        self.disconnect()
 
     def send(self, data):
         # Safeguard against newlines in input!! Otherwise, each line gets
@@ -104,7 +104,12 @@ class Irc():
         data = data.replace('\n', ' ')
         data = data.encode("utf-8") + b"\n"
         log.debug("(%s) -> %s", self.name, data.decode("utf-8").strip("\n"))
-        self.socket.send(data)
+        try:
+            self.socket.send(data)
+        except (socket.error, classes.ProtocolError, ConnectionError) as e:
+            log.warning('(%s) Disconnected from IRC: %s: %s',
+                        self.name, type(e).__name__, str(e))
+            self.disconnect()
 
 if __name__ == '__main__':
     log.info('PyLink starting...')
