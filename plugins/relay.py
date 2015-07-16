@@ -88,6 +88,10 @@ def getRemoteUser(irc, remoteirc, user):
     # If the user (stored here as {(netname, UID):
     # {network1: UID1, network2: UID2}}) exists, don't spawn it
     # again!
+    if user == remoteirc.pseudoclient.uid:
+        return irc.pseudoclient.uid
+    if user == irc.pseudoclient.uid:
+        return remoteirc.pseudoclient.uid
     try:
         u = relayusers[(irc.name, user)][remoteirc.name]
     except KeyError:
