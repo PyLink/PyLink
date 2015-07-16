@@ -174,9 +174,9 @@ def initializeChannel(irc, channel):
             if remotenet == irc.name:
                 continue
             remoteirc = utils.networkobjects[remotenet]
-            if not remoteirc.connected:
-                continue  # They aren't connected, don't bother!
             rc = remoteirc.channels[remotechan]
+            if not (remoteirc.connected and findRemoteChan(remoteirc, irc, remotechan)):
+                continue  # They aren't connected, don't bother!
             for user in remoteirc.channels[remotechan].users:
                 # Don't spawn our pseudoclients again.
                 if not utils.isInternalClient(remoteirc, user):
@@ -237,10 +237,13 @@ utils.add_hook(handle_nick, 'NICK')
 def handle_part(irc, numeric, command, args):
     channel = args['channel']
     text = args['text']
-    for netname, user in relayusers[(irc.name, numeric)].items():
+    for netname, user in relayusers.copy()[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
         remotechan = findRemoteChan(irc, remoteirc, channel)
         remoteirc.proto.partClient(remoteirc, user, remotechan, text)
+        if not remoteirc.users[user].channels:
+            remoteirc.proto.quitClient(remoteirc, user, 'Left all shared channels.')
+            del relayusers[(irc.name, numeric)][remoteirc.name]
 utils.add_hook(handle_part, 'PART')
 
 def handle_privmsg(irc, numeric, command, args):
@@ -466,9 +469,13 @@ def relayJoins(irc, channel, users, ts, modes):
             if name == irc.name:
                 # Don't relay things to their source network...
                 continue
-            u = getRemoteUser(irc, remoteirc, user)
             remotechan = findRemoteChan(irc, remoteirc, channel)
-            if remotechan is None or u is None:
+            if remotechan is None:
+                # If there is no link on our network for the user, don't
+                # bother spawning it.
+                continue
+            u = getRemoteUser(irc, remoteirc, user)
+            if u is None:
                 continue
             ts = irc.channels[channel].ts
             # TODO: join users in batches with SJOIN, not one by one.
@@ -491,6 +498,9 @@ def relayPart(irc, channel, user):
         if remotechan is None:
             continue
         remoteirc.proto.partClient(remoteirc, remoteuser, remotechan, 'Channel delinked.')
+        if not remoteirc.users[remoteuser].channels:
+            remoteirc.proto.quitClient(remoteirc, remoteuser, 'Left all shared channels.')
+            del relayusers[(irc.name, user)][remoteirc.name]
 
 def removeChannel(irc, channel):
     if channel not in map(str.lower, irc.serverdata['channels']):
