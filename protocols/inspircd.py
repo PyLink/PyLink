@@ -641,9 +641,8 @@ def handle_topic(irc, numeric, command, args):
     channel = args[0].lower()
     topic = args[1]
     ts = int(time.time())
-    setter = irc.users[numeric].nick
     irc.channels[channel].topic = topic
-    return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
+    return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic}
 
 def handle_invite(irc, numeric, command, args):
     # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 0
