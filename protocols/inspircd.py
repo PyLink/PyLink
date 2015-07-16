@@ -17,7 +17,8 @@ from classes import *
 # XXX figure out a way to not force-map ENCAP to KNOCK, since other commands are sent
 # through it too.
 hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
-            'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK', 'OPERTYPE': 'MODE'}
+            'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK', 'OPERTYPE': 'MODE',
+            'FHOST': 'CHGHOST', 'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
 
 def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
