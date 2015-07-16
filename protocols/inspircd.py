@@ -449,18 +449,22 @@ def handle_mode(irc, numeric, command, args):
 def handle_squit(irc, numeric, command, args):
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
     split_server = args[0]
+    affected_users = []
     log.info('(%s) Netsplit on server %s', irc.name, split_server)
     # Prevent RuntimeError: dictionary changed size during iteration
     old_servers = copy(irc.servers)
     for sid, data in old_servers.items():
         if data.uplink == split_server:
             log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
-            handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
+            args = handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
+            affected_users += args['users']
     for user in copy(irc.servers[split_server].users):
+        affected_users.append(user)
         log.debug('Removing client %s (%s)', user, irc.users[user].nick)
         removeClient(irc, user)
     del irc.servers[split_server]
-    return {'target': split_server}
+    log.debug('(%s) Netsplit affected users: %s', irc.name, affected_users)
+    return {'target': split_server, 'users': affected_users}
 
 def handle_rsquit(irc, numeric, command, args):
     # <- :1MLAAAAIG RSQUIT :ayy.lmao
