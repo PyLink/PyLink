@@ -6,7 +6,7 @@ PyLink is an extensible, plugin-based IRC PseudoService written in Python. It ai
 
 **PyLink is a work in progress and thus may be very unstable**! No warranty is provided if this completely wrecks your network and causes widespread rioting throughout your user base!
 
-That said, please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues]). Pull requests are open if you'd like to contribute.
+That said, please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute.
 
 ### Dependencies
 
