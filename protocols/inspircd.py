@@ -353,7 +353,7 @@ def handle_part(irc, source, command, args):
     channel = args[0].lower()
     # We should only get PART commands for channels that exist, right??
     irc.channels[channel].removeuser(source)
-    irc.users[source].channels.remove(channel)
+    irc.users[source].channels.discard(channel)
     try:
         reason = args[1]
     except IndexError:
