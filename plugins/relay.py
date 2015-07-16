@@ -321,6 +321,29 @@ def handle_kick(irc, source, command, args):
                                            remotechan, real_target, args['text'])
 utils.add_hook(handle_kick, 'KICK')
 
+def handle_chgclient(irc, source, command, args):
+    target = args['target']
+    if args.get('newhost'):
+        field = 'HOST'
+        text = args['newhost']
+    elif args.get('newident'):
+        field = 'IDENT'
+        text = args['newident']
+    elif args.get('newgecos'):
+        field = 'GECOS'
+        text = args['newgecos']
+    if field:
+        for netname, user in relayusers[(irc.name, target)].items():
+            remoteirc = utils.networkobjects[netname]
+            try:
+                remoteirc.proto.updateClient(remoteirc, user, field, text)
+            except ValueError:  # IRCd doesn't support changing the field we want
+                logging.debug('(%s) Error raised changing field %r of %s on %s (for %s/%s)', irc.name, field, user, target, remotenet, irc.name)
+                continue
+
+for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
+    utils.add_hook(handle_chgclient, c)
+
 def relayModes(irc, remoteirc, sender, channel, modes=None):
     remotechan = findRemoteChan(irc, remoteirc, channel)
     log.debug('(%s) Relay mode: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
