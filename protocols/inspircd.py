@@ -62,6 +62,7 @@ def joinClient(irc, client, channel):
             ts=irc.channels[channel].ts, uid=client, channel=channel,
             modes=utils.joinModes(irc.channels[channel].modes)))
     irc.channels[channel].users.add(client)
+    irc.users[client].channels.add(channel)
 
 def sjoinServer(irc, server, channel, users, ts=None):
     channel = channel.lower()
@@ -91,6 +92,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
         uids.append(user)
         for m in prefixes:
             changedmodes.append(('+%s' % m, user))
+        irc.users[user].channels.add(channel)
     utils.applyModes(irc, channel, changedmodes)
     namelist = ' '.join(namelist)
     _send(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
@@ -351,6 +353,7 @@ def handle_part(irc, source, command, args):
     channel = args[0].lower()
     # We should only get PART commands for channels that exist, right??
     irc.channels[channel].removeuser(source)
+    irc.users[source].channels.remove(channel)
     try:
         reason = args[1]
     except IndexError:
@@ -380,6 +383,7 @@ def handle_fjoin(irc, servernumeric, command, args):
     for user in userlist:
         modeprefix, user = user.split(',', 1)
         namelist.append(user)
+        irc.users[user].channels.add(channel)
         utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
         irc.channels[channel].users.add(user)
     return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}

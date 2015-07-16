@@ -19,6 +19,7 @@ class IrcUser():
         self.modes = modes
 
         self.identified = False
+        self.channels = set()
 
     def __repr__(self):
         return repr(self.__dict__)
