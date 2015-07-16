@@ -215,6 +215,13 @@ def handle_quit(irc, numeric, command, args):
     del relayusers[(irc.name, ouruser)]
 utils.add_hook(handle_quit, 'QUIT')
 
+def handle_squit(irc, numeric, command, args):
+    users = args['users']
+    for user in users:
+        log.debug('(%s) relay handle_squit: sending handle_quit on %s', irc.name, user)
+        handle_quit(irc, user, command, {'text': '*.net *.split'})
+utils.add_hook(handle_squit, 'SQUIT')
+
 def handle_nick(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
