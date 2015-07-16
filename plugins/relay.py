@@ -88,10 +88,13 @@ def getRemoteUser(irc, remoteirc, user):
     # If the user (stored here as {(netname, UID):
     # {network1: UID1, network2: UID2}}) exists, don't spawn it
     # again!
-    if user == remoteirc.pseudoclient.uid:
-        return irc.pseudoclient.uid
-    if user == irc.pseudoclient.uid:
-        return remoteirc.pseudoclient.uid
+    try:
+        if user == remoteirc.pseudoclient.uid:
+            return irc.pseudoclient.uid
+        if user == irc.pseudoclient.uid:
+            return remoteirc.pseudoclient.uid
+    except AttributeError:  # Network hasn't been initialized yet?
+        pass
     try:
         u = relayusers[(irc.name, user)][remoteirc.name]
     except KeyError:
@@ -386,12 +389,14 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
             if supported_char:
                 supported_modes.append((prefix+supported_char, arg))
     log.debug('(%s) Relay mode: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
-    # Check if the sender is a user; remember servers are allowed to set modes too.
-    if sender in irc.users:
-        u = getRemoteUser(irc, remoteirc, sender)
-        remoteirc.proto.modeClient(remoteirc, u, channel, supported_modes)
-    else:
-        remoteirc.proto.modeServer(remoteirc, remoteirc.sid, channel, supported_modes)
+    # Don't send anything if there are no supported modes left after filtering.
+    if supported_modes:
+        # Check if the sender is a user; remember servers are allowed to set modes too.
+        if sender in irc.users:
+            u = getRemoteUser(irc, remoteirc, sender)
+            remoteirc.proto.modeClient(remoteirc, u, channel, supported_modes)
+        else:
+            remoteirc.proto.modeServer(remoteirc, remoteirc.sid, channel, supported_modes)
 
 def handle_mode(irc, numeric, command, args):
     target = args['target']
