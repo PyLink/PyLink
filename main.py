@@ -107,7 +107,7 @@ class Irc():
             log.debug('(%s) self.pingtimeout: %s', self.name, self.pingtimeout)
             data = self.socket.recv(2048).decode("utf-8")
             buf += data
-            if not data:
+            if self.connected and not data:
                 break
             while '\n' in buf:
                 line, buf = buf.split('\n', 1)

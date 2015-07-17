@@ -19,7 +19,7 @@ def normalizeNick(irc, netname, nick, separator="/"):
     # Block until we know the IRC network's nick length (after capabilities
     # are sent)
     log.debug('(%s) normalizeNick: waiting for irc.connected', irc.name)
-    irc.connected.wait(3)
+    irc.connected.wait(1)
 
     orig_nick = nick
     protoname = irc.proto.__name__
