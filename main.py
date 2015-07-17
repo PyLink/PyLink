@@ -77,10 +77,11 @@ class Irc():
                 self.schedulePing()
                 self.run()
             except (socket.error, classes.ProtocolError, ConnectionError) as e:
-                log.warning('(%s) Failed to connect to IRC: %s: %s',
+                log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
                 self.disconnect()
                 autoconnect = self.serverdata.get('autoconnect')
+                log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
                 if autoconnect is not None and autoconnect >= 0:
                     log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
                     time.sleep(autoconnect)
@@ -103,20 +104,14 @@ class Irc():
         while (time.time() - self.lastping) < self.pingtimeout:
             log.debug('(%s) time_since_last_ping: %s', self.name, (time.time() - self.lastping))
             log.debug('(%s) self.pingtimeout: %s', self.name, self.pingtimeout)
-            try:
-                data = self.socket.recv(2048).decode("utf-8")
-                buf += data
-                if not data:
-                    break
-                while '\n' in buf:
-                    line, buf = buf.split('\n', 1)
-                    log.debug("(%s) <- %s", self.name, line)
-                    proto.handle_events(self, line)
-            except (socket.error, classes.ProtocolError, ConnectionError) as e:
-                log.warning('(%s) Disconnected from IRC: %s: %s',
-                           self.name, type(e).__name__, str(e))
+            data = self.socket.recv(2048).decode("utf-8")
+            buf += data
+            if not data:
                 break
-        self.disconnect()
+            while '\n' in buf:
+                line, buf = buf.split('\n', 1)
+                log.debug("(%s) <- %s", self.name, line)
+                proto.handle_events(self, line)
 
     def send(self, data):
         # Safeguard against newlines in input!! Otherwise, each line gets

@@ -38,15 +38,14 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     realname = realname or irc.botdata['realname']
     realhost = realhost or host
     raw_modes = utils.joinModes(modes)
+    u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+        realhost=realhost, ip=ip, modes=modes)
+    irc.servers[server].users.append(uid)
     _send(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                     " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid,
                                              modes=raw_modes, ip=ip, realname=realname,
                                              realhost=realhost))
-    # XXX Deduplicate the code here
-    u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-        realhost=realhost, ip=ip, modes=modes)
-    irc.servers[server].users.append(uid)
     return u
 
 def joinClient(irc, client, channel):

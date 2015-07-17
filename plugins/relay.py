@@ -684,6 +684,7 @@ def initializeAll(irc):
         for link in entrydata['links']:
             network, channel = link
             initializeChannel(irc, channel)
+
 def main():
     loadDB()
     utils.schedulers['relaydb'] = scheduler = sched.scheduler()
@@ -693,3 +694,7 @@ def main():
     thread = threading.Thread(target=scheduler.run)
     thread.daemon = True
     thread.start()
+
+def handle_endburst(irc, numeric, command, args):
+    initializeAll(irc)
+utils.add_hook(handle_endburst, "ENDBURST")
