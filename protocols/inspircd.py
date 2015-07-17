@@ -3,7 +3,6 @@ import sys
 import os
 import traceback
 import re
-import threading
 from copy import copy
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -588,7 +587,7 @@ def handle_events(irc, data):
             for hook_func in utils.command_hooks[hook_cmd]:
                 try:
                     log.debug('Calling function %s', hook_func)
-                    threading.Thread(target=hook_func, args=(irc, numeric, command, parsed_args)).start()
+                    hook_func(irc, numeric, command, parsed_args)
                 except Exception:
                     # We don't want plugins to crash our servers...
                     traceback.print_exc()
