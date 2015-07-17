@@ -286,6 +286,12 @@ def updateClient(irc, numeric, field, text):
     else:
         raise ValueError("Changing field %r of a client is unsupported by this protocol." % field)
 
+def pingServer(irc, source=None, target=None):
+    source = source or irc.sid
+    target = target or irc.uplink
+    if not (target is None or source is None):
+        _send(irc, source, 'PING %s %s' % (source, target))
+
 def connect(irc):
     irc.start_ts = ts = int(time.time())
     irc.uidgen = {}
@@ -306,6 +312,10 @@ def handle_ping(irc, source, command, args):
     # -> :0AL PONG 0AL 70M
     if utils.isInternalServer(irc, args[1]):
         _send(irc, args[1], 'PONG %s %s' % (args[1], source))
+
+def handle_pong(irc, source, command, args):
+    if source == irc.uplink and args[1] == irc.sid:
+        irc.lastping = time.time()
 
 def handle_privmsg(irc, source, command, args):
     return {'target': args[0], 'text': args[1]}
@@ -490,6 +500,7 @@ def handle_events(irc, data):
             # Check if recvpass is correct
             raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
        irc.servers[numeric] = IrcServer(None, servername)
+       irc.uplink = numeric
        return
     elif args[0] == 'CAPAB':
         # Capability negotiation with our uplink

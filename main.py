@@ -46,13 +46,20 @@ class Irc():
         # is also dependent on the protocol module.
         self.maxnicklen = 30
         self.prefixmodes = 'ov'
+        # Uplink SID (filled in by protocol module)
+        self.uplink = None
 
         self.serverdata = conf['servers'][netname]
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.proto = proto
+        self.pingfreq = self.serverdata.get('pingfreq') or 10
+        self.pingtimeout = self.pingfreq * 2
+
         self.connection_thread = threading.Thread(target = self.connect)
         self.connection_thread.start()
+        self.pingTimer = None
+        self.lastping = time.time()
 
     def connect(self):
         ip = self.serverdata["ip"]
@@ -61,9 +68,9 @@ class Irc():
         try:
             # Initial connection timeout is a lot smaller than the timeout after
             # we've connected; this is intentional.
-            self.socket = socket.create_connection((ip, port), timeout=10)
+            self.socket = socket.create_connection((ip, port), timeout=1)
             self.socket.setblocking(0)
-            self.socket.settimeout(180)
+            self.socket.settimeout(self.pingtimeout)
             self.proto.connect(self)
         except (socket.error, classes.ProtocolError, ConnectionError) as e:
             log.warning('(%s) Failed to connect to IRC: %s: %s',
@@ -71,16 +78,19 @@ class Irc():
             self.disconnect()
         else:
             self.spawnMain()
+            self.schedulePing()
             self.run()
 
     def disconnect(self):
+        log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
         self.connected.clear()
         try:
             self.socket.close()
+            self.pingTimer.cancel()
         except:  # Socket timed out during creation; ignore
             pass
         autoconnect = self.serverdata.get('autoconnect')
-        if autoconnect is not None and autoconnect >= 0:
+        if autoconnect is not None and autoconnect >= 1110:
             log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
             time.sleep(autoconnect)
             self.connect()
@@ -88,7 +98,9 @@ class Irc():
     def run(self):
         buf = ""
         data = ""
-        while True:
+        while (time.time() - self.lastping) < self.pingtimeout:
+            log.debug('(%s) time_since_last_ping: %s', self.name, (time.time() - self.lastping))
+            log.debug('(%s) self.pingtimeout: %s', self.name, self.pingtimeout)
             try:
                 data = self.socket.recv(2048).decode("utf-8")
                 buf += data
@@ -115,7 +127,14 @@ class Irc():
         except (socket.error, classes.ProtocolError, ConnectionError) as e:
             log.warning('(%s) Disconnected from IRC: %s: %s',
                         self.name, type(e).__name__, str(e))
-            self.disconnect()
+            raise ProtocolError
+
+    def schedulePing(self):
+        self.proto.pingServer(self)
+        self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
+        self.pingTimer.daemon = True
+        self.pingTimer.start()
+        log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
     def spawnMain(self):
         nick = self.botdata.get('nick') or 'PyLink'
