@@ -1,7 +1,6 @@
 import time
 import sys
 import os
-import traceback
 import re
 from copy import copy
 
@@ -570,28 +569,8 @@ def handle_events(irc, data):
         pass
     else:
         parsed_args = func(irc, numeric, command, args)
-        # Only call our hooks if there's data to process. Handlers that support
-        # hooks will return a dict of parsed arguments, which can be passed on
-        # to plugins and the like. For example, the JOIN handler will return
-        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
-        # 'UID3']}, etc.
         if parsed_args is not None:
-            # Always make sure TS is sent.
-            if 'ts' not in parsed_args:
-                parsed_args['ts'] = int(time.time())
-            hook_cmd = command
-            if command in hook_map:
-                hook_cmd = hook_map[command]
-            log.debug('Parsed args %r received from %s handler (calling hook %s)', parsed_args, command, hook_cmd)
-            # Iterate over hooked functions, catching errors accordingly
-            for hook_func in utils.command_hooks[hook_cmd]:
-                try:
-                    log.debug('Calling function %s', hook_func)
-                    hook_func(irc, numeric, command, parsed_args)
-                except Exception:
-                    # We don't want plugins to crash our servers...
-                    traceback.print_exc()
-                    continue
+            return [numeric, command, parsed_args]
 
 def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst=True):
     # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver

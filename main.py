@@ -7,6 +7,7 @@ import time
 import sys
 from collections import defaultdict
 import threading
+import traceback
 
 from log import log
 import conf
@@ -111,7 +112,34 @@ class Irc():
             while '\n' in buf:
                 line, buf = buf.split('\n', 1)
                 log.debug("(%s) <- %s", self.name, line)
-                proto.handle_events(self, line)
+                hook_args = self.proto.handle_events(self, line)
+                # Only call our hooks if there's data to process. Handlers that support
+                # hooks will return a dict of parsed arguments, which can be passed on
+                # to plugins and the like. For example, the JOIN handler will return
+                # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
+                # 'UID3']}, etc.
+                if hook_args is not None:
+                    self.callHooks(hook_args)
+
+    def callHooks(self, hook_args):
+        numeric, command, parsed_args = hook_args
+        # Always make sure TS is sent.
+        if 'ts' not in parsed_args:
+            parsed_args['ts'] = int(time.time())
+        hook_cmd = command
+        hook_map = self.proto.hook_map
+        if command in hook_map:
+            hook_cmd = hook_map[command]
+        log.debug('Parsed args %r received from %s handler (calling hook %s)', parsed_args, command, hook_cmd)
+        # Iterate over hooked functions, catching errors accordingly
+        for hook_func in utils.command_hooks[hook_cmd]:
+            try:
+                log.debug('Calling function %s', hook_func)
+                hook_func(self, numeric, command, parsed_args)
+            except Exception:
+                # We don't want plugins to crash our servers...
+                traceback.print_exc()
+                continue
 
     def send(self, data):
         # Safeguard against newlines in input!! Otherwise, each line gets
