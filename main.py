@@ -16,11 +16,8 @@ import utils
 import coreplugin
 
 class Irc():
-    def __init__(self, netname, proto, conf):
-        # Initialize some variables
-        self.connected = threading.Event()
-        self.name = netname.lower()
-        self.conf = conf
+
+    def initVars(self):
         # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {}
         self.users = {}
@@ -49,6 +46,14 @@ class Irc():
         self.prefixmodes = 'ov'
         # Uplink SID (filled in by protocol module)
         self.uplink = None
+
+    def __init__(self, netname, proto, conf):
+        # Initialize some variables
+        self.connected = threading.Event()
+        self.name = netname.lower()
+        self.conf = conf
+
+        self.initVars()
 
         self.serverdata = conf['servers'][netname]
         self.sid = self.serverdata["sid"]
@@ -80,7 +85,7 @@ class Irc():
             except (socket.error, classes.ProtocolError, ConnectionError) as e:
                 log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
-                self.disconnect()
+            self.disconnect()
             autoconnect = self.serverdata.get('autoconnect')
             log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
             if autoconnect is not None and autoconnect >= 0:
@@ -98,6 +103,9 @@ class Irc():
             self.pingTimer.cancel()
         except:  # Socket timed out during creation; ignore
             pass
+        self.callHooks([None, 'PYLINK_DISCONNECT', {}])
+        # Reset all our variables - this is important!
+        self.initVars()
 
     def run(self):
         buf = ""
@@ -108,6 +116,7 @@ class Irc():
             data = self.socket.recv(2048).decode("utf-8")
             buf += data
             if self.connected and not data:
+                log.warn('(%s) No data received and self.connected is not set; disconnecting!', self.name)
                 break
             while '\n' in buf:
                 line, buf = buf.split('\n', 1)

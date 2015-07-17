@@ -88,8 +88,8 @@ def getPrefixModes(irc, remoteirc, channel, user):
     return modes
 
 def getRemoteUser(irc, remoteirc, user):
-    # If the user (stored here as {(netname, UID):
-    # {network1: UID1, network2: UID2}}) exists, don't spawn it
+    # If the user (stored here as {('netname', 'UID'):
+    # {'network1': 'UID1', 'network2': 'UID2'}}) exists, don't spawn it
     # again!
     try:
         if user == remoteirc.pseudoclient.uid:
@@ -698,3 +698,12 @@ def main():
 def handle_endburst(irc, numeric, command, args):
     initializeAll(irc)
 utils.add_hook(handle_endburst, "ENDBURST")
+
+def handle_disconnect(irc, numeric, command, args):
+    for k, v in relayusers.copy().items():
+        if irc.name in v:
+            del relayusers[k][irc.name]
+        if k[0] == irc.name:
+            handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Home network lost connection.'})
+
+utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
