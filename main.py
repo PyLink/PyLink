@@ -64,22 +64,29 @@ class Irc():
     def connect(self):
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
-        log.info("Connecting to network %r on %s:%s", self.name, ip, port)
-        try:
-            # Initial connection timeout is a lot smaller than the timeout after
-            # we've connected; this is intentional.
-            self.socket = socket.create_connection((ip, port), timeout=1)
-            self.socket.setblocking(0)
-            self.socket.settimeout(self.pingtimeout)
-            self.proto.connect(self)
-        except (socket.error, classes.ProtocolError, ConnectionError) as e:
-            log.warning('(%s) Failed to connect to IRC: %s: %s',
-                        self.name, type(e).__name__, str(e))
-            self.disconnect()
-        else:
-            self.spawnMain()
-            self.schedulePing()
-            self.run()
+        while True:
+            log.info("Connecting to network %r on %s:%s", self.name, ip, port)
+            try:
+                # Initial connection timeout is a lot smaller than the timeout after
+                # we've connected; this is intentional.
+                self.socket = socket.create_connection((ip, port), timeout=1)
+                self.socket.setblocking(0)
+                self.socket.settimeout(self.pingtimeout)
+                self.proto.connect(self)
+                self.spawnMain()
+                self.schedulePing()
+                self.run()
+            except (socket.error, classes.ProtocolError, ConnectionError) as e:
+                log.warning('(%s) Failed to connect to IRC: %s: %s',
+                            self.name, type(e).__name__, str(e))
+                self.disconnect()
+                autoconnect = self.serverdata.get('autoconnect')
+                if autoconnect is not None and autoconnect >= 0:
+                    log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
+                    time.sleep(autoconnect)
+                else:
+                    return
+
 
     def disconnect(self):
         log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
@@ -89,11 +96,6 @@ class Irc():
             self.pingTimer.cancel()
         except:  # Socket timed out during creation; ignore
             pass
-        autoconnect = self.serverdata.get('autoconnect')
-        if autoconnect is not None and autoconnect >= 1110:
-            log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
-            time.sleep(autoconnect)
-            self.connect()
 
     def run(self):
         buf = ""
@@ -122,12 +124,7 @@ class Irc():
         data = data.replace('\n', ' ')
         data = data.encode("utf-8") + b"\n"
         log.debug("(%s) -> %s", self.name, data.decode("utf-8").strip("\n"))
-        try:
-            self.socket.send(data)
-        except (socket.error, classes.ProtocolError, ConnectionError) as e:
-            log.warning('(%s) Disconnected from IRC: %s: %s',
-                        self.name, type(e).__name__, str(e))
-            raise ProtocolError
+        self.socket.send(data)
 
     def schedulePing(self):
         self.proto.pingServer(self)

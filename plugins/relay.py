@@ -18,6 +18,7 @@ relayusers = defaultdict(dict)
 def normalizeNick(irc, netname, nick, separator="/"):
     # Block until we know the IRC network's nick length (after capabilities
     # are sent)
+    log.debug('(%s) normalizeNick: waiting for irc.connected', irc.name)
     irc.connected.wait()
 
     orig_nick = nick
@@ -675,6 +676,7 @@ def delink(irc, source, args):
         utils.msg(irc, source, 'Error: no such relay %r.' % channel)
 
 def initializeAll(irc):
+    log.debug('(%s) initializeAll: waiting for utils.started', irc.name)
     utils.started.wait()
     for chanpair, entrydata in db.items():
         network, channel = chanpair
@@ -691,18 +693,3 @@ def main():
     thread = threading.Thread(target=scheduler.run)
     thread.daemon = True
     thread.start()
-    '''
-    for ircobj in utils.networkobjects.values():
-        initializeAll(irc)
-
-        # Same goes for all the other initialization stuff; we only
-        # want it to happen once.
-        for network, ircobj in utils.networkobjects.items():
-            if ircobj.name != irc.name:
-                irc.proto.spawnServer(irc, '%s.relay' % network)
-    '''
-
-def handle_endburst(irc, numeric, command, args):
-    thread = threading.Thread(target=initializeAll, args=(irc,))
-    thread.start()
-utils.add_hook(handle_endburst, "ENDBURST")
