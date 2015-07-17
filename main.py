@@ -80,13 +80,13 @@ class Irc():
                 log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
                 self.disconnect()
-                autoconnect = self.serverdata.get('autoconnect')
-                log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
-                if autoconnect is not None and autoconnect >= 0:
-                    log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
-                    time.sleep(autoconnect)
-                else:
-                    return
+            autoconnect = self.serverdata.get('autoconnect')
+            log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
+            if autoconnect is not None and autoconnect >= 0:
+                log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
+                time.sleep(autoconnect)
+            else:
+                return
 
 
     def disconnect(self):
