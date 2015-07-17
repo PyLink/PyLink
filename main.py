@@ -50,29 +50,33 @@ class Irc():
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.proto = proto
-        connection_thread = threading.Thread(target = self.connect)
-        connection_thread.start()
+        self.connection_thread = threading.Thread(target = self.connect)
+        self.connection_thread.start()
 
     def connect(self):
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         log.info("Connecting to network %r on %s:%s", self.name, ip, port)
-        # Initial connection timeout is a lot smaller than the timeout after
-        # we've connected; this is intentional.
-        self.socket = socket.create_connection((ip, port), timeout=10)
-        self.socket.setblocking(0)
-        self.socket.settimeout(180)
         try:
+            # Initial connection timeout is a lot smaller than the timeout after
+            # we've connected; this is intentional.
+            self.socket = socket.create_connection((ip, port), timeout=10)
+            self.socket.setblocking(0)
+            self.socket.settimeout(180)
             self.proto.connect(self)
-        except (socket.error, socket.timeout):
-            log.error('(%s) Failed to connect to IRC: %s: %s',
-                      self.name, type(e).__name__, str(e))
+        except (socket.error, classes.ProtocolError, ConnectionError) as e:
+            log.warning('(%s) Failed to connect to IRC: %s: %s',
+                        self.name, type(e).__name__, str(e))
             self.disconnect()
-        self.run()
+        else:
+            self.run()
 
     def disconnect(self):
         self.connected.clear()
-        self.socket.close()
+        try:
+            self.socket.close()
+        except:  # Socket timed out during creation; ignore
+            pass
         autoconnect = self.serverdata.get('autoconnect')
         if autoconnect is not None and autoconnect >= 0:
             log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
