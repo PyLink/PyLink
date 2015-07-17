@@ -299,12 +299,7 @@ def connect(irc):
     f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=host,
       Pass=irc.serverdata["sendpass"], sid=irc.sid))
     f(':%s BURST %s' % (irc.sid, ts))
-    nick = irc.botdata.get('nick') or 'PyLink'
-    ident = irc.botdata.get('ident') or 'pylink'
-    irc.pseudoclient = spawnClient(irc, nick, ident, host, modes={("o", None)})
     f(':%s ENDBURST' % (irc.sid))
-    for chan in irc.serverdata['channels']:
-        joinClient(irc, irc.pseudoclient.uid, chan)
 
 def handle_ping(irc, source, command, args):
     # <- :70M PING 70M 0AL
@@ -313,31 +308,12 @@ def handle_ping(irc, source, command, args):
         _send(irc, args[1], 'PONG %s %s' % (args[1], source))
 
 def handle_privmsg(irc, source, command, args):
-    if args[0] == irc.pseudoclient.uid:
-        cmd_args = args[1].split(' ')
-        cmd = cmd_args[0].lower()
-        cmd_args = cmd_args[1:]
-        try:
-            func = utils.bot_commands[cmd]
-        except KeyError:
-            utils.msg(irc, source, 'Unknown command %r.' % cmd)
-            return
-        try:
-            func(irc, source, cmd_args)
-        except Exception as e:
-            traceback.print_exc()
-            utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
-            return
     return {'target': args[0], 'text': args[1]}
 
 def handle_kill(irc, source, command, args):
     killed = args[0]
     data = irc.users[killed]
     removeClient(irc, killed)
-    if killed == irc.pseudoclient.uid:
-        irc.pseudoclient = spawnClient(irc, 'PyLink', 'pylink', irc.serverdata["hostname"])
-        for chan in irc.serverdata['channels']:
-            joinClient(irc, irc.pseudoclient.uid, chan)
     return {'target': killed, 'text': args[1], 'userdata': data}
 
 def handle_kick(irc, source, command, args):
@@ -345,8 +321,6 @@ def handle_kick(irc, source, command, args):
     channel = args[0].lower()
     kicked = args[1]
     handle_part(irc, kicked, 'KICK', [channel, args[2]])
-    if kicked == irc.pseudoclient.uid:
-        joinClient(irc, irc.pseudoclient.uid, channel)
     return {'channel': channel, 'target': kicked, 'text': args[2]}
 
 def handle_part(irc, source, command, args):

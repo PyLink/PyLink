@@ -12,6 +12,7 @@ from log import log
 import conf
 import classes
 import utils
+import coreplugin
 
 class Irc():
     def __init__(self, netname, proto, conf):
@@ -69,6 +70,7 @@ class Irc():
                         self.name, type(e).__name__, str(e))
             self.disconnect()
         else:
+            self.spawnMain()
             self.run()
 
     def disconnect(self):
@@ -115,6 +117,14 @@ class Irc():
                         self.name, type(e).__name__, str(e))
             self.disconnect()
 
+    def spawnMain(self):
+        nick = self.botdata.get('nick') or 'PyLink'
+        ident = self.botdata.get('ident') or 'pylink'
+        host = self.serverdata["hostname"]
+        self.pseudoclient = self.proto.spawnClient(self, nick, ident, host, modes={("o", None)})
+        for chan in self.serverdata['channels']:
+            self.proto.joinClient(self, self.pseudoclient.uid, chan)
+
 if __name__ == '__main__':
     log.info('PyLink starting...')
     if conf.conf['login']['password'] == 'changeme':
@@ -124,6 +134,7 @@ if __name__ == '__main__':
 
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
+    utils.plugins.append(coreplugin)
     to_load = conf.conf['plugins']
     plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
     # Here, we override the module lookup and import the plugins
