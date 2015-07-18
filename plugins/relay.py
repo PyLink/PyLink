@@ -242,7 +242,7 @@ utils.add_hook(handle_nick, 'NICK')
 def handle_part(irc, numeric, command, args):
     channel = args['channel']
     text = args['text']
-    for netname, user in relayusers.copy()[(irc.name, numeric)].items():
+    for netname, user in relayusers[(irc.name, numeric)].copy().items():
         remoteirc = utils.networkobjects[netname]
         remotechan = findRemoteChan(irc, remoteirc, channel)
         remoteirc.proto.partClient(remoteirc, user, remotechan, text)
