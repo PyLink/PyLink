@@ -164,13 +164,13 @@ def findRemoteChan(irc, remoteirc, channel):
 def initializeChannel(irc, channel):
     # We're initializing a relay that already exists. This can be done at
     # ENDBURST, or on the LINK command.
-    irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
     c = irc.channels[channel]
     relay = findRelay((irc.name, channel))
     log.debug('(%s) initializeChannel being called on %s', irc.name, channel)
     log.debug('(%s) initializeChannel: relay pair found to be %s', irc.name, relay)
     queued_users = []
     if relay:
+        irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
         all_links = db[relay]['links'].copy()
         all_links.update((relay,))
         log.debug('(%s) initializeChannel: all_links: %s', irc.name, all_links)
@@ -195,15 +195,14 @@ def initializeChannel(irc, channel):
                 irc.proto.sjoinServer(irc, irc.sid, channel, queued_users, ts=rc.ts)
             relayModes(remoteirc, irc, remoteirc.sid, remotechan)
             relayModes(irc, remoteirc, irc.sid, channel)
+            topic = remoteirc.channels[relay[1]].topic
+            # XXX: find a more elegant way to do this
+            # Only update the topic if it's different from what we already have.
+            if topic and topic != irc.channels[channel].topic:
+                irc.proto.topicServer(irc, irc.sid, channel, topic)
 
     log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
     relayJoins(irc, channel, c.users, c.ts, c.modes)
-    remoteirc = utils.networkobjects[relay[0]]
-    topic = remoteirc.channels[relay[1]].topic
-    # XXX: find a more elegant way to do this
-    # Only update the topic if it's different from what we already have.
-    if topic and topic != irc.channels[channel].topic:
-        irc.proto.topicServer(irc, irc.sid, channel, topic)
 
 def handle_join(irc, numeric, command, args):
     channel = args['channel']
