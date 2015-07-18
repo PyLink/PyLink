@@ -1,4 +1,6 @@
 from collections import defaultdict
+import threading
+from random import randint
 
 from log import log
 import main
@@ -90,6 +92,10 @@ class FakeIRC(main.Irc):
         self.hookargs = []
         self.hookmsgs = []
         self.socket = None
+        self.initVars()
+        self.spawnMain()
+        self.connected = threading.Event()
+        self.connected.set()
 
     def run(self, data):
         """Queues a message to the fake IRC server."""
@@ -140,3 +146,15 @@ class FakeProto():
     @staticmethod
     def connect(irc):
         pass
+
+    @staticmethod
+    def spawnClient(irc, nick, *args, **kwargs):
+        uid = randint(1, 10000000000)
+        ts = int(time.time())
+        irc.users[uid] = user = IrcUser(nick, ts, uid)
+        return user
+
+    @staticmethod
+    def joinClient(irc, client, channel):
+        irc.channels[channel].users.add(client)
+        irc.users[client].channels.add(channel)

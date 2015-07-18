@@ -8,6 +8,7 @@ from collections import defaultdict
 import inspircd
 import classes
 import utils
+import coreplugin
 
 class TestProtoInspIRCd(unittest.TestCase):
     def setUp(self):

@@ -291,16 +291,14 @@ def pingServer(irc, source=None, target=None):
         _send(irc, source, 'PING %s %s' % (source, target))
 
 def connect(irc):
-    irc.start_ts = ts = int(time.time())
+    ts = irc.start_ts
     irc.uidgen = {}
-    host = irc.serverdata["hostname"]
-    irc.servers[irc.sid] = IrcServer(None, host, internal=True)
 
     f = irc.send
     f('CAPAB START 1202')
     f('CAPAB CAPABILITIES :PROTOCOL=1202')
     f('CAPAB END')
-    f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=host,
+    f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=irc.serverdata["hostname"],
       Pass=irc.serverdata["sendpass"], sid=irc.sid))
     f(':%s BURST %s' % (irc.sid, ts))
     f(':%s ENDBURST' % (irc.sid))

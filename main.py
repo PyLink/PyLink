@@ -19,7 +19,7 @@ class Irc():
 
     def initVars(self):
         # Server, channel, and user indexes to be populated by our protocol module
-        self.servers = {}
+        self.servers = {self.sid: classes.IrcServer(None, self.serverdata['hostname'], internal=True)}
         self.users = {}
         self.channels = defaultdict(classes.IrcChannel)
         # Sets flags such as whether to use halfops, etc. The default RFC1459
@@ -36,6 +36,7 @@ class Irc():
         self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
                        'oper': 'o',
                        '*A': '', '*B': '', '*C': 's', '*D': 'iow'}
+
         # This nicklen value is only a default, and SHOULD be set by the
         # protocol module as soon as the relevant capability information is
         # received from the uplink. Plugins that depend on maxnicklen being
@@ -44,23 +45,27 @@ class Irc():
         # is also dependent on the protocol module.
         self.maxnicklen = 30
         self.prefixmodes = 'ov'
+
         # Uplink SID (filled in by protocol module)
         self.uplink = None
+        self.start_ts = int(time.time())
+
+        # UID generators, for servers that need it
+        self.uidgen = {}
 
     def __init__(self, netname, proto, conf):
         # Initialize some variables
         self.connected = threading.Event()
         self.name = netname.lower()
         self.conf = conf
-
-        self.initVars()
-
         self.serverdata = conf['servers'][netname]
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.proto = proto
         self.pingfreq = self.serverdata.get('pingfreq') or 10
         self.pingtimeout = self.pingfreq * 2
+
+        self.initVars()
 
         self.connection_thread = threading.Thread(target = self.connect)
         self.connection_thread.start()
