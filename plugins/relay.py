@@ -262,14 +262,27 @@ def handle_privmsg(irc, numeric, command, args):
             if not real_target:
                 continue
         else:
-            try:
-                real_target = getLocalUser(irc, target)[1]
-            except TypeError:
-                real_target = getRemoteUser(irc, remoteirc, target)
+            remoteuser = getLocalUser(irc, target)
+            if remoteuser is None:
+                continue
+            real_target = remoteuser[1]
         if notice:
             remoteirc.proto.noticeClient(remoteirc, user, real_target, text)
         else:
             remoteirc.proto.messageClient(remoteirc, user, real_target, text)
+        break
+    else:
+        # We must be on a common channel with the target. Otherwise, the sender
+        # doesn't have a client representing them on the remote network,
+        # and we won't have anywhere to send our messages from.
+        # In this case, we've iterated over all networks where the sender
+        # has pseudoclients, and found no suitable targets to send to.
+        if target in irc.users:
+            target_s = 'a common channel with %r' % irc.users[target].nick
+        else:
+            target_s = repr(target)
+        utils.msg(irc, numeric, 'Error: You must be in %s in order to send messages.' % \
+                                target_s, notice=True)
 utils.add_hook(handle_privmsg, 'PRIVMSG')
 utils.add_hook(handle_privmsg, 'NOTICE')
 
