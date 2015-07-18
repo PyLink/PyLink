@@ -9,13 +9,6 @@ from conf import conf
 from log import log
 
 @utils.add_cmd
-def debug(irc, source, args):
-    log.debug('user index: %s' % irc.users)
-    log.debug('server index: %s' % irc.servers)
-    log.debug('channels index: %s' % irc.channels)
-    utils.msg(irc, source, 'Debug info printed to console.')
-
-@utils.add_cmd
 def status(irc, source, args):
     """takes no arguments.
 
