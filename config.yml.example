@@ -1,5 +1,5 @@
 bot:
-    # Set nick, user/ident, and real name.
+    # Sets nick, user/ident, and real name.
     nick: pylink
     user: pylink
     realname: PyLink Service Client
@@ -36,8 +36,12 @@ servers:
         channels: ["#pylink"]
         protocol: "inspircd"
 
-        # Set autoconnect delay (experimental)
+        # Sets autoconnect delay - comment this out or set the value negative to disable autoconnect entirely.
         autoconnect: 5
+
+        # Sets ping frequency (i.e. how long we should wait between sending pings to our uplink).
+        # When more than two consecutive pings are missed, PyLink will disconnect with a ping timeout.
+        pingfreq: 30
 
 # Plugins to load (omit the .py extension)
 plugins:
