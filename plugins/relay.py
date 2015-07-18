@@ -706,3 +706,18 @@ def handle_disconnect(irc, numeric, command, args):
             handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Home network lost connection.'})
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
+
+@utils.add_cmd
+def linked(irc, source, args):
+    networks = list(utils.networkobjects.keys())
+    networks.remove(irc.name)
+    s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(networks))
+    utils.msg(irc, source, s)
+    # Sort relay DB by channel name, and then sort.
+    for k, v in sorted(db.items(), key=lambda channel: channel[0][1]):
+        s = '\x02%s%s\x02 ' % k
+        if v['links']:
+            s += ' '.join([''.join(link) for link in v['links']])
+        else:
+            s += '(no relays yet)'
+        utils.msg(irc, source, s)
