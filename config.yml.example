@@ -42,3 +42,5 @@ servers:
 # Plugins to load (omit the .py extension)
 plugins:
     - commands
+    # - admin
+    # - relay

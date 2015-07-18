@@ -11,6 +11,10 @@ def checkauthenticated(irc, source):
         raise NotAuthenticatedError("You are not authenticated!")
 
 def _exec(irc, source, args):
+    """<code>
+
+    Admin-only. Executes <code> in the current PyLink instance.
+    \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
     checkauthenticated(irc, source)
     args = ' '.join(args)
     if not args.strip():
@@ -21,6 +25,10 @@ utils.add_cmd(_exec, 'exec')
 
 @utils.add_cmd
 def spawnclient(irc, source, args):
+    """<nick> <ident> <host>
+
+    Admin-only. Spawns the specified PseudoClient on the PyLink server.
+    Note: this doesn't check the validity of any fields you give it!"""
     checkauthenticated(irc, source)
     try:
         nick, ident, host = args[:3]
@@ -31,6 +39,9 @@ def spawnclient(irc, source, args):
 
 @utils.add_cmd
 def quit(irc, source, args):
+    """<target> [<reason>]
+
+    Admin-only. Quits the PyLink client <target>, if it exists."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -45,6 +56,9 @@ def quit(irc, source, args):
     irc.proto.quitClient(irc, u, quitmsg)
 
 def joinclient(irc, source, args):
+    """<target> <channel1>,[<channel2>], etc.
+
+    Admin-only. Joins <target>, a PyLink client, to a comma-separated list of channels."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -64,6 +78,9 @@ utils.add_cmd(joinclient, name='join')
 
 @utils.add_cmd
 def nick(irc, source, args):
+    """<target> <newnick>
+
+    Admin-only. Changes the nick of <target>, a PyLink client, to <newnick>."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -81,6 +98,9 @@ def nick(irc, source, args):
 
 @utils.add_cmd
 def part(irc, source, args):
+    """<target> <channel1>,[<channel2>],... [<reason>]
+
+    Admin-only. Parts <target>, a PyLink client, from a comma-separated list of channels."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -98,6 +118,9 @@ def part(irc, source, args):
 
 @utils.add_cmd
 def kick(irc, source, args):
+    """<source> <channel> <user> [<reason>]
+
+    Admin-only. Kicks <user> from <channel> via <source>, where <source> is a PyLink client."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -116,6 +139,9 @@ def kick(irc, source, args):
 
 @utils.add_cmd
 def showuser(irc, source, args):
+    """<user>
+
+    Admin-only. Shows information about <user>."""
     checkauthenticated(irc, source)
     try:
         target = args[0]
@@ -132,6 +158,9 @@ def showuser(irc, source, args):
 
 @utils.add_cmd
 def showchan(irc, source, args):
+    """<channel>
+
+    Admin-only. Shows information about <channel>."""
     checkauthenticated(irc, source)
     try:
         channel = args[0].lower()
@@ -146,24 +175,10 @@ def showchan(irc, source, args):
     utils.msg(irc, source, s)
 
 @utils.add_cmd
-def tell(irc, source, args):
-    checkauthenticated(irc, source)
-    try:
-        target, text = args[0], ' '.join(args[1:])
-    except IndexError:
-        utils.msg(irc, source, 'Error: not enough arguments. Needs 2: target, text.')
-        return
-    targetuid = utils.nickToUid(irc, target)
-    if targetuid is None:
-        utils.msg(irc, source, 'Error: unknown user %r' % target)
-        return
-    if not text:
-        utils.msg(irc, source, "Error: can't send an empty message!")
-        return
-    utils.msg(irc, target, text, notice=True)
-
-@utils.add_cmd
 def mode(irc, source, args):
+    """<source> <target> <modes>
+
+    Admin-only. Sets modes <modes> on <target>."""
     checkauthenticated(irc, source)
     try:
         modesource, target, modes = args[0], args[1], args[2:]

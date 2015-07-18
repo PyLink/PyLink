@@ -559,7 +559,7 @@ def create(irc, source, args):
 def destroy(irc, source, args):
     """<channel>
 
-    Destroys the channel <channel> over the relay."""
+    Removes <channel> from the relay, delinking all networks linked to it."""
     try:
         channel = args[0].lower()
     except IndexError:
@@ -588,8 +588,7 @@ def link(irc, source, args):
     """<remotenet> <channel> <local channel>
 
     Links channel <channel> on <remotenet> over the relay to <local channel>.
-    If <local channel> is not specified, it defaults to the same name as
-    <channel>."""
+    If <local channel> is not specified, it defaults to the same name as <channel>."""
     try:
         channel = args[1].lower()
         remotenet = args[0].lower()
@@ -637,10 +636,8 @@ def link(irc, source, args):
 def delink(irc, source, args):
     """<local channel> [<network>]
 
-    Delinks channel <local channel>. <network> must and can only be specified
-    if you are on the host network for <local channel>, and allows you to
-    pick which network to delink. To remove all networks from a relay, use the
-    'destroy' command instead."""
+    Delinks channel <local channel>. <network> must and can only be specified if you are on the host network for <local channel>, and allows you to pick which network to delink.
+    To remove a relay entirely, use the 'destroy' command instead."""
     try:
         channel = args[0].lower()
     except IndexError:
@@ -709,6 +706,9 @@ utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
 @utils.add_cmd
 def linked(irc, source, args):
+    """takes no arguments.
+
+    Returns a list of channels shared across the relay."""
     networks = list(utils.networkobjects.keys())
     networks.remove(irc.name)
     s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(networks))
