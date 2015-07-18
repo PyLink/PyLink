@@ -362,7 +362,7 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
     if remotechan is None:
         return
     if modes is None:
-        modes = remoteirc.channels[remotechan].modes
+        modes = irc.channels[channel].modes
         log.debug('(%s) Relay mode: channel data for %s%s: %s', irc.name, remoteirc.name, remotechan, remoteirc.channels[remotechan])
     supported_modes = []
     log.debug('(%s) Relay mode: initial modelist for %s is %s', irc.name, channel, modes)
@@ -396,9 +396,9 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
         # Check if the sender is a user; remember servers are allowed to set modes too.
         if sender in irc.users:
             u = getRemoteUser(irc, remoteirc, sender)
-            remoteirc.proto.modeClient(remoteirc, u, channel, supported_modes)
+            remoteirc.proto.modeClient(remoteirc, u, remotechan, supported_modes)
         else:
-            remoteirc.proto.modeServer(remoteirc, remoteirc.sid, channel, supported_modes)
+            remoteirc.proto.modeServer(remoteirc, remoteirc.sid, remotechan, supported_modes)
 
 def handle_mode(irc, numeric, command, args):
     target = args['target']
