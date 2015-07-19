@@ -21,7 +21,7 @@ logging.basicConfig(level=level, format=_format)
 
 # Set log file to $CURDIR/log/pylink
 logformat = logging.Formatter(_format)
-logfile = logging.FileHandler(os.path.join(logdir, 'pylink.log'))
+logfile = logging.FileHandler(os.path.join(logdir, 'pylink.log'), mode='w')
 logfile.setFormatter(logformat)
 
 global log
