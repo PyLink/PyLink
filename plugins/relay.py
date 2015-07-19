@@ -255,6 +255,8 @@ def handle_privmsg(irc, numeric, command, args):
     notice = (command == 'NOTICE')
     target = args['target']
     text = args['text']
+    if target == irc.pseudoclient.uid:
+        return
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
         if utils.isChannel(target):
