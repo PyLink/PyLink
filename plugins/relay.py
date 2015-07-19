@@ -383,6 +383,13 @@ def handle_chgclient(irc, source, command, args):
 for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
     utils.add_hook(handle_chgclient, c)
 
+whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
+                      'blockcolor', 'halfop', 'invex', 'inviteonly', 'key',
+                      'limit', 'moderated', 'noctcp', 'noextmsg', 'nokick',
+                      'noknock', 'nonick', 'nonotice', 'op', 'operonly',
+                      'opmoderated', 'owner', 'private', 'regonly',
+                      'regmoderated', 'secret', 'sslonly',
+                      'stripcolor', 'topiclock', 'voice'}
 def relayModes(irc, remoteirc, sender, channel, modes=None):
     remotechan = findRemoteChan(irc, remoteirc, channel)
     log.debug('(%s) Relay mode: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
@@ -405,6 +412,11 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
         for name, m in irc.cmodes.items():
             supported_char = None
             if modechar == m:
+                if name not in whitelisted_cmodes:
+                    log.debug("(%s) Relay mode: skipping mode (%r, %r) because "
+                              "it isn't a whitelisted (safe) mode for relay.",
+                              irc.name, modechar, arg)
+                    break
                 if modechar in irc.prefixmodes:
                     # This is a prefix mode (e.g. +o). We must coerse the argument
                     # so that the target exists on the remote relay network.
@@ -419,9 +431,14 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                 if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
                     # Don't add bans that don't match n!u@h syntax!
                     log.debug("(%s) Relay mode: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
-                              irc.name, supported_char, arg)
-                    continue
+                              irc.name, modechar, arg)
+                    break
                 supported_modes.append((prefix+supported_char, arg))
+                break
+        else:
+            log.debug("(%s) Relay mode: skipping mode (%r, %r) because "
+                      "the remote network (%s)'s IRCd (%s) doesn't support it.",
+                      irc.name, modechar, arg, remoteirc.name, irc.proto.__name__)
     log.debug('(%s) Relay mode: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
     # Don't send anything if there are no supported modes left after filtering.
     if supported_modes:
