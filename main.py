@@ -7,7 +7,6 @@ import time
 import sys
 from collections import defaultdict
 import threading
-import traceback
 
 from log import log
 import conf
@@ -152,7 +151,7 @@ class Irc():
                 hook_func(self, numeric, command, parsed_args)
             except Exception:
                 # We don't want plugins to crash our servers...
-                traceback.print_exc()
+                log.exception('Unhandled exception caught in %r' % hook_func)
                 continue
 
     def send(self, data):

@@ -1,7 +1,5 @@
 ## coreplugin.py - Core PyLink plugin
 
-import traceback
-
 import utils
 from log import log
 
@@ -33,7 +31,7 @@ def handle_commands(irc, source, command, args):
         try:
             func(irc, source, cmd_args)
         except Exception as e:
-            traceback.print_exc()
+            log.exception('Unhandled exception caught in command %r' % cmd)
             utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 utils.add_hook(handle_commands, 'PRIVMSG')
