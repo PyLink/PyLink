@@ -160,8 +160,12 @@ class Irc():
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
         data = data.encode("utf-8") + b"\n"
-        log.debug("(%s) -> %s", self.name, data.decode("utf-8").strip("\n"))
-        self.socket.send(data)
+        stripped_data = data.decode("utf-8").strip("\n")
+        log.debug("(%s) -> %s", self.name, stripped_data)
+        try:
+            self.socket.send(data)
+        except AttributeError:
+            log.debug("(%s) Dropping message %r; network isn't connected!", self.name, stripped_data)
 
     def schedulePing(self):
         self.proto.pingServer(self)
