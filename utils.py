@@ -331,3 +331,21 @@ def isOper(irc, uid):
     Returns whether <UID> is an opered client.
     """
     return (uid in irc.users and ("o", None) in irc.users[uid].modes)
+
+def getHostmask(irc, user):
+    userobj = irc.users.get(user)
+    if userobj is None:
+        return '<user object not found>'
+    try:
+        nick = userobj.nick
+    except AttributeError:
+        nick = '<unknown nick>'
+    try:
+        ident = userobj.ident
+    except AttributeError:
+        ident = '<unknown ident>'
+    try:
+        host = userobj.host
+    except AttributeError:
+        host = '<unknown host>'
+    return '%s!%s@%s' % (nick, ident, host)
