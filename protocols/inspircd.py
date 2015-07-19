@@ -510,6 +510,7 @@ def handle_events(irc, data):
                 # We don't really care about mode prefixes; just the mode char
                 irc.cmodes[name.lstrip(':')] = char[-1]
         elif args[1] == 'USERMODES':
+            # <- CAPAB USERMODES :bot=B callerid=g cloak=x deaf_commonchan=c helpop=h hidechans=I hideoper=H invisible=i oper=o regdeaf=R servprotect=k showwhois=W snomask=s u_registered=r u_stripcolor=S wallops=w
             # Ditto above.
             for modepair in args[2:]:
                 name, char = modepair.split('=')
@@ -524,6 +525,7 @@ def handle_events(irc, data):
             irc.maxchanlen = int(caps['CHANMAX'])
             # Modes are divided into A, B, C, and D classes
             # See http://www.irc.org/tech_docs/005.html
+
             # FIXME: Find a better way to assign/store this.
             irc.cmodes['*A'], irc.cmodes['*B'], irc.cmodes['*C'], irc.cmodes['*D'] \
                 = caps['CHANMODES'].split(',')

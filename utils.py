@@ -349,3 +349,8 @@ def getHostmask(irc, user):
     except AttributeError:
         host = '<unknown host>'
     return '%s!%s@%s' % (nick, ident, host)
+
+hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
+def isHostmask(text):
+    """Returns whether <text> is a valid hostmask."""
+    return bool(hostmaskRe.match(text))

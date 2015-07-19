@@ -416,6 +416,11 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                         arg = getRemoteUser(irc, remoteirc, arg)
                 supported_char = remoteirc.cmodes.get(name)
             if supported_char:
+                if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
+                    # Don't add bans that don't match n!u@h syntax!
+                    log.debug("(%s) Relay mode: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
+                              irc.name, supported_char, arg)
+                    continue
                 supported_modes.append((prefix+supported_char, arg))
     log.debug('(%s) Relay mode: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
     # Don't send anything if there are no supported modes left after filtering.
