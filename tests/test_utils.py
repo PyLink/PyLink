@@ -95,5 +95,6 @@ class TestUtils(unittest.TestCase):
                                ('-m', None), ('+k', 'hello'),
                                ('+b', '*!*@*.badisp.net')])
         self.assertEqual(res, '-o+l-nm+kb 9PYAAAAAA 50 hello *!*@*.badisp.net')
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,13 +1,20 @@
 # admin.py: PyLink administrative commands
-import sys, os
+import sys
+import os
+import inspect
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import utils
+from log import log
 
 class NotAuthenticatedError(Exception):
     pass
 
 def checkauthenticated(irc, source):
+    lastfunc = inspect.stack()[1][3]
     if not irc.users[source].identified:
+        log.warning('(%s) Access denied for %s calling %r', irc.name,
+                    utils.getHostmask(irc, source), lastfunc)
         raise NotAuthenticatedError("You are not authenticated!")
 
 def _exec(irc, source, args):
@@ -20,6 +27,7 @@ def _exec(irc, source, args):
     if not args.strip():
         utils.msg(irc, source, 'No code entered!')
         return
+    log.info('(%s) Executing %r for %s', irc.name, args, utils.getHostmask(irc, source))
     exec(args, globals(), locals())
 utils.add_cmd(_exec, 'exec')
 

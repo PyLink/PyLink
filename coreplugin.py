@@ -29,9 +29,10 @@ def handle_commands(irc, source, command, args):
             utils.msg(irc, source, 'Unknown command %r.' % cmd)
             return
         try:
+            log.info('(%s) Calling command %r for %s', irc.name, cmd, utils.getHostmask(irc, source))
             func(irc, source, cmd_args)
         except Exception as e:
-            log.exception('Unhandled exception caught in command %r' % cmd)
+            log.exception('Unhandled exception caught in command %r', cmd)
             utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 utils.add_hook(handle_commands, 'PRIVMSG')

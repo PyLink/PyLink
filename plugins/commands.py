@@ -34,11 +34,13 @@ def identify(irc, source, args):
         realuser = conf['login']['user']
         irc.users[source].identified = realuser
         utils.msg(irc, source, 'Successfully logged in as %s.' % realuser)
+        log.info("(%s) Successful login to %r by %s.",
+                    irc.name, username, utils.getHostmask(irc, source))
     else:
         utils.msg(irc, source, 'Incorrect credentials.')
         u = irc.users[source]
-        log.warning("(%s) Failed login to %r from user '%s!%s@%s' (UID %r).",
-                    irc.name, username, u.nick, u.ident, u.host, u.uid)
+        log.warning("(%s) Failed login to %r from %s.",
+                    irc.name, username, utils.getHostmask(irc, source))
 
 def listcommands(irc, source, args):
     """takes no arguments.
