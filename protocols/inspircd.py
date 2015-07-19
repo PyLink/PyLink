@@ -507,6 +507,8 @@ def handle_events(irc, data):
             # can use InspIRCd as a model here and assign their mode map to our cmodes list.
             for modepair in args[2:]:
                 name, char = modepair.split('=')
+                if name == 'reginvite':  # Reginvite? That's a dumb name.
+                    name = 'regonly'
                 # We don't really care about mode prefixes; just the mode char
                 irc.cmodes[name.lstrip(':')] = char[-1]
         elif args[1] == 'USERMODES':
