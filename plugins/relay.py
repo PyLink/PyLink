@@ -70,13 +70,25 @@ def loadDB():
             ", creating a new one in memory...", dbname)
         db = {}
 
-def exportDB():
+def exportDB(reschedule=False):
     scheduler = utils.schedulers.get('relaydb')
-    if scheduler:
-        scheduler.enter(30, 1, exportDB)
+    if reschedule and scheduler:
+        scheduler.enter(30, 1, exportDB, argument=(True,))
     log.debug("Relay: exporting links database to %s", dbname)
     with open(dbname, 'wb') as f:
         pickle.dump(db, f, protocol=4)
+
+@utils.add_cmd
+def save(irc, source, args):
+    """takes no arguments.
+
+    Saves the relay database to disk."""
+    if irc.users[source].identified:
+        exportDB()
+        utils.msg(irc, source, 'Done.')
+    else:
+        utils.msg(irc, source, 'Error: you are not authenticated!')
+        return
 
 def getPrefixModes(irc, remoteirc, channel, user):
     modes = ''
@@ -699,7 +711,7 @@ def initializeAll(irc):
 def main():
     loadDB()
     utils.schedulers['relaydb'] = scheduler = sched.scheduler()
-    scheduler.enter(30, 1, exportDB)
+    scheduler.enter(30, 1, exportDB, argument=(True,))
     # Thread this because exportDB() queues itself as part of its
     # execution, in order to get a repeating loop.
     thread = threading.Thread(target=scheduler.run)
