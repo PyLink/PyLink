@@ -90,7 +90,10 @@ def sjoinServer(irc, server, channel, users, ts=None):
         uids.append(user)
         for m in prefixes:
             changedmodes.append(('+%s' % m, user))
-        irc.users[user].channels.add(channel)
+        try:
+            irc.users[user].channels.add(channel)
+        except KeyError:  # Not initialized yet?
+            log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", irc.name, channel, user)
     utils.applyModes(irc, channel, changedmodes)
     namelist = ' '.join(namelist)
     _send(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
@@ -329,7 +332,10 @@ def handle_part(irc, source, command, args):
     channel = args[0].lower()
     # We should only get PART commands for channels that exist, right??
     irc.channels[channel].removeuser(source)
-    irc.users[source].channels.discard(channel)
+    try:
+        irc.users[source].channels.discard(channel)
+    except KeyError:
+        log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", irc.name, channel, source)
     try:
         reason = args[1]
     except IndexError:
