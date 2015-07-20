@@ -99,7 +99,7 @@ def getPrefixModes(irc, remoteirc, channel, user):
             modes += remoteirc.cmodes[pmode]
     return modes
 
-def getRemoteUser(irc, remoteirc, user):
+def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     # If the user (stored here as {('netname', 'UID'):
     # {'network1': 'UID1', 'network2': 'UID2'}}) exists, don't spawn it
     # again!
@@ -114,7 +114,7 @@ def getRemoteUser(irc, remoteirc, user):
         u = relayusers[(irc.name, user)][remoteirc.name]
     except KeyError:
         userobj = irc.users.get(user)
-        if userobj is None or not remoteirc.connected:
+        if userobj is None or (not spawnIfMissing) or (not remoteirc.connected):
             # The query wasn't actually a valid user, or the network hasn't
             # been connected yet... Oh well!
             return
@@ -318,26 +318,16 @@ def handle_kick(irc, source, command, args):
         log.debug('(%s) Relay kick: remotechan for %s on %s is %s', irc.name, channel, name, remotechan)
         if remotechan is None:
             continue
-        real_kicker = getRemoteUser(irc, remoteirc, kicker)
+        real_kicker = getRemoteUser(irc, remoteirc, kicker, spawnIfMissing=False)
         log.debug('(%s) Relay kick: real kicker for %s on %s is %s', irc.name, kicker, name, real_kicker)
-        if real_kicker is None or not utils.isInternalClient(irc, target):
+        if not utils.isInternalClient(irc, target):
             log.debug('(%s) Relay kick: target %s is NOT an internal client', irc.name, target)
             # Both the target and kicker are external clients; i.e.
-            # they originate from the same network. We shouldn't have
-            # to process this any further, because the uplink IRCd
-            # will handle this appropriately, and we'll just follow.
+            # they originate from the same network. We won't have
+            # to filter this; the uplink IRCd will handle it appropriately,
+            # and we'll just follow.
             real_target = getRemoteUser(irc, remoteirc, target)
             log.debug('(%s) Relay kick: real target for %s is %s', irc.name, target, real_target)
-            if real_kicker:
-                remoteirc.proto.kickClient(remoteirc, real_kicker,
-                                           remotechan, real_target, text)
-            else: # Kick originated from a server, not a client.
-                try:
-                    text = "(%s@%s) %s" % (irc.servers[kicker].name, irc.name, text)
-                except (KeyError, AttributeError):
-                    text = "(<unknown server>@%s) %s" % (irc.name, text)
-                remoteirc.proto.kickServer(remoteirc, remoteirc.sid,
-                                           remotechan, real_target, text)
         else:
             log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
             real_target = getLocalUser(irc, target)[1]
@@ -355,11 +345,27 @@ def handle_kick(irc, source, command, args):
                 utils.msg(irc, kicker, "This channel is claimed; your kick has "
                                        "to %s been blocked because you are not "
                                        "(half)opped." % channel, notice=True)
-            else:
-                # Propogate the kick!
-                log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, real_kicker, kicker, irc.name)
-                remoteirc.proto.kickClient(remoteirc, real_kicker,
-                                           remotechan, real_target, args['text'])
+                return
+
+        # Propogate the kick!
+        if real_kicker:
+            log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan,real_kicker, kicker, irc.name)
+            remoteirc.proto.kickClient(remoteirc, real_kicker,
+                                       remotechan, real_target, text)
+        else:
+            # Kick originated from a server, or the kicker isn't in any
+            # common channels with the target relay network.
+            log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan,remoteirc.sid, kicker, irc.name)
+            try:
+                if kicker in irc.servers:
+                    kname = irc.servers[kicker].name
+                else:
+                    kname = irc.users.get(kicker).nick
+                text = "(%s/%s) %s" % (kname, irc.name, text)
+            except AttributeError:
+                text = "(<unknown kicker>@%s) %s" % (irc.name, text)
+            remoteirc.proto.kickServer(remoteirc, remoteirc.sid,
+                                       remotechan, real_target, text)
 utils.add_hook(handle_kick, 'KICK')
 
 def handle_chgclient(irc, source, command, args):
@@ -490,7 +496,7 @@ def handle_mode(irc, numeric, command, args):
             relayModes(irc, remoteirc, numeric, target, modes)
         else:
             modes = getSupportedUmodes(irc, remoteirc, modes)
-            remoteuser = getRemoteUser(irc, remoteirc, target)
+            remoteuser = getRemoteUser(irc, remoteirc, target, spawnIfMissing=False)
             if remoteuser is None:
                 continue
             remoteirc.proto.modeClient(remoteirc, remoteuser, remoteuser, modes)
@@ -514,7 +520,7 @@ def handle_topic(irc, numeric, command, args):
             if remotechan is None or topic == remoteirc.channels[remotechan].topic:
                 continue
             # This might originate from a server too.
-            remoteuser = getRemoteUser(irc, remoteirc, numeric)
+            remoteuser = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
             if remoteuser:
                 remoteirc.proto.topicClient(remoteirc, remoteuser, remotechan, topic)
             else:
@@ -585,9 +591,9 @@ def relayPart(irc, channel, user):
         remotechan = findRemoteChan(irc, remoteirc, channel)
         log.debug('(%s) relayPart: looking for %s/%s on %s', irc.name, user, irc.name, remoteirc.name)
         log.debug('(%s) relayPart: remotechan found as %s', irc.name, remotechan)
-        remoteuser = getRemoteUser(irc, remoteirc, user)
+        remoteuser = getRemoteUser(irc, remoteirc, user, spawnIfMissing=False)
         log.debug('(%s) relayPart: remoteuser for %s/%s found as %s', irc.name, user, irc.name, remoteuser)
-        if remotechan is None:
+        if remotechan is None or remoteuser is None:
             continue
         remoteirc.proto.partClient(remoteirc, remoteuser, remotechan, 'Channel delinked.')
         if not remoteirc.users[remoteuser].channels:
