@@ -273,10 +273,19 @@ def handle_privmsg(irc, numeric, command, args):
         return
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
+        # HACK: Don't break on sending to @#channel or similar.
+        try:
+            prefix, target = target.split('#', 1)
+        except ValueError:
+            prefix = ''
+        else:
+            target = '#' + target
         if utils.isChannel(target):
+            log.debug('(%s) relay privmsg: prefix is %r, target is %r', irc.name, prefix, target)
             real_target = findRemoteChan(irc, remoteirc, target)
             if not real_target:
                 continue
+            real_target = prefix + real_target
         else:
             remoteuser = getLocalUser(irc, target)
             if remoteuser is None:
