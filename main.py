@@ -43,7 +43,7 @@ class Irc():
         # capability information is received. This handling of irc.connected
         # is also dependent on the protocol module.
         self.maxnicklen = 30
-        self.prefixmodes = 'ov'
+        self.prefixmodes = {'o': '@', 'v': '+'}
 
         # Uplink SID (filled in by protocol module)
         self.uplink = None

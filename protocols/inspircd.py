@@ -535,7 +535,9 @@ def handle_events(irc, data):
                 = caps['CHANMODES'].split(',')
             irc.umodes['*A'], irc.umodes['*B'], irc.umodes['*C'], irc.umodes['*D'] \
                 = caps['USERMODES'].split(',')
-            irc.prefixmodes = re.search(r'\((.*?)\)', caps['PREFIX']).group(1)
+            prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', caps['PREFIX'])
+            irc.prefixmodes = dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
+            log.debug('(%s) irc.prefixmodes set to %r', irc.name, irc.prefixmodes)
             # Sanity check: set this AFTER we fetch the capabilities for the network!
             irc.connected.set()
     try:
