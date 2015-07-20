@@ -43,6 +43,9 @@ servers:
         # When more than two consecutive pings are missed, PyLink will disconnect with a ping timeout.
         pingfreq: 30
 
+        # Separator character (used by relay)
+        separator: "/"
+
 # Plugins to load (omit the .py extension)
 plugins:
     - commands

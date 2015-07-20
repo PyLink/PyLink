@@ -15,11 +15,14 @@ from log import log
 dbname = "pylinkrelay.db"
 relayusers = defaultdict(dict)
 
-def normalizeNick(irc, netname, nick, separator="/"):
+def normalizeNick(irc, netname, nick, separator=None):
     # Block until we know the IRC network's nick length (after capabilities
     # are sent)
     log.debug('(%s) normalizeNick: waiting for irc.connected', irc.name)
     irc.connected.wait(1)
+
+    separator = separator or irc.serverdata.get('separator') or "/"
+    log.debug('(%s) normalizeNick: using %r as separator.', irc.name, separator)
 
     orig_nick = nick
     protoname = irc.proto.__name__
@@ -45,7 +48,7 @@ def normalizeNick(irc, netname, nick, separator="/"):
 
     nick = nick[:allowedlength]
     nick += suffix
-    # TODO: factorize
+    # FIXME: factorize
     while utils.nickToUid(irc, nick) and not utils.isInternalClient(irc, utils.nickToUid(irc, nick)):
         # The nick we want exists? Darn, create another one then, but only if
         # the target isn't an internal client!
@@ -53,6 +56,7 @@ def normalizeNick(irc, netname, nick, separator="/"):
         # but couldn't be created due to a nick conflict.
         # This can happen when someone steals a relay user's nick.
         new_sep = separator + separator[-1]
+        log.debug('(%s) normalizeNick: using %r as new_sep.', irc.name, separator)
         nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
     finalLength = len(nick)
     assert finalLength <= maxnicklen, "Normalized nick %r went over max " \
