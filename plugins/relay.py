@@ -27,7 +27,7 @@ def normalizeNick(irc, netname, nick, separator=None):
     orig_nick = nick
     protoname = irc.proto.__name__
     maxnicklen = irc.maxnicklen
-    if protoname == 'charybdis':
+    if not protoname.startswith(('insp', 'unreal')):
         # Charybdis doesn't allow / in usernames, and will quit with
         # a protocol violation if there is one.
         separator = separator.replace('/', '|')
