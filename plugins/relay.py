@@ -803,6 +803,21 @@ def handle_disconnect(irc, numeric, command, args):
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
+def handle_save(irc, numeric, command, args):
+    # Nick collision! Try to change our nick to the next available normalized
+    # nick.
+    target = args['target']
+    if utils.isInternalClient(irc, target):
+        realuser = getLocalUser(irc, target)
+        if realuser is None:
+            return
+        remotenet, remoteuser = realuser
+        remoteirc = utils.networkobjects[remotenet]
+        nick = remoteirc.users[remoteuser].nick
+        newnick = normalizeNick(irc, remotenet, nick)
+        irc.proto.nickClient(irc, target, newnick)
+utils.add_hook(handle_save, "SAVE")
+
 @utils.add_cmd
 def linked(irc, source, args):
     """takes no arguments.
