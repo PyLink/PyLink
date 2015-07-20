@@ -216,7 +216,7 @@ def applyModes(irc, target, changedmodes):
     else:
         old_modelist = irc.channels[target].modes
         supported_modes = irc.cmodes
-    modelist = old_modelist.copy()
+    modelist = set(old_modelist)
     log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
     for mode in changedmodes:
         # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
