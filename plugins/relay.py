@@ -122,8 +122,10 @@ def getRemoteUser(irc, remoteirc, user):
         ident = userobj.ident
         host = userobj.host
         realname = userobj.realname
+        modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
         u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
-                                        host=host, realname=realname).uid
+                                        host=host, realname=realname,
+                                        modes=modes).uid
         remoteirc.users[u].remote = irc.name
     relayusers[(irc.name, user)][remoteirc.name] = u
     remoteirc.users[u].remote = irc.name
@@ -390,6 +392,8 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
                       'opmoderated', 'owner', 'private', 'regonly',
                       'regmoderated', 'secret', 'sslonly',
                       'stripcolor', 'topiclock', 'voice'}
+whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
+                      'regdeaf', 'u_stripcolor', 'servprotect', 'u_noctcp'}
 def relayModes(irc, remoteirc, sender, channel, modes=None):
     remotechan = findRemoteChan(irc, remoteirc, channel)
     log.debug('(%s) Relay mode: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
@@ -449,16 +453,48 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
         else:
             remoteirc.proto.modeServer(remoteirc, remoteirc.sid, remotechan, supported_modes)
 
+def getSupportedUmodes(irc, remoteirc, modes):
+    supported_modes = []
+    for modepair in modes:
+        try:
+            prefix, modechar = modepair[0]
+        except ValueError:
+            modechar = modepair[0]
+            prefix = '+'
+        arg = modepair[1]
+        for name, m in irc.umodes.items():
+            supported_char = None
+            if modechar == m:
+                if name not in whitelisted_umodes:
+                    log.debug("(%s) getSupportedUmodes: skipping mode (%r, %r) because "
+                              "it isn't a whitelisted (safe) mode for relay.",
+                              irc.name, modechar, arg)
+                    break
+                supported_char = remoteirc.umodes.get(name)
+            if supported_char:
+                supported_modes.append((prefix+supported_char, arg))
+                break
+        else:
+            log.debug("(%s) getSupportedUmodes: skipping mode (%r, %r) because "
+                      "the remote network (%s)'s IRCd (%s) doesn't support it.",
+                      irc.name, modechar, arg, remoteirc.name, irc.proto.__name__)
+    return supported_modes
+
 def handle_mode(irc, numeric, command, args):
     target = args['target']
-    if not utils.isChannel(target):
-        ### TODO: handle user mode changes too
-        return
     modes = args['modes']
     for name, remoteirc in utils.networkobjects.items():
         if irc.name == name:
             continue
-        relayModes(irc, remoteirc, numeric, target, modes)
+        if utils.isChannel(target):
+            relayModes(irc, remoteirc, numeric, target, modes)
+        else:
+            modes = getSupportedUmodes(irc, remoteirc, modes)
+            remoteuser = getRemoteUser(irc, remoteirc, target)
+            if remoteuser is None:
+                continue
+            remoteirc.proto.modeClient(remoteirc, remoteuser, remoteuser, modes)
+
 utils.add_hook(handle_mode, 'MODE')
 
 def handle_topic(irc, numeric, command, args):
