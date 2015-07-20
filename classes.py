@@ -49,6 +49,7 @@ class IrcChannel():
         self.modes = set()
         self.topic = ''
         self.ts = int(time.time())
+        self.topicset = False
         self.prefixmodes = {'ops': set(), 'halfops': set(), 'voices': set(),
                             'owners': set(), 'admins': set()}
 

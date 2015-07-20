@@ -210,9 +210,9 @@ def initializeChannel(irc, channel):
             relayModes(remoteirc, irc, remoteirc.sid, remotechan)
             relayModes(irc, remoteirc, irc.sid, channel)
             topic = remoteirc.channels[relay[1]].topic
-            # XXX: find a more elegant way to do this
-            # Only update the topic if it's different from what we already have.
-            if topic and topic != irc.channels[channel].topic:
+            # Only update the topic if it's different from what we already have,
+            # and topic bursting is complete.
+            if remoteirc.channels[channel].topicset and topic != irc.channels[channel].topic:
                 irc.proto.topicServer(irc, irc.sid, channel, topic)
 
     log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
@@ -506,25 +506,20 @@ utils.add_hook(handle_mode, 'MODE')
 def handle_topic(irc, numeric, command, args):
     channel = args['channel']
     topic = args['topic']
-    # XXX: find a more elegant way to do this
-    # Topics with content take precedence over empty topics.
-    # This prevents us from overwriting topics on channels with
-    # emptiness just because a leaf network hasn't received it yet.
-    if topic:
-        for name, remoteirc in utils.networkobjects.items():
-            if irc.name == name:
-                continue
+    for name, remoteirc in utils.networkobjects.items():
+        if irc.name == name:
+            continue
 
-            remotechan = findRemoteChan(irc, remoteirc, channel)
-            # Don't send if the remote topic is the same as ours.
-            if remotechan is None or topic == remoteirc.channels[remotechan].topic:
-                continue
-            # This might originate from a server too.
-            remoteuser = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
-            if remoteuser:
-                remoteirc.proto.topicClient(remoteirc, remoteuser, remotechan, topic)
-            else:
-                remoteirc.proto.topicServer(remoteirc, remoteirc.sid, remotechan, topic)
+        remotechan = findRemoteChan(irc, remoteirc, channel)
+        # Don't send if the remote topic is the same as ours.
+        if remotechan is None or topic == remoteirc.channels[remotechan].topic:
+            continue
+        # This might originate from a server too.
+        remoteuser = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
+        if remoteuser:
+            remoteirc.proto.topicClient(remoteirc, remoteuser, remotechan, topic)
+        else:
+            remoteirc.proto.topicServer(remoteirc, remoteirc.sid, remotechan, topic)
 utils.add_hook(handle_topic, 'TOPIC')
 
 def handle_kill(irc, numeric, command, args):

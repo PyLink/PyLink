@@ -610,6 +610,7 @@ def handle_ftopic(irc, numeric, command, args):
     setter = args[2]
     topic = args[-1]
     irc.channels[channel].topic = topic
+    irc.channels[channel].topicset = True
     return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
 
 def handle_topic(irc, numeric, command, args):
@@ -618,6 +619,7 @@ def handle_topic(irc, numeric, command, args):
     topic = args[1]
     ts = int(time.time())
     irc.channels[channel].topic = topic
+    irc.channels[channel].topicset = True
     return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic}
 
 def handle_invite(irc, numeric, command, args):
