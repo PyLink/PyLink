@@ -112,18 +112,19 @@ class Irc():
         self.initVars()
 
     def run(self):
-        buf = ""
-        data = ""
+        buf = b""
+        data = b""
         while (time.time() - self.lastping) < self.pingtimeout:
             log.debug('(%s) time_since_last_ping: %s', self.name, (time.time() - self.lastping))
             log.debug('(%s) self.pingtimeout: %s', self.name, self.pingtimeout)
-            data = self.socket.recv(2048).decode("utf-8")
+            data = self.socket.recv(2048)
             buf += data
             if self.connected and not data:
                 log.warn('(%s) No data received and self.connected is not set; disconnecting!', self.name)
                 break
-            while '\n' in buf:
-                line, buf = buf.split('\n', 1)
+            while b'\n' in buf:
+                line, buf = buf.split(b'\n', 1)
+                line = line.decode("utf-8")
                 log.debug("(%s) <- %s", self.name, line)
                 hook_args = self.proto.handle_events(self, line)
                 # Only call our hooks if there's data to process. Handlers that support
