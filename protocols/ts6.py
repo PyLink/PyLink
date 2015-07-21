@@ -463,6 +463,14 @@ def handle_events(irc, data):
         # Does charybdis propagate these? If so, how?
         log.debug('(%s) irc.connected set!', irc.name)
         irc.connected.set()
+
+        # Charybdis doesn't have the idea of an explicit endburst; but some plugins
+        # like relay require it to know that the network's connected.
+        # We'll set a timer to manually call endburst. It's not beautiful,
+        # but it's the best we can do.
+        endburst_timer = threading.Timer(1, irc.callHooks, args=([irc.uplink, 'ENDBURST', {}],))
+        log.debug('(%s) Starting delay to send ENDBURST', irc.name)
+        endburst_timer.start()
     try:
         real_args = []
         for arg in args:
