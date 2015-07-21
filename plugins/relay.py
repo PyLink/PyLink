@@ -123,8 +123,10 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             # been connected yet... Oh well!
             return
         nick = normalizeNick(remoteirc, irc.name, userobj.nick)
-        ident = userobj.ident
-        host = userobj.host
+        # Truncate idents at 10 characters, because TS6 won't like them otherwise!
+        ident = userobj.ident[:10]
+        # Ditto hostname at 64 chars.
+        host = userobj.host[:64]
         realname = userobj.realname
         modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
         u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
@@ -188,7 +190,6 @@ def initializeChannel(irc, channel):
     log.debug('(%s) initializeChannel: relay pair found to be %s', irc.name, relay)
     queued_users = []
     if relay:
-        irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
         all_links = db[relay]['links'].copy()
         all_links.update((relay,))
         log.debug('(%s) initializeChannel: all_links: %s', irc.name, all_links)
@@ -197,7 +198,9 @@ def initializeChannel(irc, channel):
             remotenet, remotechan = link
             if remotenet == irc.name:
                 continue
-            remoteirc = utils.networkobjects[remotenet]
+            remoteirc = utils.networkobjects.get(remotenet)
+            if remoteirc is None:
+                continue
             rc = remoteirc.channels[remotechan]
             if not (remoteirc.connected and findRemoteChan(remoteirc, irc, remotechan)):
                 continue  # They aren't connected, don't bother!
@@ -219,8 +222,9 @@ def initializeChannel(irc, channel):
             if remoteirc.channels[channel].topicset and topic != irc.channels[channel].topic:
                 irc.proto.topicServer(irc, irc.sid, channel, topic)
 
-    log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
-    relayJoins(irc, channel, c.users, c.ts, c.modes)
+        log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
+        relayJoins(irc, channel, c.users, c.ts, c.modes)
+        irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
 
 def handle_join(irc, numeric, command, args):
     channel = args['channel']
@@ -539,6 +543,9 @@ utils.add_hook(handle_topic, 'TOPIC')
 def handle_kill(irc, numeric, command, args):
     target = args['target']
     userdata = args['userdata']
+    if numeric not in irc.users:
+        # A server's sending kill? Uh oh, this can't be good.
+        return
     # We don't allow killing over the relay, so we must spawn the client.
     # all over again and rejoin it to its channels.
     realuser = getLocalUser(irc, target)
@@ -559,28 +566,28 @@ utils.add_hook(handle_kill, 'KILL')
 
 def relayJoins(irc, channel, users, ts, modes):
     queued_users = []
-    for user in users.copy():
-        try:
-            if irc.users[user].remote:
-                # Is the .remote attribute set? If so, don't relay already
-                # relayed clients; that'll trigger an endless loop!
-                continue
-        except AttributeError:  # Nope, it isn't.
-            pass
-        if user == irc.pseudoclient.uid:
-            # We don't need to clone the PyLink pseudoclient... That's
-            # meaningless.
+    for name, remoteirc in utils.networkobjects.items():
+        if name == irc.name:
+            # Don't relay things to their source network...
             continue
-        log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
-        for name, remoteirc in utils.networkobjects.items():
-            if name == irc.name:
-                # Don't relay things to their source network...
+        remotechan = findRemoteChan(irc, remoteirc, channel)
+        if remotechan is None:
+            # If there is no link on our network for the user, don't
+            # bother spawning it.
+            continue
+        for user in users.copy():
+            try:
+                if irc.users[user].remote:
+                    # Is the .remote attribute set? If so, don't relay already
+                    # relayed clients; that'll trigger an endless loop!
+                    continue
+            except AttributeError:  # Nope, it isn't.
+                pass
+            if user == irc.pseudoclient.uid:
+                # We don't need to clone the PyLink pseudoclient... That's
+                # meaningless.
                 continue
-            remotechan = findRemoteChan(irc, remoteirc, channel)
-            if remotechan is None:
-                # If there is no link on our network for the user, don't
-                # bother spawning it.
-                continue
+            log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
             u = getRemoteUser(irc, remoteirc, user)
             if u is None:
                 continue
@@ -588,9 +595,10 @@ def relayJoins(irc, channel, users, ts, modes):
             # TODO: join users in batches with SJOIN, not one by one.
             prefixes = getPrefixModes(irc, remoteirc, channel, user)
             userpair = (prefixes, u)
+            queued_users.append(userpair)
             log.debug('(%s) relayJoin: joining %s to %s%s', irc.name, userpair, remoteirc.name, remotechan)
-            remoteirc.proto.sjoinServer(remoteirc, remoteirc.sid, remotechan, [userpair], ts=ts)
-            relayModes(irc, remoteirc, irc.sid, channel, modes)
+        remoteirc.proto.sjoinServer(remoteirc, remoteirc.sid, remotechan, queued_users, ts=ts)
+        relayModes(irc, remoteirc, irc.sid, channel, modes)
 
 def relayPart(irc, channel, user):
     for name, remoteirc in utils.networkobjects.items():
@@ -610,6 +618,8 @@ def relayPart(irc, channel, user):
             del relayusers[(irc.name, user)][remoteirc.name]
 
 def removeChannel(irc, channel):
+    if irc is None:
+        return
     if channel not in map(str.lower, irc.serverdata['channels']):
         irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
     relay = findRelay((irc.name, channel))
@@ -625,12 +635,16 @@ def removeChannel(irc, channel):
                 # Don't relay things to their source network...
                 continue
             remotenet, remotechan = link
-            remoteirc = utils.networkobjects[remotenet]
-            rc = remoteirc.channels[remotechan]
-            for user in remoteirc.channels[remotechan].users.copy():
-                log.debug('(%s) removeChannel: part user %s/%s from %s', irc.name, user, remotenet, remotechan)
-                if not utils.isInternalClient(remoteirc, user):
-                    relayPart(remoteirc, remotechan, user)
+            try:
+                remoteirc = utils.networkobjects[remotenet]
+            except KeyError:
+                pass
+            else:
+                rc = remoteirc.channels[remotechan]
+                for user in remoteirc.channels[remotechan].users.copy():
+                    log.debug('(%s) removeChannel: part user %s/%s from %s', irc.name, user, remotenet, remotechan)
+                    if not utils.isInternalClient(remoteirc, user):
+                        relayPart(remoteirc, remotechan, user)
 
 @utils.add_cmd
 def create(irc, source, args):
@@ -675,7 +689,7 @@ def destroy(irc, source, args):
     entry = (irc.name, channel)
     if entry in db:
         for link in db[entry]['links']:
-            removeChannel(utils.networkobjects[link[0]], link[1])
+            removeChannel(utils.networkobjects.get(link[0]), link[1])
         removeChannel(irc, channel)
         del db[entry]
         utils.msg(irc, source, 'Done.')
@@ -762,7 +776,7 @@ def delink(irc, source, args):
             else:
                for link in db[entry]['links'].copy():
                     if link[0] == remotenet:
-                        removeChannel(utils.networkobjects[remotenet], link[1])
+                        removeChannel(utils.networkobjects.get(remotenet), link[1])
                         db[entry]['links'].remove(link)
         else:
             removeChannel(irc, channel)

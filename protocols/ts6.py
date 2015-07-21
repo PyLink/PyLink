@@ -17,7 +17,7 @@ from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
     handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
     handle_notice
 
-hook_map = {'SJOIN': 'JOIN'}
+hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC'}
 
 def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -50,14 +50,12 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
 
 def joinClient(irc, client, channel):
     channel = channel.lower()
-    server = utils.isInternalClient(irc, client)
     # JOIN:
     # parameters: channelTS, channel, '+' (a plus sign)
-    if not server:
+    if not utils.isInternalClient(irc, client):
         log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
         raise LookupError('No such PyLink PseudoClient exists.')
-    _send(irc, client, "JOIN {ts} {channel} +".format(
-            ts=int(time.time()), channel=channel))
+    _send(irc, client, "JOIN {ts} {channel} +".format(ts=irc.channels[channel].ts, channel=channel))
     irc.channels[channel].users.add(client)
     irc.users[client].channels.add(channel)
 
@@ -80,7 +78,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
         ts = irc.channels[channel].ts
     log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts, 
               time.strftime("%c", time.localtime(ts)))
-    modes = irc.channels[channel].modes
+    modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
     uids = []
     changedmodes = []
     namelist = []
@@ -113,9 +111,9 @@ def _sendModes(irc, numeric, target, modes, ts=None):
         
         # On output, at most ten cmode parameters should be sent; if there are more,
         # multiple TMODE messages should be sent.
-        while modes[:10]:
-            joinedmodes = utils.joinModes(modes[:10])
-            modes = modes[10:]
+        while modes[:9]:
+            joinedmodes = utils.joinModes(modes = [m for m in modes[:9] if m[0] not in irc.cmodes['*A']])
+            modes = modes[9:]
             _send(irc, numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
     else:
         joinedmodes = utils.joinModes(modes)
@@ -326,6 +324,12 @@ def handle_sjoin(irc, servernumeric, command, args):
 def handle_join(irc, numeric, command, args):
     # parameters: channelTS, channel, '+' (a plus sign)
     ts = int(args[0])
+    our_ts = irc.channels[channel].ts
+    if ts < our_ts:
+        # Channel timestamp was reset on burst
+        log.debug('(%s) Setting channel TS of %s to %s from %s',
+                  irc.name, channel, ts, our_ts)
+        irc.channels[channel].ts = ts
     if args[0] == '0':
         # /join 0; part the user from all channels
         oldchans = list(irc.users[numeric].channels)
@@ -457,6 +461,7 @@ def handle_events(irc, data):
         irc.umodes.update(chary_umodes)
         # TODO: support module-created modes like +O, +S, etc.
         # Does charybdis propagate these? If so, how?
+        log.debug('(%s) irc.connected set!', irc.name)
         irc.connected.set()
     try:
         real_args = []
@@ -537,21 +542,6 @@ def handle_invite(irc, numeric, command, args):
         ts = int(time.time())
     # We don't actually need to process this; it's just something plugins/hooks can use
     return {'target': target, 'channel': channel}
-
-def handle_opertype(irc, numeric, command, args):
-    # This is used by InspIRCd to denote an oper up; there is no MODE
-    # command sent for it.
-    # <- :70MAAAAAB OPERTYPE Network_Owner
-    omode = [('+o', None)]
-    utils.applyModes(irc, numeric, omode)
-    return {'target': numeric, 'modes': omode}
-
-def handle_fident(irc, numeric, command, args):
-    # :70MAAAAAB FHOST test
-    # :70MAAAAAB FNAME :afdsafasf
-    # :70MAAAAAB FIDENT test
-    irc.users[numeric].ident = newident = args[0]
-    return {'target': numeric, 'newident': newident}
 
 def handle_chghost(irc, numeric, command, args):
     target = args[0]
