@@ -14,7 +14,8 @@ from classes import *
 from inspircd import nickClient, kickServer, kickClient, _sendKick, quitClient, \
     removeClient, partClient, messageClient, noticeClient, topicClient
 from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
-    handle_quit
+    handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
+    handle_notice
 
 hook_map = {'SJOIN': 'JOIN'}
 
@@ -56,7 +57,7 @@ def joinClient(irc, client, channel):
         log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, client, "JOIN {ts} {channel} +".format(
-            ts=irc.channels[channel].ts, channel=channel))
+            ts=int(time.time()), channel=channel))
     irc.channels[channel].users.add(client)
     irc.users[client].channels.add(channel)
 
@@ -103,76 +104,6 @@ def sjoinServer(irc, server, channel, users, ts=None):
             modes=utils.joinModes(modes)))
     irc.channels[channel].users.update(uids)
 
-'''
-def partClient(irc, client, channel, reason=None):
-    channel = channel.lower()
-    if not utils.isInternalClient(irc, client):
-        log.error('(%s) Error trying to part client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
-        raise LookupError('No such PyLink PseudoClient exists.')
-    msg = "PART %s" % channel
-    if reason:
-        msg += " :%s" % reason
-    _send(irc, client, msg)
-    handle_part(irc, client, 'PART', [channel])
-
-def removeClient(irc, numeric):
-    """<irc object> <client numeric>
-
-    Removes a client from our internal databases, regardless
-    of whether it's one of our pseudoclients or not."""
-    for v in irc.channels.values():
-        v.removeuser(numeric)
-    sid = numeric[:3]
-    log.debug('Removing client %s from irc.users', numeric)
-    del irc.users[numeric]
-    log.debug('Removing client %s from irc.servers[%s]', numeric, sid)
-    irc.servers[sid].users.remove(numeric)
-
-def quitClient(irc, numeric, reason):
-    """<irc object> <client numeric>
-
-    Quits a PyLink PseudoClient."""
-    if utils.isInternalClient(irc, numeric):
-        _send(irc, numeric, "QUIT :%s" % reason)
-        removeClient(irc, numeric)
-    else:
-        raise LookupError("No such PyLink PseudoClient exists. If you're trying to remove "
-                          "a user that's not a PyLink PseudoClient from "
-                          "the internal state, use removeClient() instead.")
-
-def _sendKick(irc, numeric, channel, target, reason=None):
-    """<irc object> <kicker client numeric>
-
-    Sends a kick from a PyLink PseudoClient."""
-    channel = channel.lower()
-    if not reason:
-        reason = 'No reason given'
-    _send(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
-    # We can pretend the target left by its own will; all we really care about
-    # is that the target gets removed from the channel userlist, and calling
-    # handle_part() does that just fine.
-    handle_part(irc, target, 'KICK', [channel])
-
-def kickClient(irc, numeric, channel, target, reason=None):
-    if not utils.isInternalClient(irc, numeric):
-        raise LookupError('No such PyLink PseudoClient exists.')
-    _sendKick(irc, numeric, channel, target, reason=reason)
-
-def kickServer(irc, numeric, channel, target, reason=None):
-    if not utils.isInternalServer(irc, numeric):
-        raise LookupError('No such PyLink PseudoServer exists.')
-    _sendKick(irc, numeric, channel, target, reason=reason)
-
-def nickClient(irc, numeric, newnick):
-    """<irc object> <client numeric> <new nickname>
-
-    Changes the nick of a PyLink PseudoClient."""
-    if not utils.isInternalClient(irc, numeric):
-        raise LookupError('No such PyLink PseudoClient exists.')
-    _send(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
-    irc.users[numeric].nick = newnick
-'''
-
 def _sendModes(irc, numeric, target, modes, ts=None):
     utils.applyModes(irc, target, modes)
     if utils.isChannel(target):
@@ -184,7 +115,8 @@ def _sendModes(irc, numeric, target, modes, ts=None):
         # multiple TMODE messages should be sent.
         while modes[:10]:
             joinedmodes = utils.joinModes(modes[:10])
-            _send(irc, numeric, 'TMODE %s %s %s' % (target, ts, joinedmodes))
+            modes = modes[10:]
+            _send(irc, numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
     else:
         joinedmodes = utils.joinModes(modes)
         _send(irc, numeric, 'MODE %s %s' % (target, joinedmodes))
@@ -223,6 +155,7 @@ def killServer(irc, numeric, target, reason):
     # the kill followed by a space and a parenthesized reason. To avoid overflow,
     # it is recommended not to add anything to the path.
 
+    assert target in irc.users, "Unknown target %r for killServer!" % target
     _send(irc, numeric, 'KILL %s :Killed (%s)' % (target, reason))
     removeClient(irc, target)
 
@@ -233,33 +166,10 @@ def killClient(irc, numeric, target, reason):
     """
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
+    assert target in irc.users, "Unknown target %r for killClient!" % target
     _send(irc, numeric, 'KILL %s :Killed (%s)' % (target, reason))
     removeClient(irc, target)
 
-'''
-def messageClient(irc, numeric, target, text):
-    """<irc object> <client numeric> <text>
-
-    Sends PRIVMSG <text> from PyLink client <client numeric>."""
-    # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L649
-    if not utils.isInternalClient(irc, numeric):
-        raise LookupError('No such PyLink PseudoClient exists.')
-    _send(irc, numeric, 'PRIVMSG %s :%s' % (target, text))
-
-def noticeClient(irc, numeric, target, text):
-    """<irc object> <client numeric> <text>
-
-    Sends NOTICE <text> from PyLink client <client numeric>."""
-    if not utils.isInternalClient(irc, numeric):
-        raise LookupError('No such PyLink PseudoClient exists.')
-    _send(irc, numeric, 'NOTICE %s :%s' % (target, text))
-
-
-def topicClient(irc, numeric, target, text):
-    if not utils.isInternalClient(irc, numeric):
-        raise LookupError('No such PyLink PseudoClient exists.')
-    _send(irc, numeric, 'TOPIC %s :%s' % (target, text))
-'''
 def topicServer(irc, numeric, target, text):
     if not utils.isInternalServer(irc, numeric):
         raise LookupError('No such PyLink PseudoServer exists.')
@@ -268,7 +178,7 @@ def topicServer(irc, numeric, target, text):
     # source: server
     # propagation: broadcast
     # parameters: channel, topicTS, opt. topic setter, topic
-    ts = int(time.time())
+    ts = irc.channels[target].ts
     servername = irc.servers[numeric].name
     _send(irc, numeric, 'TB %s %s %s :%s' % (target, ts, servername, text))
 
@@ -365,24 +275,6 @@ def handle_pong(irc, source, command, args):
     if source == irc.uplink:
         irc.lastping = time.time()
 
-'''
-def handle_privmsg(irc, source, command, args):
-    return {'target': args[0], 'text': args[1]}
-
-def handle_kill(irc, source, command, args):
-    killed = args[0]
-    data = irc.users[killed]
-    removeClient(irc, killed)
-    return {'target': killed, 'text': args[1], 'userdata': data}
-
-def handle_kick(irc, source, command, args):
-    # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
-    channel = args[0].lower()
-    kicked = args[1]
-    handle_part(irc, kicked, 'KICK', [channel, args[2]])
-    return {'channel': channel, 'target': kicked, 'text': args[2]}
-'''
-
 def handle_part(irc, source, command, args):
     channels = args[0].lower().split(',')
     # We should only get PART commands for channels that exist, right??
@@ -398,11 +290,6 @@ def handle_part(irc, source, command, args):
             reason = ''
     return {'channels': channels, 'text': reason}
 
-'''
-def handle_error(irc, numeric, command, args):
-    irc.connected = False
-    raise ProtocolError('Received an ERROR, killing!')
-'''
 
 def handle_sjoin(irc, servernumeric, command, args):
     # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
@@ -448,7 +335,7 @@ def handle_join(irc, numeric, command, args):
         return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
     else:
         channel = args[1].lower()
-        irc.channels[channel].add(numeric)
+        irc.channels[channel].users.add(numeric)
         irc.users[numeric].channels.add(numeric)
     # We send users and modes here because SJOIN and JOIN both use one hook,
     # for simplicity's sake (with plugins).
@@ -467,110 +354,29 @@ def handle_euid(irc, numeric, command, args):
     irc.servers[numeric].users.append(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
-'''
-def handle_quit(irc, numeric, command, args):
-    # <- :1SRAAGB4T QUIT :Quit: quit message goes here
-    removeClient(irc, numeric)
-    return {'text': args[0]}
-
 def handle_server(irc, numeric, command, args):
     # SERVER is sent by our uplink or any other server to introduce others.
-    # <- :00A SERVER test.server * 1 00C :testing raw message syntax
-    # <- :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
+    # parameters: server name, hopcount, sid, server description
     servername = args[0].lower()
-    sid = args[3]
+    try:
+        sid = args[2]
+    except IndexError:
+        # It is allowed to send JUPEd servers that exist without a SID.
+        # That's not very fun to handle, though.
+        # XXX: don't just save these by their server names; that's ugly!
+        sid = servername
     sdesc = args[-1]
     irc.servers[sid] = IrcServer(numeric, servername)
-    return {'name': servername, 'sid': args[3], 'text': sdesc}
-'''
+    return {'name': servername, 'sid': sid, 'text': sdesc}
 
-# XXX This is where I left off.
-
-def handle_nick(irc, numeric, command, args):
-    # <- :70MAAAAAA NICK GL-devel 1434744242
-    oldnick = irc.users[numeric].nick
-    newnick = irc.users[numeric].nick = args[0]
-    return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
-
-def handle_save(irc, numeric, command, args):
-    # This is used to handle nick collisions. Here, the client Derp_ already exists,
-    # so trying to change nick to it will cause a nick collision. On InspIRCd,
-    # this will simply set the collided user's nick to its UID.
-
-    # <- :70MAAAAAA PRIVMSG 0AL000001 :nickclient PyLink Derp_
-    # -> :0AL000001 NICK Derp_ 1433728673
-    # <- :70M SAVE 0AL000001 1433728673
-    user = args[0]
-    irc.users[user].nick = user
-    return {'target': user, 'ts': int(args[1])}
-
-def handle_fmode(irc, numeric, command, args):
-    # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
-    channel = args[0].lower()
+def handle_tmode(irc, numeric, command, args):
+    # <- :42XAAAAAB TMODE 1437450768 #endlessvoid -c+lkC 3 agte4
+    channel = args[1].lower()
     modes = args[2:]
     changedmodes = utils.parseModes(irc, channel, modes)
     utils.applyModes(irc, channel, changedmodes)
-    ts = int(args[1])
+    ts = int(args[0])
     return {'target': channel, 'modes': changedmodes, 'ts': ts}
-
-def handle_mode(irc, numeric, command, args):
-    # In InspIRCd, MODE is used for setting user modes and
-    # FMODE is used for channel modes:
-    # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
-    target = args[0]
-    modestrings = args[1:]
-    changedmodes = utils.parseModes(irc, numeric, modestrings)
-    utils.applyModes(irc, target, changedmodes)
-    return {'target': target, 'modes': changedmodes}
-
-def handle_squit(irc, numeric, command, args):
-    # :70M SQUIT 1ML :Server quit by GL!gl@0::1
-    split_server = args[0]
-    affected_users = []
-    log.info('(%s) Netsplit on server %s', irc.name, split_server)
-    # Prevent RuntimeError: dictionary changed size during iteration
-    old_servers = copy(irc.servers)
-    for sid, data in old_servers.items():
-        if data.uplink == split_server:
-            log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
-            args = handle_squit(irc, sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
-            affected_users += args['users']
-    for user in copy(irc.servers[split_server].users):
-        affected_users.append(user)
-        log.debug('Removing client %s (%s)', user, irc.users[user].nick)
-        removeClient(irc, user)
-    del irc.servers[split_server]
-    log.debug('(%s) Netsplit affected users: %s', irc.name, affected_users)
-    return {'target': split_server, 'users': affected_users}
-
-def handle_rsquit(irc, numeric, command, args):
-    # <- :1MLAAAAIG RSQUIT :ayy.lmao
-    # <- :1MLAAAAIG RSQUIT ayy.lmao :some reason
-    # RSQUIT is sent by opers to squit remote servers.
-    # Strangely, it takes a server name instead of a SID, and is
-    # allowed to be ignored entirely.
-    # If we receive a remote SQUIT, split the target server
-    # ONLY if the sender is identified with us.
-    target = args[0]
-    for (sid, server) in irc.servers.items():
-        if server.name == target:
-            target = sid
-    if utils.isInternalServer(irc, target):
-        if irc.users[numeric].identified:
-            uplink = irc.servers[target].uplink
-            reason = 'Requested by %s' % irc.users[numeric].nick
-            _send(irc, uplink, 'SQUIT %s :%s' % (target, reason))
-            return handle_squit(irc, numeric, 'SQUIT', [target, reason])
-        else:
-            utils.msg(irc, numeric, 'Error: you are not authorized to split servers!', notice=True)
-
-def handle_idle(irc, numeric, command, args):
-    """Handle the IDLE command, sent between servers in remote WHOIS queries."""
-    # <- :70MAAAAAA IDLE 1MLAAAAIG
-    # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
-    sourceuser = numeric
-    targetuser = args[0]
-    _send(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.users[targetuser].ts))
 
 def handle_events(irc, data):
     # TS6 messages:
@@ -598,6 +404,9 @@ def handle_events(irc, data):
         sname = args[1].lower()
         log.debug('(%s) Found uplink server name as %r', irc.name, sname)
         irc.servers[irc.uplink].name = sname
+        # According to the TS6 protocol documentation, we should send SVINFO
+        # when we get our uplink's SERVER command.
+        irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
     elif args[0] == 'CAPAB':
         # We only get a list of keywords here. Charybdis obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
@@ -688,7 +497,7 @@ def handle_events(irc, data):
             return [numeric, command, parsed_args]
 
 def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst=True):
-    # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
+    # -> :0AL SERVER test.server 1 0XY :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
     if sid is None:  # No sid given; generate one!
@@ -697,72 +506,37 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst
     assert len(sid) == 3, "Incorrect SID length"
     if sid in irc.servers:
         raise ValueError('A server with SID %r already exists!' % sid)
-    for server in irc.servers.values():
+    for server in irc.servers.values() + irc.servers.keys():
         if name == server.name:
             raise ValueError('A server named %r already exists!' % name)
     if not utils.isInternalServer(irc, uplink):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)
-    _send(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
+    _send(irc, uplink, 'SERVER %s 1 %s :%s' % (name, sid, desc))
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
-    if endburst:
-        endburstServer(irc, sid)
     return sid
 
-def endburstServer(irc, sid):
-    _send(irc, sid, 'ENDBURST')
-    irc.servers[sid].has_bursted = True
-
-def handle_ftopic(irc, numeric, command, args):
-    # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
-    channel = args[0].lower()
-    ts = args[1]
+def handle_tb(irc, numeric, command, args):
+    # <- :42X TB 1434510754 #channel GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
+    channel = args[1].lower()
+    ts = args[0]
     setter = args[2]
     topic = args[-1]
     irc.channels[channel].topic = topic
     irc.channels[channel].topicset = True
     return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
 
-def handle_topic(irc, numeric, command, args):
-    # <- :70MAAAAAA TOPIC #test :test
-    channel = args[0].lower()
-    topic = args[1]
-    ts = int(time.time())
-    irc.channels[channel].topic = topic
-    irc.channels[channel].topicset = True
-    return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic}
-
 def handle_invite(irc, numeric, command, args):
-    # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 0
+    # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 12345
     target = args[0]
     channel = args[1].lower()
+    try:
+        ts = args[3]
+    except IndexError:
+        ts = int(time.time())
     # We don't actually need to process this; it's just something plugins/hooks can use
     return {'target': target, 'channel': channel}
-
-def handle_encap(irc, numeric, command, args):
-    # <- :70MAAAAAA ENCAP * KNOCK #blah :agsdfas
-    # From charybdis TS6 docs: https://github.com/grawity/irc-docs/blob/03ba884a54f1cef2193cd62b6a86803d89c1ac41/server/ts6.txt
-
-    # ENCAP
-    # source: any
-    # parameters: target server mask, subcommand, opt. parameters...
-
-    # Sends a command to matching servers. Propagation is independent of
-    # understanding the subcommand.
-
-    targetmask = args[0]
-    real_command = args[1]
-    if targetmask == '*' and real_command == 'KNOCK':
-        channel = args[2].lower()
-        text = args[3]
-        return {'encapcommand': real_command, 'channel': channel,
-                'text': text}
-
-def handle_notice(irc, numeric, command, args):
-    # <- :70MAAAAAA NOTICE #dev :afasfsa
-    # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
-    return {'target': args[0], 'text': args[1]}
 
 def handle_opertype(irc, numeric, command, args):
     # This is used by InspIRCd to denote an oper up; there is no MODE
@@ -779,13 +553,7 @@ def handle_fident(irc, numeric, command, args):
     irc.users[numeric].ident = newident = args[0]
     return {'target': numeric, 'newident': newident}
 
-def handle_fhost(irc, numeric, command, args):
-    irc.users[numeric].host = newhost = args[0]
+def handle_chghost(irc, numeric, command, args):
+    target = args[0]
+    irc.users[target].host = newhost = args[1]
     return {'target': numeric, 'newhost': newhost}
-
-def handle_fname(irc, numeric, command, args):
-    irc.users[numeric].realname = newgecos = args[0]
-    return {'target': numeric, 'newgecos': newgecos}
-
-def handle_endburst(irc, numeric, command, args):
-    return {}
