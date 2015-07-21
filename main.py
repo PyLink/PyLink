@@ -143,6 +143,10 @@ class Irc():
             parsed_args['ts'] = int(time.time())
         hook_cmd = command
         hook_map = self.proto.hook_map
+        # Handlers can return a 'parse_as' key to send their payload to a
+        # different hook. An example of this is "/join 0" being interpreted
+        # as leaving all channels (PART).
+        command = parsed_args.get('parse_as') or command
         if command in hook_map:
             hook_cmd = hook_map[command]
         log.debug('Parsed args %r received from %s handler (calling hook %s)', parsed_args, command, hook_cmd)
