@@ -208,8 +208,11 @@ def initializeChannel(irc, channel):
                 # Don't spawn our pseudoclients again.
                 if not utils.isInternalClient(remoteirc, user):
                     log.debug('(%s) initializeChannel: should be joining %s/%s to %s', irc.name, user, remotenet, channel)
-                    remoteuser = getRemoteUser(remoteirc, irc, user)
-                    userpair = (getPrefixModes(remoteirc, irc, remotechan, user), remoteuser)
+                    localuser = getRemoteUser(remoteirc, irc, user)
+                    if localuser is None:
+                        log.warning('(%s) got None for local user for %s/%s', irc.name, user, remotenet)
+                        continue
+                    userpair = (getPrefixModes(remoteirc, irc, remotechan, user), localuser)
                     log.debug('(%s) initializeChannel: adding %s to queued_users for %s', irc.name, userpair, channel)
                     queued_users.append(userpair)
             if queued_users:
@@ -581,16 +584,14 @@ def relayJoins(irc, channel, users, ts, modes):
                     # Is the .remote attribute set? If so, don't relay already
                     # relayed clients; that'll trigger an endless loop!
                     continue
-            except AttributeError:  # Nope, it isn't.
+            except (AttributeError, KeyError):  # Nope, it isn't.
                 pass
-            if user == irc.pseudoclient.uid:
-                # We don't need to clone the PyLink pseudoclient... That's
+            if utils.isInternalClient(irc, user):
+                # We don't need to clone PyLink pseudoclients... That's
                 # meaningless.
                 continue
             log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
             u = getRemoteUser(irc, remoteirc, user)
-            if u is None:
-                continue
             ts = irc.channels[channel].ts
             # TODO: join users in batches with SJOIN, not one by one.
             prefixes = getPrefixModes(irc, remoteirc, channel, user)

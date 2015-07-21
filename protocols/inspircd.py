@@ -66,6 +66,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
     channel = channel.lower()
     server = server or irc.sid
     assert users, "sjoinServer: No users sent?"
+    log.debug('(%s) sjoinServer: got %r for users', irc.name, users)
     if not server:
         raise LookupError('No such PyLink PseudoClient exists.')
     if ts is None:

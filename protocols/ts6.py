@@ -17,7 +17,7 @@ from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
     handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
     handle_notice
 
-hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC'}
+hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE'}
 
 def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -72,11 +72,12 @@ def sjoinServer(irc, server, channel, users, ts=None):
     channel = channel.lower()
     server = server or irc.sid
     assert users, "sjoinServer: No users sent?"
+    log.debug('(%s) sjoinServer: got %r for users', irc.name, users)
     if not server:
         raise LookupError('No such PyLink PseudoClient exists.')
     if ts is None:
         ts = irc.channels[channel].ts
-    log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts, 
+    log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts,
               time.strftime("%c", time.localtime(ts)))
     modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
     uids = []
@@ -108,7 +109,7 @@ def _sendModes(irc, numeric, target, modes, ts=None):
         ts = ts or irc.channels[target.lower()].ts
         # TMODE:
         # parameters: channelTS, channel, cmode changes, opt. cmode parameters...
-        
+
         # On output, at most ten cmode parameters should be sent; if there are more,
         # multiple TMODE messages should be sent.
         while modes[:9]:
@@ -304,32 +305,30 @@ def handle_sjoin(irc, servernumeric, command, args):
     parsedmodes = utils.parseModes(irc, channel, modestring)
     utils.applyModes(irc, channel, parsedmodes)
     namelist = []
-    for user in userlist:
+    log.debug('(%s) handle_sjoin: got userlist %r for %r', irc.name, userlist, channel)
+    for userpair in userlist:
         # charybdis sends this in the form "@+UID1, +UID2, UID3, @UID4"
-        modeprefix = ''
-        r = re.search(r'([%s]*)(.*)' % ''.join(irc.prefixmodes.values()), user)
+        r = re.search(r'([%s]*)(.*)' % ''.join(irc.prefixmodes.values()), userpair)
         user = r.group(2)
-        for m in r.group(1):
+        modeprefix = r.group(1) or ''
+        finalprefix = ''
+        assert user, 'Failed to get the UID from %r; our regex needs updating?' % userpair
+        log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', irc.name, modeprefix, user)
+        for m in modeprefix:
             # Iterate over the mapping of prefix chars to prefixes, and
             # find the characters that match.
             for char, prefix in irc.prefixmodes.items():
                 if m == prefix:
-                    modeprefix += char
+                    finalprefix += char
         namelist.append(user)
         irc.users[user].channels.add(channel)
-        utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
+        utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in finalprefix])
         irc.channels[channel].users.add(user)
     return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
 def handle_join(irc, numeric, command, args):
     # parameters: channelTS, channel, '+' (a plus sign)
     ts = int(args[0])
-    our_ts = irc.channels[channel].ts
-    if ts < our_ts:
-        # Channel timestamp was reset on burst
-        log.debug('(%s) Setting channel TS of %s to %s from %s',
-                  irc.name, channel, ts, our_ts)
-        irc.channels[channel].ts = ts
     if args[0] == '0':
         # /join 0; part the user from all channels
         oldchans = list(irc.users[numeric].channels)
@@ -339,6 +338,12 @@ def handle_join(irc, numeric, command, args):
         return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
     else:
         channel = args[1].lower()
+        our_ts = irc.channels[channel].ts
+        if ts < our_ts:
+            # Channel timestamp was reset on burst
+            log.debug('(%s) Setting channel TS of %s to %s from %s',
+                      irc.name, channel, ts, our_ts)
+            irc.channels[channel].ts = ts
         irc.channels[channel].users.add(numeric)
         irc.users[numeric].channels.add(numeric)
     # We send users and modes here because SJOIN and JOIN both use one hook,
@@ -347,10 +352,16 @@ def handle_join(irc, numeric, command, args):
             irc.channels[channel].modes, 'ts': ts}
 
 def handle_euid(irc, numeric, command, args):
-    # <- :42X EUID GL 1 1437448431 +ailoswz ~gl 0::1 0::1 42XAAAAAB real hostname, account name :realname
+    # <- :42X EUID GL 1 1437505322 +ailoswz ~gl 127.0.0.1 127.0.0.1 42XAAAAAB * * :realname
     nick = args[0]
     ts, modes, ident, host, ip, uid, realhost = args[2:9]
-    realname = [-1]
+    if realhost == '*':
+        realhost = None
+    realname = args[-1]
+    log.debug('(%s) handle_euid got args: nick=%s ts=%s uid=%s ident=%s '
+              'host=%s realname=%s realhost=%s ip=%s', irc.name, nick, ts, uid,
+              ident, host, realname, realhost, ip)
+
     irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
     parsedmodes = utils.parseModes(irc, uid, [modes])
     log.debug('Applying modes %s for %s', parsedmodes, uid)
