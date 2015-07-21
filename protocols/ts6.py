@@ -4,7 +4,8 @@ import os
 import re
 from copy import copy
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+curdir = os.path.dirname(__file__)
+sys.path += [curdir, os.path.dirname(curdir)]
 import utils
 from log import log
 
@@ -12,6 +13,8 @@ from classes import *
 # Shared with inspircd module because the output is the same.
 from inspircd import nickClient, kickServer, kickClient, _sendKick, quitClient, \
     removeClient, partClient, messageClient, noticeClient, topicClient
+from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
+    handle_quit
 
 hook_map = {'SJOIN': 'JOIN'}
 
@@ -38,7 +41,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
         realhost=realhost, ip=ip, modes=modes)
     irc.servers[server].users.append(uid)
-    _send(irc, server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid}"
+    _send(irc, server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                     ":{realname}".format(ts=ts, host=host,
                                          nick=nick, ident=ident, uid=uid,
                                          modes=raw_modes, ip=ip, realname=realname))
@@ -281,6 +284,10 @@ def knockClient(irc, numeric, target, text):
     """<irc object> <client numeric> <text>
 
     Knocks on <channel> with <text> from PyLink client <client numeric>."""
+    if 'KNOCK' not in irc.caps:
+        log.debug('(%s) knockClient: Dropping KNOCK to %r since the IRCd '
+                  'doesn\'t support it.', irc.name, target)
+        return
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     # No text value is supported here; drop it.
@@ -311,6 +318,7 @@ def connect(irc):
     irc.uidgen = {}
 
     f = irc.send
+
     # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
     f('PASS %s TS 6 %s' % (irc.serverdata["sendpass"], irc.sid))
 
@@ -324,15 +332,16 @@ def connect(irc):
 
     # EX: Support for ban exemptions (+e)
     # IE: Support for invite exemptions (+e)
+    # CHW: Allow sending messages to @#channel and the like.
     # KNOCK: support for /knock
     # SAVE: support for SAVE (forces user to UID in nick collision)
+    # SERVICES: adds mode +r (only registered users can join a channel)
     # TB: topic burst command; we send this in topicServer
-    f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB')
+    # EUID: extended UID command, which includes real hostname + account data info,
+    #       and allows sending CHGHOST without ENCAP.
+    f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID')
 
-    f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=irc.serverdata["hostname"],
-      Pass=, sid=irc.sid))
-    f(':%s BURST %s' % (irc.sid, ts))
-    f(':%s ENDBURST' % (irc.sid))
+    f('SERVER %s 0 :PyLink Service' % irc.serverdata["hostname"])
 
 def handle_ping(irc, source, command, args):
     # PING:
@@ -356,8 +365,6 @@ def handle_pong(irc, source, command, args):
     if source == irc.uplink:
         irc.lastping = time.time()
 
-from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error
-
 '''
 def handle_privmsg(irc, source, command, args):
     return {'target': args[0], 'text': args[1]}
@@ -379,7 +386,7 @@ def handle_kick(irc, source, command, args):
 def handle_part(irc, source, command, args):
     channels = args[0].lower().split(',')
     # We should only get PART commands for channels that exist, right??
-        for channel in channels:
+    for channel in channels:
         irc.channels[channel].removeuser(source)
         try:
             irc.users[source].channels.discard(channel)
@@ -429,19 +436,38 @@ def handle_sjoin(irc, servernumeric, command, args):
         irc.channels[channel].users.add(user)
     return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
-# XXX This is where I left off.
+def handle_join(irc, numeric, command, args):
+    # parameters: channelTS, channel, '+' (a plus sign)
+    ts = int(args[0])
+    if args[0] == '0':
+        # /join 0; part the user from all channels
+        oldchans = list(irc.users[numeric].channels)
+        for channel in irc.users[numeric].channels:
+            irc.channels[channel].discard(numeric)
+        irc.users[numeric].channels = set()
+        return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
+    else:
+        channel = args[1].lower()
+        irc.channels[channel].add(numeric)
+        irc.users[numeric].channels.add(numeric)
+    # We send users and modes here because SJOIN and JOIN both use one hook,
+    # for simplicity's sake (with plugins).
+    return {'channel': channel, 'users': [numeric], 'modes':
+            irc.channels[channel].modes, 'ts': ts}
 
-def handle_uid(irc, numeric, command, args):
-    # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
-    uid, ts, nick, realhost, host, ident, ip = args[0:7]
-    realname = args[-1]
+def handle_euid(irc, numeric, command, args):
+    # <- :42X EUID GL 1 1437448431 +ailoswz ~gl 0::1 0::1 42XAAAAAB real hostname, account name :realname
+    nick = args[0]
+    ts, modes, ident, host, ip, uid, realhost = args[2:9]
+    realname = [-1]
     irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
-    parsedmodes = utils.parseModes(irc, uid, [args[8], args[9]])
+    parsedmodes = utils.parseModes(irc, uid, [modes])
     log.debug('Applying modes %s for %s', parsedmodes, uid)
     utils.applyModes(irc, uid, parsedmodes)
     irc.servers[numeric].users.append(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
+'''
 def handle_quit(irc, numeric, command, args):
     # <- :1SRAAGB4T QUIT :Quit: quit message goes here
     removeClient(irc, numeric)
@@ -456,6 +482,9 @@ def handle_server(irc, numeric, command, args):
     sdesc = args[-1]
     irc.servers[sid] = IrcServer(numeric, servername)
     return {'name': servername, 'sid': args[3], 'text': sdesc}
+'''
+
+# XXX This is where I left off.
 
 def handle_nick(irc, numeric, command, args):
     # <- :70MAAAAAA NICK GL-devel 1434744242
@@ -544,61 +573,82 @@ def handle_idle(irc, numeric, command, args):
     _send(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.users[targetuser].ts))
 
 def handle_events(irc, data):
-    # Each server message looks something like this:
-    # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :v,1SRAAESWE
-    # :<sid> <command> <argument1> <argument2> ... :final multi word argument
+    # TS6 messages:
+    # :42X COMMAND arg1 arg2 :final long arg
+    # :42XAAAAAA PRIVMSG #somewhere :hello!
     args = data.split()
     if not args:
         # No data??
         return
-    if args[0] == 'SERVER':
-       # <- SERVER whatever.net abcdefgh 0 10X :something
-       servername = args[1].lower()
-       numeric = args[4]
-       if args[2] != irc.serverdata['recvpass']:
+    if args[0] == 'PASS':
+        # <- PASS $somepassword TS 6 :42X
+        if args[1] != irc.serverdata['recvpass']:
             # Check if recvpass is correct
             raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
-       irc.servers[numeric] = IrcServer(None, servername)
-       irc.uplink = numeric
-       return
+        if 'TS 6' not in data:
+            raise ProtocolError("Remote protocol version is too old! Is this even TS6?")
+        # Server name and SID are sent in different messages, grr
+        numeric = data.rsplit(':', 1)[1]
+        log.debug('(%s) Found uplink SID as %r', irc.name, numeric)
+        irc.servers[numeric] = IrcServer(None, 'unknown')
+        irc.uplink = numeric
+        return
+    elif args[0] == 'SERVER':
+        # <- SERVER charybdis.midnight.vpn 1 :charybdis test server
+        sname = args[1].lower()
+        log.debug('(%s) Found uplink server name as %r', irc.name, sname)
+        irc.servers[irc.uplink].name = sname
     elif args[0] == 'CAPAB':
-        # Capability negotiation with our uplink
-        if args[1] == 'CHANMODES':
-            # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b banexception=e blockcolor=c c_registered=r exemptchanops=X filter=g flood=f halfop=%h history=H invex=I inviteonly=i joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T official-join=!Y op=@o operonly=O opmoderated=U owner=~q permanent=P private=p redirect=L reginvite=R regmoderated=M secret=s sslonly=z stripcolor=S topiclock=t voice=+v
+        # We only get a list of keywords here. Charybdis obviously assumes that
+        # we know what modes it supports (indeed, this is a standard list).
+        # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
+        irc.caps = caps = data.split(':', 1)[1].split()
+        for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP'):
+            if required_cap not in caps:
+                raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
-            # Named modes are essential for a cross-protocol IRC service. We
-            # can use InspIRCd as a model here and assign their mode map to our cmodes list.
-            for modepair in args[2:]:
-                name, char = modepair.split('=')
-                if name == 'reginvite':  # Reginvite? That's a dumb name.
-                    name = 'regonly'
-                # We don't really care about mode prefixes; just the mode char
-                irc.cmodes[name.lstrip(':')] = char[-1]
-        elif args[1] == 'USERMODES':
-            # <- CAPAB USERMODES :bot=B callerid=g cloak=x deaf_commonchan=c helpop=h hidechans=I hideoper=H invisible=i oper=o regdeaf=R servprotect=k showwhois=W snomask=s u_registered=r u_stripcolor=S wallops=w
-            # Ditto above.
-            for modepair in args[2:]:
-                name, char = modepair.split('=')
-                irc.umodes[name.lstrip(':')] = char
-        elif args[1] == 'CAPABILITIES':
-            # <- CAPAB CAPABILITIES :NICKMAX=21 CHANMAX=64 MAXMODES=20 IDENTMAX=11 MAXQUIT=255 MAXTOPIC=307 MAXKICK=255 MAXGECOS=128 MAXAWAY=200 IP6SUPPORT=1 PROTOCOL=1202 PREFIX=(Yqaohv)!~&@%+ CHANMODES=IXbegw,k,FHJLfjl,ACKMNOPQRSTUcimnprstz USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
-            caps = dict([x.lstrip(':').split('=') for x in args[2:]])
-            protocol_version = int(caps['PROTOCOL'])
-            if protocol_version < 1202:
-                raise ProtocolError("Remote protocol version is too old! At least 1202 (InspIRCd 2.0.x) is needed. (got %s)" % protocol_version)
-            irc.maxnicklen = int(caps['NICKMAX'])
-            irc.maxchanlen = int(caps['CHANMAX'])
-            # Modes are divided into A, B, C, and D classes
-            # See http://www.irc.org/tech_docs/005.html
+        # Valid keywords (from mostly InspIRCd's named modes):
+        # admin allowinvite autoop ban banexception blockcolor
+        # c_registered exemptchanops filter forward flood halfop history invex
+        # inviteonly joinflood key kicknorejoin limit moderated nickflood
+        # noctcp noextmsg nokick noknock nonick nonotice official-join op
+        # operonly opmoderated owner permanent private redirect regonly
+        # regmoderated secret sslonly stripcolor topiclock voice
 
-            # FIXME: Find a better way to assign/store this.
-            irc.cmodes['*A'], irc.cmodes['*B'], irc.cmodes['*C'], irc.cmodes['*D'] \
-                = caps['CHANMODES'].split(',')
-            irc.umodes['*A'], irc.umodes['*B'], irc.umodes['*C'], irc.umodes['*D'] \
-                = caps['USERMODES'].split(',')
-            irc.prefixmodes = re.search(r'\((.*?)\)', caps['PREFIX']).group(1)
-            # Sanity check: set this AFTER we fetch the capabilities for the network!
-            irc.connected.set()
+        # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
+        chary_cmodes = { # TS6 generic modes:
+                        'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
+                        'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
+                        'secret': 's', 'topiclock': 't',
+                         # charybdis-specific modes:
+                         'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
+                         'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
+                         'c_noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
+                         'g', 'opmoderated': 'z',
+                         # Now, map all the ABCD type modes:
+                         '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
+        if 'EX' in caps:
+            chary_cmodes['banexception'] = 'e'
+        if 'IE' in caps:
+            chary_cmodes['invex'] = 'I'
+        if 'SERVICES' in caps:
+            chary_cmodes['regonly'] = 'r'
+
+        irc.cmodes.update(chary_cmodes)
+
+        # Same thing with umodes:
+        # bot callerid cloak deaf_commonchan helpop hidechans hideoper invisible oper regdeaf servprotect showwhois snomask u_registered u_stripcolor wallops
+        chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'u_admin': 'a',
+                        'invisible': 'i', 'oper': 'o', 'wallops': 'w',
+                        'snomask': 's', 'u_noforward': 'Q', 'regdeaf': 'R',
+                        'callerid': 'g', 'chary_operwall': 'z', 'chary_locops':
+                        'l',
+                         # Now, map all the ABCD type modes:
+                         '*A': '', '*B': '', '*C': '', '*D': 'DSAiowQRglszZ'}
+        irc.umodes.update(chary_umodes)
+        # TODO: support module-created modes like +O, +S, etc.
+        # Does charybdis propagate these? If so, how?
+        irc.connected.set()
     try:
         real_args = []
         for arg in args:
