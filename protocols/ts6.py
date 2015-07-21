@@ -17,7 +17,7 @@ from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
     handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
     handle_notice
 
-hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE'}
+hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE'}
 
 def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -566,3 +566,15 @@ def handle_chghost(irc, numeric, command, args):
     target = args[0]
     irc.users[target].host = newhost = args[1]
     return {'target': numeric, 'newhost': newhost}
+
+def handle_bmask(irc, numeric, command, args):
+    # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
+    # This is used for propagating bans, not TMODE!
+    channel = args[1].lower()
+    mode = args[2]
+    ts = int(args[0])
+    modes = []
+    for ban in args[-1].split():
+        modes.append(('+%s' % mode, ban))
+    utils.applyModes(irc, channel, modes)
+    return {'target': channel, 'modes': modes, 'ts': ts}
