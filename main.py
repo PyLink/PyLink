@@ -124,6 +124,7 @@ class Irc():
                 break
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
+                line = line.strip(b'\r')
                 line = line.decode("utf-8")
                 log.debug("(%s) <- %s", self.name, line)
                 hook_args = self.proto.handle_events(self, line)
