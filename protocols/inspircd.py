@@ -329,18 +329,19 @@ def handle_kick(irc, source, command, args):
     return {'channel': channel, 'target': kicked, 'text': args[2]}
 
 def handle_part(irc, source, command, args):
-    channel = args[0].lower()
-    # We should only get PART commands for channels that exist, right??
-    irc.channels[channel].removeuser(source)
-    try:
-        irc.users[source].channels.discard(channel)
-    except KeyError:
-        log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", irc.name, channel, source)
-    try:
-        reason = args[1]
-    except IndexError:
-        reason = ''
-    return {'channel': channel, 'text': reason}
+    channels = args[0].lower().split(',')
+    for channel in channels:
+        # We should only get PART commands for channels that exist, right??
+        irc.channels[channel].removeuser(source)
+        try:
+            irc.users[source].channels.discard(channel)
+        except KeyError:
+            log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", irc.name, channel, source)
+        try:
+            reason = args[1]
+        except IndexError:
+            reason = ''
+    return {'channels': channels, 'text': reason}
 
 def handle_error(irc, numeric, command, args):
     irc.connected = False
