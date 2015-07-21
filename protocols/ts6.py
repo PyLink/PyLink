@@ -13,7 +13,7 @@ from classes import *
 from inspircd import nickClient, kickServer, kickClient, _sendKick, quitClient, \
     removeClient, partClient, messageClient, noticeClient, topicClient
 
-hook_map = {}
+hook_map = {'SJOIN': 'JOIN'}
 
 def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -397,15 +397,12 @@ def handle_error(irc, numeric, command, args):
     raise ProtocolError('Received an ERROR, killing!')
 '''
 
-# XXX This is where I left off.
-
-def handle_fjoin(irc, servernumeric, command, args):
-    # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
-    channel = args[0].lower()
-    # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
+def handle_sjoin(irc, servernumeric, command, args):
+    # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
+    channel = args[1].lower()
     userlist = args[-1].split()
     our_ts = irc.channels[channel].ts
-    their_ts = int(args[1])
+    their_ts = int(args[0])
     if their_ts < our_ts:
         # Channel timestamp was reset on burst
         log.debug('(%s) Setting channel TS of %s to %s from %s',
@@ -416,12 +413,23 @@ def handle_fjoin(irc, servernumeric, command, args):
     utils.applyModes(irc, channel, parsedmodes)
     namelist = []
     for user in userlist:
-        modeprefix, user = user.split(',', 1)
+        # charybdis sends this in the form "@+UID1, +UID2, UID3, @UID4"
+        modeprefix = ''
+        r = re.search(r'([%s]*)(.*)' % ''.join(irc.prefixmodes.values()), user)
+        user = r.group(2)
+        for m in r.group(1):
+            # Iterate over the mapping of prefix chars to prefixes, and
+            # find the characters that match.
+            for char, prefix in irc.prefixmodes.items():
+                if m == prefix:
+                    modeprefix += char
         namelist.append(user)
         irc.users[user].channels.add(channel)
         utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
         irc.channels[channel].users.add(user)
     return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
+
+# XXX This is where I left off.
 
 def handle_uid(irc, numeric, command, args):
     # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
