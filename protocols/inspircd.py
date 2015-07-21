@@ -329,18 +329,19 @@ def handle_kick(irc, source, command, args):
     return {'channel': channel, 'target': kicked, 'text': args[2]}
 
 def handle_part(irc, source, command, args):
-    channel = args[0].lower()
-    # We should only get PART commands for channels that exist, right??
-    irc.channels[channel].removeuser(source)
-    try:
-        irc.users[source].channels.discard(channel)
-    except KeyError:
-        log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", irc.name, channel, source)
-    try:
-        reason = args[1]
-    except IndexError:
-        reason = ''
-    return {'channel': channel, 'text': reason}
+    channels = args[0].lower().split(',')
+    for channel in channels:
+        # We should only get PART commands for channels that exist, right??
+        irc.channels[channel].removeuser(source)
+        try:
+            irc.users[source].channels.discard(channel)
+        except KeyError:
+            log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", irc.name, channel, source)
+        try:
+            reason = args[1]
+        except IndexError:
+            reason = ''
+    return {'channels': channels, 'text': reason}
 
 def handle_error(irc, numeric, command, args):
     irc.connected = False
@@ -452,27 +453,6 @@ def handle_squit(irc, numeric, command, args):
     del irc.servers[split_server]
     log.debug('(%s) Netsplit affected users: %s', irc.name, affected_users)
     return {'target': split_server, 'users': affected_users}
-
-def handle_rsquit(irc, numeric, command, args):
-    # <- :1MLAAAAIG RSQUIT :ayy.lmao
-    # <- :1MLAAAAIG RSQUIT ayy.lmao :some reason
-    # RSQUIT is sent by opers to squit remote servers.
-    # Strangely, it takes a server name instead of a SID, and is
-    # allowed to be ignored entirely.
-    # If we receive a remote SQUIT, split the target server
-    # ONLY if the sender is identified with us.
-    target = args[0]
-    for (sid, server) in irc.servers.items():
-        if server.name == target:
-            target = sid
-    if utils.isInternalServer(irc, target):
-        if irc.users[numeric].identified:
-            uplink = irc.servers[target].uplink
-            reason = 'Requested by %s' % irc.users[numeric].nick
-            _send(irc, uplink, 'SQUIT %s :%s' % (target, reason))
-            return handle_squit(irc, numeric, 'SQUIT', [target, reason])
-        else:
-            utils.msg(irc, numeric, 'Error: you are not authorized to split servers!', notice=True)
 
 def handle_idle(irc, numeric, command, args):
     """Handle the IDLE command, sent between servers in remote WHOIS queries."""

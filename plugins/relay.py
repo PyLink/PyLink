@@ -258,15 +258,16 @@ def handle_nick(irc, numeric, command, args):
 utils.add_hook(handle_nick, 'NICK')
 
 def handle_part(irc, numeric, command, args):
-    channel = args['channel']
+    channels = args['channels']
     text = args['text']
-    for netname, user in relayusers[(irc.name, numeric)].copy().items():
-        remoteirc = utils.networkobjects[netname]
-        remotechan = findRemoteChan(irc, remoteirc, channel)
-        remoteirc.proto.partClient(remoteirc, user, remotechan, text)
-        if not remoteirc.users[user].channels:
-            remoteirc.proto.quitClient(remoteirc, user, 'Left all shared channels.')
-            del relayusers[(irc.name, numeric)][remoteirc.name]
+    for channel in channels:
+        for netname, user in relayusers[(irc.name, numeric)].copy().items():
+            remoteirc = utils.networkobjects[netname]
+            remotechan = findRemoteChan(irc, remoteirc, channel)
+            remoteirc.proto.partClient(remoteirc, user, remotechan, text)
+            if not remoteirc.users[user].channels:
+                remoteirc.proto.quitClient(remoteirc, user, 'Left all shared channels.')
+                del relayusers[(irc.name, numeric)][remoteirc.name]
 utils.add_hook(handle_part, 'PART')
 
 def handle_privmsg(irc, numeric, command, args):
