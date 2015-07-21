@@ -12,9 +12,13 @@ That said, please report any bugs you find to the [issue tracker](https://github
 
 Dependencies currently include:
 
-* InspIRCd 2.0.x: more protocol modules may be implemented in the future...
 * Python 3.4+
 * PyYAML (`pip install pyyaml` or `apt-get install python3-yaml`)
+
+#### Supported IRCds
+
+* InspIRCd 2.0.x - module: `inspircd`
+* charybdis (3.5.x / git master) - module: `ts6`
 
 ### Installation
 
