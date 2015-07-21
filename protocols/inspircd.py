@@ -453,27 +453,6 @@ def handle_squit(irc, numeric, command, args):
     log.debug('(%s) Netsplit affected users: %s', irc.name, affected_users)
     return {'target': split_server, 'users': affected_users}
 
-def handle_rsquit(irc, numeric, command, args):
-    # <- :1MLAAAAIG RSQUIT :ayy.lmao
-    # <- :1MLAAAAIG RSQUIT ayy.lmao :some reason
-    # RSQUIT is sent by opers to squit remote servers.
-    # Strangely, it takes a server name instead of a SID, and is
-    # allowed to be ignored entirely.
-    # If we receive a remote SQUIT, split the target server
-    # ONLY if the sender is identified with us.
-    target = args[0]
-    for (sid, server) in irc.servers.items():
-        if server.name == target:
-            target = sid
-    if utils.isInternalServer(irc, target):
-        if irc.users[numeric].identified:
-            uplink = irc.servers[target].uplink
-            reason = 'Requested by %s' % irc.users[numeric].nick
-            _send(irc, uplink, 'SQUIT %s :%s' % (target, reason))
-            return handle_squit(irc, numeric, 'SQUIT', [target, reason])
-        else:
-            utils.msg(irc, numeric, 'Error: you are not authorized to split servers!', notice=True)
-
 def handle_idle(irc, numeric, command, args):
     """Handle the IDLE command, sent between servers in remote WHOIS queries."""
     # <- :70MAAAAAA IDLE 1MLAAAAIG
