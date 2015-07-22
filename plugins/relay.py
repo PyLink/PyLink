@@ -283,6 +283,7 @@ def handle_privmsg(irc, numeric, command, args):
     text = args['text']
     if target == irc.pseudoclient.uid:
         return
+    sent = 0
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
         # HACK: Don't break on sending to @#channel or similar.
@@ -307,8 +308,8 @@ def handle_privmsg(irc, numeric, command, args):
             remoteirc.proto.noticeClient(remoteirc, user, real_target, text)
         else:
             remoteirc.proto.messageClient(remoteirc, user, real_target, text)
-        break
-    else:
+        sent += 1
+    if not sent:
         # We must be on a common channel with the target. Otherwise, the sender
         # doesn't have a client representing them on the remote network,
         # and we won't have anywhere to send our messages from.
