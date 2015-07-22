@@ -87,7 +87,11 @@ def sjoinServer(irc, server, channel, users, ts=None):
     for userpair in users:
         assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
         prefixes, user = userpair
-        prefixchars = ''.join([irc.prefixmodes[prefix] for prefix in prefixes])
+        prefixchars = ''
+        for prefix in prefixes:
+            pr = irc.prefixmodes.get(prefix)
+            if pr:
+                prefixchars += pr
         namelist.append(prefixchars+user)
         uids.append(user)
         for m in prefixes:

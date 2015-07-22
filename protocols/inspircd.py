@@ -345,7 +345,7 @@ def handle_part(irc, source, command, args):
     return {'channels': channels, 'text': reason}
 
 def handle_error(irc, numeric, command, args):
-    irc.connected = False
+    irc.connected.clear()
     raise ProtocolError('Received an ERROR, killing!')
 
 def handle_fjoin(irc, servernumeric, command, args):

@@ -592,13 +592,14 @@ def relayJoins(irc, channel, users, ts, modes):
                 # meaningless.
                 continue
             log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
+            assert user in irc.users, "(%s) How is this possible? %r isn't in our user database." % (irc.name, user)
             u = getRemoteUser(irc, remoteirc, user)
             ts = irc.channels[channel].ts
             # TODO: join users in batches with SJOIN, not one by one.
             prefixes = getPrefixModes(irc, remoteirc, channel, user)
             userpair = (prefixes, u)
             queued_users.append(userpair)
-            log.debug('(%s) relayJoin: joining %s to %s%s', irc.name, userpair, remoteirc.name, remotechan)
+            log.debug('(%s) relayJoins: joining %s to %s%s', irc.name, userpair, remoteirc.name, remotechan)
         remoteirc.proto.sjoinServer(remoteirc, remoteirc.sid, remotechan, queued_users, ts=ts)
         relayModes(irc, remoteirc, irc.sid, channel, modes)
 
