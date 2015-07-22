@@ -80,32 +80,34 @@ def sjoinServer(irc, server, channel, users, ts=None):
     log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts,
               time.strftime("%c", time.localtime(ts)))
     modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
-    uids = []
     changedmodes = []
-    namelist = []
-    # We take <users> as a list of (prefixmodes, uid) pairs.
-    for userpair in users:
-        assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
-        prefixes, user = userpair
-        prefixchars = ''
-        for prefix in prefixes:
-            pr = irc.prefixmodes.get(prefix)
-            if pr:
-                prefixchars += pr
-        namelist.append(prefixchars+user)
-        uids.append(user)
-        for m in prefixes:
-            changedmodes.append(('+%s' % m, user))
-        try:
-            irc.users[user].channels.add(channel)
-        except KeyError:  # Not initialized yet?
-            log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", irc.name, channel, user)
+    while users[:10]:
+        uids = []
+        namelist = []
+        # We take <users> as a list of (prefixmodes, uid) pairs.
+        for userpair in users[:10]:
+            assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
+            prefixes, user = userpair
+            prefixchars = ''
+            for prefix in prefixes:
+                pr = irc.prefixmodes.get(prefix)
+                if pr:
+                    prefixchars += pr
+            namelist.append(prefixchars+user)
+            uids.append(user)
+            for m in prefixes:
+                changedmodes.append(('+%s' % m, user))
+            try:
+                irc.users[user].channels.add(channel)
+            except KeyError:  # Not initialized yet?
+                log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", irc.name, channel, user)
+        users = users[10:]
+        namelist = ' '.join(namelist)
+        _send(irc, server, "SJOIN {ts} {channel} {modes} :{users}".format(
+                ts=ts, users=namelist, channel=channel,
+                modes=utils.joinModes(modes)))
+        irc.channels[channel].users.update(uids)
     utils.applyModes(irc, channel, changedmodes)
-    namelist = ' '.join(namelist)
-    _send(irc, server, "SJOIN {ts} {channel} {modes} :{users}".format(
-            ts=ts, users=namelist, channel=channel,
-            modes=utils.joinModes(modes)))
-    irc.channels[channel].users.update(uids)
 
 def _sendModes(irc, numeric, target, modes, ts=None):
     utils.applyModes(irc, target, modes)
