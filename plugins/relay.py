@@ -633,27 +633,15 @@ def removeChannel(irc, channel):
         irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
     relay = findRelay((irc.name, channel))
     if relay:
-        all_links = db[relay]['links'].copy()
-        all_links.update((relay,))
-        log.debug('(%s) removeChannel: all_links: %s', irc.name, all_links)
-        for user in irc.channels[channel].users:
+        for user in irc.channels[channel].users.copy():
             if not utils.isInternalClient(irc, user):
                 relayPart(irc, channel, user)
-        for link in all_links:
-            if link[0] == irc.name:
-                # Don't relay things to their source network...
-                continue
-            remotenet, remotechan = link
-            try:
-                remoteirc = utils.networkobjects[remotenet]
-            except KeyError:
-                continue
             else:
-                rc = remoteirc.channels[remotechan]
-                for user in remoteirc.channels[remotechan].users.copy():
-                    log.debug('(%s) removeChannel: part user %s/%s from %s', irc.name, user, remotenet, remotechan)
-                    if not utils.isInternalClient(remoteirc, user):
-                        relayPart(remoteirc, remotechan, user)
+                irc.proto.partClient(irc, user, channel, 'Channel delinked.')
+                if not irc.users[user].channels:
+                    irc.proto.quitClient(irc, user, 'Left all shared channels.')
+                    remoteuser = getLocalUser(irc, user)
+                    del relayusers[remoteuser][irc.name]
 
 @utils.add_cmd
 def create(irc, source, args):
