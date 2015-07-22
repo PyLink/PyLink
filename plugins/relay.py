@@ -139,12 +139,18 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     remoteirc.users[u].remote = irc.name
     return u
 
-def getLocalUser(irc, user):
-    # Our target is an internal client, which means someone
-    # is kicking a remote user over the relay.
-    # We have to find the real target for the KICK. This is like
-    # findRemoteUser, but in reverse.
+def getLocalUser(irc, user, targetirc=None):
+    """<irc object> <pseudoclient uid> [<target irc object>]
+
+    Returns a tuple with the home network name and the UID of the original
+    user that <pseudoclient uid> was spawned for, where <pseudoclient uid>
+    is the UID of a PyLink relay dummy client.
+
+    If <target irc object> is specified, returns the UID of the pseudoclient
+    representing the original user on the target network, similar to what
+    getRemoteUser() does."""
     # First, iterate over everyone!
+    remoteuser = None
     for k, v in relayusers.items():
         log.debug('(%s) getLocalUser: processing %s, %s in relayusers', irc.name, k, v)
         if k[0] == irc.name:
@@ -160,6 +166,23 @@ def getLocalUser(irc, user):
             # respective relay pseudoclients on other networks.
             remoteuser = k
             log.debug('(%s) getLocalUser: found %s to correspond to %s.', irc.name, v, k)
+            break
+    log.debug('(%s) getLocalUser: remoteuser set to %r (looking up %s/%s).', irc.name, remoteuser, user, irc.name)
+    if remoteuser:
+        # If targetirc is given, we'll return simply the UID of the user on the
+        # target network, if it exists. Otherwise, we'll return a tuple
+        # with the home network name and the original user's UID.
+        sourceobj = utils.networkobjects.get(remoteuser[0])
+        if targetirc and sourceobj:
+            if remoteuser[0] == targetirc.name:
+                # The user we found's home network happens to be the one being
+                # requested; just return the UID then.
+                return remoteuser[1]
+            # Otherwise, use getRemoteUser to find our UID.
+            res = getRemoteUser(sourceobj, targetirc, remoteuser[1], spawnIfMissing=False)
+            log.debug('(%s) getLocalUser: targetirc found, getting %r as remoteuser for %r (looking up %s/%s).', irc.name, res, remoteuser[1], user, irc.name)
+            return res
+        else:
             return remoteuser
 
 def findRelay(chanpair):
@@ -357,12 +380,7 @@ def handle_kick(irc, source, command, args):
             log.debug('(%s) Relay kick: real target for %s is %s', irc.name, target, real_target)
         else:
             log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
-            real_userpair = getLocalUser(irc, target)
-            if real_userpair[0] == remoteirc.name:
-                real_target = real_userpair[1]
-            else:
-                sourceirc = utils.networkobjects[real_userpair[0]]
-                real_target = getRemoteUser(sourceirc, remoteirc, real_userpair[1])
+            real_target = getLocalUser(irc, target, targetirc=remoteirc)
             log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
             if irc.name not in db[relay]['claim'] and not \
                     any([mode in kicker_modes for mode in ('q', 'a', 'o', 'h')]):
@@ -465,16 +483,13 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     log.debug("(%s) Relay mode: coersing argument of (%r, %r) "
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
-                    try:
-                        # If the target is a remote user, get the real target
-                        # (original user).
-                        arg = getLocalUser(irc, arg)[1]
-                    finally:
-                        # Then, get the client on our network for them. 
-                        arg = getRemoteUser(irc, remoteirc, arg, spawnIfMissing=False)
-                        log.debug("(%s) Relay mode: argument found as (%r, %r) "
-                                  "for network %r.",
-                                  irc.name, modechar, arg, remoteirc.name)
+                    # If the target is a remote user, get the real target
+                    # (original user).
+                    arg = getLocalUser(irc, arg, targetirc=remoteirc) or \
+                        getRemoteUser(irc, remoteirc, arg, spawnIfMissing=False)
+                    log.debug("(%s) Relay mode: argument found as (%r, %r) "
+                              "for network %r.",
+                              irc.name, modechar, arg, remoteirc.name)
                 supported_char = remoteirc.cmodes.get(name)
             if supported_char:
                 if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
