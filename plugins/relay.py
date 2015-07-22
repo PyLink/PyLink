@@ -286,6 +286,9 @@ def handle_privmsg(irc, numeric, command, args):
     if target == irc.pseudoclient.uid:
         return
     sent = 0
+    relay = findRelay((irc.name, target))
+    if utils.isChannel(target) and relay and not db[relay]['links']:
+        return
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
         # HACK: Don't break on sending to @#channel or similar.
@@ -644,7 +647,7 @@ def removeChannel(irc, channel):
             try:
                 remoteirc = utils.networkobjects[remotenet]
             except KeyError:
-                pass
+                continue
             else:
                 rc = remoteirc.channels[remotechan]
                 for user in remoteirc.channels[remotechan].users.copy():
