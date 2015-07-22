@@ -472,6 +472,10 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
         for name, m in irc.cmodes.items():
             supported_char = None
             if modechar == m:
+                supported_char = remoteirc.cmodes.get(name)
+                if supported_char is None:
+                    break
+                modepair = (prefix+supported_char, arg)
                 if name not in whitelisted_cmodes:
                     log.debug("(%s) Relay mode: skipping mode (%r, %r) because "
                               "it isn't a whitelisted (safe) mode for relay.",
@@ -490,6 +494,11 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     log.debug("(%s) Relay mode: argument found as (%r, %r) "
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
+                    if arg in remoteirc.channels[remotechan].prefixmodes[name+'s']:
+                        # Don't set prefix modes that are already set.
+                        log.debug("(%s) Relay mode: skipping setting %s on %s/%s because it appears to be already set.",
+                                  irc.name, name, arg, remoteirc.name)
+                        break
                 supported_char = remoteirc.cmodes.get(name)
             if supported_char:
                 if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
@@ -497,7 +506,13 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     log.debug("(%s) Relay mode: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
                               irc.name, modechar, arg)
                     break
-                supported_modes.append((prefix+supported_char, arg))
+                # Don't set modes that are already set, to prevent floods on TS6
+                # where the same mode can be set infinite times.
+                if modepair in remoteirc.channels[remotechan].modes:
+                    log.debug("(%s) Relay mode: skipping setting mode (%r, %r) on %s%s because it appears to be already set.",
+                              irc.name, supported_char, arg, remoteirc.name, remotechan)
+                    break
+                supported_modes.append(modepair)
     log.debug('(%s) Relay mode: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
     # Don't send anything if there are no supported modes left after filtering.
     if supported_modes:
