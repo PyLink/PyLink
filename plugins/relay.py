@@ -588,7 +588,7 @@ def relayJoins(irc, channel, users, ts, modes):
                     continue
             except (AttributeError, KeyError):  # Nope, it isn't.
                 pass
-            if utils.isInternalClient(irc, user):
+            if utils.isInternalClient(irc, user) or user not in irc.users:
                 # We don't need to clone PyLink pseudoclients... That's
                 # meaningless.
                 continue
