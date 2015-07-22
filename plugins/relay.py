@@ -357,7 +357,12 @@ def handle_kick(irc, source, command, args):
             log.debug('(%s) Relay kick: real target for %s is %s', irc.name, target, real_target)
         else:
             log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
-            real_target = getLocalUser(irc, target)[1]
+            real_userpair = getLocalUser(irc, target)
+            if real_userpair[0] == remoteirc.name:
+                real_target = real_userpair[1]
+            else:
+                sourceirc = utils.networkobjects[real_userpair[0]]
+                real_target = getRemoteUser(sourceirc, remoteirc, real_userpair[1])
             log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
             if irc.name not in db[relay]['claim'] and not \
                     any([mode in kicker_modes for mode in ('q', 'a', 'o', 'h')]):
@@ -457,12 +462,19 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                 if modechar in irc.prefixmodes:
                     # This is a prefix mode (e.g. +o). We must coerse the argument
                     # so that the target exists on the remote relay network.
+                    log.debug("(%s) Relay mode: coersing argument of (%r, %r) "
+                              "for network %r.",
+                              irc.name, modechar, arg, remoteirc.name)
                     try:
+                        # If the target is a remote user, get the real target
+                        # (original user).
                         arg = getLocalUser(irc, arg)[1]
-                    except TypeError:
-                        # getLocalUser returns None, raises None when trying to
-                        # get [1] from it.
-                        arg = getRemoteUser(irc, remoteirc, arg)
+                    finally:
+                        # Then, get the client on our network for them. 
+                        arg = getRemoteUser(irc, remoteirc, arg, spawnIfMissing=False)
+                        log.debug("(%s) Relay mode: argument found as (%r, %r) "
+                                  "for network %r.",
+                                  irc.name, modechar, arg, remoteirc.name)
                 supported_char = remoteirc.cmodes.get(name)
             if supported_char:
                 if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
@@ -471,11 +483,6 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                               irc.name, modechar, arg)
                     break
                 supported_modes.append((prefix+supported_char, arg))
-                break
-        else:
-            log.debug("(%s) Relay mode: skipping mode (%r, %r) because "
-                      "the remote network (%s)'s IRCd (%s) doesn't support it.",
-                      irc.name, modechar, arg, remoteirc.name, irc.proto.__name__)
     log.debug('(%s) Relay mode: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
     # Don't send anything if there are no supported modes left after filtering.
     if supported_modes:
@@ -484,8 +491,8 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
             u = getRemoteUser(irc, remoteirc, sender, spawnIfMissing=False)
             if u:
                 remoteirc.proto.modeClient(remoteirc, u, remotechan, supported_modes)
-                return
-        remoteirc.proto.modeServer(remoteirc, remoteirc.sid, remotechan, supported_modes)
+        else:
+            remoteirc.proto.modeServer(remoteirc, remoteirc.sid, remotechan, supported_modes)
 
 def getSupportedUmodes(irc, remoteirc, modes):
     supported_modes = []
