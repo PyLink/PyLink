@@ -233,6 +233,7 @@ def applyModes(irc, target, changedmodes):
                     pmodelist.add(mode[1])
                 else:
                     pmodelist.discard(mode[1])
+                irc.channels[target].prefixmodes[pmode] = pmodelist
                 log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
             if real_mode[0] in irc.prefixmodes:
                 # Ignore other prefix modes such as InspIRCd's +Yy

@@ -99,7 +99,9 @@ def getPrefixModes(irc, remoteirc, channel, user):
     for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
         if pmode not in remoteirc.cmodes:  # Mode not supported by IRCd
             continue
-        if user in irc.channels[channel].prefixmodes[pmode+'s']:
+        mlist = irc.channels[channel].prefixmodes[pmode+'s']
+        log.debug('(%s) getPrefixModes: checking if %r is in %r', irc.name, user, mlist)
+        if user in mlist:
             modes += remoteirc.cmodes[pmode]
     return modes
 
