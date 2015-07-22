@@ -494,7 +494,7 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     log.debug("(%s) Relay mode: argument found as (%r, %r) "
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
-                    if arg in remoteirc.channels[remotechan].prefixmodes[name+'s']:
+                    if prefix == '+' and arg in remoteirc.channels[remotechan].prefixmodes[name+'s']:
                         # Don't set prefix modes that are already set.
                         log.debug("(%s) Relay mode: skipping setting %s on %s/%s because it appears to be already set.",
                                   irc.name, name, arg, remoteirc.name)
@@ -508,7 +508,7 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     break
                 # Don't set modes that are already set, to prevent floods on TS6
                 # where the same mode can be set infinite times.
-                if modepair in remoteirc.channels[remotechan].modes:
+                if prefix == '+' and modepair in remoteirc.channels[remotechan].modes:
                     log.debug("(%s) Relay mode: skipping setting mode (%r, %r) on %s%s because it appears to be already set.",
                               irc.name, supported_char, arg, remoteirc.name, remotechan)
                     break
