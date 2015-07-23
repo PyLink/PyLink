@@ -61,7 +61,7 @@ class Irc():
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.proto = proto
-        self.pingfreq = self.serverdata.get('pingfreq') or 10
+        self.pingfreq = self.serverdata.get('pingfreq') or 30
         self.pingtimeout = self.pingfreq * 2
 
         self.initVars()
