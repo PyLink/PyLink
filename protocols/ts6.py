@@ -469,7 +469,7 @@ def handle_events(irc, data):
                          'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
                          'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
                          'c_noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                         'g', 'opmoderated': 'z',
+                         'g', 'opmoderated': 'z', 'noctcp': 'C',
                          # Now, map all the ABCD type modes:
                          '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
         if 'EX' in caps:
