@@ -295,6 +295,8 @@ def handle_part(irc, numeric, command, args):
         for netname, user in relayusers[(irc.name, numeric)].copy().items():
             remoteirc = utils.networkobjects[netname]
             remotechan = findRemoteChan(irc, remoteirc, channel)
+            if remotechan is None:
+                continue
             remoteirc.proto.partClient(remoteirc, user, remotechan, text)
             if not remoteirc.users[user].channels:
                 remoteirc.proto.quitClient(remoteirc, user, 'Left all shared channels.')
