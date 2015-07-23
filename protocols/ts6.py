@@ -442,7 +442,9 @@ def handle_events(irc, data):
     elif args[0] == 'SQUIT':
         # What? Charybdis send this in a different format!
         # <- SQUIT 00A :Remote host closed the connection
-        handle_squit(irc, args[1], 'SQUIT', [args[1]])
+        split_server = args[1]
+        res = handle_squit(irc, split_server, 'SQUIT', [split_server])
+        irc.callHooks([split_server, 'SQUIT', res])
     elif args[0] == 'CAPAB':
         # We only get a list of keywords here. Charybdis obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
