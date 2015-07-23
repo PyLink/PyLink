@@ -189,7 +189,7 @@ def parseModes(irc, target, args):
             prefix = mode
         else:
             if not prefix:
-                raise ValueError('Invalid query %r: mode char given without preceding prefix.' % modestring)
+                prefix = '+'
             arg = None
             log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
             try:
