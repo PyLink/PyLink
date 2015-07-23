@@ -2,7 +2,6 @@ import time
 import sys
 import os
 import re
-from copy import copy
 
 curdir = os.path.dirname(__file__)
 sys.path += [curdir, os.path.dirname(curdir)]

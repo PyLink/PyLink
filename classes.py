@@ -1,4 +1,3 @@
-from collections import defaultdict
 import threading
 from random import randint
 

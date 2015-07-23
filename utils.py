@@ -98,8 +98,6 @@ class TS6SIDGenerator():
             self.iters[pos] = iter(self.allowedchars[pos])
             next(self.iters[pos])
             self.increment(pos-1)
-        else:
-            print('NEXT')
 
     def next_sid(self):
         sid = ''.join(self.output)
