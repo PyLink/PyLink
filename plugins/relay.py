@@ -476,14 +476,10 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
         for name, m in irc.cmodes.items():
             supported_char = None
             if modechar == m:
-                if name.startswith('*'):
-                    # This internally is just used for storing which modes
-                    # are which type; ignore them.
-                    continue
                 if name not in whitelisted_cmodes:
-                    log.debug("(%s) Relay mode: skipping mode %r (%r, %r) because "
-                              "it isn't a whitelisted (safe) cmode for relay.",
-                              irc.name, name, modechar, arg)
+                    log.debug("(%s) Relay mode: skipping mode (%r, %r) because "
+                              "it isn't a whitelisted (safe) mode for relay.",
+                              irc.name, modechar, arg)
                     break
                 if modechar in irc.prefixmodes:
                     # This is a prefix mode (e.g. +o). We must coerse the argument
@@ -528,15 +524,11 @@ def getSupportedUmodes(irc, remoteirc, modes):
         arg = modepair[1]
         for name, m in irc.umodes.items():
             supported_char = None
-            if name.startswith('*'):
-                # This internally is just used for storing which modes
-                # are which type; ignore them.
-                continue
             if modechar == m:
                 if name not in whitelisted_umodes:
-                    log.debug("(%s) getSupportedUmodes: skipping mode %r (%r, %r) because "
-                              "it isn't a whitelisted (safe) umode for relay.",
-                              irc.name, name, modechar, arg)
+                    log.debug("(%s) getSupportedUmodes: skipping mode (%r, %r) because "
+                              "it isn't a whitelisted (safe) mode for relay.",
+                              irc.name, modechar, arg)
                     break
                 supported_char = remoteirc.umodes.get(name)
             if supported_char:
