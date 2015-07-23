@@ -387,7 +387,6 @@ def handle_uid(irc, numeric, command, args):
                         "handled by us at all!")
 
 def handle_server(irc, numeric, command, args):
-    # SERVER is sent by our uplink or any other server to introduce others.
     # parameters: server name, hopcount, sid, server description
     servername = args[0].lower()
     try:
@@ -400,6 +399,8 @@ def handle_server(irc, numeric, command, args):
     sdesc = args[-1]
     irc.servers[sid] = IrcServer(numeric, servername)
     return {'name': servername, 'sid': sid, 'text': sdesc}
+
+handle_sid = handle_server
 
 def handle_tmode(irc, numeric, command, args):
     # <- :42XAAAAAB TMODE 1437450768 #endlessvoid -c+lkC 3 agte4
