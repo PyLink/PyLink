@@ -439,6 +439,10 @@ def handle_events(irc, data):
         # According to the TS6 protocol documentation, we should send SVINFO
         # when we get our uplink's SERVER command.
         irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
+    elif args[0] == 'SQUIT':
+        # What? Charybdis send this in a different format!
+        # <- SQUIT 00A :Remote host closed the connection
+        handle_squit(irc, args[1], 'SQUIT', [args[1]])
     elif args[0] == 'CAPAB':
         # We only get a list of keywords here. Charybdis obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
