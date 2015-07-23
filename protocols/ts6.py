@@ -17,6 +17,7 @@ from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
     handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
     handle_notice
 
+casemapping = 'rfc1459'
 hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE'}
 
 def _send(irc, sid, msg):

@@ -10,6 +10,8 @@ from log import log
 
 from classes import *
 
+casemapping = 'ascii'
+
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
 # non-standard names to our hook handlers, so plugins get the information they need.
 

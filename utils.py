@@ -122,9 +122,18 @@ def add_hook(func, command):
     command = command.upper()
     command_hooks[command].append(func)
 
+def toLower(irc, text):
+    if irc.proto.casemapping == 'rfc1459':
+        text = text.replace('{', '[')
+        text = text.replace('}', ']')
+        text = text.replace('|', '\\')
+        text = text.replace('~', '^')
+    return text.lower()
+
 def nickToUid(irc, nick):
+    nick = toLower(irc, nick)
     for k, v in irc.users.items():
-        if v.nick == nick:
+        if toLower(irc, v.nick) == nick:
             return k
 
 def clientToServer(irc, numeric):
