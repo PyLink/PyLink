@@ -84,7 +84,9 @@ class Irc():
                 self.socket.settimeout(self.pingtimeout)
                 self.proto.connect(self)
                 self.spawnMain()
+                log.info('(%s) Starting ping schedulers....', self.name)
                 self.schedulePing()
+                log.info('(%s) Server ready; listening for data.', self.name)
                 self.run()
             except (socket.error, classes.ProtocolError, ConnectionError) as e:
                 log.warning('(%s) Disconnected from IRC: %s: %s',
@@ -183,6 +185,7 @@ class Irc():
         nick = self.botdata.get('nick') or 'PyLink'
         ident = self.botdata.get('ident') or 'pylink'
         host = self.serverdata["hostname"]
+        log.info('(%s) Connected! Spawning main client %s.', self.name, nick)
         self.pseudoclient = self.proto.spawnClient(self, nick, ident, host, modes={("+o", None)})
         for chan in self.serverdata['channels']:
             self.proto.joinClient(self, self.pseudoclient.uid, chan)
