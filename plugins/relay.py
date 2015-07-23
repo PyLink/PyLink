@@ -17,11 +17,13 @@ relayusers = defaultdict(dict)
 
 def relayWhoisHandlers(irc, target):
     user = irc.users[target]
-    network, remoteuid = getLocalUser(irc, target)
-    remotenick = utils.networkobjects[network].users[remoteuid].nick
-    return [320, "%s :is a remote user connected via PyLink Relay. Home "
-                 "network: %s; Home nick: %s" % (user.nick, network,
-                                                 remotenick)]
+    orig = getLocalUser(irc, target)
+    if orig:
+        network, remoteuid = orig
+        remotenick = utils.networkobjects[network].users[remoteuid].nick
+        return [320, "%s :is a remote user connected via PyLink Relay. Home "
+                     "network: %s; Home nick: %s" % (user.nick, network,
+                                                     remotenick)]
 utils.whois_handlers.append(relayWhoisHandlers)
 
 def normalizeNick(irc, netname, nick, separator=None):

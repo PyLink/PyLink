@@ -82,8 +82,10 @@ def handle_whois(irc, source, command, args):
         # Iterate over plugin-created WHOIS handlers. They return a tuple
         # or list with two arguments: the numeric, and the text to send.
         for func in utils.whois_handlers:
-            num, text = func(irc, target)
-            f(irc, server, num, source, text)
+            res = func(irc, target)
+            if res:
+                num, text = res
+                f(irc, server, num, source, text)
     except Exception as e:
         # Again, we wouldn't want this to crash our service, in case
         # something goes wrong!
