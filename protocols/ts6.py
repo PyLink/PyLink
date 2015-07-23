@@ -41,7 +41,8 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     realhost = realhost or host
     raw_modes = utils.joinModes(modes)
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-        realhost=realhost, ip=ip, modes=modes)
+        realhost=realhost, ip=ip)
+    utils.applyModes(irc, uid, modes)
     irc.servers[server].users.append(uid)
     _send(irc, server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                     ":{realname}".format(ts=ts, host=host,

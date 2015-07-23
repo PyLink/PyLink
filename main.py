@@ -183,7 +183,7 @@ class Irc():
         nick = self.botdata.get('nick') or 'PyLink'
         ident = self.botdata.get('ident') or 'pylink'
         host = self.serverdata["hostname"]
-        self.pseudoclient = self.proto.spawnClient(self, nick, ident, host, modes={("o", None)})
+        self.pseudoclient = self.proto.spawnClient(self, nick, ident, host, modes={("+o", None)})
         for chan in self.serverdata['channels']:
             self.proto.joinClient(self, self.pseudoclient.uid, chan)
 
