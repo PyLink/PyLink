@@ -217,7 +217,7 @@ def updateClient(irc, numeric, field, text):
     Changes the <field> field of <target> PyLink PseudoClient <client numeric>."""
     field = field.upper()
     if field == 'HOST':
-        handle_chghost(irc, numeric, 'PYLINK_UPDATECLIENT_HOST', [text])
+        irc.users[numeric].host = text
         _send(irc, irc.sid, 'CHGHOST %s :%s' % (numeric, text))
     else:
         raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)

@@ -276,16 +276,16 @@ def updateClient(irc, numeric, field, text):
     Changes the <field> field of <target> PyLink PseudoClient <client numeric>."""
     field = field.upper()
     if field == 'IDENT':
-        handle_fident(irc, numeric, 'PYLINK_UPDATECLIENT_IDENT', [text])
+        irc.users[numeric].ident = text
         _send(irc, numeric, 'FIDENT %s' % text)
     elif field == 'HOST':
-        handle_fhost(irc, numeric, 'PYLINK_UPDATECLIENT_HOST', [text])
+        irc.users[numeric].host = text
         _send(irc, numeric, 'FHOST %s' % text)
     elif field in ('REALNAME', 'GECOS'):
-        handle_fname(irc, numeric, 'PYLINK_UPDATECLIENT_GECOS', [text])
+        irc.users[numeric].realname = text
         _send(irc, numeric, 'FNAME :%s' % text)
     else:
-        raise ValueError("Changing field %r of a client is unsupported by this protocol." % field)
+        raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
 def pingServer(irc, source=None, target=None):
     source = source or irc.sid
