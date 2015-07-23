@@ -310,7 +310,10 @@ def handle_privmsg(irc, numeric, command, args):
         return
     sent = 0
     relay = findRelay((irc.name, target))
-    if utils.isChannel(target) and relay and not db[relay]['links']:
+    # Don't send any "you must be in common channels" if we're not part
+    # of a relay, or we are but there are no links!
+    if utils.isChannel(target) and ((relay and not db[relay]['links']) or \
+            relay is None):
         return
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
