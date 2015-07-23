@@ -527,7 +527,7 @@ def handle_events(irc, data):
         if parsed_args is not None:
             return [numeric, command, parsed_args]
 
-def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst=True):
+def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     # -> :0AL SERVER test.server 1 0XY :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()

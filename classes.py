@@ -39,7 +39,6 @@ class IrcServer():
         self.users = []
         self.internal = internal
         self.name = name.lower()
-        self.has_bursted = False
     def __repr__(self):
         return repr(self.__dict__)
 
