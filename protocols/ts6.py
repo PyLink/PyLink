@@ -33,9 +33,9 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     if server not in irc.uidgen:
         irc.uidgen[server] = utils.TS6UIDGenerator(server)
     uid = irc.uidgen[server].next_uid()
-    # UID:
+    # EUID:
     # parameters: nickname, hopcount, nickTS, umodes, username,
-    # visible hostname, IP address, UID, gecos
+    # visible hostname, IP address, UID, real hostname, account name, gecos
     ts = ts or int(time.time())
     realname = realname or irc.botdata['realname']
     realhost = realhost or host
@@ -44,10 +44,11 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
         realhost=realhost, ip=ip)
     utils.applyModes(irc, uid, modes)
     irc.servers[server].users.append(uid)
-    _send(irc, server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
-                    ":{realname}".format(ts=ts, host=host,
-                                         nick=nick, ident=ident, uid=uid,
-                                         modes=raw_modes, ip=ip, realname=realname))
+    _send(irc, server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+            "{realhost} * :{realname}".format(ts=ts, host=host,
+            nick=nick, ident=ident, uid=uid,
+            modes=raw_modes, ip=ip, realname=realname,
+            realhost=realhost))
     return u
 
 def joinClient(irc, client, channel):
@@ -380,6 +381,11 @@ def handle_euid(irc, numeric, command, args):
     irc.servers[numeric].users.append(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
+def handle_uid(irc, numeric, command, args):
+    raise ProtocolError("Servers must use EUID to send users! This is a "
+                        "requested capability; plain UID (received) is not "
+                        "handled by us at all!")
+
 def handle_server(irc, numeric, command, args):
     # SERVER is sent by our uplink or any other server to introduce others.
     # parameters: server name, hopcount, sid, server description
@@ -452,6 +458,10 @@ def handle_events(irc, data):
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
         chary_cmodes = { # TS6 generic modes:
+                         # Note: charybdis +p has the effect of being both
+                         # noknock AND private. Surprisingly, mapping it twice
+                         # works pretty well: setting +p on a charybdis relay
+                         # server sets +pK on an InspIRCd network.
                         'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
                         'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
                         'secret': 's', 'topiclock': 't',
