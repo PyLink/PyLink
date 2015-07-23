@@ -230,6 +230,9 @@ def pingServer(irc, source=None, target=None):
     else:
         _send(irc, source, 'PING %s' % source)
 
+def numericServer(irc, source, numeric, target, text):
+    _send(irc, source, '%s %s %s' % (numeric, target, text))
+
 def connect(irc):
     ts = irc.start_ts
     irc.uidgen = {}
@@ -586,3 +589,7 @@ def handle_bmask(irc, numeric, command, args):
         modes.append(('+%s' % mode, ban))
     utils.applyModes(irc, channel, modes)
     return {'target': channel, 'modes': modes, 'ts': ts}
+
+def handle_whois(irc, numeric, command, args):
+    # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
+    return {'target': args[0]}

@@ -36,3 +36,25 @@ def handle_commands(irc, source, command, args):
             utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
             return
 utils.add_hook(handle_commands, 'PRIVMSG')
+
+# Return WHOIS replies to IRCds that use them.
+def handle_whois(irc, source, command, args):
+    target = args['target']
+    user = irc.users.get(target)
+    if user is None:
+        log.warning('(%s) Got a WHOIS request for %r from %r, but the target doesn\'t exist in irc.users!', irc.name, target, source)
+    f = irc.proto.numericServer
+    server = utils.clientToServer(irc, target) or irc.sid
+    nick = user.nick
+    # https://www.alien.net.au/irc/irc2numerics.html
+    # 311: sends nick!user@host information
+    f(irc, server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
+    # 312: sends the server the target is on, and the name
+    f(irc, server, 312, source, "%s %s :PyLink Server" % (nick, irc.serverdata['hostname']))
+    # 313: sends a string denoting the target's operator privilege;
+    # we'll only send it if the user has umode +o.
+    if ('o', None) in user.modes:
+        f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
+    # 318: End of WHOIS.
+    f(irc, server, 318, source, "%s :End of WHOIS" % nick.lower())
+utils.add_hook(handle_whois, 'WHOIS')

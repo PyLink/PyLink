@@ -293,6 +293,12 @@ def pingServer(irc, source=None, target=None):
     if not (target is None or source is None):
         _send(irc, source, 'PING %s %s' % (source, target))
 
+def numericServer(irc, source, numeric, text):
+    raise NotImplementedError("Numeric sending is not yet implemented by this "
+                              "protocol module. WHOIS requests are handled "
+                              "locally by InspIRCd servers, so there is no "
+                              "need for PyLink to send numerics directly yet.")
+
 def connect(irc):
     ts = irc.start_ts
     irc.uidgen = {}
