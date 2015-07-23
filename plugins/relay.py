@@ -97,12 +97,11 @@ def save(irc, source, args):
 def getPrefixModes(irc, remoteirc, channel, user):
     modes = ''
     for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
-        if pmode not in remoteirc.cmodes:  # Mode not supported by IRCd
-            continue
-        mlist = irc.channels[channel].prefixmodes[pmode+'s']
-        log.debug('(%s) getPrefixModes: checking if %r is in %r', irc.name, user, mlist)
-        if user in mlist:
-            modes += remoteirc.cmodes[pmode]
+        if pmode in remoteirc.cmodes:  # Mode supported by IRCd
+            mlist = irc.channels[channel].prefixmodes[pmode+'s']
+            log.debug('(%s) getPrefixModes: checking if %r is in %r', irc.name, user, mlist)
+            if user in mlist:
+                modes += remoteirc.cmodes[pmode]
     return modes
 
 def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
@@ -218,6 +217,7 @@ def initializeChannel(irc, channel):
         all_links = db[relay]['links'].copy()
         all_links.update((relay,))
         log.debug('(%s) initializeChannel: all_links: %s', irc.name, all_links)
+        # Iterate over all the remote channels linked in this relay.
         for link in all_links:
             modes = []
             remotenet, remotechan = link
@@ -229,20 +229,9 @@ def initializeChannel(irc, channel):
             rc = remoteirc.channels[remotechan]
             if not (remoteirc.connected and findRemoteChan(remoteirc, irc, remotechan)):
                 continue  # They aren't connected, don't bother!
-            for user in remoteirc.channels[remotechan].users:
-                # Don't spawn our pseudoclients again.
-                if not utils.isInternalClient(remoteirc, user):
-                    log.debug('(%s) initializeChannel: should be joining %s/%s to %s', irc.name, user, remotenet, channel)
-                    localuser = getRemoteUser(remoteirc, irc, user)
-                    if localuser is None:
-                        log.warning('(%s) got None for local user for %s/%s', irc.name, user, remotenet)
-                        continue
-                    userpair = (getPrefixModes(remoteirc, irc, remotechan, user), localuser)
-                    log.debug('(%s) initializeChannel: adding %s to queued_users for %s', irc.name, userpair, channel)
-                    queued_users.append(userpair)
-            if queued_users:
-                irc.proto.sjoinServer(irc, irc.sid, channel, queued_users, ts=rc.ts)
-            relayModes(remoteirc, irc, remoteirc.sid, remotechan)
+            # Join their (remote) users and set their modes.
+            relayJoins(remoteirc, remotechan, rc.users,
+                       rc.ts, rc.modes)
             relayModes(irc, remoteirc, irc.sid, channel)
             topic = remoteirc.channels[relay[1]].topic
             # Only update the topic if it's different from what we already have,
@@ -251,6 +240,7 @@ def initializeChannel(irc, channel):
                 irc.proto.topicServer(irc, irc.sid, channel, topic)
 
         log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
+        # After that's done, we'll send our users to them.
         relayJoins(irc, channel, c.users, c.ts, c.modes)
         irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
 
@@ -262,7 +252,6 @@ def handle_join(irc, numeric, command, args):
     modes = args['modes']
     ts = args['ts']
     users = set(args['users'])
-    # users.update(irc.channels[channel].users)
     relayJoins(irc, channel, users, ts, modes)
 utils.add_hook(handle_join, 'JOIN')
 
@@ -597,8 +586,8 @@ def handle_kill(irc, numeric, command, args):
 utils.add_hook(handle_kill, 'KILL')
 
 def relayJoins(irc, channel, users, ts, modes):
-    queued_users = []
     for name, remoteirc in utils.networkobjects.items():
+        queued_users = []
         if name == irc.name:
             # Don't relay things to their source network...
             continue
@@ -607,13 +596,14 @@ def relayJoins(irc, channel, users, ts, modes):
             # If there is no link on our network for the user, don't
             # bother spawning it.
             continue
+        log.debug('(%s) relayJoins: got %r for users', irc.name, users)
         for user in users.copy():
             try:
                 if irc.users[user].remote:
                     # Is the .remote attribute set? If so, don't relay already
                     # relayed clients; that'll trigger an endless loop!
                     continue
-            except (AttributeError, KeyError):  # Nope, it isn't.
+            except AttributeError:  # Nope, it isn't.
                 pass
             if utils.isInternalClient(irc, user) or user not in irc.users:
                 # We don't need to clone PyLink pseudoclients... That's
