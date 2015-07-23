@@ -663,9 +663,14 @@ def removeChannel(irc, channel):
         for user in irc.channels[channel].users.copy():
             if not utils.isInternalClient(irc, user):
                 relayPart(irc, channel, user)
+            # Don't ever part the main client from any of its autojoin channels.
             else:
+                if user == irc.pseudoclient.uid and channel in \
+                        irc.serverdata['channels']:
+                    continue
                 irc.proto.partClient(irc, user, channel, 'Channel delinked.')
-                if not irc.users[user].channels:
+                # Don't ever quit it either...
+                if user != irc.pseudoclient.uid and not irc.users[user].channels:
                     irc.proto.quitClient(irc, user, 'Left all shared channels.')
                     remoteuser = getLocalUser(irc, user)
                     del relayusers[remoteuser][irc.name]
