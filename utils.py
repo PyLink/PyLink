@@ -178,9 +178,11 @@ def parseModes(irc, target, args):
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
         supported_modes = irc.umodes
+        oldmodes = irc.users[target].modes
     else:
         log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
         supported_modes = irc.cmodes
+        oldmodes = irc.channels[target].modes
     res = []
     for mode in modestring:
         if mode in '+-':
@@ -195,6 +197,17 @@ def parseModes(irc, target, args):
                     # Must have parameter.
                     log.debug('Mode %s: This mode must have parameter.', mode)
                     arg = args.pop(0)
+                    if prefix == '-' and mode in supported_modes['*B'] and arg == '*':
+                        # Charybdis allows unsetting +k without actually
+                        # knowing the key by faking the argument when unsetting
+                        # as a single "*".
+                        # We'd need to know the real argument of +k for us to
+                        # be able to unset the mode.
+                        oldargs = [m[1] for m in oldmodes if m[0] == mode]
+                        if oldargs:
+                            # Set the arg to the old one on the channel.
+                            arg = oldargs[0]
+                            log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
                 elif mode in irc.prefixmodes and not usermodes:
                     # We're setting a prefix mode on someone (e.g. +o user1)
                     log.debug('Mode %s: This mode is a prefix mode.', mode)
