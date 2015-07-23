@@ -46,6 +46,7 @@ def handle_whois(irc, source, command, args):
     f = irc.proto.numericServer
     server = utils.clientToServer(irc, target) or irc.sid
     nick = user.nick
+    sourceisOper = ('o', None) in irc.users[source].modes
     # https://www.alien.net.au/irc/irc2numerics.html
     # 311: sends nick!user@host information
     f(irc, server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
@@ -55,8 +56,10 @@ def handle_whois(irc, source, command, args):
     # we'll only send it if the user has umode +o.
     if ('o', None) in user.modes:
         f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
-    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd
-    f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
+    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
+    # Only shown to opers!
+    if sourceisOper:
+        f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
     # 319: RPL_WHOISCHANNELS, shows channel list
     public_chans = []
     for chan in user.channels:
@@ -65,8 +68,7 @@ def handle_whois(irc, source, command, args):
         c = irc.channels[chan]
         if ((irc.cmodes.get('secret'), None) in c.modes or \
             (irc.cmodes.get('private'), None) in c.modes) \
-            and not (('o', None) in irc.users[source].modes or \
-            source in c.users):
+            and not (sourceisOper or source in c.users):
                 continue
         # TODO: show prefix modes like a regular IRCd does.
         public_chans.append(chan)
