@@ -12,6 +12,7 @@ command_hooks = defaultdict(list)
 networkobjects = {}
 schedulers = {}
 plugins = []
+whois_handlers = []
 started = threading.Event()
 
 class TS6UIDGenerator():

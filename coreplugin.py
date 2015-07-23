@@ -55,6 +55,38 @@ def handle_whois(irc, source, command, args):
     # we'll only send it if the user has umode +o.
     if ('o', None) in user.modes:
         f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
-    # 318: End of WHOIS.
-    f(irc, server, 318, source, "%s :End of WHOIS" % nick.lower())
+    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd
+    f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
+    # 319: RPL_WHOISCHANNELS, shows channel list
+    public_chans = []
+    for chan in user.channels:
+        # Here, we'll want to hide secret/private channels from non-opers
+        # who are not in them.
+        c = irc.channels[chan]
+        if ((irc.cmodes.get('secret'), None) in c.modes or \
+            (irc.cmodes.get('private'), None) in c.modes) \
+            and not (('o', None) in irc.users[source].modes or \
+            source in c.users):
+                continue
+        # TODO: show prefix modes like a regular IRCd does.
+        public_chans.append(chan)
+    if public_chans:
+        f(irc, server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
+    # 317: shows idle and signon time. Though we don't track the user's real
+    # idle time; we just return 0.
+    # 317 GL GL 15 1437632859 :seconds idle, signon time
+    f(irc, server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
+    try:
+        # Iterate over plugin-created WHOIS handlers. They return a tuple
+        # or list with two arguments: the numeric, and the text to send.
+        for func in utils.whois_handlers:
+            num, text = func(irc, target)
+            f(irc, server, num, source, text)
+    except Exception as e:
+        # Again, we wouldn't want this to crash our service, in case
+        # something goes wrong!
+        log.exception('Error caught in WHOIS handler: %s', e)
+    finally:
+        # 318: End of WHOIS.
+        f(irc, server, 318, source, "%s :End of WHOIS" % nick)
 utils.add_hook(handle_whois, 'WHOIS')
