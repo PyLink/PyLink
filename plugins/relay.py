@@ -420,6 +420,12 @@ def handle_kick(irc, source, command, args):
                 text = "(<unknown kicker>@%s) %s" % (irc.name, text)
             remoteirc.proto.kickServer(remoteirc, remoteirc.sid,
                                        remotechan, real_target, text)
+
+        if target != irc.pseudoclient.uid and not irc.users[target].channels:
+            irc.proto.quitClient(irc, target, 'Left all shared channels.')
+            remoteuser = getLocalUser(irc, target)
+            del relayusers[remoteuser][irc.name]
+
 utils.add_hook(handle_kick, 'KICK')
 
 def handle_chgclient(irc, source, command, args):
