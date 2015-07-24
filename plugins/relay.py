@@ -615,6 +615,10 @@ def relayJoins(irc, channel, users, ts, modes):
             continue
         log.debug('(%s) relayJoins: got %r for users', irc.name, users)
         for user in users.copy():
+            if utils.isInternalClient(irc, user) or user not in irc.users:
+                # We don't need to clone PyLink pseudoclients... That's
+                # meaningless.
+                continue
             try:
                 if irc.users[user].remote:
                     # Is the .remote attribute set? If so, don't relay already
@@ -622,10 +626,6 @@ def relayJoins(irc, channel, users, ts, modes):
                     continue
             except AttributeError:  # Nope, it isn't.
                 pass
-            if utils.isInternalClient(irc, user) or user not in irc.users:
-                # We don't need to clone PyLink pseudoclients... That's
-                # meaningless.
-                continue
             log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
             assert user in irc.users, "(%s) How is this possible? %r isn't in our user database." % (irc.name, user)
             u = getRemoteUser(irc, remoteirc, user)
