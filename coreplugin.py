@@ -92,5 +92,5 @@ def handle_whois(irc, source, command, args):
         log.exception('Error caught in WHOIS handler: %s', e)
     finally:
         # 318: End of WHOIS.
-        f(irc, server, 318, source, "%s :End of WHOIS" % nick)
+        f(irc, server, 318, source, "%s :End of /WHOIS list" % nick)
 utils.add_hook(handle_whois, 'WHOIS')
