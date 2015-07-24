@@ -414,7 +414,7 @@ def handle_events(irc, data):
     # TS6 messages:
     # :42X COMMAND arg1 arg2 :final long arg
     # :42XAAAAAA PRIVMSG #somewhere :hello!
-    args = data.split()
+    args = data.split(" ")
     if not args:
         # No data??
         return
