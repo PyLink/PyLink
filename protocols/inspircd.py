@@ -476,7 +476,7 @@ def handle_events(irc, data):
     # Each server message looks something like this:
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :v,1SRAAESWE
     # :<sid> <command> <argument1> <argument2> ... :final multi word argument
-    args = data.split()
+    args = data.split(" ")
     if not args:
         # No data??
         return
