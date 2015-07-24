@@ -454,8 +454,7 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
                       'regmoderated', 'secret', 'sslonly',
                       'stripcolor', 'topiclock', 'voice'}
 whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
-                      'regdeaf', 'u_stripcolor', 'servprotect', 'u_noctcp',
-                      'wallops'}
+                      'regdeaf', 'u_stripcolor', 'u_noctcp', 'wallops'}
 def relayModes(irc, remoteirc, sender, channel, modes=None):
     remotechan = findRemoteChan(irc, remoteirc, channel)
     log.debug('(%s) Relay mode: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
