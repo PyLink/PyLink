@@ -327,8 +327,9 @@ def handle_privmsg(irc, source, command, args):
 
 def handle_kill(irc, source, command, args):
     killed = args[0]
-    data = irc.users[killed]
-    removeClient(irc, killed)
+    data = irc.users.get(killed)
+    if data:
+        removeClient(irc, killed)
     return {'target': killed, 'text': args[1], 'userdata': data}
 
 def handle_kick(irc, source, command, args):

@@ -586,25 +586,35 @@ utils.add_hook(handle_topic, 'TOPIC')
 def handle_kill(irc, numeric, command, args):
     target = args['target']
     userdata = args['userdata']
-    if numeric not in irc.users:
-        # A server's sending kill? Uh oh, this can't be good.
-        return
-    # We don't allow killing over the relay, so we must spawn the client.
-    # all over again and rejoin it to its channels.
     realuser = getLocalUser(irc, target)
-    del relayusers[realuser][irc.name]
-    remoteirc = utils.networkobjects[realuser[0]]
-    for channel in remoteirc.channels:
-        remotechan = findRemoteChan(remoteirc, irc, channel)
-        if remotechan:
-            modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
-            log.debug('(%s) handle_kill: userpair: %s, %s', irc.name, modes, realuser)
-            client = getRemoteUser(remoteirc, irc, realuser[1])
-            irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, client)])
-            utils.msg(irc, numeric, "Your kill has to %s been blocked "
-                                   "because PyLink does not allow killing"
-                                   " users over the relay at this time." % \
-                                   userdata.nick, notice=True)
+    log.debug('(%s) relay handle_kill: realuser is %r', irc.name, realuser)
+    # Target user was remote:
+    if realuser and realuser[0] != irc.name:
+        # We don't allow killing over the relay, so we must respawn the affected
+        # client and rejoin it to its channels.
+        del relayusers[realuser][irc.name]
+        remoteirc = utils.networkobjects[realuser[0]]
+        for channel in remoteirc.channels:
+            remotechan = findRemoteChan(remoteirc, irc, channel)
+            if remotechan:
+                modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
+                log.debug('(%s) relay handle_kill: userpair: %s, %s', irc.name, modes, realuser)
+                client = getRemoteUser(remoteirc, irc, realuser[1])
+                irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, client)])
+                if userdata and numeric in irc.users:
+                    utils.msg(irc, numeric, "Your kill has to %s been blocked "
+                                        "because PyLink does not allow killing"
+                                        " users over the relay at this time." % \
+                                        userdata.nick, notice=True)
+    # Target user was local.
+    else:
+        # IMPORTANT: some IRCds (charybdis) don't send explicit QUIT messages
+        # for locally killed clients, while others (inspircd) do!
+        # If we receive a user object in 'userdata' instead of None, it means
+        # that the KILL hasn't been handled by a preceding QUIT message.
+        if userdata:
+            handle_quit(irc, target, 'KILL', {'text': args['text']})
+
 utils.add_hook(handle_kill, 'KILL')
 
 def relayJoins(irc, channel, users, ts, modes):
