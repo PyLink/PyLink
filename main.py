@@ -7,6 +7,7 @@ import time
 import sys
 from collections import defaultdict
 import threading
+import _thread
 
 from log import log
 import conf
@@ -100,7 +101,6 @@ class Irc():
             else:
                 return
 
-
     def disconnect(self):
         log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
         self.connected.clear()
@@ -129,7 +129,14 @@ class Irc():
                 line = line.strip(b'\r')
                 line = line.decode("utf-8")
                 log.debug("(%s) <- %s", self.name, line)
-                hook_args = self.proto.handle_events(self, line)
+                hook_args = None
+                try:
+                    hook_args = self.proto.handle_events(self, line)
+                except Exception:
+                    # We broke! Shutdown immediately.
+                    log.exception('(%s) Caught error in handle_events, exiting!', self.name)
+                    _thread.interrupt_main()
+                    sys.exit(4)
                 # Only call our hooks if there's data to process. Handlers that support
                 # hooks will return a dict of parsed arguments, which can be passed on
                 # to plugins and the like. For example, the JOIN handler will return
