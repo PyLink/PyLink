@@ -476,6 +476,8 @@ def handle_events(irc, data):
                          'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
                          'c_noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
                          'g', 'opmoderated': 'z', 'noctcp': 'C',
+                         # charybdis-specific modes provided by EXTENSIONS
+                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
                          # Now, map all the ABCD type modes:
                          '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
         if 'EX' in caps:
@@ -609,3 +611,19 @@ def handle_bmask(irc, numeric, command, args):
 def handle_whois(irc, numeric, command, args):
     # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
     return {'target': args[0]}
+
+def handle_472(irc, numeric, command, args):
+    # <- :charybdis.midnight.vpn 472 GL|devel O :is an unknown mode char to me
+    # 472 is sent to us when one of our clients tries to set a mode the server
+    # doesn't support. In this case, we'll raise a warning to alert the user
+    # about it.
+    badmode = args[1]
+    reason = args[-1]
+    setter = args[0]
+    charlist = {'A': 'chm_adminonly', 'O': 'chm_operonly', 'S': 'chm_sslonly'}
+    if badmode in charlist:
+        log.warning('(%s) User %r attempted to set channel mode %r, but the '
+                    'extension providing it isn\'t loaded! To prevent possible'
+                    ' desyncs, try adding the line "loadmodule "extensions/%s.so";" to '
+                    'your IRCd configuration.', irc.name, setter, badmode,
+                    charlist[badmode])
