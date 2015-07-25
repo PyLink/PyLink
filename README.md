@@ -18,7 +18,7 @@ Dependencies currently include:
 #### Supported IRCds
 
 * InspIRCd 2.0.x - module: `inspircd`
-* charybdis (3.5.x / git master) - module: `ts6` (**experimental**)
+* charybdis (3.5.x / git master) - module: `ts6`
 
 ### Installation
 
