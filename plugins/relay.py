@@ -841,7 +841,7 @@ def delink(irc, source, args):
     entry = findRelay((irc.name, channel))
     if entry:
         if entry[0] == irc.name:  # We own this channel.
-            if remotenet is None:
+            if not remotenet:
                 utils.msg(irc, source, "Error: you must select a network to delink, or use the 'destroy' command no remove this relay entirely.")
                 return
             else:
