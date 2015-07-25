@@ -204,6 +204,10 @@ if __name__ == '__main__':
         sys.exit(2)
     protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
 
+    # Write a PID file.
+    with open('pylink.pid', 'w') as f:
+        f.write(str(os.getpid()))
+
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
     utils.plugins.append(coreplugin)
