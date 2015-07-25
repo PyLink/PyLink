@@ -865,18 +865,24 @@ def handle_disconnect(irc, numeric, command, args):
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
 def handle_save(irc, numeric, command, args):
-    # Nick collision! Try to change our nick to the next available normalized
-    # nick.
     target = args['target']
-    if utils.isInternalClient(irc, target):
-        realuser = getLocalUser(irc, target)
-        if realuser is None:
-            return
+    realuser = getLocalUser(irc, target)
+    log.debug('(%s) relay handle_save: %r got in a nick collision! Real user: %r',
+                  irc.name, target, realuser)
+    if utils.isInternalClient(irc, target) and realuser:
+        # Nick collision!
+        # It's one of our relay clients; try to fix our nick to the next
+        # available normalized nick.
         remotenet, remoteuser = realuser
         remoteirc = utils.networkobjects[remotenet]
         nick = remoteirc.users[remoteuser].nick
         newnick = normalizeNick(irc, remotenet, nick)
         irc.proto.nickClient(irc, target, newnick)
+    else:
+        # Somebody else on the network (not a PyLink client) had a nick collision;
+        # relay this as a nick change appropriately.
+        handle_nick(irc, target, 'SAVE', {'oldnick': None, 'newnick': target})
+
 utils.add_hook(handle_save, "SAVE")
 
 @utils.add_cmd
