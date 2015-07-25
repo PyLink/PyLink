@@ -446,7 +446,8 @@ def handle_chgclient(irc, source, command, args):
                 remoteirc.proto.updateClient(remoteirc, user, field, text)
             except NotImplementedError:  # IRCd doesn't support changing the field we want
                 log.debug('(%s) Ignoring changing field %r of %s on %s (for %s/%s);'
-                              'remote IRCd doesn\'t support it', irc.name, field, user, target, remotenet, irc.name)
+                          ' remote IRCd doesn\'t support it', irc.name, field,
+                          user, target, netname, irc.name)
                 continue
 
 for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
