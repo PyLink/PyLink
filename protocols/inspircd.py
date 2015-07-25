@@ -10,6 +10,8 @@ from log import log
 
 from classes import *
 
+casemapping = 'rfc1459'
+
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
 # non-standard names to our hook handlers, so plugins get the information they need.
 
@@ -23,7 +25,7 @@ def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
 
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
-        server=None, ip='0.0.0.0', realname=None):
+        server=None, ip='0.0.0.0', realname=None, ts=None):
     server = server or irc.sid
     if not utils.isInternalServer(irc, server):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
@@ -32,12 +34,13 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     if server not in irc.uidgen:
         irc.uidgen[server] = utils.TS6UIDGenerator(server)
     uid = irc.uidgen[server].next_uid()
-    ts = int(time.time())
+    ts = ts or int(time.time())
     realname = realname or irc.botdata['realname']
     realhost = realhost or host
     raw_modes = utils.joinModes(modes)
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-        realhost=realhost, ip=ip, modes=modes)
+        realhost=realhost, ip=ip)
+    utils.applyModes(irc, uid, modes)
     irc.servers[server].users.append(uid)
     _send(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                     " {ts} {modes} + :{realname}".format(ts=ts, host=host,
@@ -273,22 +276,28 @@ def updateClient(irc, numeric, field, text):
     Changes the <field> field of <target> PyLink PseudoClient <client numeric>."""
     field = field.upper()
     if field == 'IDENT':
-        handle_fident(irc, numeric, 'PYLINK_UPDATECLIENT_IDENT', [text])
+        irc.users[numeric].ident = text
         _send(irc, numeric, 'FIDENT %s' % text)
     elif field == 'HOST':
-        handle_fhost(irc, numeric, 'PYLINK_UPDATECLIENT_HOST', [text])
+        irc.users[numeric].host = text
         _send(irc, numeric, 'FHOST %s' % text)
     elif field in ('REALNAME', 'GECOS'):
-        handle_fname(irc, numeric, 'PYLINK_UPDATECLIENT_GECOS', [text])
+        irc.users[numeric].realname = text
         _send(irc, numeric, 'FNAME :%s' % text)
     else:
-        raise ValueError("Changing field %r of a client is unsupported by this protocol." % field)
+        raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
 def pingServer(irc, source=None, target=None):
     source = source or irc.sid
     target = target or irc.uplink
     if not (target is None or source is None):
         _send(irc, source, 'PING %s %s' % (source, target))
+
+def numericServer(irc, source, numeric, text):
+    raise NotImplementedError("Numeric sending is not yet implemented by this "
+                              "protocol module. WHOIS requests are handled "
+                              "locally by InspIRCd servers, so there is no "
+                              "need for PyLink to send numerics directly yet.")
 
 def connect(irc):
     ts = irc.start_ts
@@ -318,8 +327,9 @@ def handle_privmsg(irc, source, command, args):
 
 def handle_kill(irc, source, command, args):
     killed = args[0]
-    data = irc.users[killed]
-    removeClient(irc, killed)
+    data = irc.users.get(killed)
+    if data:
+        removeClient(irc, killed)
     return {'target': killed, 'text': args[1], 'userdata': data}
 
 def handle_kick(irc, source, command, args):
@@ -467,7 +477,7 @@ def handle_events(irc, data):
     # Each server message looks something like this:
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :v,1SRAAESWE
     # :<sid> <command> <argument1> <argument2> ... :final multi word argument
-    args = data.split()
+    args = data.split(" ")
     if not args:
         # No data??
         return
@@ -559,7 +569,7 @@ def handle_events(irc, data):
         if parsed_args is not None:
             return [numeric, command, parsed_args]
 
-def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst=True):
+def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
@@ -578,13 +588,8 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst
         raise ValueError('Invalid server name %r' % name)
     _send(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
-    if endburst:
-        endburstServer(irc, sid)
-    return sid
-
-def endburstServer(irc, sid):
     _send(irc, sid, 'ENDBURST')
-    irc.servers[sid].has_bursted = True
+    return sid
 
 def handle_ftopic(irc, numeric, command, args):
     # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic

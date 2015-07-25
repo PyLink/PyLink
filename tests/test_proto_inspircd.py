@@ -2,7 +2,6 @@ import sys
 import os
 sys.path += [os.getcwd(), os.path.join(os.getcwd(), 'protocols')]
 import unittest
-import time
 from collections import defaultdict
 
 import inspircd
@@ -72,7 +71,6 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.assertNotIn(u, self.irc.channels['#channel'].users)
         self.assertNotIn(u, self.irc.users)
         self.assertNotIn(u, self.irc.servers[self.irc.sid].users)
-        pass
 
     def testKickClient(self):
         target = self.proto.spawnClient(self.irc, 'soccerball', 'soccerball', 'abcd').uid

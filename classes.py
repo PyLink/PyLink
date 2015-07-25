@@ -1,4 +1,3 @@
-from collections import defaultdict
 import threading
 from random import randint
 
@@ -9,7 +8,7 @@ import time
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0', modes=set()):
+                 ip='0.0.0.0'):
         self.nick = nick
         self.ts = ts
         self.uid = uid
@@ -18,7 +17,7 @@ class IrcUser():
         self.realhost = realhost
         self.ip = ip
         self.realname = realname
-        self.modes = modes
+        self.modes = set()
 
         self.identified = False
         self.channels = set()
@@ -39,7 +38,6 @@ class IrcServer():
         self.users = []
         self.internal = internal
         self.name = name.lower()
-        self.has_bursted = False
     def __repr__(self):
         return repr(self.__dict__)
 

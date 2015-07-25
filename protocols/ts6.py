@@ -2,7 +2,6 @@ import time
 import sys
 import os
 import re
-from copy import copy
 
 curdir = os.path.dirname(__file__)
 sys.path += [curdir, os.path.dirname(curdir)]
@@ -17,13 +16,14 @@ from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
     handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
     handle_notice
 
+casemapping = 'rfc1459'
 hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE'}
 
 def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
 
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
-        server=None, ip='0.0.0.0', realname=None):
+        server=None, ip='0.0.0.0', realname=None, ts=None):
     server = server or irc.sid
     if not utils.isInternalServer(irc, server):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
@@ -32,20 +32,22 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     if server not in irc.uidgen:
         irc.uidgen[server] = utils.TS6UIDGenerator(server)
     uid = irc.uidgen[server].next_uid()
-    # UID:
+    # EUID:
     # parameters: nickname, hopcount, nickTS, umodes, username,
-    # visible hostname, IP address, UID, gecos
-    ts = int(time.time())
+    # visible hostname, IP address, UID, real hostname, account name, gecos
+    ts = ts or int(time.time())
     realname = realname or irc.botdata['realname']
     realhost = realhost or host
     raw_modes = utils.joinModes(modes)
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-        realhost=realhost, ip=ip, modes=modes)
+        realhost=realhost, ip=ip)
+    utils.applyModes(irc, uid, modes)
     irc.servers[server].users.append(uid)
-    _send(irc, server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
-                    ":{realname}".format(ts=ts, host=host,
-                                         nick=nick, ident=ident, uid=uid,
-                                         modes=raw_modes, ip=ip, realname=realname))
+    _send(irc, server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+            "{realhost} * :{realname}".format(ts=ts, host=host,
+            nick=nick, ident=ident, uid=uid,
+            modes=raw_modes, ip=ip, realname=realname,
+            realhost=realhost))
     return u
 
 def joinClient(irc, client, channel):
@@ -214,7 +216,7 @@ def updateClient(irc, numeric, field, text):
     Changes the <field> field of <target> PyLink PseudoClient <client numeric>."""
     field = field.upper()
     if field == 'HOST':
-        handle_chghost(irc, numeric, 'PYLINK_UPDATECLIENT_HOST', [text])
+        irc.users[numeric].host = text
         _send(irc, irc.sid, 'CHGHOST %s :%s' % (numeric, text))
     else:
         raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
@@ -227,6 +229,9 @@ def pingServer(irc, source=None, target=None):
         _send(irc, source, 'PING %s %s' % (source, target))
     else:
         _send(irc, source, 'PING %s' % source)
+
+def numericServer(irc, source, numeric, target, text):
+    _send(irc, source, '%s %s %s' % (numeric, target, text))
 
 def connect(irc):
     ts = irc.start_ts
@@ -375,8 +380,12 @@ def handle_euid(irc, numeric, command, args):
     irc.servers[numeric].users.append(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
+def handle_uid(irc, numeric, command, args):
+    raise ProtocolError("Servers must use EUID to send users! This is a "
+                        "requested capability; plain UID (received) is not "
+                        "handled by us at all!")
+
 def handle_server(irc, numeric, command, args):
-    # SERVER is sent by our uplink or any other server to introduce others.
     # parameters: server name, hopcount, sid, server description
     servername = args[0].lower()
     try:
@@ -389,6 +398,8 @@ def handle_server(irc, numeric, command, args):
     sdesc = args[-1]
     irc.servers[sid] = IrcServer(numeric, servername)
     return {'name': servername, 'sid': sid, 'text': sdesc}
+
+handle_sid = handle_server
 
 def handle_tmode(irc, numeric, command, args):
     # <- :42XAAAAAB TMODE 1437450768 #endlessvoid -c+lkC 3 agte4
@@ -403,7 +414,7 @@ def handle_events(irc, data):
     # TS6 messages:
     # :42X COMMAND arg1 arg2 :final long arg
     # :42XAAAAAA PRIVMSG #somewhere :hello!
-    args = data.split()
+    args = data.split(" ")
     if not args:
         # No data??
         return
@@ -428,6 +439,12 @@ def handle_events(irc, data):
         # According to the TS6 protocol documentation, we should send SVINFO
         # when we get our uplink's SERVER command.
         irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
+    elif args[0] == 'SQUIT':
+        # What? Charybdis send this in a different format!
+        # <- SQUIT 00A :Remote host closed the connection
+        split_server = args[1]
+        res = handle_squit(irc, split_server, 'SQUIT', [split_server])
+        irc.callHooks([split_server, 'SQUIT', res])
     elif args[0] == 'CAPAB':
         # We only get a list of keywords here. Charybdis obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
@@ -447,6 +464,10 @@ def handle_events(irc, data):
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
         chary_cmodes = { # TS6 generic modes:
+                         # Note: charybdis +p has the effect of being both
+                         # noknock AND private. Surprisingly, mapping it twice
+                         # works pretty well: setting +p on a charybdis relay
+                         # server sets +pK on an InspIRCd network.
                         'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
                         'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
                         'secret': 's', 'topiclock': 't',
@@ -454,7 +475,9 @@ def handle_events(irc, data):
                          'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
                          'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
                          'c_noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                         'g', 'opmoderated': 'z',
+                         'g', 'opmoderated': 'z', 'noctcp': 'C',
+                         # charybdis-specific modes provided by EXTENSIONS
+                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
                          # Now, map all the ABCD type modes:
                          '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
         if 'EX' in caps:
@@ -526,7 +549,7 @@ def handle_events(irc, data):
         if parsed_args is not None:
             return [numeric, command, parsed_args]
 
-def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server', endburst=True):
+def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     # -> :0AL SERVER test.server 1 0XY :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
@@ -584,3 +607,23 @@ def handle_bmask(irc, numeric, command, args):
         modes.append(('+%s' % mode, ban))
     utils.applyModes(irc, channel, modes)
     return {'target': channel, 'modes': modes, 'ts': ts}
+
+def handle_whois(irc, numeric, command, args):
+    # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
+    return {'target': args[0]}
+
+def handle_472(irc, numeric, command, args):
+    # <- :charybdis.midnight.vpn 472 GL|devel O :is an unknown mode char to me
+    # 472 is sent to us when one of our clients tries to set a mode the server
+    # doesn't support. In this case, we'll raise a warning to alert the user
+    # about it.
+    badmode = args[1]
+    reason = args[-1]
+    setter = args[0]
+    charlist = {'A': 'chm_adminonly', 'O': 'chm_operonly', 'S': 'chm_sslonly'}
+    if badmode in charlist:
+        log.warning('(%s) User %r attempted to set channel mode %r, but the '
+                    'extension providing it isn\'t loaded! To prevent possible'
+                    ' desyncs, try adding the line "loadmodule "extensions/%s.so";" to '
+                    'your IRCd configuration.', irc.name, setter, badmode,
+                    charlist[badmode])

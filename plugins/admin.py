@@ -49,7 +49,7 @@ def spawnclient(irc, source, args):
 def quit(irc, source, args):
     """<target> [<reason>]
 
-    Admin-only. Quits the PyLink client <target>, if it exists."""
+    Admin-only. Quits the PyLink client with nick <target>, if one exists."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -66,7 +66,7 @@ def quit(irc, source, args):
 def joinclient(irc, source, args):
     """<target> <channel1>,[<channel2>], etc.
 
-    Admin-only. Joins <target>, a PyLink client, to a comma-separated list of channels."""
+    Admin-only. Joins <target>, the nick of a PyLink client, to a comma-separated list of channels."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -108,7 +108,7 @@ def nick(irc, source, args):
 def part(irc, source, args):
     """<target> <channel1>,[<channel2>],... [<reason>]
 
-    Admin-only. Parts <target>, a PyLink client, from a comma-separated list of channels."""
+    Admin-only. Parts <target>, the nick of a PyLink client, from a comma-separated list of channels."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -128,7 +128,7 @@ def part(irc, source, args):
 def kick(irc, source, args):
     """<source> <channel> <user> [<reason>]
 
-    Admin-only. Kicks <user> from <channel> via <source>, where <source> is a PyLink client."""
+    Admin-only. Kicks <user> from <channel> via <source>, where <source> is the nick of a PyLink client."""
     checkauthenticated(irc, source)
     try:
         nick = args[0]
@@ -186,7 +186,7 @@ def showchan(irc, source, args):
 def mode(irc, source, args):
     """<source> <target> <modes>
 
-    Admin-only. Sets modes <modes> on <target>."""
+    Admin-only. Sets modes <modes> on <target> from <source>, where <source> is the nick of a PyLink client."""
     checkauthenticated(irc, source)
     try:
         modesource, target, modes = args[0], args[1], args[2:]

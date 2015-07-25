@@ -12,6 +12,7 @@ command_hooks = defaultdict(list)
 networkobjects = {}
 schedulers = {}
 plugins = []
+whois_handlers = []
 started = threading.Event()
 
 class TS6UIDGenerator():
@@ -97,8 +98,6 @@ class TS6SIDGenerator():
             self.iters[pos] = iter(self.allowedchars[pos])
             next(self.iters[pos])
             self.increment(pos-1)
-        else:
-            print('NEXT')
 
     def next_sid(self):
         sid = ''.join(self.output)
@@ -122,9 +121,18 @@ def add_hook(func, command):
     command = command.upper()
     command_hooks[command].append(func)
 
+def toLower(irc, text):
+    if irc.proto.casemapping == 'rfc1459':
+        text = text.replace('{', '[')
+        text = text.replace('}', ']')
+        text = text.replace('|', '\\')
+        text = text.replace('~', '^')
+    return text.lower()
+
 def nickToUid(irc, nick):
+    nick = toLower(irc, nick)
     for k, v in irc.users.items():
-        if v.nick == nick:
+        if toLower(irc, v.nick) == nick:
             return k
 
 def clientToServer(irc, numeric):
@@ -170,16 +178,18 @@ def parseModes(irc, target, args):
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
         supported_modes = irc.umodes
+        oldmodes = irc.users[target].modes
     else:
         log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
         supported_modes = irc.cmodes
+        oldmodes = irc.channels[target].modes
     res = []
     for mode in modestring:
         if mode in '+-':
             prefix = mode
         else:
             if not prefix:
-                raise ValueError('Invalid query %r: mode char given without preceding prefix.' % modestring)
+                prefix = '+'
             arg = None
             log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
             try:
@@ -187,6 +197,17 @@ def parseModes(irc, target, args):
                     # Must have parameter.
                     log.debug('Mode %s: This mode must have parameter.', mode)
                     arg = args.pop(0)
+                    if prefix == '-' and mode in supported_modes['*B'] and arg == '*':
+                        # Charybdis allows unsetting +k without actually
+                        # knowing the key by faking the argument when unsetting
+                        # as a single "*".
+                        # We'd need to know the real argument of +k for us to
+                        # be able to unset the mode.
+                        oldargs = [m[1] for m in oldmodes if m[0] == mode]
+                        if oldargs:
+                            # Set the arg to the old one on the channel.
+                            arg = oldargs[0]
+                            log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
                 elif mode in irc.prefixmodes and not usermodes:
                     # We're setting a prefix mode on someone (e.g. +o user1)
                     log.debug('Mode %s: This mode is a prefix mode.', mode)
