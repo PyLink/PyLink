@@ -25,7 +25,7 @@ def relayWhoisHandlers(irc, target):
                                                      remotenick)]
 utils.whois_handlers.append(relayWhoisHandlers)
 
-def normalizeNick(irc, netname, nick, separator=None):
+def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
     # Block until we know the IRC network's nick length (after capabilities
     # are sent)
     log.debug('(%s) normalizeNick: waiting for irc.connected', irc.name)
@@ -59,7 +59,8 @@ def normalizeNick(irc, netname, nick, separator=None):
     nick = nick[:allowedlength]
     nick += suffix
     # FIXME: factorize
-    while utils.nickToUid(irc, nick) and not utils.isInternalClient(irc, utils.nickToUid(irc, nick)):
+    while utils.nickToUid(irc, nick) or utils.nickToUid(irc, oldnick) and not \
+            utils.isInternalClient(irc, utils.nickToUid(irc, nick)):
         # The nick we want exists? Darn, create another one then, but only if
         # the target isn't an internal client!
         # Increase the separator length by 1 if the user was already tagged,
@@ -901,7 +902,7 @@ def handle_save(irc, numeric, command, args):
         remotenet, remoteuser = realuser
         remoteirc = utils.networkobjects[remotenet]
         nick = remoteirc.users[remoteuser].nick
-        newnick = normalizeNick(irc, remotenet, nick)
+        newnick = normalizeNick(irc, remotenet, nick, oldnick=args['oldnick'])
         irc.proto.nickClient(irc, target, newnick)
     else:
         # Somebody else on the network (not a PyLink client) had a nick collision;

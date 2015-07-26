@@ -423,8 +423,9 @@ def handle_save(irc, numeric, command, args):
     # -> :0AL000001 NICK Derp_ 1433728673
     # <- :70M SAVE 0AL000001 1433728673
     user = args[0]
+    oldnick = irc.users[user].nick
     irc.users[user].nick = user
-    return {'target': user, 'ts': int(args[1])}
+    return {'target': user, 'ts': int(args[1]), 'oldnick': oldnick}
 
 def handle_fmode(irc, numeric, command, args):
     # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
