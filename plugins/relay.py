@@ -367,7 +367,7 @@ def handle_kick(irc, source, command, args):
     if relay is None:
         return
     for name, remoteirc in utils.networkobjects.items():
-        if irc.name == name:
+        if irc.name == name or not remoteirc.connected.is_set():
             continue
         remotechan = findRemoteChan(irc, remoteirc, channel)
         log.debug('(%s) Relay kick: remotechan for %s on %s is %s', irc.name, channel, name, remotechan)
@@ -571,7 +571,7 @@ def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
     for name, remoteirc in utils.networkobjects.items():
-        if irc.name == name:
+        if irc.name == name or not remoteirc.connected.is_set():
             continue
         if utils.isChannel(target):
             relayModes(irc, remoteirc, numeric, target, modes)
@@ -588,7 +588,7 @@ def handle_topic(irc, numeric, command, args):
     channel = args['channel']
     topic = args['topic']
     for name, remoteirc in utils.networkobjects.items():
-        if irc.name == name:
+        if irc.name == name or not remoteirc.connected.is_set():
             continue
 
         remotechan = findRemoteChan(irc, remoteirc, channel)
@@ -640,7 +640,7 @@ utils.add_hook(handle_kill, 'KILL')
 def relayJoins(irc, channel, users, ts, modes):
     for name, remoteirc in utils.networkobjects.items():
         queued_users = []
-        if name == irc.name:
+        if name == irc.name or not remoteirc.connected.is_set():
             # Don't relay things to their source network...
             continue
         remotechan = findRemoteChan(irc, remoteirc, channel)
@@ -681,7 +681,7 @@ def relayJoins(irc, channel, users, ts, modes):
 
 def relayPart(irc, channel, user):
     for name, remoteirc in utils.networkobjects.items():
-        if name == irc.name:
+        if name == irc.name or not remoteirc.connected.is_set():
             # Don't relay things to their source network...
             continue
         remotechan = findRemoteChan(irc, remoteirc, channel)
