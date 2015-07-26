@@ -28,8 +28,10 @@ utils.whois_handlers.append(relayWhoisHandlers)
 def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
     # Block until we know the IRC network's nick length (after capabilities
     # are sent)
-    log.debug('(%s) normalizeNick: waiting for irc.connected', irc.name)
-    irc.connected.wait(1)
+    if not hasattr(irc, 'relay_waitFinished'):
+        log.debug('(%s) normalizeNick: waiting for irc.connected', irc.name)
+        irc.connected.wait(1)
+        irc.relay_waitFinished = True
 
     separator = separator or irc.serverdata.get('separator') or "/"
     log.debug('(%s) normalizeNick: using %r as separator.', irc.name, separator)
