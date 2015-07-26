@@ -155,9 +155,9 @@ class Irc():
         # Handlers can return a 'parse_as' key to send their payload to a
         # different hook. An example of this is "/join 0" being interpreted
         # as leaving all channels (PART).
-        command = parsed_args.get('parse_as') or command
         if command in hook_map:
             hook_cmd = hook_map[command]
+        hook_cmd = parsed_args.get('parse_as') or hook_cmd
         log.debug('Parsed args %r received from %s handler (calling hook %s)', parsed_args, command, hook_cmd)
         # Iterate over hooked functions, catching errors accordingly
         for hook_func in utils.command_hooks[hook_cmd]:

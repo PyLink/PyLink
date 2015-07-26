@@ -342,10 +342,12 @@ def handle_join(irc, numeric, command, args):
     ts = int(args[0])
     if args[0] == '0':
         # /join 0; part the user from all channels
-        oldchans = list(irc.users[numeric].channels)
-        for channel in irc.users[numeric].channels:
-            irc.channels[channel].discard(numeric)
-        irc.users[numeric].channels = set()
+        oldchans = irc.users[numeric].channels.copy()
+        log.debug('(%s) Got /join 0 from %r, channel list is %r',
+                  irc.name, numeric, oldchans)
+        for channel in oldchans:
+            irc.channels[channel].users.discard(numeric)
+            irc.users[numeric].channels.discard(channel)
         return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
     else:
         channel = args[1].lower()
@@ -356,7 +358,7 @@ def handle_join(irc, numeric, command, args):
                       irc.name, channel, ts, our_ts)
             irc.channels[channel].ts = ts
         irc.channels[channel].users.add(numeric)
-        irc.users[numeric].channels.add(numeric)
+        irc.users[numeric].channels.add(channel)
     # We send users and modes here because SJOIN and JOIN both use one hook,
     # for simplicity's sake (with plugins).
     return {'channel': channel, 'users': [numeric], 'modes':
