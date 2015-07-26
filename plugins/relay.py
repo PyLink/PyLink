@@ -120,8 +120,6 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     # {'network1': 'UID1', 'network2': 'UID2'}}) exists, don't spawn it
     # again!
     try:
-        if user == remoteirc.pseudoclient.uid:
-            return irc.pseudoclient.uid
         if user == irc.pseudoclient.uid:
             return remoteirc.pseudoclient.uid
     except AttributeError:  # Network hasn't been initialized yet?
