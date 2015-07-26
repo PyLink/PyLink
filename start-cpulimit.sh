@@ -2,7 +2,7 @@
 # Shell script to start PyLink under CPUlimit, killing it if it starts abusing the CPU.
 
 # Set this to whatever you want. cpulimit --help
-LIMIT=50
+LIMIT=20
 
 # Change to the PyLink root directory.
 WRAPPER_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
