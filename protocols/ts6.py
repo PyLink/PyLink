@@ -450,7 +450,7 @@ def handle_events(irc, data):
         # we know what modes it supports (indeed, this is a standard list).
         # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
         irc.caps = caps = data.split(':', 1)[1].split()
-        for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP'):
+        for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS'):
             if required_cap not in caps:
                 raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
