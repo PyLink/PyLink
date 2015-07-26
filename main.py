@@ -178,7 +178,7 @@ class Irc():
         log.debug("(%s) -> %s", self.name, stripped_data)
         try:
             self.socket.send(data)
-        except AttributeError:
+        except (OSError, AttributeError):
             log.debug("(%s) Dropping message %r; network isn't connected!", self.name, stripped_data)
 
     def schedulePing(self):
