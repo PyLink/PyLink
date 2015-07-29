@@ -127,7 +127,8 @@ class Irc():
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
-                line = line.decode("utf-8")
+                # TODO: respect other encodings?
+                line = line.decode("utf-8", "replace")
                 log.debug("(%s) <- %s", self.name, line)
                 hook_args = None
                 try:
