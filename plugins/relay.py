@@ -314,8 +314,13 @@ def handle_privmsg(irc, numeric, command, args):
     relay = findRelay((irc.name, target))
     # Don't send any "you must be in common channels" if we're not part
     # of a relay, or we are but there are no links!
+    remoteusers = relayusers[(irc.name, numeric)].items()
+    '''
     if utils.isChannel(target) and ((relay and not db[relay]['links']) or \
             relay is None):
+        return
+    '''
+    if not remoteusers:
         return
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
@@ -342,6 +347,7 @@ def handle_privmsg(irc, numeric, command, args):
         else:
             remoteirc.proto.messageClient(remoteirc, user, real_target, text)
         sent += 1
+    '''
     if not sent:
         # We must be on a common channel with the target. Otherwise, the sender
         # doesn't have a client representing them on the remote network,
@@ -354,6 +360,7 @@ def handle_privmsg(irc, numeric, command, args):
             target_s = repr(target)
         utils.msg(irc, numeric, 'Error: You must be in %s in order to send messages.' % \
                                 target_s, notice=True)
+    '''
 utils.add_hook(handle_privmsg, 'PRIVMSG')
 utils.add_hook(handle_privmsg, 'NOTICE')
 
