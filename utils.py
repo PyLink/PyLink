@@ -350,9 +350,10 @@ def isInternalServer(irc, sid):
 def isOper(irc, uid):
     """<irc object> <UID>
 
-    Returns whether <UID> is an opered client.
+    Returns whether <UID> has operator status on PyLink. This can be achieved
+    by either identifying to PyLink as admin, or having user mode +o set.
     """
-    return (uid in irc.users and ("o", None) in irc.users[uid].modes)
+    return (uid in irc.users and (("o", None) in irc.users[uid].modes or irc.users[uid].identified))
 
 def getHostmask(irc, user):
     userobj = irc.users.get(user)

@@ -14,9 +14,10 @@ def status(irc, source, args):
     Returns your current PyLink login status."""
     identified = irc.users[source].identified
     if identified:
-        utils.msg(irc, source, 'You are identified as %s.' % identified)
+        utils.msg(irc, source, 'You are identified as \x02%s\x02.' % identified)
     else:
         utils.msg(irc, source, 'You are not identified as anyone.')
+    utils.msg(irc, source, 'Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
 
 @utils.add_cmd
 def identify(irc, source, args):
