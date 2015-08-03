@@ -15,11 +15,9 @@ casemapping = 'rfc1459'
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
 # non-standard names to our hook handlers, so plugins get the information they need.
 
-# XXX figure out a way to not force-map ENCAP to KNOCK, since other commands are sent
-# through it too.
 hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
-            'FTOPIC': 'TOPIC', 'ENCAP': 'KNOCK', 'OPERTYPE': 'MODE',
-            'FHOST': 'CHGHOST', 'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
+            'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
+            'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
 
 def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
@@ -634,7 +632,7 @@ def handle_encap(irc, numeric, command, args):
     if targetmask == '*' and real_command == 'KNOCK':
         channel = args[2].lower()
         text = args[3]
-        return {'encapcommand': real_command, 'channel': channel,
+        return {'parse_as': real_command, 'channel': channel,
                 'text': text}
 
 def handle_notice(irc, numeric, command, args):
