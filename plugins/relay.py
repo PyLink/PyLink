@@ -268,7 +268,7 @@ utils.add_hook(handle_join, 'JOIN')
 
 def handle_quit(irc, numeric, command, args):
     ouruser = numeric
-    for netname, user in relayusers[(irc.name, numeric)].items():
+    for netname, user in relayusers[(irc.name, numeric)].copy().items():
         remoteirc = utils.networkobjects[netname]
         remoteirc.proto.quitClient(remoteirc, user, args['text'])
     del relayusers[(irc.name, ouruser)]
