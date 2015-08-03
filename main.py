@@ -77,10 +77,11 @@ class Irc():
         port = self.serverdata["port"]
         while True:
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
+            self.initVars()
             try:
                 # Initial connection timeout is a lot smaller than the timeout after
                 # we've connected; this is intentional.
-                self.socket = socket.create_connection((ip, port), timeout=1)
+                self.socket = socket.create_connection((ip, port), timeout=self.pingfreq)
                 self.socket.setblocking(0)
                 self.socket.settimeout(self.pingtimeout)
                 self.proto.connect(self)
@@ -110,8 +111,6 @@ class Irc():
         except:  # Socket timed out during creation; ignore
             pass
         self.callHooks([None, 'PYLINK_DISCONNECT', {}])
-        # Reset all our variables - this is important!
-        self.initVars()
 
     def run(self):
         buf = b""
