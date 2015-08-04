@@ -299,7 +299,6 @@ def numericServer(irc, source, numeric, text):
 
 def connect(irc):
     ts = irc.start_ts
-    irc.uidgen = {}
 
     f = irc.send
     f('CAPAB START 1202')

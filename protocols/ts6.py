@@ -235,7 +235,6 @@ def numericServer(irc, source, numeric, target, text):
 
 def connect(irc):
     ts = irc.start_ts
-    irc.uidgen = {}
 
     f = irc.send
 
