@@ -889,7 +889,8 @@ def main():
     thread.start()
 
 def handle_endburst(irc, numeric, command, args):
-    initializeAll(irc)
+    if numeric == irc.uplink:
+        initializeAll(irc)
 utils.add_hook(handle_endburst, "ENDBURST")
 
 def handle_disconnect(irc, numeric, command, args):
