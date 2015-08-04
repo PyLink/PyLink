@@ -33,6 +33,9 @@ servers:
 
         # Autojoin channels
         channels: ["#pylink"]
+
+        # Sets the protocol module to use - see the protocols/ folder for a list of valid values
+        # (omitting the .py extension).
         protocol: "inspircd"
 
         # Sets autoconnect delay - comment this out or set the value negative to disable autoconnect entirely.
@@ -40,6 +43,7 @@ servers:
 
         # Sets ping frequency (i.e. how long we should wait between sending pings to our uplink).
         # When more than two consecutive pings are missed, PyLink will disconnect with a ping timeout.
+        # Defaults to 30 if not set.
         pingfreq: 30
 
         # Separator character (used by relay)
@@ -48,6 +52,39 @@ servers:
         # Sets the max nick length for the network. It is important this is set correctly, or
         # PyLink might introduce a nick that is too long and cause netsplits!
         maxnicklen: 30
+
+    ts6net:
+        ip: 127.0.0.1
+        port: 7000
+        recvpass: "abcd"
+        sendpass: "abcd"
+        hostname: "pylink.example.com"
+        sid: "8PY"
+
+        # Leave this as an empty list if you don't want to join any channels.
+        channels: []
+
+        protocol: "ts6"
+        autoconnect: 5
+        pingfreq: 30
+        maxnicklen: 30
+
+        # /'s in nicks are automatically converted to |'s for TS6 networks, since they
+        # don't allow "/" in nicks
+        separator: "|"
+
+        # The following options are specific to TS6 servers:
+        # Toggles owner (+y), admin (+a), and halfop (+h) support for shadowircd/elemental-ircd.
+        # This defaults to off for the best compatibility.
+        use_owner: false
+        use_admin: false
+        use_halfop: false
+
+        # Toggles support of shadowircd/elemental-ircd specific channel modes:
+        # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
+        # +K (no repeat messages), +d (no nick changes), and user modes:
+        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides channel list)
+        use_elemental_modes: false
 
 # Plugins to load (omit the .py extension)
 plugins:

@@ -97,8 +97,6 @@ def sjoinServer(irc, server, channel, users, ts=None):
                     prefixchars += pr
             namelist.append(prefixchars+user)
             uids.append(user)
-            for m in prefixes:
-                changedmodes.append(('+%s' % m, user))
             try:
                 irc.users[user].channels.add(channel)
             except KeyError:  # Not initialized yet?
@@ -237,6 +235,69 @@ def connect(irc):
     ts = irc.start_ts
 
     f = irc.send
+    # Valid keywords (from mostly InspIRCd's named modes):
+    # admin allowinvite autoop ban banexception blockcolor
+    # c_registered exemptchanops filter forward flood halfop history invex
+    # inviteonly joinflood key kicknorejoin limit moderated nickflood
+    # noctcp noextmsg nokick noknock nonick nonotice official-join op
+    # operonly opmoderated owner permanent private redirect regonly
+    # regmoderated secret sslonly stripcolor topiclock voice
+
+    # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
+    chary_cmodes = { # TS6 generic modes:
+                     # Note: charybdis +p has the effect of being both
+                     # noknock AND private. Surprisingly, mapping it twice
+                     # works pretty well: setting +p on a charybdis relay
+                     # server sets +pK on an InspIRCd network.
+                    'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
+                    'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
+                    'secret': 's', 'topiclock': 't',
+                     # charybdis-specific modes:
+                    'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
+                    'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
+                    'c_noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
+                    'g', 'opmoderated': 'z', 'noctcp': 'C',
+                     # charybdis-specific modes provided by EXTENSIONS
+                    'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
+                     # Now, map all the ABCD type modes:
+                    '*A': 'beIq', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
+
+    if irc.serverdata.get('use_owner'):
+        chary_cmodes['owner'] = 'y'
+        irc.prefixmodes['y'] = '~'
+    if irc.serverdata.get('use_admin'):
+        chary_cmodes['admin'] = 'a'
+        irc.prefixmodes['a'] = '!'
+    if irc.serverdata.get('use_halfop'):
+        chary_cmodes['halfop'] = 'h'
+        irc.prefixmodes['h'] = '%'
+
+    irc.cmodes.update(chary_cmodes)
+
+    # Same thing with umodes:
+    # bot callerid cloak deaf_commonchan helpop hidechans hideoper invisible oper regdeaf servprotect showwhois snomask u_registered u_stripcolor wallops
+    chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'u_admin': 'a',
+                    'invisible': 'i', 'oper': 'o', 'wallops': 'w',
+                    'snomask': 's', 'u_noforward': 'Q', 'regdeaf': 'R',
+                    'callerid': 'g', 'chary_operwall': 'z', 'chary_locops':
+                    'l',
+                     # Now, map all the ABCD type modes:
+                     '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzl'}
+    irc.umodes.update(chary_umodes)
+
+    # Toggles support of shadowircd/elemental-ircd specific channel modes:
+    # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
+    # +K (no repeat messages), +d (no nick changes), and user modes:
+    # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides channel list)
+    if irc.serverdata.get('use_elemental_modes'):
+        elemental_cmodes = {'nonotice': 'T', 'hiddenbans': 'u', 'nokick': 'E',
+                            'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd'}
+        irc.cmodes.update(elemental_cmodes)
+        irc.cmodes['*D'] += ''.join(elemental_cmodes.values())
+        elemental_umodes = {'u_noctcp': 'C', 'deaf': 'D', 'bot': 'B', 'u_noinvite': 'V',
+                            'hidechans': 'I'}
+        irc.umodes.update(elemental_umodes)
+        irc.umodes['*D'] += ''.join(elemental_umodes.values())
 
     # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
     f('PASS %s TS 6 %s' % (irc.serverdata["sendpass"], irc.sid))
@@ -318,7 +379,7 @@ def handle_sjoin(irc, servernumeric, command, args):
     log.debug('(%s) handle_sjoin: got userlist %r for %r', irc.name, userlist, channel)
     for userpair in userlist:
         # charybdis sends this in the form "@+UID1, +UID2, UID3, @UID4"
-        r = re.search(r'([%s]*)(.*)' % ''.join(irc.prefixmodes.values()), userpair)
+        r = re.search(r'([^\d]*)(.*)', userpair)
         user = r.group(2)
         modeprefix = r.group(1) or ''
         finalprefix = ''
@@ -455,53 +516,13 @@ def handle_events(irc, data):
             if required_cap not in caps:
                 raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
-        # Valid keywords (from mostly InspIRCd's named modes):
-        # admin allowinvite autoop ban banexception blockcolor
-        # c_registered exemptchanops filter forward flood halfop history invex
-        # inviteonly joinflood key kicknorejoin limit moderated nickflood
-        # noctcp noextmsg nokick noknock nonick nonotice official-join op
-        # operonly opmoderated owner permanent private redirect regonly
-        # regmoderated secret sslonly stripcolor topiclock voice
-
-        # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
-        chary_cmodes = { # TS6 generic modes:
-                         # Note: charybdis +p has the effect of being both
-                         # noknock AND private. Surprisingly, mapping it twice
-                         # works pretty well: setting +p on a charybdis relay
-                         # server sets +pK on an InspIRCd network.
-                        'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
-                        'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
-                        'secret': 's', 'topiclock': 't',
-                         # charybdis-specific modes:
-                         'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
-                         'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
-                         'c_noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                         'g', 'opmoderated': 'z', 'noctcp': 'C',
-                         # charybdis-specific modes provided by EXTENSIONS
-                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
-                         # Now, map all the ABCD type modes:
-                         '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
         if 'EX' in caps:
-            chary_cmodes['banexception'] = 'e'
+            irc.cmodes['banexception'] = 'e'
         if 'IE' in caps:
-            chary_cmodes['invex'] = 'I'
+            irc.cmodes['invex'] = 'I'
         if 'SERVICES' in caps:
-            chary_cmodes['regonly'] = 'r'
+            irc.cmodes['regonly'] = 'r'
 
-        irc.cmodes.update(chary_cmodes)
-
-        # Same thing with umodes:
-        # bot callerid cloak deaf_commonchan helpop hidechans hideoper invisible oper regdeaf servprotect showwhois snomask u_registered u_stripcolor wallops
-        chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'u_admin': 'a',
-                        'invisible': 'i', 'oper': 'o', 'wallops': 'w',
-                        'snomask': 's', 'u_noforward': 'Q', 'regdeaf': 'R',
-                        'callerid': 'g', 'chary_operwall': 'z', 'chary_locops':
-                        'l',
-                         # Now, map all the ABCD type modes:
-                         '*A': '', '*B': '', '*C': '', '*D': 'DSAiowQRglszZ'}
-        irc.umodes.update(chary_umodes)
-        # TODO: support module-created modes like +O, +S, etc.
-        # Does charybdis propagate these? If so, how?
         log.debug('(%s) irc.connected set!', irc.name)
         irc.connected.set()
 
