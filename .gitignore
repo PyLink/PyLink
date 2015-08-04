@@ -1,4 +1,4 @@
-config.yml
+*.yml
 build/
 __pycache__/
 *.py[cod]
@@ -6,4 +6,4 @@ __pycache__/
 *~
 *.save*
 *.db
-pylink.pid
+*.pid

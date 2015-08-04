@@ -2,7 +2,7 @@ import logging
 import sys
 import os
 
-from conf import conf
+from conf import conf, confname
 
 level = conf['bot'].get('loglevel') or 'DEBUG'
 try:
@@ -21,7 +21,7 @@ logging.basicConfig(level=level, format=_format)
 
 # Set log file to $CURDIR/log/pylink
 logformat = logging.Formatter(_format)
-logfile = logging.FileHandler(os.path.join(logdir, 'pylink.log'), mode='w')
+logfile = logging.FileHandler(os.path.join(logdir, '%s.log' % confname), mode='w')
 logfile.setFormatter(logformat)
 
 global log

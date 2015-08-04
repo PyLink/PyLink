@@ -10,8 +10,12 @@ from collections import defaultdict
 
 import utils
 from log import log
+from conf import confname
 
-dbname = "pylinkrelay.db"
+dbname = "pylinkrelay"
+if confname != 'pylink':
+    dbname += '-%s' % confname
+dbname += '.db'
 relayusers = defaultdict(dict)
 
 def relayWhoisHandlers(irc, target):
