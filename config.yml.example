@@ -51,6 +51,10 @@ servers:
         # Separator character (used by relay)
         separator: "/"
 
+        # Sets the max nick length for the network. It is important this is set correctly, or
+        # PyLink might introduce a nick that is too long and cause netsplits!
+        maxnicklen: 30
+
 # Plugins to load (omit the .py extension)
 plugins:
     - commands

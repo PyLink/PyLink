@@ -36,13 +36,11 @@ class Irc():
                        'oper': 'o',
                        '*A': '', '*B': '', '*C': 's', '*D': 'iow'}
 
-        # This nicklen value is only a default, and SHOULD be set by the
-        # protocol module as soon as the relevant capability information is
-        # received from the uplink. Plugins that depend on maxnicklen being
-        # set MUST call "irc.connected.wait()", which blocks until the
-        # capability information is received. This handling of irc.connected
-        # is also dependent on the protocol module.
-        self.maxnicklen = 30
+        # This max nick length starts off as the config value, but may be
+        # overwritten later by the protocol module if such information is
+        # received. Note that only some IRCds (InspIRCd) give us nick length
+        # during link, so it is still required that the config value be set!
+        self.maxnicklen = self.serverdata['maxnicklen']
         self.prefixmodes = {'o': '@', 'v': '+'}
 
         # Uplink SID (filled in by protocol module)
