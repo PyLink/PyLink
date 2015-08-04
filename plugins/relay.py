@@ -150,7 +150,6 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                                         modes=modes, ts=userobj.ts).uid
         remoteirc.users[u].remote = irc.name
     relayusers[(irc.name, user)][remoteirc.name] = u
-    remoteirc.users[u].remote = irc.name
     return u
 
 def getLocalUser(irc, user, targetirc=None):
@@ -399,7 +398,7 @@ def handle_kick(irc, source, command, args):
             real_target = getLocalUser(irc, target, targetirc=remoteirc)
             log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
             if irc.name not in db[relay]['claim'] and not \
-                    any([mode in kicker_modes for mode in ('q', 'a', 'o', 'h')]):
+                    any([mode in kicker_modes for mode in ('y', 'q', 'a', 'o', 'h')]):
                 log.debug('(%s) Relay kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
                 # Home network is not in the channel's claim AND the kicker is not
                 # opped. We won't propograte the kick then.
@@ -408,9 +407,10 @@ def handle_kick(irc, source, command, args):
                 modes = getPrefixModes(remoteirc, irc, remotechan, real_target)
                 # Join the kicked client back with its respective modes.
                 irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, target)])
-                utils.msg(irc, kicker, "This channel is claimed; your kick has "
-                                       "to %s been blocked because you are not "
-                                       "(half)opped." % channel, notice=True)
+                if kicker in irc.users:
+                    utils.msg(irc, kicker, "This channel is claimed; your kick has "
+                                           "to %s been blocked because you are not "
+                                           "(half)opped." % channel, notice=True)
                 return
 
         # Propogate the kick!
