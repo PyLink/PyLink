@@ -104,7 +104,7 @@ def save(irc, source, args):
     """takes no arguments.
 
     Saves the relay database to disk."""
-    if irc.users[source].identified:
+    if utils.isOper(irc, source):
         exportDB()
         utils.msg(irc, source, 'Done.')
     else:
