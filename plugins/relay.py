@@ -632,11 +632,11 @@ def handle_kill(irc, numeric, command, args):
                 log.debug('(%s) relay handle_kill: userpair: %s, %s', irc.name, modes, realuser)
                 client = getRemoteUser(remoteirc, irc, realuser[1])
                 irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, client)])
-                if userdata and numeric in irc.users:
-                    utils.msg(irc, numeric, "Your kill has to %s been blocked "
-                                        "because PyLink does not allow killing"
-                                        " users over the relay at this time." % \
-                                        userdata.nick, notice=True)
+        if userdata and numeric in irc.users:
+            utils.msg(irc, numeric, "Your kill has to %s been blocked "
+                                    "because PyLink does not allow killing"
+                                    " users over the relay at this time." % \
+                                    userdata.nick, notice=True)
     # Target user was local.
     else:
         # IMPORTANT: some IRCds (charybdis) don't send explicit QUIT messages
