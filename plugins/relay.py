@@ -479,9 +479,15 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
     log.debug('(%s) Relay mode: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
     if remotechan is None:
         return
+    rc = remoteirc.channels[remotechan]
+    c = irc.channels[channel]
     if modes is None:
-        modes = irc.channels[channel].modes
-        log.debug('(%s) Relay mode: channel data for %s%s: %s', irc.name, remoteirc.name, remotechan, remoteirc.channels[remotechan])
+        modes = c.modes
+        log.debug('(%s) Relay mode: channel data for %s%s: %s', irc.name, remoteirc.name, remotechan, rc)
+    if c.ts > rc.ts:
+        log.debug('(%s) Relay mode: dropping relaying modes %r to %s%s, since our TS (%s) is greater than theirs (%s)',
+                  irc.name, modes, remoteirc.name, remotechan, c.ts, rc.ts)
+        return
     supported_modes = []
     log.debug('(%s) Relay mode: initial modelist for %s is %s', irc.name, channel, modes)
     for modepair in modes:
@@ -660,6 +666,8 @@ def relayJoins(irc, channel, users, ts, modes):
             # bother spawning it.
             continue
         log.debug('(%s) relayJoins: got %r for users', irc.name, users)
+        ts = irc.channels[channel].ts
+        rts = remoteirc.channels[remotechan].ts
         for user in users.copy():
             if utils.isInternalClient(irc, user) or user not in irc.users:
                 # We don't need to clone PyLink pseudoclients... That's
@@ -678,8 +686,10 @@ def relayJoins(irc, channel, users, ts, modes):
             # Only join users if they aren't already joined. This prevents op floods
             # on charybdis from all the SJOINing.
             if u not in remoteirc.channels[channel].users:
-                ts = irc.channels[channel].ts
-                prefixes = getPrefixModes(irc, remoteirc, channel, user)
+                if ts < rts:
+                    prefixes = getPrefixModes(irc, remoteirc, channel, user)
+                else:
+                    prefixes = ''
                 userpair = (prefixes, u)
                 queued_users.append(userpair)
                 log.debug('(%s) relayJoins: joining %s to %s%s', irc.name, userpair, remoteirc.name, remotechan)

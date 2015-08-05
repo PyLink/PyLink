@@ -367,6 +367,9 @@ def handle_fjoin(irc, servernumeric, command, args):
         log.debug('(%s) Setting channel TS of %s to %s from %s',
                   irc.name, channel, their_ts, our_ts)
         irc.channels[channel].ts = their_ts
+        irc.channels[channel].modes.clear()
+        for p in irc.channels[channel].prefixmodes.values():
+            p.clear()
     modestring = args[2:-1] or args[2]
     parsedmodes = utils.parseModes(irc, channel, modestring)
     utils.applyModes(irc, channel, parsedmodes)
