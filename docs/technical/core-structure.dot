@@ -1,0 +1,6 @@
+digraph G {
+	IRCd -> "Protocol module" -> "PyLink Core" -> "PyLink hooks" -> Plugins;
+	Plugins -> "Protocol module" [label="Communicates via\n*Client/*Server API\ncommands"] [color=navyblue] [fontcolor=navyblue];
+	Plugins -> "PyLink Core" [label="Adds commands &\nhook handlers via\nutils.add_cmd/add_hook"] [color=brown] [fontcolor=brown];
+	"Protocol module" -> IRCd;
+}
