@@ -30,13 +30,6 @@ def relayWhoisHandlers(irc, target):
 utils.whois_handlers.append(relayWhoisHandlers)
 
 def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
-    # Block until we know the IRC network's nick length (after capabilities
-    # are sent)
-    if not hasattr(irc, 'relay_waitFinished'):
-        log.debug('(%s) normalizeNick: waiting for irc.connected', irc.name)
-        irc.connected.wait(1)
-        irc.relay_waitFinished = True
-
     separator = separator or irc.serverdata.get('separator') or "/"
     log.debug('(%s) normalizeNick: using %r as separator.', irc.name, separator)
 
@@ -49,7 +42,7 @@ def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
         separator = separator.replace('/', '|')
         nick = nick.replace('/', '|')
     if nick.startswith(tuple(string.digits)):
-        # On TS6 IRCd-s, nicks that start with 0-9 are only allowed if
+        # On TS6 IRCds, nicks that start with 0-9 are only allowed if
         # they match the UID of the originating server. Otherwise, you'll
         # get nasty protocol violations!
         nick = '_' + nick
@@ -134,7 +127,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
         u = relayusers[(irc.name, user)][remoteirc.name]
     except KeyError:
         userobj = irc.users.get(user)
-        if userobj is None or (not spawnIfMissing) or (not remoteirc.connected):
+        if userobj is None or (not spawnIfMissing) or (not remoteirc.connected.is_set()):
             # The query wasn't actually a valid user, or the network hasn't
             # been connected yet... Oh well!
             return
@@ -241,7 +234,7 @@ def initializeChannel(irc, channel):
             if remoteirc is None:
                 continue
             rc = remoteirc.channels[remotechan]
-            if not (remoteirc.connected and findRemoteChan(remoteirc, irc, remotechan)):
+            if not (remoteirc.connected.is_set() and findRemoteChan(remoteirc, irc, remotechan)):
                 continue  # They aren't connected, don't bother!
             # Join their (remote) users and set their modes.
             relayJoins(remoteirc, remotechan, rc.users,
