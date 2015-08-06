@@ -1,6 +1,27 @@
 digraph G {
-	IRCd -> "Protocol module" -> "PyLink Core" -> "PyLink hooks" -> Plugins;
-	Plugins -> "Protocol module" [label="Communicates via\n*Client/*Server API\ncommands"] [color=navyblue] [fontcolor=navyblue];
-	Plugins -> "PyLink Core" [label="Adds commands &\nhook handlers via\nutils.add_cmd/add_hook"] [color=brown] [fontcolor=brown];
-	"Protocol module" -> IRCd;
+	ratio = 1.3;
+	subgraph cluster_core {
+		label="PyLink Application Structure";
+		style="filled";
+		node [style="filled",color="white"];
+		color="lightblue";
+		subgraph cluster_testsuite {
+			label="Test Suite API";
+			style="filled";
+			node [style="filled",color="white"];
+			color=moccasin;
+			"Dummy protocol\nmodule" -> "Dummy IRC\nobject (FakeIRC)" [color=darkgreen];
+			"Dummy IRC\nobject (FakeIRC)" -> "Dummy protocol\nmodule" [color=darkgreen];
+		}
+
+		"IRC object" -> "Protocol module" -> "PyLink hooks" -> Plugins;
+		"Main program" -> "IRC object" [color=indigo] [label="Spawns 1/net"] [fontcolor=indigo];
+		"Main program" -> "Dummy IRC\nobject (FakeIRC)" [color=darkgreen] [label="(test suite runner)"] [fontcolor=darkgreen];
+	}
+
+	"Protocol module" -> "Remote IRCd" -> "Protocol module";
+	Plugins -> "Protocol module" [label="Communicates \nvia*Client/*Server\nfunctions"] [color=navyblue] [fontcolor=navyblue];
+	Plugins -> "Main program" [label="Registers commands\n& hook handlers"] [color=brown] [fontcolor=brown];
+	"Dummy protocol\nmodule" -> "PyLink hooks" [color=darkgreen];
+
 }
