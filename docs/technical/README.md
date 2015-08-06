@@ -7,7 +7,7 @@ Any documentation here is provided for reference only.
 
 PyLink is a modular, plugin-based IRC PseudoService framework. It uses swappable protocol modules and a hook-based system for calling plugins, which aim, together, to provide a consistent API.
 
-![Diagram of PyLink's core structure](core-structure.png)
+<img src="core-structure.png" width="50%" height="50%">
 
 ### Contents
 
