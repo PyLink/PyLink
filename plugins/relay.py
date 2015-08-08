@@ -401,8 +401,8 @@ def handle_kick(irc, source, command, args):
                 # Join the kicked client back with its respective modes.
                 irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, target)])
                 if kicker in irc.users:
-                    utils.msg(irc, kicker, "This channel is claimed; your kick has "
-                                           "to %s been blocked because you are not "
+                    utils.msg(irc, kicker, "This channel is claimed; your kick to "
+                                           "%s has been blocked because you are not "
                                            "(half)opped." % channel, notice=True)
                 return
 
@@ -626,7 +626,7 @@ def handle_kill(irc, numeric, command, args):
                 client = getRemoteUser(remoteirc, irc, realuser[1])
                 irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, client)])
         if userdata and numeric in irc.users:
-            utils.msg(irc, numeric, "Your kill has to %s been blocked "
+            utils.msg(irc, numeric, "Your kill to %s has been blocked "
                                     "because PyLink does not allow killing"
                                     " users over the relay at this time." % \
                                     userdata.nick, notice=True)
