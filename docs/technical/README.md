@@ -5,10 +5,14 @@ Any documentation here is provided for reference only.
 
 ### Introduction
 
-PyLink is a modular, plugin-based IRC PseudoService framework. It uses swappable protocol modules and a hook-based system for calling plugins, which aim, together, to provide a consistent API.
+PyLink aims to be a modular, plugin-based IRC PseudoService framework. It uses swappable protocol modules and a hook-based system for calling plugins, allowing them to function regardless of the IRCd used.
 
 <img src="core-structure.png" width="50%" height="50%">
 
 ### Contents
 
-TBD.
+- [Writing plugins for PyLink](writing-plugins.md)
+- [PyLink hooks reference](hooks-reference.md)
+- [PyLink protocol module specification](pmodule-spec.md)
+- [Writing tests for PyLink modules](writing-tests.md)
+- [Using PyLink's utils module](using-utils.md)
