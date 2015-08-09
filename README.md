@@ -4,7 +4,7 @@ PyLink is an extensible, plugin-based IRC PseudoService written in Python. It ai
 
 ## Usage
 
-**PyLink is a work in progress and thus may be very unstable**! No warranty is provided if this completely wrecks your network and causes widespread rioting throughout your user base!
+**PyLink is a work in progress and thus may be very unstable**! No warranty is provided if this completely wrecks your network and causes widespread rioting amongst your users!
 
 That said, please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute.
 
@@ -19,6 +19,7 @@ Dependencies currently include:
 
 * InspIRCd 2.0.x - module: `inspircd`
 * charybdis (3.5.x / git master) - module: `ts6`
+* Elemental-IRCd (6.6.x / git master) - module `ts6`
 
 ### Installation
 
