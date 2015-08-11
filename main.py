@@ -130,8 +130,8 @@ class Irc():
             log.debug('(%s) self.pingtimeout: %s', self.name, self.pingtimeout)
             data = self.socket.recv(2048)
             buf += data
-            if self.connected and not data:
-                log.warn('(%s) No data received and self.connected is not set; disconnecting!', self.name)
+            if self.connected.is_set() and not data:
+                log.warn('(%s) No data received and self.connected is set; disconnecting!', self.name)
                 break
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
