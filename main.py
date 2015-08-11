@@ -7,6 +7,7 @@ import time
 import sys
 from collections import defaultdict
 import threading
+import ssl
 
 from log import log
 import conf
@@ -73,13 +74,25 @@ class Irc():
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         while True:
-            log.info("Connecting to network %r on %s:%s", self.name, ip, port)
             self.initVars()
             try:
+                self.socket = socket.socket()
+                self.socket.setblocking(0)
                 # Initial connection timeout is a lot smaller than the timeout after
                 # we've connected; this is intentional.
-                self.socket = socket.create_connection((ip, port), timeout=self.pingfreq)
-                self.socket.setblocking(0)
+                self.socket.settimeout(self.pingfreq)
+
+                if self.serverdata.get('ssl'):
+                    log.info('(%s) Attempting SSL for this connection...', self.name)
+                    certfile = self.serverdata.get('ssl_certfile')
+                    keyfile = self.serverdata.get('ssl_keyfile')
+                    if certfile and keyfile:
+                        self.socket = ssl.wrap_socket(self.socket, certfile=certfile, keyfile=keyfile)
+                    else:
+                        log.warning('(%s) SSL certfile/keyfile was not set correctly. '
+                                    'SSL will be disabled for this connection.', self.name)
+                log.info("Connecting to network %r on %s:%s", self.name, ip, port)
+                self.socket.connect((ip, port))
                 self.socket.settimeout(self.pingtimeout)
                 self.proto.connect(self)
                 self.spawnMain()

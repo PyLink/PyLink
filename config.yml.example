@@ -53,6 +53,12 @@ servers:
         # PyLink might introduce a nick that is too long and cause netsplits!
         maxnicklen: 30
 
+        # Toggles SSL for this network. Defaults to false if not specified, and requires the
+        # ssl_certfile and ssl_keyfile options to work.
+        # ssl: true
+        # ssl_certfile: pylink-cert.pem
+        # ssl_keyfile: pylink-key.pem
+
     ts6net:
         ip: 127.0.0.1
         port: 7000
