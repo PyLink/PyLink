@@ -56,8 +56,13 @@ servers:
         # Toggles SSL for this network. Defaults to false if not specified, and requires the
         # ssl_certfile and ssl_keyfile options to work.
         # ssl: true
+
         # ssl_certfile: pylink-cert.pem
         # ssl_keyfile: pylink-key.pem
+
+        # Optionally, you can set this option to verify the SSL certificate
+        # fingerprint (SHA1) of your uplink.
+        # ssl_fingerprint: "e0fee1adf795c84eec4735f039503eb18d9c35cc"
 
     ts6net:
         ip: 127.0.0.1
