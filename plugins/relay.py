@@ -932,3 +932,9 @@ def linked(irc, source, args):
         else:
             s += '(no relays yet)'
         utils.msg(irc, source, s)
+
+def handle_away(irc, numeric, command, args):
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        remoteirc = utils.networkobjects[netname]
+        remoteirc.proto.awayClient(remoteirc, user, args['text'])
+utils.add_hook(handle_away, 'AWAY')
