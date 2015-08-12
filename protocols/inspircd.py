@@ -80,7 +80,8 @@ def sjoinServer(irc, server, channel, users, ts=None):
     else:
         utils.applyModes(irc, channel, modes)
     '''
-    modes = irc.channels[channel].modes
+    # Strip out list-modes, they shouldn't be ever sent in FJOIN.
+    modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
     uids = []
     changedmodes = []
     namelist = []
