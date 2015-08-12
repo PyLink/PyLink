@@ -109,7 +109,8 @@ def getPrefixModes(irc, remoteirc, channel, user):
     for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
         if pmode in remoteirc.cmodes:  # Mode supported by IRCd
             mlist = irc.channels[channel].prefixmodes[pmode+'s']
-            log.debug('(%s) getPrefixModes: checking if %r is in %r', irc.name, user, mlist)
+            log.debug('(%s) getPrefixModes: checking if %r is in %s list: %r',
+                      irc.name, user, pmode, mlist)
             if user in mlist:
                 modes += remoteirc.cmodes[pmode]
     return modes
@@ -158,11 +159,9 @@ def getLocalUser(irc, user, targetirc=None):
     # First, iterate over everyone!
     remoteuser = None
     for k, v in relayusers.items():
-        log.debug('(%s) getLocalUser: processing %s, %s in relayusers', irc.name, k, v)
         if k[0] == irc.name:
             # We don't need to do anything if the target users is on
             # the same network as us.
-            log.debug('(%s) getLocalUser: skipping %s since the target network matches the source network.', irc.name, k)
             continue
         if v.get(irc.name) == user:
             # If the stored pseudoclient UID for the kicked user on
