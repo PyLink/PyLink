@@ -89,7 +89,17 @@ class Irc():
                     certfile = self.serverdata.get('ssl_certfile')
                     keyfile = self.serverdata.get('ssl_keyfile')
                     if certfile and keyfile:
-                        self.socket = ssl.wrap_socket(self.socket, certfile=certfile, keyfile=keyfile)
+                        try:
+                            self.socket = ssl.wrap_socket(self.socket,
+                                                          certfile=certfile,
+                                                          keyfile=keyfile)
+                        except OSError:
+                             log.exception('(%s) Caught OSError trying to '
+                                           'initialize the SSL connection; '
+                                           'are "ssl_certfile" and '
+                                           '"ssl_keyfile" set correctly?',
+                                           self.name)
+                             checks_ok = False
                     else:
                         log.error('(%s) SSL certfile/keyfile was not set '
                                   'correctly, aborting... ', self.name)
