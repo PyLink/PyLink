@@ -718,9 +718,9 @@ def removeChannel(irc, channel):
                 irc.proto.partClient(irc, user, channel, 'Channel delinked.')
                 # Don't ever quit it either...
                 if user != irc.pseudoclient.uid and not irc.users[user].channels:
-                    irc.proto.quitClient(irc, user, 'Left all shared channels.')
                     remoteuser = getLocalUser(irc, user)
                     del relayusers[remoteuser][irc.name]
+                    irc.proto.quitClient(irc, user, 'Left all shared channels.')
 
 @utils.add_cmd
 def create(irc, source, args):
