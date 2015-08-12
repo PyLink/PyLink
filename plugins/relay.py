@@ -849,7 +849,10 @@ def delink(irc, source, args):
     if entry:
         if entry[0] == irc.name:  # We own this channel.
             if not remotenet:
-                utils.msg(irc, source, "Error: you must select a network to delink, or use the 'destroy' command no remove this relay entirely.")
+                utils.msg(irc, source, "Error: You must select a network to "
+                          "delink, or use the 'destroy' command to remove "
+                          "this relay entirely (it was created on the current "
+                          "network).")
                 return
             else:
                for link in db[entry]['links'].copy():
