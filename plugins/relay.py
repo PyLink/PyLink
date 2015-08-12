@@ -109,7 +109,8 @@ def getPrefixModes(irc, remoteirc, channel, user):
     for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
         if pmode in remoteirc.cmodes:  # Mode supported by IRCd
             mlist = irc.channels[channel].prefixmodes[pmode+'s']
-            log.debug('(%s) getPrefixModes: checking if %r is in %r', irc.name, user, mlist)
+            log.debug('(%s) getPrefixModes: checking if %r is in %s list: %r',
+                      irc.name, user, pmode, mlist)
             if user in mlist:
                 modes += remoteirc.cmodes[pmode]
     return modes
@@ -142,6 +143,9 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                                         host=host, realname=realname,
                                         modes=modes, ts=userobj.ts).uid
         remoteirc.users[u].remote = irc.name
+        away = userobj.away
+        if away:
+            remoteirc.proto.awayClient(remoteirc, u, away)
     relayusers[(irc.name, user)][remoteirc.name] = u
     return u
 
@@ -158,11 +162,9 @@ def getLocalUser(irc, user, targetirc=None):
     # First, iterate over everyone!
     remoteuser = None
     for k, v in relayusers.items():
-        log.debug('(%s) getLocalUser: processing %s, %s in relayusers', irc.name, k, v)
         if k[0] == irc.name:
             # We don't need to do anything if the target users is on
             # the same network as us.
-            log.debug('(%s) getLocalUser: skipping %s since the target network matches the source network.', irc.name, k)
             continue
         if v.get(irc.name) == user:
             # If the stored pseudoclient UID for the kicked user on
@@ -718,9 +720,9 @@ def removeChannel(irc, channel):
                 irc.proto.partClient(irc, user, channel, 'Channel delinked.')
                 # Don't ever quit it either...
                 if user != irc.pseudoclient.uid and not irc.users[user].channels:
-                    irc.proto.quitClient(irc, user, 'Left all shared channels.')
                     remoteuser = getLocalUser(irc, user)
                     del relayusers[remoteuser][irc.name]
+                    irc.proto.quitClient(irc, user, 'Left all shared channels.')
 
 @utils.add_cmd
 def create(irc, source, args):
@@ -847,7 +849,10 @@ def delink(irc, source, args):
     if entry:
         if entry[0] == irc.name:  # We own this channel.
             if not remotenet:
-                utils.msg(irc, source, "Error: you must select a network to delink, or use the 'destroy' command no remove this relay entirely.")
+                utils.msg(irc, source, "Error: You must select a network to "
+                          "delink, or use the 'destroy' command to remove "
+                          "this relay entirely (it was created on the current "
+                          "network).")
                 return
             else:
                for link in db[entry]['links'].copy():
@@ -933,3 +938,9 @@ def linked(irc, source, args):
         else:
             s += '(no relays yet)'
         utils.msg(irc, source, s)
+
+def handle_away(irc, numeric, command, args):
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        remoteirc = utils.networkobjects[netname]
+        remoteirc.proto.awayClient(remoteirc, user, args['text'])
+utils.add_hook(handle_away, 'AWAY')
