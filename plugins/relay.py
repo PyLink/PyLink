@@ -143,6 +143,9 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                                         host=host, realname=realname,
                                         modes=modes, ts=userobj.ts).uid
         remoteirc.users[u].remote = irc.name
+        away = userobj.away
+        if away:
+            remoteirc.proto.awayClient(remoteirc, u, away)
     relayusers[(irc.name, user)][remoteirc.name] = u
     return u
 
