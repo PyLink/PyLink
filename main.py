@@ -20,6 +20,8 @@ class Irc():
 
     def initVars(self):
         # Server, channel, and user indexes to be populated by our protocol module
+        self.connected = threading.Event()
+        self.lastping = time.time()
         self.servers = {self.sid: classes.IrcServer(None, self.serverdata['hostname'], internal=True)}
         self.users = {}
         self.channels = defaultdict(classes.IrcChannel)
@@ -54,7 +56,6 @@ class Irc():
 
     def __init__(self, netname, proto, conf):
         # Initialize some variables
-        self.connected = threading.Event()
         self.name = netname.lower()
         self.conf = conf
         self.serverdata = conf['servers'][netname]
@@ -69,7 +70,6 @@ class Irc():
         self.connection_thread = threading.Thread(target = self.connect)
         self.connection_thread.start()
         self.pingTimer = None
-        self.lastping = time.time()
 
     def connect(self):
         ip = self.serverdata["ip"]
@@ -167,14 +167,15 @@ class Irc():
     def run(self):
         buf = b""
         data = b""
-        while (time.time() - self.lastping) < self.pingtimeout:
-            log.debug('(%s) time_since_last_ping: %s', self.name, (time.time() - self.lastping))
-            log.debug('(%s) self.pingtimeout: %s', self.name, self.pingtimeout)
+        while True:
             data = self.socket.recv(2048)
             buf += data
             if self.connected.is_set() and not data:
-                log.warn('(%s) No data received and self.connected is set; disconnecting!', self.name)
-                break
+                log.warning('(%s) No data received and self.connected is set; disconnecting!', self.name)
+                return
+            elif (time.time() - self.lastping) > self.pingtimeout:
+                log.warning('(%s) Connection timed out.', self.name)
+                return
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
