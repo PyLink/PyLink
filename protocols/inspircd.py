@@ -56,10 +56,11 @@ def joinClient(irc, client, channel):
     if not server:
         log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
         raise LookupError('No such PyLink PseudoClient exists.')
-    # One channel per line here!
+    # Strip out list-modes, they shouldn't be ever sent in FJOIN.
+    modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
     _send(irc, server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
             ts=irc.channels[channel].ts, uid=client, channel=channel,
-            modes=utils.joinModes(irc.channels[channel].modes)))
+            modes=utils.joinModes(modes)))
     irc.channels[channel].users.add(client)
     irc.users[client].channels.add(channel)
 
@@ -74,12 +75,6 @@ def sjoinServer(irc, server, channel, users, ts=None):
         ts = irc.channels[channel].ts
     log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts, 
               time.strftime("%c", time.localtime(ts)))
-    ''' TODO: handle this properly!
-    if modes is None:
-        modes = irc.channels[channel].modes
-    else:
-        utils.applyModes(irc, channel, modes)
-    '''
     # Strip out list-modes, they shouldn't be ever sent in FJOIN.
     modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
     uids = []
