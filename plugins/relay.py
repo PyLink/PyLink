@@ -16,7 +16,9 @@ dbname = "pylinkrelay"
 if confname != 'pylink':
     dbname += '-%s' % confname
 dbname += '.db'
+
 relayusers = defaultdict(dict)
+spawnlocks = defaultdict(threading.Lock)
 
 def relayWhoisHandlers(irc, target):
     user = irc.users[target]
@@ -124,30 +126,31 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             return remoteirc.pseudoclient.uid
     except AttributeError:  # Network hasn't been initialized yet?
         pass
-    try:
-        u = relayusers[(irc.name, user)][remoteirc.name]
-    except KeyError:
-        userobj = irc.users.get(user)
-        if userobj is None or (not spawnIfMissing) or (not remoteirc.connected.is_set()):
-            # The query wasn't actually a valid user, or the network hasn't
-            # been connected yet... Oh well!
-            return
-        nick = normalizeNick(remoteirc, irc.name, userobj.nick)
-        # Truncate idents at 10 characters, because TS6 won't like them otherwise!
-        ident = userobj.ident[:10]
-        # Ditto hostname at 64 chars.
-        host = userobj.host[:64]
-        realname = userobj.realname
-        modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
-        u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
-                                        host=host, realname=realname,
-                                        modes=modes, ts=userobj.ts).uid
-        remoteirc.users[u].remote = irc.name
-        away = userobj.away
-        if away:
-            remoteirc.proto.awayClient(remoteirc, u, away)
-    relayusers[(irc.name, user)][remoteirc.name] = u
-    return u
+    with spawnlocks[irc.name]:
+        try:
+            u = relayusers[(irc.name, user)][remoteirc.name]
+        except KeyError:
+            userobj = irc.users.get(user)
+            if userobj is None or (not spawnIfMissing) or (not remoteirc.connected.is_set()):
+                # The query wasn't actually a valid user, or the network hasn't
+                # been connected yet... Oh well!
+                return
+            nick = normalizeNick(remoteirc, irc.name, userobj.nick)
+            # Truncate idents at 10 characters, because TS6 won't like them otherwise!
+            ident = userobj.ident[:10]
+            # Ditto hostname at 64 chars.
+            host = userobj.host[:64]
+            realname = userobj.realname
+            modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
+            u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
+                                            host=host, realname=realname,
+                                            modes=modes, ts=userobj.ts).uid
+            remoteirc.users[u].remote = irc.name
+            away = userobj.away
+            if away:
+                remoteirc.proto.awayClient(remoteirc, u, away)
+        relayusers[(irc.name, user)][remoteirc.name] = u
+        return u
 
 def getLocalUser(irc, user, targetirc=None):
     """<irc object> <pseudoclient uid> [<target irc object>]
