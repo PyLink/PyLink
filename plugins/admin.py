@@ -208,3 +208,30 @@ def mode(irc, source, args):
     else:
         sourceuid = utils.nickToUid(irc, modesource)
         irc.proto.modeClient(irc, sourceuid, target, parsedmodes)
+
+@utils.add_cmd
+def msg(irc, source, args):
+    """<source> <target> <text>
+
+    Admin-only. Sends message <text> from <source>, where <source> is the nick of a PyLink client."""
+    checkauthenticated(irc, source)
+    try:
+        msgsource, target, text = args[0], args[1], ' '.join(args[2:])
+    except IndexError:
+        utils.msg(irc, source, 'Error: not enough arguments. Needs 3: source nick, target, text.')
+        return
+    sourceuid = utils.nickToUid(irc, msgsource)
+    if not sourceuid:
+        utils.msg(irc, source, 'Error: unknown user %r' % msgsource)
+        return
+    if not utils.isChannel(target):
+        real_target = utils.nickToUid(irc, target)
+        if real_target is None:
+            utils.msg(irc, source, 'Error: unknown user %r' % target)
+            return
+    else:
+        real_target = target
+    if not text:
+        utils.msg(irc, source, 'Error: no text given.')
+        return
+    irc.proto.messageClient(irc, sourceuid, real_target, text)
