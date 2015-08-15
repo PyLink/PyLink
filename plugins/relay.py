@@ -293,6 +293,9 @@ utils.add_hook(handle_nick, 'NICK')
 def handle_part(irc, numeric, command, args):
     channels = args['channels']
     text = args['text']
+    # Don't allow the PyLink client PARTing to be relayed.
+    if numeric == irc.pseudoclient.uid:
+        return
     for channel in channels:
         for netname, user in relayusers[(irc.name, numeric)].copy().items():
             remoteirc = utils.networkobjects[netname]
@@ -370,7 +373,8 @@ def handle_kick(irc, source, command, args):
     kicker = source
     kicker_modes = getPrefixModes(irc, irc, channel, kicker)
     relay = findRelay((irc.name, channel))
-    if relay is None:
+    # Don't allow kicks to the PyLink client to be relayed.
+    if relay is None or target == irc.pseudoclient.uid:
         return
     for name, remoteirc in utils.networkobjects.items():
         if irc.name == name or not remoteirc.connected.is_set():
