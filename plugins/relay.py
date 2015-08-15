@@ -61,7 +61,7 @@ def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
     nick += suffix
     # FIXME: factorize
     while utils.nickToUid(irc, nick) or utils.nickToUid(irc, oldnick) and not \
-            utils.isInternalClient(irc, utils.nickToUid(irc, nick)):
+            isRelayClient(irc, utils.nickToUid(irc, nick)):
         # The nick we want exists? Darn, create another one then, but only if
         # the target isn't an internal client!
         # Increase the separator length by 1 if the user was already tagged,
@@ -381,7 +381,7 @@ def handle_kick(irc, source, command, args):
             continue
         real_kicker = getRemoteUser(irc, remoteirc, kicker, spawnIfMissing=False)
         log.debug('(%s) Relay kick: real kicker for %s on %s is %s', irc.name, kicker, name, real_kicker)
-        if not utils.isInternalClient(irc, target):
+        if not isRelayClient(irc, target):
             log.debug('(%s) Relay kick: target %s is NOT an internal client', irc.name, target)
             # Both the target and kicker are external clients; i.e.
             # they originate from the same network. We won't have
@@ -431,7 +431,7 @@ def handle_kick(irc, source, command, args):
             remoteirc.proto.kickServer(remoteirc, remoteirc.sid,
                                        remotechan, real_target, text)
 
-    if target != irc.pseudoclient.uid and not irc.users[target].channels:
+    if isRelayClient(irc, target) and not irc.users[target].channels:
         irc.proto.quitClient(irc, target, 'Left all shared channels.')
         remoteuser = getLocalUser(irc, target)
         del relayusers[remoteuser][irc.name]
@@ -646,6 +646,16 @@ def handle_kill(irc, numeric, command, args):
 
 utils.add_hook(handle_kill, 'KILL')
 
+def isRelayClient(irc, user):
+    try:
+        if irc.users[user].remote:
+            # Is the .remote attribute set? If so, don't relay already
+            # relayed clients; that'll trigger an endless loop!
+            return True
+    except (KeyError, AttributeError):  # Nope, it isn't.
+        pass
+    return False
+
 def relayJoins(irc, channel, users, ts, modes):
     for name, remoteirc in utils.networkobjects.items():
         queued_users = []
@@ -659,13 +669,10 @@ def relayJoins(irc, channel, users, ts, modes):
             continue
         log.debug('(%s) relayJoins: got %r for users', irc.name, users)
         for user in users.copy():
-            try:
-                if irc.users[user].remote:
-                    # Is the .remote attribute set? If so, don't relay already
-                    # relayed clients; that'll trigger an endless loop!
-                    continue
-            except AttributeError:  # Nope, it isn't.
-                pass
+            if isRelayClient(irc, user):
+                # Don't clone relay clients; that'll cause some bad, bad
+                # things to happen.
+                return
             log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
             assert user in irc.users, "(%s) How is this possible? %r isn't in our user database." % (irc.name, user)
             u = getRemoteUser(irc, remoteirc, user)
@@ -697,7 +704,7 @@ def relayPart(irc, channel, user):
         if remotechan is None or remoteuser is None:
             continue
         remoteirc.proto.partClient(remoteirc, remoteuser, remotechan, 'Channel delinked.')
-        if not remoteirc.users[remoteuser].channels:
+        if isRelayClient(remoteirc, remoteuser) and not remoteirc.users[remoteuser].channels:
             remoteirc.proto.quitClient(remoteirc, remoteuser, 'Left all shared channels.')
             del relayusers[(irc.name, user)][remoteirc.name]
 
@@ -709,7 +716,7 @@ def removeChannel(irc, channel):
     relay = findRelay((irc.name, channel))
     if relay:
         for user in irc.channels[channel].users.copy():
-            if not utils.isInternalClient(irc, user):
+            if not isRelayClient(irc, user):
                 relayPart(irc, channel, user)
             # Don't ever part the main client from any of its autojoin channels.
             else:
@@ -904,7 +911,7 @@ def handle_save(irc, numeric, command, args):
     realuser = getLocalUser(irc, target)
     log.debug('(%s) relay handle_save: %r got in a nick collision! Real user: %r',
                   irc.name, target, realuser)
-    if utils.isInternalClient(irc, target) and realuser:
+    if isRelayClient(irc, target) and realuser:
         # Nick collision!
         # It's one of our relay clients; try to fix our nick to the next
         # available normalized nick.
