@@ -311,57 +311,51 @@ def handle_privmsg(irc, numeric, command, args):
     text = args['text']
     if target == irc.pseudoclient.uid:
         return
-    sent = 0
     relay = findRelay((irc.name, target))
-    # Don't send any "you must be in common channels" if we're not part
-    # of a relay, or we are but there are no links!
-    remoteusers = relayusers[(irc.name, numeric)].items()
-    '''
-    if utils.isChannel(target) and ((relay and not db[relay]['links']) or \
-            relay is None):
+    remoteusers = relayusers[(irc.name, numeric)]
+    if utils.isChannel(target) and relay and numeric not in irc.channels[target].users:
+        # The sender must be in the target channel to send messages over the relay;
+        # it's the only way we can make sure they have a spawned client on ALL
+        # of the linked networks. This affects -n channels too; see
+        # https://github.com/GLolol/PyLink/issues/91 for an explanation of why.
+        utils.msg(irc, numeric, 'Error: You must be in %r in order to send '
+                  'messages over the relay.' % target, notice=True)
         return
-    '''
-    if not remoteusers:
-        return
-    for netname, user in relayusers[(irc.name, numeric)].items():
-        remoteirc = utils.networkobjects[netname]
-        # HACK: Don't break on sending to @#channel or similar.
-        try:
+    if utils.isChannel(target):
+        for netname, user in relayusers[(irc.name, numeric)].items():
+            remoteirc = utils.networkobjects[netname]
+            # HACK: Don't break on sending to @#channel or similar.
             prefix, target = target.split('#', 1)
-        except ValueError:
-            prefix = ''
-        else:
             target = '#' + target
-        if utils.isChannel(target):
             log.debug('(%s) relay privmsg: prefix is %r, target is %r', irc.name, prefix, target)
             real_target = findRemoteChan(irc, remoteirc, target)
             if not real_target:
                 continue
             real_target = prefix + real_target
-        else:
-            remoteuser = getLocalUser(irc, target)
-            if remoteuser is None:
-                continue
-            real_target = remoteuser[1]
+            if notice:
+                remoteirc.proto.noticeClient(remoteirc, user, real_target, text)
+            else:
+                remoteirc.proto.messageClient(remoteirc, user, real_target, text)
+    else:
+        remoteuser = getLocalUser(irc, target)
+        if remoteuser is None:
+            return
+        homenet, real_target = remoteuser
+        # For PMs, we must be on a common channel with the target.
+        # Otherwise, the sender doesn't have a client representing them
+        # on the remote network, and we won't have anything to send our
+        # messages from.
+        if homenet not in remoteusers.keys():
+            utils.msg(irc, numeric, 'Error: you must be in a common channel '
+                      'with %r in order to send messages.' % \
+                      irc.users[target].nick, notice=True)
+            return
+        remoteirc = utils.networkobjects[homenet]
+        user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
         if notice:
             remoteirc.proto.noticeClient(remoteirc, user, real_target, text)
         else:
             remoteirc.proto.messageClient(remoteirc, user, real_target, text)
-        sent += 1
-    '''
-    if not sent:
-        # We must be on a common channel with the target. Otherwise, the sender
-        # doesn't have a client representing them on the remote network,
-        # and we won't have anywhere to send our messages from.
-        # In this case, we've iterated over all networks where the sender
-        # has pseudoclients, and found no suitable targets to send to.
-        if target in irc.users:
-            target_s = 'a common channel with %r' % irc.users[target].nick
-        else:
-            target_s = repr(target)
-        utils.msg(irc, numeric, 'Error: You must be in %s in order to send messages.' % \
-                                target_s, notice=True)
-    '''
 utils.add_hook(handle_privmsg, 'PRIVMSG')
 utils.add_hook(handle_privmsg, 'NOTICE')
 
