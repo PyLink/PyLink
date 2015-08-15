@@ -389,7 +389,7 @@ def handle_kick(irc, source, command, args):
             # they originate from the same network. We won't have
             # to filter this; the uplink IRCd will handle it appropriately,
             # and we'll just follow.
-            real_target = getRemoteUser(irc, remoteirc, target)
+            real_target = getRemoteUser(irc, remoteirc, target, spawnIfMissing=False)
             log.debug('(%s) Relay kick: real target for %s is %s', irc.name, target, real_target)
         else:
             log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
@@ -431,10 +431,10 @@ def handle_kick(irc, source, command, args):
             remoteirc.proto.kickServer(remoteirc, remoteirc.sid,
                                        remotechan, real_target, text)
 
-        if target != irc.pseudoclient.uid and not irc.users[target].channels:
-            irc.proto.quitClient(irc, target, 'Left all shared channels.')
-            remoteuser = getLocalUser(irc, target)
-            del relayusers[remoteuser][irc.name]
+    if target != irc.pseudoclient.uid and not irc.users[target].channels:
+        irc.proto.quitClient(irc, target, 'Left all shared channels.')
+        remoteuser = getLocalUser(irc, target)
+        del relayusers[remoteuser][irc.name]
 
 utils.add_hook(handle_kick, 'KICK')
 
