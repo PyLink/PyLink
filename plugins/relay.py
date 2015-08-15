@@ -313,6 +313,14 @@ def handle_privmsg(irc, numeric, command, args):
         return
     relay = findRelay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
+    # HACK: Don't break on sending to @#channel or similar.
+    try:
+        prefix, target = target.split('#', 1)
+    except ValueError:
+        prefix = ''
+    else:
+        target = '#' + target
+    log.debug('(%s) relay privmsg: prefix is %r, target is %r', irc.name, prefix, target)
     if utils.isChannel(target) and relay and numeric not in irc.channels[target].users:
         # The sender must be in the target channel to send messages over the relay;
         # it's the only way we can make sure they have a spawned client on ALL
@@ -324,10 +332,6 @@ def handle_privmsg(irc, numeric, command, args):
     if utils.isChannel(target):
         for netname, user in relayusers[(irc.name, numeric)].items():
             remoteirc = utils.networkobjects[netname]
-            # HACK: Don't break on sending to @#channel or similar.
-            prefix, target = target.split('#', 1)
-            target = '#' + target
-            log.debug('(%s) relay privmsg: prefix is %r, target is %r', irc.name, prefix, target)
             real_target = findRemoteChan(irc, remoteirc, target)
             if not real_target:
                 continue
