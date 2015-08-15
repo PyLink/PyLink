@@ -186,7 +186,7 @@ def showchan(irc, source, args):
 def mode(irc, source, args):
     """<source> <target> <modes>
 
-    Admin-only. Sets modes <modes> on <target> from <source>, where <source> is the nick of a PyLink client."""
+    Admin-only. Sets modes <modes> on <target> from <source>, where <source> is either the nick of a PyLink client, or the SID of a PyLink server."""
     checkauthenticated(irc, source)
     try:
         modesource, target, modes = args[0], args[1], args[2:]
