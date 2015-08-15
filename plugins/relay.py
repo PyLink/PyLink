@@ -675,7 +675,7 @@ def relayJoins(irc, channel, users, ts, modes):
             u = getRemoteUser(irc, remoteirc, user)
             # Only join users if they aren't already joined. This prevents op floods
             # on charybdis from all the SJOINing.
-            if u not in remoteirc.channels[channel].users:
+            if u not in remoteirc.channels[remotechan].users:
                 ts = irc.channels[channel].ts
                 prefixes = getPrefixModes(irc, remoteirc, channel, user)
                 userpair = (prefixes, u)
