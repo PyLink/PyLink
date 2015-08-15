@@ -409,6 +409,8 @@ def handle_kick(irc, source, command, args):
                                            "(half)opped." % channel, notice=True)
                 return
 
+        if not real_target:
+            return
         # Propogate the kick!
         if real_kicker:
             log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan,real_kicker, kicker, irc.name)
