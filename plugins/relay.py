@@ -657,10 +657,6 @@ def relayJoins(irc, channel, users, ts, modes):
             continue
         log.debug('(%s) relayJoins: got %r for users', irc.name, users)
         for user in users.copy():
-            if utils.isInternalClient(irc, user) or user not in irc.users:
-                # We don't need to clone PyLink pseudoclients... That's
-                # meaningless.
-                continue
             try:
                 if irc.users[user].remote:
                     # Is the .remote attribute set? If so, don't relay already
