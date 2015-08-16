@@ -247,6 +247,8 @@ def topicClient(irc, numeric, target, text):
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'TOPIC %s :%s' % (target, text))
+    irc.channels[target].topic = text
+    irc.channels[target].topicset = True
 
 def topicServer(irc, numeric, target, text):
     if not utils.isInternalServer(irc, numeric):
@@ -254,6 +256,8 @@ def topicServer(irc, numeric, target, text):
     ts = int(time.time())
     servername = irc.servers[numeric].name
     _send(irc, numeric, 'FTOPIC %s %s %s :%s' % (target, ts, servername, text))
+    irc.channels[target].topic = text
+    irc.channels[target].topicset = True
 
 def inviteClient(irc, numeric, target, channel):
     """<irc object> <client numeric> <text>

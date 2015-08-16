@@ -194,6 +194,8 @@ def topicServer(irc, numeric, target, text):
     ts = irc.channels[target].ts
     servername = irc.servers[numeric].name
     _send(irc, numeric, 'TB %s %s %s :%s' % (target, ts, servername, text))
+    irc.channels[target].topic = text
+    irc.channels[target].topicset = True
 
 def inviteClient(irc, numeric, target, channel):
     """<irc object> <client numeric> <text>
