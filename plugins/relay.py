@@ -665,7 +665,7 @@ def relayJoins(irc, channel, users, ts, modes):
             if isRelayClient(irc, user):
                 # Don't clone relay clients; that'll cause some bad, bad
                 # things to happen.
-                return
+                continue
             log.debug('Okay, spawning %s/%s everywhere', user, irc.name)
             assert user in irc.users, "(%s) How is this possible? %r isn't in our user database." % (irc.name, user)
             u = getRemoteUser(irc, remoteirc, user)
