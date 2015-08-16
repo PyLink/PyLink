@@ -241,7 +241,10 @@ def applyModes(irc, target, changedmodes):
     log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
     for mode in changedmodes:
         # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
-        real_mode = (mode[0][1], mode[1])
+        try:
+            real_mode = (mode[0][1], mode[1])
+        except IndexError:
+            real_mode = mode
         if not usermodes:
             pmode = ''
             for m in ('owner', 'admin', 'op', 'halfop', 'voice'):
