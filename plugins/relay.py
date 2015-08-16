@@ -145,7 +145,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
                                             host=host, realname=realname,
                                             modes=modes, ts=userobj.ts).uid
-            remoteirc.users[u].remote = irc.name
+            remoteirc.users[u].remote = (irc.name, user)
             away = userobj.away
             if away:
                 remoteirc.proto.awayClient(remoteirc, u, away)
@@ -163,21 +163,10 @@ def getLocalUser(irc, user, targetirc=None):
     representing the original user on the target network, similar to what
     getRemoteUser() does."""
     # First, iterate over everyone!
-    remoteuser = None
-    for k, v in relayusers.items():
-        if k[0] == irc.name:
-            # We don't need to do anything if the target users is on
-            # the same network as us.
-            continue
-        if v.get(irc.name) == user:
-            # If the stored pseudoclient UID for the kicked user on
-            # this network matches the target we have, set that user
-            # as the one we're kicking! It's a handful, but remember
-            # we're mapping (home network, UID) pairs to their
-            # respective relay pseudoclients on other networks.
-            remoteuser = k
-            log.debug('(%s) getLocalUser: found %s to correspond to %s.', irc.name, v, k)
-            break
+    try:
+        remoteuser = irc.users[user].remote
+    except (AttributeError, KeyError):
+        remoteuser = None
     log.debug('(%s) getLocalUser: remoteuser set to %r (looking up %s/%s).', irc.name, remoteuser, user, irc.name)
     if remoteuser:
         # If targetirc is given, we'll return simply the UID of the user on the
@@ -436,9 +425,9 @@ def handle_kick(irc, source, command, args):
                                        remotechan, real_target, text)
 
     if isRelayClient(irc, target) and not irc.users[target].channels:
-        irc.proto.quitClient(irc, target, 'Left all shared channels.')
         remoteuser = getLocalUser(irc, target)
         del relayusers[remoteuser][irc.name]
+        irc.proto.quitClient(irc, target, 'Left all shared channels.')
 
 utils.add_hook(handle_kick, 'KICK')
 
