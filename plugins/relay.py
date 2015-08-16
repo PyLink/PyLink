@@ -233,11 +233,11 @@ def initializeChannel(irc, channel):
             # Join their (remote) users and set their modes.
             relayJoins(remoteirc, remotechan, rc.users,
                        rc.ts, rc.modes)
-            relayModes(irc, remoteirc, irc.sid, channel)
-            topic = remoteirc.channels[relay[1]].topic
+            # relayModes(irc, remoteirc, irc.sid, channel)
+            topic = remoteirc.channels[remotechan].topic
             # Only update the topic if it's different from what we already have,
             # and topic bursting is complete.
-            if remoteirc.channels[channel].topicset and topic != irc.channels[channel].topic:
+            if remoteirc.channels[remotechan].topicset and topic != irc.channels[channel].topic:
                 irc.proto.topicServer(irc, irc.sid, channel, topic)
 
         log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
