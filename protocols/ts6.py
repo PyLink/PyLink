@@ -230,6 +230,16 @@ def pingServer(irc, source=None, target=None):
 def numericServer(irc, source, numeric, target, text):
     _send(irc, source, '%s %s %s' % (numeric, target, text))
 
+def awayClient(irc, source, text):
+    """<irc object> <numeric> <text>
+
+    Sends an AWAY message with text <text> from PyLink client <numeric>.
+    <text> can be an empty string to unset AWAY status."""
+    if text:
+        _send(irc, source, 'AWAY :%s' % text)
+    else:
+        _send(irc, source, 'AWAY')
+
 def connect(irc):
     ts = irc.start_ts
 
@@ -651,3 +661,13 @@ def handle_472(irc, numeric, command, args):
                     ' desyncs, try adding the line "loadmodule "extensions/%s.so";" to '
                     'your IRCd configuration.', irc.name, setter, badmode,
                     charlist[badmode])
+
+def handle_away(irc, numeric, command, args):
+    # <- :6ELAAAAAB AWAY :Auto-away
+
+    try:
+        irc.users[numeric].away = text = args[0]
+    except IndexError:  # User is unsetting away status
+        irc.users[numeric].away = text = ''
+    return {'text': text}
+
