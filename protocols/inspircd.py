@@ -71,9 +71,16 @@ def sjoinServer(irc, server, channel, users, ts=None):
     log.debug('(%s) sjoinServer: got %r for users', irc.name, users)
     if not server:
         raise LookupError('No such PyLink PseudoClient exists.')
-    if ts is None:
-        ts = irc.channels[channel].ts
-    log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts, 
+    orig_ts = irc.channels[channel].ts
+    ts = ts or orig_ts
+    if ts < orig_ts:
+        log.debug('(%s) sjoinServer: resetting TS of %r from %s to %s (clearing modes)',
+                  irc.name, channel, orig_ts, ts)
+        irc.channels[channel].ts = ts
+        irc.channels[channel].modes.clear()
+        for p in irc.channels[channel].prefixmodes.values():
+            p.clear()
+    log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts,
               time.strftime("%c", time.localtime(ts)))
     # Strip out list-modes, they shouldn't be ever sent in FJOIN.
     modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
