@@ -89,6 +89,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
     log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts,
               time.strftime("%c", time.localtime(ts)))
     modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
+    changedmodes = []
     while users[:10]:
         uids = []
         namelist = []
@@ -101,6 +102,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
                 pr = irc.prefixmodes.get(prefix)
                 if pr:
                     prefixchars += pr
+                    changedmodes.append(('+%s' % prefix, user))
             namelist.append(prefixchars+user)
             uids.append(user)
             try:
@@ -113,7 +115,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
                 ts=ts, users=namelist, channel=channel,
                 modes=utils.joinModes(modes)))
         irc.channels[channel].users.update(uids)
-    utils.applyModes(irc, channel, modes)
+    utils.applyModes(irc, channel, changedmodes)
 
 def _sendModes(irc, numeric, target, modes, ts=None):
     utils.applyModes(irc, target, modes)
