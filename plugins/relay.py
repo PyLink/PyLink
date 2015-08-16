@@ -215,6 +215,11 @@ def initializeChannel(irc, channel):
     log.debug('(%s) initializeChannel: relay pair found to be %s', irc.name, relay)
     queued_users = []
     if relay:
+        # Send our users and channel modes to the other nets
+        log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
+        relayJoins(irc, channel, c.users, c.ts)
+        irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
+
         all_links = db[relay]['links'].copy()
         all_links.update((relay,))
         log.debug('(%s) initializeChannel: all_links: %s', irc.name, all_links)
@@ -231,29 +236,23 @@ def initializeChannel(irc, channel):
             if not (remoteirc.connected.is_set() and findRemoteChan(remoteirc, irc, remotechan)):
                 continue  # They aren't connected, don't bother!
             # Join their (remote) users and set their modes.
-            relayJoins(remoteirc, remotechan, rc.users,
-                       rc.ts, rc.modes)
-            # relayModes(irc, remoteirc, irc.sid, channel)
+            relayJoins(remoteirc, remotechan, rc.users, rc.ts)
+            relayModes(remoteirc, irc, remoteirc.sid, remotechan, rc.modes)
+            relayModes(irc, remoteirc, irc.sid, channel, modes)
             topic = remoteirc.channels[remotechan].topic
             # Only update the topic if it's different from what we already have,
             # and topic bursting is complete.
             if remoteirc.channels[remotechan].topicset and topic != irc.channels[channel].topic:
                 irc.proto.topicServer(irc, irc.sid, channel, topic)
 
-        log.debug('(%s) initializeChannel: joining our users: %s', irc.name, c.users)
-        # After that's done, we'll send our users to them.
-        relayJoins(irc, channel, c.users, c.ts, c.modes)
-        irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
-
 def handle_join(irc, numeric, command, args):
     channel = args['channel']
     if not findRelay((irc.name, channel)):
         # No relay here, return.
         return
-    modes = args['modes']
     ts = args['ts']
     users = set(args['users'])
-    relayJoins(irc, channel, users, ts, modes)
+    relayJoins(irc, channel, users, ts)
 utils.add_hook(handle_join, 'JOIN')
 
 def handle_quit(irc, numeric, command, args):
@@ -633,7 +632,7 @@ def handle_kill(irc, numeric, command, args):
 
 utils.add_hook(handle_kill, 'KILL')
 
-def relayJoins(irc, channel, users, ts, modes):
+def relayJoins(irc, channel, users, ts):
     for name, remoteirc in utils.networkobjects.items():
         queued_users = []
         if name == irc.name or not remoteirc.connected.is_set():
@@ -673,7 +672,6 @@ def relayJoins(irc, channel, users, ts, modes):
                           u, remoteirc.name, remotechan)
         if queued_users:
             remoteirc.proto.sjoinServer(remoteirc, remoteirc.sid, remotechan, queued_users, ts=ts)
-        relayModes(irc, remoteirc, irc.sid, channel, modes)
 
 def relayPart(irc, channel, user):
     for name, remoteirc in utils.networkobjects.items():
