@@ -378,8 +378,9 @@ def handle_part(irc, source, command, args):
             reason = args[1]
         except IndexError:
             reason = ''
+        if not (irc.channels[channel].users or ((irc.cmodes.get('permanent'), None) in irc.channels[channel].modes)):
+            del irc.channels[channel]
     return {'channels': channels, 'text': reason}
-
 
 def handle_sjoin(irc, servernumeric, command, args):
     # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist

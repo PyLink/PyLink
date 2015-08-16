@@ -122,8 +122,12 @@ def removeClient(irc, numeric):
 
     Removes a client from our internal databases, regardless
     of whether it's one of our pseudoclients or not."""
-    for v in irc.channels.values():
+    for c, v in irc.channels.copy().items():
         v.removeuser(numeric)
+        # Clear empty non-permanent channels.
+        if not (irc.channels[c].users or ((irc.cmodes.get('permanent'), None) in irc.channels[c].modes)):
+            del irc.channels[c]
+
     sid = numeric[:3]
     log.debug('Removing client %s from irc.users', numeric)
     del irc.users[numeric]
@@ -366,6 +370,9 @@ def handle_part(irc, source, command, args):
             reason = args[1]
         except IndexError:
             reason = ''
+        # Clear empty non-permanent channels.
+        if not (irc.channels[channel].users or ((irc.cmodes.get('permanent'), None) in irc.channels[channel].modes)):
+            del irc.channels[channel]
     return {'channels': channels, 'text': reason}
 
 def handle_error(irc, numeric, command, args):
