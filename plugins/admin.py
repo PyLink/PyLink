@@ -62,6 +62,7 @@ def quit(irc, source, args):
     u = utils.nickToUid(irc, nick)
     quitmsg =  ' '.join(args[1:]) or 'Client quit'
     irc.proto.quitClient(irc, u, quitmsg)
+    irc.callHooks([u, 'PYLINK_ADMIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
 def joinclient(irc, source, args):
     """<target> <channel1>,[<channel2>], etc.
@@ -82,6 +83,9 @@ def joinclient(irc, source, args):
             utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
             return
         irc.proto.joinClient(irc, u, channel)
+        irc.callHooks([u, 'PYLINK_ADMIN_JOIN', {'channel': channel, 'users': [u],
+                                                'modes': irc.channels[channel].modes,
+                                                'parse_as': 'JOIN'}])
 utils.add_cmd(joinclient, name='join')
 
 @utils.add_cmd
@@ -103,6 +107,7 @@ def nick(irc, source, args):
         utils.msg(irc, source, 'Error: Invalid nickname %r.' % newnick)
         return
     irc.proto.nickClient(irc, u, newnick)
+    irc.callHooks([u, 'PYLINK_ADMIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
 @utils.add_cmd
 def part(irc, source, args):
@@ -123,6 +128,7 @@ def part(irc, source, args):
             utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
             return
         irc.proto.partClient(irc, u, channel, reason)
+    irc.callHooks([u, 'PYLINK_ADMIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
 @utils.add_cmd
 def kick(irc, source, args):
@@ -144,6 +150,7 @@ def kick(irc, source, args):
         utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
         return
     irc.proto.kickClient(irc, u, channel, targetu, reason)
+    irc.callHooks([u, 'PYLINK_ADMIN_KICK', {'channel': channel, 'target': targetu, 'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
 def showuser(irc, source, args):
@@ -205,9 +212,11 @@ def mode(irc, source, args):
         return
     if utils.isInternalServer(irc, modesource):
         irc.proto.modeServer(irc, modesource, target, parsedmodes)
+        irc.callHooks([modesource, 'PYLINK_ADMIN_MODE', {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
     else:
         sourceuid = utils.nickToUid(irc, modesource)
         irc.proto.modeClient(irc, sourceuid, target, parsedmodes)
+        irc.callHooks([sourceuid, 'PYLINK_ADMIN_MODE', {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
 
 @utils.add_cmd
 def msg(irc, source, args):
@@ -235,3 +244,4 @@ def msg(irc, source, args):
         utils.msg(irc, source, 'Error: no text given.')
         return
     irc.proto.messageClient(irc, sourceuid, real_target, text)
+    irc.callHooks([sourceuid, 'PYLINK_ADMIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
