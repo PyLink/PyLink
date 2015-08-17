@@ -77,8 +77,15 @@ def sjoinServer(irc, server, channel, users, ts=None):
     log.debug('(%s) sjoinServer: got %r for users', irc.name, users)
     if not server:
         raise LookupError('No such PyLink PseudoClient exists.')
-    if ts is None:
-        ts = irc.channels[channel].ts
+    orig_ts = irc.channels[channel].ts
+    ts = ts or orig_ts
+    if ts < orig_ts:
+        log.debug('(%s) sjoinServer: resetting TS of %r from %s to %s (clearing modes)',
+                  irc.name, channel, orig_ts, ts)
+        irc.channels[channel].ts = ts
+        irc.channels[channel].modes.clear()
+        for p in irc.channels[channel].prefixmodes.values():
+            p.clear()
     log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts,
               time.strftime("%c", time.localtime(ts)))
     modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
@@ -95,6 +102,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
                 pr = irc.prefixmodes.get(prefix)
                 if pr:
                     prefixchars += pr
+                    changedmodes.append(('+%s' % prefix, user))
             namelist.append(prefixchars+user)
             uids.append(user)
             try:
@@ -186,6 +194,8 @@ def topicServer(irc, numeric, target, text):
     ts = irc.channels[target].ts
     servername = irc.servers[numeric].name
     _send(irc, numeric, 'TB %s %s %s :%s' % (target, ts, servername, text))
+    irc.channels[target].topic = text
+    irc.channels[target].topicset = True
 
 def inviteClient(irc, numeric, target, channel):
     """<irc object> <client numeric> <text>
@@ -368,8 +378,9 @@ def handle_part(irc, source, command, args):
             reason = args[1]
         except IndexError:
             reason = ''
+        if not (irc.channels[channel].users or ((irc.cmodes.get('permanent'), None) in irc.channels[channel].modes)):
+            del irc.channels[channel]
     return {'channels': channels, 'text': reason}
-
 
 def handle_sjoin(irc, servernumeric, command, args):
     # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
@@ -382,6 +393,9 @@ def handle_sjoin(irc, servernumeric, command, args):
         log.debug('(%s) Setting channel TS of %s to %s from %s',
                   irc.name, channel, their_ts, our_ts)
         irc.channels[channel].ts = their_ts
+        irc.channels[channel].modes.clear()
+        for p in irc.channels[channel].prefixmodes.values():
+            p.clear()
     modestring = args[2:-1] or args[2]
     parsedmodes = utils.parseModes(irc, channel, modestring)
     utils.applyModes(irc, channel, parsedmodes)
