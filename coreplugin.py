@@ -20,7 +20,8 @@ utils.add_hook(handle_kick, 'KICK')
 # Handle commands sent to the PyLink client (PRIVMSG)
 def handle_commands(irc, source, command, args):
     if args['target'] == irc.pseudoclient.uid:
-        cmd_args = args['text'].split(' ')
+        text = args['text'].strip()
+        cmd_args = text.split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         try:
