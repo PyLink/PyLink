@@ -601,7 +601,7 @@ utils.add_hook(handle_topic, 'TOPIC')
 def handle_kill(irc, numeric, command, args):
     target = args['target']
     userdata = args['userdata']
-    realuser = getLocalUser(irc, target)
+    realuser = getLocalUser(irc, target) or userdata.__dict__.get('remote')
     log.debug('(%s) relay handle_kill: realuser is %r', irc.name, realuser)
     # Target user was remote:
     if realuser and realuser[0] != irc.name:
