@@ -396,7 +396,7 @@ def handle_kick(irc, source, command, args):
                 # kick ops, admins can't kick owners, etc.
                 modes = getPrefixModes(remoteirc, irc, remotechan, real_target)
                 # Join the kicked client back with its respective modes.
-                irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, target)])
+                irc.proto.sjoinServer(irc, irc.sid, channel, [(modes, target)])
                 if kicker in irc.users:
                     utils.msg(irc, kicker, "This channel is claimed; your kick to "
                                            "%s has been blocked because you are not "
