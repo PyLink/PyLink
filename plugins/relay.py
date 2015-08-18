@@ -256,11 +256,10 @@ def handle_join(irc, numeric, command, args):
 utils.add_hook(handle_join, 'JOIN')
 
 def handle_quit(irc, numeric, command, args):
-    ouruser = numeric
     for netname, user in relayusers[(irc.name, numeric)].copy().items():
         remoteirc = utils.networkobjects[netname]
         remoteirc.proto.quitClient(remoteirc, user, args['text'])
-    del relayusers[(irc.name, ouruser)]
+    del relayusers[(irc.name, numeric)]
 utils.add_hook(handle_quit, 'QUIT')
 
 def handle_squit(irc, numeric, command, args):
@@ -621,13 +620,13 @@ def handle_kill(irc, numeric, command, args):
         # client and rejoin it to its channels.
         del relayusers[realuser][irc.name]
         remoteirc = utils.networkobjects[realuser[0]]
-        for channel in remoteirc.channels:
-            remotechan = findRemoteChan(remoteirc, irc, channel)
-            if remotechan:
-                modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
+        for remotechan in remoteirc.channels:
+            localchan = findRemoteChan(remoteirc, irc, remotechan)
+            if localchan:
+                modes = getPrefixModes(remoteirc, irc, localchan, realuser[1])
                 log.debug('(%s) relay handle_kill: userpair: %s, %s', irc.name, modes, realuser)
                 client = getRemoteUser(remoteirc, irc, realuser[1])
-                irc.proto.sjoinServer(irc, irc.sid, remotechan, [(modes, client)])
+                irc.proto.sjoinServer(irc, irc.sid, localchan, [(modes, client)])
         if userdata and numeric in irc.users:
             utils.msg(irc, numeric, "Your kill to %s has been blocked "
                                     "because PyLink does not allow killing"
@@ -947,3 +946,10 @@ def handle_away(irc, numeric, command, args):
         remoteirc = utils.networkobjects[netname]
         remoteirc.proto.awayClient(remoteirc, user, args['text'])
 utils.add_hook(handle_away, 'AWAY')
+
+def handle_spawnmain(irc, numeric, command, args):
+    if args['olduser']:
+        # Kills to the main PyLink client force reinitialization; this makes sure
+        # it joins all the relay channels like it's supposed to.
+        initializeAll(irc)
+utils.add_hook(handle_spawnmain, 'PYLINK_SPAWNMAIN')

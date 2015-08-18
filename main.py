@@ -19,9 +19,10 @@ import coreplugin
 class Irc():
 
     def initVars(self):
-        # Server, channel, and user indexes to be populated by our protocol module
+        self.pseudoclient = None
         self.connected = threading.Event()
         self.lastping = time.time()
+        # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {self.sid: classes.IrcServer(None, self.serverdata['hostname'], internal=True)}
         self.users = {}
         self.channels = defaultdict(classes.IrcChannel)
@@ -162,6 +163,7 @@ class Irc():
             self.pingTimer.cancel()
         except:  # Socket timed out during creation; ignore
             pass
+        # Internal hook signifying that a network has disconnected.
         self.callHooks([None, 'PYLINK_DISCONNECT', {}])
 
     def run(self):
@@ -244,9 +246,13 @@ class Irc():
         ident = self.botdata.get('ident') or 'pylink'
         host = self.serverdata["hostname"]
         log.info('(%s) Connected! Spawning main client %s.', self.name, nick)
+        olduserobj = self.pseudoclient
         self.pseudoclient = self.proto.spawnClient(self, nick, ident, host, modes={("+o", None)})
         for chan in self.serverdata['channels']:
             self.proto.joinClient(self, self.pseudoclient.uid, chan)
+        # PyLink internal hook called when spawnMain is called and the
+        # contents of Irc().pseudoclient change.
+        self.callHooks([self.sid, 'PYLINK_SPAWNMAIN', {'olduser': olduserobj}])
 
 if __name__ == '__main__':
     log.info('PyLink starting...')
