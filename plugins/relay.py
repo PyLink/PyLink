@@ -364,6 +364,7 @@ def handle_kick(irc, source, command, args):
     # Don't allow kicks to the PyLink client to be relayed.
     if relay is None or target == irc.pseudoclient.uid:
         return
+    origuser = getLocalUser(irc, target)
     for name, remoteirc in utils.networkobjects.items():
         if irc.name == name or not remoteirc.connected.is_set():
             continue
@@ -402,7 +403,7 @@ def handle_kick(irc, source, command, args):
                 return
 
         if not real_target:
-            return
+            continue
         # Propogate the kick!
         if real_kicker:
             log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan,real_kicker, kicker, irc.name)
@@ -411,7 +412,7 @@ def handle_kick(irc, source, command, args):
         else:
             # Kick originated from a server, or the kicker isn't in any
             # common channels with the target relay network.
-            log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan,remoteirc.sid, kicker, irc.name)
+            log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, remoteirc.sid, kicker, irc.name)
             try:
                 if kicker in irc.servers:
                     kname = irc.servers[kicker].name
@@ -423,9 +424,13 @@ def handle_kick(irc, source, command, args):
             remoteirc.proto.kickServer(remoteirc, remoteirc.sid,
                                        remotechan, real_target, text)
 
-    if isRelayClient(irc, target) and not irc.users[target].channels:
-        remoteuser = getLocalUser(irc, target)
-        del relayusers[remoteuser][irc.name]
+        # If the target isn't on any channels, quit them.
+        if origuser and origuser[0] != remoteirc.name and not remoteirc.users[real_target].channels:
+            del relayusers[origuser][remoteirc.name]
+            remoteirc.proto.quitClient(remoteirc, real_target, 'Left all shared channels.')
+
+    if origuser and not irc.users[target].channels:
+        del relayusers[origuser][irc.name]
         irc.proto.quitClient(irc, target, 'Left all shared channels.')
 
 utils.add_hook(handle_kick, 'KICK')
