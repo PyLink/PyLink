@@ -387,7 +387,8 @@ def handle_kick(irc, source, command, args):
             real_target = getLocalUser(irc, target, targetirc=remoteirc)
             log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
             if irc.name not in db[relay]['claim'] and not \
-                    any([mode in kicker_modes for mode in ('y', 'q', 'a', 'o', 'h')]):
+                    (any([mode in kicker_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
+                     or utils.isInternalClient(irc, kicker)):
                 log.debug('(%s) Relay kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
                 # Home network is not in the channel's claim AND the kicker is not
                 # opped. We won't propograte the kick then.
