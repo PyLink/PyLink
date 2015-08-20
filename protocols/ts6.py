@@ -80,6 +80,8 @@ def sjoinServer(irc, server, channel, users, ts=None):
     orig_ts = irc.channels[channel].ts
     ts = ts or orig_ts
     if ts < orig_ts:
+        # If the TS we're sending is lower than the one that existing, clear the
+        # mode lists from our channel state and reset the timestamp.
         log.debug('(%s) sjoinServer: resetting TS of %r from %s to %s (clearing modes)',
                   irc.name, channel, orig_ts, ts)
         irc.channels[channel].ts = ts
@@ -115,7 +117,9 @@ def sjoinServer(irc, server, channel, users, ts=None):
                 ts=ts, users=namelist, channel=channel,
                 modes=utils.joinModes(modes)))
         irc.channels[channel].users.update(uids)
-    utils.applyModes(irc, channel, changedmodes)
+    if ts < orig_ts:
+        # Only save our prefix modes in the channel state if our TS is lower than theirs.
+        utils.applyModes(irc, channel, changedmodes)
 
 def _sendModes(irc, numeric, target, modes, ts=None):
     utils.applyModes(irc, target, modes)
