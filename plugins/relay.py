@@ -34,7 +34,6 @@ utils.whois_handlers.append(relayWhoisHandlers)
 def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
     separator = separator or irc.serverdata.get('separator') or "/"
     log.debug('(%s) normalizeNick: using %r as separator.', irc.name, separator)
-
     orig_nick = nick
     protoname = irc.proto.__name__
     maxnicklen = irc.maxnicklen
@@ -68,7 +67,7 @@ def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
         # but couldn't be created due to a nick conflict.
         # This can happen when someone steals a relay user's nick.
         new_sep = separator + separator[-1]
-        log.debug('(%s) normalizeNick: using %r as new_sep.', irc.name, separator)
+        log.debug('(%s) normalizeNick: nick %r is in use; using %r as new_sep.', irc.name, nick, new_sep)
         nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
     finalLength = len(nick)
     assert finalLength <= maxnicklen, "Normalized nick %r went over max " \
