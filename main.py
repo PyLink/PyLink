@@ -7,6 +7,8 @@ import time
 import sys
 from collections import defaultdict
 import threading
+import ssl
+import hashlib
 
 from log import log
 import conf
@@ -17,6 +19,9 @@ import coreplugin
 class Irc():
 
     def initVars(self):
+        self.pseudoclient = None
+        self.connected = threading.Event()
+        self.lastping = time.time()
         # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {self.sid: classes.IrcServer(None, self.serverdata['hostname'], internal=True)}
         self.users = {}
@@ -52,7 +57,6 @@ class Irc():
 
     def __init__(self, netname, proto, conf):
         # Initialize some variables
-        self.connected = threading.Event()
         self.name = netname.lower()
         self.conf = conf
         self.serverdata = conf['servers'][netname]
@@ -67,26 +71,78 @@ class Irc():
         self.connection_thread = threading.Thread(target = self.connect)
         self.connection_thread.start()
         self.pingTimer = None
-        self.lastping = time.time()
 
     def connect(self):
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         while True:
-            log.info("Connecting to network %r on %s:%s", self.name, ip, port)
             self.initVars()
+            checks_ok = True
             try:
+                self.socket = socket.socket()
+                self.socket.setblocking(0)
                 # Initial connection timeout is a lot smaller than the timeout after
                 # we've connected; this is intentional.
-                self.socket = socket.create_connection((ip, port), timeout=self.pingfreq)
-                self.socket.setblocking(0)
+                self.socket.settimeout(self.pingfreq)
+                self.ssl = self.serverdata.get('ssl')
+                if self.ssl:
+                    log.info('(%s) Attempting SSL for this connection...', self.name)
+                    certfile = self.serverdata.get('ssl_certfile')
+                    keyfile = self.serverdata.get('ssl_keyfile')
+                    if certfile and keyfile:
+                        try:
+                            self.socket = ssl.wrap_socket(self.socket,
+                                                          certfile=certfile,
+                                                          keyfile=keyfile)
+                        except OSError:
+                             log.exception('(%s) Caught OSError trying to '
+                                           'initialize the SSL connection; '
+                                           'are "ssl_certfile" and '
+                                           '"ssl_keyfile" set correctly?',
+                                           self.name)
+                             checks_ok = False
+                    else:
+                        log.error('(%s) SSL certfile/keyfile was not set '
+                                  'correctly, aborting... ', self.name)
+                        checks_ok = False
+                log.info("Connecting to network %r on %s:%s", self.name, ip, port)
+                self.socket.connect((ip, port))
                 self.socket.settimeout(self.pingtimeout)
-                self.proto.connect(self)
-                self.spawnMain()
-                log.info('(%s) Starting ping schedulers....', self.name)
-                self.schedulePing()
-                log.info('(%s) Server ready; listening for data.', self.name)
-                self.run()
+
+                if self.ssl and checks_ok:
+                    peercert = self.socket.getpeercert(binary_form=True)
+                    sha1fp = hashlib.sha1(peercert).hexdigest()
+                    expected_fp = self.serverdata.get('ssl_fingerprint')
+                    if expected_fp:
+                        if sha1fp != expected_fp:
+                            log.error('(%s) Uplink\'s SSL certificate '
+                                      'fingerprint (SHA1) does not match the '
+                                      'one configured: expected %r, got %r; '
+                                      'disconnecting...', self.name,
+                                      expected_fp, sha1fp)
+                            checks_ok = False
+                        else:
+                            log.info('(%s) Uplink SSL certificate fingerprint '
+                                     '(SHA1) verified: %r', self.name, sha1fp)
+                    else:
+                        log.info('(%s) Uplink\'s SSL certificate fingerprint '
+                                 'is %r. You can enhance the security of your '
+                                 'link by specifying this in a "ssl_fingerprint"'
+                                 ' option in your server block.', self.name,
+                                 sha1fp)
+
+                if checks_ok:
+                    self.proto.connect(self)
+                    self.spawnMain()
+                    log.info('(%s) Starting ping schedulers....', self.name)
+                    self.schedulePing()
+                    log.info('(%s) Server ready; listening for data.', self.name)
+                    self.run()
+                else:
+                    log.error('(%s) A configuration error was encountered '
+                              'trying to set up this connection. Please check'
+                              ' your configuration file and try again.',
+                              self.name)
             except (socket.error, classes.ProtocolError, ConnectionError) as e:
                 log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
@@ -107,19 +163,21 @@ class Irc():
             self.pingTimer.cancel()
         except:  # Socket timed out during creation; ignore
             pass
+        # Internal hook signifying that a network has disconnected.
         self.callHooks([None, 'PYLINK_DISCONNECT', {}])
 
     def run(self):
         buf = b""
         data = b""
-        while (time.time() - self.lastping) < self.pingtimeout:
-            log.debug('(%s) time_since_last_ping: %s', self.name, (time.time() - self.lastping))
-            log.debug('(%s) self.pingtimeout: %s', self.name, self.pingtimeout)
+        while True:
             data = self.socket.recv(2048)
             buf += data
-            if self.connected and not data:
-                log.warn('(%s) No data received and self.connected is not set; disconnecting!', self.name)
-                break
+            if self.connected.is_set() and not data:
+                log.warning('(%s) No data received and self.connected is set; disconnecting!', self.name)
+                return
+            elif (time.time() - self.lastping) > self.pingtimeout:
+                log.warning('(%s) Connection timed out.', self.name)
+                return
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
@@ -188,9 +246,13 @@ class Irc():
         ident = self.botdata.get('ident') or 'pylink'
         host = self.serverdata["hostname"]
         log.info('(%s) Connected! Spawning main client %s.', self.name, nick)
+        olduserobj = self.pseudoclient
         self.pseudoclient = self.proto.spawnClient(self, nick, ident, host, modes={("+o", None)})
         for chan in self.serverdata['channels']:
             self.proto.joinClient(self, self.pseudoclient.uid, chan)
+        # PyLink internal hook called when spawnMain is called and the
+        # contents of Irc().pseudoclient change.
+        self.callHooks([self.sid, 'PYLINK_SPAWNMAIN', {'olduser': olduserobj}])
 
 if __name__ == '__main__':
     log.info('PyLink starting...')
