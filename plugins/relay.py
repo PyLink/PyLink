@@ -538,10 +538,9 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
     # Don't send anything if there are no supported modes left after filtering.
     if supported_modes:
         # Check if the sender is a user; remember servers are allowed to set modes too.
-        if sender in irc.users:
-            u = getRemoteUser(irc, remoteirc, sender, spawnIfMissing=False)
-            if u:
-                remoteirc.proto.modeClient(remoteirc, u, remotechan, supported_modes)
+        u = getRemoteUser(irc, remoteirc, sender, spawnIfMissing=False)
+        if u:
+            remoteirc.proto.modeClient(remoteirc, u, remotechan, supported_modes)
         else:
             remoteirc.proto.modeServer(remoteirc, remoteirc.sid, remotechan, supported_modes)
 
