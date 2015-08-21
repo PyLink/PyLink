@@ -144,12 +144,15 @@ def kick(irc, source, args):
     except IndexError:
         utils.msg(irc, source, "Error: not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
         return
-    u = utils.nickToUid(irc, nick)
+    u = utils.nickToUid(irc, nick) or nick
     targetu = utils.nickToUid(irc, target)
     if not utils.isChannel(channel):
         utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
         return
-    irc.proto.kickClient(irc, u, channel, targetu, reason)
+    if utils.isInternalServer(irc, u):
+        irc.proto.kickServer(irc, u, channel, targetu, reason)
+    else:
+        irc.proto.kickClient(irc, u, channel, targetu, reason)
     irc.callHooks([u, 'PYLINK_ADMIN_KICK', {'channel': channel, 'target': targetu, 'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
