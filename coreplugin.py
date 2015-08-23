@@ -7,7 +7,7 @@ from log import log
 def handle_kill(irc, source, command, args):
     if args['target'] == irc.pseudoclient.uid:
         irc.spawnMain()
-utils.add_hook(handle_kill, 'KILL')          
+utils.add_hook(handle_kill, 'KILL')
 
 # Handle KICKs to the PyLink client, rejoining the channels
 def handle_kick(irc, source, command, args):
@@ -15,12 +15,13 @@ def handle_kick(irc, source, command, args):
     channel = args['channel']
     if kicked == irc.pseudoclient.uid:
         irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
-utils.add_hook(handle_kick, 'KICK')  
+utils.add_hook(handle_kick, 'KICK')
 
 # Handle commands sent to the PyLink client (PRIVMSG)
 def handle_commands(irc, source, command, args):
     if args['target'] == irc.pseudoclient.uid:
-        cmd_args = args['text'].split(' ')
+        text = args['text'].strip()
+        cmd_args = text.split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         try:
