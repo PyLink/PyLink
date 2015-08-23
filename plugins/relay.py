@@ -404,9 +404,16 @@ def handle_kick(irc, source, command, args):
                 # Join the kicked client back with its respective modes.
                 irc.proto.sjoinServer(irc, irc.sid, channel, [(modes, target)])
                 if kicker in irc.users:
+                    log.info('(%s) Blocked KICK (reason %r) from %s to relay client %s/%s on %s.',
+                             irc.name, args['text'], irc.users[source].nick,
+                             remoteirc.users[real_target].nick, remoteirc.name, channel)
                     utils.msg(irc, kicker, "This channel is claimed; your kick to "
                                            "%s has been blocked because you are not "
                                            "(half)opped." % channel, notice=True)
+                else:
+                    log.info('(%s) Blocked KICK (reason %r) from server %s to relay client %s/%s on %s.',
+                             irc.name, args['text'], irc.servers[source].name,
+                             remoteirc.users[real_target].nick, remoteirc.name, channel)
                 return
 
         if not real_target:
@@ -634,10 +641,17 @@ def handle_kill(irc, numeric, command, args):
                 client = getRemoteUser(remoteirc, irc, realuser[1])
                 irc.proto.sjoinServer(irc, irc.sid, localchan, [(modes, client)])
         if userdata and numeric in irc.users:
+            log.info('(%s) Blocked KILL (reason %r) from %s to relay client %s/%s.',
+                     irc.name, args['text'], irc.users[numeric].nick,
+                     remoteirc.users[realuser[1]].nick, realuser[0])
             utils.msg(irc, numeric, "Your kill to %s has been blocked "
                                     "because PyLink does not allow killing"
                                     " users over the relay at this time." % \
                                     userdata.nick, notice=True)
+        else:
+            log.info('(%s) Blocked KILL (reason %r) from server %s to relay client %s/%s.',
+                     irc.name, args['text'], irc.servers[numeric].name,
+                     remoteirc.users[realuser[1]].nick, realuser[0])
     # Target user was local.
     else:
         # IMPORTANT: some IRCds (charybdis) don't send explicit QUIT messages
