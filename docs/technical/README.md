@@ -5,7 +5,7 @@ Any documentation here is provided for reference only.
 
 ### Introduction
 
-PyLink aims to be a modular, plugin-based IRC PseudoService framework. It uses swappable protocol modules and a hook-based system for calling plugins, allowing them to function regardless of the IRCd used.
+PyLink is an a modular, plugin-based IRC PseudoService framework. It uses swappable protocol modules and a hook-based system for calling plugins, allowing them to function regardless of the IRCd used.
 
 <img src="core-structure.png" width="50%" height="50%">
 
