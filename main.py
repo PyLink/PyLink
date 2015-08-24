@@ -278,10 +278,10 @@ if __name__ == '__main__':
             pl = imp.load_source(plugin, moduleinfo[1])
             utils.plugins.append(pl)
         except ImportError as e:
-            if str(e).startswith('No module named'):
-                log.error('Failed to load plugin %r: the plugin could not be found.', plugin)
+            if str(e) == ('No module named %r' % plugin):
+                log.error('Failed to load plugin %r: The plugin could not be found.', plugin)
             else:
-                log.error('Failed to load plugin %r: import error %s', plugin, str(e))
+                log.error('Failed to load plugin %r: ImportError: %s', plugin, str(e))
         else:
             if hasattr(pl, 'main'):
                 log.debug('Calling main() function of plugin %r', pl)
@@ -293,10 +293,10 @@ if __name__ == '__main__':
             moduleinfo = imp.find_module(protoname, protocols_folder)
             proto = imp.load_source(protoname, moduleinfo[1])
         except ImportError as e:
-            if str(e).startswith('No module named'):
-                log.critical('Failed to load protocol module %r: the file could not be found.', protoname)
+            if str(e) == ('No module named %r' % protoname):
+                log.critical('Failed to load protocol module %r: The file could not be found.', protoname)
             else:
-                log.critical('Failed to load protocol module: import error %s', protoname, str(e))
+                log.critical('Failed to load protocol module: ImportError: %s', protoname, str(e))
             sys.exit(2)
         else:
             utils.networkobjects[network] = Irc(network, proto, conf.conf)

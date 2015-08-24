@@ -8,6 +8,8 @@ import threading
 import string
 from collections import defaultdict
 
+from expiringdict import ExpiringDict
+
 import utils
 from log import log
 from conf import confname
@@ -19,6 +21,7 @@ dbname += '.db'
 
 relayusers = defaultdict(dict)
 spawnlocks = defaultdict(threading.Lock)
+savecache = ExpiringDict(max_len=5, max_age_seconds=10)
 
 def relayWhoisHandlers(irc, target):
     user = irc.users[target]
@@ -31,41 +34,46 @@ def relayWhoisHandlers(irc, target):
                                                      remotenick)]
 utils.whois_handlers.append(relayWhoisHandlers)
 
-def normalizeNick(irc, netname, nick, separator=None, oldnick=''):
+def normalizeNick(irc, netname, nick, separator=None, uid=''):
     separator = separator or irc.serverdata.get('separator') or "/"
     log.debug('(%s) normalizeNick: using %r as separator.', irc.name, separator)
     orig_nick = nick
     protoname = irc.proto.__name__
     maxnicklen = irc.maxnicklen
     if not protoname.startswith(('insp', 'unreal')):
-        # Charybdis doesn't allow / in usernames, and will quit with
-        # a protocol violation if there is one.
+        # Charybdis doesn't allow / in usernames, and will SQUIT with
+        # a protocol violation if it sees one.
         separator = separator.replace('/', '|')
         nick = nick.replace('/', '|')
     if nick.startswith(tuple(string.digits)):
         # On TS6 IRCds, nicks that start with 0-9 are only allowed if
         # they match the UID of the originating server. Otherwise, you'll
-        # get nasty protocol violations!
+        # get nasty protocol violation SQUITs!
         nick = '_' + nick
     tagnicks = True
 
     suffix = separator + netname
     nick = nick[:maxnicklen]
-    # Maximum allowed length of a nickname.
+    # Maximum allowed length of a nickname, minus the obligatory /network tag.
     allowedlength = maxnicklen - len(suffix)
-    # If a nick is too long, the real nick portion must be cut off, but the
-    # /network suffix must remain the same.
 
+    # If a nick is too long, the real nick portion will be cut off, but the
+    # /network suffix MUST remain the same.
     nick = nick[:allowedlength]
     nick += suffix
-    # FIXME: factorize
-    while utils.nickToUid(irc, nick) or utils.nickToUid(irc, oldnick) and not \
-            isRelayClient(irc, utils.nickToUid(irc, nick)):
-        # The nick we want exists? Darn, create another one then, but only if
-        # the target isn't an internal client!
-        # Increase the separator length by 1 if the user was already tagged,
-        # but couldn't be created due to a nick conflict.
-        # This can happen when someone steals a relay user's nick.
+
+    # The nick we want exists? Darn, create another one then.
+    # Increase the separator length by 1 if the user was already tagged,
+    # but couldn't be created due to a nick conflict.
+    # This can happen when someone steals a relay user's nick.
+
+    # However, if the user is changing from, say, a long, cut-off nick to another long,
+    # cut-off nick, we don't need to check for duplicates and tag the nick twice.
+
+    # somecutoffnick/net would otherwise be erroneous NICK'ed to somecutoffnic//net,
+    # even though there would be no collision because the old and new nicks are from
+    # the same client.
+    while utils.nickToUid(irc, nick) and utils.nickToUid(irc, nick) != uid:
         new_sep = separator + separator[-1]
         log.debug('(%s) normalizeNick: nick %r is in use; using %r as new_sep.', irc.name, nick, new_sep)
         nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
@@ -271,7 +279,7 @@ utils.add_hook(handle_squit, 'SQUIT')
 def handle_nick(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = utils.networkobjects[netname]
-        newnick = normalizeNick(remoteirc, irc.name, args['newnick'])
+        newnick = normalizeNick(remoteirc, irc.name, args['newnick'], uid=user)
         if remoteirc.users[user].nick != newnick:
             remoteirc.proto.nickClient(remoteirc, user, newnick)
 utils.add_hook(handle_nick, 'NICK')
@@ -396,9 +404,16 @@ def handle_kick(irc, source, command, args):
                 # Join the kicked client back with its respective modes.
                 irc.proto.sjoinServer(irc, irc.sid, channel, [(modes, target)])
                 if kicker in irc.users:
+                    log.info('(%s) Blocked KICK (reason %r) from %s to relay client %s/%s on %s.',
+                             irc.name, args['text'], irc.users[source].nick,
+                             remoteirc.users[real_target].nick, remoteirc.name, channel)
                     utils.msg(irc, kicker, "This channel is claimed; your kick to "
                                            "%s has been blocked because you are not "
                                            "(half)opped." % channel, notice=True)
+                else:
+                    log.info('(%s) Blocked KICK (reason %r) from server %s to relay client %s/%s on %s.',
+                             irc.name, args['text'], irc.servers[source].name,
+                             remoteirc.users[real_target].nick, remoteirc.name, channel)
                 return
 
         if not real_target:
@@ -538,10 +553,9 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
     # Don't send anything if there are no supported modes left after filtering.
     if supported_modes:
         # Check if the sender is a user; remember servers are allowed to set modes too.
-        if sender in irc.users:
-            u = getRemoteUser(irc, remoteirc, sender, spawnIfMissing=False)
-            if u:
-                remoteirc.proto.modeClient(remoteirc, u, remotechan, supported_modes)
+        u = getRemoteUser(irc, remoteirc, sender, spawnIfMissing=False)
+        if u:
+            remoteirc.proto.modeClient(remoteirc, u, remotechan, supported_modes)
         else:
             remoteirc.proto.modeServer(remoteirc, remoteirc.sid, remotechan, supported_modes)
 
@@ -627,10 +641,17 @@ def handle_kill(irc, numeric, command, args):
                 client = getRemoteUser(remoteirc, irc, realuser[1])
                 irc.proto.sjoinServer(irc, irc.sid, localchan, [(modes, client)])
         if userdata and numeric in irc.users:
+            log.info('(%s) Blocked KILL (reason %r) from %s to relay client %s/%s.',
+                     irc.name, args['text'], irc.users[numeric].nick,
+                     remoteirc.users[realuser[1]].nick, realuser[0])
             utils.msg(irc, numeric, "Your kill to %s has been blocked "
                                     "because PyLink does not allow killing"
                                     " users over the relay at this time." % \
                                     userdata.nick, notice=True)
+        else:
+            log.info('(%s) Blocked KILL (reason %r) from server %s to relay client %s/%s.',
+                     irc.name, args['text'], irc.servers[numeric].name,
+                     remoteirc.users[realuser[1]].nick, realuser[0])
     # Target user was local.
     else:
         # IMPORTANT: some IRCds (charybdis) don't send explicit QUIT messages
@@ -913,8 +934,18 @@ def handle_save(irc, numeric, command, args):
         remotenet, remoteuser = realuser
         remoteirc = utils.networkobjects[remotenet]
         nick = remoteirc.users[remoteuser].nick
-        newnick = normalizeNick(irc, remotenet, nick, oldnick=args['oldnick'])
-        irc.proto.nickClient(irc, target, newnick)
+        # Limit how many times we can attempt to fix our nick, to prevent
+        # floods and such.
+        if savecache.setdefault(target, 0) <= 5:
+            newnick = normalizeNick(irc, remotenet, nick)
+            log.info('(%s) SAVE received for relay client %r (%s), fixing nick to %s',
+                      irc.name, target, nick, newnick)
+            irc.proto.nickClient(irc, target, newnick)
+        else:
+            log.warning('(%s) SAVE received for relay client %r (%s), not '
+                        'fixing nick again due to 5 failed attempts in '
+                        'the last 10 seconds!',  irc.name, target, nick)
+        savecache[target] += 1
     else:
         # Somebody else on the network (not a PyLink client) had a nick collision;
         # relay this as a nick change appropriately.
