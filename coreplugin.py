@@ -38,7 +38,7 @@ def handle_commands(irc, source, command, args):
             return
 utils.add_hook(handle_commands, 'PRIVMSG')
 
-# Return WHOIS replies to IRCds that use them.
+# Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd).
 def handle_whois(irc, source, command, args):
     target = args['target']
     user = irc.users.get(target)
@@ -51,16 +51,6 @@ def handle_whois(irc, source, command, args):
     # https://www.alien.net.au/irc/irc2numerics.html
     # 311: sends nick!user@host information
     f(irc, server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
-    # 312: sends the server the target is on, and the name
-    f(irc, server, 312, source, "%s %s :%s" % (nick, irc.serverdata['hostname'], irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
-    # 313: sends a string denoting the target's operator privilege;
-    # we'll only send it if the user has umode +o.
-    if ('o', None) in user.modes:
-        f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
-    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
-    # Only shown to opers!
-    if sourceisOper:
-        f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
     # 319: RPL_WHOISCHANNELS, shows channel list
     public_chans = []
     for chan in user.channels:
@@ -75,12 +65,23 @@ def handle_whois(irc, source, command, args):
         public_chans.append(chan)
     if public_chans:
         f(irc, server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
-    # 317: shows idle and signon time. Though we don't track the user's real
-    # idle time; we just return 0.
-    # 317 GL GL 15 1437632859 :seconds idle, signon time
+    # 312: sends the server the target is on, and its server description.
+    f(irc, server, 312, source, "%s %s :%s" % (nick, irc.serverdata['hostname'],
+      irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
+    # 313: sends a string denoting the target's operator privilege,
+    # only if they have umode +o.
+    if ('o', None) in user.modes:
+        f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
+    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
+    # Only show this to opers!
+    if sourceisOper:
+        f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
+    # 317: shows idle and signon time. However, we don't track the user's real
+    # idle time, so we simply return 0.
+    # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(irc, server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
     try:
-        # Iterate over plugin-created WHOIS handlers. They return a tuple
+        # Iterate over custom plugin WHOIS handlers. They return a tuple
         # or list with two arguments: the numeric, and the text to send.
         for func in utils.whois_handlers:
             res = func(irc, target)
