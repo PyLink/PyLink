@@ -61,7 +61,11 @@ def handle_whois(irc, source, command, args):
             (irc.cmodes.get('private'), None) in c.modes) \
             and not (sourceisOper or source in c.users):
                 continue
-        # TODO: show prefix modes like a regular IRCd does.
+        # Show prefix modes like a regular IRCd does.
+        for prefixmode, prefixchar in irc.prefixmodes.items():
+            modename = [mname for mname, char in irc.cmodes.items() if char == prefixmode]
+            if modename and target in c.prefixmodes[modename[0]+'s']:
+                chan = prefixchar + chan
         public_chans.append(chan)
     if public_chans:
         f(irc, server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
