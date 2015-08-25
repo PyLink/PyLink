@@ -84,19 +84,18 @@ def handle_whois(irc, source, command, args):
     # idle time, so we simply return 0.
     # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(irc, server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
-    try:
-        # Iterate over custom plugin WHOIS handlers. They return a tuple
-        # or list with two arguments: the numeric, and the text to send.
-        for func in utils.whois_handlers:
+    for func in utils.whois_handlers:
+    # Iterate over custom plugin WHOIS handlers. They return a tuple
+    # or list with two arguments: the numeric, and the text to send.
+        try:
             res = func(irc, target)
             if res:
                 num, text = res
                 f(irc, server, num, source, text)
-    except Exception as e:
-        # Again, we wouldn't want this to crash our service, in case
-        # something goes wrong!
-        log.exception('Error caught in WHOIS handler: %s', e)
-    finally:
-        # 318: End of WHOIS.
-        f(irc, server, 318, source, "%s :End of /WHOIS list" % nick)
+        except Exception as e:
+            # Again, we wouldn't want this to crash our service, in case
+            # something goes wrong!
+            log.exception('(%s) Error caught in WHOIS handler: %s', irc.name, e)
+    # 318: End of WHOIS.
+    f(irc, server, 318, source, "%s :End of /WHOIS list" % nick)
 utils.add_hook(handle_whois, 'WHOIS')
