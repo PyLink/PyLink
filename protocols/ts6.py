@@ -345,7 +345,8 @@ def connect(irc):
     #       and allows sending CHGHOST without ENCAP.
     f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID')
 
-    f('SERVER %s 0 :PyLink Service' % irc.serverdata["hostname"])
+    f('SERVER %s 0 :%s' % (irc.serverdata["hostname"],
+                           irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
 
 def handle_ping(irc, source, command, args):
     # PING:

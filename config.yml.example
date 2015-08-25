@@ -8,6 +8,10 @@ bot:
     nick: pylink
     user: pylink
     realname: PyLink Service Client
+
+    # Server description (shown in /links, /whois, etc.)
+    serverdesc: PyLink Server
+
     # Console log verbosity: see https://docs.python.org/3/library/logging.html#logging-levels
     loglevel: DEBUG
 

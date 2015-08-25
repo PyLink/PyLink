@@ -52,7 +52,7 @@ def handle_whois(irc, source, command, args):
     # 311: sends nick!user@host information
     f(irc, server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
     # 312: sends the server the target is on, and the name
-    f(irc, server, 312, source, "%s %s :PyLink Server" % (nick, irc.serverdata['hostname']))
+    f(irc, server, 312, source, "%s %s :%s" % (nick, irc.serverdata['hostname'], irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
     # 313: sends a string denoting the target's operator privilege;
     # we'll only send it if the user has umode +o.
     if ('o', None) in user.modes:
