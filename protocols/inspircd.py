@@ -101,8 +101,8 @@ def sjoinServer(irc, server, channel, users, ts=None):
             irc.users[user].channels.add(channel)
         except KeyError:  # Not initialized yet?
             log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", irc.name, channel, user)
-    if ts < orig_ts:
-        # Only save our prefix modes in the channel state if our TS is lower than theirs.
+    if ts <= orig_ts:
+        # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
         utils.applyModes(irc, channel, changedmodes)
     namelist = ' '.join(namelist)
     _send(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
