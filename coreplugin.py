@@ -27,7 +27,7 @@ def handle_commands(irc, source, command, args):
         try:
             func = utils.bot_commands[cmd]
         except KeyError:
-            utils.msg(irc, source, 'Unknown command %r.' % cmd)
+            utils.msg(irc, source, 'Error: Unknown command %r.' % cmd)
             return
         try:
             log.info('(%s) Calling command %r for %s', irc.name, cmd, utils.getHostmask(irc, source))

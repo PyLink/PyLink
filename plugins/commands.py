@@ -27,7 +27,7 @@ def identify(irc, source, args):
     try:
         username, password = args[0], args[1]
     except IndexError:
-        utils.msg(irc, source, 'Error: not enough arguments.')
+        utils.msg(irc, source, 'Error: Not enough arguments.')
         return
     # Usernames are case-insensitive, passwords are NOT.
     if username.lower() == conf['login']['user'].lower() and password == conf['login']['password']:
@@ -35,7 +35,7 @@ def identify(irc, source, args):
         irc.users[source].identified = realuser
         utils.msg(irc, source, 'Successfully logged in as %s.' % realuser)
         log.info("(%s) Successful login to %r by %s.",
-                    irc.name, username, utils.getHostmask(irc, source))
+                 irc.name, username, utils.getHostmask(irc, source))
     else:
         utils.msg(irc, source, 'Incorrect credentials.')
         u = irc.users[source]
@@ -65,7 +65,7 @@ def help(irc, source, args):
     try:
         func = utils.bot_commands[command]
     except KeyError:
-        utils.msg(irc, source, 'Error: no such command %r.' % command)
+        utils.msg(irc, source, 'Error: Unknown command %r.' % command)
         return
     else:
         doc = func.__doc__
