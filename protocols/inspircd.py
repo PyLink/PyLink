@@ -407,7 +407,8 @@ def handle_fjoin(irc, servernumeric, command, args):
         modeprefix, user = user.split(',', 1)
         namelist.append(user)
         irc.users[user].channels.add(channel)
-        utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
+        if their_ts <= our_ts:
+            utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
         irc.channels[channel].users.add(user)
     return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 

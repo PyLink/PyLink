@@ -422,7 +422,8 @@ def handle_sjoin(irc, servernumeric, command, args):
                     finalprefix += char
         namelist.append(user)
         irc.users[user].channels.add(channel)
-        utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in finalprefix])
+        if their_ts <= our_ts:
+            utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in finalprefix])
         irc.channels[channel].users.add(user)
     return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
