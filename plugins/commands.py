@@ -37,7 +37,7 @@ def identify(irc, source, args):
         log.info("(%s) Successful login to %r by %s.",
                  irc.name, username, utils.getHostmask(irc, source))
     else:
-        utils.msg(irc, source, 'Incorrect credentials.')
+        utils.msg(irc, source, 'Error: Incorrect credentials.')
         u = irc.users[source]
         log.warning("(%s) Failed login to %r from %s.",
                     irc.name, username, utils.getHostmask(irc, source))
