@@ -563,21 +563,20 @@ def handle_events(irc, data):
             irc.connected.set()
     try:
         real_args = []
-        for arg in args:
+        for idx, arg in enumerate(args):
             real_args.append(arg)
             # If the argument starts with ':' and ISN'T the first argument.
             # The first argument is used for denoting the source UID/SID.
-            if arg.startswith(':') and args.index(arg) != 0:
+            if arg.startswith(':') and idx != 0:
                 # : is used for multi-word arguments that last until the end
                 # of the message. We can use list splicing here to turn them all
                 # into one argument.
-                index = args.index(arg)  # Get the array index of the multi-word arg
                 # Set the last arg to a joined version of the remaining args
-                arg = args[index:]
+                arg = args[idx:]
                 arg = ' '.join(arg)[1:]
                 # Cut the original argument list right before the multi-word arg,
                 # and then append the multi-word arg.
-                real_args = args[:index]
+                real_args = args[:idx]
                 real_args.append(arg)
                 break
         real_args[0] = real_args[0].split(':', 1)[1]
