@@ -2,9 +2,9 @@ import string
 import re
 from collections import defaultdict
 import threading
+import inspect
 
 from log import log
-
 global bot_commands, command_hooks
 # This should be a mapping of command names to functions
 bot_commands = {}
@@ -14,6 +14,10 @@ schedulers = {}
 plugins = []
 whois_handlers = []
 started = threading.Event()
+
+# This is separate from classes.py to prevent import loops.
+class NotAuthenticatedError(Exception):
+    pass
 
 class TS6UIDGenerator():
     """TS6 UID Generator module, adapted from InspIRCd source
@@ -350,15 +354,38 @@ def isInternalServer(irc, sid):
     """
     return (sid in irc.servers and irc.servers[sid].internal)
 
-def isOper(irc, uid):
+def isOper(irc, uid, allowAuthed=True, allowOper=True):
     """<irc object> <UID>
 
     Returns whether <UID> has operator status on PyLink. This can be achieved
-    by either identifying to PyLink as admin, or having user mode +o set.
+    by either identifying to PyLink as admin (if allowAuthed is True),
+    or having user mode +o set (if allowOper is True). At least one of
+    allowAuthed or allowOper must be True for this to give any meaningful
+    results.
     """
-    return (uid in irc.users and (("o", None) in irc.users[uid].modes or irc.users[uid].identified))
+    if uid in irc.users:
+        if allowOper and ("o", None) in irc.users[uid].modes:
+            return True
+        elif allowAuthed and irc.users[uid].identified:
+            return True
+    return False
+
+def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
+    """<irc object> <UID>
+
+    Checks whether user <UID> has operator status on PyLink, raising
+    NotAuthenticatedError and logging the access denial if not."""
+    lastfunc = inspect.stack()[1][3]
+    if not isOper(irc, uid, allowAuthed=allowAuthed, allowOper=allowOper):
+        log.warning('(%s) Access denied for %s calling %r', irc.name,
+                    getHostmask(irc, uid), lastfunc)
+        raise NotAuthenticatedError("You are not authenticated!")
+    return True
 
 def getHostmask(irc, user):
+    """<irc object> <UID>
+
+    Gets the hostmask of user <UID>, if present."""
     userobj = irc.users.get(user)
     if userobj is None:
         return '<user object not found>'

@@ -12,9 +12,6 @@ import utils
 
 ### Exceptions
 
-class NotAuthenticatedError(Exception):
-    pass
-
 class ProtocolError(Exception):
     pass
 

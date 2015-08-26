@@ -1,28 +1,17 @@
 # admin.py: PyLink administrative commands
 import sys
 import os
-import inspect
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import utils
 from log import log
-
-class NotAuthenticatedError(Exception):
-    pass
-
-def checkauthenticated(irc, source):
-    lastfunc = inspect.stack()[1][3]
-    if not irc.users[source].identified:
-        log.warning('(%s) Access denied for %s calling %r', irc.name,
-                    utils.getHostmask(irc, source), lastfunc)
-        raise NotAuthenticatedError("You are not authenticated!")
 
 def _exec(irc, source, args):
     """<code>
 
     Admin-only. Executes <code> in the current PyLink instance.
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     args = ' '.join(args)
     if not args.strip():
         utils.msg(irc, source, 'No code entered!')
@@ -37,7 +26,7 @@ def spawnclient(irc, source, args):
 
     Admin-only. Spawns the specified PseudoClient on the PyLink server.
     Note: this doesn't check the validity of any fields you give it!"""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         nick, ident, host = args[:3]
     except ValueError:
@@ -50,7 +39,7 @@ def quit(irc, source, args):
     """<target> [<reason>]
 
     Admin-only. Quits the PyLink client with nick <target>, if one exists."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         nick = args[0]
     except IndexError:
@@ -68,7 +57,7 @@ def joinclient(irc, source, args):
     """<target> <channel1>,[<channel2>], etc.
 
     Admin-only. Joins <target>, the nick of a PyLink client, to a comma-separated list of channels."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         nick = args[0]
         clist = args[1].split(',')
@@ -93,7 +82,7 @@ def nick(irc, source, args):
     """<target> <newnick>
 
     Admin-only. Changes the nick of <target>, a PyLink client, to <newnick>."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         nick = args[0]
         newnick = args[1]
@@ -114,7 +103,7 @@ def part(irc, source, args):
     """<target> <channel1>,[<channel2>],... [<reason>]
 
     Admin-only. Parts <target>, the nick of a PyLink client, from a comma-separated list of channels."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         nick = args[0]
         clist = args[1].split(',')
@@ -135,7 +124,7 @@ def kick(irc, source, args):
     """<source> <channel> <user> [<reason>]
 
     Admin-only. Kicks <user> from <channel> via <source>, where <source> is the nick of a PyLink client."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         nick = args[0]
         channel = args[1]
@@ -160,7 +149,7 @@ def showuser(irc, source, args):
     """<user>
 
     Admin-only. Shows information about <user>."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         target = args[0]
     except IndexError:
@@ -179,7 +168,7 @@ def showchan(irc, source, args):
     """<channel>
 
     Admin-only. Shows information about <channel>."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         channel = args[0].lower()
     except IndexError:
@@ -197,7 +186,7 @@ def mode(irc, source, args):
     """<source> <target> <modes>
 
     Admin-only. Sets modes <modes> on <target> from <source>, where <source> is either the nick of a PyLink client, or the SID of a PyLink server."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         modesource, target, modes = args[0], args[1], args[2:]
     except IndexError:
@@ -226,7 +215,7 @@ def msg(irc, source, args):
     """<source> <target> <text>
 
     Admin-only. Sends message <text> from <source>, where <source> is the nick of a PyLink client."""
-    checkauthenticated(irc, source)
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         msgsource, target, text = args[0], args[1], ' '.join(args[2:])
     except IndexError:
