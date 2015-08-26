@@ -14,6 +14,7 @@ Dependencies currently include:
 
 * Python 3.4+
 * PyYAML (`pip install pyyaml` or `apt-get install python3-yaml`)
+* *For the relay plugin only*: expiringdict (`pip install expiringdict`/`apt-get install python3-expiringdict`)
 
 #### Supported IRCds
 
@@ -23,7 +24,7 @@ Dependencies currently include:
 
 ### Installation
 
-1) Rename `config.yml.example` to `config.yml` and configure your instance there. Not all options are properly implemented yet, and the configuration schema isn't finalized yet - this means your configuration may break in an update!
+1) Rename `config.yml.example` to `config.yml` and configure your instance there. Not all options are properly implemented yet, and the configuration schema isn't finalized yet - this means that your configuration may break in an update!
 
 2) Run `main.py` from the command line.
 

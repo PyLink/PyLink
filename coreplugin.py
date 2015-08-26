@@ -38,7 +38,7 @@ def handle_commands(irc, source, command, args):
             return
 utils.add_hook(handle_commands, 'PRIVMSG')
 
-# Return WHOIS replies to IRCds that use them.
+# Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd).
 def handle_whois(irc, source, command, args):
     target = args['target']
     user = irc.users.get(target)
@@ -51,16 +51,6 @@ def handle_whois(irc, source, command, args):
     # https://www.alien.net.au/irc/irc2numerics.html
     # 311: sends nick!user@host information
     f(irc, server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
-    # 312: sends the server the target is on, and the name
-    f(irc, server, 312, source, "%s %s :PyLink Server" % (nick, irc.serverdata['hostname']))
-    # 313: sends a string denoting the target's operator privilege;
-    # we'll only send it if the user has umode +o.
-    if ('o', None) in user.modes:
-        f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
-    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
-    # Only shown to opers!
-    if sourceisOper:
-        f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
     # 319: RPL_WHOISCHANNELS, shows channel list
     public_chans = []
     for chan in user.channels:
@@ -71,27 +61,41 @@ def handle_whois(irc, source, command, args):
             (irc.cmodes.get('private'), None) in c.modes) \
             and not (sourceisOper or source in c.users):
                 continue
-        # TODO: show prefix modes like a regular IRCd does.
+        # Show prefix modes like a regular IRCd does.
+        for prefixmode, prefixchar in irc.prefixmodes.items():
+            modename = [mname for mname, char in irc.cmodes.items() if char == prefixmode]
+            if modename and target in c.prefixmodes[modename[0]+'s']:
+                chan = prefixchar + chan
         public_chans.append(chan)
     if public_chans:
         f(irc, server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
-    # 317: shows idle and signon time. Though we don't track the user's real
-    # idle time; we just return 0.
-    # 317 GL GL 15 1437632859 :seconds idle, signon time
+    # 312: sends the server the target is on, and its server description.
+    f(irc, server, 312, source, "%s %s :%s" % (nick, irc.serverdata['hostname'],
+      irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
+    # 313: sends a string denoting the target's operator privilege,
+    # only if they have umode +o.
+    if ('o', None) in user.modes:
+        f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
+    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
+    # Only show this to opers!
+    if sourceisOper:
+        f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
+    # 317: shows idle and signon time. However, we don't track the user's real
+    # idle time, so we simply return 0.
+    # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(irc, server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
-    try:
-        # Iterate over plugin-created WHOIS handlers. They return a tuple
-        # or list with two arguments: the numeric, and the text to send.
-        for func in utils.whois_handlers:
+    for func in utils.whois_handlers:
+    # Iterate over custom plugin WHOIS handlers. They return a tuple
+    # or list with two arguments: the numeric, and the text to send.
+        try:
             res = func(irc, target)
             if res:
                 num, text = res
                 f(irc, server, num, source, text)
-    except Exception as e:
-        # Again, we wouldn't want this to crash our service, in case
-        # something goes wrong!
-        log.exception('Error caught in WHOIS handler: %s', e)
-    finally:
-        # 318: End of WHOIS.
-        f(irc, server, 318, source, "%s :End of /WHOIS list" % nick)
+        except Exception as e:
+            # Again, we wouldn't want this to crash our service, in case
+            # something goes wrong!
+            log.exception('(%s) Error caught in WHOIS handler: %s', irc.name, e)
+    # 318: End of WHOIS.
+    f(irc, server, 318, source, "%s :End of /WHOIS list" % nick)
 utils.add_hook(handle_whois, 'WHOIS')

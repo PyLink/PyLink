@@ -101,8 +101,8 @@ def sjoinServer(irc, server, channel, users, ts=None):
             irc.users[user].channels.add(channel)
         except KeyError:  # Not initialized yet?
             log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", irc.name, channel, user)
-    if ts < orig_ts:
-        # Only save our prefix modes in the channel state if our TS is lower than theirs.
+    if ts <= orig_ts:
+        # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
         utils.applyModes(irc, channel, changedmodes)
     namelist = ' '.join(namelist)
     _send(irc, server, "FJOIN {channel} {ts} {modes} :{users}".format(
@@ -329,8 +329,9 @@ def connect(irc):
     f('CAPAB START 1202')
     f('CAPAB CAPABILITIES :PROTOCOL=1202')
     f('CAPAB END')
-    f('SERVER {host} {Pass} 0 {sid} :PyLink Service'.format(host=irc.serverdata["hostname"],
-      Pass=irc.serverdata["sendpass"], sid=irc.sid))
+    f('SERVER {host} {Pass} 0 {sid} :{sdesc}'.format(host=irc.serverdata["hostname"],
+      Pass=irc.serverdata["sendpass"], sid=irc.sid,
+      sdesc=irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
     f(':%s BURST %s' % (irc.sid, ts))
     f(':%s ENDBURST' % (irc.sid))
 

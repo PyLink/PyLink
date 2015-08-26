@@ -117,8 +117,8 @@ def sjoinServer(irc, server, channel, users, ts=None):
                 ts=ts, users=namelist, channel=channel,
                 modes=utils.joinModes(modes)))
         irc.channels[channel].users.update(uids)
-    if ts < orig_ts:
-        # Only save our prefix modes in the channel state if our TS is lower than theirs.
+    if ts <= orig_ts:
+       # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
         utils.applyModes(irc, channel, changedmodes)
 
 def _sendModes(irc, numeric, target, modes, ts=None):
@@ -345,7 +345,8 @@ def connect(irc):
     #       and allows sending CHGHOST without ENCAP.
     f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID')
 
-    f('SERVER %s 0 :PyLink Service' % irc.serverdata["hostname"])
+    f('SERVER %s 0 :%s' % (irc.serverdata["hostname"],
+                           irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
 
 def handle_ping(irc, source, command, args):
     # PING:
