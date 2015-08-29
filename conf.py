@@ -23,7 +23,8 @@ testconf = {'bot':
                     'nick': 'PyLink',
                     'user': 'pylink',
                     'realname': 'PyLink Service Client',
-                    'loglevel': 'INFO',
+                    # Suppress logging in the test output for the most part.
+                    'loglevel': 'CRITICAL',
                     'serverdesc': 'PyLink unit tests'
                 },
             'servers':
@@ -45,12 +46,12 @@ testconf = {'bot':
 
 with open(fname, 'r') as f:
     global conf
-    try:
-        conf = yaml.load(f)
-    except Exception as e:
-        if world.testing:
-            conf = testconf
-            confname = 'testconf'
-        else:
+    if world.testing:
+        conf = testconf
+        confname = 'testconf'
+    else:
+        try:
+            conf = yaml.load(f)
+        except Exception as e:
             print('ERROR: Failed to load config from %r: %s: %s' % (fname, type(e).__name__, e))
             sys.exit(4)
