@@ -836,6 +836,9 @@ def link(irc, source, args):
         utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
         return
     else:
+        if irc.name in entry['blocked_nets']:
+            utils.msg(irc, source, 'Error: access denied (network is banned from linking to this channel).')
+            return
         for link in entry['links']:
             if link[0] == irc.name:
                 utils.msg(irc, source, "Error: remote channel '%s%s' is already"
@@ -983,3 +986,49 @@ def handle_spawnmain(irc, numeric, command, args):
         # it joins all the relay channels like it's supposed to.
         initializeAll(irc)
 utils.add_hook(handle_spawnmain, 'PYLINK_SPAWNMAIN')
+
+@utils.add_cmd
+def linkacl(irc, source, args):
+    """ALLOW|DENY|LIST <channel> <remotenet>
+
+    Allows blocking / unblocking certain networks from linking to a relay, based on a blacklist.
+    LINKACL LIST returns a list of blocked networks for a channel, while the ALLOW and DENY subcommands allow manipulating this blacklist."""
+    missingargs = "Error: not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST), channel, remote network (for ALLOW/DENY)."
+    if not utils.isOper(irc, source):
+        utils.msg(irc, source, 'Error: you must be opered in order to complete this operation.')
+        return
+    try:
+        cmd = args[0].lower()
+        channel = args[1].lower()
+    except IndexError:
+        utils.msg(irc, source, missingargs)
+        return
+    if not utils.isChannel(channel):
+        utils.msg(irc, source, 'Error: invalid channel %r.' % channel)
+        return
+    relay = findRelay((irc.name, channel))
+    if not relay:
+        utils.msg(irc, source, 'Error: no such relay %r exists.' % channel)
+        return
+    if cmd == 'list':
+        s = 'Blocked networks for \x02%s\x02: \x02%s\x02' % (channel, ', '.join(db[relay]['blocked_nets']) or '(empty)')
+        utils.msg(irc, source, s)
+        return
+
+    try:
+        remotenet = args[2]
+    except IndexError:
+        utils.msg(irc, source, missingargs)
+        return
+    if cmd == 'deny':
+        db[relay]['blocked_nets'].add(remotenet)
+        utils.msg(irc, source, 'Done.')
+    elif cmd == 'allow':
+        try:
+            db[relay]['blocked_nets'].remove(remotenet)
+        except KeyError:
+            utils.msg(irc, source, 'Error: network %r is not on the blacklist for %r.' % (remotenet, channel))
+        else:
+            utils.msg(irc, source, 'Done.')
+    else:
+        utils.msg(irc, source, 'Error: unknown subcommand %r: valid ones are ALLOW, DENY, and LIST.' % cmd)
