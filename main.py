@@ -57,7 +57,7 @@ if __name__ == '__main__':
                 log.critical('Failed to load protocol module: ImportError: %s', protoname, str(e))
             sys.exit(2)
         else:
-            world.networkobjects[network] = classes.Irc(network, proto, conf.conf)
+            world.networkobjects[network] = classes.Irc(network, proto)
     world.started.set()
     log.info("loaded plugins: %s", world.plugins)
 
