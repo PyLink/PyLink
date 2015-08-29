@@ -4,19 +4,6 @@ from collections import defaultdict
 
 import world
 
-global confname
-try:
-    # Get the config name from the command line, falling back to config.yml
-    # if not given.
-    fname = sys.argv[1]
-    confname = fname.split('.', 1)[0]
-except IndexError:
-    # confname is used for logging and PID writing, so that each
-    # instance uses its own files. fname is the actual name of the file
-    # we load.
-    confname = 'pylink'
-    fname = 'config.yml'
-
 global testconf
 testconf = {'bot':
                 {
@@ -43,13 +30,22 @@ testconf = {'bot':
                         'maxnicklen': 20
                     })
            }
-
-with open(fname, 'r') as f:
-    global conf
-    if world.testing:
-        conf = testconf
-        confname = 'testconf'
-    else:
+if world.testing:
+    conf = testconf
+    confname = 'testconf'
+else:
+    try:
+        # Get the config name from the command line, falling back to config.yml
+        # if not given.
+        fname = sys.argv[1]
+        confname = fname.split('.', 1)[0]
+    except IndexError:
+        # confname is used for logging and PID writing, so that each
+        # instance uses its own files. fname is the actual name of the file
+        # we load.
+        confname = 'pylink'
+        fname = 'config.yml'
+    with open(fname, 'r') as f:
         try:
             conf = yaml.load(f)
         except Exception as e:

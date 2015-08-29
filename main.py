@@ -4,15 +4,17 @@ import imp
 import os
 import sys
 
-from log import log
+# This must be done before conf imports, so we get the real conf instead of testing one.
+import world
+world.testing = False
+
 import conf
+from log import log
 import classes
 import utils
 import coreplugin
-import world
 
 if __name__ == '__main__':
-    world.testing = False
     log.info('PyLink starting...')
     if conf.conf['login']['password'] == 'changeme':
         log.critical("You have not set the login details correctly! Exiting...")
