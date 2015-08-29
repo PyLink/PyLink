@@ -5,11 +5,16 @@ import unittest
 import itertools
 
 import utils
+import classes
+import conf
 
 def dummyf():
     pass
 
 class TestUtils(unittest.TestCase):
+    def setUp(self):
+        self.irc = classes.FakeIRC('fakeirc', classes.FakeProto(), conf.testconf)
+
     def testTS6UIDGenerator(self):
         uidgen = utils.TS6UIDGenerator('9PY')
         self.assertEqual(uidgen.next_uid(), '9PYAAAAAA')
@@ -95,6 +100,20 @@ class TestUtils(unittest.TestCase):
                                ('-m', None), ('+k', 'hello'),
                                ('+b', '*!*@*.badisp.net')])
         self.assertEqual(res, '-o+l-nm+kb 9PYAAAAAA 50 hello *!*@*.badisp.net')
+
+    @unittest.skip('Wait, we need to work out the kinks first! (reversing changes of modes with arguments)')
+    def testReverseModes(self):
+        f = lambda x: utils.reverseModes(self.irc, '#test', x)
+        # Strings.
+        self.assertEqual(f("+nt-lk"), "-nt+lk")
+        self.assertEqual(f("nt-k"), "-nt+k")
+        # Lists.
+        self.assertEqual(f([('+m', None), ('+t', None), ('+l', '3'), ('-o', 'person')]),
+            [('-m', None), ('-t', None), ('-l', '3'), ('+o', 'person')])
+        # Sets.
+        self.assertEqual(f({('s', None), ('+o', 'whoever')}), {('-s', None), ('-o', 'whoever')})
+        # Combining modes with an initial + and those without
+        self.assertEqual(f({('s', None), ('+n', None)}), {('-s', None), ('-n', None)})
 
 if __name__ == '__main__':
     unittest.main()

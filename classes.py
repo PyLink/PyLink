@@ -311,29 +311,6 @@ class IrcChannel():
 
 ### FakeIRC classes, used for test cases
 
-global testconf
-testconf = {'bot':
-                {
-                    'nick': 'PyLink',
-                    'user': 'pylink',
-                    'realname': 'PyLink Service Client',
-                    'loglevel': 'DEBUG',
-                },
-            'servers':
-                {'unittest':
-                    {
-                        'ip': '0.0.0.0',
-                        'port': 7000,
-                        'recvpass': "abcd",
-                        'sendpass': "abcd",
-                        'protocol': "null",
-                        'hostname': "pylink.unittest",
-                        'sid': "9PY",
-                        'channels': ["#pylink"],
-                    },
-                },
-           }
-
 class FakeIRC(Irc):
     def connect(self):
         self.messages = []
@@ -382,11 +359,16 @@ class FakeIRC(Irc):
 
     @staticmethod
     def dummyhook(irc, source, command, parsed_args):
-        """Dummy function to bind to hooks."""
+        """Dummy function to bind to hooks. This is what allows takeHooks() to work."""
         irc.hookmsgs.append(parsed_args)
 
 class FakeProto():
     """Dummy protocol module for testing purposes."""
+    def __init__(self):
+        self.hook_map = {}
+        self.casemapping = 'rfc1459'
+        self.__name__ = 'FakeProto'
+
     @staticmethod
     def handle_events(irc, data):
         pass

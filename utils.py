@@ -165,7 +165,7 @@ def isServerName(s):
     return _isASCII(s) and '.' in s and not s.startswith('.')
 
 def parseModes(irc, target, args):
-    """Parses a mode string into a list of (mode, argument) tuples.
+    """Parses a modestring list into a list of (mode, argument) tuples.
     ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
     """
     # http://www.irc.org/tech_docs/005.html
@@ -336,6 +336,34 @@ def joinModes(modes):
         # Add the args if there are any.
         modelist += ' %s' % ' '.join(args)
     return modelist
+
+def reverseModes(irc, target, modes):
+    """<mode string/mode list>
+
+    Reverses/Inverts the mode string or mode list given.
+
+    "+nt-lk" => "-nt+lk"
+    "nt-k" => "-nt+k"
+    [('+m', None), ('+t', None), ('+l', '3'), ('-o', 'person')] =>
+        [('-m', None), ('-t', None), ('-l', '3'), ('+o', 'person')]
+    [('s', None), ('+n', None)] => [('-s', None), ('-n', None)]
+    """
+    origtype = type(modes)
+    # Operate on joined modestrings only; it's easier.
+    if origtype != str:
+        modes = joinModes(modes)
+    # Swap the +'s and -'s by replacing one with a dummy character, and then changing it back.
+    assert '\x00' not in modes, 'NUL cannot be in the mode list (it is a reserved character)!'
+    if not modes.startswith(('+', '-')):
+        modes = '+' + modes
+    newmodes = modes.replace('+', '\x00')
+    newmodes = newmodes.replace('-', '+')
+    newmodes = newmodes.replace('\x00', '-')
+    if origtype != str:
+        # If the original query isn't a string, send back the parseModes() output.
+        return parseModes(irc, target, newmodes.split(" "))
+    else:
+        return newmodes
 
 def isInternalClient(irc, numeric):
     """<irc object> <client numeric>

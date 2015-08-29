@@ -9,8 +9,10 @@ import conf
 import classes
 import utils
 import coreplugin
+import world
 
 if __name__ == '__main__':
+    world.testing = False
     log.info('PyLink starting...')
     if conf.conf['login']['password'] == 'changeme':
         log.critical("You have not set the login details correctly! Exiting...")
