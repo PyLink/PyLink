@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 from conf import conf
 from log import log
+import world
 
 @utils.add_cmd
 def status(irc, source, args):
@@ -46,7 +47,7 @@ def listcommands(irc, source, args):
     """takes no arguments.
 
     Returns a list of available commands PyLink has to offer."""
-    cmds = list(utils.bot_commands.keys())
+    cmds = list(world.bot_commands.keys())
     cmds.sort()
     utils.msg(irc, source, 'Available commands include: %s' % ', '.join(cmds))
     utils.msg(irc, source, 'To see help on a specific command, type \x02help <command>\x02.')
@@ -63,7 +64,7 @@ def help(irc, source, args):
         listcommands(irc, source, args)
         return
     try:
-        func = utils.bot_commands[command]
+        func = world.bot_commands[command]
     except KeyError:
         utils.msg(irc, source, 'Error: Unknown command %r.' % command)
         return

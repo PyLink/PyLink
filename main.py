@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
-    utils.plugins.append(coreplugin)
+    world.plugins.append(coreplugin)
     to_load = conf.conf['plugins']
     plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
     # Here, we override the module lookup and import the plugins
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         try:
             moduleinfo = imp.find_module(plugin, plugins_folder)
             pl = imp.load_source(plugin, moduleinfo[1])
-            utils.plugins.append(pl)
+            world.plugins.append(pl)
         except ImportError as e:
             if str(e) == ('No module named %r' % plugin):
                 log.error('Failed to load plugin %r: The plugin could not be found.', plugin)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
                 log.critical('Failed to load protocol module: ImportError: %s', protoname, str(e))
             sys.exit(2)
         else:
-            utils.networkobjects[network] = classes.Irc(network, proto, conf.conf)
-    utils.started.set()
-    log.info("loaded plugins: %s", utils.plugins)
+            world.networkobjects[network] = classes.Irc(network, proto, conf.conf)
+    world.started.set()
+    log.info("loaded plugins: %s", world.plugins)
 

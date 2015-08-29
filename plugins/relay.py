@@ -13,6 +13,7 @@ from expiringdict import ExpiringDict
 import utils
 from log import log
 from conf import confname
+import world
 
 dbname = "pylinkrelay"
 if confname != 'pylink':
@@ -28,11 +29,11 @@ def relayWhoisHandlers(irc, target):
     orig = getLocalUser(irc, target)
     if orig:
         network, remoteuid = orig
-        remotenick = utils.networkobjects[network].users[remoteuid].nick
+        remotenick = world.networkobjects[network].users[remoteuid].nick
         return [320, "%s :is a remote user connected via PyLink Relay. Home "
                      "network: %s; Home nick: %s" % (user.nick, network,
                                                      remotenick)]
-utils.whois_handlers.append(relayWhoisHandlers)
+world.whois_handlers.append(relayWhoisHandlers)
 
 def normalizeNick(irc, netname, nick, separator=None, uid=''):
     separator = separator or irc.serverdata.get('separator') or "/"
@@ -94,7 +95,7 @@ def loadDB():
         db = {}
 
 def exportDB(reschedule=False):
-    scheduler = utils.schedulers.get('relaydb')
+    scheduler = world.schedulers.get('relaydb')
     if reschedule and scheduler:
         scheduler.enter(30, 1, exportDB, argument=(True,))
     log.debug("Relay: exporting links database to %s", dbname)
@@ -179,7 +180,7 @@ def getLocalUser(irc, user, targetirc=None):
         # If targetirc is given, we'll return simply the UID of the user on the
         # target network, if it exists. Otherwise, we'll return a tuple
         # with the home network name and the original user's UID.
-        sourceobj = utils.networkobjects.get(remoteuser[0])
+        sourceobj = world.networkobjects.get(remoteuser[0])
         if targetirc and sourceobj:
             if remoteuser[0] == targetirc.name:
                 # The user we found's home network happens to be the one being
@@ -236,7 +237,7 @@ def initializeChannel(irc, channel):
             remotenet, remotechan = link
             if remotenet == irc.name:
                 continue
-            remoteirc = utils.networkobjects.get(remotenet)
+            remoteirc = world.networkobjects.get(remotenet)
             if remoteirc is None:
                 continue
             rc = remoteirc.channels[remotechan]
@@ -264,7 +265,7 @@ utils.add_hook(handle_join, 'JOIN')
 
 def handle_quit(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].copy().items():
-        remoteirc = utils.networkobjects[netname]
+        remoteirc = world.networkobjects[netname]
         remoteirc.proto.quitClient(remoteirc, user, args['text'])
     del relayusers[(irc.name, numeric)]
 utils.add_hook(handle_quit, 'QUIT')
@@ -278,7 +279,7 @@ utils.add_hook(handle_squit, 'SQUIT')
 
 def handle_nick(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].items():
-        remoteirc = utils.networkobjects[netname]
+        remoteirc = world.networkobjects[netname]
         newnick = normalizeNick(remoteirc, irc.name, args['newnick'], uid=user)
         if remoteirc.users[user].nick != newnick:
             remoteirc.proto.nickClient(remoteirc, user, newnick)
@@ -292,7 +293,7 @@ def handle_part(irc, numeric, command, args):
         return
     for channel in channels:
         for netname, user in relayusers[(irc.name, numeric)].copy().items():
-            remoteirc = utils.networkobjects[netname]
+            remoteirc = world.networkobjects[netname]
             remotechan = findRemoteChan(irc, remoteirc, channel)
             if remotechan is None:
                 continue
@@ -328,7 +329,7 @@ def handle_privmsg(irc, numeric, command, args):
         return
     if utils.isChannel(target):
         for netname, user in relayusers[(irc.name, numeric)].items():
-            remoteirc = utils.networkobjects[netname]
+            remoteirc = world.networkobjects[netname]
             real_target = findRemoteChan(irc, remoteirc, target)
             if not real_target:
                 continue
@@ -351,7 +352,7 @@ def handle_privmsg(irc, numeric, command, args):
                       'with %r in order to send messages.' % \
                       irc.users[target].nick, notice=True)
             return
-        remoteirc = utils.networkobjects[homenet]
+        remoteirc = world.networkobjects[homenet]
         user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
         if notice:
             remoteirc.proto.noticeClient(remoteirc, user, real_target, text)
@@ -371,7 +372,7 @@ def handle_kick(irc, source, command, args):
     if relay is None or target == irc.pseudoclient.uid:
         return
     origuser = getLocalUser(irc, target)
-    for name, remoteirc in utils.networkobjects.items():
+    for name, remoteirc in world.networkobjects.items():
         if irc.name == name or not remoteirc.connected.is_set():
             continue
         remotechan = findRemoteChan(irc, remoteirc, channel)
@@ -462,7 +463,7 @@ def handle_chgclient(irc, source, command, args):
         text = args['newgecos']
     if field:
         for netname, user in relayusers[(irc.name, target)].items():
-            remoteirc = utils.networkobjects[netname]
+            remoteirc = world.networkobjects[netname]
             try:
                 remoteirc.proto.updateClient(remoteirc, user, field, text)
             except NotImplementedError:  # IRCd doesn't support changing the field we want
@@ -589,7 +590,7 @@ def getSupportedUmodes(irc, remoteirc, modes):
 def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
-    for name, remoteirc in utils.networkobjects.items():
+    for name, remoteirc in world.networkobjects.items():
         if irc.name == name or not remoteirc.connected.is_set():
             continue
         if utils.isChannel(target):
@@ -606,7 +607,7 @@ utils.add_hook(handle_mode, 'MODE')
 def handle_topic(irc, numeric, command, args):
     channel = args['channel']
     topic = args['topic']
-    for name, remoteirc in utils.networkobjects.items():
+    for name, remoteirc in world.networkobjects.items():
         if irc.name == name or not remoteirc.connected.is_set():
             continue
 
@@ -632,7 +633,7 @@ def handle_kill(irc, numeric, command, args):
         # We don't allow killing over the relay, so we must respawn the affected
         # client and rejoin it to its channels.
         del relayusers[realuser][irc.name]
-        remoteirc = utils.networkobjects[realuser[0]]
+        remoteirc = world.networkobjects[realuser[0]]
         for remotechan in remoteirc.channels:
             localchan = findRemoteChan(remoteirc, irc, remotechan)
             if localchan:
@@ -674,7 +675,7 @@ def isRelayClient(irc, user):
     return False
 
 def relayJoins(irc, channel, users, ts):
-    for name, remoteirc in utils.networkobjects.items():
+    for name, remoteirc in world.networkobjects.items():
         queued_users = []
         if name == irc.name or not remoteirc.connected.is_set():
             # Don't relay things to their source network...
@@ -708,7 +709,7 @@ def relayJoins(irc, channel, users, ts):
             remoteirc.proto.sjoinServer(remoteirc, remoteirc.sid, remotechan, queued_users, ts=ts)
 
 def relayPart(irc, channel, user):
-    for name, remoteirc in utils.networkobjects.items():
+    for name, remoteirc in world.networkobjects.items():
         if name == irc.name or not remoteirc.connected.is_set():
             # Don't relay things to their source network...
             continue
@@ -789,7 +790,7 @@ def destroy(irc, source, args):
     entry = (irc.name, channel)
     if entry in db:
         for link in db[entry]['links']:
-            removeChannel(utils.networkobjects.get(link[0]), link[1])
+            removeChannel(world.networkobjects.get(link[0]), link[1])
         removeChannel(irc, channel)
         del db[entry]
         utils.msg(irc, source, 'Done.')
@@ -823,7 +824,7 @@ def link(irc, source, args):
     if not utils.isOper(irc, source):
         utils.msg(irc, source, 'Error: You must be opered in order to complete this operation.')
         return
-    if remotenet not in utils.networkobjects:
+    if remotenet not in world.networkobjects:
         utils.msg(irc, source, 'Error: No network named %r exists.' % remotenet)
         return
     localentry = findRelay((irc.name, localchan))
@@ -882,7 +883,7 @@ def delink(irc, source, args):
             else:
                for link in db[entry]['links'].copy():
                     if link[0] == remotenet:
-                        removeChannel(utils.networkobjects.get(remotenet), link[1])
+                        removeChannel(world.networkobjects.get(remotenet), link[1])
                         db[entry]['links'].remove(link)
         else:
             removeChannel(irc, channel)
@@ -892,8 +893,8 @@ def delink(irc, source, args):
         utils.msg(irc, source, 'Error: No such relay %r.' % channel)
 
 def initializeAll(irc):
-    log.debug('(%s) initializeAll: waiting for utils.started', irc.name)
-    utils.started.wait()
+    log.debug('(%s) initializeAll: waiting for world.started', irc.name)
+    world.started.wait()
     for chanpair, entrydata in db.items():
         network, channel = chanpair
         initializeChannel(irc, channel)
@@ -903,7 +904,7 @@ def initializeAll(irc):
 
 def main():
     loadDB()
-    utils.schedulers['relaydb'] = scheduler = sched.scheduler()
+    world.schedulers['relaydb'] = scheduler = sched.scheduler()
     scheduler.enter(30, 1, exportDB, argument=(True,))
     # Thread this because exportDB() queues itself as part of its
     # execution, in order to get a repeating loop.
@@ -935,7 +936,7 @@ def handle_save(irc, numeric, command, args):
         # It's one of our relay clients; try to fix our nick to the next
         # available normalized nick.
         remotenet, remoteuser = realuser
-        remoteirc = utils.networkobjects[remotenet]
+        remoteirc = world.networkobjects[remotenet]
         nick = remoteirc.users[remoteuser].nick
         # Limit how many times we can attempt to fix our nick, to prevent
         # floods and such.
@@ -961,7 +962,7 @@ def linked(irc, source, args):
     """takes no arguments.
 
     Returns a list of channels shared across the relay."""
-    networks = list(utils.networkobjects.keys())
+    networks = list(world.networkobjects.keys())
     networks.remove(irc.name)
     s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(networks))
     utils.msg(irc, source, s)
@@ -976,7 +977,7 @@ def linked(irc, source, args):
 
 def handle_away(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].items():
-        remoteirc = utils.networkobjects[netname]
+        remoteirc = world.networkobjects[netname]
         remoteirc.proto.awayClient(remoteirc, user, args['text'])
 utils.add_hook(handle_away, 'AWAY')
 

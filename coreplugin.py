@@ -2,6 +2,7 @@
 
 import utils
 from log import log
+import world
 
 # Handle KILLs sent to the PyLink client and respawn
 def handle_kill(irc, source, command, args):
@@ -25,7 +26,7 @@ def handle_commands(irc, source, command, args):
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         try:
-            func = utils.bot_commands[cmd]
+            func = world.bot_commands[cmd]
         except KeyError:
             utils.msg(irc, source, 'Error: Unknown command %r.' % cmd)
             return
@@ -84,7 +85,7 @@ def handle_whois(irc, source, command, args):
     # idle time, so we simply return 0.
     # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(irc, server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
-    for func in utils.whois_handlers:
+    for func in world.whois_handlers:
     # Iterate over custom plugin WHOIS handlers. They return a tuple
     # or list with two arguments: the numeric, and the text to send.
         try:

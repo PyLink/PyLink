@@ -10,6 +10,7 @@ import hashlib
 from log import log
 import utils
 from conf import conf
+import world
 
 ### Exceptions
 
@@ -214,7 +215,7 @@ class Irc():
         hook_cmd = parsed_args.get('parse_as') or hook_cmd
         log.debug('Parsed args %r received from %s handler (calling hook %s)', parsed_args, command, hook_cmd)
         # Iterate over hooked functions, catching errors accordingly
-        for hook_func in utils.command_hooks[hook_cmd]:
+        for hook_func in world.command_hooks[hook_cmd]:
             try:
                 log.debug('Calling function %s', hook_func)
                 hook_func(self, numeric, command, parsed_args)

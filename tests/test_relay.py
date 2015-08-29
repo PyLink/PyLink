@@ -7,7 +7,6 @@ import unittest
 import utils
 import classes
 import relay
-import conf
 
 def dummyf():
     pass

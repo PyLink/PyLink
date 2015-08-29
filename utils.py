@@ -1,19 +1,9 @@
 import string
 import re
-from collections import defaultdict
-import threading
 import inspect
 
 from log import log
-global bot_commands, command_hooks
-# This should be a mapping of command names to functions
-bot_commands = {}
-command_hooks = defaultdict(list)
-networkobjects = {}
-schedulers = {}
-plugins = []
-whois_handlers = []
-started = threading.Event()
+import world
 
 # This is separate from classes.py to prevent import loops.
 class NotAuthenticatedError(Exception):
@@ -118,12 +108,12 @@ def add_cmd(func, name=None):
     if name is None:
         name = func.__name__
     name = name.lower()
-    bot_commands[name] = func
+    world.bot_commands[name] = func
 
 def add_hook(func, command):
     """Add a hook <func> for command <command>."""
     command = command.upper()
-    command_hooks[command].append(func)
+    world.command_hooks[command].append(func)
 
 def toLower(irc, text):
     if irc.proto.casemapping == 'rfc1459':
