@@ -70,8 +70,12 @@ class Irc():
 
         self.initVars()
 
-        self.connection_thread = threading.Thread(target = self.connect)
-        self.connection_thread.start()
+        if world.testing:
+            # HACK: Don't thread if we're running tests.
+            self.connect()
+        else:
+            self.connection_thread = threading.Thread(target = self.connect)
+            self.connection_thread.start()
         self.pingTimer = None
 
     def connect(self):
@@ -327,7 +331,10 @@ class FakeIRC(Irc):
     def run(self, data):
         """Queues a message to the fake IRC server."""
         log.debug('<- ' + data)
-        self.proto.handle_events(self, data)
+        hook_args = self.proto.handle_events(self, data)
+        if hook_args is not None:
+            self.hookmsgs.append(hook_args)
+            self.callHooks(hook_args)
 
     def send(self, data):
         self.messages.append(data)
@@ -358,11 +365,6 @@ class FakeIRC(Irc):
         hookmsgs = self.hookmsgs
         self.hookmsgs = []
         return hookmsgs
-
-    @staticmethod
-    def dummyhook(irc, source, command, parsed_args):
-        """Dummy function to bind to hooks. This is what allows takeHooks() to work."""
-        irc.hookmsgs.append(parsed_args)
 
 class FakeProto():
     """Dummy protocol module for testing purposes."""
