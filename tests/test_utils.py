@@ -13,7 +13,7 @@ def dummyf():
 
 class TestUtils(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('fakeirc', classes.FakeProto(), conf.testconf)
+        self.irc = classes.FakeIRC('fakeirc', classes.FakeProto())
 
     def testTS6UIDGenerator(self):
         uidgen = utils.TS6UIDGenerator('9PY')

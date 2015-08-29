@@ -9,6 +9,7 @@ import hashlib
 
 from log import log
 import utils
+from conf import conf
 
 ### Exceptions
 
@@ -55,7 +56,7 @@ class Irc():
         # UID generators, for servers that need it
         self.uidgen = {}
 
-    def __init__(self, netname, proto, conf):
+    def __init__(self, netname, proto):
         # Initialize some variables
         self.name = netname.lower()
         self.conf = conf

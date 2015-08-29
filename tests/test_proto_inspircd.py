@@ -11,23 +11,23 @@ import coreplugin
 
 class TestProtoInspIRCd(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('unittest', inspircd, classes.testconf)
+        self.irc = classes.FakeIRC('unittest', inspircd)
         self.proto = self.irc.proto
         self.sdata = self.irc.serverdata
         # This is to initialize ourself as an internal PseudoServer, so we can spawn clients
-        self.proto.connect(self.irc)
+        self.irc.connect()
         self.u = self.irc.pseudoclient.uid
         self.maxDiff = None
-        utils.command_hooks = defaultdict(list)
+        self.initial_messages = self.irc.takeMsgs()
+        # Clear the hooks called at startup (spawnmain and possibly others)
+        self.irc.takeHooks()
 
     def testConnect(self):
-        initial_messages = self.irc.takeMsgs()
-        commands = self.irc.takeCommands(initial_messages)
-
+        commands = self.irc.takeCommands(self.initial_messages)
         # SERVER pylink.unittest abcd 0 9PY :PyLink Service
         serverline = 'SERVER %s %s 0 %s :PyLink Service' % (
             self.sdata['hostname'], self.sdata['sendpass'], self.sdata['sid'])
-        self.assertIn(serverline, initial_messages)
+        self.assertIn(serverline, self.initial_messages)
         self.assertIn('BURST', commands)
         self.assertIn('ENDBURST', commands)
         # Is it creating our lovely PyLink PseudoClient?
@@ -135,18 +135,6 @@ class TestProtoInspIRCd(unittest.TestCase):
         self.assertNotIn('34P', self.irc.servers)
         self.assertNotIn('34Q', self.irc.servers)
         self.assertNotIn('34Z', self.irc.servers)
-
-    def testRSquit(self):
-        u = self.proto.spawnClient(self.irc, 'person1', 'person', 'users.overdrive.pw')
-        u.identified = 'admin'
-        self.proto.spawnServer(self.irc, 'level1.pylink', '34P')
-        self.irc.run(':%s RSQUIT level1.pylink :some reason' % self.u)
-        # No SQUIT yet, since the 'PyLink' client isn't identified
-        self.assertNotIn('SQUIT', self.irc.takeCommands(self.irc.takeMsgs()))
-        # The one we just spawned however, is.
-        self.irc.run(':%s RSQUIT level1.pylink :some reason' % u.uid)
-        self.assertIn('SQUIT', self.irc.takeCommands(self.irc.takeMsgs()))
-        self.assertNotIn('34P', self.irc.servers)
 
     def testHandleServer(self):
         self.irc.run('SERVER whatever.net abcd 0 10X :something')

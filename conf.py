@@ -23,7 +23,7 @@ testconf = {'bot':
                     'nick': 'PyLink',
                     'user': 'pylink',
                     'realname': 'PyLink Service Client',
-                    'loglevel': 'DEBUG',
+                    'loglevel': 'INFO',
                     'serverdesc': 'PyLink unit tests'
                 },
             'servers':

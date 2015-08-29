@@ -14,7 +14,7 @@ def dummyf():
 
 class TestRelay(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('unittest', classes.FakeProto(), conf.testconf)
+        self.irc = classes.FakeIRC('unittest', classes.FakeProto())
         self.irc.maxnicklen = 20
         self.f = lambda nick: relay.normalizeNick(self.irc, 'unittest', nick)
         # Fake our protocol name to something that supports slashes in nicks.
