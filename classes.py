@@ -291,7 +291,7 @@ class IrcServer():
     """
     def __init__(self, uplink, name, internal=False):
         self.uplink = uplink
-        self.users = []
+        self.users = set()
         self.internal = internal
         self.name = name.lower()
     def __repr__(self):

@@ -39,7 +39,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
         realhost=realhost, ip=ip)
     utils.applyModes(irc, uid, modes)
-    irc.servers[server].users.append(uid)
+    irc.servers[server].users.add(uid)
     _send(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                     " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid,
@@ -136,7 +136,7 @@ def removeClient(irc, numeric):
     log.debug('Removing client %s from irc.users', numeric)
     del irc.users[numeric]
     log.debug('Removing client %s from irc.servers[%s]', numeric, sid)
-    irc.servers[sid].users.remove(numeric)
+    irc.servers[sid].users.discard(numeric)
 
 def quitClient(irc, numeric, reason):
     """<irc object> <client numeric>
@@ -420,7 +420,7 @@ def handle_uid(irc, numeric, command, args):
     parsedmodes = utils.parseModes(irc, uid, [args[8], args[9]])
     log.debug('Applying modes %s for %s', parsedmodes, uid)
     utils.applyModes(irc, uid, parsedmodes)
-    irc.servers[numeric].users.append(uid)
+    irc.servers[numeric].users.add(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
 def handle_quit(irc, numeric, command, args):
