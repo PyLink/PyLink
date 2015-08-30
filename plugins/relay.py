@@ -1046,7 +1046,7 @@ def showuser(irc, source, args):
         # for us.
         return
     u = utils.nickToUid(irc, target)
-    if u and (utils.isOper(irc, source) or u == source):
+    if u:
         try:
             userpair = getLocalUser(irc, u) or (irc.name, u)
             remoteusers = relayusers[userpair].items()
@@ -1055,6 +1055,8 @@ def showuser(irc, source, args):
         else:
             nicks = []
             if remoteusers:
+                nicks.append('%s (home network): \x02%s\x02' % (userpair[0],
+                             world.networkobjects[userpair[0]].users[userpair[1]].nick))
                 for r in remoteusers:
                     remotenet, remoteuser = r
                     remoteirc = world.networkobjects[remotenet]
@@ -1065,5 +1067,5 @@ def showuser(irc, source, args):
             relay = findRelay((irc.name, ch))
             if relay:
                 relaychannels.append(''.join(relay))
-        if relaychannels:
+        if relaychannels and (utils.isOper(irc, source) or u == source):
             utils.msg(irc, source, "\x02Relay channels\x02: %s" % ' '.join(relaychannels))
