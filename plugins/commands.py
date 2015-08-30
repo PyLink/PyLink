@@ -50,6 +50,10 @@ def listcommands(irc, source, args):
     Returns a list of available commands PyLink has to offer."""
     cmds = list(world.bot_commands.keys())
     cmds.sort()
+    for idx, cmd in enumerate(cmds):
+        nfuncs = len(world.bot_commands[cmd])
+        if nfuncs > 1:
+            cmds[idx] = '%s(x%s)' % (cmd, nfuncs)
     utils.msg(irc, source, 'Available commands include: %s' % ', '.join(cmds))
     utils.msg(irc, source, 'To see help on a specific command, type \x02help <command>\x02.')
 utils.add_cmd(listcommands, 'list')
