@@ -11,7 +11,6 @@ world.testing = False
 import conf
 from log import log
 import classes
-import utils
 import coreplugin
 
 if __name__ == '__main__':

@@ -4,7 +4,6 @@ cwd = os.getcwd()
 sys.path += [cwd, os.path.join(cwd, 'plugins')]
 import unittest
 
-import utils
 import classes
 import relay
 

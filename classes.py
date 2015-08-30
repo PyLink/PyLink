@@ -8,7 +8,6 @@ from collections import defaultdict
 import hashlib
 
 from log import log
-import utils
 from conf import conf
 import world
 

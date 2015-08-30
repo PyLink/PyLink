@@ -2,7 +2,6 @@ import sys
 import os
 sys.path += [os.getcwd(), os.path.join(os.getcwd(), 'protocols')]
 import unittest
-from collections import defaultdict
 
 import inspircd
 import classes

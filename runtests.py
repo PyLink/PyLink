@@ -2,7 +2,6 @@
 
 import unittest
 import glob
-import imp
 import os
 import sys
 
