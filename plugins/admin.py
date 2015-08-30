@@ -131,25 +131,6 @@ def kick(irc, source, args):
     irc.callHooks([u, 'PYLINK_ADMIN_KICK', {'channel': channel, 'target': targetu, 'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
-def showuser(irc, source, args):
-    """<user>
-
-    Admin-only. Shows information about <user>."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
-    try:
-        target = args[0]
-    except IndexError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 1: nick.")
-        return
-    u = utils.nickToUid(irc, target)
-    if u is None:
-        utils.msg(irc, source, 'Error: Unknown user %r.' % target)
-        return
-    s = ['\x02%s\x02: %s' % (k, v) for k, v in sorted(irc.users[u].__dict__.items())]
-    s = 'Information on user \x02%s\x02: %s' % (target, '; '.join(s))
-    utils.msg(irc, source, s)
-
-@utils.add_cmd
 def showchan(irc, source, args):
     """<channel>
 

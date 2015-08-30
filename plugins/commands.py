@@ -1,6 +1,7 @@
 # commands.py: base PyLink commands
 import sys
 import os
+from time import ctime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
@@ -86,3 +87,37 @@ def help(irc, source, args):
                                        "doesn't offer any help." % (command, mod))
                 return
 
+@utils.add_cmd
+def showuser(irc, source, args):
+    """<user>
+
+    Shows information about <user>."""
+    try:
+        target = args[0]
+    except IndexError:
+        utils.msg(irc, source, "Error: Not enough arguments. Needs 1: nick.")
+        return
+    u = utils.nickToUid(irc, target) or target
+    # Only show private info if the person is calling 'showuser' on themselves,
+    # or is an oper.
+    verbose = utils.isOper(irc, source) or u == source
+    if u not in irc.users:
+        utils.msg(irc, source, 'Error: Unknown user %r.' % target)
+        return
+
+    f = lambda s: utils.msg(irc, source, s)
+    userobj = irc.users[u]
+    f('Information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
+      userobj.host, userobj.realname))
+    sid = utils.clientToServer(irc, u)
+    serverobj = irc.servers[sid]
+    ts = userobj.ts
+    f('\x02Home server\x02: %s (%s); \x02Signon time:\x02 %s (%s)' % \
+      (serverobj.name, sid, ctime(float(ts)), ts))
+    if verbose:
+        f('\x02Protocol UID\x02: %s; \x02PyLink identification\x02: %s' % \
+          (u, userobj.identified))
+        f('\x02User modes\x02: %s' % utils.joinModes(userobj.modes))
+        f('\x02Real host\x02: %s; \x02IP\x02: %s; \x02Away status\x02: %s' % \
+          (userobj.realhost, userobj.ip, userobj.away or '\x1D(not set)\x1D'))
+        f('\x02Channels\x02: %s' % (' '.join(userobj.channels).strip() or '\x1D(none)\x1D'))
