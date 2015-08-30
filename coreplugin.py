@@ -25,18 +25,17 @@ def handle_commands(irc, source, command, args):
         cmd_args = text.split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
-        try:
-            func = world.bot_commands[cmd]
-        except KeyError:
+        if cmd not in world.bot_commands:
             utils.msg(irc, source, 'Error: Unknown command %r.' % cmd)
             return
-        try:
-            log.info('(%s) Calling command %r for %s', irc.name, cmd, utils.getHostmask(irc, source))
-            func(irc, source, cmd_args)
-        except Exception as e:
-            log.exception('Unhandled exception caught in command %r', cmd)
-            utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
-            return
+        log.info('(%s) Calling command %r for %s', irc.name, cmd, utils.getHostmask(irc, source))
+        for func in world.bot_commands[cmd]:
+            try:
+                func(irc, source, cmd_args)
+            except Exception as e:
+                log.exception('Unhandled exception caught in command %r', cmd)
+                utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+                return
 utils.add_hook(handle_commands, 'PRIVMSG')
 
 # Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd).

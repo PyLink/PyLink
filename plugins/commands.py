@@ -63,20 +63,26 @@ def help(irc, source, args):
     except IndexError:  # No argument given, just return 'list' output
         listcommands(irc, source, args)
         return
-    try:
-        func = world.bot_commands[command]
-    except KeyError:
+    if command not in world.bot_commands:
         utils.msg(irc, source, 'Error: Unknown command %r.' % command)
         return
     else:
-        doc = func.__doc__
-        if doc:
-            lines = doc.split('\n')
-            # Bold the first line, which usually just tells you what
-            # arguments the command takes.
-            lines[0] = '\x02%s %s\x02' % (command, lines[0])
-            for line in lines:
-                utils.msg(irc, source, line.strip())
-        else:
-            utils.msg(irc, source, 'Error: Command %r doesn\'t offer any help.' % command)
-            return
+        funcs = world.bot_commands[command]
+        if len(funcs) > 1:
+            utils.msg(irc, source, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
+                      % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
+        for func in funcs:
+            doc = func.__doc__
+            mod = func.__module__
+            if doc:
+                lines = doc.split('\n')
+                # Bold the first line, which usually just tells you what
+                # arguments the command takes.
+                lines[0] = '\x02%s %s\x02 (plugin: %r)' % (command, lines[0], mod)
+                for line in lines:
+                    utils.msg(irc, source, line.strip())
+            else:
+                utils.msg(irc, source, "Error: Command %r (from plugin %r) "
+                                       "doesn't offer any help." % (command, mod))
+                return
+

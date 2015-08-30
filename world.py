@@ -9,7 +9,7 @@ testing = True
 
 global bot_commands, command_hooks
 # This should be a mapping of command names to functions
-bot_commands = {}
+bot_commands = defaultdict(list)
 command_hooks = defaultdict(list)
 networkobjects = {}
 schedulers = {}

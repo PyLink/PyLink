@@ -108,7 +108,7 @@ def add_cmd(func, name=None):
     if name is None:
         name = func.__name__
     name = name.lower()
-    world.bot_commands[name] = func
+    world.bot_commands[name].append(func)
 
 def add_hook(func, command):
     """Add a hook <func> for command <command>."""
