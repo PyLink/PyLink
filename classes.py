@@ -262,7 +262,7 @@ class Irc():
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0', opertype='IRC Operator'):
+                 ip='0.0.0.0'):
         self.nick = nick
         self.ts = ts
         self.uid = uid
