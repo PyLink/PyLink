@@ -195,6 +195,7 @@ def _operUp(irc, target, opertype=None):
         otype = 'IRC_Operator'
     log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
               irc.name, target)
+    userobj.opertype = otype
     _send(irc, target, 'OPERTYPE %s' % otype)
 
 def _sendModes(irc, numeric, target, modes, ts=None):

@@ -75,7 +75,13 @@ def handle_whois(irc, source, command, args):
     # 313: sends a string denoting the target's operator privilege,
     # only if they have umode +o.
     if ('o', None) in user.modes:
-        f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
+        if hasattr(user, 'opertype'):
+            opertype = user.opertype.replace("_", " ")
+        else:
+            opertype = "IRC Operator"
+        # Let's be gramatically correct.
+        n = 'n' if opertype[0].lower() in 'aeiou' else ''
+        f(irc, server, 313, source, "%s :is a%s %s" % (nick, n, opertype))
     # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
     # Only show this to opers!
     if sourceisOper:

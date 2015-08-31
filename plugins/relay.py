@@ -150,7 +150,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             host = userobj.host[:64]
             realname = userobj.realname
             modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
-            opertype = 'IRC_Operator_(remote)'
+            opertype = ''
             if ('o', None) in userobj.modes:
                 if hasattr(userobj, 'opertype'):
                     # InspIRCd's special OPERTYPE command; this is mandatory
@@ -165,6 +165,8 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                     log.debug('(%s) relay.getRemoteUser: setting OPERTYPE of client for %r to %s',
                               irc.name, user, userobj.opertype)
                     opertype = userobj.opertype + '_(remote)'
+                else:
+                    opertype = 'IRC_Operator_(remote)'
                 # Set hideoper on remote opers, to prevent inflating
                 # /lusers and various /stats
                 hideoper_mode = remoteirc.umodes.get('hideoper')
@@ -175,6 +177,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                                             modes=modes, ts=userobj.ts,
                                             opertype=opertype).uid
             remoteirc.users[u].remote = (irc.name, user)
+            remoteirc.users[u].opertype = opertype
             away = userobj.away
             if away:
                 remoteirc.proto.awayClient(remoteirc, u, away)
