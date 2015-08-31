@@ -299,7 +299,7 @@ class IrcServer():
 class IrcChannel():
     def __init__(self):
         self.users = set()
-        self.modes = set()
+        self.modes = {('n', None), ('t', None)}
         self.topic = ''
         self.ts = int(time.time())
         self.topicset = False
