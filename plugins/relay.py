@@ -632,7 +632,7 @@ def handle_kill(irc, numeric, command, args):
         # client and rejoin it to its channels.
         del relayusers[realuser][irc.name]
         remoteirc = utils.networkobjects[realuser[0]]
-        for remotechan in remoteirc.channels:
+        for remotechan in remoteirc.channels.copy():
             localchan = findRemoteChan(remoteirc, irc, remotechan)
             if localchan:
                 modes = getPrefixModes(remoteirc, irc, localchan, realuser[1])
