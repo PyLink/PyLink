@@ -528,11 +528,15 @@ def handle_events(irc, data):
             # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b banexception=e blockcolor=c c_registered=r exemptchanops=X filter=g flood=f halfop=%h history=H invex=I inviteonly=i joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T official-join=!Y op=@o operonly=O opmoderated=U owner=~q permanent=P private=p redirect=L reginvite=R regmoderated=M secret=s sslonly=z stripcolor=S topiclock=t voice=+v
 
             # Named modes are essential for a cross-protocol IRC service. We
-            # can use InspIRCd as a model here and assign their mode map to our cmodes list.
+            # can use InspIRCd as a model here and assign a similar mode map to our cmodes list.
             for modepair in args[2:]:
                 name, char = modepair.split('=')
                 if name == 'reginvite':  # Reginvite? That's a dumb name.
                     name = 'regonly'
+                if name == 'founder':  # Channel mode +q
+                    # Founder, owner; same thing. m_customprefix allows you to name it anything you like
+                    # (the former is config default, but I personally prefer the latter.)
+                    name = 'owner'
                 # We don't really care about mode prefixes; just the mode char
                 irc.cmodes[name.lstrip(':')] = char[-1]
         elif args[1] == 'USERMODES':
