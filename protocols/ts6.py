@@ -23,7 +23,7 @@ def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
 
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
-        server=None, ip='0.0.0.0', realname=None, ts=None):
+        server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
     server = server or irc.sid
     if not utils.isInternalServer(irc, server):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
