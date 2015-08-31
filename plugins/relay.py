@@ -233,7 +233,6 @@ def initializeChannel(irc, channel):
         log.debug('(%s) initializeChannel: all_links: %s', irc.name, all_links)
         # Iterate over all the remote channels linked in this relay.
         for link in all_links:
-            modes = []
             remotenet, remotechan = link
             if remotenet == irc.name:
                 continue
@@ -246,7 +245,7 @@ def initializeChannel(irc, channel):
             # Join their (remote) users and set their modes.
             relayJoins(remoteirc, remotechan, rc.users, rc.ts)
             relayModes(remoteirc, irc, remoteirc.sid, remotechan, rc.modes)
-            relayModes(irc, remoteirc, irc.sid, channel, modes)
+            relayModes(irc, remoteirc, irc.sid, channel, c.modes)
             topic = remoteirc.channels[remotechan].topic
             # Only update the topic if it's different from what we already have,
             # and topic bursting is complete.

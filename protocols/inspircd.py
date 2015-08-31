@@ -23,7 +23,7 @@ def _send(irc, sid, msg):
     irc.send(':%s %s' % (sid, msg))
 
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
-        server=None, ip='0.0.0.0', realname=None, ts=None):
+        server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
     server = server or irc.sid
     if not utils.isInternalServer(irc, server):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
@@ -45,6 +45,8 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
                                              nick=nick, ident=ident, uid=uid,
                                              modes=raw_modes, ip=ip, realname=realname,
                                              realhost=realhost))
+    if ('o', None) in modes or ('+o', None) in modes:
+        _operUp(irc, uid, opertype=opertype or 'IRC_Operator')
     return u
 
 def joinClient(irc, client, channel):
@@ -182,11 +184,30 @@ def nickClient(irc, numeric, newnick):
     _send(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
 
+def _operUp(irc, target, opertype=None):
+    userobj = irc.users[target]
+    try:
+        otype = opertype or userobj.opertype
+    except AttributeError:
+        log.debug('(%s) opertype field for %s (%s) isn\'t filled yet!',
+                  irc.name, target, userobj.nick)
+        # whatever, this is non-standard anyways.
+        otype = 'IRC_Operator'
+    log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
+              irc.name, target)
+    _send(irc, target, 'OPERTYPE %s' % otype)
+
 def _sendModes(irc, numeric, target, modes, ts=None):
     # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
     # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
-    joinedmodes = utils.joinModes(modes)
+    log.debug('(%s) inspircd._sendModes: received %r for mode list', irc.name, modes)
+    if ('+o', None) in modes and not utils.isChannel(target):
+        # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
+        # Servers need a special command to set umode +o on people.
+        # Why isn't this documented anywhere, InspIRCd?
+        _operUp(irc, target)
     utils.applyModes(irc, target, modes)
+    joinedmodes = utils.joinModes(modes)
     if utils.isChannel(target):
         ts = ts or irc.channels[target.lower()].ts
         _send(irc, numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
@@ -528,11 +549,15 @@ def handle_events(irc, data):
             # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b banexception=e blockcolor=c c_registered=r exemptchanops=X filter=g flood=f halfop=%h history=H invex=I inviteonly=i joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T official-join=!Y op=@o operonly=O opmoderated=U owner=~q permanent=P private=p redirect=L reginvite=R regmoderated=M secret=s sslonly=z stripcolor=S topiclock=t voice=+v
 
             # Named modes are essential for a cross-protocol IRC service. We
-            # can use InspIRCd as a model here and assign their mode map to our cmodes list.
+            # can use InspIRCd as a model here and assign a similar mode map to our cmodes list.
             for modepair in args[2:]:
                 name, char = modepair.split('=')
                 if name == 'reginvite':  # Reginvite? That's a dumb name.
                     name = 'regonly'
+                if name == 'founder':  # Channel mode +q
+                    # Founder, owner; same thing. m_customprefix allows you to name it anything you like
+                    # (the former is config default, but I personally prefer the latter.)
+                    name = 'owner'
                 # We don't really care about mode prefixes; just the mode char
                 irc.cmodes[name.lstrip(':')] = char[-1]
         elif args[1] == 'USERMODES':
@@ -676,8 +701,9 @@ def handle_opertype(irc, numeric, command, args):
     # command sent for it.
     # <- :70MAAAAAB OPERTYPE Network_Owner
     omode = [('+o', None)]
+    irc.users[numeric].opertype = opertype = args[0]
     utils.applyModes(irc, numeric, omode)
-    return {'target': numeric, 'modes': omode}
+    return {'target': numeric, 'modes': omode, 'text': opertype}
 
 def handle_fident(irc, numeric, command, args):
     # :70MAAAAAB FHOST test
