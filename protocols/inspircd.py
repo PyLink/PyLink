@@ -703,7 +703,10 @@ def handle_opertype(irc, numeric, command, args):
     omode = [('+o', None)]
     irc.users[numeric].opertype = opertype = args[0]
     utils.applyModes(irc, numeric, omode)
-    return {'target': numeric, 'modes': omode, 'text': opertype}
+    # OPERTYPE is essentially umode +o and metadata in one command;
+    # we'll call that too.
+    irc.callHooks([numeric, 'PYLINK_CLIENT_OPERED', {'text': opertype}])
+    return {'target': numeric, 'modes': omode}
 
 def handle_fident(irc, numeric, command, args):
     # :70MAAAAAB FHOST test

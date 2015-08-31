@@ -150,15 +150,39 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             host = userobj.host[:64]
             realname = userobj.realname
             modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
+            if hasattr(userobj, 'opertype'):
+                # InspIRCd's special OPERTYPE command; this is mandatory
+                # and setting of umode +/-o will fail unless this
+                # is used instead. This also sets an oper type for
+                # the user, which is used in WHOIS, etc.
+
+                # If an opertype exists for the user, add " (remote)"
+                # for the relayed clone, so that it shows in whois.
+                # Janus does this too. :)
+                # OPERTYPE uses underscores instead of spaces, FYI.
+                log.debug('(%s) relay.getRemoteUser: setting OPERTYPE of client for %r to %s',
+                          irc.name, user, userobj.opertype)
+                opertype = userobj.opertype + '_(remote)'
+            else:
+                opertype = 'IRC_Operator_(remote)'
             u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
                                             host=host, realname=realname,
-                                            modes=modes, ts=userobj.ts).uid
+                                            modes=modes, ts=userobj.ts,
+                                            opertype=opertype).uid
             remoteirc.users[u].remote = (irc.name, user)
             away = userobj.away
             if away:
                 remoteirc.proto.awayClient(remoteirc, u, away)
         relayusers[(irc.name, user)][remoteirc.name] = u
         return u
+
+def handle_operup(irc, numeric, command, args):
+    newtype = args['text'] + '_(remote)'
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        log.debug('(%s) relay.handle_opertype: setting OPERTYPE of %s/%s to %s', irc.name, user, netname, newtype)
+        remoteirc = world.networkobjects[netname]
+        remoteirc.users[user].opertype = newtype
+utils.add_hook(handle_operup, 'PYLINK_CLIENT_OPERED')
 
 def getLocalUser(irc, user, targetirc=None):
     """<irc object> <pseudoclient uid> [<target irc object>]
