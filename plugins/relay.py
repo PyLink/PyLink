@@ -150,21 +150,26 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             host = userobj.host[:64]
             realname = userobj.realname
             modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
-            if hasattr(userobj, 'opertype'):
-                # InspIRCd's special OPERTYPE command; this is mandatory
-                # and setting of umode +/-o will fail unless this
-                # is used instead. This also sets an oper type for
-                # the user, which is used in WHOIS, etc.
+            opertype = 'IRC_Operator_(remote)'
+            if ('o', None) in userobj.modes:
+                if hasattr(userobj, 'opertype'):
+                    # InspIRCd's special OPERTYPE command; this is mandatory
+                    # and setting of umode +/-o will fail unless this
+                    # is used instead. This also sets an oper type for
+                    # the user, which is used in WHOIS, etc.
 
-                # If an opertype exists for the user, add " (remote)"
-                # for the relayed clone, so that it shows in whois.
-                # Janus does this too. :)
-                # OPERTYPE uses underscores instead of spaces, FYI.
-                log.debug('(%s) relay.getRemoteUser: setting OPERTYPE of client for %r to %s',
-                          irc.name, user, userobj.opertype)
-                opertype = userobj.opertype + '_(remote)'
-            else:
-                opertype = 'IRC_Operator_(remote)'
+                    # If an opertype exists for the user, add " (remote)"
+                    # for the relayed clone, so that it shows in whois.
+                    # Janus does this too. :)
+                    # OPERTYPE uses underscores instead of spaces, FYI.
+                    log.debug('(%s) relay.getRemoteUser: setting OPERTYPE of client for %r to %s',
+                              irc.name, user, userobj.opertype)
+                    opertype = userobj.opertype + '_(remote)'
+                # Set hideoper on remote opers, to prevent inflating
+                # /lusers and various /stats
+                hideoper_mode = remoteirc.umodes.get('hideoper')
+                if hideoper_mode:
+                    modes.append((hideoper_mode, None))
             u = remoteirc.proto.spawnClient(remoteirc, nick, ident=ident,
                                             host=host, realname=realname,
                                             modes=modes, ts=userobj.ts,
@@ -619,7 +624,15 @@ def handle_mode(irc, numeric, command, args):
         if utils.isChannel(target):
             relayModes(irc, remoteirc, numeric, target, modes)
         else:
+            # Set hideoper on remote opers, to prevent inflating
+            # /lusers and various /stats
+            hideoper_mode = remoteirc.umodes.get('hideoper')
             modes = getSupportedUmodes(irc, remoteirc, modes)
+            if hideoper_mode:
+                if ('+o', None) in modes:
+                    modes.append(('+%s' % hideoper_mode, None))
+                elif ('-o', None) in modes:
+                    modes.append(('-%s' % hideoper_mode, None))
             remoteuser = getRemoteUser(irc, remoteirc, target, spawnIfMissing=False)
             if remoteuser is None:
                 continue
