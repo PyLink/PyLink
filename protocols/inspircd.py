@@ -367,7 +367,15 @@ def handle_pong(irc, source, command, args):
         irc.lastping = time.time()
 
 def handle_privmsg(irc, source, command, args):
-    return {'target': args[0], 'text': args[1]}
+    # <- :70MAAAAAA PRIVMSG #dev :afasfsa
+    # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
+    target = args[0]
+    # We use lowercase channels internally, but uppercase UIDs.
+    if utils.isChannel(target):
+        target = target.lower()
+    return {'target': target, 'text': args[1]}
+
+handle_notice = handle_privmsg
 
 def handle_kill(irc, source, command, args):
     killed = args[0]
@@ -690,11 +698,6 @@ def handle_encap(irc, numeric, command, args):
         text = args[3]
         return {'parse_as': real_command, 'channel': channel,
                 'text': text}
-
-def handle_notice(irc, numeric, command, args):
-    # <- :70MAAAAAA NOTICE #dev :afasfsa
-    # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
-    return {'target': args[0], 'text': args[1]}
 
 def handle_opertype(irc, numeric, command, args):
     # This is used by InspIRCd to denote an oper up; there is no MODE
