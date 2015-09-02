@@ -792,7 +792,7 @@ def create(irc, source, args):
 
     Creates the channel <channel> over the relay."""
     try:
-        channel = args[0].lower()
+        channel = utils.toLower(irc, args[0])
     except IndexError:
         utils.msg(irc, source, "Error: Not enough arguments. Needs 1: channel.")
         return
@@ -815,7 +815,7 @@ def destroy(irc, source, args):
 
     Removes <channel> from the relay, delinking all networks linked to it."""
     try:
-        channel = args[0].lower()
+        channel = utils.toLower(irc, args[0])
     except IndexError:
         utils.msg(irc, source, "Error: Not enough arguments. Needs 1: channel.")
         return
@@ -844,13 +844,13 @@ def link(irc, source, args):
     Links channel <channel> on <remotenet> over the relay to <local channel>.
     If <local channel> is not specified, it defaults to the same name as <channel>."""
     try:
-        channel = args[1].lower()
+        channel = utils.toLower(irc, args[1])
         remotenet = args[0].lower()
     except IndexError:
         utils.msg(irc, source, "Error: Not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
         return
     try:
-        localchan = args[2].lower()
+        localchan = utils.toLower(irc, args[2])
     except IndexError:
         localchan = channel
     for c in (channel, localchan):
@@ -896,7 +896,7 @@ def delink(irc, source, args):
     Delinks channel <local channel>. <network> must and can only be specified if you are on the host network for <local channel>, and allows you to pick which network to delink.
     To remove a relay entirely, use the 'destroy' command instead."""
     try:
-        channel = args[0].lower()
+        channel = utils.toLower(irc, args[0])
     except IndexError:
         utils.msg(irc, source, "Error: Not enough arguments. Needs 1-2: channel, remote netname (optional).")
         return
@@ -1039,7 +1039,7 @@ def linkacl(irc, source, args):
         return
     try:
         cmd = args[0].lower()
-        channel = args[1].lower()
+        channel = utils.toLower(irc, args[1])
     except IndexError:
         utils.msg(irc, source, missingargs)
         return

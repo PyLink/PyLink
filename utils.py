@@ -116,6 +116,10 @@ def add_hook(func, command):
     world.command_hooks[command].append(func)
 
 def toLower(irc, text):
+    """<irc object> <text>
+
+    Returns a lowercase representation of <text> based on <irc object>'s
+    casemapping (rfc1459 vs ascii)."""
     if irc.proto.casemapping == 'rfc1459':
         text = text.replace('{', '[')
         text = text.replace('}', ']')
@@ -124,6 +128,9 @@ def toLower(irc, text):
     return text.lower()
 
 def nickToUid(irc, nick):
+    """<irc object> <nick>
+
+    Returns the UID of a user named <nick>, if present."""
     nick = toLower(irc, nick)
     for k, v in irc.users.items():
         if toLower(irc, v.nick) == nick:

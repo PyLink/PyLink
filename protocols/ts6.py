@@ -51,7 +51,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     return u
 
 def joinClient(irc, client, channel):
-    channel = channel.lower()
+    channel = utils.toLower(irc, channel)
     # JOIN:
     # parameters: channelTS, channel, '+' (a plus sign)
     if not utils.isInternalClient(irc, client):
@@ -71,7 +71,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
     # their status ('@+', '@', '+' or ''), for example:
     # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'. All users must be behind the source server
     # so it is not possible to use this message to force users to join a channel.
-    channel = channel.lower()
+    channel = utils.toLower(irc, channel)
     server = server or irc.sid
     assert users, "sjoinServer: No users sent?"
     log.debug('(%s) sjoinServer: got %r for users', irc.name, users)
@@ -124,7 +124,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
 def _sendModes(irc, numeric, target, modes, ts=None):
     utils.applyModes(irc, target, modes)
     if utils.isChannel(target):
-        ts = ts or irc.channels[target.lower()].ts
+        ts = ts or irc.channels[utils.toLower(irc, target)].ts
         # TMODE:
         # parameters: channelTS, channel, cmode changes, opt. cmode parameters...
 
@@ -371,7 +371,7 @@ def handle_pong(irc, source, command, args):
         irc.lastping = time.time()
 
 def handle_part(irc, source, command, args):
-    channels = args[0].lower().split(',')
+    channels = utils.toLower(irc, args[0]).split(',')
     # We should only get PART commands for channels that exist, right??
     for channel in channels:
         irc.channels[channel].removeuser(source)
@@ -389,7 +389,7 @@ def handle_part(irc, source, command, args):
 
 def handle_sjoin(irc, servernumeric, command, args):
     # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
-    channel = args[1].lower()
+    channel = utils.toLower(irc, args[1])
     userlist = args[-1].split()
     our_ts = irc.channels[channel].ts
     their_ts = int(args[0])
@@ -440,7 +440,7 @@ def handle_join(irc, numeric, command, args):
             irc.users[numeric].channels.discard(channel)
         return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
     else:
-        channel = args[1].lower()
+        channel = utils.toLower(irc, args[1])
         our_ts = irc.channels[channel].ts
         if ts < our_ts:
             # Channel timestamp was reset on burst
@@ -498,7 +498,7 @@ handle_sid = handle_server
 
 def handle_tmode(irc, numeric, command, args):
     # <- :42XAAAAAB TMODE 1437450768 #endlessvoid -c+lkC 3 agte4
-    channel = args[1].lower()
+    channel = utils.toLower(irc, args[1])
     modes = args[2:]
     changedmodes = utils.parseModes(irc, channel, modes)
     utils.applyModes(irc, channel, changedmodes)
