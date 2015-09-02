@@ -53,7 +53,7 @@ def joinClient(irc, client, channel):
     # InspIRCd doesn't distinguish between burst joins and regular joins,
     # so what we're actually doing here is sending FJOIN from the server,
     # on behalf of the clients that call it.
-    channel = channel.lower()
+    channel = utils.toLower(irc, channel)
     server = utils.isInternalClient(irc, client)
     if not server:
         log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
@@ -67,7 +67,7 @@ def joinClient(irc, client, channel):
     irc.users[client].channels.add(channel)
 
 def sjoinServer(irc, server, channel, users, ts=None):
-    channel = channel.lower()
+    channel = utils.toLower(irc, channel)
     server = server or irc.sid
     assert users, "sjoinServer: No users sent?"
     log.debug('(%s) sjoinServer: got %r for users', irc.name, users)
@@ -113,7 +113,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
     irc.channels[channel].users.update(uids)
 
 def partClient(irc, client, channel, reason=None):
-    channel = channel.lower()
+    channel = utils.toLower(irc, channel)
     if not utils.isInternalClient(irc, client):
         log.error('(%s) Error trying to part client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
         raise LookupError('No such PyLink PseudoClient exists.')
@@ -156,7 +156,7 @@ def _sendKick(irc, numeric, channel, target, reason=None):
     """<irc object> <kicker client numeric>
 
     Sends a kick from a PyLink PseudoClient."""
-    channel = channel.lower()
+    channel = utils.toLower(irc, channel)
     if not reason:
         reason = 'No reason given'
     _send(irc, numeric, 'KICK %s %s :%s' % (channel, target, reason))
@@ -209,7 +209,7 @@ def _sendModes(irc, numeric, target, modes, ts=None):
     utils.applyModes(irc, target, modes)
     joinedmodes = utils.joinModes(modes)
     if utils.isChannel(target):
-        ts = ts or irc.channels[target.lower()].ts
+        ts = ts or irc.channels[utils.toLower(irc, target)].ts
         _send(irc, numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
     else:
         _send(irc, numeric, 'MODE %s %s' % (target, joinedmodes))
@@ -372,7 +372,7 @@ def handle_privmsg(irc, source, command, args):
     target = args[0]
     # We use lowercase channels internally, but uppercase UIDs.
     if utils.isChannel(target):
-        target = target.lower()
+        target = utils.toLower(irc, target)
     return {'target': target, 'text': args[1]}
 
 handle_notice = handle_privmsg
@@ -386,13 +386,13 @@ def handle_kill(irc, source, command, args):
 
 def handle_kick(irc, source, command, args):
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
-    channel = args[0].lower()
+    channel = utils.toLower(irc, args[0])
     kicked = args[1]
     handle_part(irc, kicked, 'KICK', [channel, args[2]])
     return {'channel': channel, 'target': kicked, 'text': args[2]}
 
 def handle_part(irc, source, command, args):
-    channels = args[0].lower().split(',')
+    channels = utils.toLower(irc, args[0]).split(',')
     for channel in channels:
         # We should only get PART commands for channels that exist, right??
         irc.channels[channel].removeuser(source)
@@ -415,7 +415,7 @@ def handle_error(irc, numeric, command, args):
 
 def handle_fjoin(irc, servernumeric, command, args):
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
-    channel = args[0].lower()
+    channel = utils.toLower(irc, args[0])
     # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
     userlist = args[-1].split()
     our_ts = irc.channels[channel].ts
@@ -488,7 +488,7 @@ def handle_save(irc, numeric, command, args):
 
 def handle_fmode(irc, numeric, command, args):
     # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
-    channel = args[0].lower()
+    channel = utils.toLower(irc, args[0])
     modes = args[2:]
     changedmodes = utils.parseModes(irc, channel, modes)
     utils.applyModes(irc, channel, changedmodes)
@@ -656,7 +656,7 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
 
 def handle_ftopic(irc, numeric, command, args):
     # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
-    channel = args[0].lower()
+    channel = utils.toLower(irc, args[0])
     ts = args[1]
     setter = args[2]
     topic = args[-1]
@@ -666,7 +666,7 @@ def handle_ftopic(irc, numeric, command, args):
 
 def handle_topic(irc, numeric, command, args):
     # <- :70MAAAAAA TOPIC #test :test
-    channel = args[0].lower()
+    channel = utils.toLower(irc, args[0])
     topic = args[1]
     ts = int(time.time())
     irc.channels[channel].topic = topic
@@ -676,7 +676,7 @@ def handle_topic(irc, numeric, command, args):
 def handle_invite(irc, numeric, command, args):
     # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 0
     target = args[0]
-    channel = args[1].lower()
+    channel = utils.toLower(irc, args[1])
     # We don't actually need to process this; it's just something plugins/hooks can use
     return {'target': target, 'channel': channel}
 
@@ -694,7 +694,7 @@ def handle_encap(irc, numeric, command, args):
     targetmask = args[0]
     real_command = args[1]
     if targetmask == '*' and real_command == 'KNOCK':
-        channel = args[2].lower()
+        channel = utils.toLower(irc, args[2])
         text = args[3]
         return {'parse_as': real_command, 'channel': channel,
                 'text': text}
