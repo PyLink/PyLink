@@ -615,7 +615,8 @@ def getSupportedUmodes(irc, remoteirc, modes):
         else:
             log.debug("(%s) getSupportedUmodes: skipping mode (%r, %r) because "
                       "the remote network (%s)'s IRCd (%s) doesn't support it.",
-                      irc.name, modechar, arg, remoteirc.name, irc.proto.__name__)
+                      irc.name, modechar, arg, remoteirc.name,
+                      remoteirc.proto.__name__)
     return supported_modes
 
 def handle_mode(irc, numeric, command, args):
