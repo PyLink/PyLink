@@ -637,9 +637,8 @@ def handle_mode(irc, numeric, command, args):
                 elif ('-o', None) in modes:
                     modes.append(('-%s' % hideoper_mode, None))
             remoteuser = getRemoteUser(irc, remoteirc, target, spawnIfMissing=False)
-            if remoteuser is None:
-                continue
-            remoteirc.proto.modeClient(remoteirc, remoteuser, remoteuser, modes)
+            if remoteuser and modes:
+                remoteirc.proto.modeClient(remoteirc, remoteuser, remoteuser, modes)
 
 utils.add_hook(handle_mode, 'MODE')
 
