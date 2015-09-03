@@ -746,7 +746,7 @@ def relayJoins(irc, channel, users, ts, burst=True):
             # users/someone with a prefix.
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 remoteirc.proto.sjoinServer(remoteirc, remoteirc.sid, remotechan, queued_users, ts=ts)
-                relayModes(irc, remoteirc, remoteirc.sid, remotechan)
+                relayModes(irc, remoteirc, irc.sid, channel, irc.channels[channel].modes)
             else:
                 remoteirc.proto.joinClient(remoteirc, queued_users[0][1], remotechan)
 
