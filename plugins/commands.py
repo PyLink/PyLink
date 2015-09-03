@@ -125,3 +125,17 @@ def showuser(irc, source, args):
         f('\x02Real host\x02: %s; \x02IP\x02: %s; \x02Away status\x02: %s' % \
           (userobj.realhost, userobj.ip, userobj.away or '\x1D(not set)\x1D'))
         f('\x02Channels\x02: %s' % (' '.join(userobj.channels).strip() or '\x1D(none)\x1D'))
+
+@utils.add_cmd
+def shutdown(irc, source, args):
+    """takes no arguments.
+
+    Exits PyLink by disconnecting all networks."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    u = irc.users[source]
+    log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
+             u.ident, u.host)
+    for ircobj in world.networkobjects.values():
+        # Disable auto-connect first by setting the time to negative.
+        ircobj.serverdata['autoconnect'] = -1
+        ircobj.aborted.set()
