@@ -476,9 +476,8 @@ def handle_euid(irc, numeric, command, args):
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
 def handle_uid(irc, numeric, command, args):
-    raise ProtocolError("Servers must use EUID to send users! This is a "
-                        "requested capability; plain UID (received) is not "
-                        "handled by us at all!")
+    raise ProtocolError("Servers should use EUID instead of UID to send users! "
+                        "This IS a required capability after all...")
 
 def handle_server(irc, numeric, command, args):
     # parameters: server name, hopcount, sid, server description
