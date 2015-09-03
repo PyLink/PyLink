@@ -20,9 +20,11 @@ class ProtocolError(Exception):
 
 class Irc():
     def initVars(self):
+        self.connected.clear()
+        self.aborted.clear()
         self.pseudoclient = None
-        self.connected = threading.Event()
         self.lastping = time.time()
+
         # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'], internal=True)}
         self.users = {}
@@ -66,6 +68,9 @@ class Irc():
         self.proto = proto
         self.pingfreq = self.serverdata.get('pingfreq') or 30
         self.pingtimeout = self.pingfreq * 2
+
+        self.connected = threading.Event()
+        self.aborted = threading.Event()
 
         self.initVars()
 
@@ -151,7 +156,7 @@ class Irc():
             except (socket.error, ProtocolError, ConnectionError) as e:
                 log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
-            self.disconnect()
+            self._disconnect()
             autoconnect = self.serverdata.get('autoconnect')
             log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
             if autoconnect is not None and autoconnect >= 0:
@@ -160,8 +165,8 @@ class Irc():
             else:
                 return
 
-    def disconnect(self):
-        log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
+    def _disconnect(self):
+        log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
         self.connected.clear()
         try:
             self.socket.close()
@@ -171,10 +176,14 @@ class Irc():
         # Internal hook signifying that a network has disconnected.
         self.callHooks([None, 'PYLINK_DISCONNECT', {}])
 
+    def disconnect(self):
+        """Closes the IRC connection."""
+        self.aborted.set()
+
     def run(self):
         buf = b""
         data = b""
-        while True:
+        while not self.aborted.is_set():
             data = self.socket.recv(2048)
             buf += data
             if self.connected.is_set() and not data:
@@ -186,7 +195,7 @@ class Irc():
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
-                # TODO: respect other encodings?
+                # FIXME: respect other encodings?
                 line = line.decode("utf-8", "replace")
                 log.debug("(%s) <- %s", self.name, line)
                 hook_args = None
