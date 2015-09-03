@@ -771,7 +771,7 @@ def removeChannel(irc, channel):
     if irc is None:
         return
     if channel not in map(str.lower, irc.serverdata['channels']):
-        irc.proto.partClient(irc, irc.pseudoclient.uid, channel)
+        irc.proto.partClient(irc, irc.pseudoclient.uid, channel, 'Channel delinked.')
     relay = findRelay((irc.name, channel))
     if relay:
         for user in irc.channels[channel].users.copy():
