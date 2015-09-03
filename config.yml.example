@@ -110,5 +110,6 @@ servers:
 # Plugins to load (omit the .py extension)
 plugins:
     - commands
+    - networks
     # - admin
     # - relay
