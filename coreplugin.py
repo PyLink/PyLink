@@ -32,10 +32,11 @@ def handle_commands(irc, source, command, args):
         for func in world.bot_commands[cmd]:
             try:
                 func(irc, source, cmd_args)
+            except utils.NotAuthenticatedError:
+                utils.msg(irc, source, 'Error: You are not authorized to perform this operation.')
             except Exception as e:
                 log.exception('Unhandled exception caught in command %r', cmd)
                 utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
-                return
 utils.add_hook(handle_commands, 'PRIVMSG')
 
 # Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd).
