@@ -288,7 +288,7 @@ def handle_join(irc, numeric, command, args):
         return
     ts = args['ts']
     users = set(args['users'])
-    relayJoins(irc, channel, users, ts)
+    relayJoins(irc, channel, users, ts, burst=False)
 utils.add_hook(handle_join, 'JOIN')
 
 def handle_quit(irc, numeric, command, args):
