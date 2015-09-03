@@ -111,5 +111,5 @@ servers:
 plugins:
     - commands
     - networks
-    # - admin
+    # - bots
     # - relay
