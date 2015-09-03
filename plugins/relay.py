@@ -1030,6 +1030,28 @@ def handle_spawnmain(irc, numeric, command, args):
         initializeAll(irc)
 utils.add_hook(handle_spawnmain, 'PYLINK_SPAWNMAIN')
 
+def handle_invite(irc, source, command, args):
+    target = args['target']
+    channel = args['channel']
+    if isRelayClient(irc, target):
+        remotenet, remoteuser = getLocalUser(irc, target)
+        remoteirc = world.networkobjects[remotenet]
+        remotechan = findRemoteChan(irc, remoteirc, channel)
+        remotesource = getRemoteUser(irc, remoteirc, source, spawnIfMissing=False)
+        if remotesource is None:
+            utils.msg(irc, source, 'Error: You must be in a common channel '
+                                   'with %s to invite them to channels.' % \
+                                   irc.users[target].nick,
+                                   notice=True)
+        elif remotechan is None:
+            utils.msg(irc, source, 'Error: You cannot invite someone to a '
+                                   'channel not on their network!',
+                                   notice=True)
+        else:
+            remoteirc.proto.inviteClient(remoteirc, remotesource, remoteuser,
+                                         remotechan)
+utils.add_hook(handle_invite, 'INVITE')
+
 @utils.add_cmd
 def linkacl(irc, source, args):
     """ALLOW|DENY|LIST <channel> <remotenet>
