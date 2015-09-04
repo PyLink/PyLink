@@ -1,14 +1,15 @@
 import time
 import sys
 import os
-import re
 import time
+import ipaddress
 
 curdir = os.path.dirname(__file__)
 sys.path += [curdir, os.path.dirname(curdir)]
 import utils
 from log import log
-import proto_common
+from ts6_common import parseArgs, removeClient, _send
+from ts6_common import handle_quit, handle_part, handle_nick, handle_kill
 from classes import *
 
 casemapping = 'ascii'
@@ -28,9 +29,6 @@ def pingServer(irc, source=None, target=None):
     if not (target is None or source is None):
         _send(irc, source, 'PING %s %s' % (irc.servers[source].name, irc.servers[target].name))
 
-def _send(irc, sid, msg):
-    irc.send(':%s %s' % (sid, msg))
-
 def connect(irc):
     ts = irc.start_ts
     irc.caps = []
@@ -47,6 +45,7 @@ def connect(irc):
     # VL - Sends version string in below SERVER message
     # UMODE2 - used for users setting modes on themselves (one less argument needed)
     # EAUTH - Early auth? (Unreal 3.4 linking protocol)
+    # ~~NICKIP - sends the IP in the NICK/UID command~~ Doesn't work with SID/UID support
     f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL EAUTH=%s SID=%s' % (irc.serverdata["hostname"], irc.sid))
     sdesc = irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']
     f('SERVER %s 1 U%s-h6e-%s :%s' % (host, proto_ver, irc.sid, sdesc))
@@ -124,7 +123,7 @@ def handle_events(irc, data):
     #   <- @servernumeric SJOIN <ts> <chname> [<modes>] [<mode para> ...] :<[[*~@%+]member] [&"ban/except] ...>
     # Same deal as TS6 with :'s indicating a long argument lasting to the
     # end of the line.
-    args = proto_common.parseArgs(data.split(" "))
+    args = parseArgs(data.split(" "))
     # Message starts with a SID/UID prefix.
     if args[0][0] in ':@':
         numeric = args[0].lstrip(':@')
