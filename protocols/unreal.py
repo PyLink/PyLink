@@ -113,6 +113,15 @@ def handle_protoctl(irc, numeric, command, args):
                 if m in _unrealCmodes:
                     irc.cmodes[_unrealCmodes[m]] = m
 
+def _sidToServer(irc, sname):
+    """<irc object> <server name>
+
+    Returns the SID of a server named <server name>, if present."""
+    nick = sname.lower()
+    for k, v in irc.servers.items():
+        if v.name.lower() == nick:
+            return k
+
 def handle_events(irc, data):
     # Unreal's protocol has three styles of commands, @servernumeric, :user, and plain commands.
     # e.g. NICK introduction looks like:
@@ -126,9 +135,13 @@ def handle_events(irc, data):
     args = parseArgs(data.split(" "))
     # Message starts with a SID/UID prefix.
     if args[0][0] in ':@':
-        numeric = args[0].lstrip(':@')
+        sender = args[0].lstrip(':@')
         command = args[1]
         args = args[2:]
+        # If the sender isn't in UID format, try to convert it automatically.
+        # Unreal's protocol isn't quite consistent with this yet!
+        numeric = _sidToServer(irc, sender) or utils.nickToUid(irc, sender) or \
+            sender
     else:
         # Raw command w/o explicit sender, assume it's being sent by our uplink.
         numeric = irc.uplink
