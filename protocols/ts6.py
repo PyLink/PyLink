@@ -10,18 +10,14 @@ from log import log
 
 from classes import *
 # Shared with inspircd module because the output is the same.
-from inspircd import nickClient, kickServer, kickClient, _sendKick, quitClient, \
-    removeClient, partClient, messageClient, noticeClient, topicClient
-from inspircd import handle_privmsg, handle_kill, handle_kick, handle_error, \
+from ts6_common import nickClient, kickServer, kickClient, _sendKick, quitClient, \
+    removeClient, partClient, messageClient, noticeClient, topicClient, parseTS6Args
+from ts6_common import handle_privmsg, handle_kill, handle_kick, handle_error, \
     handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
-    handle_notice
-import proto_common
+    handle_notice, _send, handle_part
 
 casemapping = 'rfc1459'
 hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE'}
-
-def _send(irc, sid, msg):
-    irc.send(':%s %s' % (sid, msg))
 
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
         server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
@@ -371,23 +367,6 @@ def handle_pong(irc, source, command, args):
     if source == irc.uplink:
         irc.lastping = time.time()
 
-def handle_part(irc, source, command, args):
-    channels = utils.toLower(irc, args[0]).split(',')
-    # We should only get PART commands for channels that exist, right??
-    for channel in channels:
-        irc.channels[channel].removeuser(source)
-        try:
-            irc.users[source].channels.discard(channel)
-        except KeyError:
-            log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", irc.name, channel, source)
-        try:
-            reason = args[1]
-        except IndexError:
-            reason = ''
-        if not (irc.channels[channel].users or ((irc.cmodes.get('permanent'), None) in irc.channels[channel].modes)):
-            del irc.channels[channel]
-    return {'channels': channels, 'text': reason}
-
 def handle_sjoin(irc, servernumeric, command, args):
     # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
     channel = utils.toLower(irc, args[1])
@@ -578,7 +557,7 @@ def handle_events(irc, data):
         log.debug('(%s) Starting delay to send ENDBURST', irc.name)
         endburst_timer.start()
     try:
-        args = proto_common.parseTS6Args(args)
+        args = parseTS6Args(args)
 
         numeric = args[0]
         command = args[1]
