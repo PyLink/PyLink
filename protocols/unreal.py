@@ -17,8 +17,31 @@ proto_ver = 2351
 
 hook_map = {}
 
-def spawnClient(irc, nick, ident, host, **kwargs):
-    pass
+def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
+        server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
+    server = server or irc.sid
+    if not utils.isInternalServer(irc, server):
+        raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
+    # Unreal 3.4 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
+    # do, but we can do that fine...
+    if server not in irc.uidgen:
+        irc.uidgen[server] = utils.TS6UIDGenerator(server)
+    uid = irc.uidgen[server].next_uid()
+    ts = ts or int(time.time())
+    realname = realname or irc.botdata['realname']
+    realhost = realhost or host
+    raw_modes = utils.joinModes(modes)
+    u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+        realhost=realhost, ip=ip)
+    utils.applyModes(irc, uid, modes)
+    irc.servers[server].users.add(uid)
+    # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
+    _send(irc, server, "UID {nick} 0 {ts} {ident} {realhost} {uid} 0 {modes} "
+                       "* {host} * :{realname}".format(ts=ts, host=host,
+                            nick=nick, ident=ident, uid=uid,
+                            modes=raw_modes, realname=realname,
+                            realhost=realhost))
+    return u
 
 def joinClient(irc, client, channel):
     pass
@@ -63,8 +86,27 @@ def handle_netinfo(irc, numeric, command, args):
 
 def handle_uid(irc, numeric, command, args):
     # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
-    # <- :001 UID GL| 1 1441312224 gl localhost 001J7FZ02 0 +iwx midnight-1C620195 midnight-1C620195 fwAAAQ== :realname
-    pass
+    # <- :001 UID GL| 0 1441389007 gl 10.120.0.6 001ZO8F03 0 +iwx * 391A9CB9.26A16454.D9847B69.IP CngABg== :realname
+    # arguments: nick, number???, ts, ident, real-host, UID, number???, modes,
+    #            star???, hidden host, some base64 thing???, and realname
+    # TODO: find out what all the "???" fields mean.
+    nick = args[0]
+    ts, ident, realhost, uid = args[2:6]
+    modestring = args[7]
+    host = args[9]
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:  # Invalid for IP
+        # XXX: find a way of getting the real IP of the user (protocol-wise)
+        #      without looking up every hostname ourselves (that's expensive!)
+        #      NICKIP doesn't seem to work for the UID command...
+        ip = "0.0.0.0"
+    realname = args[-1]
+    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    parsedmodes = utils.parseModes(irc, uid, [modestring])
+    utils.applyModes(irc, uid, parsedmodes)
+    irc.servers[numeric].users.add(uid)
+    return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
 def handle_pass(irc, numeric, command, args):
     # <- PASS :abcdefg
