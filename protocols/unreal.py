@@ -8,7 +8,7 @@ curdir = os.path.dirname(__file__)
 sys.path += [curdir, os.path.dirname(curdir)]
 import utils
 from log import log
-from ts6_common import parseArgs, removeClient, _send
+from ts6_common import parseArgs, removeClient, _send, messageClient, noticeClient
 from ts6_common import handle_quit, handle_part, handle_nick, handle_kill
 from classes import *
 
@@ -16,6 +16,8 @@ casemapping = 'ascii'
 proto_ver = 2351
 
 hook_map = {}
+
+### OUTGOING COMMAND FUNCTIONS
 
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
         server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
@@ -51,6 +53,8 @@ def pingServer(irc, source=None, target=None):
     target = target or irc.uplink
     if not (target is None or source is None):
         _send(irc, source, 'PING %s %s' % (irc.servers[source].name, irc.servers[target].name))
+
+### HANDLERS
 
 def connect(irc):
     ts = irc.start_ts
@@ -196,6 +200,13 @@ def _sidToServer(irc, sname):
         if v.name.lower() == nick:
             return k
 
+def _convertNick(irc, target):
+    target = utils.nickToUid(irc, target) or target
+    if target not in irc.users:
+        log.warning("(%s) Possible desync? Got command target %s, who "
+                    "isn't in our user list!")
+    return target
+
 def handle_events(irc, data):
     # Unreal's protocol has three styles of commands, @servernumeric, :user, and plain commands.
     # e.g. NICK introduction looks like:
@@ -229,3 +240,12 @@ def handle_events(irc, data):
         parsed_args = func(irc, numeric, command, args)
         if parsed_args is not None:
             return [numeric, command, parsed_args]
+
+def handle_privmsg(irc, source, command, args):
+    # Convert nicks to UIDs, where they exist.
+    target = _convertNick(irc, args[0])
+    # We use lowercase channels internally, but uppercase UIDs.
+    if utils.isChannel(target):
+        target = utils.toLower(irc, target)
+    return {'target': target, 'text': args[1]}
+handle_notice = handle_privmsg
