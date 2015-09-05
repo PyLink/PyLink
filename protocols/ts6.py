@@ -575,26 +575,32 @@ def handle_events(irc, data):
         if parsed_args is not None:
             return [numeric, command, parsed_args]
 
-def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
-    # -> :0AL SERVER test.server 1 0XY :some silly pseudoserver
+def spawnServer(irc, name, sid=None, uplink=None, desc=None):
+    # -> :0AL SID test.server 1 0XY :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
+    desc = desc or irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']
     if sid is None:  # No sid given; generate one!
         irc.sidgen = utils.TS6SIDGenerator(irc.serverdata["sidrange"])
         sid = irc.sidgen.next_sid()
     assert len(sid) == 3, "Incorrect SID length"
     if sid in irc.servers:
         raise ValueError('A server with SID %r already exists!' % sid)
-    for server in irc.servers.values() + irc.servers.keys():
+    for server in irc.servers.values():
         if name == server.name:
             raise ValueError('A server named %r already exists!' % name)
     if not utils.isInternalServer(irc, uplink):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)
-    _send(irc, uplink, 'SERVER %s 1 %s :%s' % (name, sid, desc))
+    _send(irc, uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
     return sid
+
+def squitServer(irc, source, target, text='No reason given'):
+    # -> SQUIT 9PZ :blah, blah
+    irc.send('SQUIT %s :%s' % (target, text))
+    handle_squit(irc, source, 'SQUIT', [target, text])
 
 def handle_tb(irc, numeric, command, args):
     # <- :42X TB 1434510754 #channel GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic

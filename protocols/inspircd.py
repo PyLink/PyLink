@@ -425,10 +425,11 @@ def handle_events(irc, data):
         if parsed_args is not None:
             return [numeric, command, parsed_args]
 
-def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
+def spawnServer(irc, name, sid=None, uplink=None, desc=None):
     # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
+    desc = desc or irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']
     if sid is None:  # No sid given; generate one!
         irc.sidgen = utils.TS6SIDGenerator(irc.serverdata["sidrange"])
         sid = irc.sidgen.next_sid()
@@ -446,6 +447,11 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
     _send(irc, sid, 'ENDBURST')
     return sid
+
+def squitServer(irc, source, target, text='No reason given'):
+    # -> :9PY SQUIT 9PZ :blah, blah
+    _send(irc, source, 'SQUIT %s :%s' % (target, text))
+    handle_squit(irc, source, 'SQUIT', [target, text])
 
 def handle_ftopic(irc, numeric, command, args):
     # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
