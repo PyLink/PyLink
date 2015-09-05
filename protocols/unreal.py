@@ -124,10 +124,18 @@ def handle_pong(irc, source, command, args):
         irc.lastping = time.time()
 
 def handle_server(irc, numeric, command, args):
+    # <- SERVER unreal.midnight.vpn 1 :U2351-Fhin6OoEM UnrealIRCd test server
     # <- SERVER unreal.midnight.vpn 1 :UnrealIRCd test server
     sname = args[0]
-    # TODO: handle server introductions from other servers
+    # TODO: handle introductions for other servers
     if numeric == irc.uplink:
+        for cap in _neededCaps:
+            if cap not in irc.protodata:
+                raise ProtocolError("Not all required capabilities were met "
+                                    "by the remote server. Your version of UnrealIRCd "
+                                    "is probably too old! (Got: %s, needed: %s)" %
+                                    (sorted(irc.protodata.keys()),
+                                     sorted(_neededCaps)))
         irc.servers[numeric] = IrcServer(None, sname)
     else:
         raise NotImplementedError
@@ -141,6 +149,7 @@ _unrealCmodes = {'l': 'limit', 'c': 'blockcolor', 'G': 'censor',
                  'C': 'noctcp', 'O': 'operonly', 'S': 'stripcolor',
                  'm': 'moderated', 'K': 'noknock', 'o': 'op', 'v': 'voice',
                  'I': 'invex', 't': 'topiclock'}
+_neededCaps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3"]
 def handle_protoctl(irc, numeric, command, args):
     # <- PROTOCTL NOQUIT NICKv2 SJOIN SJOIN2 UMODE2 VL SJ3 TKLEXT TKLEXT2 NICKIP ESVID
     # <- PROTOCTL CHANMODES=beI,k,l,psmntirzMQNRTOVKDdGPZSCc NICKCHARS= SID=001 MLOCK TS=1441314501 EXTSWHOIS
@@ -148,12 +157,23 @@ def handle_protoctl(irc, numeric, command, args):
     for cap in args:
         if cap.startswith('SID'):
             irc.uplink = cap.split('=', 1)[1]
+            irc.protodata['SID'] = True
         elif cap.startswith('CHANMODES'):
             cmodes = cap.split('=', 1)[1]
             irc.cmodes['*A'], irc.cmodes['*B'], irc.cmodes['*C'], irc.cmodes['*D'] = cmodes.split(',')
             for m in cmodes:
                 if m in _unrealCmodes:
                     irc.cmodes[_unrealCmodes[m]] = m
+            irc.protodata['CHANMODES'] = True
+        # Because more than one PROTOCTL line is sent, we have to delay the
+        # check to see whether our needed capabilities are all there...
+        # That's done by handle_server(), which comes right after PROTOCTL.
+        elif cap == 'VL':
+            irc.protodata['VL'] = True
+        elif cap == 'NOQUIT':
+            irc.protodata['NOQUIT'] = True
+        elif cap == 'SJ3':
+            irc.protodata['SJ3'] = True
 
 def _sidToServer(irc, sname):
     """<irc object> <server name>
@@ -185,7 +205,7 @@ def handle_events(irc, data):
         numeric = _sidToServer(irc, sender) or utils.nickToUid(irc, sender) or \
             sender
     else:
-        # Raw command w/o explicit sender, assume it's being sent by our uplink.
+        # Raw command without an explicit sender; assume it's being sent by our uplink.
         numeric = irc.uplink
         command = args[0]
         args = args[1:]

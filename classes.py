@@ -58,6 +58,10 @@ class Irc():
         # UID generators, for servers that need it
         self.uidgen = {}
 
+        # Local data for the IRC object, which protocol modules may use for
+        # initialization, etc.
+        self.protodata = {}
+
     def __init__(self, netname, proto):
         # Initialize some variables
         self.name = netname.lower()
