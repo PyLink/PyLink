@@ -596,6 +596,11 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
     return sid
 
+def squitServer(irc, source, target, text='No reason given'):
+    # -> SQUIT 9PZ :blah, blah
+    irc.send('SQUIT %s :%s' % (target, text))
+    handle_squit(irc, source, 'SQUIT', [target, text])
+
 def handle_tb(irc, numeric, command, args):
     # <- :42X TB 1434510754 #channel GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
     channel = args[1].lower()

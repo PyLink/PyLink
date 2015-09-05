@@ -447,6 +447,11 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     _send(irc, sid, 'ENDBURST')
     return sid
 
+def squitServer(irc, source, target, text='No reason given'):
+    # -> :9PY SQUIT 9PZ :blah, blah
+    _send(irc, source, 'SQUIT %s :%s' % (target, text))
+    handle_squit(irc, source, 'SQUIT', [target, text])
+
 def handle_ftopic(irc, numeric, command, args):
     # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
     channel = utils.toLower(irc, args[0])
