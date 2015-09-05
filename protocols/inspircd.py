@@ -11,7 +11,7 @@ import utils
 from log import log
 from classes import *
 
-# Some functions are shared with the charybdis module... (ts6_common)
+# Some functions are shared with the charybdis module (ts6_common)
 from ts6_common import nickClient, kickServer, kickClient, _sendKick, quitClient, \
     removeClient, partClient, messageClient, noticeClient, topicClient, parseTS6Args
 from ts6_common import handle_privmsg, handle_kill, handle_kick, handle_error, \
@@ -419,7 +419,7 @@ def handle_fjoin(irc, servernumeric, command, args):
     """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
     channel = utils.toLower(irc, args[0])
-    # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
+    # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
     userlist = args[-1].split()
     our_ts = irc.channels[channel].ts
     their_ts = int(args[1])
