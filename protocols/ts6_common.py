@@ -7,12 +7,12 @@ import utils
 from log import log
 from classes import *
 
-def _send(irc, sid, msg):
-    irc.send(':%s %s' % (sid, msg))
+def _send(irc, source, msg):
+    """Sends a TS6-style raw command from a source numeric to the IRC connection given."""
+    irc.send(':%s %s' % (source, msg))
 
 def parseArgs(args):
-    """<arg list>
-    Parses a string of RFC1459-style arguments split into a list, where ":" may
+    """Parses a string of RFC1459-style arguments split into a list, where ":" may
     be used for multi-word arguments that last until the end of a line.
     """
     real_args = []
@@ -35,9 +35,7 @@ def parseArgs(args):
     return real_args
 
 def parseTS6Args(args):
-    """<arg list>
-
-    Similar to parseArgs(), but stripping leading colons from the first argument
+    """Similar to parseArgs(), but stripping leading colons from the first argument
     of a line (usually the sender field)."""
     args = parseArgs(args)
     args[0] = args[0].split(':', 1)[1]
@@ -46,9 +44,7 @@ def parseTS6Args(args):
 ### OUTGOING COMMANDS
 
 def _sendKick(irc, numeric, channel, target, reason=None):
-    """<irc object> <kicker client numeric>
-
-    Sends a kick from a PyLink PseudoClient."""
+    """Internal function to send kicks from a PyLink client/server."""
     channel = utils.toLower(irc, channel)
     if not reason:
         reason = 'No reason given'
@@ -59,29 +55,26 @@ def _sendKick(irc, numeric, channel, target, reason=None):
     handle_part(irc, target, 'KICK', [channel])
 
 def kickClient(irc, numeric, channel, target, reason=None):
+    """Sends a kick from a PyLink client."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _sendKick(irc, numeric, channel, target, reason=reason)
 
 def kickServer(irc, numeric, channel, target, reason=None):
+    """Sends a kick from a PyLink server."""
     if not utils.isInternalServer(irc, numeric):
         raise LookupError('No such PyLink PseudoServer exists.')
     _sendKick(irc, numeric, channel, target, reason=reason)
 
 def nickClient(irc, numeric, newnick):
-    """<irc object> <client numeric> <new nickname>
-
-    Changes the nick of a PyLink PseudoClient."""
+    """Changes the nick of a PyLink client."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'NICK %s %s' % (newnick, int(time.time())))
     irc.users[numeric].nick = newnick
 
 def removeClient(irc, numeric):
-    """<irc object> <client numeric>
-
-    Removes a client from our internal databases, regardless
-    of whether it's one of our pseudoclients or not."""
+    """Internal function to remove a client from our internal state."""
     for c, v in irc.channels.copy().items():
         v.removeuser(numeric)
         # Clear empty non-permanent channels.
@@ -95,6 +88,7 @@ def removeClient(irc, numeric):
     irc.servers[sid].users.discard(numeric)
 
 def partClient(irc, client, channel, reason=None):
+    """Sends a part from a PyLink client."""
     channel = utils.toLower(irc, channel)
     if not utils.isInternalClient(irc, client):
         log.error('(%s) Error trying to part client %r to %r (no such pseudoclient exists)', irc.name, client, channel)
@@ -106,9 +100,7 @@ def partClient(irc, client, channel, reason=None):
     handle_part(irc, client, 'PART', [channel])
 
 def quitClient(irc, numeric, reason):
-    """<irc object> <client numeric>
-
-    Quits a PyLink PseudoClient."""
+    """Quits a PyLink client."""
     if utils.isInternalClient(irc, numeric):
         _send(irc, numeric, "QUIT :%s" % reason)
         removeClient(irc, numeric)
@@ -116,22 +108,19 @@ def quitClient(irc, numeric, reason):
         raise LookupError("No such PyLink PseudoClient exists.")
 
 def messageClient(irc, numeric, target, text):
-    """<irc object> <client numeric> <text>
-
-    Sends PRIVMSG <text> from PyLink client <client numeric>."""
+    """Sends a PRIVMSG from a PyLink client."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'PRIVMSG %s :%s' % (target, text))
 
 def noticeClient(irc, numeric, target, text):
-    """<irc object> <client numeric> <text>
-
-    Sends NOTICE <text> from PyLink client <client numeric>."""
+    """Sends a NOTICE from a PyLink client."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'NOTICE %s :%s' % (target, text))
 
 def topicClient(irc, numeric, target, text):
+    """Sends a ROPIC from a PyLink client."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'TOPIC %s :%s' % (target, text))
@@ -141,6 +130,7 @@ def topicClient(irc, numeric, target, text):
 ### HANDLERS
 
 def handle_privmsg(irc, source, command, args):
+    """Handles incoming PRIVMSG/NOTICE."""
     # <- :70MAAAAAA PRIVMSG #dev :afasfsa
     # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
     target = args[0]
@@ -152,13 +142,18 @@ def handle_privmsg(irc, source, command, args):
 handle_notice = handle_privmsg
 
 def handle_kill(irc, source, command, args):
+    """Handles incoming KILLs."""
     killed = args[0]
+    # Depending on whether the IRCd sends explicit QUIT messages for
+    # KILLed clients, the user may or may not have automatically been removed.
+    # If not, we have to assume that KILL = QUIT and remove them ourselves.
     data = irc.users.get(killed)
     if data:
         removeClient(irc, killed)
     return {'target': killed, 'text': args[1], 'userdata': data}
 
 def handle_kick(irc, source, command, args):
+    """Handles incoming KICKs."""
     # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
     channel = utils.toLower(irc, args[0])
     kicked = args[1]
@@ -166,24 +161,29 @@ def handle_kick(irc, source, command, args):
     return {'channel': channel, 'target': kicked, 'text': args[2]}
 
 def handle_error(irc, numeric, command, args):
+    """Handles ERROR messages - these mean that our uplink has disconnected us!"""
     irc.connected.clear()
-    raise ProtocolError('Received an ERROR, killing!')
+    raise ProtocolError('Received an ERROR, disconnecting!')
 
 def handle_nick(irc, numeric, command, args):
+    """Handles incoming NICK changes."""
     # <- :70MAAAAAA NICK GL-devel 1434744242
     oldnick = irc.users[numeric].nick
     newnick = irc.users[numeric].nick = args[0]
     return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
 
 def handle_quit(irc, numeric, command, args):
+    """Handles incoming QUITs."""
     # <- :1SRAAGB4T QUIT :Quit: quit message goes here
     removeClient(irc, numeric)
     return {'text': args[0]}
 
 def handle_save(irc, numeric, command, args):
-    # This is used to handle nick collisions. Here, the client Derp_ already exists,
-    # so trying to change nick to it will cause a nick collision. On InspIRCd,
-    # this will simply set the collided user's nick to its UID.
+    """Handles incoming SAVE messages, used to handle nick collisions."""
+    # In this below example, the client Derp_ already exists,
+    # and trying to change someone's nick to it will cause a nick
+    # collision. On TS6 IRCds, this will simply set the collided user's
+    # nick to its UID.
 
     # <- :70MAAAAAA PRIVMSG 0AL000001 :nickclient PyLink Derp_
     # -> :0AL000001 NICK Derp_ 1433728673
@@ -194,6 +194,7 @@ def handle_save(irc, numeric, command, args):
     return {'target': user, 'ts': int(args[1]), 'oldnick': oldnick}
 
 def handle_squit(irc, numeric, command, args):
+    """Handles incoming SQUITs (netsplits)."""
     # :70M SQUIT 1ML :Server quit by GL!gl@0::1
     split_server = args[0]
     affected_users = []
@@ -214,6 +215,8 @@ def handle_squit(irc, numeric, command, args):
     return {'target': split_server, 'users': affected_users}
 
 def handle_mode(irc, numeric, command, args):
+    """Handles incoming user mode changes. For channel mode changes,
+    TMODE (TS6/charybdis) and FMODE (InspIRCd) are used instead."""
     # In InspIRCd, MODE is used for setting user modes and
     # FMODE is used for channel modes:
     # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
@@ -224,6 +227,8 @@ def handle_mode(irc, numeric, command, args):
     return {'target': target, 'modes': changedmodes}
 
 def handle_topic(irc, numeric, command, args):
+    """Handles incoming TOPIC changes from clients. For topic bursts,
+    TB (TS6/charybdis) and FTOPIC (InspIRCd) are used instead."""
     # <- :70MAAAAAA TOPIC #test :test
     channel = utils.toLower(irc, args[0])
     topic = args[1]
@@ -233,6 +238,7 @@ def handle_topic(irc, numeric, command, args):
     return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic}
 
 def handle_part(irc, source, command, args):
+    """Handles incoming PART commands."""
     channels = utils.toLower(irc, args[0]).split(',')
     for channel in channels:
         # We should only get PART commands for channels that exist, right??

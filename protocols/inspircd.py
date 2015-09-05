@@ -4,32 +4,36 @@ import os
 import re
 from copy import copy
 
+# Import hacks to access utils and classes...
 curdir = os.path.dirname(__file__)
 sys.path += [curdir, os.path.dirname(curdir)]
 import utils
 from log import log
 from classes import *
 
+# Some functions are shared with the charybdis module... (ts6_common)
 from ts6_common import nickClient, kickServer, kickClient, _sendKick, quitClient, \
     removeClient, partClient, messageClient, noticeClient, topicClient, parseTS6Args
 from ts6_common import handle_privmsg, handle_kill, handle_kick, handle_error, \
     handle_quit, handle_nick, handle_save, handle_squit, handle_mode, handle_topic, \
     handle_notice, _send, handle_part
 
+# Set our case mapping (rfc1459 maps "\" and "|" together, for example".
 casemapping = 'rfc1459'
 
 # Raw commands sent from servers vary from protocol to protocol. Here, we map
-# non-standard names to our hook handlers, so plugins get the information they need.
-
+# non-standard names to our hook handlers, so command handlers' outputs
+# are called with the right hooks.
 hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
             'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
             'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
 
-def _send(irc, sid, msg):
-    irc.send(':%s %s' % (sid, msg))
-
 def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set(),
         server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
+    """Spawns a client with nick <nick> on the given IRC connection.
+
+    Note: No nick collision / valid nickname checks are done here; it is
+    up to plugins to make sure they don't introduce anything invalid."""
     server = server or irc.sid
     if not utils.isInternalServer(irc, server):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
@@ -56,9 +60,10 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     return u
 
 def joinClient(irc, client, channel):
+    """Joins an internal spawned client <client> to a channel."""
     # InspIRCd doesn't distinguish between burst joins and regular joins,
     # so what we're actually doing here is sending FJOIN from the server,
-    # on behalf of the clients that call it.
+    # on behalf of the clients that are joining.
     channel = utils.toLower(irc, channel)
     server = utils.isInternalClient(irc, client)
     if not server:
@@ -73,6 +78,16 @@ def joinClient(irc, client, channel):
     irc.users[client].channels.add(channel)
 
 def sjoinServer(irc, server, channel, users, ts=None):
+    """Sends an SJOIN for a group of users to a channel.
+
+    The sender should always be a Server ID (SID). TS is optional, and defaults
+    to the one we've stored in the channel state if not given.
+    <users> is a list of (prefix mode, UID) pairs:
+
+    Example uses:
+        sjoinServer(irc, '100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])
+        sjoinServer(irc, irc.sid, '#test', [('o', irc.pseudoclient.uid)])
+    """
     channel = utils.toLower(irc, channel)
     server = server or irc.sid
     assert users, "sjoinServer: No users sent?"
@@ -92,7 +107,7 @@ def sjoinServer(irc, server, channel, users, ts=None):
             p.clear()
     log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, irc.name, ts,
               time.strftime("%c", time.localtime(ts)))
-    # Strip out list-modes, they shouldn't be ever sent in FJOIN.
+    # Strip out list-modes, they shouldn't ever be sent in FJOIN (protocol rules).
     modes = [m for m in irc.channels[channel].modes if m[0] not in irc.cmodes['*A']]
     uids = []
     changedmodes = []
@@ -119,6 +134,15 @@ def sjoinServer(irc, server, channel, users, ts=None):
     irc.channels[channel].users.update(uids)
 
 def _operUp(irc, target, opertype=None):
+    """Opers a client up (internal function specific to InspIRCd).
+
+    This should be called whenever user mode +o is set on anyone, because
+    InspIRCd requires a special command (OPERTYPE) to be sent in order to
+    recognize ANY non-burst oper ups.
+
+    Plugins don't have to call this function themselves, but they can
+    set the opertype attribute of an IrcUser object (in irc.users),
+    and the change will be reflected here."""
     userobj = irc.users[target]
     try:
         otype = opertype or userobj.opertype
@@ -133,6 +157,7 @@ def _operUp(irc, target, opertype=None):
     _send(irc, target, 'OPERTYPE %s' % otype)
 
 def _sendModes(irc, numeric, target, modes, ts=None):
+    """Internal function to send modes from a PyLink client/server."""
     # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
     # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
     log.debug('(%s) inspircd._sendModes: received %r for mode list', irc.name, modes)
@@ -150,20 +175,18 @@ def _sendModes(irc, numeric, target, modes, ts=None):
         _send(irc, numeric, 'MODE %s %s' % (target, joinedmodes))
 
 def modeClient(irc, numeric, target, modes, ts=None):
-    """<irc object> <client numeric> <list of modes>
-
-    Sends modes from a PyLink PseudoClient. <list of modes> should be
-    a list of (mode, arg) tuples, in the format of utils.parseModes() output.
+    """
+    Sends modes from a PyLink client. <modes> should be
+    a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
     """
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _sendModes(irc, numeric, target, modes, ts=ts)
 
 def modeServer(irc, numeric, target, modes, ts=None):
-    """<irc object> <server SID> <list of modes>
-
-    Sends modes from a PyLink PseudoServer. <list of modes> should be
-    a list of (mode, arg) tuples, in the format of utils.parseModes() output.
+    """
+    Sends modes from a PyLink server. <list of modes> should be
+    a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
     """
     if not utils.isInternalServer(irc, numeric):
         raise LookupError('No such PyLink PseudoServer exists.')
@@ -192,6 +215,7 @@ def killClient(irc, numeric, target, reason):
     # will send a QUIT from the target if the command succeeds.
 
 def topicServer(irc, numeric, target, text):
+    """Sends a burst topic from a PyLink server. This is usally used on burst."""
     if not utils.isInternalServer(irc, numeric):
         raise LookupError('No such PyLink PseudoServer exists.')
     ts = int(time.time())
@@ -201,25 +225,19 @@ def topicServer(irc, numeric, target, text):
     irc.channels[target].topicset = True
 
 def inviteClient(irc, numeric, target, channel):
-    """<irc object> <client numeric> <text>
-
-    Invites <target> to <channel> to <text> from PyLink client <client numeric>."""
+    """Sends an INVITE from a PyLink client.."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'INVITE %s %s' % (target, channel))
 
 def knockClient(irc, numeric, target, text):
-    """<irc object> <client numeric> <text>
-
-    Knocks on <channel> with <text> from PyLink client <client numeric>."""
+    """Sends a KNOCK from a PyLink client."""
     if not utils.isInternalClient(irc, numeric):
         raise LookupError('No such PyLink PseudoClient exists.')
     _send(irc, numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
 def updateClient(irc, numeric, field, text):
-    """<irc object> <client numeric> <field> <text>
-
-    Changes the <field> field of <target> PyLink PseudoClient <client numeric>."""
+    """Updates the ident, host, or realname of a PyLink client."""
     field = field.upper()
     if field == 'IDENT':
         irc.users[numeric].ident = text
@@ -234,6 +252,8 @@ def updateClient(irc, numeric, field, text):
         raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
 def pingServer(irc, source=None, target=None):
+    """Sends a PING to a target server. Periodic PINGs are sent to our uplink
+    automatically by the Irc() internals; plugins shouldn't have to use this."""
     source = source or irc.sid
     target = target or irc.uplink
     if not (target is None or source is None):
@@ -246,16 +266,46 @@ def numericServer(irc, source, numeric, text):
                               "need for PyLink to send numerics directly yet.")
 
 def awayClient(irc, source, text):
-    """<irc object> <numeric> <text>
-
-    Sends an AWAY message with text <text> from PyLink client <numeric>.
-    <text> can be an empty string to unset AWAY status."""
+    """Sends an AWAY message from a PyLink client. <text> can be an empty string
+    to unset AWAY status."""
     if text:
         _send(irc, source, 'AWAY %s :%s' % (int(time.time()), text))
     else:
         _send(irc, source, 'AWAY')
 
+def spawnServer(irc, name, sid=None, uplink=None, desc=None):
+    """Spawns a server off a PyLink server."""
+    # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
+    uplink = uplink or irc.sid
+    name = name.lower()
+    # "desc" defaults to the configured server description.
+    desc = desc or irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']
+    if sid is None:  # No sid given; generate one!
+        irc.sidgen = utils.TS6SIDGenerator(irc.serverdata["sidrange"])
+        sid = irc.sidgen.next_sid()
+    assert len(sid) == 3, "Incorrect SID length"
+    if sid in irc.servers:
+        raise ValueError('A server with SID %r already exists!' % sid)
+    for server in irc.servers.values():
+        if name == server.name:
+            raise ValueError('A server named %r already exists!' % name)
+    if not utils.isInternalServer(irc, uplink):
+        raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
+    if not utils.isServerName(name):
+        raise ValueError('Invalid server name %r' % name)
+    _send(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
+    irc.servers[sid] = IrcServer(uplink, name, internal=True)
+    _send(irc, sid, 'ENDBURST')
+    return sid
+
+def squitServer(irc, source, target, text='No reason given'):
+    """SQUITs a PyLink server."""
+    # -> :9PY SQUIT 9PZ :blah, blah
+    _send(irc, source, 'SQUIT %s :%s' % (target, text))
+    handle_squit(irc, source, 'SQUIT', [target, text])
+
 def connect(irc):
+    """Initializes a connection to a server."""
     ts = irc.start_ts
 
     f = irc.send
@@ -268,84 +318,10 @@ def connect(irc):
     f(':%s BURST %s' % (irc.sid, ts))
     f(':%s ENDBURST' % (irc.sid))
 
-def handle_ping(irc, source, command, args):
-    # <- :70M PING 70M 0AL
-    # -> :0AL PONG 0AL 70M
-    if utils.isInternalServer(irc, args[1]):
-        _send(irc, args[1], 'PONG %s %s' % (args[1], source))
-
-def handle_pong(irc, source, command, args):
-    if source == irc.uplink and args[1] == irc.sid:
-        irc.lastping = time.time()
-
-def handle_fjoin(irc, servernumeric, command, args):
-    # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
-    channel = utils.toLower(irc, args[0])
-    # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
-    userlist = args[-1].split()
-    our_ts = irc.channels[channel].ts
-    their_ts = int(args[1])
-    if their_ts < our_ts:
-        # Channel timestamp was reset on burst
-        log.debug('(%s) Setting channel TS of %s to %s from %s',
-                  irc.name, channel, their_ts, our_ts)
-        irc.channels[channel].ts = their_ts
-        irc.channels[channel].modes.clear()
-        for p in irc.channels[channel].prefixmodes.values():
-            p.clear()
-    modestring = args[2:-1] or args[2]
-    parsedmodes = utils.parseModes(irc, channel, modestring)
-    utils.applyModes(irc, channel, parsedmodes)
-    namelist = []
-    for user in userlist:
-        modeprefix, user = user.split(',', 1)
-        namelist.append(user)
-        irc.users[user].channels.add(channel)
-        if their_ts <= our_ts:
-            utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
-        irc.channels[channel].users.add(user)
-    return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
-
-def handle_uid(irc, numeric, command, args):
-    # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
-    uid, ts, nick, realhost, host, ident, ip = args[0:7]
-    realname = args[-1]
-    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
-    parsedmodes = utils.parseModes(irc, uid, [args[8], args[9]])
-    log.debug('Applying modes %s for %s', parsedmodes, uid)
-    utils.applyModes(irc, uid, parsedmodes)
-    irc.servers[numeric].users.add(uid)
-    return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
-
-def handle_server(irc, numeric, command, args):
-    # SERVER is sent by our uplink or any other server to introduce others.
-    # <- :00A SERVER test.server * 1 00C :testing raw message syntax
-    # <- :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
-    servername = args[0].lower()
-    sid = args[3]
-    sdesc = args[-1]
-    irc.servers[sid] = IrcServer(numeric, servername)
-    return {'name': servername, 'sid': args[3], 'text': sdesc}
-
-def handle_fmode(irc, numeric, command, args):
-    # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
-    channel = utils.toLower(irc, args[0])
-    modes = args[2:]
-    changedmodes = utils.parseModes(irc, channel, modes)
-    utils.applyModes(irc, channel, changedmodes)
-    ts = int(args[1])
-    return {'target': channel, 'modes': changedmodes, 'ts': ts}
-
-
-def handle_idle(irc, numeric, command, args):
-    """Handle the IDLE command, sent between servers in remote WHOIS queries."""
-    # <- :70MAAAAAA IDLE 1MLAAAAIG
-    # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
-    sourceuser = numeric
-    targetuser = args[0]
-    _send(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.users[targetuser].ts))
-
 def handle_events(irc, data):
+    """Event handler for the InspIRCd protocol. This passes most commands to
+    the various handle_ABCD() functions elsewhere in this module, but also
+    handles commands sent in the initial server linking phase."""
     # Each server message looks something like this:
     # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :v,1SRAAESWE
     # :<sid> <command> <argument1> <argument2> ... :final multi word argument
@@ -425,35 +401,92 @@ def handle_events(irc, data):
         if parsed_args is not None:
             return [numeric, command, parsed_args]
 
-def spawnServer(irc, name, sid=None, uplink=None, desc=None):
-    # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
-    uplink = uplink or irc.sid
-    name = name.lower()
-    desc = desc or irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']
-    if sid is None:  # No sid given; generate one!
-        irc.sidgen = utils.TS6SIDGenerator(irc.serverdata["sidrange"])
-        sid = irc.sidgen.next_sid()
-    assert len(sid) == 3, "Incorrect SID length"
-    if sid in irc.servers:
-        raise ValueError('A server with SID %r already exists!' % sid)
-    for server in irc.servers.values():
-        if name == server.name:
-            raise ValueError('A server named %r already exists!' % name)
-    if not utils.isInternalServer(irc, uplink):
-        raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
-    if not utils.isServerName(name):
-        raise ValueError('Invalid server name %r' % name)
-    _send(irc, uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
-    irc.servers[sid] = IrcServer(uplink, name, internal=True)
-    _send(irc, sid, 'ENDBURST')
-    return sid
+def handle_ping(irc, source, command, args):
+    """Handles incoming PING commands, so we don't time out."""
+    # <- :70M PING 70M 0AL
+    # -> :0AL PONG 0AL 70M
+    if utils.isInternalServer(irc, args[1]):
+        _send(irc, args[1], 'PONG %s %s' % (args[1], source))
 
-def squitServer(irc, source, target, text='No reason given'):
-    # -> :9PY SQUIT 9PZ :blah, blah
-    _send(irc, source, 'SQUIT %s :%s' % (target, text))
-    handle_squit(irc, source, 'SQUIT', [target, text])
+def handle_pong(irc, source, command, args):
+    """Handles incoming PONG commands. This is used to keep track of whether
+    the uplink is alive by the Irc() internals - a server that fails to reply
+    to our PINGs eventually times out and is disconnected."""
+    if source == irc.uplink and args[1] == irc.sid:
+        irc.lastping = time.time()
+
+def handle_fjoin(irc, servernumeric, command, args):
+    """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
+    # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
+    channel = utils.toLower(irc, args[0])
+    # InspIRCd sends each user's channel data in the form of 'modeprefix(es),UID'
+    userlist = args[-1].split()
+    our_ts = irc.channels[channel].ts
+    their_ts = int(args[1])
+    if their_ts < our_ts:
+        # Channel timestamp was reset on burst
+        log.debug('(%s) Setting channel TS of %s to %s from %s',
+                  irc.name, channel, their_ts, our_ts)
+        irc.channels[channel].ts = their_ts
+        irc.channels[channel].modes.clear()
+        for p in irc.channels[channel].prefixmodes.values():
+            p.clear()
+    modestring = args[2:-1] or args[2]
+    parsedmodes = utils.parseModes(irc, channel, modestring)
+    utils.applyModes(irc, channel, parsedmodes)
+    namelist = []
+    for user in userlist:
+        modeprefix, user = user.split(',', 1)
+        namelist.append(user)
+        irc.users[user].channels.add(channel)
+        if their_ts <= our_ts:
+            utils.applyModes(irc, channel, [('+%s' % mode, user) for mode in modeprefix])
+        irc.channels[channel].users.add(user)
+    return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
+
+def handle_uid(irc, numeric, command, args):
+    """Handles incoming UID commands (user introduction)."""
+    # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
+    uid, ts, nick, realhost, host, ident, ip = args[0:7]
+    realname = args[-1]
+    irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+    parsedmodes = utils.parseModes(irc, uid, [args[8], args[9]])
+    log.debug('Applying modes %s for %s', parsedmodes, uid)
+    utils.applyModes(irc, uid, parsedmodes)
+    irc.servers[numeric].users.add(uid)
+    return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
+
+def handle_server(irc, numeric, command, args):
+    """Handles incoming SERVER commands (introduction of servers)."""
+    # SERVER is sent by our uplink or any other server to introduce others.
+    # <- :00A SERVER test.server * 1 00C :testing raw message syntax
+    # <- :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
+    servername = args[0].lower()
+    sid = args[3]
+    sdesc = args[-1]
+    irc.servers[sid] = IrcServer(numeric, servername)
+    return {'name': servername, 'sid': args[3], 'text': sdesc}
+
+def handle_fmode(irc, numeric, command, args):
+    """Handles the FMODE command, used for channel mode changes."""
+    # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
+    channel = utils.toLower(irc, args[0])
+    modes = args[2:]
+    changedmodes = utils.parseModes(irc, channel, modes)
+    utils.applyModes(irc, channel, changedmodes)
+    ts = int(args[1])
+    return {'target': channel, 'modes': changedmodes, 'ts': ts}
+
+def handle_idle(irc, numeric, command, args):
+    """Handles the IDLE command, sent between servers in remote WHOIS queries."""
+    # <- :70MAAAAAA IDLE 1MLAAAAIG
+    # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
+    sourceuser = numeric
+    targetuser = args[0]
+    _send(irc, targetuser, 'IDLE %s %s 0' % (sourceuser, irc.users[targetuser].ts))
 
 def handle_ftopic(irc, numeric, command, args):
+    """Handles incoming FTOPIC (sets topic on burst)."""
     # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
     channel = utils.toLower(irc, args[0])
     ts = args[1]
@@ -464,13 +497,19 @@ def handle_ftopic(irc, numeric, command, args):
     return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
 
 def handle_invite(irc, numeric, command, args):
+    """Handles incoming INVITEs."""
     # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 0
     target = args[0]
     channel = utils.toLower(irc, args[1])
-    # We don't actually need to process this; it's just something plugins/hooks can use
+    # We don't actually need to process this; just send the hook so plugins can use it
     return {'target': target, 'channel': channel}
 
 def handle_encap(irc, numeric, command, args):
+    """Handles incoming encapsulated commands (ENCAP). Hook arguments
+    returned by this should have a parse_as field, that sets the correct
+    hook name for the message.
+
+    For InspIRCd, the only ENCAP command we handle right now is KNOCK."""
     # <- :70MAAAAAA ENCAP * KNOCK #blah :agsdfas
     # From charybdis TS6 docs: https://github.com/grawity/irc-docs/blob/03ba884a54f1cef2193cd62b6a86803d89c1ac41/server/ts6.txt
 
@@ -490,6 +529,10 @@ def handle_encap(irc, numeric, command, args):
                 'text': text}
 
 def handle_opertype(irc, numeric, command, args):
+    """Handles incoming OPERTYPE, which is used to denote an oper up.
+
+    This calls the internal hook PYLINK_CLIENT_OPERED, sets the internal
+    opertype of the client, and assumes setting user mode +o on the caller."""
     # This is used by InspIRCd to denote an oper up; there is no MODE
     # command sent for it.
     # <- :70MAAAAAB OPERTYPE Network_Owner
@@ -502,24 +545,29 @@ def handle_opertype(irc, numeric, command, args):
     return {'target': numeric, 'modes': omode}
 
 def handle_fident(irc, numeric, command, args):
-    # :70MAAAAAB FHOST test
-    # :70MAAAAAB FNAME :afdsafasf
-    # :70MAAAAAB FIDENT test
+    """Handles FIDENT, used for denoting ident changes."""
+    # <- :70MAAAAAB FIDENT test
     irc.users[numeric].ident = newident = args[0]
     return {'target': numeric, 'newident': newident}
 
 def handle_fhost(irc, numeric, command, args):
+    """Handles FHOST, used for denoting hostname changes."""
+    # <- :70MAAAAAB FIDENT some.host
     irc.users[numeric].host = newhost = args[0]
     return {'target': numeric, 'newhost': newhost}
 
 def handle_fname(irc, numeric, command, args):
+    """Handles FNAME, used for denoting real name/gecos changes."""
+    # <- :70MAAAAAB FNAME :afdsafasf
     irc.users[numeric].realname = newgecos = args[0]
     return {'target': numeric, 'newgecos': newgecos}
 
 def handle_endburst(irc, numeric, command, args):
+    """ENDBURST handler; sends a hook with empty contents."""
     return {}
 
 def handle_away(irc, numeric, command, args):
+    """Handles incoming AWAY messages."""
     # <- :1MLAAAAIG AWAY 1439371390 :Auto-away
     try:
         ts = args[0]

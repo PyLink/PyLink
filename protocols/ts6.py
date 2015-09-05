@@ -9,7 +9,7 @@ import utils
 from log import log
 
 from classes import *
-# Shared with inspircd module because the output is the same.
+# Some functions are shared with the InspIRCd module (ts6_common)
 from ts6_common import nickClient, kickServer, kickClient, _sendKick, quitClient, \
     removeClient, partClient, messageClient, noticeClient, topicClient, parseTS6Args
 from ts6_common import handle_privmsg, handle_kill, handle_kick, handle_error, \
