@@ -125,7 +125,6 @@ def handle_pong(irc, source, command, args):
 
 def handle_server(irc, numeric, command, args):
     # <- SERVER unreal.midnight.vpn 1 :U2351-Fhin6OoEM UnrealIRCd test server
-    # <- SERVER unreal.midnight.vpn 1 :UnrealIRCd test server
     sname = args[0]
     # TODO: handle introductions for other servers
     if numeric == irc.uplink:
@@ -136,6 +135,19 @@ def handle_server(irc, numeric, command, args):
                                     "is probably too old! (Got: %s, needed: %s)" %
                                     (sorted(irc.protodata.keys()),
                                      sorted(_neededCaps)))
+        sdesc = args[-1].split(" ")
+        # Get our protocol version :)
+        vline = sdesc[0].split('-', 1)
+        try:
+            protover = int(vline[0].strip('U'))
+        except ValueError:
+            raise ProtocolError("Protocol version too old! (needs at least 2351 "
+                                "(Unreal 3.4-beta1/2), got something invalid; "
+                                "is VL being sent?)")
+        sdesc = args[-1][1:]
+        if protover < 2351:
+            raise ProtocolError("Protocol version too old! (needs at least 2351 "
+                                "(Unreal 3.4-beta1/2), got %s)" % protover)
         irc.servers[numeric] = IrcServer(None, sname)
     else:
         raise NotImplementedError
