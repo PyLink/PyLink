@@ -59,6 +59,8 @@ def pingServer(irc, source=None, target=None):
 def connect(irc):
     ts = irc.start_ts
     irc.caps = []
+    irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h', '%', 'v': '+'}
+    ### XXX: fill out irc.umodes
 
     f = irc.send
     host = irc.serverdata["hostname"]
@@ -249,3 +251,20 @@ def handle_privmsg(irc, source, command, args):
         target = utils.toLower(irc, target)
     return {'target': target, 'text': args[1]}
 handle_notice = handle_privmsg
+
+def handle_join(irc, numeric, command, args):
+    # <- GL JOIN #pylink,#test
+    for channel in args[0].split(','):
+        c = irc.channels[channel]
+        if args[0] == '0':
+            # /join 0; part the user from all channels
+            oldchans = irc.users[numeric].channels.copy()
+            log.debug('(%s) Got /join 0 from %r, channel list is %r',
+                      irc.name, numeric, oldchans)
+            for ch in oldchans:
+                irc.channels[ch].users.discard(numeric)
+                irc.users[numeric].channels.discard(ch)
+            return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
+        # Call hooks manually, because one JOIN command can have multiple channels...
+        irc.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
+                                          c.modes, 'ts': c.ts}])
