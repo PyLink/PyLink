@@ -601,7 +601,7 @@ def handle_events(irc, data):
             return [numeric, command, parsed_args]
 
 def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
-    # -> :0AL SERVER test.server 1 0XY :some silly pseudoserver
+    # -> :0AL SID test.server 1 0XY :some silly pseudoserver
     uplink = uplink or irc.sid
     name = name.lower()
     if sid is None:  # No sid given; generate one!
@@ -610,14 +610,14 @@ def spawnServer(irc, name, sid=None, uplink=None, desc='PyLink Server'):
     assert len(sid) == 3, "Incorrect SID length"
     if sid in irc.servers:
         raise ValueError('A server with SID %r already exists!' % sid)
-    for server in irc.servers.values() + irc.servers.keys():
+    for server in irc.servers.values():
         if name == server.name:
             raise ValueError('A server named %r already exists!' % name)
     if not utils.isInternalServer(irc, uplink):
         raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
     if not utils.isServerName(name):
         raise ValueError('Invalid server name %r' % name)
-    _send(irc, uplink, 'SERVER %s 1 %s :%s' % (name, sid, desc))
+    _send(irc, uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
     irc.servers[sid] = IrcServer(uplink, name, internal=True)
     return sid
 
