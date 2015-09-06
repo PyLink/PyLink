@@ -65,7 +65,8 @@ class Irc():
         self.serverdata = conf['servers'][netname]
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
-        self.proto = proto
+        self.protoname = proto.__name__
+        self.proto = proto.Class(self)
         self.pingfreq = self.serverdata.get('pingfreq') or 30
         self.pingtimeout = self.pingfreq * 2
 
@@ -142,7 +143,7 @@ class Irc():
                                  sha1fp)
 
                 if checks_ok:
-                    self.proto.connect(self)
+                    self.proto.connect()
                     self.spawnMain()
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self.schedulePing()
@@ -200,7 +201,7 @@ class Irc():
                 log.debug("(%s) <- %s", self.name, line)
                 hook_args = None
                 try:
-                    hook_args = self.proto.handle_events(self, line)
+                    hook_args = self.proto.handle_events(line)
                 except Exception:
                     log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
                     return
@@ -249,7 +250,7 @@ class Irc():
             log.debug("(%s) Dropping message %r; network isn't connected!", self.name, stripped_data)
 
     def schedulePing(self):
-        self.proto.pingServer(self)
+        self.proto.pingServer()
         self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
         self.pingTimer.daemon = True
         self.pingTimer.start()
@@ -261,9 +262,9 @@ class Irc():
         host = self.serverdata["hostname"]
         log.info('(%s) Connected! Spawning main client %s.', self.name, nick)
         olduserobj = self.pseudoclient
-        self.pseudoclient = self.proto.spawnClient(self, nick, ident, host, modes={("+o", None)})
+        self.pseudoclient = self.proto.spawnClient(nick, ident, host, modes={("+o", None)})
         for chan in self.serverdata['channels']:
-            self.proto.joinClient(self, self.pseudoclient.uid, chan)
+            self.proto.joinClient(self.pseudoclient.uid, chan)
         # PyLink internal hook called when spawnMain is called and the
         # contents of Irc().pseudoclient change.
         self.callHooks([self.sid, 'PYLINK_SPAWNMAIN', {'olduser': olduserobj}])
@@ -339,7 +340,7 @@ class FakeIRC(Irc):
     def run(self, data):
         """Queues a message to the fake IRC server."""
         log.debug('<- ' + data)
-        hook_args = self.proto.handle_events(self, data)
+        hook_args = self.proto.handle_events(data)
         if hook_args is not None:
             self.hookmsgs.append(hook_args)
             self.callHooks(hook_args)
@@ -373,6 +374,13 @@ class FakeIRC(Irc):
         hookmsgs = self.hookmsgs
         self.hookmsgs = []
         return hookmsgs
+
+class Protocol():
+    # TODO: Future state-keeping things will go here
+    def __init__(self, irc):
+        self.irc = irc
+        self.casemapping = 'rfc1459'
+        self.hook_map = {}
 
 class FakeProto():
     """Dummy protocol module for testing purposes."""

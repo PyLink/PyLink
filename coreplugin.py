@@ -15,7 +15,7 @@ def handle_kick(irc, source, command, args):
     kicked = args['target']
     channel = args['channel']
     if kicked == irc.pseudoclient.uid:
-        irc.proto.joinClient(irc, irc.pseudoclient.uid, channel)
+        irc.proto.joinClient(irc.pseudoclient.uid, channel)
 utils.add_hook(handle_kick, 'KICK')
 
 # Handle commands sent to the PyLink client (PRIVMSG)
@@ -51,7 +51,7 @@ def handle_whois(irc, source, command, args):
     sourceisOper = ('o', None) in irc.users[source].modes
     # https://www.alien.net.au/irc/irc2numerics.html
     # 311: sends nick!user@host information
-    f(irc, server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
+    f(server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
     # 319: RPL_WHOISCHANNELS, shows channel list
     public_chans = []
     for chan in user.channels:
@@ -69,9 +69,9 @@ def handle_whois(irc, source, command, args):
                 chan = prefixchar + chan
         public_chans.append(chan)
     if public_chans:
-        f(irc, server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
+        f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
     # 312: sends the server the target is on, and its server description.
-    f(irc, server, 312, source, "%s %s :%s" % (nick, irc.serverdata['hostname'],
+    f(server, 312, source, "%s %s :%s" % (nick, irc.serverdata['hostname'],
       irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
     # 313: sends a string denoting the target's operator privilege,
     # only if they have umode +o.
@@ -82,15 +82,15 @@ def handle_whois(irc, source, command, args):
             opertype = "IRC Operator"
         # Let's be gramatically correct.
         n = 'n' if opertype[0].lower() in 'aeiou' else ''
-        f(irc, server, 313, source, "%s :is a%s %s" % (nick, n, opertype))
+        f(server, 313, source, "%s :is a%s %s" % (nick, n, opertype))
     # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
     # Only show this to opers!
     if sourceisOper:
-        f(irc, server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
+        f(server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
     # 317: shows idle and signon time. However, we don't track the user's real
     # idle time, so we simply return 0.
     # <- 317 GL GL 15 1437632859 :seconds idle, signon time
-    f(irc, server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
+    f(server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
     for func in world.whois_handlers:
     # Iterate over custom plugin WHOIS handlers. They return a tuple
     # or list with two arguments: the numeric, and the text to send.
@@ -98,11 +98,11 @@ def handle_whois(irc, source, command, args):
             res = func(irc, target)
             if res:
                 num, text = res
-                f(irc, server, num, source, text)
+                f(server, num, source, text)
         except Exception as e:
             # Again, we wouldn't want this to crash our service, in case
             # something goes wrong!
             log.exception('(%s) Error caught in WHOIS handler: %s', irc.name, e)
     # 318: End of WHOIS.
-    f(irc, server, 318, source, "%s :End of /WHOIS list" % nick)
+    f(server, 318, source, "%s :End of /WHOIS list" % nick)
 utils.add_hook(handle_whois, 'WHOIS')
