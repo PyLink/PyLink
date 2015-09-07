@@ -26,7 +26,7 @@ def hook_privmsg(irc, source, command, args):
     # irc.pseudoclient stores the IrcUser object of the main PyLink client.
     # (i.e. the user defined in the bot: section of the config)
     if utils.isChannel(channel) and irc.pseudoclient.nick in text:
-        utils.msg(irc, channel, 'hi there!')
+        irc.msg(channel, 'hi there!')
         log.info('%s said my name on channel %s (PRIVMSG hook caught)' % (source, channel))
 utils.add_hook(hook_privmsg, 'PRIVMSG')
 
@@ -50,7 +50,7 @@ def randint(irc, source, args):
     except IndexError:
        rmin, rmax = 1, 10
     n = random.randint(rmin, rmax)
-    utils.msg(irc, source, str(n))
+    irc.msg(source, str(n))
 # You can also bind a command function multiple times, and/or to different command names via a
 # second argument.
 # Note: no checking is done at the moment to prevent multiple plugins from binding to the same
