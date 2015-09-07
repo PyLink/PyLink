@@ -7,7 +7,7 @@ import unittest
 
 class TestFakeIRC(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('unittest', classes.FakeProto())
+        self.irc = classes.FakeIRC('unittest', classes.FakeProto)
 
     def testFakeIRC(self):
         self.irc.run('this should do nothing')

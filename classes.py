@@ -391,29 +391,22 @@ class Protocol():
         self.casemapping = 'rfc1459'
         self.hook_map = {}
 
-class FakeProto():
+class FakeProto(Protocol):
     """Dummy protocol module for testing purposes."""
-    def __init__(self):
-        self.hook_map = {}
-        self.casemapping = 'rfc1459'
-        self.__name__ = 'FakeProto'
-
-    @staticmethod
-    def handle_events(irc, data):
+    def handle_events(self, data):
         pass
 
-    @staticmethod
-    def connect(irc):
+    def connect(self):
         pass
 
-    @staticmethod
-    def spawnClient(irc, nick, *args, **kwargs):
+    def spawnClient(self, nick, *args, **kwargs):
         uid = randint(1, 10000000000)
         ts = int(time.time())
-        irc.users[uid] = user = IrcUser(nick, ts, uid)
+        self.irc.users[uid] = user = IrcUser(nick, ts, uid)
         return user
 
-    @staticmethod
-    def joinClient(irc, client, channel):
-        irc.channels[channel].users.add(client)
-        irc.users[client].channels.add(channel)
+    def joinClient(self, client, channel):
+        self.irc.channels[channel].users.add(client)
+        self.irc.users[client].channels.add(channel)
+
+FakeProto.Class = FakeProto

@@ -12,13 +12,13 @@ def dummyf():
 
 class TestRelay(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('unittest', classes.FakeProto())
+        self.irc = classes.FakeIRC('fakeirc', classes.FakeProto)
         self.irc.maxnicklen = 20
         self.f = lambda nick: relay.normalizeNick(self.irc, 'unittest', nick)
         # Fake our protocol name to something that supports slashes in nicks.
         # relay uses a whitelist for this to prevent accidentally introducing
         # bad nicks:
-        self.irc.proto.__name__ = "inspircd"
+        self.irc.protoname = "inspircd"
 
     def testNormalizeNick(self):
         # Second argument simply states the suffix.
@@ -36,10 +36,10 @@ class TestRelay(unittest.TestCase):
         self.assertEqual(self.f('helloworld'), 'helloworl///unittest')
 
     def testNormalizeNickRemovesSlashes(self):
-        self.irc.proto.__name__ = "charybdis"
+        self.irc.protoname = "charybdis"
         try:
             self.assertEqual(self.f('helloworld'), 'helloworld|unittest')
             self.assertEqual(self.f('abcde/eJanus'), 'abcde|eJanu|unittest')
             self.assertEqual(self.f('ObnoxiouslyLongNick'), 'Obnoxiously|unittest')
         finally:
-            self.irc.proto.__name__ = "inspircd"
+            self.irc.protoname = "inspircd"
