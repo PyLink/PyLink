@@ -24,7 +24,7 @@ relayusers = defaultdict(dict)
 spawnlocks = defaultdict(threading.Lock)
 savecache = ExpiringDict(max_len=5, max_age_seconds=10)
 
-def relayWhoisHandlers(irc, target):
+def relayWhoisHandler(irc, target):
     user = irc.users[target]
     orig = getLocalUser(irc, target)
     if orig:
@@ -33,7 +33,7 @@ def relayWhoisHandlers(irc, target):
         return [320, "%s :is a remote user connected via PyLink Relay. Home "
                      "network: %s; Home nick: %s" % (user.nick, network,
                                                      remotenick)]
-world.whois_handlers.append(relayWhoisHandlers)
+world.whois_handlers.append(relayWhoisHandler)
 
 def normalizeNick(irc, netname, nick, separator=None, uid=''):
     separator = separator or irc.serverdata.get('separator') or "/"
