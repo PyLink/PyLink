@@ -217,8 +217,8 @@ class TS6BaseProtocol(Protocol):
 
     def handle_mode(self, numeric, command, args):
         """Handles incoming user mode changes. For channel mode changes,
-        TMODE (TS6/charybdis) and FMODE (Inspself.ircd) are used instead."""
-        # In Inspself.ircd, MODE is used for setting user modes and
+        TMODE (TS6/charybdis) and FMODE (InspIRCd) are used instead."""
+        # In InspIRCd, MODE is used for setting user modes and
         # FMODE is used for channel modes:
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
         target = args[0]
@@ -229,7 +229,7 @@ class TS6BaseProtocol(Protocol):
 
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients. For topic bursts,
-        TB (TS6/charybdis) and FTOPIC (Inspself.ircd) are used instead."""
+        TB (TS6/charybdis) and FTOPIC (InspIRCd) are used instead."""
         # <- :70MAAAAAA TOPIC #test :test
         channel = utils.toLower(self.irc, args[0])
         topic = args[1]

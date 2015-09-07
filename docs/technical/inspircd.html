@@ -113,13 +113,9 @@ to&nbsp;our&nbsp;PINGs&nbsp;eventually&nbsp;times&nbsp;out&nbsp;and&nbsp;is&nbsp
 
 <dl><dt><a name="InspIRCdProtocol-joinClient"><strong>joinClient</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;an&nbsp;internal&nbsp;spawned&nbsp;client&nbsp;&lt;client&gt;&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-killClient"><strong>killClient</strong></a>(self, numeric, target, reason)</dt><dd><tt>&lt;self.<strong>irc</strong>&nbsp;object&gt;&nbsp;&lt;client&nbsp;numeric&gt;&nbsp;&lt;target&gt;&nbsp;&lt;reason&gt;<br>
-&nbsp;<br>
-Sends&nbsp;a&nbsp;kill&nbsp;to&nbsp;&lt;target&gt;&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;PseudoClient.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-killClient"><strong>killClient</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-killServer"><strong>killServer</strong></a>(self, numeric, target, reason)</dt><dd><tt>&lt;self.<strong>irc</strong>&nbsp;object&gt;&nbsp;&lt;server&nbsp;SID&gt;&nbsp;&lt;target&gt;&nbsp;&lt;reason&gt;<br>
-&nbsp;<br>
-Sends&nbsp;a&nbsp;kill&nbsp;to&nbsp;&lt;target&gt;&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;PseudoServer.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-killServer"><strong>killServer</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-knockClient"><strong>knockClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;KNOCK&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
 
@@ -141,8 +137,8 @@ to&nbsp;the&nbsp;one&nbsp;we've&nbsp;stored&nbsp;in&nbsp;the&nbsp;channel&nbsp;s
 &lt;users&gt;&nbsp;is&nbsp;a&nbsp;list&nbsp;of&nbsp;(prefix&nbsp;mode,&nbsp;UID)&nbsp;pairs:<br>
 &nbsp;<br>
 Example&nbsp;uses:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>,&nbsp;'100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>,&nbsp;self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoinServer">sjoinServer</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
 &nbsp;<br>
@@ -166,7 +162,7 @@ Methods inherited from <a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6B
 <dl><dt><a name="InspIRCdProtocol-handle_kill"><strong>handle_kill</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_mode"><strong>handle_mode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;user&nbsp;mode&nbsp;changes.&nbsp;For&nbsp;channel&nbsp;mode&nbsp;changes,<br>
-TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(Inspself.ircd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;NICK&nbsp;changes.</tt></dd></dl>
 
@@ -183,7 +179,7 @@ TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(Inspself.ircd)&nbsp;are&nbs
 <dl><dt><a name="InspIRCdProtocol-handle_squit"><strong>handle_squit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SQUITs&nbsp;(netsplits).</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_topic"><strong>handle_topic</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;TOPIC&nbsp;changes&nbsp;from&nbsp;clients.&nbsp;For&nbsp;topic&nbsp;bursts,<br>
-TB&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FTOPIC&nbsp;(Inspself.ircd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+TB&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FTOPIC&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-kickClient"><strong>kickClient</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;kick&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
 
@@ -288,13 +284,9 @@ to&nbsp;our&nbsp;PINGs&nbsp;eventually&nbsp;times&nbsp;out&nbsp;and&nbsp;is&nbsp
 
 <dl><dt><a name="InspIRCdProtocol-joinClient"><strong>joinClient</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;an&nbsp;internal&nbsp;spawned&nbsp;client&nbsp;&lt;client&gt;&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-killClient"><strong>killClient</strong></a>(self, numeric, target, reason)</dt><dd><tt>&lt;self.<strong>irc</strong>&nbsp;object&gt;&nbsp;&lt;client&nbsp;numeric&gt;&nbsp;&lt;target&gt;&nbsp;&lt;reason&gt;<br>
-&nbsp;<br>
-Sends&nbsp;a&nbsp;kill&nbsp;to&nbsp;&lt;target&gt;&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;PseudoClient.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-killClient"><strong>killClient</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-killServer"><strong>killServer</strong></a>(self, numeric, target, reason)</dt><dd><tt>&lt;self.<strong>irc</strong>&nbsp;object&gt;&nbsp;&lt;server&nbsp;SID&gt;&nbsp;&lt;target&gt;&nbsp;&lt;reason&gt;<br>
-&nbsp;<br>
-Sends&nbsp;a&nbsp;kill&nbsp;to&nbsp;&lt;target&gt;&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;PseudoServer.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-killServer"><strong>killServer</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-knockClient"><strong>knockClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;KNOCK&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
 
@@ -316,8 +308,8 @@ to&nbsp;the&nbsp;one&nbsp;we've&nbsp;stored&nbsp;in&nbsp;the&nbsp;channel&nbsp;s
 &lt;users&gt;&nbsp;is&nbsp;a&nbsp;list&nbsp;of&nbsp;(prefix&nbsp;mode,&nbsp;UID)&nbsp;pairs:<br>
 &nbsp;<br>
 Example&nbsp;uses:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>,&nbsp;'100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>,&nbsp;self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoinServer">sjoinServer</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
 &nbsp;<br>
@@ -341,7 +333,7 @@ Methods inherited from <a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6B
 <dl><dt><a name="InspIRCdProtocol-handle_kill"><strong>handle_kill</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_mode"><strong>handle_mode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;user&nbsp;mode&nbsp;changes.&nbsp;For&nbsp;channel&nbsp;mode&nbsp;changes,<br>
-TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(Inspself.ircd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;NICK&nbsp;changes.</tt></dd></dl>
 
@@ -358,7 +350,7 @@ TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(Inspself.ircd)&nbsp;are&nbs
 <dl><dt><a name="InspIRCdProtocol-handle_squit"><strong>handle_squit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SQUITs&nbsp;(netsplits).</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_topic"><strong>handle_topic</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;TOPIC&nbsp;changes&nbsp;from&nbsp;clients.&nbsp;For&nbsp;topic&nbsp;bursts,<br>
-TB&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FTOPIC&nbsp;(Inspself.ircd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+TB&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FTOPIC&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-kickClient"><strong>kickClient</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;kick&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
 
@@ -399,7 +391,7 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'loglevel': 'CRITICAL', 'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f47d93ddc80&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'loglevel': 'CRITICAL', 'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f0dbb516c80&gt;, {})}<br>
 <strong>curdir</strong> = 'protocols'<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;</td></tr></table>
 </body></html>

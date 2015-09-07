@@ -83,8 +83,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         <users> is a list of (prefix mode, UID) pairs:
 
         Example uses:
-            sjoinServer(self.irc, '100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])
-            sjoinServer(self.irc, self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
+            sjoinServer('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])
+            sjoinServer(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
         """
         channel = utils.toLower(self.irc, channel)
         server = server or self.irc.sid
@@ -191,9 +191,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._sendModes(numeric, target, modes, ts=ts)
 
     def killServer(self, numeric, target, reason):
-        """<self.irc object> <server SID> <target> <reason>
-
-        Sends a kill to <target> from a PyLink PseudoServer.
+        """Sends a kill from a PyLink server.
         """
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
@@ -202,9 +200,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # will send a QUIT from the target if the command succeeds.
 
     def killClient(self, numeric, target, reason):
-        """<self.irc object> <client numeric> <target> <reason>
-
-        Sends a kill to <target> from a PyLink PseudoClient.
+        """Sends a kill from a PyLink client.
         """
         if not utils.isInternalClient(self.irc, numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
