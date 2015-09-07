@@ -166,6 +166,15 @@ class Irc():
             else:
                 return
 
+    def msg(self, target, text, notice=False, source=None):
+        """Handy function to send messages/notices to clients. Source
+        is optional, and defaults to the main PyLink client if not specified."""
+        source = source or self.pseudoclient.uid
+        if notice:
+            self.proto.noticeClient(source, target, text)
+        else:
+            self.proto.messageClient(source, target, text)
+
     def _disconnect(self):
         log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
         self.connected.clear()

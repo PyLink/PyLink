@@ -14,7 +14,7 @@ def _exec(irc, source, args):
     utils.checkAuthenticated(irc, source, allowOper=False)
     args = ' '.join(args)
     if not args.strip():
-        utils.msg(irc, source, 'No code entered!')
+        irc.msg(source, 'No code entered!')
         return
     log.info('(%s) Executing %r for %s', irc.name, args, utils.getHostmask(irc, source))
     exec(args, globals(), locals())

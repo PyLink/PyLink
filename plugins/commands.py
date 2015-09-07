@@ -16,10 +16,10 @@ def status(irc, source, args):
     Returns your current PyLink login status."""
     identified = irc.users[source].identified
     if identified:
-        utils.msg(irc, source, 'You are identified as \x02%s\x02.' % identified)
+        irc.msg(source, 'You are identified as \x02%s\x02.' % identified)
     else:
-        utils.msg(irc, source, 'You are not identified as anyone.')
-    utils.msg(irc, source, 'Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
+        irc.msg(source, 'You are not identified as anyone.')
+    irc.msg(source, 'Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
 
 @utils.add_cmd
 def identify(irc, source, args):
@@ -29,17 +29,17 @@ def identify(irc, source, args):
     try:
         username, password = args[0], args[1]
     except IndexError:
-        utils.msg(irc, source, 'Error: Not enough arguments.')
+        irc.msg(source, 'Error: Not enough arguments.')
         return
     # Usernames are case-insensitive, passwords are NOT.
     if username.lower() == conf['login']['user'].lower() and password == conf['login']['password']:
         realuser = conf['login']['user']
         irc.users[source].identified = realuser
-        utils.msg(irc, source, 'Successfully logged in as %s.' % realuser)
+        irc.msg(source, 'Successfully logged in as %s.' % realuser)
         log.info("(%s) Successful login to %r by %s.",
                  irc.name, username, utils.getHostmask(irc, source))
     else:
-        utils.msg(irc, source, 'Error: Incorrect credentials.')
+        irc.msg(source, 'Error: Incorrect credentials.')
         u = irc.users[source]
         log.warning("(%s) Failed login to %r from %s.",
                     irc.name, username, utils.getHostmask(irc, source))
@@ -54,8 +54,8 @@ def listcommands(irc, source, args):
         nfuncs = len(world.bot_commands[cmd])
         if nfuncs > 1:
             cmds[idx] = '%s(x%s)' % (cmd, nfuncs)
-    utils.msg(irc, source, 'Available commands include: %s' % ', '.join(cmds))
-    utils.msg(irc, source, 'To see help on a specific command, type \x02help <command>\x02.')
+    irc.msg(source, 'Available commands include: %s' % ', '.join(cmds))
+    irc.msg(source, 'To see help on a specific command, type \x02help <command>\x02.')
 utils.add_cmd(listcommands, 'list')
 
 @utils.add_cmd
@@ -69,12 +69,12 @@ def help(irc, source, args):
         listcommands(irc, source, args)
         return
     if command not in world.bot_commands:
-        utils.msg(irc, source, 'Error: Unknown command %r.' % command)
+        irc.msg(source, 'Error: Unknown command %r.' % command)
         return
     else:
         funcs = world.bot_commands[command]
         if len(funcs) > 1:
-            utils.msg(irc, source, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
+            irc.msg(source, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
                       % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
         for func in funcs:
             doc = func.__doc__
@@ -85,9 +85,9 @@ def help(irc, source, args):
                 # arguments the command takes.
                 lines[0] = '\x02%s %s\x02 (plugin: %r)' % (command, lines[0], mod)
                 for line in lines:
-                    utils.msg(irc, source, line.strip())
+                    irc.msg(source, line.strip())
             else:
-                utils.msg(irc, source, "Error: Command %r (from plugin %r) "
+                irc.msg(source, "Error: Command %r (from plugin %r) "
                                        "doesn't offer any help." % (command, mod))
                 return
 
@@ -99,17 +99,17 @@ def showuser(irc, source, args):
     try:
         target = args[0]
     except IndexError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 1: nick.")
+        irc.msg(source, "Error: Not enough arguments. Needs 1: nick.")
         return
     u = utils.nickToUid(irc, target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
     verbose = utils.isOper(irc, source) or u == source
     if u not in irc.users:
-        utils.msg(irc, source, 'Error: Unknown user %r.' % target)
+        irc.msg(source, 'Error: Unknown user %r.' % target)
         return
 
-    f = lambda s: utils.msg(irc, source, s)
+    f = lambda s: irc.msg(source, s)
     userobj = irc.users[u]
     f('Information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
       userobj.host, userobj.realname))

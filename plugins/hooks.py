@@ -14,6 +14,6 @@ def hook_privmsg(irc, source, command, args):
     channel = args['target']
     text = args['text']
     if utils.isChannel(channel) and irc.pseudoclient.nick in text:
-        utils.msg(irc, channel, 'hi there!')
+        irc.msg(channel, 'hi there!')
         log.info('%s said my name on channel %s (PRIVMSG hook caught)' % (source, channel))
 utils.add_hook(hook_privmsg, 'PRIVMSG')

@@ -98,12 +98,6 @@ class TS6SIDGenerator():
         self.increment()
         return sid
 
-def msg(irc, target, text, notice=False):
-    if notice:
-        irc.proto.noticeClient(irc.pseudoclient.uid, target, text)
-    else:
-        irc.proto.messageClient(irc.pseudoclient.uid, target, text)
-
 def add_cmd(func, name=None):
     if name is None:
         name = func.__name__
