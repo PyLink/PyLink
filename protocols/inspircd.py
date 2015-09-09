@@ -471,6 +471,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         ts = int(args[1])
         return {'target': channel, 'modes': changedmodes, 'ts': ts}
 
+    def handle_mode(self, numeric, command, args):
+        """Handles incoming user mode changes."""
+        # In InspIRCd, MODE is used for setting user modes and
+        # FMODE is used for channel modes:
+        # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
+        target = args[0]
+        modestrings = args[1:]
+        changedmodes = utils.parseModes(self.irc, numeric, modestrings)
+        utils.applyModes(self.irc, target, changedmodes)
+        return {'target': target, 'modes': changedmodes}
+
     def handle_idle(self, numeric, command, args):
         """Handles the IDLE command, sent between servers in remote WHOIS queries."""
         # <- :70MAAAAAA IDLE 1MLAAAAIG

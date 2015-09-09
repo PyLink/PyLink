@@ -215,18 +215,6 @@ class TS6BaseProtocol(Protocol):
         log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
         return {'target': split_server, 'users': affected_users}
 
-    def handle_mode(self, numeric, command, args):
-        """Handles incoming user mode changes. For channel mode changes,
-        TMODE (TS6/charybdis) and FMODE (InspIRCd) are used instead."""
-        # In InspIRCd, MODE is used for setting user modes and
-        # FMODE is used for channel modes:
-        # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
-        target = args[0]
-        modestrings = args[1:]
-        changedmodes = utils.parseModes(self.irc, numeric, modestrings)
-        utils.applyModes(self.irc, target, changedmodes)
-        return {'target': target, 'modes': changedmodes}
-
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients. For topic bursts,
         TB (TS6/charybdis) and FTOPIC (InspIRCd) are used instead."""
