@@ -2,7 +2,6 @@ import time
 import sys
 import os
 import re
-from copy import copy
 
 # Import hacks to access utils and classes...
 curdir = os.path.dirname(__file__)
@@ -58,7 +57,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         return u
 
     def joinClient(self, client, channel):
-        """Joins an internal spawned client <client> to a channel."""
+        """Joins a PyLink client to a channel."""
         # InspIRCd doesn't distinguish between burst joins and regular joins,
         # so what we're actually doing here is sending FJOIN from the server,
         # on behalf of the clients that are joining.
@@ -155,7 +154,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send(target, 'OPERTYPE %s' % otype)
 
     def _sendModes(self, numeric, target, modes, ts=None):
-        """Internal function to send modes from a PyLink client/server."""
+        """Internal function to send mode changes from a PyLink client/server."""
         # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
         # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
         log.debug('(%s) inspself.ircd._sendModes: received %r for mode list', self.irc.name, modes)
@@ -174,7 +173,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def modeClient(self, numeric, target, modes, ts=None):
         """
-        Sends modes from a PyLink client. <modes> should be
+        Sends mode changes from a PyLink client. <modes> should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
         if not utils.isInternalClient(self.irc, numeric):
@@ -183,7 +182,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def modeServer(self, numeric, target, modes, ts=None):
         """
-        Sends modes from a PyLink server. <list of modes> should be
+        Sends mode changes from a PyLink server. <list of modes> should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
         if not utils.isInternalServer(self.irc, numeric):
@@ -191,8 +190,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._sendModes(numeric, target, modes, ts=ts)
 
     def killServer(self, numeric, target, reason):
-        """Sends a kill from a PyLink server.
-        """
+        """Sends a kill from a PyLink server."""
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         self._send(numeric, 'KILL %s :%s' % (target, reason))
@@ -200,8 +198,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # will send a QUIT from the target if the command succeeds.
 
     def killClient(self, numeric, target, reason):
-        """Sends a kill from a PyLink client.
-        """
+        """Sends a kill from a PyLink client."""
         if not utils.isInternalClient(self.irc, numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'KILL %s :%s' % (target, reason))
@@ -209,7 +206,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # will send a QUIT from the target if the command succeeds.
 
     def topicServer(self, numeric, target, text):
-        """Sends a burst topic from a PyLink server. This is usally used on burst."""
+        """Sends a topic change from a PyLink server. This is usally used on burst."""
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         ts = int(time.time())
@@ -313,9 +310,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
         f(':%s ENDBURST' % (self.irc.sid))
 
     def handle_events(self, data):
-        """Event handler for the InspIRCd protocol. This passes most commands to
-        the various handle_ABCD() functions elsewhere in this module, but also
-        handles commands sent in the initial server linking phase."""
+        """Event handler for the InspIRCd protocol.
+
+        This passes most commands to the various handle_ABCD() functions
+        elsewhere in this module, but also handles commands sent in the
+        initial server linking phase."""
         # Each server message looks something like this:
         # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :v,1SRAAESWE
         # :<sid> <command> <argument1> <argument2> ... :final multi word argument
@@ -403,9 +402,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(args[1], 'PONG %s %s' % (args[1], source))
 
     def handle_pong(self, source, command, args):
-        """Handles incoming PONG commands. This is used to keep track of whether
-        the uplink is alive by the Irc() internals - a server that fails to reply
-        to our PINGs eventually times out and is disconnected."""
+        """Handles incoming PONG commands.
+
+        This is used to keep track of whether the uplink is alive by the Irc()
+        internals - a server that fails to reply to our PINGs eventually
+        times out and is disconnected."""
         if source == self.irc.uplink and args[1] == self.irc.sid:
             self.irc.lastping = time.time()
 

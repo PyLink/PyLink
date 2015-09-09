@@ -174,7 +174,7 @@ class TS6BaseProtocol(Protocol):
         return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
 
     def handle_quit(self, numeric, command, args):
-        """Handles incoming QUITs."""
+        """Handles incoming QUIT commands."""
         # <- :1SRAAGB4T QUIT :Quit: quit message goes here
         self.removeClient(numeric)
         return {'text': args[0]}
