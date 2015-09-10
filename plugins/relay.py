@@ -80,7 +80,7 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
         nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
     finalLength = len(nick)
     assert finalLength <= maxnicklen, "Normalized nick %r went over max " \
-        "nick length (got: %s, allowed: %s!" % (nick, finalLength, maxnicklen)
+        "nick length (got: %s, allowed: %s!)" % (nick, finalLength, maxnicklen)
 
     return nick
 
