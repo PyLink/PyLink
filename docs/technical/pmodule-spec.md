@@ -1,0 +1,27 @@
+This page is still incomplete. For now, see [inspircd.html](inspircd.html) for an auto-generated specification of the InspIRCd protocol module. Any camelCase `ABCServer/Client` functions are outgoing commands, and include the following:
+
+- `awayClient`
+- `inviteClient`
+- `joinClient`
+- `kickClient`
+- `kickServer`
+- `killClient`
+- `killServer`
+- `knockClient`
+- `messageClient`
+- `modeClient`
+- `modeServer`
+- `nickClient`
+- `noticeClient`
+- `numericServer`
+- `partClient`
+- `pingServer`
+- `quitClient`
+- `removeClient`
+- `sjoinServer`
+- `spawnClient`
+- `spawnServer`
+- `squitServer`
+- `topicClient`
+- `topicServer`
+- `updateClient`

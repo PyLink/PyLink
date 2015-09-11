@@ -20,9 +20,9 @@ def spawnclient(irc, source, args):
     try:
         nick, ident, host = args[:3]
     except ValueError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 3: nick, user, host.")
+        irc.msg(source, "Error: Not enough arguments. Needs 3: nick, user, host.")
         return
-    irc.proto.spawnClient(irc, nick, ident, host)
+    irc.proto.spawnClient(nick, ident, host)
 
 @utils.add_cmd
 def quit(irc, source, args):
@@ -33,14 +33,14 @@ def quit(irc, source, args):
     try:
         nick = args[0]
     except IndexError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 1-2: nick, reason (optional).")
+        irc.msg(source, "Error: Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
     if irc.pseudoclient.uid == utils.nickToUid(irc, nick):
-        utils.msg(irc, source, "Error: Cannot quit the main PyLink PseudoClient!")
+        irc.msg(source, "Error: Cannot quit the main PyLink PseudoClient!")
         return
     u = utils.nickToUid(irc, nick)
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
-    irc.proto.quitClient(irc, u, quitmsg)
+    irc.proto.quitClient(u, quitmsg)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
 def joinclient(irc, source, args):
@@ -54,14 +54,14 @@ def joinclient(irc, source, args):
         if not clist:
             raise IndexError
     except IndexError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
+        irc.msg(source, "Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
     u = utils.nickToUid(irc, nick)
     for channel in clist:
         if not utils.isChannel(channel):
-            utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
+            irc.msg(source, "Error: Invalid channel name %r." % channel)
             return
-        irc.proto.joinClient(irc, u, channel)
+        irc.proto.joinClient(u, channel)
         irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': channel, 'users': [u],
                                                 'modes': irc.channels[channel].modes,
                                                 'parse_as': 'JOIN'}])
@@ -77,15 +77,15 @@ def nick(irc, source, args):
         nick = args[0]
         newnick = args[1]
     except IndexError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 2: nick, newnick.")
+        irc.msg(source, "Error: Not enough arguments. Needs 2: nick, newnick.")
         return
     u = utils.nickToUid(irc, nick)
     if newnick in ('0', u):
         newnick = u
     elif not utils.isNick(newnick):
-        utils.msg(irc, source, 'Error: Invalid nickname %r.' % newnick)
+        irc.msg(source, 'Error: Invalid nickname %r.' % newnick)
         return
-    irc.proto.nickClient(irc, u, newnick)
+    irc.proto.nickClient(u, newnick)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
 @utils.add_cmd
@@ -99,14 +99,14 @@ def part(irc, source, args):
         clist = args[1].split(',')
         reason = ' '.join(args[2:])
     except IndexError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
+        irc.msg(source, "Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
     u = utils.nickToUid(irc, nick)
     for channel in clist:
         if not utils.isChannel(channel):
-            utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
+            irc.msg(source, "Error: Invalid channel name %r." % channel)
             return
-        irc.proto.partClient(irc, u, channel, reason)
+        irc.proto.partClient(u, channel, reason)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
 @utils.add_cmd
@@ -121,17 +121,17 @@ def kick(irc, source, args):
         target = args[2]
         reason = ' '.join(args[3:])
     except IndexError:
-        utils.msg(irc, source, "Error: Not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
+        irc.msg(source, "Error: Not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
         return
     u = utils.nickToUid(irc, nick) or nick
     targetu = utils.nickToUid(irc, target)
     if not utils.isChannel(channel):
-        utils.msg(irc, source, "Error: Invalid channel name %r." % channel)
+        irc.msg(source, "Error: Invalid channel name %r." % channel)
         return
     if utils.isInternalServer(irc, u):
-        irc.proto.kickServer(irc, u, channel, targetu, reason)
+        irc.proto.kickServer(u, channel, targetu, reason)
     else:
-        irc.proto.kickClient(irc, u, channel, targetu, reason)
+        irc.proto.kickClient(u, channel, targetu, reason)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_KICK', {'channel': channel, 'target': targetu, 'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
@@ -143,24 +143,24 @@ def mode(irc, source, args):
     try:
         modesource, target, modes = args[0], args[1], args[2:]
     except IndexError:
-        utils.msg(irc, source, 'Error: Not enough arguments. Needs 3: source nick, target, modes to set.')
+        irc.msg(source, 'Error: Not enough arguments. Needs 3: source nick, target, modes to set.')
         return
     if not modes:
-        utils.msg(irc, source, "Error: No modes given to set!")
+        irc.msg(source, "Error: No modes given to set!")
         return
     parsedmodes = utils.parseModes(irc, target, modes)
     targetuid = utils.nickToUid(irc, target)
     if targetuid:
         target = targetuid
     elif not utils.isChannel(target):
-        utils.msg(irc, source, "Error: Invalid channel or nick %r." % target)
+        irc.msg(source, "Error: Invalid channel or nick %r." % target)
         return
     if utils.isInternalServer(irc, modesource):
-        irc.proto.modeServer(irc, modesource, target, parsedmodes)
+        irc.proto.modeServer(modesource, target, parsedmodes)
         irc.callHooks([modesource, 'PYLINK_BOTSPLUGIN_MODE', {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
     else:
         sourceuid = utils.nickToUid(irc, modesource)
-        irc.proto.modeClient(irc, sourceuid, target, parsedmodes)
+        irc.proto.modeClient(sourceuid, target, parsedmodes)
         irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MODE', {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
 
 @utils.add_cmd
@@ -172,21 +172,21 @@ def msg(irc, source, args):
     try:
         msgsource, target, text = args[0], args[1], ' '.join(args[2:])
     except IndexError:
-        utils.msg(irc, source, 'Error: Not enough arguments. Needs 3: source nick, target, text.')
+        irc.msg(source, 'Error: Not enough arguments. Needs 3: source nick, target, text.')
         return
     sourceuid = utils.nickToUid(irc, msgsource)
     if not sourceuid:
-        utils.msg(irc, source, 'Error: Unknown user %r.' % msgsource)
+        irc.msg(source, 'Error: Unknown user %r.' % msgsource)
         return
     if not utils.isChannel(target):
         real_target = utils.nickToUid(irc, target)
         if real_target is None:
-            utils.msg(irc, source, 'Error: Unknown user %r.' % target)
+            irc.msg(source, 'Error: Unknown user %r.' % target)
             return
     else:
         real_target = target
     if not text:
-        utils.msg(irc, source, 'Error: No text given.')
+        irc.msg(source, 'Error: No text given.')
         return
-    irc.proto.messageClient(irc, sourceuid, real_target, text)
+    irc.proto.messageClient(sourceuid, real_target, text)
     irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])

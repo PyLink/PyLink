@@ -1,0 +1,397 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module inspircd</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>inspircd</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/gl/pylink/protocols/inspircd.py">/home/gl/pylink/protocols/inspircd.py</a></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="hashlib.html">hashlib</a><br>
+<a href="os.html">os</a><br>
+<a href="re.html">re</a><br>
+</td><td width="25%" valign=top><a href="socket.html">socket</a><br>
+<a href="ssl.html">ssl</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="threading.html">threading</a><br>
+<a href="time.html">time</a><br>
+<a href="utils.html">utils</a><br>
+</td><td width="25%" valign=top><a href="world.html">world</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>(<a href="classes.html#Protocol">classes.Protocol</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="inspircd.html#InspIRCdProtocol">InspIRCdProtocol</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><strong>Class</strong> = <a name="Class">class InspIRCdProtocol</a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="inspircd.html#InspIRCdProtocol">InspIRCdProtocol</a></dd>
+<dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
+<dd><a href="classes.html#Protocol">classes.Protocol</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+
+<dl><dt><a name="InspIRCdProtocol-awayClient"><strong>awayClient</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
+to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Initializes&nbsp;a&nbsp;connection&nbsp;to&nbsp;a&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_away"><strong>handle_away</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;AWAY&nbsp;messages.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_encap"><strong>handle_encap</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;encapsulated&nbsp;commands&nbsp;(ENCAP).&nbsp;Hook&nbsp;arguments<br>
+returned&nbsp;by&nbsp;this&nbsp;should&nbsp;have&nbsp;a&nbsp;parse_as&nbsp;field,&nbsp;that&nbsp;sets&nbsp;the&nbsp;correct<br>
+hook&nbsp;name&nbsp;for&nbsp;the&nbsp;message.<br>
+&nbsp;<br>
+For&nbsp;InspIRCd,&nbsp;the&nbsp;only&nbsp;ENCAP&nbsp;command&nbsp;we&nbsp;handle&nbsp;right&nbsp;now&nbsp;is&nbsp;KNOCK.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_endburst"><strong>handle_endburst</strong></a>(self, numeric, command, args)</dt><dd><tt>ENDBURST&nbsp;handler;&nbsp;sends&nbsp;a&nbsp;hook&nbsp;with&nbsp;empty&nbsp;contents.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_events"><strong>handle_events</strong></a>(self, data)</dt><dd><tt>Event&nbsp;handler&nbsp;for&nbsp;the&nbsp;InspIRCd&nbsp;protocol.&nbsp;This&nbsp;passes&nbsp;most&nbsp;commands&nbsp;to<br>
+the&nbsp;various&nbsp;handle_ABCD()&nbsp;functions&nbsp;elsewhere&nbsp;in&nbsp;this&nbsp;module,&nbsp;but&nbsp;also<br>
+handles&nbsp;commands&nbsp;sent&nbsp;in&nbsp;the&nbsp;initial&nbsp;server&nbsp;linking&nbsp;phase.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fhost"><strong>handle_fhost</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;FHOST,&nbsp;used&nbsp;for&nbsp;denoting&nbsp;hostname&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fident"><strong>handle_fident</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;FIDENT,&nbsp;used&nbsp;for&nbsp;denoting&nbsp;ident&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fjoin"><strong>handle_fjoin</strong></a>(self, servernumeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;FJOIN&nbsp;commands&nbsp;(InspIRCd&nbsp;equivalent&nbsp;of&nbsp;JOIN/SJOIN).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fmode"><strong>handle_fmode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;FMODE&nbsp;command,&nbsp;used&nbsp;for&nbsp;channel&nbsp;mode&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fname"><strong>handle_fname</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;FNAME,&nbsp;used&nbsp;for&nbsp;denoting&nbsp;real&nbsp;name/gecos&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_ftopic"><strong>handle_ftopic</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;FTOPIC&nbsp;(sets&nbsp;topic&nbsp;on&nbsp;burst).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_idle"><strong>handle_idle</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;IDLE&nbsp;command,&nbsp;sent&nbsp;between&nbsp;servers&nbsp;in&nbsp;remote&nbsp;WHOIS&nbsp;queries.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_invite"><strong>handle_invite</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;INVITEs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_opertype"><strong>handle_opertype</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;OPERTYPE,&nbsp;which&nbsp;is&nbsp;used&nbsp;to&nbsp;denote&nbsp;an&nbsp;oper&nbsp;up.<br>
+&nbsp;<br>
+This&nbsp;calls&nbsp;the&nbsp;internal&nbsp;hook&nbsp;PYLINK_CLIENT_OPERED,&nbsp;sets&nbsp;the&nbsp;internal<br>
+opertype&nbsp;of&nbsp;the&nbsp;client,&nbsp;and&nbsp;assumes&nbsp;setting&nbsp;user&nbsp;mode&nbsp;+o&nbsp;on&nbsp;the&nbsp;caller.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_ping"><strong>handle_ping</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PING&nbsp;commands,&nbsp;so&nbsp;we&nbsp;don't&nbsp;time&nbsp;out.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_pong"><strong>handle_pong</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PONG&nbsp;commands.&nbsp;This&nbsp;is&nbsp;used&nbsp;to&nbsp;keep&nbsp;track&nbsp;of&nbsp;whether<br>
+the&nbsp;uplink&nbsp;is&nbsp;alive&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals&nbsp;-&nbsp;a&nbsp;server&nbsp;that&nbsp;fails&nbsp;to&nbsp;reply<br>
+to&nbsp;our&nbsp;PINGs&nbsp;eventually&nbsp;times&nbsp;out&nbsp;and&nbsp;is&nbsp;disconnected.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_server"><strong>handle_server</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SERVER&nbsp;commands&nbsp;(introduction&nbsp;of&nbsp;servers).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_uid"><strong>handle_uid</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;UID&nbsp;commands&nbsp;(user&nbsp;introduction).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-inviteClient"><strong>inviteClient</strong></a>(self, numeric, target, channel)</dt><dd><tt>Sends&nbsp;an&nbsp;INVITE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client..</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-joinClient"><strong>joinClient</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;an&nbsp;internal&nbsp;spawned&nbsp;client&nbsp;&lt;client&gt;&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-killClient"><strong>killClient</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-killServer"><strong>killServer</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-knockClient"><strong>knockClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;KNOCK&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-modeClient"><strong>modeClient</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;modes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;modes&gt;&nbsp;should&nbsp;be<br>
+a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;arg)&nbsp;tuples,&nbsp;i.e.&nbsp;the&nbsp;format&nbsp;of&nbsp;utils.parseModes()&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-modeServer"><strong>modeServer</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;modes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;&lt;list&nbsp;of&nbsp;modes&gt;&nbsp;should&nbsp;be<br>
+a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;arg)&nbsp;tuples,&nbsp;i.e.&nbsp;the&nbsp;format&nbsp;of&nbsp;utils.parseModes()&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-numericServer"><strong>numericServer</strong></a>(self, source, numeric, text)</dt></dl>
+
+<dl><dt><a name="InspIRCdProtocol-pingServer"><strong>pingServer</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
+automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-sjoinServer"><strong>sjoinServer</strong></a>(self, server, channel, users, ts=None)</dt><dd><tt>Sends&nbsp;an&nbsp;SJOIN&nbsp;for&nbsp;a&nbsp;group&nbsp;of&nbsp;users&nbsp;to&nbsp;a&nbsp;channel.<br>
+&nbsp;<br>
+The&nbsp;sender&nbsp;should&nbsp;always&nbsp;be&nbsp;a&nbsp;Server&nbsp;ID&nbsp;(SID).&nbsp;TS&nbsp;is&nbsp;optional,&nbsp;and&nbsp;defaults<br>
+to&nbsp;the&nbsp;one&nbsp;we've&nbsp;stored&nbsp;in&nbsp;the&nbsp;channel&nbsp;state&nbsp;if&nbsp;not&nbsp;given.<br>
+&lt;users&gt;&nbsp;is&nbsp;a&nbsp;list&nbsp;of&nbsp;(prefix&nbsp;mode,&nbsp;UID)&nbsp;pairs:<br>
+&nbsp;<br>
+Example&nbsp;uses:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoinServer">sjoinServer</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
+&nbsp;<br>
+Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
+up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-squitServer"><strong>squitServer</strong></a>(self, source, target, text='No reason given')</dt><dd><tt>SQUITs&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-topicServer"><strong>topicServer</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;burst&nbsp;topic&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;This&nbsp;is&nbsp;usally&nbsp;used&nbsp;on&nbsp;burst.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-updateClient"><strong>updateClient</strong></a>(self, numeric, field, text)</dt><dd><tt>Updates&nbsp;the&nbsp;ident,&nbsp;host,&nbsp;or&nbsp;realname&nbsp;of&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>:<br>
+<dl><dt><a name="InspIRCdProtocol-handle_error"><strong>handle_error</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;ERROR&nbsp;messages&nbsp;-&nbsp;these&nbsp;mean&nbsp;that&nbsp;our&nbsp;uplink&nbsp;has&nbsp;disconnected&nbsp;us!</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_kick"><strong>handle_kick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KICKs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_kill"><strong>handle_kill</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_mode"><strong>handle_mode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;user&nbsp;mode&nbsp;changes.&nbsp;For&nbsp;channel&nbsp;mode&nbsp;changes,<br>
+TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;NICK&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_notice"><strong>handle_notice</strong></a> = handle_privmsg(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_part"><strong>handle_part</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PART&nbsp;commands.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_quit"><strong>handle_quit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;QUITs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_save"><strong>handle_save</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SAVE&nbsp;messages,&nbsp;used&nbsp;to&nbsp;handle&nbsp;nick&nbsp;collisions.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_squit"><strong>handle_squit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SQUITs&nbsp;(netsplits).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_topic"><strong>handle_topic</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;TOPIC&nbsp;changes&nbsp;from&nbsp;clients.&nbsp;For&nbsp;topic&nbsp;bursts,<br>
+TB&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FTOPIC&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-kickClient"><strong>kickClient</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;kick&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-kickServer"><strong>kickServer</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;kick&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-messageClient"><strong>messageClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;PRIVMSG&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-nickClient"><strong>nickClient</strong></a>(self, numeric, newnick)</dt><dd><tt>Changes&nbsp;the&nbsp;nick&nbsp;of&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-noticeClient"><strong>noticeClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;NOTICE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
+be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-parseTS6Args"><strong>parseTS6Args</strong></a>(self, args)</dt><dd><tt>Similar&nbsp;to&nbsp;<a href="#Class-parseArgs">parseArgs</a>(),&nbsp;but&nbsp;stripping&nbsp;leading&nbsp;colons&nbsp;from&nbsp;the&nbsp;first&nbsp;argument<br>
+of&nbsp;a&nbsp;line&nbsp;(usually&nbsp;the&nbsp;sender&nbsp;field).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-partClient"><strong>partClient</strong></a>(self, client, channel, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;part&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-quitClient"><strong>quitClient</strong></a>(self, numeric, reason)</dt><dd><tt>Quits&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-topicClient"><strong>topicClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;TOPIC&nbsp;change&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="InspIRCdProtocol">class <strong>InspIRCdProtocol</strong></a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="inspircd.html#InspIRCdProtocol">InspIRCdProtocol</a></dd>
+<dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
+<dd><a href="classes.html#Protocol">classes.Protocol</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+
+<dl><dt><a name="InspIRCdProtocol-awayClient"><strong>awayClient</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
+to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Initializes&nbsp;a&nbsp;connection&nbsp;to&nbsp;a&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_away"><strong>handle_away</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;AWAY&nbsp;messages.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_encap"><strong>handle_encap</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;encapsulated&nbsp;commands&nbsp;(ENCAP).&nbsp;Hook&nbsp;arguments<br>
+returned&nbsp;by&nbsp;this&nbsp;should&nbsp;have&nbsp;a&nbsp;parse_as&nbsp;field,&nbsp;that&nbsp;sets&nbsp;the&nbsp;correct<br>
+hook&nbsp;name&nbsp;for&nbsp;the&nbsp;message.<br>
+&nbsp;<br>
+For&nbsp;InspIRCd,&nbsp;the&nbsp;only&nbsp;ENCAP&nbsp;command&nbsp;we&nbsp;handle&nbsp;right&nbsp;now&nbsp;is&nbsp;KNOCK.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_endburst"><strong>handle_endburst</strong></a>(self, numeric, command, args)</dt><dd><tt>ENDBURST&nbsp;handler;&nbsp;sends&nbsp;a&nbsp;hook&nbsp;with&nbsp;empty&nbsp;contents.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_events"><strong>handle_events</strong></a>(self, data)</dt><dd><tt>Event&nbsp;handler&nbsp;for&nbsp;the&nbsp;InspIRCd&nbsp;protocol.&nbsp;This&nbsp;passes&nbsp;most&nbsp;commands&nbsp;to<br>
+the&nbsp;various&nbsp;handle_ABCD()&nbsp;functions&nbsp;elsewhere&nbsp;in&nbsp;this&nbsp;module,&nbsp;but&nbsp;also<br>
+handles&nbsp;commands&nbsp;sent&nbsp;in&nbsp;the&nbsp;initial&nbsp;server&nbsp;linking&nbsp;phase.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fhost"><strong>handle_fhost</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;FHOST,&nbsp;used&nbsp;for&nbsp;denoting&nbsp;hostname&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fident"><strong>handle_fident</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;FIDENT,&nbsp;used&nbsp;for&nbsp;denoting&nbsp;ident&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fjoin"><strong>handle_fjoin</strong></a>(self, servernumeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;FJOIN&nbsp;commands&nbsp;(InspIRCd&nbsp;equivalent&nbsp;of&nbsp;JOIN/SJOIN).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fmode"><strong>handle_fmode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;FMODE&nbsp;command,&nbsp;used&nbsp;for&nbsp;channel&nbsp;mode&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_fname"><strong>handle_fname</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;FNAME,&nbsp;used&nbsp;for&nbsp;denoting&nbsp;real&nbsp;name/gecos&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_ftopic"><strong>handle_ftopic</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;FTOPIC&nbsp;(sets&nbsp;topic&nbsp;on&nbsp;burst).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_idle"><strong>handle_idle</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;IDLE&nbsp;command,&nbsp;sent&nbsp;between&nbsp;servers&nbsp;in&nbsp;remote&nbsp;WHOIS&nbsp;queries.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_invite"><strong>handle_invite</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;INVITEs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_opertype"><strong>handle_opertype</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;OPERTYPE,&nbsp;which&nbsp;is&nbsp;used&nbsp;to&nbsp;denote&nbsp;an&nbsp;oper&nbsp;up.<br>
+&nbsp;<br>
+This&nbsp;calls&nbsp;the&nbsp;internal&nbsp;hook&nbsp;PYLINK_CLIENT_OPERED,&nbsp;sets&nbsp;the&nbsp;internal<br>
+opertype&nbsp;of&nbsp;the&nbsp;client,&nbsp;and&nbsp;assumes&nbsp;setting&nbsp;user&nbsp;mode&nbsp;+o&nbsp;on&nbsp;the&nbsp;caller.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_ping"><strong>handle_ping</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PING&nbsp;commands,&nbsp;so&nbsp;we&nbsp;don't&nbsp;time&nbsp;out.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_pong"><strong>handle_pong</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PONG&nbsp;commands.&nbsp;This&nbsp;is&nbsp;used&nbsp;to&nbsp;keep&nbsp;track&nbsp;of&nbsp;whether<br>
+the&nbsp;uplink&nbsp;is&nbsp;alive&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals&nbsp;-&nbsp;a&nbsp;server&nbsp;that&nbsp;fails&nbsp;to&nbsp;reply<br>
+to&nbsp;our&nbsp;PINGs&nbsp;eventually&nbsp;times&nbsp;out&nbsp;and&nbsp;is&nbsp;disconnected.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_server"><strong>handle_server</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SERVER&nbsp;commands&nbsp;(introduction&nbsp;of&nbsp;servers).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_uid"><strong>handle_uid</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;UID&nbsp;commands&nbsp;(user&nbsp;introduction).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-inviteClient"><strong>inviteClient</strong></a>(self, numeric, target, channel)</dt><dd><tt>Sends&nbsp;an&nbsp;INVITE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client..</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-joinClient"><strong>joinClient</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;an&nbsp;internal&nbsp;spawned&nbsp;client&nbsp;&lt;client&gt;&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-killClient"><strong>killClient</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-killServer"><strong>killServer</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-knockClient"><strong>knockClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;KNOCK&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-modeClient"><strong>modeClient</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;modes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;modes&gt;&nbsp;should&nbsp;be<br>
+a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;arg)&nbsp;tuples,&nbsp;i.e.&nbsp;the&nbsp;format&nbsp;of&nbsp;utils.parseModes()&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-modeServer"><strong>modeServer</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;modes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;&lt;list&nbsp;of&nbsp;modes&gt;&nbsp;should&nbsp;be<br>
+a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;arg)&nbsp;tuples,&nbsp;i.e.&nbsp;the&nbsp;format&nbsp;of&nbsp;utils.parseModes()&nbsp;output.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-numericServer"><strong>numericServer</strong></a>(self, source, numeric, text)</dt></dl>
+
+<dl><dt><a name="InspIRCdProtocol-pingServer"><strong>pingServer</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
+automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-sjoinServer"><strong>sjoinServer</strong></a>(self, server, channel, users, ts=None)</dt><dd><tt>Sends&nbsp;an&nbsp;SJOIN&nbsp;for&nbsp;a&nbsp;group&nbsp;of&nbsp;users&nbsp;to&nbsp;a&nbsp;channel.<br>
+&nbsp;<br>
+The&nbsp;sender&nbsp;should&nbsp;always&nbsp;be&nbsp;a&nbsp;Server&nbsp;ID&nbsp;(SID).&nbsp;TS&nbsp;is&nbsp;optional,&nbsp;and&nbsp;defaults<br>
+to&nbsp;the&nbsp;one&nbsp;we've&nbsp;stored&nbsp;in&nbsp;the&nbsp;channel&nbsp;state&nbsp;if&nbsp;not&nbsp;given.<br>
+&lt;users&gt;&nbsp;is&nbsp;a&nbsp;list&nbsp;of&nbsp;(prefix&nbsp;mode,&nbsp;UID)&nbsp;pairs:<br>
+&nbsp;<br>
+Example&nbsp;uses:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoinServer">sjoinServer</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoinServer">sjoinServer</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
+&nbsp;<br>
+Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
+up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-squitServer"><strong>squitServer</strong></a>(self, source, target, text='No reason given')</dt><dd><tt>SQUITs&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-topicServer"><strong>topicServer</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;burst&nbsp;topic&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;This&nbsp;is&nbsp;usally&nbsp;used&nbsp;on&nbsp;burst.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-updateClient"><strong>updateClient</strong></a>(self, numeric, field, text)</dt><dd><tt>Updates&nbsp;the&nbsp;ident,&nbsp;host,&nbsp;or&nbsp;realname&nbsp;of&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>:<br>
+<dl><dt><a name="InspIRCdProtocol-handle_error"><strong>handle_error</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;ERROR&nbsp;messages&nbsp;-&nbsp;these&nbsp;mean&nbsp;that&nbsp;our&nbsp;uplink&nbsp;has&nbsp;disconnected&nbsp;us!</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_kick"><strong>handle_kick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KICKs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_kill"><strong>handle_kill</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_mode"><strong>handle_mode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;user&nbsp;mode&nbsp;changes.&nbsp;For&nbsp;channel&nbsp;mode&nbsp;changes,<br>
+TMODE&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FMODE&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;NICK&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_notice"><strong>handle_notice</strong></a> = handle_privmsg(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_part"><strong>handle_part</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PART&nbsp;commands.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_quit"><strong>handle_quit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;QUITs.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_save"><strong>handle_save</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SAVE&nbsp;messages,&nbsp;used&nbsp;to&nbsp;handle&nbsp;nick&nbsp;collisions.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_squit"><strong>handle_squit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SQUITs&nbsp;(netsplits).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_topic"><strong>handle_topic</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;TOPIC&nbsp;changes&nbsp;from&nbsp;clients.&nbsp;For&nbsp;topic&nbsp;bursts,<br>
+TB&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FTOPIC&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-kickClient"><strong>kickClient</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;kick&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-kickServer"><strong>kickServer</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;kick&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-messageClient"><strong>messageClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;PRIVMSG&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-nickClient"><strong>nickClient</strong></a>(self, numeric, newnick)</dt><dd><tt>Changes&nbsp;the&nbsp;nick&nbsp;of&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-noticeClient"><strong>noticeClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;NOTICE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
+be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-parseTS6Args"><strong>parseTS6Args</strong></a>(self, args)</dt><dd><tt>Similar&nbsp;to&nbsp;<a href="#InspIRCdProtocol-parseArgs">parseArgs</a>(),&nbsp;but&nbsp;stripping&nbsp;leading&nbsp;colons&nbsp;from&nbsp;the&nbsp;first&nbsp;argument<br>
+of&nbsp;a&nbsp;line&nbsp;(usually&nbsp;the&nbsp;sender&nbsp;field).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-partClient"><strong>partClient</strong></a>(self, client, channel, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;part&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-quitClient"><strong>quitClient</strong></a>(self, numeric, reason)</dt><dd><tt>Quits&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-topicClient"><strong>topicClient</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;TOPIC&nbsp;change&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>conf</strong> = {'bot': {'loglevel': 'CRITICAL', 'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f0dbb516c80&gt;, {})}<br>
+<strong>curdir</strong> = 'protocols'<br>
+<strong>log</strong> = &lt;logging.RootLogger object&gt;</td></tr></table>
+</body></html>

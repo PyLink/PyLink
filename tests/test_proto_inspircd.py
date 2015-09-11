@@ -19,7 +19,7 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
         self.assertRaises(classes.ProtocolError, self.irc.run, 'SERVER somehow.someday BADPASS 0 0AL :Somehow Server - McMurdo Station, Antarctica')
 
     def testConnect(self):
-        self.proto.connect(self.irc)
+        self.proto.connect()
         initial_messages = self.irc.takeMsgs()
         commands = self.irc.takeCommands(initial_messages)
         # SERVER pylink.unittest abcd 0 9PY :PyLink Service
@@ -40,20 +40,20 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
 
     def testHandleSQuit(self):
         # Spawn a messy network map, just because!
-        self.proto.spawnServer(self.irc, 'level1.pylink', '34P')
-        self.proto.spawnServer(self.irc, 'level2.pylink', '34Q', uplink='34P')
-        self.proto.spawnServer(self.irc, 'level3.pylink', '34Z', uplink='34Q')
-        self.proto.spawnServer(self.irc, 'level4.pylink', '34Y', uplink='34Z')
+        self.proto.spawnServer('level1.pylink', '34P')
+        self.proto.spawnServer('level2.pylink', '34Q', uplink='34P')
+        self.proto.spawnServer('level3.pylink', '34Z', uplink='34Q')
+        self.proto.spawnServer('level4.pylink', '34Y', uplink='34Z')
         self.assertEqual(self.irc.servers['34Y'].uplink, '34Z')
-        s4u = self.proto.spawnClient(self.irc, 'person1', 'person', 'users.overdrive.pw', server='34Y').uid
-        s3u = self.proto.spawnClient(self.irc, 'person2', 'person', 'users.overdrive.pw', server='34Z').uid
-        self.proto.joinClient(self.irc, s3u, '#pylink')
-        self.proto.joinClient(self.irc, s4u, '#pylink')
+        s4u = self.proto.spawnClient('person1', 'person', 'users.overdrive.pw', server='34Y').uid
+        s3u = self.proto.spawnClient('person2', 'person', 'users.overdrive.pw', server='34Z').uid
+        self.proto.joinClient(s3u, '#pylink')
+        self.proto.joinClient(s4u, '#pylink')
         self.irc.run(':34Z SQUIT 34Y :random squit messsage')
         self.assertNotIn(s4u, self.irc.users)
         self.assertNotIn('34Y', self.irc.servers)
         # Netsplits are obviously recursive, so all these should be removed.
-        self.proto.handle_squit(self.irc, '9PY', 'SQUIT', ['34P'])
+        self.proto.handle_squit('9PY', 'SQUIT', ['34P'])
         self.assertNotIn(s3u, self.irc.users)
         self.assertNotIn('34P', self.irc.servers)
         self.assertNotIn('34Q', self.irc.servers)
@@ -136,11 +136,16 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
         self.assertEqual(expected, hookdata)
 
     def testHandleFMode(self):
+        # Default channels start with +nt
+        self.irc.run(':70M FMODE #pylink 1423790412 -nt')
+        self.assertEqual(set(), self.irc.channels['#pylink'].modes)
+        self.irc.takeHooks()
+
         self.irc.run(':70M FMODE #pylink 1423790412 +ikl herebedragons 100')
         self.assertEqual({('i', None), ('k', 'herebedragons'), ('l', '100')}, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790413 -ilk+m herebedragons')
         self.assertEqual({('m', None)}, self.irc.channels['#pylink'].modes)
-        
+
         hookdata = self.irc.takeHooks()
         expected = [['70M', 'FMODE', {'target': '#pylink', 'modes':
                                       [('+i', None), ('+k', 'herebedragons'),
@@ -175,9 +180,10 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
 
     def testHandleFModeRemovesOldParams(self):
         self.irc.run(':70M FMODE #pylink 1423790412 +l 50')
-        self.assertEqual({('l', '50')}, self.irc.channels['#pylink'].modes)
+        self.assertIn(('l', '50'), self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790412 +l 30')
-        self.assertEqual({('l', '30')}, self.irc.channels['#pylink'].modes)
+        self.assertIn(('l', '30'), self.irc.channels['#pylink'].modes)
+        self.assertNotIn(('l', '50'), self.irc.channels['#pylink'].modes)
         hookdata = self.irc.takeHooks()
         expected = [['70M', 'FMODE', {'target': '#pylink', 'modes': [('+l', '50')], 'ts': 1423790412}],
                     ['70M', 'FMODE', {'target': '#pylink', 'modes': [('+l', '30')], 'ts': 1423790412}]]
