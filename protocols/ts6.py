@@ -17,6 +17,7 @@ class TS6Protocol(TS6BaseProtocol):
         super(TS6Protocol, self).__init__(irc)
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE'}
+        self.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
@@ -263,8 +264,7 @@ class TS6Protocol(TS6BaseProtocol):
         name = name.lower()
         desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         if sid is None:  # No sid given; generate one!
-            self.irc.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
-            sid = self.irc.sidgen.next_sid()
+            sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
         if sid in self.irc.servers:
             raise ValueError('A server with SID %r already exists!' % sid)

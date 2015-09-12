@@ -24,6 +24,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
                     'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
+        self.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
@@ -272,8 +273,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # "desc" defaults to the configured server description.
         desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         if sid is None:  # No sid given; generate one!
-            self.irc.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
-            sid = self.irc.sidgen.next_sid()
+            sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
         if sid in self.irc.servers:
             raise ValueError('A server with SID %r already exists!' % sid)
