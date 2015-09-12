@@ -276,7 +276,7 @@ class TS6Protocol(TS6BaseProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
-        self.irc.servers[sid] = IrcServer(uplink, name, internal=True)
+        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
         return sid
 
     def squitServer(self, source, target, text='No reason given'):
@@ -407,6 +407,7 @@ class TS6Protocol(TS6BaseProtocol):
             sname = args[1].lower()
             log.debug('(%s) Found uplink server name as %r', self.irc.name, sname)
             self.irc.servers[self.irc.uplink].name = sname
+            self.irc.servers[self.irc.uplink].desc = ' '.join(args).split(':', 1)[1]
             # According to the TS6 protocol documentation, we should send SVINFO
             # when we get our uplink's SERVER command.
             self.irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
@@ -593,7 +594,7 @@ class TS6Protocol(TS6BaseProtocol):
             # XXX: don't just save these by their server names; that's ugly!
             sid = servername
         sdesc = args[-1]
-        self.irc.servers[sid] = IrcServer(numeric, servername)
+        self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': sid, 'text': sdesc}
 
     handle_sid = handle_server

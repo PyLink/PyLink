@@ -285,7 +285,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
-        self.irc.servers[sid] = IrcServer(uplink, name, internal=True)
+        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
         self._send(sid, 'ENDBURST')
         return sid
 
@@ -329,7 +329,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
            if args[2] != self.irc.serverdata['recvpass']:
                 # Check if recvpass is correct
                 raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
-           self.irc.servers[numeric] = IrcServer(None, servername)
+           sdesc = ' '.join(args).split(':', 1)[1]
+           self.irc.servers[numeric] = IrcServer(None, servername, desc=sdesc)
            self.irc.uplink = numeric
            return
         elif args[0] == 'CAPAB':
@@ -459,7 +460,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         servername = args[0].lower()
         sid = args[3]
         sdesc = args[-1]
-        self.irc.servers[sid] = IrcServer(numeric, servername)
+        self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': args[3], 'text': sdesc}
 
     def handle_fmode(self, numeric, command, args):

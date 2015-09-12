@@ -26,7 +26,9 @@ class Irc():
         self.lastping = time.time()
 
         # Server, channel, and user indexes to be populated by our protocol module
-        self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'], internal=True)}
+        self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'],
+                        internal=True, desc=self.serverdata.get('serverdesc')
+                        or self.botdata['serverdesc'])}
         self.users = {}
         self.channels = defaultdict(IrcChannel)
         # Sets flags such as whether to use halfops, etc. The default RFC1459
@@ -307,11 +309,12 @@ class IrcServer():
     name: The name of the server.
     internal: Whether the server is an internal PyLink PseudoServer.
     """
-    def __init__(self, uplink, name, internal=False):
+    def __init__(self, uplink, name, internal=False, desc="(None given)"):
         self.uplink = uplink
         self.users = set()
         self.internal = internal
         self.name = name.lower()
+        self.desc = desc
     def __repr__(self):
         return repr(self.__dict__)
 
