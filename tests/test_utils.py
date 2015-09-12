@@ -5,11 +5,16 @@ import unittest
 import itertools
 
 import utils
+import classes
+import world
 
 def dummyf():
     pass
 
 class TestUtils(unittest.TestCase):
+    def setUp(self):
+        self.irc = classes.FakeIRC('fakeirc', classes.FakeProto())
+
     def testTS6UIDGenerator(self):
         uidgen = utils.TS6UIDGenerator('9PY')
         self.assertEqual(uidgen.next_uid(), '9PYAAAAAA')
@@ -21,16 +26,16 @@ class TestUtils(unittest.TestCase):
         utils.add_cmd(dummyf)
         utils.add_cmd(dummyf, 'TEST')
         # All command names should be automatically lowercased.
-        self.assertIn('dummyf', utils.bot_commands)
-        self.assertIn('test', utils.bot_commands)
-        self.assertNotIn('TEST', utils.bot_commands)
+        self.assertIn('dummyf', world.bot_commands)
+        self.assertIn('test', world.bot_commands)
+        self.assertNotIn('TEST', world.bot_commands)
 
     def test_add_hook(self):
         utils.add_hook(dummyf, 'join')
-        self.assertIn('JOIN', utils.command_hooks)
+        self.assertIn('JOIN', world.command_hooks)
         # Command names stored in uppercase.
-        self.assertNotIn('join', utils.command_hooks)
-        self.assertIn(dummyf, utils.command_hooks['JOIN'])
+        self.assertNotIn('join', world.command_hooks)
+        self.assertIn(dummyf, world.command_hooks['JOIN'])
 
     def testIsNick(self):
         self.assertFalse(utils.isNick('abcdefgh', nicklen=3))
@@ -95,6 +100,20 @@ class TestUtils(unittest.TestCase):
                                ('-m', None), ('+k', 'hello'),
                                ('+b', '*!*@*.badisp.net')])
         self.assertEqual(res, '-o+l-nm+kb 9PYAAAAAA 50 hello *!*@*.badisp.net')
+
+    @unittest.skip('Wait, we need to work out the kinks first! (reversing changes of modes with arguments)')
+    def testReverseModes(self):
+        f = lambda x: utils.reverseModes(self.irc, '#test', x)
+        # Strings.
+        self.assertEqual(f("+nt-lk"), "-nt+lk")
+        self.assertEqual(f("nt-k"), "-nt+k")
+        # Lists.
+        self.assertEqual(f([('+m', None), ('+t', None), ('+l', '3'), ('-o', 'person')]),
+            [('-m', None), ('-t', None), ('-l', '3'), ('+o', 'person')])
+        # Sets.
+        self.assertEqual(f({('s', None), ('+o', 'whoever')}), {('-s', None), ('-o', 'whoever')})
+        # Combining modes with an initial + and those without
+        self.assertEqual(f({('s', None), ('+n', None)}), {('-s', None), ('-n', None)})
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,19 +1,13 @@
 import string
 import re
-from collections import defaultdict
-import threading
+import inspect
 
 from log import log
+import world
 
-global bot_commands, command_hooks
-# This should be a mapping of command names to functions
-bot_commands = {}
-command_hooks = defaultdict(list)
-networkobjects = {}
-schedulers = {}
-plugins = []
-whois_handlers = []
-started = threading.Event()
+# This is separate from classes.py to prevent import loops.
+class NotAuthenticatedError(Exception):
+    pass
 
 class TS6UIDGenerator():
     """TS6 UID Generator module, adapted from InspIRCd source
@@ -114,12 +108,12 @@ def add_cmd(func, name=None):
     if name is None:
         name = func.__name__
     name = name.lower()
-    bot_commands[name] = func
+    world.bot_commands[name].append(func)
 
 def add_hook(func, command):
     """Add a hook <func> for command <command>."""
     command = command.upper()
-    command_hooks[command].append(func)
+    world.command_hooks[command].append(func)
 
 def toLower(irc, text):
     """<irc object> <text>
@@ -168,7 +162,7 @@ def isServerName(s):
     return _isASCII(s) and '.' in s and not s.startswith('.')
 
 def parseModes(irc, target, args):
-    """Parses a mode string into a list of (mode, argument) tuples.
+    """Parses a modestring list into a list of (mode, argument) tuples.
     ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
     """
     # http://www.irc.org/tech_docs/005.html
@@ -340,6 +334,34 @@ def joinModes(modes):
         modelist += ' %s' % ' '.join(args)
     return modelist
 
+def reverseModes(irc, target, modes):
+    """<mode string/mode list>
+
+    Reverses/Inverts the mode string or mode list given.
+
+    "+nt-lk" => "-nt+lk"
+    "nt-k" => "-nt+k"
+    [('+m', None), ('+t', None), ('+l', '3'), ('-o', 'person')] =>
+        [('-m', None), ('-t', None), ('-l', '3'), ('+o', 'person')]
+    [('s', None), ('+n', None)] => [('-s', None), ('-n', None)]
+    """
+    origtype = type(modes)
+    # Operate on joined modestrings only; it's easier.
+    if origtype != str:
+        modes = joinModes(modes)
+    # Swap the +'s and -'s by replacing one with a dummy character, and then changing it back.
+    assert '\x00' not in modes, 'NUL cannot be in the mode list (it is a reserved character)!'
+    if not modes.startswith(('+', '-')):
+        modes = '+' + modes
+    newmodes = modes.replace('+', '\x00')
+    newmodes = newmodes.replace('-', '+')
+    newmodes = newmodes.replace('\x00', '-')
+    if origtype != str:
+        # If the original query isn't a string, send back the parseModes() output.
+        return parseModes(irc, target, newmodes.split(" "))
+    else:
+        return newmodes
+
 def isInternalClient(irc, numeric):
     """<irc object> <client numeric>
 
@@ -357,15 +379,38 @@ def isInternalServer(irc, sid):
     """
     return (sid in irc.servers and irc.servers[sid].internal)
 
-def isOper(irc, uid):
+def isOper(irc, uid, allowAuthed=True, allowOper=True):
     """<irc object> <UID>
 
     Returns whether <UID> has operator status on PyLink. This can be achieved
-    by either identifying to PyLink as admin, or having user mode +o set.
+    by either identifying to PyLink as admin (if allowAuthed is True),
+    or having user mode +o set (if allowOper is True). At least one of
+    allowAuthed or allowOper must be True for this to give any meaningful
+    results.
     """
-    return (uid in irc.users and (("o", None) in irc.users[uid].modes or irc.users[uid].identified))
+    if uid in irc.users:
+        if allowOper and ("o", None) in irc.users[uid].modes:
+            return True
+        elif allowAuthed and irc.users[uid].identified:
+            return True
+    return False
+
+def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
+    """<irc object> <UID>
+
+    Checks whether user <UID> has operator status on PyLink, raising
+    NotAuthenticatedError and logging the access denial if not."""
+    lastfunc = inspect.stack()[1][3]
+    if not isOper(irc, uid, allowAuthed=allowAuthed, allowOper=allowOper):
+        log.warning('(%s) Access denied for %s calling %r', irc.name,
+                    getHostmask(irc, uid), lastfunc)
+        raise NotAuthenticatedError("You are not authenticated!")
+    return True
 
 def getHostmask(irc, user):
+    """<irc object> <UID>
+
+    Gets the hostmask of user <UID>, if present."""
     userobj = irc.users.get(user)
     if userobj is None:
         return '<user object not found>'

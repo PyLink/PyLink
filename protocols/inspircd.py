@@ -39,7 +39,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
         realhost=realhost, ip=ip)
     utils.applyModes(irc, uid, modes)
-    irc.servers[server].users.append(uid)
+    irc.servers[server].users.add(uid)
     _send(irc, server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                     " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                              nick=nick, ident=ident, uid=uid,
@@ -138,7 +138,7 @@ def removeClient(irc, numeric):
     log.debug('Removing client %s from irc.users', numeric)
     del irc.users[numeric]
     log.debug('Removing client %s from irc.servers[%s]', numeric, sid)
-    irc.servers[sid].users.remove(numeric)
+    irc.servers[sid].users.discard(numeric)
 
 def quitClient(irc, numeric, reason):
     """<irc object> <client numeric>
@@ -195,6 +195,7 @@ def _operUp(irc, target, opertype=None):
         otype = 'IRC_Operator'
     log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
               irc.name, target)
+    userobj.opertype = otype
     _send(irc, target, 'OPERTYPE %s' % otype)
 
 def _sendModes(irc, numeric, target, modes, ts=None):
@@ -449,7 +450,7 @@ def handle_uid(irc, numeric, command, args):
     parsedmodes = utils.parseModes(irc, uid, [args[8], args[9]])
     log.debug('Applying modes %s for %s', parsedmodes, uid)
     utils.applyModes(irc, uid, parsedmodes)
-    irc.servers[numeric].users.append(uid)
+    irc.servers[numeric].users.add(uid)
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
 def handle_quit(irc, numeric, command, args):
@@ -706,7 +707,10 @@ def handle_opertype(irc, numeric, command, args):
     omode = [('+o', None)]
     irc.users[numeric].opertype = opertype = args[0]
     utils.applyModes(irc, numeric, omode)
-    return {'target': numeric, 'modes': omode, 'text': opertype}
+    # OPERTYPE is essentially umode +o and metadata in one command;
+    # we'll call that too.
+    irc.callHooks([numeric, 'PYLINK_CLIENT_OPERED', {'text': opertype}])
+    return {'target': numeric, 'modes': omode}
 
 def handle_fident(irc, numeric, command, args):
     # :70MAAAAAB FHOST test

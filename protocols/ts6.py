@@ -42,7 +42,7 @@ def spawnClient(irc, nick, ident='null', host='null', realhost=None, modes=set()
     u = irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
         realhost=realhost, ip=ip)
     utils.applyModes(irc, uid, modes)
-    irc.servers[server].users.append(uid)
+    irc.servers[server].users.add(uid)
     _send(irc, server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
             "{realhost} * :{realname}".format(ts=ts, host=host,
             nick=nick, ident=ident, uid=uid,
@@ -469,7 +469,10 @@ def handle_euid(irc, numeric, command, args):
     parsedmodes = utils.parseModes(irc, uid, [modes])
     log.debug('Applying modes %s for %s', parsedmodes, uid)
     utils.applyModes(irc, uid, parsedmodes)
-    irc.servers[numeric].users.append(uid)
+    irc.servers[numeric].users.add(uid)
+    if ('o', None) in parsedmodes:
+        otype = 'Server_Administrator' if ('a', None) in parsedmodes else 'IRC_Operator'
+        irc.callHooks([uid, 'PYLINK_CLIENT_OPERED', {'text': otype}])
     return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
 def handle_uid(irc, numeric, command, args):
@@ -501,6 +504,17 @@ def handle_tmode(irc, numeric, command, args):
     utils.applyModes(irc, channel, changedmodes)
     ts = int(args[0])
     return {'target': channel, 'modes': changedmodes, 'ts': ts}
+
+def handle_mode(irc, numeric, command, args):
+    # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
+    target = args[0]
+    modestrings = args[1:]
+    changedmodes = utils.parseModes(irc, numeric, modestrings)
+    utils.applyModes(irc, target, changedmodes)
+    if ('+o', None) in changedmodes:
+        otype = 'Server_Administrator' if ('a', None) in irc.users[target].modes else 'IRC_Operator'
+        irc.callHooks([target, 'PYLINK_CLIENT_OPERED', {'text': otype}])
+    return {'target': target, 'modes': changedmodes}
 
 def handle_events(irc, data):
     # TS6 messages:

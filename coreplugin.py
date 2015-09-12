@@ -2,6 +2,7 @@
 
 import utils
 from log import log
+import world
 
 # Handle KILLs sent to the PyLink client and respawn
 def handle_kill(irc, source, command, args):
@@ -24,18 +25,17 @@ def handle_commands(irc, source, command, args):
         cmd_args = text.split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
-        try:
-            func = utils.bot_commands[cmd]
-        except KeyError:
-            utils.msg(irc, source, 'Unknown command %r.' % cmd)
+        if cmd not in world.bot_commands:
+            utils.msg(irc, source, 'Error: Unknown command %r.' % cmd)
             return
-        try:
-            log.info('(%s) Calling command %r for %s', irc.name, cmd, utils.getHostmask(irc, source))
-            func(irc, source, cmd_args)
-        except Exception as e:
-            log.exception('Unhandled exception caught in command %r', cmd)
-            utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
-            return
+        log.info('(%s) Calling command %r for %s', irc.name, cmd, utils.getHostmask(irc, source))
+        for func in world.bot_commands[cmd]:
+            try:
+                func(irc, source, cmd_args)
+            except Exception as e:
+                log.exception('Unhandled exception caught in command %r', cmd)
+                utils.msg(irc, source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+                return
 utils.add_hook(handle_commands, 'PRIVMSG')
 
 # Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd).
@@ -75,7 +75,13 @@ def handle_whois(irc, source, command, args):
     # 313: sends a string denoting the target's operator privilege,
     # only if they have umode +o.
     if ('o', None) in user.modes:
-        f(irc, server, 313, source, "%s :is an IRC Operator" % nick)
+        if hasattr(user, 'opertype'):
+            opertype = user.opertype.replace("_", " ")
+        else:
+            opertype = "IRC Operator"
+        # Let's be gramatically correct.
+        n = 'n' if opertype[0].lower() in 'aeiou' else ''
+        f(irc, server, 313, source, "%s :is a%s %s" % (nick, n, opertype))
     # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
     # Only show this to opers!
     if sourceisOper:
@@ -84,7 +90,7 @@ def handle_whois(irc, source, command, args):
     # idle time, so we simply return 0.
     # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(irc, server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
-    for func in utils.whois_handlers:
+    for func in world.whois_handlers:
     # Iterate over custom plugin WHOIS handlers. They return a tuple
     # or list with two arguments: the numeric, and the text to send.
         try:
