@@ -57,9 +57,6 @@ class Irc():
         self.uplink = None
         self.start_ts = int(time.time())
 
-        # UID generators, for servers that need it
-        self.uidgen = {}
-
     def __init__(self, netname, proto):
         # Initialize some variables
         self.name = netname.lower()

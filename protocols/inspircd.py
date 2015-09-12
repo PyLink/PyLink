@@ -25,6 +25,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
         self.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
+        self.uidgen = {}
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
@@ -35,11 +36,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         server = server or self.irc.sid
         if not utils.isInternalServer(self.irc, server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
-        # We need a separate UID generator instance for every PseudoServer
-        # we spawn. Otherwise, things won't wrap around properly.
-        if server not in self.irc.uidgen:
-            self.irc.uidgen[server] = utils.TS6UIDGenerator(server)
-        uid = self.irc.uidgen[server].next_uid()
+        # Create an UIDGenerator instance for every SID, so that each gets
+        # distinct values.
+        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
