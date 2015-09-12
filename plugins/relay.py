@@ -1020,7 +1020,7 @@ def handle_save(irc, numeric, command, args):
         nick = remoteirc.users[remoteuser].nick
         # Limit how many times we can attempt to fix our nick, to prevent
         # floods and such.
-        if savecache.setdefault(target, 0) <= 5:
+        if savecache.setdefault(irc.name, 0) <= 5:
             newnick = normalizeNick(irc, remotenet, nick)
             log.info('(%s) SAVE received for relay client %r (%s), fixing nick to %s',
                       irc.name, target, nick, newnick)
@@ -1028,8 +1028,8 @@ def handle_save(irc, numeric, command, args):
         else:
             log.warning('(%s) SAVE received for relay client %r (%s), not '
                         'fixing nick again due to 5 failed attempts in '
-                        'the last 10 seconds!',  irc.name, target, nick)
-        savecache[target] += 1
+                        'the last 10 seconds!', irc.name, target, nick)
+        savecache[irc.name] += 1
     else:
         # Somebody else on the network (not a PyLink client) had a nick collision;
         # relay this as a nick change appropriately.
