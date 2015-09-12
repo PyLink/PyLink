@@ -1157,12 +1157,12 @@ def showuser(irc, source, args):
         else:
             nicks = []
             if remoteusers:
-                nicks.append('%s (home network): \x02%s\x02' % (userpair[0],
+                nicks.append('%s:\x02%s\x02' % (userpair[0],
                              world.networkobjects[userpair[0]].users[userpair[1]].nick))
                 for r in remoteusers:
                     remotenet, remoteuser = r
                     remoteirc = world.networkobjects[remotenet]
-                    nicks.append('%s: \x02%s\x02' % (remotenet, remoteirc.users[remoteuser].nick))
+                    nicks.append('%s:\x02%s\x02' % (remotenet, remoteirc.users[remoteuser].nick))
                 irc.msg(source, "\x02Relay nicks\x02: %s" % ', '.join(nicks))
         relaychannels = []
         for ch in irc.users[u].channels:
