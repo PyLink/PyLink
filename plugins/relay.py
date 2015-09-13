@@ -423,13 +423,16 @@ def checkClaim(irc, channel, sender):
 
     1) The originating network is in the CLAIM list for the relay in question.
     2) The sender is halfop or above in the channel.
-    3) The sender is a PyLink client (checks are suppressed in this case).
+    3) The sender is a PyLink client/server (checks are suppressed in this case).
+    4) No relay exists for the channel in question.
+    5) The originating network is the one that created the relay.
     """
     relay = findRelay((irc.name, channel))
     sender_modes = getPrefixModes(irc, irc, channel, sender)
-    return irc.name in db[relay]['claim'] or \
+    return (not relay) or irc.name == relay[0] or irc.name in db[relay]['claim'] or \
         any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
-        or utils.isInternalClient(irc, sender)
+        or utils.isInternalClient(irc, sender) or \
+        utils.isInternalServer(irc, sender)
 
 def handle_kick(irc, source, command, args):
     channel = args['channel']
@@ -662,7 +665,14 @@ def handle_mode(irc, numeric, command, args):
         if irc.name == name or not remoteirc.connected.is_set():
             continue
         if utils.isChannel(target):
-            relayModes(irc, remoteirc, numeric, target, modes)
+            if checkClaim(irc, target, numeric):
+                relayModes(irc, remoteirc, numeric, target, modes)
+            else:  # Mode change blocked by CLAIM.
+                reversed_modes = utils.reverseModes(irc, target, modes)
+                log.debug('(%s) Reversing mode changes of %r with %r (CLAIM).',
+                          irc.name, modes, reversed_modes)
+                irc.proto.modeClient(irc.pseudoclient.uid, target, reversed_modes)
+                break
         else:
             # Set hideoper on remote opers, to prevent inflating
             # /lusers and various /stats
