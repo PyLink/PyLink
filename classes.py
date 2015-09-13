@@ -6,6 +6,7 @@ import threading
 import ssl
 from collections import defaultdict
 import hashlib
+from copy import deepcopy
 
 from log import log
 from conf import conf
@@ -332,6 +333,9 @@ class IrcChannel():
         for s in self.prefixmodes.values():
             s.discard(target)
         self.users.discard(target)
+
+    def deepcopy(self):
+        return deepcopy(self)
 
 ### FakeIRC classes, used for test cases
 
