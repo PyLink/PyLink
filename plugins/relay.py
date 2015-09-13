@@ -707,22 +707,27 @@ utils.add_hook(handle_mode, 'MODE')
 
 def handle_topic(irc, numeric, command, args):
     channel = args['channel']
+    oldtopic = args['oldtopic']
     topic = args['topic']
-    for name, remoteirc in world.networkobjects.items():
-        if irc.name == name or not remoteirc.connected.is_set():
-            continue
+    if checkClaim(irc, channel, numeric):
+        for name, remoteirc in world.networkobjects.items():
+            if irc.name == name or not remoteirc.connected.is_set():
+                continue
 
-        remotechan = findRemoteChan(irc, remoteirc, channel)
-        # Don't send if the remote topic is the same as ours.
-        if remotechan is None or topic == remoteirc.channels[remotechan].topic:
-            continue
-        # This might originate from a server too.
-        remoteuser = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
-        if remoteuser:
-            remoteirc.proto.topicClient(remoteuser, remotechan, topic)
-        else:
-            rsid = getRemoteSid(remoteirc, irc)
-            remoteirc.proto.topicServer(rsid, remotechan, topic)
+            remotechan = findRemoteChan(irc, remoteirc, channel)
+            # Don't send if the remote topic is the same as ours.
+            if remotechan is None or topic == remoteirc.channels[remotechan].topic:
+                continue
+            # This might originate from a server too.
+            remoteuser = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
+            if remoteuser:
+                remoteirc.proto.topicClient(remoteuser, remotechan, topic)
+            else:
+                rsid = getRemoteSid(remoteirc, irc)
+                remoteirc.proto.topicServer(rsid, remotechan, topic)
+    else:  # Topic change blocked by claim.
+        irc.proto.topicClient(irc.pseudoclient.uid, channel, oldtopic)
+
 utils.add_hook(handle_topic, 'TOPIC')
 
 def handle_kill(irc, numeric, command, args):
