@@ -174,8 +174,8 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
         hookdata = self.irc.takeHooks()
         expected = [['70M', 'FJOIN', {'channel': '#pylink', 'ts': 123, 'modes': [('+n', None)],
                                       'users': ['10XAAAAAA', '10XAAAAAB']}],
-                    ['70M', 'FMODE', {'target': '#pylink', 'modes': [('+l', '50'), ('+o', '9PYAAAAAA'), ('+t', None)], 'ts': 123}],
-                    ['70M', 'FMODE', {'target': '#pylink', 'modes': [('-o', '9PYAAAAAA')], 'ts': 123}]]
+                    ['70M', 'FMODE', {'target': '#pylink', 'modes': [('+l', '50'), ('+o', self.u), ('+t', None)], 'ts': 123}],
+                    ['70M', 'FMODE', {'target': '#pylink', 'modes': [('-o', self.u)], 'ts': 123}]]
         self.assertEqual(expected, hookdata)
 
     def testHandleFModeRemovesOldParams(self):
@@ -238,24 +238,24 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
         self.assertIn('00C', self.irc.servers)
 
     def testHandleNick(self):
-        self.irc.run(':9PYAAAAAA NICK PyLink-devel 1434744242')
+        self.irc.run(':%s NICK PyLink-devel 1434744242' % self.u)
         hookdata = self.irc.takeHooks()[0][-1]
         expected = {'newnick': 'PyLink-devel', 'oldnick': 'PyLink', 'ts': 1434744242}
         self.assertEqual(hookdata, expected)
-        self.assertEqual('PyLink-devel', self.irc.users['9PYAAAAAA'].nick)
+        self.assertEqual('PyLink-devel', self.irc.users[self.u].nick)
 
     def testHandleSave(self):
-        self.irc.run(':9PYAAAAAA NICK Derp_ 1433728673')
-        self.irc.run(':70M SAVE 9PYAAAAAA 1433728673')
+        self.irc.run(':%s NICK Derp_ 1433728673' % self.u)
+        self.irc.run(':70M SAVE %s 1433728673' % self.u)
         hookdata = self.irc.takeHooks()[-1][-1]
-        self.assertEqual(hookdata, {'target': '9PYAAAAAA', 'ts': 1433728673, 'oldnick': 'Derp_'})
-        self.assertEqual('9PYAAAAAA', self.irc.users['9PYAAAAAA'].nick)
+        self.assertEqual(hookdata, {'target': self.u, 'ts': 1433728673, 'oldnick': 'Derp_'})
+        self.assertEqual(self.u, self.irc.users[self.u].nick)
 
     def testHandleInvite(self):
-        self.irc.run(':10XAAAAAA INVITE 9PYAAAAAA #blah 0')
+        self.irc.run(':10XAAAAAA INVITE %s #blah 0' % self.u)
         hookdata = self.irc.takeHooks()[-1][-1]
         del hookdata['ts']
-        self.assertEqual(hookdata, {'target': '9PYAAAAAA', 'channel': '#blah'})
+        self.assertEqual(hookdata, {'target': self.u, 'channel': '#blah'})
 
     def testHandleOpertype(self):
         self.irc.run('SERVER whatever. abcd 0 10X :Whatever Server - Hellas Planitia, Mars')

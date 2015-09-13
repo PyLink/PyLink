@@ -27,7 +27,8 @@ testconf = {'bot':
                         'hostname': "pylink.unittest",
                         'sid': "9PY",
                         'channels': ["#pylink"],
-                        'maxnicklen': 20
+                        'maxnicklen': 20,
+                        'sidrange': '8##'
                     })
            }
 if world.testing:
