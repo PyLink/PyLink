@@ -416,12 +416,26 @@ def handle_privmsg(irc, numeric, command, args):
 utils.add_hook(handle_privmsg, 'PRIVMSG')
 utils.add_hook(handle_privmsg, 'NOTICE')
 
+def checkClaim(irc, channel, sender):
+    """
+    Checks whether the sender of a kick/mode change passes CLAIM checks for
+    a given channel. This returns True if any of the following criteria are met:
+
+    1) The originating network is in the CLAIM list for the relay in question.
+    2) The sender is halfop or above in the channel.
+    3) The sender is a PyLink client (checks are suppressed in this case).
+    """
+    relay = findRelay((irc.name, channel))
+    sender_modes = getPrefixModes(irc, irc, channel, sender)
+    return irc.name in db[relay]['claim'] or \
+        any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
+        or utils.isInternalClient(irc, sender)
+
 def handle_kick(irc, source, command, args):
     channel = args['channel']
     target = args['target']
     text = args['text']
     kicker = source
-    kicker_modes = getPrefixModes(irc, irc, channel, kicker)
     relay = findRelay((irc.name, channel))
     # Don't allow kicks to the PyLink client to be relayed.
     if relay is None or target == irc.pseudoclient.uid:
@@ -447,10 +461,7 @@ def handle_kick(irc, source, command, args):
         else:
             log.debug('(%s) Relay kick: target %s is an internal client, going to look up the real user', irc.name, target)
             real_target = getLocalUser(irc, target, targetirc=remoteirc)
-            log.debug('(%s) Relay kick: kicker_modes are %r', irc.name, kicker_modes)
-            if irc.name not in db[relay]['claim'] and not \
-                    (any([mode in kicker_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
-                     or utils.isInternalClient(irc, kicker)):
+            if not checkClaim(irc, channel, kicker):
                 log.debug('(%s) Relay kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
                 # Home network is not in the channel's claim AND the kicker is not
                 # opped. We won't propograte the kick then.
@@ -464,8 +475,8 @@ def handle_kick(irc, source, command, args):
                              irc.name, args['text'], irc.users[source].nick,
                              remoteirc.users[real_target].nick, remoteirc.name, channel)
                     irc.msg(kicker, "This channel is claimed; your kick to "
-                                           "%s has been blocked because you are not "
-                                           "(half)opped." % channel, notice=True)
+                                    "%s has been blocked because you are not "
+                                    "(half)opped." % channel, notice=True)
                 else:
                     log.info('(%s) Relay claim: Blocked KICK (reason %r) from server %s to relay client %s/%s on %s.',
                              irc.name, args['text'], irc.servers[source].name,
