@@ -157,7 +157,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Internal function to send mode changes from a PyLink client/server."""
         # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
         # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
-        log.debug('(%s) inspself.ircd._sendModes: received %r for mode list', self.irc.name, modes)
+        log.debug('(%s) inspircd._sendModes: received %r for mode list', self.irc.name, modes)
         if ('+o', None) in modes and not utils.isChannel(target):
             # https://github.com/inspself.ircd/inspself.ircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.

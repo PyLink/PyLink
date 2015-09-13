@@ -135,6 +135,7 @@ class TS6Protocol(TS6BaseProtocol):
     def _sendModes(self, numeric, target, modes, ts=None):
         """Internal function to send mode changes from a PyLink client/server."""
         utils.applyModes(self.irc, target, modes)
+        modes = list(modes)
         if utils.isChannel(target):
             ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
             # TMODE:
