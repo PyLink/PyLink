@@ -326,10 +326,20 @@ def joinModes(modes):
         modelist += ' %s' % ' '.join(args)
     return modelist
 
-def reverseModes(irc, target, modes):
-    """<mode string/mode list>
+def _flip(mode):
+    """Flips a mode character."""
+    # Make it a list first, strings don't support item assignment
+    mode = list(mode)
+    if mode[0] == '-':  # Query is something like "-n"
+        mode[0] = '+'  # Change it to "+n"
+    elif mode[0] == '+':
+        mode[0] = '-'
+    else:  # No prefix given, assume +
+        mode.insert(0, '-')
+    return ''.join(mode)
 
-    Reverses/Inverts the mode string or mode list given.
+def reverseModes(irc, target, modes):
+    """Reverses/Inverts the mode string or mode list given.
 
     "+nt-lk" => "-nt+lk"
     "nt-k" => "-nt+k"
@@ -338,21 +348,56 @@ def reverseModes(irc, target, modes):
     [('s', None), ('+n', None)] => [('-s', None), ('-n', None)]
     """
     origtype = type(modes)
-    # Operate on joined modestrings only; it's easier.
-    if origtype != str:
-        modes = joinModes(modes)
-    # Swap the +'s and -'s by replacing one with a dummy character, and then changing it back.
-    assert '\x00' not in modes, 'NUL cannot be in the mode list (it is a reserved character)!'
-    if not modes.startswith(('+', '-')):
-        modes = '+' + modes
-    newmodes = modes.replace('+', '\x00')
-    newmodes = newmodes.replace('-', '+')
-    newmodes = newmodes.replace('\x00', '-')
-    if origtype != str:
-        # If the original query isn't a string, send back the parseModes() output.
-        return parseModes(irc, target, newmodes.split(" "))
+    # If the query is a string, we have to parse it first.
+    if origtype == str:
+        modes = parseModes(irc, target, modes.split(" "))
+    # Get the current mode list first.
+    if isChannel(target):
+        oldmodes = irc.channels[target].modes.copy()
+        possible_modes = irc.cmodes.copy()
+        # For channels, this also includes the list of prefix modes.
+        possible_modes['*A'] += ''.join(irc.prefixmodes)
+        for name, userlist in irc.channels[target].prefixmodes.items():
+            try:
+                oldmodes.update([(irc.cmodes[name[:-1]], u) for u in userlist])
+            except KeyError:
+                continue
     else:
-        return newmodes
+        oldmodes = irc.users[target].modes
+        possible_modes = irc.umodes
+    newmodes = []
+    for char, arg in modes:
+        # Mode types:
+        # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
+        # B = Mode that changes a setting and always has a parameter.
+        # C = Mode that changes a setting and only has a parameter when set.
+        # D = Mode that changes a setting and never has a parameter.
+        mchar = char[-1]
+        if mchar in possible_modes['*B'] + possible_modes['*C']:
+            # We need to find the current mode list, so we can reset arguments
+            # for modes that have arguments. For example, setting +l 30 on a channel
+            # that had +l 50 set should give "+l 30", not "-l".
+            oldarg = [m for m in oldmodes if m[0] == mchar]
+            if oldarg:  # Old mode argument for this mode existed, use that.
+                oldarg = oldarg[0]
+                mpair = ('+%s' % oldarg[0], oldarg[1])
+            else:  # Not found, flip the mode then.
+                # Mode takes no arguments when unsetting.
+                if mchar in possible_modes['*C'] and char[0] != '-':
+                    arg = None
+                mpair = (_flip(char), arg)
+        else:
+            mpair = (_flip(char), arg)
+        if char[0] != '-' and (mchar, arg) in oldmodes:
+            # Mode is already set.
+            continue
+        newmodes.append(mpair)
+
+    if origtype == str:
+        # If the original query is a string, send it back as a string.
+        return joinModes(newmodes)
+    else:
+        return set(newmodes)
 
 def isInternalClient(irc, numeric):
     """
