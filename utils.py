@@ -401,6 +401,12 @@ def reverseModes(irc, target, modes, oldobj=None):
             log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since we're "
                       "setting a mode that's already set.", irc.name, char, arg, mpair)
             continue
+        elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
+            # We're unsetting a prefixmode that was never set - don't set it in response!
+            # Charybdis lacks verification for this server-side.
+            log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since it "
+                      "wasn't previously set.", irc.name, char, arg, mpair)
+            continue
         newmodes.append(mpair)
 
     log.debug('(%s) reverseModes: new modes: %s', irc.name, newmodes)

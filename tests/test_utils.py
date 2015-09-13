@@ -108,13 +108,13 @@ class TestUtils(unittest.TestCase):
     def testReverseModes(self):
         test = lambda x, y: self.assertEqual(utils.reverseModes(self.irc, '#test', x), y)
         # Strings.
-        self._reverseModes("+mi-lk test", "-mi+lk test")
-        self._reverseModes("mi-k test", "-mi+k test")
+        self._reverseModes("+mk-t test", "-mk+t test")
+        self._reverseModes("ml-n 111", "-ml+n")
         # Lists.
-        self._reverseModes([('+m', None), ('+r', None), ('+l', '3'), ('-o', 'person')],
-                           {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
+        self._reverseModes([('+m', None), ('+r', None), ('+l', '3')],
+                           {('-m', None), ('-r', None), ('-l', None)})
         # Sets.
-        self._reverseModes({('s', None), ('+o', 'whoever')}, {('-s', None), ('-o', 'whoever')})
+        self._reverseModes({('s', None)}, {('-s', None)})
         # Combining modes with an initial + and those without
         self._reverseModes({('s', None), ('+R', None)}, {('-s', None), ('-R', None)})
 
@@ -138,6 +138,13 @@ class TestUtils(unittest.TestCase):
         self._reverseModes('+oo GLolol 9PYAAAAAA', '-o GLolol')
         self._reverseModes('+o 9PYAAAAAA', '+')
         self._reverseModes('+vvvvM test abcde atat abcd', '-vvvvM test abcde atat abcd')
+
+        # Ignore unsetting prefixmodes/list modes that were never set.
+        self._reverseModes([('-v', '10XAAAAAA')], set())
+        self._reverseModes('-ob 10XAAAAAA derp!*@*', '+')
+        utils.applyModes(self.irc, '#test', [('+o', 'GLolol'), ('+b', '*!user@badisp.tk')])
+        self._reverseModes('-voo GLolol GLolol 10XAAAAAA', '+o GLolol')
+        self._reverseModes('-bb *!*@* *!user@badisp.tk', '+b *!user@badisp.tk')
 
 if __name__ == '__main__':
     unittest.main()
