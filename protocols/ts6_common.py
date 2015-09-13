@@ -224,9 +224,11 @@ class TS6BaseProtocol(Protocol):
         channel = utils.toLower(self.irc, args[0])
         topic = args[1]
         ts = int(time.time())
+        oldtopic = self.irc.channels[channel].topic
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
-        return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic}
+        return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic,
+                'oldtopic': oldtopic}
 
     def handle_part(self, source, command, args):
         """Handles incoming PART commands."""
