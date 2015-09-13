@@ -466,11 +466,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles the FMODE command, used for channel mode changes."""
         # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
         channel = utils.toLower(self.irc, args[0])
+        oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = utils.parseModes(self.irc, channel, modes)
         utils.applyModes(self.irc, channel, changedmodes)
         ts = int(args[1])
-        return {'target': channel, 'modes': changedmodes, 'ts': ts}
+        return {'target': channel, 'modes': changedmodes, 'ts': ts,
+                'oldchan': oldobj}
 
     def handle_mode(self, numeric, command, args):
         """Handles incoming user mode changes."""
