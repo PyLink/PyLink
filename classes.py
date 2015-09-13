@@ -400,7 +400,7 @@ class FakeProto(Protocol):
         pass
 
     def spawnClient(self, nick, *args, **kwargs):
-        uid = randint(1, 10000000000)
+        uid = str(randint(1, 10000000000))
         ts = int(time.time())
         self.irc.users[uid] = user = IrcUser(nick, ts, uid)
         return user
