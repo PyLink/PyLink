@@ -40,10 +40,9 @@ class TS6UIDGenerator():
         return uid
 
 class TS6SIDGenerator():
-    """<query>
-
+    """
     TS6 SID Generator. <query> is a 3 character string with any combination of
-    uppercase letters, digits, and #'s. <query> must contain at least one #,
+    uppercase letters, digits, and #'s. it must contain at least one #,
     which are used by the generator as a wildcard. On every next_sid() call,
     the first available wildcard character (from the right) will be
     incremented to generate the next SID.
@@ -110,10 +109,8 @@ def add_hook(func, command):
     world.command_hooks[command].append(func)
 
 def toLower(irc, text):
-    """<irc object> <text>
-
-    Returns a lowercase representation of <text> based on <irc object>'s
-    casemapping (rfc1459 vs ascii)."""
+    """Returns a lowercase representation of text based on the IRC object's
+    casemapping (rfc1459 or ascii)."""
     if irc.proto.casemapping == 'rfc1459':
         text = text.replace('{', '[')
         text = text.replace('}', ']')
@@ -122,38 +119,41 @@ def toLower(irc, text):
     return text.lower()
 
 def nickToUid(irc, nick):
-    """<irc object> <nick>
-
-    Returns the UID of a user named <nick>, if present."""
+    """Returns the UID of a user named nick, if present."""
     nick = toLower(irc, nick)
     for k, v in irc.users.items():
         if toLower(irc, v.nick) == nick:
             return k
 
 def clientToServer(irc, numeric):
-    """<irc object> <numeric>
-
-    Finds the server SID of user <numeric> and returns it."""
+    """Finds the SID of the server a user is on."""
     for server in irc.servers:
         if numeric in irc.servers[server].users:
             return server
 
-# A+ regex
 _nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
 def isNick(s, nicklen=None):
+    """Checks whether the string given is a valid nick."""
     if nicklen and len(s) > nicklen:
         return False
     return bool(re.match(_nickregex, s))
 
 def isChannel(s):
-    return s.startswith('#')
+    """Checks whether the string given is a valid channel name."""
+    return str(s).startswith('#')
 
 def _isASCII(s):
     chars = string.ascii_letters + string.digits + string.punctuation
     return all(char in chars for char in s)
 
 def isServerName(s):
+    """Checks whether the string given is a server name."""
     return _isASCII(s) and '.' in s and not s.startswith('.')
+
+hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
+def isHostmask(text):
+    """Returns whether the given text is a valid hostmask."""
+    return bool(hostmaskRe.match(text))
 
 def parseModes(irc, target, args):
     """Parses a modestring list into a list of (mode, argument) tuples.
@@ -220,10 +220,9 @@ def parseModes(irc, target, args):
     return res
 
 def applyModes(irc, target, changedmodes):
-    """<target> <changedmodes>
+    """Takes a list of parsed IRC modes, and applies them on the given target.
 
-    Takes a list of parsed IRC modes (<changedmodes>, in the format of parseModes()), and applies them on <target>.
-    <target> can be either a channel or a user; this is handled automatically."""
+    The target can be either a channel or a user; this is handled automatically."""
     usermodes = not isChannel(target)
     log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
     if usermodes:
@@ -292,11 +291,10 @@ def applyModes(irc, target, changedmodes):
         irc.channels[target].modes = modelist
 
 def joinModes(modes):
-    """<mode list>
+    """Takes a list of (mode, arg) tuples in parseModes() format, and
+    joins them into a string.
 
-    Takes a list of (mode, arg) tuples in parseModes() format, and
-    joins them into a string. See testJoinModes in tests/test_utils.py
-    for some examples."""
+    See testJoinModes in tests/test_utils.py for some examples."""
     prefix = '+'  # Assume we're adding modes unless told otherwise
     modelist = ''
     args = []
@@ -357,26 +355,21 @@ def reverseModes(irc, target, modes):
         return newmodes
 
 def isInternalClient(irc, numeric):
-    """<irc object> <client numeric>
-
-    Checks whether <client numeric> is a PyLink PseudoClient,
-    returning the SID of the PseudoClient's server if True.
+    """
+    Checks whether the given numeric is a PyLink Client,
+    returning the SID of the server it's on if so.
     """
     for sid in irc.servers:
         if irc.servers[sid].internal and numeric in irc.servers[sid].users:
             return sid
 
 def isInternalServer(irc, sid):
-    """<irc object> <sid>
-
-    Returns whether <sid> is an internal PyLink PseudoServer.
-    """
+    """Returns whether the given SID is an internal PyLink server."""
     return (sid in irc.servers and irc.servers[sid].internal)
 
 def isOper(irc, uid, allowAuthed=True, allowOper=True):
-    """<irc object> <UID>
-
-    Returns whether <UID> has operator status on PyLink. This can be achieved
+    """
+    Returns whether the given user has operator status on PyLink. This can be achieved
     by either identifying to PyLink as admin (if allowAuthed is True),
     or having user mode +o set (if allowOper is True). At least one of
     allowAuthed or allowOper must be True for this to give any meaningful
@@ -390,10 +383,10 @@ def isOper(irc, uid, allowAuthed=True, allowOper=True):
     return False
 
 def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
-    """<irc object> <UID>
-
-    Checks whether user <UID> has operator status on PyLink, raising
-    NotAuthenticatedError and logging the access denial if not."""
+    """
+    Checks whetherthe given user has operator status on PyLink, raising
+    NotAuthenticatedError and logging the access denial if not.
+    """
     lastfunc = inspect.stack()[1][3]
     if not isOper(irc, uid, allowAuthed=allowAuthed, allowOper=allowOper):
         log.warning('(%s) Access denied for %s calling %r', irc.name,
@@ -402,9 +395,7 @@ def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
     return True
 
 def getHostmask(irc, user):
-    """<irc object> <UID>
-
-    Gets the hostmask of user <UID>, if present."""
+    """Gets the hostmask of the given user, if present."""
     userobj = irc.users.get(user)
     if userobj is None:
         return '<user object not found>'
@@ -421,8 +412,3 @@ def getHostmask(irc, user):
     except AttributeError:
         host = '<unknown host>'
     return '%s!%s@%s' % (nick, ident, host)
-
-hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
-def isHostmask(text):
-    """Returns whether <text> is a valid hostmask."""
-    return bool(hostmaskRe.match(text))
