@@ -139,24 +139,11 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
         # Default channels start with +nt
         self.irc.run(':70M FMODE #pylink 1423790412 -nt')
         self.assertEqual(set(), self.irc.channels['#pylink'].modes)
-        self.irc.takeHooks()
 
         self.irc.run(':70M FMODE #pylink 1423790412 +ikl herebedragons 100')
         self.assertEqual({('i', None), ('k', 'herebedragons'), ('l', '100')}, self.irc.channels['#pylink'].modes)
         self.irc.run(':70M FMODE #pylink 1423790413 -ilk+m herebedragons')
         self.assertEqual({('m', None)}, self.irc.channels['#pylink'].modes)
-
-        hookdata = self.irc.takeHooks()
-        expected = [['70M', 'FMODE', {'target': '#pylink', 'modes':
-                                      [('+i', None), ('+k', 'herebedragons'),
-                                       ('+l', '100')], 'ts': 1423790412}
-                    ],
-                    ['70M', 'FMODE', {'target': '#pylink', 'modes':
-                                      [('-i', None), ('-l', None),
-                                       ('-k', 'herebedragons'), ('+m', None)],
-                                       'ts': 1423790413}]
-                   ]
-        self.assertEqual(expected, hookdata)
 
     def testHandleFModeWithPrefixes(self):
         self.irc.run(':70M FJOIN #pylink 123 +n :o,10XAAAAAA ,10XAAAAAB')
@@ -170,13 +157,6 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
         self.irc.run(':70M FMODE #pylink 123 -o %s' % self.u)
         self.assertEqual(modes, self.irc.channels['#pylink'].modes)
         self.assertNotIn(self.u, self.irc.channels['#pylink'].prefixmodes['ops'])
-        # Test hooks
-        hookdata = self.irc.takeHooks()
-        expected = [['70M', 'FJOIN', {'channel': '#pylink', 'ts': 123, 'modes': [('+n', None)],
-                                      'users': ['10XAAAAAA', '10XAAAAAB']}],
-                    ['70M', 'FMODE', {'target': '#pylink', 'modes': [('+l', '50'), ('+o', self.u), ('+t', None)], 'ts': 123}],
-                    ['70M', 'FMODE', {'target': '#pylink', 'modes': [('-o', self.u)], 'ts': 123}]]
-        self.assertEqual(expected, hookdata)
 
     def testHandleFModeRemovesOldParams(self):
         self.irc.run(':70M FMODE #pylink 1423790412 +l 50')
@@ -184,10 +164,6 @@ class InspIRCdTestCase(tests_common.CommonProtoTestCase):
         self.irc.run(':70M FMODE #pylink 1423790412 +l 30')
         self.assertIn(('l', '30'), self.irc.channels['#pylink'].modes)
         self.assertNotIn(('l', '50'), self.irc.channels['#pylink'].modes)
-        hookdata = self.irc.takeHooks()
-        expected = [['70M', 'FMODE', {'target': '#pylink', 'modes': [('+l', '50')], 'ts': 1423790412}],
-                    ['70M', 'FMODE', {'target': '#pylink', 'modes': [('+l', '30')], 'ts': 1423790412}]]
-        self.assertEqual(expected, hookdata)
 
     def testHandleFJoinResetsTS(self):
         curr_ts = self.irc.channels['#pylink'].ts
