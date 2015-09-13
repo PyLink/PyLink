@@ -116,14 +116,23 @@ def save(irc, source, args):
         irc.msg(source, 'Error: You are not authenticated!')
         return
 
-def getPrefixModes(irc, remoteirc, channel, user):
+def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
+    """
+    Fetches all prefix modes for a user in a channel that are supported by the
+    remote IRC network given.
+
+    Optionally, an mlist argument can be given to look at an earlier state of
+    the channel, e.g. for checking the op  status of a mode setter before their
+    modes are processed and added to the channel state.
+    """
     modes = ''
+    mlist = mlist or irc.channels[channel].prefixmodes
     for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
         if pmode in remoteirc.cmodes:  # Mode supported by IRCd
-            mlist = irc.channels[channel].prefixmodes[pmode+'s']
+            userlist = mlist[pmode+'s']
             log.debug('(%s) getPrefixModes: checking if %r is in %s list: %r',
-                      irc.name, user, pmode, mlist)
-            if user in mlist:
+                      irc.name, user, pmode, userlist)
+            if user in userlist:
                 modes += remoteirc.cmodes[pmode]
     return modes
 
@@ -416,7 +425,7 @@ def handle_privmsg(irc, numeric, command, args):
 utils.add_hook(handle_privmsg, 'PRIVMSG')
 utils.add_hook(handle_privmsg, 'NOTICE')
 
-def checkClaim(irc, channel, sender):
+def checkClaim(irc, channel, sender, chanobj=None):
     """
     Checks whether the sender of a kick/mode change passes CLAIM checks for
     a given channel. This returns True if any of the following criteria are met:
@@ -428,7 +437,13 @@ def checkClaim(irc, channel, sender):
     5) The originating network is the one that created the relay.
     """
     relay = findRelay((irc.name, channel))
-    sender_modes = getPrefixModes(irc, irc, channel, sender)
+    try:
+        mlist = chanobj.prefixmodes
+    except AttributeError:
+        mlist = None
+    sender_modes = getPrefixModes(irc, irc, channel, sender, mlist=mlist)
+    log.debug('(%s) relay.checkClaim: sender modes (%s/%s) are %s (mlist=%s)', irc.name,
+              sender, channel, sender_modes, mlist)
     return (not relay) or irc.name == relay[0] or irc.name in db[relay]['claim'] or \
         any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
         or utils.isInternalClient(irc, sender) or \
@@ -665,10 +680,11 @@ def handle_mode(irc, numeric, command, args):
         if irc.name == name or not remoteirc.connected.is_set():
             continue
         if utils.isChannel(target):
-            if checkClaim(irc, target, numeric):
+            oldchan = args['oldchan']
+            if checkClaim(irc, target, numeric, chanobj=oldchan):
                 relayModes(irc, remoteirc, numeric, target, modes)
             else:  # Mode change blocked by CLAIM.
-                reversed_modes = utils.reverseModes(irc, target, modes)
+                reversed_modes = utils.reverseModes(irc, target, modes, oldobj=oldchan)
                 log.debug('(%s) Reversing mode changes of %r with %r (CLAIM).',
                           irc.name, modes, reversed_modes)
                 irc.proto.modeClient(irc.pseudoclient.uid, target, reversed_modes)

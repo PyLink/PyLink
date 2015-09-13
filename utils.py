@@ -338,14 +338,19 @@ def _flip(mode):
         mode.insert(0, '-')
     return ''.join(mode)
 
-def reverseModes(irc, target, modes):
+def reverseModes(irc, target, modes, oldobj=None):
     """Reverses/Inverts the mode string or mode list given.
 
-    "+nt-lk" => "-nt+lk"
-    "nt-k" => "-nt+k"
-    [('+m', None), ('+t', None), ('+l', '3'), ('-o', 'person')] =>
-        [('-m', None), ('-t', None), ('-l', '3'), ('+o', 'person')]
-    [('s', None), ('+n', None)] => [('-s', None), ('-n', None)]
+    Optionally, an oldobj argument can be given to look at an earlier state of
+    a channel/user object, e.g. for checking the op status of a mode setter
+    before their modes are processed and added to the channel state.
+
+    This function allows both mode strings or mode lists. Example uses:
+        "+mi-lk test => "-mi+lk test"
+        "mi-k test => "-mi+k test"
+        [('+m', None), ('+r', None), ('+l', '3'), ('-o', 'person')
+         => {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
+        {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
     """
     origtype = type(modes)
     # If the query is a string, we have to parse it first.
@@ -353,11 +358,12 @@ def reverseModes(irc, target, modes):
         modes = parseModes(irc, target, modes.split(" "))
     # Get the current mode list first.
     if isChannel(target):
-        oldmodes = irc.channels[target].modes.copy()
+        c = oldobj or irc.channels[target]
+        oldmodes = c.modes.copy()
         possible_modes = irc.cmodes.copy()
         # For channels, this also includes the list of prefix modes.
         possible_modes['*A'] += ''.join(irc.prefixmodes)
-        for name, userlist in irc.channels[target].prefixmodes.items():
+        for name, userlist in c.prefixmodes.items():
             try:
                 oldmodes.update([(irc.cmodes[name[:-1]], u) for u in userlist])
             except KeyError:
@@ -366,6 +372,8 @@ def reverseModes(irc, target, modes):
         oldmodes = irc.users[target].modes
         possible_modes = irc.umodes
     newmodes = []
+    log.debug('(%s) reverseModes: old/current mode list for %s is: %s', irc.name,
+               target, oldmodes)
     for char, arg in modes:
         # Mode types:
         # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
@@ -390,9 +398,12 @@ def reverseModes(irc, target, modes):
             mpair = (_flip(char), arg)
         if char[0] != '-' and (mchar, arg) in oldmodes:
             # Mode is already set.
+            log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since we're "
+                      "setting a mode that's already set.", irc.name, char, arg, mpair)
             continue
         newmodes.append(mpair)
 
+    log.debug('(%s) reverseModes: new modes: %s', irc.name, newmodes)
     if origtype == str:
         # If the original query is a string, send it back as a string.
         return joinModes(newmodes)
