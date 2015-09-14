@@ -766,7 +766,6 @@ def handle_kill(irc, numeric, command, args):
                       irc.name, userdata.nick)
             irc.aborted.set()
         killcache[irc.name] += 1
-        log.debug('killcache: %s', irc.name, killcache)
 
     # Target user was local.
     else:
