@@ -187,7 +187,7 @@ def nickClient(irc, numeric, newnick):
 def _operUp(irc, target, opertype=None):
     userobj = irc.users[target]
     try:
-        otype = opertype or userobj.opertype
+        otype = opertype or userobj.opertype or 'IRC_Operator'
     except AttributeError:
         log.debug('(%s) opertype field for %s (%s) isn\'t filled yet!',
                   irc.name, target, userobj.nick)
@@ -195,6 +195,7 @@ def _operUp(irc, target, opertype=None):
         otype = 'IRC_Operator'
     log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
               irc.name, target)
+    assert otype, "Tried to send an empty OPERTYPE!"
     userobj.opertype = otype
     _send(irc, target, 'OPERTYPE %s' % otype)
 
