@@ -707,7 +707,7 @@ utils.add_hook(handle_mode, 'MODE')
 
 def handle_topic(irc, numeric, command, args):
     channel = args['channel']
-    oldtopic = args['oldtopic']
+    oldtopic = args.get('oldtopic')
     topic = args['topic']
     if checkClaim(irc, channel, numeric):
         for name, remoteirc in world.networkobjects.items():
@@ -725,7 +725,7 @@ def handle_topic(irc, numeric, command, args):
             else:
                 rsid = getRemoteSid(remoteirc, irc)
                 remoteirc.proto.topicServer(rsid, remotechan, topic)
-    else:  # Topic change blocked by claim.
+    elif oldtopic:  # Topic change blocked by claim.
         irc.proto.topicClient(irc.pseudoclient.uid, channel, oldtopic)
 
 utils.add_hook(handle_topic, 'TOPIC')
