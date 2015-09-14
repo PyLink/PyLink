@@ -142,12 +142,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
         and the change will be reflected here."""
         userobj = self.irc.users[target]
         try:
-            otype = opertype or userobj.opertype
+            otype = opertype or userobj.opertype or 'IRC_Operator'
         except AttributeError:
             log.debug('(%s) opertype field for %s (%s) isn\'t filled yet!',
                       self.irc.name, target, userobj.nick)
             # whatever, this is non-standard anyways.
             otype = 'IRC_Operator'
+        assert otype, "Tried to send an empty OPERTYPE!"
         log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
                   self.irc.name, target)
         userobj.opertype = otype
