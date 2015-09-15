@@ -146,17 +146,21 @@ def mode(irc, source, args):
         irc.msg(source, 'Error: Not enough arguments. Needs 3: source nick, target, modes to set.')
         return
     target = utils.nickToUid(irc, target) or target
+    extclient = target in irc.users and not utils.isInternalClient(irc, target)
+    parsedmodes = utils.parseModes(irc, target, modes)
     if not (target in irc.users or target in irc.channels):
         irc.msg(source, "Error: Invalid channel or nick %r." % target)
         return
-    elif target in irc.users and not utils.isInternalClient(irc, target) and \
-            not irc.proto.allow_forceset_usermodes:
+    elif not parsedmodes:
+        irc.msg(source, "Error: No valid modes were given.")
+        return
+    elif extclient and not irc.proto.allow_forceset_usermodes:
         irc.msg(source, "Error: this IRCd does not allow forcing user mode "
                         "changes on other servers' users!")
         return
-    parsedmodes = utils.parseModes(irc, target, modes)
-    if not parsedmodes:
-        irc.msg(source, "Error: No valid modes were given.")
+    elif extclient and ("+o", None) in parsedmodes and not irc.proto.allow_forceoper:
+        irc.msg(source, "Error: this IRCd does not allow forcing an oper up "
+                        "for other servers' users!")
         return
     if utils.isInternalServer(irc, modesource):
         # Setting modes from a server.
