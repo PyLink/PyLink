@@ -170,11 +170,10 @@ def parseModes(irc, target, args):
     # B = Mode that changes a setting and always has a parameter.
     # C = Mode that changes a setting and only has a parameter when set.
     # D = Mode that changes a setting and never has a parameter.
+    assert args, 'No valid modes were supplied!'
     usermodes = not isChannel(target)
     prefix = ''
     modestring = args[0]
-    if not modestring:
-        return ValueError('No modes supplied in parseModes query: %r' % modes)
     args = args[1:]
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
