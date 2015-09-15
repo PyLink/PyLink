@@ -206,6 +206,13 @@ def parseModes(irc, target, args):
                     # We're setting a prefix mode on someone (e.g. +o user1)
                     log.debug('Mode %s: This mode is a prefix mode.', mode)
                     arg = args.pop(0)
+                    # Convert nicks to UIDs implicitly; most IRCds will want
+                    # this already.
+                    arg = nickToUid(irc, arg) or arg
+                    if arg not in irc.users:  # Target doesn't exist, skip it.
+                        log.debug('(%s) Skipping setting mode "%s %s"; the '
+                                  'target doesn\'t seem to exist!')
+                        continue
                 elif prefix == '+' and mode in supported_modes['*C']:
                     # Only has parameter when setting.
                     log.debug('Mode %s: Only has parameter when setting.', mode)
