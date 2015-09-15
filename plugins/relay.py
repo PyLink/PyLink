@@ -805,7 +805,7 @@ def handle_mode(irc, numeric, command, args):
         if irc.name == name or not remoteirc.connected.is_set():
             continue
         if utils.isChannel(target):
-            oldchan = args['oldchan']
+            oldchan = args.get('oldchan')
             if checkClaim(irc, target, numeric, chanobj=oldchan):
                 relayModes(irc, remoteirc, numeric, target, modes)
             else:  # Mode change blocked by CLAIM.
