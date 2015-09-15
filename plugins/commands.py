@@ -127,6 +127,52 @@ def showuser(irc, source, args):
         f('\x02Channels\x02: %s' % (' '.join(userobj.channels).strip() or '\x1D(none)\x1D'))
 
 @utils.add_cmd
+def showchan(irc, source, args):
+    """<channel>
+
+    Shows information about <channel>."""
+    try:
+        channel = utils.toLower(irc, args[0])
+    except IndexError:
+        irc.msg(source, "Error: Not enough arguments. Needs 1: channel.")
+        return
+    if channel not in irc.channels:
+        irc.msg(source, 'Error: Unknown channel %r.' % channel)
+        return
+
+    f = lambda s: irc.msg(source, s)
+    c = irc.channels[channel]
+    # Only show verbose info if caller is oper or is in the target channel.
+    verbose = source in c.users or utils.isOper(irc, source)
+    secret = ('s', None) in c.modes
+    if secret and not verbose:
+        # Hide secret channels from normal users.
+        irc.msg(source, 'Error: Unknown channel %r.' % channel)
+        return
+
+    nicks = [irc.users[u].nick for u in c.users]
+    pmodes = ('owner', 'admin', 'op', 'halfop', 'voice')
+
+    f('Information on channel \x02%s\x02:' % channel)
+    f('\x02Channel topic\x02: %s' % c.topic)
+    f('\x02Channel creation time\x02: %s (%s)' % (ctime(c.ts), c.ts))
+    # Show only modes that aren't list-style modes.
+    modes = utils.joinModes([m for m in c.modes if m[0] not in irc.cmodes['*A']])
+    f('\x02Channel modes\x02: %s' % modes)
+    if verbose:
+        nicklist = []
+        # Iterate over the user list, sorted by nick.
+        for user, nick in sorted(zip(c.users, nicks),
+                                 key=lambda userpair: userpair[1].lower()):
+            prefixmodes = [irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '')
+                           for pmode in pmodes if user in c.prefixmodes[pmode+'s']]
+            nicklist.append(''.join(prefixmodes) + nick)
+
+        while nicklist[:20]:  # 20 nicks per line to prevent message cutoff.
+            f('\x02User list\x02: %s' % ' '.join(nicklist[:20]))
+            nicklist = nicklist[20:]
+
+@utils.add_cmd
 def shutdown(irc, source, args):
     """takes no arguments.
 
