@@ -396,6 +396,9 @@ class Protocol():
         self.casemapping = 'rfc1459'
         self.hook_map = {}
 
+        # Whether the IRCd allows forcing user mode changes on other servers' clients.
+        self.allow_forceset_usermodes = False
+
 class FakeProto(Protocol):
     """Dummy protocol module for testing purposes."""
     def handle_events(self, data):

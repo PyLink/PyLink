@@ -27,6 +27,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
         self.uidgen = {}
 
+        # Whether the IRCd allows forcing user mode changes on other servers' clients.
+        self.allow_forceset_usermodes = True
+
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
         """Spawns a client with nick <nick> on the given IRC connection.

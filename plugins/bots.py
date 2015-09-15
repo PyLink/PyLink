@@ -138,30 +138,34 @@ def kick(irc, source, args):
 def mode(irc, source, args):
     """<source> <target> <modes>
 
-    Admin-only. Sets modes <modes> on <target> from <source>, where <source> is either the nick of a PyLink client, or the SID of a PyLink server."""
+    Admin-only. Sets modes <modes> on <target> from <source>, where <source> is either the nick of a PyLink client, or the SID of a PyLink server. <target> can be either a nick or a channel."""
     utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         modesource, target, modes = args[0], args[1], args[2:]
     except IndexError:
         irc.msg(source, 'Error: Not enough arguments. Needs 3: source nick, target, modes to set.')
         return
-    if not modes:
-        irc.msg(source, "Error: No modes given to set!")
-        return
-    parsedmodes = utils.parseModes(irc, target, modes)
-    targetuid = utils.nickToUid(irc, target)
-    if targetuid:
-        target = targetuid
-    elif not utils.isChannel(target):
+    target = utils.nickToUid(irc, target) or target
+    if not (target in irc.users or target in irc.channels):
         irc.msg(source, "Error: Invalid channel or nick %r." % target)
         return
+    elif target in irc.users and not irc.proto.allow_forceset_usermodes:
+        irc.msg(source, "Error: this IRCd does not allow forcing user mode "
+                        "changes on other servers' users!")
+        return
+    parsedmodes = utils.parseModes(irc, target, modes)
+    if not parsedmodes:
+        irc.msg(source, "Error: No valid modes were given.")
+        return
     if utils.isInternalServer(irc, modesource):
+        # Setting modes from a server.
         irc.proto.modeServer(modesource, target, parsedmodes)
-        irc.callHooks([modesource, 'PYLINK_BOTSPLUGIN_MODE', {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
     else:
-        sourceuid = utils.nickToUid(irc, modesource)
-        irc.proto.modeClient(sourceuid, target, parsedmodes)
-        irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MODE', {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
+        # Setting modes from a client.
+        modesource = utils.nickToUid(irc, modesource)
+        irc.proto.modeClient(modesource, target, parsedmodes)
+    irc.callHooks([modesource, 'PYLINK_BOTSPLUGIN_MODE',
+                   {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
 
 @utils.add_cmd
 def msg(irc, source, args):
