@@ -1251,3 +1251,37 @@ def save(irc, source, args):
     else:
         irc.msg(source, 'Error: You are not authenticated!')
         return
+
+@utils.add_cmd
+def claim(irc, source, args):
+    """<channel> [<comma separated list of networks>]
+
+    Sets the CLAIM for a channel to a case-sensitive list of networks. If no list of networks is given, shows which networks have claim over the channel. A single hyphen (-) can also be given as a list of networks to remove claim from the channel entirely.
+
+    CLAIM is a way of enforcing network ownership for a channel, similarly to Janus. Unless the list is empty, only networks on the CLAIM list for a channel (plus the creating network) are allowed to override kicks, mode changes, and topic changes in it - attempts from other networks' opers to do this are simply blocked or reverted."""
+    utils.checkAuthenticated(irc, source)
+    try:
+        channel = utils.toLower(irc, args[0])
+    except IndexError:
+        irc.msg(source, "Error: Not enough arguments. Needs 1-2: channel, list of networks (optional).")
+        return
+
+    # We override getRelay() here to limit the search to the current network.
+    relay = (irc.name, channel)
+    if relay not in db:
+        irc.msg(source, 'Error: No such relay %r exists.' % channel)
+        return
+    claimed = db[relay]["claim"]
+    try:
+        nets = args[1].strip()
+    except IndexError:  # No networks given.
+        irc.msg(source, 'Channel \x02%s\x02 is claimed by: %s' %
+                        (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
+    else:
+        if nets == '-' or not nets:
+            claimed = set()
+        else:
+            claimed = set(nets.split(','))
+        db[relay]["claim"] = claimed
+        irc.msg(source, 'CLAIM for channel \x02%s\x02 set to: %s' %
+                        (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
