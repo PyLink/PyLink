@@ -99,7 +99,7 @@ class TS6Protocol(TS6BaseProtocol):
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
                 p.clear()
-        log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, self.irc.name, ts,
+        log.debug("(%s) sending SJOIN to %s with ts %s (that's %r)", self.irc.name, channel, ts,
                   time.strftime("%c", time.localtime(ts)))
         modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
         changedmodes = []

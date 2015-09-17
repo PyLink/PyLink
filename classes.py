@@ -236,15 +236,17 @@ class Irc():
         if command in hook_map:
             hook_cmd = hook_map[command]
         hook_cmd = parsed_args.get('parse_as') or hook_cmd
-        log.debug('Parsed args %r received from %s handler (calling hook %s)', parsed_args, command, hook_cmd)
+        log.debug('(%s) Parsed args %r received from %s handler (calling hook %s)',
+                  self.name, parsed_args, command, hook_cmd)
         # Iterate over hooked functions, catching errors accordingly
         for hook_func in world.command_hooks[hook_cmd]:
             try:
-                log.debug('Calling function %s', hook_func)
+                log.debug('(%s) Calling function %s', self.name, hook_func)
                 hook_func(self, numeric, command, parsed_args)
             except Exception:
                 # We don't want plugins to crash our servers...
-                log.exception('Unhandled exception caught in %r' % hook_func)
+                log.exception('(%s) Unhandled exception caught in %r',
+                              self.name, hook_func)
                 continue
 
     def send(self, data):
