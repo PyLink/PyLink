@@ -250,7 +250,8 @@ def getOrigUser(irc, user, targetirc=None):
             return remoteuser
 
 def getRelay(chanpair):
-    """Finds a matching relay for the given (network name, channel) pair."""
+    """Finds the matching relay entry name for the given (network name, channel)
+    pair, if one exists."""
     if chanpair in db:  # This chanpair is a shared channel; others link to it
         return chanpair
     # This chanpair is linked *to* a remote channel
@@ -336,11 +337,12 @@ def checkClaim(irc, channel, sender, chanobj=None):
     Checks whether the sender of a kick/mode change passes CLAIM checks for
     a given channel. This returns True if any of the following criteria are met:
 
-    1) The originating network is in the CLAIM list for the relay in question.
-    2) The sender is halfop or above in the channel.
-    3) The sender is a PyLink client/server (checks are suppressed in this case).
-    4) No relay exists for the channel in question.
-    5) The originating network is the one that created the relay.
+    1) No relay exists for the channel in question.
+    2) The originating network is the one that created the relay.
+    3) The CLAIM list for the relay in question is empty.
+    4) The originating network is in the CLAIM list for the relay in question.
+    5) The sender is halfop or above in the channel.
+    6) The sender is a PyLink client/server (checks are suppressed in this case).
     """
     relay = getRelay((irc.name, channel))
     try:
@@ -350,7 +352,8 @@ def checkClaim(irc, channel, sender, chanobj=None):
     sender_modes = getPrefixModes(irc, irc, channel, sender, mlist=mlist)
     log.debug('(%s) relay.checkClaim: sender modes (%s/%s) are %s (mlist=%s)', irc.name,
               sender, channel, sender_modes, mlist)
-    return (not relay) or irc.name == relay[0] or irc.name in db[relay]['claim'] or \
+    return (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
+        irc.name in db[relay]['claim'] or \
         any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
         or utils.isInternalClient(irc, sender) or \
         utils.isInternalServer(irc, sender)
