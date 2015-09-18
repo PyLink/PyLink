@@ -673,7 +673,7 @@ def handle_kill(irc, numeric, command, args):
         for remotechan in remoteirc.users[realuser[1]].channels:
             localchan = findRemoteChan(remoteirc, irc, remotechan)
             if localchan:
-                modes = getPrefixModes(remoteirc, irc, localchan, realuser[1])
+                modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
                 log.debug('(%s) relay handle_kill: userpair: %s, %s', irc.name, modes, realuser)
                 client = getRemoteUser(remoteirc, irc, realuser[1])
                 irc.proto.sjoinServer(irc, irc.sid, localchan, [(modes, client)])
