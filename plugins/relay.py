@@ -808,6 +808,10 @@ def create(irc, source, args):
     if not utils.isOper(irc, source):
         utils.msg(irc, source, 'Error: You must be opered in order to complete this operation.')
         return
+    localentry = findRelay((irc.name, channel))
+    if localentry:
+        utils.msg(irc, source, 'Error: Channel %r is already part of a relay.' % channel)
+        return
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
     initializeChannel(irc, channel)
     utils.msg(irc, source, 'Done.')
