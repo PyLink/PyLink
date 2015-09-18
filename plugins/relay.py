@@ -1012,6 +1012,10 @@ def create(irc, source, args):
         irc.msg(source, 'Error: You must be in %r to complete this operation.' % channel)
         return
     utils.checkAuthenticated(irc, source)
+    localentry = getRelay((irc.name, channel))
+    if localentry:
+        irc.msg(source, 'Error: Channel %r is already part of a relay.' % channel)
+        return
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
     initializeChannel(irc, channel)
     irc.msg(source, 'Done.')
