@@ -22,7 +22,7 @@ def spawnclient(irc, source, args):
     except ValueError:
         irc.msg(source, "Error: Not enough arguments. Needs 3: nick, user, host.")
         return
-    irc.proto.spawnClient(nick, ident, host)
+    irc.proto.spawnClient(nick, ident, host, manipulatable=True)
 
 @utils.add_cmd
 def quit(irc, source, args):
@@ -40,6 +40,9 @@ def quit(irc, source, args):
         return
     u = utils.nickToUid(irc, nick)
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
+    if not utils.isManipulatableClient(irc, u):
+        irc.msg(source, "Error: Cannot force quit a protected PyLink services client.")
+        return
     irc.proto.quitClient(u, quitmsg)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
@@ -57,6 +60,9 @@ def joinclient(irc, source, args):
         irc.msg(source, "Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
     u = utils.nickToUid(irc, nick)
+    if not utils.isManipulatableClient(irc, u):
+        irc.msg(source, "Error: Cannot force join a protected PyLink services client.")
+        return
     for channel in clist:
         if not utils.isChannel(channel):
             irc.msg(source, "Error: Invalid channel name %r." % channel)
@@ -85,6 +91,9 @@ def nick(irc, source, args):
     elif not utils.isNick(newnick):
         irc.msg(source, 'Error: Invalid nickname %r.' % newnick)
         return
+    elif not utils.isManipulatableClient(irc, u):
+        irc.msg(source, "Error: Cannot force nick changes for a protected PyLink services client.")
+        return
     irc.proto.nickClient(u, newnick)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
@@ -102,6 +111,9 @@ def part(irc, source, args):
         irc.msg(source, "Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
     u = utils.nickToUid(irc, nick)
+    if not utils.isManipulatableClient(irc, u):
+        irc.msg(source, "Error: Cannot force part a protected PyLink services client.")
+        return
     for channel in clist:
         if not utils.isChannel(channel):
             irc.msg(source, "Error: Invalid channel name %r." % channel)
@@ -148,19 +160,15 @@ def mode(irc, source, args):
     target = utils.nickToUid(irc, target) or target
     extclient = target in irc.users and not utils.isInternalClient(irc, target)
     parsedmodes = utils.parseModes(irc, target, modes)
-    if not (target in irc.users or target in irc.channels):
+    ischannel = target in irc.channels
+    if not (target in irc.users or ischannel):
         irc.msg(source, "Error: Invalid channel or nick %r." % target)
         return
     elif not parsedmodes:
         irc.msg(source, "Error: No valid modes were given.")
         return
-    elif extclient and not irc.proto.allow_forceset_usermodes:
-        irc.msg(source, "Error: this IRCd does not allow forcing user mode "
-                        "changes on other servers' users!")
-        return
-    elif extclient and ("+o", None) in parsedmodes and not irc.proto.allow_forceoper:
-        irc.msg(source, "Error: this IRCd does not allow forcing an oper up "
-                        "for other servers' users!")
+    elif not (ischannel or utils.isManipulatableClient(irc, target)):
+        irc.msg(source, "Error: Can only set modes on channels or non-protected PyLink clients.")
         return
     if utils.isInternalServer(irc, modesource):
         # Setting modes from a server.
