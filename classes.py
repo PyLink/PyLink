@@ -274,7 +274,9 @@ class Irc():
         host = self.serverdata["hostname"]
         log.info('(%s) Connected! Spawning main client %s.', self.name, nick)
         olduserobj = self.pseudoclient
-        self.pseudoclient = self.proto.spawnClient(nick, ident, host, modes={("+o", None)})
+        self.pseudoclient = self.proto.spawnClient(nick, ident, host,
+                                                   modes={("+o", None)},
+                                                   manipulatable=True)
         for chan in self.serverdata['channels']:
             self.proto.joinClient(self.pseudoclient.uid, chan)
         # PyLink internal hook called when spawnMain is called and the
@@ -284,7 +286,7 @@ class Irc():
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0'):
+                 ip='0.0.0.0', manipulatable=False):
         self.nick = nick
         self.ts = ts
         self.uid = uid
@@ -298,6 +300,11 @@ class IrcUser():
         self.identified = False
         self.channels = set()
         self.away = ''
+
+        # Whether the client should be marked as manipulatable
+        # (i.e. we are allowed to play with it using bots.py's commands).
+        # For internal services clients, this should always be False.
+        self.manipulatable = manipulatable
 
     def __repr__(self):
         return repr(self.__dict__)

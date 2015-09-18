@@ -462,6 +462,15 @@ def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
         raise NotAuthenticatedError("You are not authenticated!")
     return True
 
+def isManipulatableClient(irc, uid):
+    """
+    Returns whether the given user is marked as an internal, manipulatable
+    client. Usually, automatically spawned services clients should have this
+    set True to prevent interactions with opers (like mode changes) from
+    causing desyncs.
+    """
+    return isInternalClient(irc, uid) and irc.users[uid].manipulatable
+
 def getHostmask(irc, user):
     """Gets the hostmask of the given user, if present."""
     userobj = irc.users.get(user)
