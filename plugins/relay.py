@@ -870,7 +870,7 @@ def handle_kill(irc, numeric, command, args):
         del relayusers[realuser][irc.name]
         if killcache.setdefault(irc.name, 0) <= 5:
             remoteirc = world.networkobjects[realuser[0]]
-            for remotechan in remoteirc.channels.copy():
+            for remotechan in remoteirc.users[realuser[1]].channels:
                 localchan = getRemoteChan(remoteirc, irc, remotechan)
                 if localchan:
                     modes = getPrefixModes(remoteirc, irc, localchan, realuser[1])
@@ -1011,9 +1011,7 @@ def create(irc, source, args):
     if source not in irc.channels[channel].users:
         irc.msg(source, 'Error: You must be in %r to complete this operation.' % channel)
         return
-    if not utils.isOper(irc, source):
-        irc.msg(source, 'Error: You must be opered in order to complete this operation.')
-        return
+    utils.checkAuthenticated(irc, source)
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
     initializeChannel(irc, channel)
     irc.msg(source, 'Done.')
@@ -1031,9 +1029,7 @@ def destroy(irc, source, args):
     if not utils.isChannel(channel):
         irc.msg(source, 'Error: Invalid channel %r.' % channel)
         return
-    if not utils.isOper(irc, source):
-        irc.msg(source, 'Error: You must be opered in order to complete this operation.')
-        return
+    utils.checkAuthenticated(irc, source)
 
     entry = (irc.name, channel)
     if entry in db:
@@ -1069,9 +1065,7 @@ def link(irc, source, args):
     if source not in irc.channels[localchan].users:
         irc.msg(source, 'Error: You must be in %r to complete this operation.' % localchan)
         return
-    if not utils.isOper(irc, source):
-        irc.msg(source, 'Error: You must be opered in order to complete this operation.')
-        return
+    utils.checkAuthenticated(irc, source)
     if remotenet not in world.networkobjects:
         irc.msg(source, 'Error: No network named %r exists.' % remotenet)
         return
@@ -1113,9 +1107,7 @@ def delink(irc, source, args):
         remotenet = args[1].lower()
     except IndexError:
         remotenet = None
-    if not utils.isOper(irc, source):
-        irc.msg(source, 'Error: You must be opered in order to complete this operation.')
-        return
+    utils.checkAuthenticated(irc, source)
     if not utils.isChannel(channel):
         irc.msg(source, 'Error: Invalid channel %r.' % channel)
         return
@@ -1165,9 +1157,7 @@ def linkacl(irc, source, args):
     Allows blocking / unblocking certain networks from linking to a relay, based on a blacklist.
     LINKACL LIST returns a list of blocked networks for a channel, while the ALLOW and DENY subcommands allow manipulating this blacklist."""
     missingargs = "Error: Not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST), channel, remote network (for ALLOW/DENY)."
-    if not utils.isOper(irc, source):
-        irc.msg(source, 'Error: You must be opered in order to complete this operation.')
-        return
+    utils.checkAuthenticated(irc, source)
     try:
         cmd = args[0].lower()
         channel = utils.toLower(irc, args[1])
@@ -1245,12 +1235,9 @@ def save(irc, source, args):
     """takes no arguments.
 
     Saves the relay database to disk."""
-    if utils.isOper(irc, source):
-        exportDB()
-        irc.msg(source, 'Done.')
-    else:
-        irc.msg(source, 'Error: You are not authenticated!')
-        return
+    utils.checkAuthenticated(irc, source)
+    exportDB()
+    irc.msg(source, 'Done.')
 
 @utils.add_cmd
 def claim(irc, source, args):
