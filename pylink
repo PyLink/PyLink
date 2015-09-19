@@ -5,6 +5,7 @@ import os
 import sys
 
 # This must be done before conf imports, so we get the real conf instead of testing one.
+os.chdir(os.path.dirname(__file__))
 import world
 world.testing = False
 
