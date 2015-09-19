@@ -1148,6 +1148,16 @@ def linked(irc, source, args):
     # Sort relay DB by channel name, and then sort.
     for k, v in sorted(db.items(), key=lambda channel: channel[0][1]):
         s = '\x02%s%s\x02 ' % k
+        remoteirc = world.networkobjects.get(k[0])
+        channel = k[1]
+        if remoteirc and channel in remoteirc.channels:
+            c = remoteirc.channels[channel]
+            if ('s', None) in c.modes or ('p', None) in c.modes:
+                # Only show hidden channels to opers.
+                if utils.isOper(irc, source):
+                    s += '\x02[secret]\x02 '
+                else:
+                    continue
         if v['links']:
             s += ' '.join([''.join(link) for link in v['links']])
         else:
