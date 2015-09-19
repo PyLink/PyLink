@@ -207,21 +207,24 @@ class Irc():
                 line = line.strip(b'\r')
                 # FIXME: respect other encodings?
                 line = line.decode("utf-8", "replace")
-                log.debug("(%s) <- %s", self.name, line)
-                hook_args = None
-                try:
-                    hook_args = self.proto.handle_events(line)
-                except Exception:
-                    log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
-                    log.error('(%s) The offending line was: <- %s', self.name, line)
-                    return
-                # Only call our hooks if there's data to process. Handlers that support
-                # hooks will return a dict of parsed arguments, which can be passed on
-                # to plugins and the like. For example, the JOIN handler will return
-                # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
-                # 'UID3']}, etc.
-                if hook_args is not None:
-                    self.callHooks(hook_args)
+                self.runline(line)
+
+    def runline(self, line):
+        """Sends a command to the protocol module."""
+        log.debug("(%s) <- %s", self.name, line)
+        try:
+            hook_args = self.proto.handle_events(line)
+        except Exception:
+            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
+            log.error('(%s) The offending line was: <- %s', self.name, line)
+            return
+        # Only call our hooks if there's data to process. Handlers that support
+        # hooks will return a dict of parsed arguments, which can be passed on
+        # to plugins and the like. For example, the JOIN handler will return
+        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
+        # 'UID3']}, etc.
+        if hook_args is not None:
+            self.callHooks(hook_args)
 
     def callHooks(self, hook_args):
         numeric, command, parsed_args = hook_args
