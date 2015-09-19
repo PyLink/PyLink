@@ -185,3 +185,11 @@ def shutdown(irc, source, args):
         # Disable auto-connect first by setting the time to negative.
         ircobj.serverdata['autoconnect'] = -1
         ircobj.aborted.set()
+
+@utils.add_cmd
+def version(irc, source, args):
+    """takes no arguments.
+
+    Returns the version of the currently running PyLink instance."""
+    irc.msg(source, "PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
+    irc.msg(source, "The source of this program is available at \x02%s\x02." % world.source)

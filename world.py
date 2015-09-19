@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 import threading
+import subprocess
 
 # Global variable to indicate whether we're being ran directly, or imported
 # for a testcase.
@@ -16,3 +17,14 @@ schedulers = {}
 plugins = []
 whois_handlers = []
 started = threading.Event()
+
+version = "<unknown>"
+source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
+
+# Only run this once.
+if version == "<unknown>":
+    # Get version from Git tags.
+    try:
+        version = 'v' + subprocess.check_output(['git', 'describe', '--tags']).decode('utf-8').strip()
+    except:
+        log.exception('Failed to get version from "git describe --tags".')
