@@ -1239,7 +1239,7 @@ def linkacl(irc, source, args):
 def showuser(irc, source, args):
     """<user>
 
-    Shows relay data about user <user>. This is intended to be used alongside the 'commands' plugin, which provides a 'showuser' command with more general information."""
+    Shows relay data about user <user>. This supplements the 'showuser' command in the 'commands' plugin, which provides more general information."""
     try:
         target = args[0]
     except IndexError:
