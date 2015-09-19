@@ -44,7 +44,9 @@ def handle_whois(irc, source, command, args):
     target = args['target']
     user = irc.users.get(target)
     if user is None:
-        log.warning('(%s) Got a WHOIS request for %r from %r, but the target doesn\'t exist in irc.users!', irc.name, target, source)
+        log.warning('(%s) Got a WHOIS request for %r from %r, but the target '
+                    'doesn\'t exist in irc.users!', irc.name, target, source)
+        return
     f = irc.proto.numericServer
     server = utils.clientToServer(irc, target) or irc.sid
     nick = user.nick
@@ -86,6 +88,7 @@ def handle_whois(irc, source, command, args):
     # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
     # Only show this to opers!
     if sourceisOper:
+        f(server, 378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
         f(server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
     # 317: shows idle and signon time. However, we don't track the user's real
     # idle time, so we simply return 0.
