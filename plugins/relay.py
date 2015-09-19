@@ -203,14 +203,29 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                 # Set hideoper on remote opers, to prevent inflating
                 # /lusers and various /stats
                 hideoper_mode = remoteirc.umodes.get('hideoper')
-                if hideoper_mode:
+                try:
+                    use_hideoper = irc.conf['relay']['hideoper']
+                except KeyError:
+                    use_hideoper = True
+                if hideoper_mode and use_hideoper:
                     modes.append((hideoper_mode, None))
             rsid = getRemoteSid(remoteirc, irc)
+            try:
+                showRealIP = irc.conf['relay']['show_ips']
+            except KeyError:
+                showRealIP = False
+            if showRealIP:
+                ip = userobj.ip
+                realhost = userobj.realhost
+            else:
+                realhost = None
+                ip = '0.0.0.0'
             try:
                 u = remoteirc.proto.spawnClient(nick, ident=ident,
                                                 host=host, realname=realname,
                                                 modes=modes, ts=userobj.ts,
-                                                opertype=opertype, server=rsid).uid
+                                                opertype=opertype, server=rsid,
+                                                ip=ip, realhost=realhost).uid
             except ValueError:
                 log.exception('(%s) Failed to spawn relay user %s on %s.', irc.name,
                               nick, remoteirc.name)
