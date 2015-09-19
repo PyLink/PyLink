@@ -26,5 +26,5 @@ if version == "<unknown>":
     # Get version from Git tags.
     try:
         version = 'v' + subprocess.check_output(['git', 'describe', '--tags']).decode('utf-8').strip()
-    except:
-        log.exception('Failed to get version from "git describe --tags".')
+    except Exception as e:
+        print('ERROR: Failed to get version from "git describe --tags": %s: %s' % (type(e).__name__, e))
