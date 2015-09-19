@@ -201,6 +201,7 @@ class TS6BaseProtocol(Protocol):
         split_server = args[0]
         affected_users = []
         log.info('(%s) Netsplit on server %s', self.irc.name, split_server)
+        assert split_server in self.irc.servers, "Tried to split a server (%s) that didn't exist!" % split_server
         # Prevent RuntimeError: dictionary changed size during iteration
         old_servers = self.irc.servers.copy()
         for sid, data in old_servers.items():

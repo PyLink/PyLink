@@ -30,8 +30,6 @@ killcache = ExpiringDict(max_len=5, max_age_seconds=10)
 
 def initializeAll(irc):
     """Initializes all relay channels for the given IRC object."""
-    log.debug('(%s) initializeAll: waiting for world.started', irc.name)
-    world.started.wait()
     for chanpair, entrydata in db.items():
         network, channel = chanpair
         initializeChannel(irc, channel)
@@ -149,7 +147,12 @@ def getRemoteSid(irc, remoteirc):
         try:
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
-            sid = irc.proto.spawnServer('%s.relay' % remoteirc.name)
+            try:
+                sid = irc.proto.spawnServer('%s.relay' % remoteirc.name)
+            except ValueError:  # Network not initialized yet.
+                log.exception('(%s) Failed to spawn server for %r:',
+                              irc.name, remoteirc.name)
+                return
             relayservers[irc.name][remoteirc.name] = sid
         return sid
 
@@ -203,10 +206,15 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                 if hideoper_mode:
                     modes.append((hideoper_mode, None))
             rsid = getRemoteSid(remoteirc, irc)
-            u = remoteirc.proto.spawnClient(nick, ident=ident,
-                                            host=host, realname=realname,
-                                            modes=modes, ts=userobj.ts,
-                                            opertype=opertype, server=rsid).uid
+            try:
+                u = remoteirc.proto.spawnClient(nick, ident=ident,
+                                                host=host, realname=realname,
+                                                modes=modes, ts=userobj.ts,
+                                                opertype=opertype, server=rsid).uid
+            except ValueError:
+                log.exception('(%s) Failed to spawn relay user %s on %s.', irc.name,
+                              nick, remoteirc.name)
+                return
             remoteirc.users[u].remote = (irc.name, user)
             remoteirc.users[u].opertype = opertype
             away = userobj.away
@@ -955,10 +963,14 @@ def handle_disconnect(irc, numeric, command, args):
     for name, ircobj in world.networkobjects.items():
         if name != irc.name:
             rsid = getRemoteSid(ircobj, irc)
-            ircobj.proto.squitServer(ircobj.sid, rsid, text='Home network lost connection.')
-            del relayservers[name][irc.name]
-    del relayservers[irc.name]
-    # handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Home network lost connection.'})
+            # Let's be super extra careful here...
+            if rsid and name in relayservers and irc.name in relayservers[name]:
+                ircobj.proto.squitServer(ircobj.sid, rsid, text='Home network lost connection.')
+                del relayservers[name][irc.name]
+    try:
+        del relayservers[irc.name]
+    except KeyError:
+        pass
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
