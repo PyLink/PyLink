@@ -44,6 +44,9 @@ servers:
         recvpass: "abcd"
         sendpass: "abcd"
 
+        # The full network name, used by plugins.
+        netname: "yournet"
+
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet"
 
@@ -97,6 +100,7 @@ servers:
         sendpass: "abcd"
         hostname: "pylink.example.com"
         sid: "8PY"
+        netname: "some network"
 
         # Leave this as an empty list if you don't want to join any channels.
         channels: []
