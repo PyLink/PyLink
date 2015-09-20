@@ -74,7 +74,7 @@ def handle_whois(irc, source, command, args):
         f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
     # 312: sends the server the target is on, and its server description.
     f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
-      irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
+      irc.servers[server].desc))
     # 313: sends a string denoting the target's operator privilege,
     # only if they have umode +o.
     if ('o', None) in user.modes:
