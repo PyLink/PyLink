@@ -54,7 +54,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                                  modes=raw_modes, ip=ip, realname=realname,
                                                  realhost=realhost))
         if ('o', None) in modes or ('+o', None) in modes:
-            self._operUp(uid, opertype=opertype or 'IRC_Operator')
+            self._operUp(uid, opertype=opertype or 'IRC Operator')
         return u
 
     def joinClient(self, client, channel):
@@ -143,17 +143,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         and the change will be reflected here."""
         userobj = self.irc.users[target]
         try:
-            otype = opertype or userobj.opertype or 'IRC_Operator'
+            otype = opertype or userobj.opertype or 'IRC Operator'
         except AttributeError:
             log.debug('(%s) opertype field for %s (%s) isn\'t filled yet!',
                       self.irc.name, target, userobj.nick)
             # whatever, this is non-standard anyways.
-            otype = 'IRC_Operator'
+            otype = 'IRC Operator'
         assert otype, "Tried to send an empty OPERTYPE!"
         log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
                   self.irc.name, target)
         userobj.opertype = otype
-        self._send(target, 'OPERTYPE %s' % otype)
+        self._send(target, 'OPERTYPE %s' % otype.replace(" ", "_"))
 
     def _sendModes(self, numeric, target, modes, ts=None):
         """Internal function to send mode changes from a PyLink client/server."""
@@ -163,7 +163,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if ('+o', None) in modes and not utils.isChannel(target):
             # https://github.com/inspself.ircd/inspself.ircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
-            # Why isn't this documented anywhere, InspIRCd?
             self._operUp(target)
         utils.applyModes(self.irc, target, modes)
         joinedmodes = utils.joinModes(modes)
@@ -547,7 +546,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # command sent for it.
         # <- :70MAAAAAB OPERTYPE Network_Owner
         omode = [('+o', None)]
-        self.irc.users[numeric].opertype = opertype = args[0]
+        self.irc.users[numeric].opertype = opertype = args[0].replace("_", " ")
         utils.applyModes(self.irc, numeric, omode)
         # OPERTYPE is essentially umode +o and metadata in one command;
         # we'll call that too.

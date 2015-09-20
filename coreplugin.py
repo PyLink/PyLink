@@ -79,7 +79,7 @@ def handle_whois(irc, source, command, args):
     # only if they have umode +o.
     if ('o', None) in user.modes:
         if hasattr(user, 'opertype'):
-            opertype = user.opertype.replace("_", " ")
+            opertype = user.opertype
         else:
             opertype = "IRC Operator"
         # Let's be gramatically correct.

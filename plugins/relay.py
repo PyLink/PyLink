@@ -194,12 +194,11 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                     # If an opertype exists for the user, add " (remote)"
                     # for the relayed clone, so that it shows in whois.
                     # Janus does this too. :)
-                    # OPERTYPE uses underscores instead of spaces, FYI.
                     log.debug('(%s) relay.getRemoteUser: setting OPERTYPE of client for %r to %s',
                               irc.name, user, userobj.opertype)
-                    opertype = userobj.opertype + '_(remote)'
+                    opertype = userobj.opertype + ' (remote)'
                 else:
-                    opertype = 'IRC_Operator_(remote)'
+                    opertype = 'IRC Operator (remote)'
                 # Set hideoper on remote opers, to prevent inflating
                 # /lusers and various /stats
                 hideoper_mode = remoteirc.umodes.get('hideoper')
@@ -587,7 +586,8 @@ world.whois_handlers.append(relayWhoisHandler)
 def handle_operup(irc, numeric, command, args):
     newtype = args['text'] + '_(remote)'
     for netname, user in relayusers[(irc.name, numeric)].items():
-        log.debug('(%s) relay.handle_opertype: setting OPERTYPE of %s/%s to %s', irc.name, user, netname, newtype)
+        log.debug('(%s) relay.handle_opertype: setting OPERTYPE of %s/%s to %s',
+                  irc.name, user, netname, newtype)
         remoteirc = world.networkobjects[netname]
         remoteirc.users[user].opertype = newtype
 utils.add_hook(handle_operup, 'PYLINK_CLIENT_OPERED')
