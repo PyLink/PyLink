@@ -148,7 +148,10 @@ def getRemoteSid(irc, remoteirc):
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
             try:
-                sid = irc.proto.spawnServer('%s.relay' % remoteirc.name)
+                sid = irc.proto.spawnServer('%s.relay' % remoteirc.name,
+                                            desc="PyLink Relay network - %s" %
+                                            (remoteirc.serverdata.get('netname')\
+                                            or remoteirc.name))
             except ValueError:  # Network not initialized yet.
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
