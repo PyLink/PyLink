@@ -23,6 +23,7 @@ dbname += '.db'
 relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.RLock)
+spawnlocks_servers = defaultdict(threading.RLock)
 savecache = ExpiringDict(max_len=5, max_age_seconds=10)
 killcache = ExpiringDict(max_len=5, max_age_seconds=10)
 
@@ -143,7 +144,7 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
 def getRemoteSid(irc, remoteirc):
     """Gets the remote server SID representing remoteirc on irc, spawning
     it if it doesn't exist."""
-    with spawnlocks[irc.name]:
+    with spawnlocks_servers[irc.name]:
         try:
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
