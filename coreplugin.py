@@ -117,6 +117,6 @@ def handle_mode(irc, source, command, args):
     # If the sender is not a PyLink client, and the target IS a protected
     # client, revert any forced deoper attempts.
     if utils.isInternalClient(irc, target) and not utils.isInternalClient(irc, source):
-        if ('-o', None) in modes and not utils.isManipulatableClient(irc, target):
+        if ('-o', None) in modes and (target == irc.pseudoclient.uid or not utils.isManipulatableClient(irc, target)):
             irc.proto.modeServer(irc.sid, target, {('+o', None)})
 utils.add_hook(handle_mode, 'MODE')
