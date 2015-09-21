@@ -17,7 +17,7 @@ class TS6Protocol(TS6BaseProtocol):
         super(TS6Protocol, self).__init__(irc)
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE'}
-        self.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
+        self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),

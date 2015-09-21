@@ -24,7 +24,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
                     'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
-        self.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
+        self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),

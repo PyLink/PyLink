@@ -56,8 +56,12 @@ class TS6SIDGenerator():
         "6##" would give: 600, 601, 602, ... 60Y, 60Z, 610, 611, ... 6ZZ (1296 total results)
     """
 
-    def __init__(self, query):
-        self.query = list(query)
+    def __init__(self, irc):
+        self.irc = irc
+        try:
+            self.query = query = list(irc.serverdata["sidrange"])
+        except KeyError:
+            raise RuntimeError('(%s) "sidrange" is missing from your server configuration block!' % irc.name)
         self.iters = self.query.copy()
         self.output = self.query.copy()
         self.allowedchars = {}
@@ -93,8 +97,9 @@ class TS6SIDGenerator():
             self.increment(pos-1)
 
     def next_sid(self):
+        while ''.join(self.output) in self.irc.servers:
+            self.increment()
         sid = ''.join(self.output)
-        self.increment()
         return sid
 
 def add_cmd(func, name=None):
