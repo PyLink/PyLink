@@ -775,8 +775,7 @@ def handle_kick(irc, source, command, args):
         # Propogate the kick!
         if real_kicker:
             log.debug('(%s) Relay kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan,real_kicker, kicker, irc.name)
-            remoteirc.proto.kickClient(real_kicker,
-                                       remotechan, real_target, text)
+            remoteirc.proto.kickClient(real_kicker, remotechan, real_target, args['text'])
         else:
             # Kick originated from a server, or the kicker isn't in any
             # common channels with the target relay network.
@@ -787,9 +786,9 @@ def handle_kick(irc, source, command, args):
                     kname = irc.servers[kicker].name
                 else:
                     kname = irc.users.get(kicker).nick
-                text = "(%s/%s) %s" % (kname, irc.name, text)
+                text = "(%s/%s) %s" % (kname, irc.name, args['text'])
             except AttributeError:
-                text = "(<unknown kicker>@%s) %s" % (irc.name, text)
+                text = "(<unknown kicker>@%s) %s" % (irc.name, args['text'])
             remoteirc.proto.kickServer(rsid, remotechan, real_target, text)
 
         # If the target isn't on any channels, quit them.
