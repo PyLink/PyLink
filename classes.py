@@ -6,6 +6,7 @@ import threading
 import ssl
 from collections import defaultdict
 import hashlib
+from copy import deepcopy
 
 from log import log
 from conf import conf
@@ -26,7 +27,9 @@ class Irc():
         self.lastping = time.time()
 
         # Server, channel, and user indexes to be populated by our protocol module
-        self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'], internal=True)}
+        self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'],
+                        internal=True, desc=self.serverdata.get('serverdesc')
+                        or self.botdata['serverdesc'])}
         self.users = {}
         self.channels = defaultdict(IrcChannel)
         # Sets flags such as whether to use halfops, etc. The default RFC1459
@@ -54,13 +57,6 @@ class Irc():
         # Uplink SID (filled in by protocol module)
         self.uplink = None
         self.start_ts = int(time.time())
-
-        # UID generators, for servers that need it
-        self.uidgen = {}
-
-        # Local data for the IRC object, which protocol modules may use for
-        # initialization, etc.
-        self.protodata = {}
 
     def __init__(self, netname, proto):
         # Initialize some variables
@@ -211,20 +207,24 @@ class Irc():
                 line = line.strip(b'\r')
                 # FIXME: respect other encodings?
                 line = line.decode("utf-8", "replace")
-                log.debug("(%s) <- %s", self.name, line)
-                hook_args = None
-                try:
-                    hook_args = self.proto.handle_events(line)
-                except Exception:
-                    log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
-                    return
-                # Only call our hooks if there's data to process. Handlers that support
-                # hooks will return a dict of parsed arguments, which can be passed on
-                # to plugins and the like. For example, the JOIN handler will return
-                # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
-                # 'UID3']}, etc.
-                if hook_args is not None:
-                    self.callHooks(hook_args)
+                self.runline(line)
+
+    def runline(self, line):
+        """Sends a command to the protocol module."""
+        log.debug("(%s) <- %s", self.name, line)
+        try:
+            hook_args = self.proto.handle_events(line)
+        except Exception:
+            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
+            log.error('(%s) The offending line was: <- %s', self.name, line)
+            return
+        # Only call our hooks if there's data to process. Handlers that support
+        # hooks will return a dict of parsed arguments, which can be passed on
+        # to plugins and the like. For example, the JOIN handler will return
+        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
+        # 'UID3']}, etc.
+        if hook_args is not None:
+            self.callHooks(hook_args)
 
     def callHooks(self, hook_args):
         numeric, command, parsed_args = hook_args
@@ -239,15 +239,17 @@ class Irc():
         if command in hook_map:
             hook_cmd = hook_map[command]
         hook_cmd = parsed_args.get('parse_as') or hook_cmd
-        log.debug('Parsed args %r received from %s handler (calling hook %s)', parsed_args, command, hook_cmd)
+        log.debug('(%s) Parsed args %r received from %s handler (calling hook %s)',
+                  self.name, parsed_args, command, hook_cmd)
         # Iterate over hooked functions, catching errors accordingly
         for hook_func in world.command_hooks[hook_cmd]:
             try:
-                log.debug('Calling function %s', hook_func)
+                log.debug('(%s) Calling function %s', self.name, hook_func)
                 hook_func(self, numeric, command, parsed_args)
             except Exception:
                 # We don't want plugins to crash our servers...
-                log.exception('Unhandled exception caught in %r' % hook_func)
+                log.exception('(%s) Unhandled exception caught in %r',
+                              self.name, hook_func)
                 continue
 
     def send(self, data):
@@ -275,7 +277,9 @@ class Irc():
         host = self.serverdata["hostname"]
         log.info('(%s) Connected! Spawning main client %s.', self.name, nick)
         olduserobj = self.pseudoclient
-        self.pseudoclient = self.proto.spawnClient(nick, ident, host, modes={("+o", None)})
+        self.pseudoclient = self.proto.spawnClient(nick, ident, host,
+                                                   modes={("+o", None)},
+                                                   manipulatable=True)
         for chan in self.serverdata['channels']:
             self.proto.joinClient(self.pseudoclient.uid, chan)
         # PyLink internal hook called when spawnMain is called and the
@@ -285,7 +289,7 @@ class Irc():
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0'):
+                 ip='0.0.0.0', manipulatable=False):
         self.nick = nick
         self.ts = ts
         self.uid = uid
@@ -300,6 +304,11 @@ class IrcUser():
         self.channels = set()
         self.away = ''
 
+        # Whether the client should be marked as manipulatable
+        # (i.e. we are allowed to play with it using bots.py's commands).
+        # For internal services clients, this should always be False.
+        self.manipulatable = manipulatable
+
     def __repr__(self):
         return repr(self.__dict__)
 
@@ -311,11 +320,12 @@ class IrcServer():
     name: The name of the server.
     internal: Whether the server is an internal PyLink PseudoServer.
     """
-    def __init__(self, uplink, name, internal=False):
+    def __init__(self, uplink, name, internal=False, desc="(None given)"):
         self.uplink = uplink
         self.users = set()
         self.internal = internal
         self.name = name.lower()
+        self.desc = desc
     def __repr__(self):
         return repr(self.__dict__)
 
@@ -336,6 +346,9 @@ class IrcChannel():
         for s in self.prefixmodes.values():
             s.discard(target)
         self.users.discard(target)
+
+    def deepcopy(self):
+        return deepcopy(self)
 
 ### FakeIRC classes, used for test cases
 
@@ -404,7 +417,7 @@ class FakeProto(Protocol):
         pass
 
     def spawnClient(self, nick, *args, **kwargs):
-        uid = randint(1, 10000000000)
+        uid = str(randint(1, 10000000000))
         ts = int(time.time())
         self.irc.users[uid] = user = IrcUser(nick, ts, uid)
         return user

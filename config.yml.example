@@ -20,6 +20,22 @@ login:
     user: admin
     password: changeme
 
+relay:
+    # This block defines various options for the Relay plugin. You don't need this
+    # if you aren't using it.
+
+    # Determines whether remote opers will have user mode +H (hideoper) set on them.
+    # This has the benefit of lowering the oper count in /lusers and /stats (P|p),
+    # but only on IRCds that supported the mode.
+    # It defaults to true if not set.
+    hideoper: true
+
+    # Determines whether real IPs should be sent across the relay. You should
+    # generally have a consensus with your linked networks whether this should
+    # be turned on. You will see other networks' user IP addresses, and they
+    # will see yours.
+    show_ips: false
+
 servers:
     yournet:
         # Server IP, port, and passwords
@@ -27,6 +43,9 @@ servers:
         port: 7000
         recvpass: "abcd"
         sendpass: "abcd"
+
+        # The full network name, used by plugins.
+        netname: "yournet"
 
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet"
@@ -81,6 +100,7 @@ servers:
         sendpass: "abcd"
         hostname: "pylink.example.com"
         sid: "8PY"
+        netname: "some network"
 
         # Leave this as an empty list if you don't want to join any channels.
         channels: []

@@ -4,22 +4,22 @@ import utils
 from log import log
 import world
 
-# Handle KILLs sent to the PyLink client and respawn
 def handle_kill(irc, source, command, args):
+    """Handle KILLs to the main PyLink client, respawning it as needed."""
     if args['target'] == irc.pseudoclient.uid:
         irc.spawnMain()
 utils.add_hook(handle_kill, 'KILL')
 
-# Handle KICKs to the PyLink client, rejoining the channels
 def handle_kick(irc, source, command, args):
+    """Handle KICKs to the main PyLink client, rejoining channels as needed."""
     kicked = args['target']
     channel = args['channel']
     if kicked == irc.pseudoclient.uid:
         irc.proto.joinClient(irc.pseudoclient.uid, channel)
 utils.add_hook(handle_kick, 'KICK')
 
-# Handle commands sent to the PyLink client (PRIVMSG)
 def handle_commands(irc, source, command, args):
+    """Handle commands sent to the PyLink client (PRIVMSG)."""
     if args['target'] == irc.pseudoclient.uid:
         text = args['text'].strip()
         cmd_args = text.split(' ')
@@ -39,12 +39,14 @@ def handle_commands(irc, source, command, args):
                 irc.msg(source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 utils.add_hook(handle_commands, 'PRIVMSG')
 
-# Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd).
 def handle_whois(irc, source, command, args):
+    """Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd)."""
     target = args['target']
     user = irc.users.get(target)
     if user is None:
-        log.warning('(%s) Got a WHOIS request for %r from %r, but the target doesn\'t exist in irc.users!', irc.name, target, source)
+        log.warning('(%s) Got a WHOIS request for %r from %r, but the target '
+                    'doesn\'t exist in irc.users!', irc.name, target, source)
+        return
     f = irc.proto.numericServer
     server = utils.clientToServer(irc, target) or irc.sid
     nick = user.nick
@@ -72,12 +74,12 @@ def handle_whois(irc, source, command, args):
         f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
     # 312: sends the server the target is on, and its server description.
     f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
-      irc.serverdata.get('serverdesc') or irc.botdata['serverdesc']))
+      irc.servers[server].desc))
     # 313: sends a string denoting the target's operator privilege,
     # only if they have umode +o.
     if ('o', None) in user.modes:
         if hasattr(user, 'opertype'):
-            opertype = user.opertype.replace("_", " ")
+            opertype = user.opertype
         else:
             opertype = "IRC Operator"
         # Let's be gramatically correct.
@@ -86,6 +88,7 @@ def handle_whois(irc, source, command, args):
     # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
     # Only show this to opers!
     if sourceisOper:
+        f(server, 378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
         f(server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
     # 317: shows idle and signon time. However, we don't track the user's real
     # idle time, so we simply return 0.
@@ -106,3 +109,14 @@ def handle_whois(irc, source, command, args):
     # 318: End of WHOIS.
     f(server, 318, source, "%s :End of /WHOIS list" % nick)
 utils.add_hook(handle_whois, 'WHOIS')
+
+def handle_mode(irc, source, command, args):
+    """Protect against forced deoper attempts."""
+    target = args['target']
+    modes = args['modes']
+    # If the sender is not a PyLink client, and the target IS a protected
+    # client, revert any forced deoper attempts.
+    if utils.isInternalClient(irc, target) and not utils.isInternalClient(irc, source):
+        if ('-o', None) in modes and (target == irc.pseudoclient.uid or not utils.isManipulatableClient(irc, target)):
+            irc.proto.modeServer(irc.sid, target, {('+o', None)})
+utils.add_hook(handle_mode, 'MODE')

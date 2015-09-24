@@ -18,7 +18,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.casemapping = 'ascii'
         self.proto_ver = 2351
         self.hook_map = {}
-
+        self.uidgen = {}
 
         self.caps = {}
         self._unrealCmodes = {'l': 'limit', 'c': 'blockcolor', 'G': 'censor',
@@ -40,9 +40,7 @@ class UnrealProtocol(TS6BaseProtocol):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
         # Unreal 3.4 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
         # do, but we can do that fine...
-        if server not in self.irc.uidgen:
-            self.irc.uidgen[server] = utils.TS6UIDGenerator(server)
-        uid = self.irc.uidgen[server].next_uid()
+        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host

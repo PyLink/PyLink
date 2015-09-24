@@ -19,3 +19,17 @@ def _exec(irc, source, args):
     log.info('(%s) Executing %r for %s', irc.name, args, utils.getHostmask(irc, source))
     exec(args, globals(), locals())
 utils.add_cmd(_exec, 'exec')
+
+def _eval(irc, source, args):
+    """<Python expression>
+
+    Admin-only. Evaluates the given Python expression and returns the result.
+    \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    args = ' '.join(args)
+    if not args.strip():
+        irc.msg(source, 'No code entered!')
+        return
+    log.info('(%s) Evaluating %r for %s', irc.name, args, utils.getHostmask(irc, source))
+    irc.msg(source, eval(args))
+utils.add_cmd(_eval, 'eval')

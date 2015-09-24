@@ -101,19 +101,50 @@ class TestUtils(unittest.TestCase):
                                ('+b', '*!*@*.badisp.net')])
         self.assertEqual(res, '-o+l-nm+kb 9PYAAAAAA 50 hello *!*@*.badisp.net')
 
-    @unittest.skip('Wait, we need to work out the kinks first! (reversing changes of modes with arguments)')
+    def _reverseModes(self, query, expected, target='#test'):
+        res = utils.reverseModes(self.irc, target, query)
+        self.assertEqual(res, expected)
+
     def testReverseModes(self):
-        f = lambda x: utils.reverseModes(self.irc, '#test', x)
+        test = lambda x, y: self.assertEqual(utils.reverseModes(self.irc, '#test', x), y)
         # Strings.
-        self.assertEqual(f("+nt-lk"), "-nt+lk")
-        self.assertEqual(f("nt-k"), "-nt+k")
+        self._reverseModes("+mk-t test", "-mk+t test")
+        self._reverseModes("ml-n 111", "-ml+n")
         # Lists.
-        self.assertEqual(f([('+m', None), ('+t', None), ('+l', '3'), ('-o', 'person')]),
-            [('-m', None), ('-t', None), ('-l', '3'), ('+o', 'person')])
+        self._reverseModes([('+m', None), ('+r', None), ('+l', '3')],
+                           {('-m', None), ('-r', None), ('-l', None)})
         # Sets.
-        self.assertEqual(f({('s', None), ('+o', 'whoever')}), {('-s', None), ('-o', 'whoever')})
+        self._reverseModes({('s', None)}, {('-s', None)})
         # Combining modes with an initial + and those without
-        self.assertEqual(f({('s', None), ('+n', None)}), {('-s', None), ('-n', None)})
+        self._reverseModes({('s', None), ('+R', None)}, {('-s', None), ('-R', None)})
+
+    def testReverseModesUser(self):
+        self._reverseModes({('+i', None), ('l', 'asfasd')}, {('-i', None), ('-l', 'asfasd')},
+                           target=self.irc.pseudoclient.uid)
+
+    def testReverseModesExisting(self):
+        utils.applyModes(self.irc, '#test', [('+m', None), ('+l', '50'), ('+k', 'supersecret'),
+                                             ('+o', '9PYAAAAAA')])
+
+        self._reverseModes({('+i', None), ('+l', '3')}, {('-i', None), ('+l', '50')})
+        self._reverseModes('-n', '+n')
+        self._reverseModes('-l', '+l 50')
+        self._reverseModes('+k derp', '+k supersecret')
+        self._reverseModes('-mk *', '+mk supersecret')
+
+        # Existing modes are ignored.
+        self._reverseModes([('+t', None)], set())
+        self._reverseModes('+n', '+')
+        self._reverseModes('+oo GLolol 9PYAAAAAA', '-o GLolol')
+        self._reverseModes('+o 9PYAAAAAA', '+')
+        self._reverseModes('+vvvvM test abcde atat abcd', '-vvvvM test abcde atat abcd')
+
+        # Ignore unsetting prefixmodes/list modes that were never set.
+        self._reverseModes([('-v', '10XAAAAAA')], set())
+        self._reverseModes('-ob 10XAAAAAA derp!*@*', '+')
+        utils.applyModes(self.irc, '#test', [('+o', 'GLolol'), ('+b', '*!user@badisp.tk')])
+        self._reverseModes('-voo GLolol GLolol 10XAAAAAA', '+o GLolol')
+        self._reverseModes('-bb *!*@* *!user@badisp.tk', '+b *!user@badisp.tk')
 
 if __name__ == '__main__':
     unittest.main()

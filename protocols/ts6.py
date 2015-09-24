@@ -17,9 +17,12 @@ class TS6Protocol(TS6BaseProtocol):
         super(TS6Protocol, self).__init__(irc)
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE'}
+        self.sidgen = utils.TS6SIDGenerator(self.irc)
+        self.uidgen = {}
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
-            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
+            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
+            manipulatable=False):
         """Spawns a client with nick <nick> on the given IRC connection.
 
         Note: No nick collision / valid nickname checks are done here; it is
@@ -27,11 +30,9 @@ class TS6Protocol(TS6BaseProtocol):
         server = server or self.irc.sid
         if not utils.isInternalServer(self.irc, server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
-        # We need a separate UID generator instance for every PseudoServer
-        # we spawn. Otherwise, things won't wrap around properly.
-        if server not in self.irc.uidgen:
-            self.irc.uidgen[server] = utils.TS6UIDGenerator(server)
-        uid = self.irc.uidgen[server].next_uid()
+        # Create an UIDGenerator instance for every SID, so that each gets
+        # distinct values.
+        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
         # EUID:
         # parameters: nickname, hopcount, nickTS, umodes, username,
         # visible hostname, IP address, UID, real hostname, account name, gecos
@@ -40,7 +41,7 @@ class TS6Protocol(TS6BaseProtocol):
         realhost = realhost or host
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-            realhost=realhost, ip=ip)
+            realhost=realhost, ip=ip, manipulatable=manipulatable)
         utils.applyModes(self.irc, uid, modes)
         self.irc.servers[server].users.add(uid)
         self._send(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
@@ -99,7 +100,7 @@ class TS6Protocol(TS6BaseProtocol):
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
                 p.clear()
-        log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, self.irc.name, ts,
+        log.debug("(%s) sending SJOIN to %s with ts %s (that's %r)", self.irc.name, channel, ts,
                   time.strftime("%c", time.localtime(ts)))
         modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
         changedmodes = []
@@ -135,6 +136,7 @@ class TS6Protocol(TS6BaseProtocol):
     def _sendModes(self, numeric, target, modes, ts=None):
         """Internal function to send mode changes from a PyLink client/server."""
         utils.applyModes(self.irc, target, modes)
+        modes = list(modes)
         if utils.isChannel(target):
             ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
             # TMODE:
@@ -263,8 +265,7 @@ class TS6Protocol(TS6BaseProtocol):
         name = name.lower()
         desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         if sid is None:  # No sid given; generate one!
-            self.irc.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
-            sid = self.irc.sidgen.next_sid()
+            sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
         if sid in self.irc.servers:
             raise ValueError('A server with SID %r already exists!' % sid)
@@ -276,7 +277,7 @@ class TS6Protocol(TS6BaseProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
-        self.irc.servers[sid] = IrcServer(uplink, name, internal=True)
+        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
         return sid
 
     def squitServer(self, source, target, text='No reason given'):
@@ -407,6 +408,7 @@ class TS6Protocol(TS6BaseProtocol):
             sname = args[1].lower()
             log.debug('(%s) Found uplink server name as %r', self.irc.name, sname)
             self.irc.servers[self.irc.uplink].name = sname
+            self.irc.servers[self.irc.uplink].desc = ' '.join(args).split(':', 1)[1]
             # According to the TS6 protocol documentation, we should send SVINFO
             # when we get our uplink's SERVER command.
             self.irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
@@ -593,7 +595,7 @@ class TS6Protocol(TS6BaseProtocol):
             # XXX: don't just save these by their server names; that's ugly!
             sid = servername
         sdesc = args[-1]
-        self.irc.servers[sid] = IrcServer(numeric, servername)
+        self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': sid, 'text': sdesc}
 
     handle_sid = handle_server
@@ -602,11 +604,13 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming TMODE commands (channel mode change)."""
         # <- :42XAAAAAB TMODE 1437450768 #endlessvoid -c+lkC 3 agte4
         channel = utils.toLower(self.irc, args[1])
+        oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = utils.parseModes(self.irc, channel, modes)
         utils.applyModes(self.irc, channel, changedmodes)
         ts = int(args[0])
-        return {'target': channel, 'modes': changedmodes, 'ts': ts}
+        return {'target': channel, 'modes': changedmodes, 'ts': ts,
+                'oldchan': oldobj}
 
     def handle_mode(self, numeric, command, args):
         """Handles incoming user mode changes."""

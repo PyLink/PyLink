@@ -40,10 +40,9 @@ class TS6UIDGenerator():
         return uid
 
 class TS6SIDGenerator():
-    """<query>
-
+    """
     TS6 SID Generator. <query> is a 3 character string with any combination of
-    uppercase letters, digits, and #'s. <query> must contain at least one #,
+    uppercase letters, digits, and #'s. it must contain at least one #,
     which are used by the generator as a wildcard. On every next_sid() call,
     the first available wildcard character (from the right) will be
     incremented to generate the next SID.
@@ -57,8 +56,12 @@ class TS6SIDGenerator():
         "6##" would give: 600, 601, 602, ... 60Y, 60Z, 610, 611, ... 6ZZ (1296 total results)
     """
 
-    def __init__(self, query):
-        self.query = list(query)
+    def __init__(self, irc):
+        self.irc = irc
+        try:
+            self.query = query = list(irc.serverdata["sidrange"])
+        except KeyError:
+            raise RuntimeError('(%s) "sidrange" is missing from your server configuration block!' % irc.name)
         self.iters = self.query.copy()
         self.output = self.query.copy()
         self.allowedchars = {}
@@ -94,8 +97,9 @@ class TS6SIDGenerator():
             self.increment(pos-1)
 
     def next_sid(self):
+        while ''.join(self.output) in self.irc.servers:
+            self.increment()
         sid = ''.join(self.output)
-        self.increment()
         return sid
 
 def add_cmd(func, name=None):
@@ -110,10 +114,8 @@ def add_hook(func, command):
     world.command_hooks[command].append(func)
 
 def toLower(irc, text):
-    """<irc object> <text>
-
-    Returns a lowercase representation of <text> based on <irc object>'s
-    casemapping (rfc1459 vs ascii)."""
+    """Returns a lowercase representation of text based on the IRC object's
+    casemapping (rfc1459 or ascii)."""
     if irc.proto.casemapping == 'rfc1459':
         text = text.replace('{', '[')
         text = text.replace('}', ']')
@@ -122,38 +124,41 @@ def toLower(irc, text):
     return text.lower()
 
 def nickToUid(irc, nick):
-    """<irc object> <nick>
-
-    Returns the UID of a user named <nick>, if present."""
+    """Returns the UID of a user named nick, if present."""
     nick = toLower(irc, nick)
     for k, v in irc.users.items():
         if toLower(irc, v.nick) == nick:
             return k
 
 def clientToServer(irc, numeric):
-    """<irc object> <numeric>
-
-    Finds the server SID of user <numeric> and returns it."""
+    """Finds the SID of the server a user is on."""
     for server in irc.servers:
         if numeric in irc.servers[server].users:
             return server
 
-# A+ regex
 _nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
 def isNick(s, nicklen=None):
+    """Checks whether the string given is a valid nick."""
     if nicklen and len(s) > nicklen:
         return False
     return bool(re.match(_nickregex, s))
 
 def isChannel(s):
-    return s.startswith('#')
+    """Checks whether the string given is a valid channel name."""
+    return str(s).startswith('#')
 
 def _isASCII(s):
     chars = string.ascii_letters + string.digits + string.punctuation
     return all(char in chars for char in s)
 
 def isServerName(s):
+    """Checks whether the string given is a server name."""
     return _isASCII(s) and '.' in s and not s.startswith('.')
+
+hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
+def isHostmask(text):
+    """Returns whether the given text is a valid hostmask."""
+    return bool(hostmaskRe.match(text))
 
 def parseModes(irc, target, args):
     """Parses a modestring list into a list of (mode, argument) tuples.
@@ -164,11 +169,10 @@ def parseModes(irc, target, args):
     # B = Mode that changes a setting and always has a parameter.
     # C = Mode that changes a setting and only has a parameter when set.
     # D = Mode that changes a setting and never has a parameter.
+    assert args, 'No valid modes were supplied!'
     usermodes = not isChannel(target)
     prefix = ''
     modestring = args[0]
-    if not modestring:
-        return ValueError('No modes supplied in parseModes query: %r' % modes)
     args = args[1:]
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
@@ -207,6 +211,13 @@ def parseModes(irc, target, args):
                     # We're setting a prefix mode on someone (e.g. +o user1)
                     log.debug('Mode %s: This mode is a prefix mode.', mode)
                     arg = args.pop(0)
+                    # Convert nicks to UIDs implicitly; most IRCds will want
+                    # this already.
+                    arg = nickToUid(irc, arg) or arg
+                    if arg not in irc.users:  # Target doesn't exist, skip it.
+                        log.debug('(%s) Skipping setting mode "%s %s"; the '
+                                  'target doesn\'t seem to exist!')
+                        continue
                 elif prefix == '+' and mode in supported_modes['*C']:
                     # Only has parameter when setting.
                     log.debug('Mode %s: Only has parameter when setting.', mode)
@@ -220,10 +231,9 @@ def parseModes(irc, target, args):
     return res
 
 def applyModes(irc, target, changedmodes):
-    """<target> <changedmodes>
+    """Takes a list of parsed IRC modes, and applies them on the given target.
 
-    Takes a list of parsed IRC modes (<changedmodes>, in the format of parseModes()), and applies them on <target>.
-    <target> can be either a channel or a user; this is handled automatically."""
+    The target can be either a channel or a user; this is handled automatically."""
     usermodes = not isChannel(target)
     log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
     if usermodes:
@@ -292,11 +302,10 @@ def applyModes(irc, target, changedmodes):
         irc.channels[target].modes = modelist
 
 def joinModes(modes):
-    """<mode list>
+    """Takes a list of (mode, arg) tuples in parseModes() format, and
+    joins them into a string.
 
-    Takes a list of (mode, arg) tuples in parseModes() format, and
-    joins them into a string. See testJoinModes in tests/test_utils.py
-    for some examples."""
+    See testJoinModes in tests/test_utils.py for some examples."""
     prefix = '+'  # Assume we're adding modes unless told otherwise
     modelist = ''
     args = []
@@ -328,55 +337,112 @@ def joinModes(modes):
         modelist += ' %s' % ' '.join(args)
     return modelist
 
-def reverseModes(irc, target, modes):
-    """<mode string/mode list>
+def _flip(mode):
+    """Flips a mode character."""
+    # Make it a list first, strings don't support item assignment
+    mode = list(mode)
+    if mode[0] == '-':  # Query is something like "-n"
+        mode[0] = '+'  # Change it to "+n"
+    elif mode[0] == '+':
+        mode[0] = '-'
+    else:  # No prefix given, assume +
+        mode.insert(0, '-')
+    return ''.join(mode)
 
-    Reverses/Inverts the mode string or mode list given.
+def reverseModes(irc, target, modes, oldobj=None):
+    """Reverses/Inverts the mode string or mode list given.
 
-    "+nt-lk" => "-nt+lk"
-    "nt-k" => "-nt+k"
-    [('+m', None), ('+t', None), ('+l', '3'), ('-o', 'person')] =>
-        [('-m', None), ('-t', None), ('-l', '3'), ('+o', 'person')]
-    [('s', None), ('+n', None)] => [('-s', None), ('-n', None)]
+    Optionally, an oldobj argument can be given to look at an earlier state of
+    a channel/user object, e.g. for checking the op status of a mode setter
+    before their modes are processed and added to the channel state.
+
+    This function allows both mode strings or mode lists. Example uses:
+        "+mi-lk test => "-mi+lk test"
+        "mi-k test => "-mi+k test"
+        [('+m', None), ('+r', None), ('+l', '3'), ('-o', 'person')
+         => {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
+        {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
     """
     origtype = type(modes)
-    # Operate on joined modestrings only; it's easier.
-    if origtype != str:
-        modes = joinModes(modes)
-    # Swap the +'s and -'s by replacing one with a dummy character, and then changing it back.
-    assert '\x00' not in modes, 'NUL cannot be in the mode list (it is a reserved character)!'
-    if not modes.startswith(('+', '-')):
-        modes = '+' + modes
-    newmodes = modes.replace('+', '\x00')
-    newmodes = newmodes.replace('-', '+')
-    newmodes = newmodes.replace('\x00', '-')
-    if origtype != str:
-        # If the original query isn't a string, send back the parseModes() output.
-        return parseModes(irc, target, newmodes.split(" "))
+    # If the query is a string, we have to parse it first.
+    if origtype == str:
+        modes = parseModes(irc, target, modes.split(" "))
+    # Get the current mode list first.
+    if isChannel(target):
+        c = oldobj or irc.channels[target]
+        oldmodes = c.modes.copy()
+        possible_modes = irc.cmodes.copy()
+        # For channels, this also includes the list of prefix modes.
+        possible_modes['*A'] += ''.join(irc.prefixmodes)
+        for name, userlist in c.prefixmodes.items():
+            try:
+                oldmodes.update([(irc.cmodes[name[:-1]], u) for u in userlist])
+            except KeyError:
+                continue
     else:
-        return newmodes
+        oldmodes = irc.users[target].modes
+        possible_modes = irc.umodes
+    newmodes = []
+    log.debug('(%s) reverseModes: old/current mode list for %s is: %s', irc.name,
+               target, oldmodes)
+    for char, arg in modes:
+        # Mode types:
+        # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
+        # B = Mode that changes a setting and always has a parameter.
+        # C = Mode that changes a setting and only has a parameter when set.
+        # D = Mode that changes a setting and never has a parameter.
+        mchar = char[-1]
+        if mchar in possible_modes['*B'] + possible_modes['*C']:
+            # We need to find the current mode list, so we can reset arguments
+            # for modes that have arguments. For example, setting +l 30 on a channel
+            # that had +l 50 set should give "+l 30", not "-l".
+            oldarg = [m for m in oldmodes if m[0] == mchar]
+            if oldarg:  # Old mode argument for this mode existed, use that.
+                oldarg = oldarg[0]
+                mpair = ('+%s' % oldarg[0], oldarg[1])
+            else:  # Not found, flip the mode then.
+                # Mode takes no arguments when unsetting.
+                if mchar in possible_modes['*C'] and char[0] != '-':
+                    arg = None
+                mpair = (_flip(char), arg)
+        else:
+            mpair = (_flip(char), arg)
+        if char[0] != '-' and (mchar, arg) in oldmodes:
+            # Mode is already set.
+            log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since we're "
+                      "setting a mode that's already set.", irc.name, char, arg, mpair)
+            continue
+        elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
+            # We're unsetting a prefixmode that was never set - don't set it in response!
+            # Charybdis lacks verification for this server-side.
+            log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since it "
+                      "wasn't previously set.", irc.name, char, arg, mpair)
+            continue
+        newmodes.append(mpair)
+
+    log.debug('(%s) reverseModes: new modes: %s', irc.name, newmodes)
+    if origtype == str:
+        # If the original query is a string, send it back as a string.
+        return joinModes(newmodes)
+    else:
+        return set(newmodes)
 
 def isInternalClient(irc, numeric):
-    """<irc object> <client numeric>
-
-    Checks whether <client numeric> is a PyLink PseudoClient,
-    returning the SID of the PseudoClient's server if True.
+    """
+    Checks whether the given numeric is a PyLink Client,
+    returning the SID of the server it's on if so.
     """
     for sid in irc.servers:
         if irc.servers[sid].internal and numeric in irc.servers[sid].users:
             return sid
 
 def isInternalServer(irc, sid):
-    """<irc object> <sid>
-
-    Returns whether <sid> is an internal PyLink PseudoServer.
-    """
+    """Returns whether the given SID is an internal PyLink server."""
     return (sid in irc.servers and irc.servers[sid].internal)
 
 def isOper(irc, uid, allowAuthed=True, allowOper=True):
-    """<irc object> <UID>
-
-    Returns whether <UID> has operator status on PyLink. This can be achieved
+    """
+    Returns whether the given user has operator status on PyLink. This can be achieved
     by either identifying to PyLink as admin (if allowAuthed is True),
     or having user mode +o set (if allowOper is True). At least one of
     allowAuthed or allowOper must be True for this to give any meaningful
@@ -390,10 +456,10 @@ def isOper(irc, uid, allowAuthed=True, allowOper=True):
     return False
 
 def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
-    """<irc object> <UID>
-
-    Checks whether user <UID> has operator status on PyLink, raising
-    NotAuthenticatedError and logging the access denial if not."""
+    """
+    Checks whetherthe given user has operator status on PyLink, raising
+    NotAuthenticatedError and logging the access denial if not.
+    """
     lastfunc = inspect.stack()[1][3]
     if not isOper(irc, uid, allowAuthed=allowAuthed, allowOper=allowOper):
         log.warning('(%s) Access denied for %s calling %r', irc.name,
@@ -401,10 +467,17 @@ def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
         raise NotAuthenticatedError("You are not authenticated!")
     return True
 
-def getHostmask(irc, user):
-    """<irc object> <UID>
+def isManipulatableClient(irc, uid):
+    """
+    Returns whether the given user is marked as an internal, manipulatable
+    client. Usually, automatically spawned services clients should have this
+    set True to prevent interactions with opers (like mode changes) from
+    causing desyncs.
+    """
+    return isInternalClient(irc, uid) and irc.users[uid].manipulatable
 
-    Gets the hostmask of user <UID>, if present."""
+def getHostmask(irc, user):
+    """Gets the hostmask of the given user, if present."""
     userobj = irc.users.get(user)
     if userobj is None:
         return '<user object not found>'
@@ -421,8 +494,3 @@ def getHostmask(irc, user):
     except AttributeError:
         host = '<unknown host>'
     return '%s!%s@%s' % (nick, ident, host)
-
-hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
-def isHostmask(text):
-    """Returns whether <text> is a valid hostmask."""
-    return bool(hostmaskRe.match(text))

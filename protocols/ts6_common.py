@@ -81,11 +81,12 @@ class TS6BaseProtocol(Protocol):
             # Clear empty non-permanent channels.
             if not (self.irc.channels[c].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[c].modes)):
                 del self.irc.channels[c]
+            assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
 
         sid = numeric[:3]
         log.debug('Removing client %s from self.irc.users', numeric)
         del self.irc.users[numeric]
-        log.debug('Removing client %s from self.irc.servers[%s]', numeric, sid)
+        log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
         self.irc.servers[sid].users.discard(numeric)
 
     def partClient(self, client, channel, reason=None):
@@ -200,6 +201,7 @@ class TS6BaseProtocol(Protocol):
         split_server = args[0]
         affected_users = []
         log.info('(%s) Netsplit on server %s', self.irc.name, split_server)
+        assert split_server in self.irc.servers, "Tried to split a server (%s) that didn't exist!" % split_server
         # Prevent RuntimeError: dictionary changed size during iteration
         old_servers = self.irc.servers.copy()
         for sid, data in old_servers.items():
@@ -211,9 +213,10 @@ class TS6BaseProtocol(Protocol):
             affected_users.append(user)
             log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
             self.removeClient(user)
+        sname = self.irc.servers[split_server].name
         del self.irc.servers[split_server]
         log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
-        return {'target': split_server, 'users': affected_users}
+        return {'target': split_server, 'users': affected_users, 'name': sname}
 
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients. For topic bursts,
@@ -222,9 +225,11 @@ class TS6BaseProtocol(Protocol):
         channel = utils.toLower(self.irc, args[0])
         topic = args[1]
         ts = int(time.time())
+        oldtopic = self.irc.channels[channel].topic
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
-        return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic}
+        return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic,
+                'oldtopic': oldtopic}
 
     def handle_part(self, source, command, args):
         """Handles incoming PART commands."""

@@ -1,12 +1,12 @@
 # PyLink
 
-PyLink is an extensible, plugin-based IRC PseudoService written in Python. It aims to be a replacement for the now-defunct Janus.
+PyLink is an extensible, plugin-based IRC Services framework written in Python. It aims to be a replacement for the now-defunct Janus.
 
 ## Usage
 
 **PyLink is a work in progress and thus may be very unstable**! No warranty is provided if this completely wrecks your network and causes widespread rioting amongst your users!
 
-That said, please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute.
+That said, please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute: note that **master** is bugfix only; new stuff goes to the **devel** branch.
 
 ### Dependencies
 
@@ -22,10 +22,10 @@ Dependencies currently include:
 * charybdis (3.5.x / git master) - module `ts6`
 * Elemental-IRCd (6.6.x / git master) - module `ts6`
 
-### Installation
+### Setup
 
-1) Rename `config.yml.example` to `config.yml` and configure your instance there. Not all options are properly implemented yet, and the configuration schema isn't finalized yet - this means that your configuration may break in an update!
+1) Rename `config.yml.example` to `config.yml` and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
 
-2) Run `main.py` from the command line.
+2) Run `./pylink` from the command line.
 
 3) Profit???

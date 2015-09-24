@@ -5,6 +5,7 @@ import os
 import sys
 
 # This must be done before conf imports, so we get the real conf instead of testing one.
+os.chdir(os.path.dirname(__file__))
 import world
 world.testing = False
 
@@ -14,7 +15,7 @@ import classes
 import coreplugin
 
 if __name__ == '__main__':
-    log.info('PyLink starting...')
+    log.info('PyLink %s starting...', world.version)
     if conf.conf['login']['password'] == 'changeme':
         log.critical("You have not set the login details correctly! Exiting...")
         sys.exit(2)
@@ -61,4 +62,3 @@ if __name__ == '__main__':
             world.networkobjects[network] = classes.Irc(network, proto)
     world.started.set()
     log.info("loaded plugins: %s", world.plugins)
-

@@ -24,9 +24,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
                     'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
+        self.sidgen = utils.TS6SIDGenerator(self.irc)
+        self.uidgen = {}
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
-            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
+            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
+            manipulatable=False):
         """Spawns a client with nick <nick> on the given IRC connection.
 
         Note: No nick collision / valid nickname checks are done here; it is
@@ -34,17 +37,15 @@ class InspIRCdProtocol(TS6BaseProtocol):
         server = server or self.irc.sid
         if not utils.isInternalServer(self.irc, server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
-        # We need a separate UID generator instance for every PseudoServer
-        # we spawn. Otherwise, things won't wrap around properly.
-        if server not in self.irc.uidgen:
-            self.irc.uidgen[server] = utils.TS6UIDGenerator(server)
-        uid = self.irc.uidgen[server].next_uid()
+        # Create an UIDGenerator instance for every SID, so that each gets
+        # distinct values.
+        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-            realhost=realhost, ip=ip)
+            realhost=realhost, ip=ip, manipulatable=manipulatable)
         utils.applyModes(self.irc, uid, modes)
         self.irc.servers[server].users.add(uid)
         self._send(server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
@@ -53,7 +54,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                                  modes=raw_modes, ip=ip, realname=realname,
                                                  realhost=realhost))
         if ('o', None) in modes or ('+o', None) in modes:
-            self._operUp(uid, opertype=opertype or 'IRC_Operator')
+            self._operUp(uid, opertype=opertype or 'IRC Operator')
         return u
 
     def joinClient(self, client, channel):
@@ -142,26 +143,26 @@ class InspIRCdProtocol(TS6BaseProtocol):
         and the change will be reflected here."""
         userobj = self.irc.users[target]
         try:
-            otype = opertype or userobj.opertype
+            otype = opertype or userobj.opertype or 'IRC Operator'
         except AttributeError:
             log.debug('(%s) opertype field for %s (%s) isn\'t filled yet!',
                       self.irc.name, target, userobj.nick)
             # whatever, this is non-standard anyways.
-            otype = 'IRC_Operator'
+            otype = 'IRC Operator'
+        assert otype, "Tried to send an empty OPERTYPE!"
         log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
                   self.irc.name, target)
         userobj.opertype = otype
-        self._send(target, 'OPERTYPE %s' % otype)
+        self._send(target, 'OPERTYPE %s' % otype.replace(" ", "_"))
 
     def _sendModes(self, numeric, target, modes, ts=None):
         """Internal function to send mode changes from a PyLink client/server."""
         # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
         # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
-        log.debug('(%s) inspself.ircd._sendModes: received %r for mode list', self.irc.name, modes)
+        log.debug('(%s) inspircd._sendModes: received %r for mode list', self.irc.name, modes)
         if ('+o', None) in modes and not utils.isChannel(target):
             # https://github.com/inspself.ircd/inspself.ircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
-            # Why isn't this documented anywhere, InspIRCd?
             self._operUp(target)
         utils.applyModes(self.irc, target, modes)
         joinedmodes = utils.joinModes(modes)
@@ -272,8 +273,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # "desc" defaults to the configured server description.
         desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         if sid is None:  # No sid given; generate one!
-            self.irc.sidgen = utils.TS6SIDGenerator(self.irc.serverdata["sidrange"])
-            sid = self.irc.sidgen.next_sid()
+            sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
         if sid in self.irc.servers:
             raise ValueError('A server with SID %r already exists!' % sid)
@@ -285,7 +285,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
-        self.irc.servers[sid] = IrcServer(uplink, name, internal=True)
+        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
         self._send(sid, 'ENDBURST')
         return sid
 
@@ -329,7 +329,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
            if args[2] != self.irc.serverdata['recvpass']:
                 # Check if recvpass is correct
                 raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
-           self.irc.servers[numeric] = IrcServer(None, servername)
+           sdesc = ' '.join(args).split(':', 1)[1]
+           self.irc.servers[numeric] = IrcServer(None, servername, desc=sdesc)
            self.irc.uplink = numeric
            return
         elif args[0] == 'CAPAB':
@@ -459,18 +460,20 @@ class InspIRCdProtocol(TS6BaseProtocol):
         servername = args[0].lower()
         sid = args[3]
         sdesc = args[-1]
-        self.irc.servers[sid] = IrcServer(numeric, servername)
+        self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': args[3], 'text': sdesc}
 
     def handle_fmode(self, numeric, command, args):
         """Handles the FMODE command, used for channel mode changes."""
         # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
         channel = utils.toLower(self.irc, args[0])
+        oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = utils.parseModes(self.irc, channel, modes)
         utils.applyModes(self.irc, channel, changedmodes)
         ts = int(args[1])
-        return {'target': channel, 'modes': changedmodes, 'ts': ts}
+        return {'target': channel, 'modes': changedmodes, 'ts': ts,
+                'oldchan': oldobj}
 
     def handle_mode(self, numeric, command, args):
         """Handles incoming user mode changes."""
@@ -543,7 +546,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # command sent for it.
         # <- :70MAAAAAB OPERTYPE Network_Owner
         omode = [('+o', None)]
-        self.irc.users[numeric].opertype = opertype = args[0]
+        self.irc.users[numeric].opertype = opertype = args[0].replace("_", " ")
         utils.applyModes(self.irc, numeric, omode)
         # OPERTYPE is essentially umode +o and metadata in one command;
         # we'll call that too.
