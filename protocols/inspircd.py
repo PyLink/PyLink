@@ -251,7 +251,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if not (target is None or source is None):
             self._send(source, 'PING %s %s' % (source, target))
 
-    def numericServer(self, source, numeric, text):
+    def numericServer(self, source, numeric, target, text):
         raise NotImplementedError("Numeric sending is not yet implemented by this "
                                   "protocol module. WHOIS requests are handled "
                                   "locally by InspIRCd servers, so there is no "
