@@ -12,29 +12,6 @@ class TS6BaseProtocol(Protocol):
         """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""
         self.irc.send(':%s %s' % (source, msg))
 
-    def parseArgs(self, args):
-        """Parses a string of RFC1459-style arguments split into a list, where ":" may
-        be used for multi-word arguments that last until the end of a line.
-        """
-        real_args = []
-        for idx, arg in enumerate(args):
-            real_args.append(arg)
-            # If the argument starts with ':' and ISN'T the first argument.
-            # The first argument is used for denoting the source UID/SID.
-            if arg.startswith(':') and idx != 0:
-                # : is used for multi-word arguments that last until the end
-                # of the message. We can use list splicing here to turn them all
-                # into one argument.
-                # Set the last arg to a joined version of the remaining args
-                arg = args[idx:]
-                arg = ' '.join(arg)[1:]
-                # Cut the original argument list right before the multi-word arg,
-                # and then append the multi-word arg.
-                real_args = args[:idx]
-                real_args.append(arg)
-                break
-        return real_args
-
     def parseTS6Args(self, args):
         """Similar to parseArgs(), but stripping leading colons from the first argument
         of a line (usually the sender field)."""
@@ -73,21 +50,6 @@ class TS6BaseProtocol(Protocol):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
         self.irc.users[numeric].nick = newnick
-
-    def removeClient(self, numeric):
-        """Internal function to remove a client from our internal state."""
-        for c, v in self.irc.channels.copy().items():
-            v.removeuser(numeric)
-            # Clear empty non-permanent channels.
-            if not (self.irc.channels[c].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[c].modes)):
-                del self.irc.channels[c]
-            assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
-
-        sid = numeric[:3]
-        log.debug('Removing client %s from self.irc.users', numeric)
-        del self.irc.users[numeric]
-        log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
-        self.irc.servers[sid].users.discard(numeric)
 
     def partClient(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
