@@ -48,9 +48,9 @@ The following functions *must* be implemented by any protocol module within its 
 
 - **`killServer`**`(self, source, target, reason)` - Sends a kill from a PyLink server.
 
-- **`knockClient`**`(self, source, target, text)` - Sends a `KNOCK` from a PyLink client.
+- **`knockClient`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client.
 
-- **`messageClient`**`(self, source, target, text)` - Sends a `PRIVMSG` from a PyLink client.
+- **`messageClient`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
 
 - **`modeClient`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink client. `modes` takes a set of `([+/-]mode char, mode arg)` tuples.
 
@@ -58,13 +58,13 @@ The following functions *must* be implemented by any protocol module within its 
 
 - **`nickClient`**`(self, source, newnick)` - Changes the nick of a PyLink client.
 
-- **`noticeClient`**`(self, source, target, text)` - Sends a `NOTICE` from a PyLink client.
+- **`noticeClient`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client.
 
 - **`numericServer`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
 
 - **`partClient`**`(self, client, channel, reason=None)` - Sends a part from a PyLink client.
 
-- **`pingServer`**`(self, source=None, target=None)` - Sends a `PING` to a target server. Periodic `PING`s are sent to our uplink automatically by the [`Irc`**`()`
+- **`pingServer`**`(self, source=None, target=None)` - Sends a PING to a target server. Periodic PINGs are sent to our uplink automatically by the [`Irc`**`()`
 internals]`**`(https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272); plugins shouldn't have to use this.
 
 - **`quitClient`**`(self, source, reason)` - Quits a PyLink client.
