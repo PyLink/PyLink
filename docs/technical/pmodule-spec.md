@@ -64,8 +64,8 @@ The following functions *must* be implemented by any protocol module within its 
 
 - **`partClient`**`(self, client, channel, reason=None)` - Sends a part from a PyLink client.
 
-- **`pingServer`**`(self, source=None, target=None)` - Sends a PING to a target server. Periodic PINGs are sent to our uplink automatically by the [`Irc`**`()`
-internals]`**`(https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272); plugins shouldn't have to use this.
+- **`pingServer`**`(self, source=None, target=None)` - Sends a PING to a target server. Periodic PINGs are sent to our uplink automatically by the [`Irc()`
+internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272); plugins shouldn't have to use this.
 
 - **`quitClient`**`(self, source, reason)` - Quits a PyLink client.
 
