@@ -194,7 +194,7 @@ class TS6Protocol(TS6BaseProtocol):
         removeClient(self.irc, target)
 
     def topicServer(self, numeric, target, text):
-        """Sends a topic change from a PyLink server. This is usally used on burst."""
+        """Sends a topic change from a PyLink server. This is usually used on burst."""
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         # TB
@@ -259,7 +259,12 @@ class TS6Protocol(TS6BaseProtocol):
             self._send(source, 'AWAY')
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None):
-        """Spawns a server off a PyLink server."""
+        """
+        Spawns a server off a PyLink server. desc (server description)
+        defaults to the one in the config. uplink defaults to the main PyLink
+        server, and sid (the server ID) is automatically generated if not
+        given.
+        """
         # -> :0AL SID test.server 1 0XY :some silly pseudoserver
         uplink = uplink or self.irc.sid
         name = name.lower()

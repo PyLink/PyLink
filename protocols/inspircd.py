@@ -15,7 +15,7 @@ from ts6_common import TS6BaseProtocol
 class InspIRCdProtocol(TS6BaseProtocol):
     def __init__(self, irc):
         super(InspIRCdProtocol, self).__init__(irc)
-        # Set our case mapping (rfc1459 maps "\" and "|" together, for example".
+        # Set our case mapping (rfc1459 maps "\" and "|" together, for example).
         self.casemapping = 'rfc1459'
 
         # Raw commands sent from servers vary from protocol to protocol. Here, we map
@@ -207,7 +207,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # will send a QUIT from the target if the command succeeds.
 
     def topicServer(self, numeric, target, text):
-        """Sends a topic change from a PyLink server. This is usally used on burst."""
+        """Sends a topic change from a PyLink server. This is usually used on burst."""
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         ts = int(time.time())
@@ -266,7 +266,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(source, 'AWAY')
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None):
-        """Spawns a server off a PyLink server."""
+        """
+        Spawns a server off a PyLink server. desc (server description)
+        defaults to the one in the config. uplink defaults to the main PyLink
+        server, and sid (the server ID) is automatically generated if not
+        given.
+        """
         # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
         uplink = uplink or self.irc.sid
         name = name.lower()
