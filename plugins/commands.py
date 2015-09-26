@@ -196,3 +196,10 @@ def version(irc, source, args):
     Returns the version of the currently running PyLink instance."""
     irc.msg(irc.called_by, "PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
     irc.msg(irc.called_by, "The source of this program is available at \x02%s\x02." % world.source)
+
+@utils.add_cmd
+def echo(irc, source, args):
+    """<text>
+
+    Echoes the text given."""
+    irc.msg(irc.called_by, ' '.join(args))
