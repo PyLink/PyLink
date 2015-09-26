@@ -266,7 +266,8 @@ class Irc():
         # Iterate over hooked functions, catching errors accordingly
         for hook_func in world.command_hooks[hook_cmd]:
             try:
-                log.debug('(%s) Calling function %s', self.name, hook_func)
+                log.debug('(%s) Calling hook function %s from plugin "%s"', self.name,
+                          hook_func, hook_func.__module__)
                 hook_func(self, numeric, command, parsed_args)
             except Exception:
                 # We don't want plugins to crash our servers...
