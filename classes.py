@@ -11,6 +11,7 @@ from copy import deepcopy
 from log import log
 from conf import conf
 import world
+import utils
 
 ### Exceptions
 
@@ -25,6 +26,10 @@ class Irc():
         self.aborted.clear()
         self.pseudoclient = None
         self.lastping = time.time()
+
+        # Internal variable to set the place the last command was called (in PM
+        # or in a channel), used by fantasy command support.
+        self.called_by = None
 
         # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'],
@@ -165,6 +170,23 @@ class Irc():
                 time.sleep(autoconnect)
             else:
                 return
+
+    def callCommand(self, source, text):
+        cmd_args = text.strip().split(' ')
+        cmd = cmd_args[0].lower()
+        cmd_args = cmd_args[1:]
+        if cmd not in world.bot_commands:
+            self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
+            return
+        log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
+        for func in world.bot_commands[cmd]:
+            try:
+                func(self, source, cmd_args)
+            except utils.NotAuthenticatedError:
+                self.msg(self.called_by or source, 'Error: You are not authorized to perform this operation.')
+            except Exception as e:
+                log.exception('Unhandled exception caught in command %r', cmd)
+                self.msg(self.called_by or source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
     def msg(self, target, text, notice=False, source=None):
         """Handy function to send messages/notices to clients. Source
