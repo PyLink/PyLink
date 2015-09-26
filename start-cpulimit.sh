@@ -10,7 +10,7 @@ cd "$WRAPPER_DIR"
 
 if [[ ! -z "$(which cpulimit)" ]]; then
 	# -z makes cpulimit exit when PyLink dies.
-	cpulimit -l $LIMIT -z ./pylink
+	cpulimit -l $LIMIT -z ./pylink $*
 	echo "PyLink has been started (daemonized) under cpulimit, and will automatically be throttled if it goes over the CPU limit of ${LIMIT}%."
 	echo "To kill the process manually, run ./kill.sh"
 else
