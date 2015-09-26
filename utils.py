@@ -218,7 +218,8 @@ def parseModes(irc, target, args):
                     arg = nickToUid(irc, arg) or arg
                     if arg not in irc.users:  # Target doesn't exist, skip it.
                         log.debug('(%s) Skipping setting mode "%s %s"; the '
-                                  'target doesn\'t seem to exist!')
+                                  'target doesn\'t seem to exist!', self.name,
+                                  mode, arg)
                         continue
                 elif prefix == '+' and mode in supported_modes['*C']:
                     # Only has parameter when setting.
