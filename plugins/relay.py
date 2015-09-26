@@ -660,11 +660,11 @@ def handle_part(irc, numeric, command, args):
                 del relayusers[(irc.name, numeric)][remoteirc.name]
 utils.add_hook(handle_part, 'PART')
 
-def handle_privmsg(irc, numeric, command, args):
-    notice = (command == 'NOTICE')
+def handle_messages(irc, numeric, command, args):
+    notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
     target = args['target']
     text = args['text']
-    if target == irc.pseudoclient.uid:
+    if utils.isInternalClient(irc, target):
         return
     relay = getRelay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
@@ -685,11 +685,11 @@ def handle_privmsg(irc, numeric, command, args):
                   'messages over the relay.' % target, notice=True)
         return
     if utils.isChannel(target):
-        for netname, user in relayusers[(irc.name, numeric)].items():
-            remoteirc = world.networkobjects[netname]
+        for name, remoteirc in world.networkobjects.items():
             real_target = getRemoteChan(irc, remoteirc, target)
-            if not real_target:
+            if irc.name == name or not remoteirc.connected.is_set() or not real_target:
                 continue
+            user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
             real_target = prefix + real_target
             if notice:
                 remoteirc.proto.noticeClient(user, real_target, text)
@@ -715,8 +715,8 @@ def handle_privmsg(irc, numeric, command, args):
             remoteirc.proto.noticeClient(user, real_target, text)
         else:
             remoteirc.proto.messageClient(user, real_target, text)
-utils.add_hook(handle_privmsg, 'PRIVMSG')
-utils.add_hook(handle_privmsg, 'NOTICE')
+for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
+    utils.add_hook(handle_messages, cmd)
 
 def handle_kick(irc, source, command, args):
     channel = args['channel']
