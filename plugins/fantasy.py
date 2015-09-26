@@ -16,7 +16,13 @@ def handle_fantasy(irc, source, command, args):
         return
     channel = args['target']
     text = args['text']
-    if utils.isChannel(channel) and text.startswith(prefix) and not \
+    # Conditions:
+    # 1) Message target is a channel,
+    # 2) Message starts with our fantasy prefix,
+    # 3) The main PyLink client is in the channel.
+    # 4) The sender is NOT a PyLink client (prevents message loops).
+    if utils.isChannel(channel) and text.startswith(prefix) and \
+            irc.pseudoclient.uid in irc.channels[channel].users and not \
             utils.isInternalClient(irc, source):
         # Cut off the length of the prefix from the text.
         text = text[len(prefix):]
