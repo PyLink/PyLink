@@ -15,6 +15,9 @@ bot:
     # Console log verbosity: see https://docs.python.org/3/library/logging.html#logging-levels
     loglevel: DEBUG
 
+    # Fantasy command prefix, if the fantasy plugin is loaded.
+    prefix: "."
+
 login:
     # PyLink administrative login - Change this, or the service will not start!
     user: admin
@@ -129,7 +132,19 @@ servers:
 
 # Plugins to load (omit the .py extension)
 plugins:
+    # Commands plugin: provides core commands such as logging in, shutting down PyLink, and
+    # various command help.
     - commands
+
+    # Networks plugin: allows you to manage (dis)connections to networks while PyLink is running.
     - networks
+
+    # Bots plugin: allows you to manipulate pseudo-clients (bots) on networks.
     # - bots
+
+    # Relay plugin: Janus-style server-side relay plugin.
     # - relay
+
+    # Fantasy plugin: allows you to trigger commands in channels by PyLink's nick or a
+    # configurable prefix character.
+    # - fantasy
