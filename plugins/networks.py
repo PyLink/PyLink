@@ -22,12 +22,12 @@ def disconnect(irc, source, args):
         netname = args[0]
         network = world.networkobjects[netname]
     except IndexError:  # No argument given.
-        irc.msg(source, 'Error: Not enough arguments (needs 1: network name (case sensitive)).')
+        irc.msg(irc.called_by, 'Error: Not enough arguments (needs 1: network name (case sensitive)).')
         return
     except KeyError:  # Unknown network.
-        irc.msg(source, 'Error: No such network "%s" (case sensitive).' % netname)
+        irc.msg(irc.called_by, 'Error: No such network "%s" (case sensitive).' % netname)
         return
-    irc.msg(source, "Done.")
+    irc.msg(irc.called_by, "Done.")
     # Abort the connection! Simple as that.
     network.aborted.set()
 
@@ -41,18 +41,18 @@ def connect(irc, source, args):
         netname = args[0]
         network = world.networkobjects[netname]
     except IndexError:  # No argument given.
-        irc.msg(source, 'Error: Not enough arguments (needs 1: network name (case sensitive)).')
+        irc.msg(irc.called_by, 'Error: Not enough arguments (needs 1: network name (case sensitive)).')
         return
     except KeyError:  # Unknown network.
-        irc.msg(source, 'Error: No such network "%s" (case sensitive).' % netname)
+        irc.msg(irc.called_by, 'Error: No such network "%s" (case sensitive).' % netname)
         return
     if network.connection_thread.is_alive():
-        irc.msg(source, 'Error: Network "%s" seems to be already connected.' % netname)
+        irc.msg(irc.called_by, 'Error: Network "%s" seems to be already connected.' % netname)
     else:  # Reconnect the network!
         network.initVars()
         network.connection_thread = threading.Thread(target=network.connect)
         network.connection_thread.start()
-        irc.msg(source, "Done.")
+        irc.msg(irc.called_by, "Done.")
 
 @utils.add_cmd
 def autoconnect(irc, source, args):
@@ -66,13 +66,13 @@ def autoconnect(irc, source, args):
         seconds = float(args[1])
         network = world.networkobjects[netname]
     except IndexError:  # Arguments not given.
-        irc.msg(source, 'Error: Not enough arguments (needs 2: network name (case sensitive), autoconnect time (in seconds)).')
+        irc.msg(irc.called_by, 'Error: Not enough arguments (needs 2: network name (case sensitive), autoconnect time (in seconds)).')
         return
     except KeyError:  # Unknown network.
-        irc.msg(source, 'Error: No such network "%s" (case sensitive).' % netname)
+        irc.msg(irc.called_by, 'Error: No such network "%s" (case sensitive).' % netname)
         return
     except ValueError:
-        irc.msg(source, 'Error: Invalid argument "%s" for <seconds>.' % seconds)
+        irc.msg(irc.called_by, 'Error: Invalid argument "%s" for <seconds>.' % seconds)
         return
     network.serverdata['autoconnect'] = seconds
-    irc.msg(source, "Done.")
+    irc.msg(irc.called_by, "Done.")

@@ -1033,22 +1033,22 @@ def create(irc, source, args):
     try:
         channel = utils.toLower(irc, args[0])
     except IndexError:
-        irc.msg(source, "Error: Not enough arguments. Needs 1: channel.")
+        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: channel.")
         return
     if not utils.isChannel(channel):
-        irc.msg(source, 'Error: Invalid channel %r.' % channel)
+        irc.msg(irc.called_by, 'Error: Invalid channel %r.' % channel)
         return
     if source not in irc.channels[channel].users:
-        irc.msg(source, 'Error: You must be in %r to complete this operation.' % channel)
+        irc.msg(irc.called_by, 'Error: You must be in %r to complete this operation.' % channel)
         return
     utils.checkAuthenticated(irc, source)
     localentry = getRelay((irc.name, channel))
     if localentry:
-        irc.msg(source, 'Error: Channel %r is already part of a relay.' % channel)
+        irc.msg(irc.called_by, 'Error: Channel %r is already part of a relay.' % channel)
         return
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
     initializeChannel(irc, channel)
-    irc.msg(source, 'Done.')
+    irc.msg(irc.called_by, 'Done.')
 
 @utils.add_cmd
 def destroy(irc, source, args):
@@ -1058,10 +1058,10 @@ def destroy(irc, source, args):
     try:
         channel = utils.toLower(irc, args[0])
     except IndexError:
-        irc.msg(source, "Error: Not enough arguments. Needs 1: channel.")
+        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: channel.")
         return
     if not utils.isChannel(channel):
-        irc.msg(source, 'Error: Invalid channel %r.' % channel)
+        irc.msg(irc.called_by, 'Error: Invalid channel %r.' % channel)
         return
     utils.checkAuthenticated(irc, source)
 
@@ -1071,9 +1071,9 @@ def destroy(irc, source, args):
             removeChannel(world.networkobjects.get(link[0]), link[1])
         removeChannel(irc, channel)
         del db[entry]
-        irc.msg(source, 'Done.')
+        irc.msg(irc.called_by, 'Done.')
     else:
-        irc.msg(source, 'Error: No such relay %r exists.' % channel)
+        irc.msg(irc.called_by, 'Error: No such relay %r exists.' % channel)
         return
 
 @utils.add_cmd
@@ -1086,7 +1086,7 @@ def link(irc, source, args):
         channel = utils.toLower(irc, args[1])
         remotenet = args[0].lower()
     except IndexError:
-        irc.msg(source, "Error: Not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
+        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
         return
     try:
         localchan = utils.toLower(irc, args[2])
@@ -1094,37 +1094,37 @@ def link(irc, source, args):
         localchan = channel
     for c in (channel, localchan):
         if not utils.isChannel(c):
-            irc.msg(source, 'Error: Invalid channel %r.' % c)
+            irc.msg(irc.called_by, 'Error: Invalid channel %r.' % c)
             return
     if source not in irc.channels[localchan].users:
-        irc.msg(source, 'Error: You must be in %r to complete this operation.' % localchan)
+        irc.msg(irc.called_by, 'Error: You must be in %r to complete this operation.' % localchan)
         return
     utils.checkAuthenticated(irc, source)
     if remotenet not in world.networkobjects:
-        irc.msg(source, 'Error: No network named %r exists.' % remotenet)
+        irc.msg(irc.called_by, 'Error: No network named %r exists.' % remotenet)
         return
     localentry = getRelay((irc.name, localchan))
     if localentry:
-        irc.msg(source, 'Error: Channel %r is already part of a relay.' % localchan)
+        irc.msg(irc.called_by, 'Error: Channel %r is already part of a relay.' % localchan)
         return
     try:
         entry = db[(remotenet, channel)]
     except KeyError:
-        irc.msg(source, 'Error: No such relay %r exists.' % channel)
+        irc.msg(irc.called_by, 'Error: No such relay %r exists.' % channel)
         return
     else:
         if irc.name in entry['blocked_nets']:
-            irc.msg(source, 'Error: Access denied (network is banned from linking to this channel).')
+            irc.msg(irc.called_by, 'Error: Access denied (network is banned from linking to this channel).')
             return
         for link in entry['links']:
             if link[0] == irc.name:
-                irc.msg(source, "Error: Remote channel '%s%s' is already"
+                irc.msg(irc.called_by, "Error: Remote channel '%s%s' is already"
                                        " linked here as %r." % (remotenet,
                                                                 channel, link[1]))
                 return
         entry['links'].add((irc.name, localchan))
         initializeChannel(irc, localchan)
-        irc.msg(source, 'Done.')
+        irc.msg(irc.called_by, 'Done.')
 
 @utils.add_cmd
 def delink(irc, source, args):
@@ -1135,7 +1135,7 @@ def delink(irc, source, args):
     try:
         channel = utils.toLower(irc, args[0])
     except IndexError:
-        irc.msg(source, "Error: Not enough arguments. Needs 1-2: channel, remote netname (optional).")
+        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1-2: channel, remote netname (optional).")
         return
     try:
         remotenet = args[1].lower()
@@ -1143,13 +1143,13 @@ def delink(irc, source, args):
         remotenet = None
     utils.checkAuthenticated(irc, source)
     if not utils.isChannel(channel):
-        irc.msg(source, 'Error: Invalid channel %r.' % channel)
+        irc.msg(irc.called_by, 'Error: Invalid channel %r.' % channel)
         return
     entry = getRelay((irc.name, channel))
     if entry:
         if entry[0] == irc.name:  # We own this channel.
             if not remotenet:
-                irc.msg(source, "Error: You must select a network to "
+                irc.msg(irc.called_by, "Error: You must select a network to "
                           "delink, or use the 'destroy' command to remove "
                           "this relay entirely (it was created on the current "
                           "network).")
@@ -1162,9 +1162,9 @@ def delink(irc, source, args):
         else:
             removeChannel(irc, channel)
             db[entry]['links'].remove((irc.name, channel))
-        irc.msg(source, 'Done.')
+        irc.msg(irc.called_by, 'Done.')
     else:
-        irc.msg(source, 'Error: No such relay %r.' % channel)
+        irc.msg(irc.called_by, 'Error: No such relay %r.' % channel)
 
 @utils.add_cmd
 def linked(irc, source, args):
@@ -1206,37 +1206,37 @@ def linkacl(irc, source, args):
         cmd = args[0].lower()
         channel = utils.toLower(irc, args[1])
     except IndexError:
-        irc.msg(source, missingargs)
+        irc.msg(irc.called_by, missingargs)
         return
     if not utils.isChannel(channel):
-        irc.msg(source, 'Error: Invalid channel %r.' % channel)
+        irc.msg(irc.called_by, 'Error: Invalid channel %r.' % channel)
         return
     relay = getRelay((irc.name, channel))
     if not relay:
-        irc.msg(source, 'Error: No such relay %r exists.' % channel)
+        irc.msg(irc.called_by, 'Error: No such relay %r exists.' % channel)
         return
     if cmd == 'list':
         s = 'Blocked networks for \x02%s\x02: \x02%s\x02' % (channel, ', '.join(db[relay]['blocked_nets']) or '(empty)')
-        irc.msg(source, s)
+        irc.msg(irc.called_by, s)
         return
 
     try:
         remotenet = args[2]
     except IndexError:
-        irc.msg(source, missingargs)
+        irc.msg(irc.called_by, missingargs)
         return
     if cmd == 'deny':
         db[relay]['blocked_nets'].add(remotenet)
-        irc.msg(source, 'Done.')
+        irc.msg(irc.called_by, 'Done.')
     elif cmd == 'allow':
         try:
             db[relay]['blocked_nets'].remove(remotenet)
         except KeyError:
-            irc.msg(source, 'Error: Network %r is not on the blacklist for %r.' % (remotenet, channel))
+            irc.msg(irc.called_by, 'Error: Network %r is not on the blacklist for %r.' % (remotenet, channel))
         else:
-            irc.msg(source, 'Done.')
+            irc.msg(irc.called_by, 'Done.')
     else:
-        irc.msg(source, 'Error: Unknown subcommand %r: valid ones are ALLOW, DENY, and LIST.' % cmd)
+        irc.msg(irc.called_by, 'Error: Unknown subcommand %r: valid ones are ALLOW, DENY, and LIST.' % cmd)
 
 @utils.add_cmd
 def showuser(irc, source, args):
@@ -1281,7 +1281,7 @@ def save(irc, source, args):
     Saves the relay database to disk."""
     utils.checkAuthenticated(irc, source)
     exportDB()
-    irc.msg(source, 'Done.')
+    irc.msg(irc.called_by, 'Done.')
 
 @utils.add_cmd
 def claim(irc, source, args):
@@ -1294,25 +1294,25 @@ def claim(irc, source, args):
     try:
         channel = utils.toLower(irc, args[0])
     except IndexError:
-        irc.msg(source, "Error: Not enough arguments. Needs 1-2: channel, list of networks (optional).")
+        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1-2: channel, list of networks (optional).")
         return
 
     # We override getRelay() here to limit the search to the current network.
     relay = (irc.name, channel)
     if relay not in db:
-        irc.msg(source, 'Error: No such relay %r exists.' % channel)
+        irc.msg(irc.called_by, 'Error: No such relay %r exists.' % channel)
         return
     claimed = db[relay]["claim"]
     try:
         nets = args[1].strip()
     except IndexError:  # No networks given.
-        irc.msg(source, 'Channel \x02%s\x02 is claimed by: %s' %
-                        (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
+        irc.msg(irc.called_by, 'Channel \x02%s\x02 is claimed by: %s' %
+                (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
     else:
         if nets == '-' or not nets:
             claimed = set()
         else:
             claimed = set(nets.split(','))
         db[relay]["claim"] = claimed
-        irc.msg(source, 'CLAIM for channel \x02%s\x02 set to: %s' %
-                        (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
+        irc.msg(irc.called_by, 'CLAIM for channel \x02%s\x02 set to: %s' %
+                (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
