@@ -176,10 +176,12 @@ def parseModes(irc, target, args):
     args = args[1:]
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
+        assert target in irc.users, "Unknown user %r." % target
         supported_modes = irc.umodes
         oldmodes = irc.users[target].modes
     else:
         log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
+        assert target in irc.channels, "Unknown channel %r." % target
         supported_modes = irc.cmodes
         oldmodes = irc.channels[target].modes
     res = []
