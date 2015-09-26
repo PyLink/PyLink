@@ -16,7 +16,8 @@ def handle_fantasy(irc, source, command, args):
         return
     channel = args['target']
     text = args['text']
-    if utils.isChannel(channel) and text.startswith(prefix):
+    if utils.isChannel(channel) and text.startswith(prefix) and not \
+            utils.isInternalClient(irc, source):
         # Cut off the length of the prefix from the text.
         text = text[len(prefix):]
         # Set the last called in variable to the channel, so replies (from
