@@ -194,8 +194,11 @@ class Irc():
         source = source or self.pseudoclient.uid
         if notice:
             self.proto.noticeClient(source, target, text)
+            cmd = 'PYLINK_SELF_NOTICE'
         else:
             self.proto.messageClient(source, target, text)
+            cmd = 'PYLINK_SELF_PRIVMSG'
+        self.callHooks([source, cmd, {'target': target, 'text': text}])
 
     def _disconnect(self):
         log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
