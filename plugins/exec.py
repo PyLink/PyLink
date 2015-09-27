@@ -6,6 +6,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 from log import log
 
+# Easier access to world through eval/exec.
+import world
+
 def _exec(irc, source, args):
     """<code>
 
