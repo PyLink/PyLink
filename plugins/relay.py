@@ -989,11 +989,6 @@ def handle_invite(irc, source, command, args):
                                          remotechan)
 utils.add_hook(handle_invite, 'INVITE')
 
-def handle_endburst(irc, numeric, command, args):
-    if numeric == irc.uplink:
-        initializeAll(irc)
-utils.add_hook(handle_endburst, "ENDBURST")
-
 def handle_disconnect(irc, numeric, command, args):
     for k, v in relayusers.copy().items():
         if irc.name in v:
