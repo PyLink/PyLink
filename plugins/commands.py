@@ -51,10 +51,10 @@ def listcommands(irc, source, args):
     """takes no arguments.
 
     Returns a list of available commands PyLink has to offer."""
-    cmds = list(world.bot_commands.keys())
+    cmds = list(world.commands.keys())
     cmds.sort()
     for idx, cmd in enumerate(cmds):
-        nfuncs = len(world.bot_commands[cmd])
+        nfuncs = len(world.commands[cmd])
         if nfuncs > 1:
             cmds[idx] = '%s(x%s)' % (cmd, nfuncs)
     irc.msg(irc.called_by, 'Available commands include: %s' % ', '.join(cmds))
@@ -71,11 +71,11 @@ def help(irc, source, args):
     except IndexError:  # No argument given, just return 'list' output
         listcommands(irc, source, args)
         return
-    if command not in world.bot_commands:
+    if command not in world.commands:
         irc.msg(source, 'Error: Unknown command %r.' % command)
         return
     else:
-        funcs = world.bot_commands[command]
+        funcs = world.commands[command]
         if len(funcs) > 1:
             irc.msg(irc.called_by, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
                       % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))

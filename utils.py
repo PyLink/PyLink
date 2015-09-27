@@ -106,12 +106,12 @@ def add_cmd(func, name=None):
     if name is None:
         name = func.__name__
     name = name.lower()
-    world.bot_commands[name].append(func)
+    world.commands[name].append(func)
 
 def add_hook(func, command):
     """Add a hook <func> for command <command>."""
     command = command.upper()
-    world.command_hooks[command].append(func)
+    world.hooks[command].append(func)
 
 def toLower(irc, text):
     """Returns a lowercase representation of text based on the IRC object's

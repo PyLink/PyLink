@@ -175,11 +175,11 @@ class Irc():
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
-        if cmd not in world.bot_commands:
+        if cmd not in world.commands:
             self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
             return
         log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
-        for func in world.bot_commands[cmd]:
+        for func in world.commands[cmd]:
             try:
                 func(self, source, cmd_args)
             except utils.NotAuthenticatedError:
@@ -267,7 +267,7 @@ class Irc():
         log.debug('(%s) Parsed args %r received from %s handler (calling hook %s)',
                   self.name, parsed_args, command, hook_cmd)
         # Iterate over hooked functions, catching errors accordingly
-        for hook_func in world.command_hooks[hook_cmd]:
+        for hook_func in world.hooks[hook_cmd]:
             try:
                 log.debug('(%s) Calling hook function %s from plugin "%s"', self.name,
                           hook_func, hook_func.__module__)
