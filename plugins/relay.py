@@ -26,6 +26,7 @@ spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
 savecache = ExpiringDict(max_len=5, max_age_seconds=10)
 killcache = ExpiringDict(max_len=5, max_age_seconds=10)
+relay_started = True
 
 ### INTERNAL FUNCTIONS
 
@@ -38,8 +39,10 @@ def initializeAll(irc):
             network, channel = link
             initializeChannel(irc, channel)
 
-def main():
+def main(irc=None):
     """Main function, called during plugin loading at start."""
+    global relay_started
+    relay_started = True
     loadDB()
     world.schedulers['relaydb'] = scheduler = sched.scheduler()
     scheduler.enter(30, 1, exportDB, argument=(True,))
@@ -48,6 +51,23 @@ def main():
     thread = threading.Thread(target=scheduler.run)
     thread.daemon = True
     thread.start()
+    if irc is not None:
+        for ircobj in world.networkobjects.values():
+            initializeAll(ircobj)
+
+def die(sourceirc):
+    """Deinitialize PyLink Relay by quitting all relay clients."""
+    global relay_started
+    relay_started = False
+    for irc in world.networkobjects.values():
+        for user in irc.users.copy():
+            if isRelayClient(irc, user):
+                irc.proto.quitClient(user, "Relay plugin unloaded.")
+        for server, sobj in irc.servers.copy().items():
+            if hasattr(sobj, 'remote'):
+                irc.proto.squitServer(irc.sid, server, text="Relay plugin unloaded.")
+    relayservers.clear()
+    relayusers.clear()
 
 def normalizeNick(irc, netname, nick, separator=None, uid=''):
     """Creates a normalized nickname for the given nick suitable for
@@ -115,7 +135,7 @@ def exportDB(reschedule=False):
     """Exports the relay database, optionally creating a loop to do this
     automatically."""
     scheduler = world.schedulers.get('relaydb')
-    if reschedule and scheduler:
+    if reschedule and scheduler and relay_started:
         scheduler.enter(30, 1, exportDB, argument=(True,))
     log.debug("Relay: exporting links database to %s", dbname)
     with open(dbname, 'wb') as f:
@@ -157,6 +177,8 @@ def getRemoteSid(irc, remoteirc):
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
                 irc.aborted.set()
+            else:
+                irc.servers[sid].remote = remoteirc.name
             relayservers[irc.name][remoteirc.name] = sid
         return sid
 
