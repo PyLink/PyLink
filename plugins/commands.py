@@ -216,6 +216,9 @@ def load(irc, source, args):
     except IndexError:
         irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: plugin name.")
         return
+    if name in world.plugins:
+        irc.msg(irc.called_by, "Error: %r is already loaded." % name)
+        return
     try:
         world.plugins[name] = pl = __import__(name)
     except ImportError as e:
