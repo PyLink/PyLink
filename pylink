@@ -4,9 +4,12 @@ import imp
 import os
 import sys
 
-# This must be done before conf imports, so we get the real conf instead of testing one.
+# cd into the PyLink root directory first...
 os.chdir(os.path.dirname(__file__))
+
 import world
+
+# This must be set before conf imports, so we get the real conf instead of testing one.
 world.testing = False
 
 import conf
@@ -19,7 +22,7 @@ if __name__ == '__main__':
     if conf.conf['login']['password'] == 'changeme':
         log.critical("You have not set the login details correctly! Exiting...")
         sys.exit(2)
-    protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
+    protocols_folder = os.path.join(os.getcwd(), 'protocols')
 
     # Write a PID file.
     with open('%s.pid' % conf.confname, 'w') as f:
@@ -28,14 +31,11 @@ if __name__ == '__main__':
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
     to_load = conf.conf['plugins']
-    plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
-    # Here, we override the module lookup and import the plugins
-    # dynamically depending on which were configured.
+    plugins_folder = os.path.join(os.getcwd(), 'plugins')
+    sys.path.extend([plugins_folder, protocols_folder])
     for plugin in to_load:
         try:
-            moduleinfo = imp.find_module(plugin, plugins_folder)
-            pl = imp.load_source(plugin, moduleinfo[1])
-            world.plugins[plugin] = pl
+            world.plugins[plugin] = pl = __import__(plugin)
         except ImportError as e:
             if str(e) == ('No module named %r' % plugin):
                 log.error('Failed to load plugin %r: The plugin could not be found.', plugin)
@@ -49,8 +49,7 @@ if __name__ == '__main__':
     for network in conf.conf['servers']:
         protoname = conf.conf['servers'][network]['protocol']
         try:
-            moduleinfo = imp.find_module(protoname, protocols_folder)
-            proto = imp.load_source(protoname, moduleinfo[1])
+            proto = __import__(protoname)
         except ImportError as e:
             if str(e) == ('No module named %r' % protoname):
                 log.critical('Failed to load protocol module %r: The file could not be found.', protoname)
@@ -58,6 +57,7 @@ if __name__ == '__main__':
                 log.critical('Failed to load protocol module: ImportError: %s', protoname, str(e))
             sys.exit(2)
         else:
-            world.networkobjects[network] = classes.Irc(network, proto)
+            world.networkobjects[network] = irc = classes.Irc(network, proto)
+            irc.plugins_folder = plugins_folder
     world.started.set()
     log.info("loaded plugins: %s", world.plugins)
