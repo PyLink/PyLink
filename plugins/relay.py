@@ -156,7 +156,7 @@ def getRemoteSid(irc, remoteirc):
             except ValueError:  # Network not initialized yet.
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
-                return
+                irc.aborted.set()
             relayservers[irc.name][remoteirc.name] = sid
         return sid
 
