@@ -27,7 +27,6 @@ if __name__ == '__main__':
 
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
-    world.plugins.append(coreplugin)
     to_load = conf.conf['plugins']
     plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
     # Here, we override the module lookup and import the plugins
@@ -36,7 +35,7 @@ if __name__ == '__main__':
         try:
             moduleinfo = imp.find_module(plugin, plugins_folder)
             pl = imp.load_source(plugin, moduleinfo[1])
-            world.plugins.append(pl)
+            world.plugins[plugin] = pl
         except ImportError as e:
             if str(e) == ('No module named %r' % plugin):
                 log.error('Failed to load plugin %r: The plugin could not be found.', plugin)

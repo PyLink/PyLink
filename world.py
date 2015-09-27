@@ -14,7 +14,7 @@ bot_commands = defaultdict(list)
 command_hooks = defaultdict(list)
 networkobjects = {}
 schedulers = {}
-plugins = []
+plugins = {}
 whois_handlers = []
 started = threading.Event()
 
