@@ -16,9 +16,6 @@ import coreplugin
 
 if __name__ == '__main__':
     log.info('PyLink %s starting...', world.version)
-    if conf.conf['login']['password'] == 'changeme':
-        log.critical("You have not set the login details correctly! Exiting...")
-        sys.exit(2)
     protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
 
     # Write a PID file.
