@@ -39,6 +39,10 @@ relay:
     # will see yours.
     show_ips: false
 
+    # Whether subservers should be spawned for each relay network (requires reload to change).
+    # Defaults to true.
+    spawn_servers: true
+
 servers:
     yournet:
         # Server IP, port, and passwords

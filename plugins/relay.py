@@ -164,6 +164,12 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
 def getRemoteSid(irc, remoteirc):
     """Gets the remote server SID representing remoteirc on irc, spawning
     it if it doesn't exist."""
+    try:
+        spawnservers = irc.conf['relay']['spawn_servers']
+    except KeyError:
+        spawnservers = True
+    if not spawnservers:
+        return irc.sid
     with spawnlocks_servers[irc.name]:
         try:
             sid = relayservers[irc.name][remoteirc.name]
@@ -245,16 +251,11 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             else:
                 realhost = None
                 ip = '0.0.0.0'
-            try:
-                u = remoteirc.proto.spawnClient(nick, ident=ident,
+            u = remoteirc.proto.spawnClient(nick, ident=ident,
                                                 host=host, realname=realname,
                                                 modes=modes, ts=userobj.ts,
                                                 opertype=opertype, server=rsid,
                                                 ip=ip, realhost=realhost).uid
-            except ValueError:
-                log.exception('(%s) Failed to spawn relay user %s on %s.', irc.name,
-                              nick, remoteirc.name)
-                return
             remoteirc.users[u].remote = (irc.name, user)
             remoteirc.users[u].opertype = opertype
             away = userobj.away
@@ -999,7 +1000,11 @@ def handle_disconnect(irc, numeric, command, args):
         if irc.name in v:
             del relayusers[k][irc.name]
         if k[0] == irc.name:
-            del relayusers[k]
+            try:
+                handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Home network lost connection.'})
+                del relayusers[k]
+            except KeyError:
+                pass
     for name, ircobj in world.networkobjects.items():
         if name != irc.name:
             rsid = getRemoteSid(ircobj, irc)
