@@ -313,3 +313,37 @@ def reload(irc, source, args):
         return
     if unload(irc, source, args):
         load(irc, source, args)
+
+@utils.add_cmd
+def rehash(irc, source, args):
+    """takes no arguments.
+
+    Reloads the configuration file for PyLink, (dis)connecting added/removed networks.
+    Plugins must be manually reloaded."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    old_conf = conf.conf.copy()
+    fname = conf.fname
+    try:
+        new_conf = conf.validateConf(conf.loadConf(fname))
+    except Exception as e:  # Something went wrong, abort.
+        log.exception("Error REHASH'ing config: ")
+        irc.msg(irc.called_by, "Error loading configuration file: %s: %s", type(e).__name__, e)
+        return
+    conf.conf = new_conf
+    for network, ircobj in world.networkobjects.copy().items():
+        # Server was removed from the config file, disconnect them.
+        log.debug('(%s) rehash: checking if %r is in new conf still.', irc.name, network)
+        if network not in new_conf['servers']:
+            # Disable autoconnect first.
+            log.debug('(%s) rehash: removing connection to %r (removed from config).', irc.name, network)
+            ircobj.serverdata['autoconnect'] = -1
+            ircobj.aborted.set()
+            del world.networkobjects[network]
+        else:
+            ircobj.conf = new_conf
+    for network, sdata in new_conf['servers'].items():
+        # New server was added. Connect them if not already connected.
+        if network not in world.networkobjects:
+            proto = utils.getProtoModule(sdata['protocol'])
+            world.networkobjects[network] = classes.Irc(network, proto, new_conf)
+    irc.msg(irc.called_by, "Done.")
