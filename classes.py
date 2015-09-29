@@ -311,6 +311,9 @@ class Irc():
         # contents of Irc().pseudoclient change.
         self.callHooks([self.sid, 'PYLINK_SPAWNMAIN', {'olduser': olduserobj}])
 
+    def __repr__(self):
+        return "<classes.Irc object for %r>" % self.name
+
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
