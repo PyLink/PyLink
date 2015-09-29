@@ -1,6 +1,7 @@
 import string
 import re
 import inspect
+import imp
 
 from log import log
 import world
@@ -497,3 +498,13 @@ def getHostmask(irc, user):
     except AttributeError:
         host = '<unknown host>'
     return '%s!%s@%s' % (nick, ident, host)
+
+def loadModuleFromFolder(name, folder):
+    """Attempts an import of name from a specific folder, returning the resulting module."""
+    moduleinfo = imp.find_module(name, folder)
+    m = imp.load_source(name, moduleinfo[1])
+    return m
+
+def getProtoModule(protoname):
+    """Imports and returns the protocol module requested."""
+    return loadModuleFromFolder(protoname, world.protocols_folder)

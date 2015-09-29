@@ -12,11 +12,11 @@ world.testing = False
 import conf
 from log import log
 import classes
+import utils
 import coreplugin
 
 if __name__ == '__main__':
     log.info('PyLink %s starting...', world.version)
-    protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
 
     # Write a PID file.
     with open('%s.pid' % conf.confname, 'w') as f:
@@ -25,14 +25,11 @@ if __name__ == '__main__':
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
     to_load = conf.conf['plugins']
-    plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
     # Here, we override the module lookup and import the plugins
     # dynamically depending on which were configured.
     for plugin in to_load:
         try:
-            moduleinfo = imp.find_module(plugin, plugins_folder)
-            pl = imp.load_source(plugin, moduleinfo[1])
-            world.plugins[plugin] = pl
+            world.plugins[plugin] = pl = utils.loadModuleFromFolder(plugin, world.plugins_folder)
         except ImportError as e:
             if str(e) == ('No module named %r' % plugin):
                 log.error('Failed to load plugin %r: The plugin could not be found.', plugin)
@@ -44,17 +41,7 @@ if __name__ == '__main__':
                 pl.main()
 
     for network in conf.conf['servers']:
-        protoname = conf.conf['servers'][network]['protocol']
-        try:
-            moduleinfo = imp.find_module(protoname, protocols_folder)
-            proto = imp.load_source(protoname, moduleinfo[1])
-        except ImportError as e:
-            if str(e) == ('No module named %r' % protoname):
-                log.critical('Failed to load protocol module %r: The file could not be found.', protoname)
-            else:
-                log.critical('Failed to load protocol module: ImportError: %s', protoname, str(e))
-            sys.exit(2)
-        else:
-            world.networkobjects[network] = classes.Irc(network, proto)
+        proto = utils.getProtoModule(conf.conf['servers'][network]['protocol'])
+        world.networkobjects[network] = classes.Irc(network, proto, conf.conf)
     world.started.set()
     log.info("loaded plugins: %s", world.plugins)

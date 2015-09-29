@@ -3,6 +3,7 @@
 from collections import defaultdict
 import threading
 import subprocess
+import os
 
 # Global variable to indicate whether we're being ran directly, or imported
 # for a testcase.
@@ -17,6 +18,9 @@ schedulers = {}
 plugins = {}
 whois_handlers = []
 started = threading.Event()
+
+plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
+protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
 
 version = "<unknown>"
 source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!

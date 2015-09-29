@@ -7,9 +7,10 @@ import gc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
-from conf import conf
+import conf
 from log import log
 import world
+import classes
 
 @utils.add_cmd
 def status(irc, source, args):
@@ -37,8 +38,8 @@ def identify(irc, source, args):
         irc.msg(source, 'Error: Not enough arguments.')
         return
     # Usernames are case-insensitive, passwords are NOT.
-    if username.lower() == conf['login']['user'].lower() and password == conf['login']['password']:
-        realuser = conf['login']['user']
+    if username.lower() == irc.conf['login']['user'].lower() and password == irc.conf['login']['password']:
+        realuser = irc.conf['login']['user']
         irc.users[source].identified = realuser
         irc.msg(source, 'Successfully logged in as %s.' % realuser)
         log.info("(%s) Successful login to %r by %s.",
@@ -220,7 +221,7 @@ def load(irc, source, args):
         irc.msg(irc.called_by, "Error: %r is already loaded." % name)
         return
     try:
-        world.plugins[name] = pl = __import__(name)
+        world.plugins[name] = pl = utils.loadModuleFromFolder(name, world.plugins_folder)
     except ImportError as e:
         if str(e) == ('No module named %r' % name):
             log.exception('Failed to load plugin %r: The plugin could not be found.', name)

@@ -60,6 +60,7 @@ def loadConf(fname):
 if world.testing:
     conf = testconf
     confname = 'testconf'
+    fname = None
 else:
     try:
         # Get the config name from the command line, falling back to config.yml

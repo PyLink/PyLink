@@ -9,7 +9,6 @@ import hashlib
 from copy import deepcopy
 
 from log import log
-from conf import conf
 import world
 import utils
 
@@ -63,7 +62,7 @@ class Irc():
         self.uplink = None
         self.start_ts = int(time.time())
 
-    def __init__(self, netname, proto):
+    def __init__(self, netname, proto, conf):
         # Initialize some variables
         self.name = netname.lower()
         self.conf = conf
