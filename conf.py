@@ -39,9 +39,9 @@ def validateConf(conf):
         assert conf.get(section), "Missing %r section in config." % section
     for netname, serverblock in conf['servers'].items():
         for section in ('ip', 'port', 'recvpass', 'sendpass', 'hostname',
-                        'sid', 'sidrange', 'channels', 'protocol', 'maxnicklen'):
+                        'sid', 'sidrange', 'protocol', 'maxnicklen'):
             assert serverblock.get(section), "Missing %r in server block for %r." % (section, netname)
-        assert type(serverblock['channels']) == list, "'channels' option in " \
+        assert type(serverblock.get('channels')) == list, "'channels' option in " \
             "server block for %s must be a list, not %s." % (netname, type(serverblock['channels']).__name__)
     assert type(conf['login'].get('password')) == type(conf['login'].get('user')) == str and \
         conf['login']['password'] != "changeme", "You have not set the login details correctly!"
