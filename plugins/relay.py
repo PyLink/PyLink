@@ -687,7 +687,7 @@ def handle_messages(irc, numeric, command, args):
     notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
     target = args['target']
     text = args['text']
-    if utils.isInternalClient(irc, target):
+    if utils.isInternalClient(irc, numeric):
         return
     relay = getRelay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
