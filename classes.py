@@ -99,7 +99,8 @@ class Irc():
             port = self.serverdata["port"]
             checks_ok = True
             try:
-                self.socket = socket.socket()
+                stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
+                self.socket = socket.socket(stype)
                 self.socket.setblocking(0)
                 # Initial connection timeout is a lot smaller than the timeout after
                 # we've connected; this is intentional.

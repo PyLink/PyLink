@@ -101,7 +101,11 @@ servers:
         # ssl_fingerprint: "e0fee1adf795c84eec4735f039503eb18d9c35cc"
 
     ts6net:
-        ip: 127.0.0.1
+        ip: ::1
+
+        # Determines whether IPv6 should be used for this connection.
+        ipv6: yes
+
         port: 7000
         recvpass: "abcd"
         sendpass: "abcd"
