@@ -183,7 +183,7 @@ class TS6Protocol(TS6BaseProtocol):
 
         assert target in self.irc.users, "Unknown target %r for killServer!" % target
         self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
-        removeClient(self.irc, target)
+        self.removeClient(target)
 
     def killClient(self, numeric, target, reason):
         """Sends a kill from a PyLink client."""
@@ -191,7 +191,7 @@ class TS6Protocol(TS6BaseProtocol):
             raise LookupError('No such PyLink PseudoClient exists.')
         assert target in self.irc.users, "Unknown target %r for killClient!" % target
         self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
-        removeClient(self.irc, target)
+        self.removeClient(target)
 
     def topicServer(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
