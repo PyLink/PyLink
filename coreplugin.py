@@ -20,7 +20,7 @@ utils.add_hook(handle_kick, 'KICK')
 
 def handle_commands(irc, source, command, args):
     """Handle commands sent to the PyLink client (PRIVMSG)."""
-    if args['target'] == irc.pseudoclient.uid:
+    if args['target'] == irc.pseudoclient.uid and not utils.isInternalClient(irc, source):
         irc.called_by = source
         irc.callCommand(source, args['text'])
 
