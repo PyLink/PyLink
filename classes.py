@@ -21,6 +21,11 @@ class ProtocolError(Exception):
 
 class Irc():
     def initVars(self):
+        self.sid = self.serverdata["sid"]
+        self.botdata = self.conf['bot']
+        self.pingfreq = self.serverdata.get('pingfreq') or 30
+        self.pingtimeout = self.pingfreq * 2
+
         self.connected.clear()
         self.aborted.clear()
         self.pseudoclient = None
@@ -88,10 +93,10 @@ class Irc():
         self.pingTimer = None
 
     def connect(self):
-        ip = self.serverdata["ip"]
-        port = self.serverdata["port"]
         while True:
             self.initVars()
+            ip = self.serverdata["ip"]
+            port = self.serverdata["port"]
             checks_ok = True
             try:
                 self.socket = socket.socket()

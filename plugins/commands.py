@@ -341,6 +341,7 @@ def rehash(irc, source, args):
             del world.networkobjects[network]
         else:
             ircobj.conf = new_conf
+            ircobj.serverdata = new_conf['servers'][network]
     for network, sdata in new_conf['servers'].items():
         # New server was added. Connect them if not already connected.
         if network not in world.networkobjects:
