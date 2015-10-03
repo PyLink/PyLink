@@ -18,6 +18,6 @@ PyLink is an a modular, plugin-based IRC PseudoService framework. It uses swappa
 
 #### Future topics (not yet available)
 
+- [Using PyLink's utils module](using-utils.md)
 - [PyLink hooks reference](hooks-reference.md)
 - [Writing tests for PyLink modules](writing-tests.md)
-- [Using PyLink's utils module](using-utils.md)
