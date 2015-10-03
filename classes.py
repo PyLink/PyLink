@@ -170,10 +170,11 @@ class Irc():
             self._disconnect()
             autoconnect = self.serverdata.get('autoconnect')
             log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
-            if autoconnect is not None and autoconnect >= 0:
+            if autoconnect is not None and autoconnect >= 1:
                 log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
                 time.sleep(autoconnect)
             else:
+                log.info('(%s) Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
                 return
 
     def callCommand(self, source, text):

@@ -74,7 +74,7 @@ servers:
         # (omitting the .py extension).
         protocol: "inspircd"
 
-        # Sets autoconnect delay - comment this out or set the value negative to disable autoconnect entirely.
+        # Sets autoconnect delay - comment this out or set the value below 1 to disable autoconnect entirely.
         autoconnect: 5
 
         # Sets ping frequency (i.e. how long we should wait between sending pings to our uplink).
