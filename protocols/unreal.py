@@ -264,7 +264,7 @@ class UnrealProtocol(TS6BaseProtocol):
     handle_notice = handle_privmsg
 
     def handle_join(self, numeric, command, args):
-        # <- GL JOIN #pylink,#test
+        # <- :GL JOIN #pylink,#test
         for channel in args[0].split(','):
             c = self.irc.channels[channel]
             if args[0] == '0':
@@ -276,9 +276,12 @@ class UnrealProtocol(TS6BaseProtocol):
                     self.irc.channels[ch].users.discard(numeric)
                     self.irc.users[numeric].channels.discard(ch)
                 return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
+
+            self.irc.users[numeric].channels.add(channel)
+            self.irc.channels[channel].users.add(numeric)
             # Call hooks manually, because one JOIN command in UnrealIRCd can
             # have multiple channels...
             self.irc.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
-                                              c.modes, 'ts': c.ts}])
+                                                   c.modes, 'ts': c.ts}])
 
 Class = UnrealProtocol
