@@ -20,23 +20,10 @@ utils.add_hook(handle_kick, 'KICK')
 
 def handle_commands(irc, source, command, args):
     """Handle commands sent to the PyLink client (PRIVMSG)."""
-    if args['target'] == irc.pseudoclient.uid:
-        text = args['text'].strip()
-        cmd_args = text.split(' ')
-        cmd = cmd_args[0].lower()
-        cmd_args = cmd_args[1:]
-        if cmd not in world.bot_commands:
-            irc.msg(source, 'Error: Unknown command %r.' % cmd)
-            return
-        log.info('(%s) Calling command %r for %s', irc.name, cmd, utils.getHostmask(irc, source))
-        for func in world.bot_commands[cmd]:
-            try:
-                func(irc, source, cmd_args)
-            except utils.NotAuthenticatedError:
-                irc.msg(source, 'Error: You are not authorized to perform this operation.')
-            except Exception as e:
-                log.exception('Unhandled exception caught in command %r', cmd)
-                irc.msg(source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+    if args['target'] == irc.pseudoclient.uid and not utils.isInternalClient(irc, source):
+        irc.called_by = source
+        irc.callCommand(source, args['text'])
+
 utils.add_hook(handle_commands, 'PRIVMSG')
 
 def handle_whois(irc, source, command, args):

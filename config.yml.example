@@ -15,6 +15,9 @@ bot:
     # Console log verbosity: see https://docs.python.org/3/library/logging.html#logging-levels
     loglevel: DEBUG
 
+    # Fantasy command prefix, if the fantasy plugin is loaded.
+    prefix: "."
+
 login:
     # PyLink administrative login - Change this, or the service will not start!
     user: admin
@@ -35,6 +38,10 @@ relay:
     # be turned on. You will see other networks' user IP addresses, and they
     # will see yours.
     show_ips: false
+
+    # Whether subservers should be spawned for each relay network (requires reload to change).
+    # Defaults to true.
+    spawn_servers: true
 
 servers:
     yournet:
@@ -67,7 +74,7 @@ servers:
         # (omitting the .py extension).
         protocol: "inspircd"
 
-        # Sets autoconnect delay - comment this out or set the value negative to disable autoconnect entirely.
+        # Sets autoconnect delay - comment this out or set the value below 1 to disable autoconnect entirely.
         autoconnect: 5
 
         # Sets ping frequency (i.e. how long we should wait between sending pings to our uplink).
@@ -94,7 +101,11 @@ servers:
         # ssl_fingerprint: "e0fee1adf795c84eec4735f039503eb18d9c35cc"
 
     ts6net:
-        ip: 127.0.0.1
+        ip: ::1
+
+        # Determines whether IPv6 should be used for this connection.
+        ipv6: yes
+
         port: 7000
         recvpass: "abcd"
         sendpass: "abcd"
@@ -129,7 +140,19 @@ servers:
 
 # Plugins to load (omit the .py extension)
 plugins:
+    # Commands plugin: provides core commands such as logging in, shutting down PyLink, and
+    # various command help.
     - commands
+
+    # Networks plugin: allows you to manage (dis)connections to networks while PyLink is running.
     - networks
+
+    # Bots plugin: allows you to manipulate pseudo-clients (bots) on networks.
     # - bots
+
+    # Relay plugin: Janus-style server-side relay plugin.
     # - relay
+
+    # Fantasy plugin: allows you to trigger commands in channels by PyLink's nick or a
+    # configurable prefix character.
+    # - fantasy

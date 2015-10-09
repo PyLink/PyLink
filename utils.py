@@ -1,6 +1,7 @@
 import string
 import re
 import inspect
+import imp
 
 from log import log
 import world
@@ -106,12 +107,12 @@ def add_cmd(func, name=None):
     if name is None:
         name = func.__name__
     name = name.lower()
-    world.bot_commands[name].append(func)
+    world.commands[name].append(func)
 
 def add_hook(func, command):
     """Add a hook <func> for command <command>."""
     command = command.upper()
-    world.command_hooks[command].append(func)
+    world.hooks[command].append(func)
 
 def toLower(irc, text):
     """Returns a lowercase representation of text based on the IRC object's
@@ -158,7 +159,8 @@ def isServerName(s):
 hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
 def isHostmask(text):
     """Returns whether the given text is a valid hostmask."""
-    return bool(hostmaskRe.match(text))
+    # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
+    return hostmaskRe.match(text) and '#' not in text
 
 def parseModes(irc, target, args):
     """Parses a modestring list into a list of (mode, argument) tuples.
@@ -176,10 +178,12 @@ def parseModes(irc, target, args):
     args = args[1:]
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
+        assert target in irc.users, "Unknown user %r." % target
         supported_modes = irc.umodes
         oldmodes = irc.users[target].modes
     else:
         log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
+        assert target in irc.channels, "Unknown channel %r." % target
         supported_modes = irc.cmodes
         oldmodes = irc.channels[target].modes
     res = []
@@ -216,7 +220,8 @@ def parseModes(irc, target, args):
                     arg = nickToUid(irc, arg) or arg
                     if arg not in irc.users:  # Target doesn't exist, skip it.
                         log.debug('(%s) Skipping setting mode "%s %s"; the '
-                                  'target doesn\'t seem to exist!')
+                                  'target doesn\'t seem to exist!', self.name,
+                                  mode, arg)
                         continue
                 elif prefix == '+' and mode in supported_modes['*C']:
                     # Only has parameter when setting.
@@ -494,3 +499,13 @@ def getHostmask(irc, user):
     except AttributeError:
         host = '<unknown host>'
     return '%s!%s@%s' % (nick, ident, host)
+
+def loadModuleFromFolder(name, folder):
+    """Attempts an import of name from a specific folder, returning the resulting module."""
+    moduleinfo = imp.find_module(name, folder)
+    m = imp.load_source(name, moduleinfo[1])
+    return m
+
+def getProtoModule(protoname):
+    """Imports and returns the protocol module requested."""
+    return loadModuleFromFolder(protoname, world.protocols_folder)

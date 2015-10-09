@@ -26,16 +26,16 @@ class TestUtils(unittest.TestCase):
         utils.add_cmd(dummyf)
         utils.add_cmd(dummyf, 'TEST')
         # All command names should be automatically lowercased.
-        self.assertIn('dummyf', world.bot_commands)
-        self.assertIn('test', world.bot_commands)
-        self.assertNotIn('TEST', world.bot_commands)
+        self.assertIn('dummyf', world.commands)
+        self.assertIn('test', world.commands)
+        self.assertNotIn('TEST', world.commands)
 
     def test_add_hook(self):
         utils.add_hook(dummyf, 'join')
-        self.assertIn('JOIN', world.command_hooks)
+        self.assertIn('JOIN', world.hooks)
         # Command names stored in uppercase.
-        self.assertNotIn('join', world.command_hooks)
-        self.assertIn(dummyf, world.command_hooks['JOIN'])
+        self.assertNotIn('join', world.hooks)
+        self.assertIn(dummyf, world.hooks['JOIN'])
 
     def testIsNick(self):
         self.assertFalse(utils.isNick('abcdefgh', nicklen=3))

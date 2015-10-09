@@ -9,8 +9,8 @@ import hashlib
 from copy import deepcopy
 
 from log import log
-from conf import conf
 import world
+import utils
 
 ### Exceptions
 
@@ -21,10 +21,19 @@ class ProtocolError(Exception):
 
 class Irc():
     def initVars(self):
+        self.sid = self.serverdata["sid"]
+        self.botdata = self.conf['bot']
+        self.pingfreq = self.serverdata.get('pingfreq') or 30
+        self.pingtimeout = self.pingfreq * 2
+
         self.connected.clear()
         self.aborted.clear()
         self.pseudoclient = None
         self.lastping = time.time()
+
+        # Internal variable to set the place the last command was called (in PM
+        # or in a channel), used by fantasy command support.
+        self.called_by = None
 
         # Server, channel, and user indexes to be populated by our protocol module
         self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'],
@@ -58,7 +67,7 @@ class Irc():
         self.uplink = None
         self.start_ts = int(time.time())
 
-    def __init__(self, netname, proto):
+    def __init__(self, netname, proto, conf):
         # Initialize some variables
         self.name = netname.lower()
         self.conf = conf
@@ -84,13 +93,14 @@ class Irc():
         self.pingTimer = None
 
     def connect(self):
-        ip = self.serverdata["ip"]
-        port = self.serverdata["port"]
         while True:
             self.initVars()
+            ip = self.serverdata["ip"]
+            port = self.serverdata["port"]
             checks_ok = True
             try:
-                self.socket = socket.socket()
+                stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
+                self.socket = socket.socket(stype)
                 self.socket.setblocking(0)
                 # Initial connection timeout is a lot smaller than the timeout after
                 # we've connected; this is intentional.
@@ -160,11 +170,29 @@ class Irc():
             self._disconnect()
             autoconnect = self.serverdata.get('autoconnect')
             log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
-            if autoconnect is not None and autoconnect >= 0:
+            if autoconnect is not None and autoconnect >= 1:
                 log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
                 time.sleep(autoconnect)
             else:
+                log.info('(%s) Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
                 return
+
+    def callCommand(self, source, text):
+        cmd_args = text.strip().split(' ')
+        cmd = cmd_args[0].lower()
+        cmd_args = cmd_args[1:]
+        if cmd not in world.commands:
+            self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
+            return
+        log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
+        for func in world.commands[cmd]:
+            try:
+                func(self, source, cmd_args)
+            except utils.NotAuthenticatedError:
+                self.msg(self.called_by or source, 'Error: You are not authorized to perform this operation.')
+            except Exception as e:
+                log.exception('Unhandled exception caught in command %r', cmd)
+                self.msg(self.called_by or source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
     def msg(self, target, text, notice=False, source=None):
         """Handy function to send messages/notices to clients. Source
@@ -172,8 +200,11 @@ class Irc():
         source = source or self.pseudoclient.uid
         if notice:
             self.proto.noticeClient(source, target, text)
+            cmd = 'PYLINK_SELF_NOTICE'
         else:
             self.proto.messageClient(source, target, text)
+            cmd = 'PYLINK_SELF_PRIVMSG'
+        self.callHooks([source, cmd, {'target': target, 'text': text}])
 
     def _disconnect(self):
         log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
@@ -242,9 +273,10 @@ class Irc():
         log.debug('(%s) Parsed args %r received from %s handler (calling hook %s)',
                   self.name, parsed_args, command, hook_cmd)
         # Iterate over hooked functions, catching errors accordingly
-        for hook_func in world.command_hooks[hook_cmd]:
+        for hook_func in world.hooks[hook_cmd]:
             try:
-                log.debug('(%s) Calling function %s', self.name, hook_func)
+                log.debug('(%s) Calling hook function %s from plugin "%s"', self.name,
+                          hook_func, hook_func.__module__)
                 hook_func(self, numeric, command, parsed_args)
             except Exception:
                 # We don't want plugins to crash our servers...
@@ -285,6 +317,9 @@ class Irc():
         # PyLink internal hook called when spawnMain is called and the
         # contents of Irc().pseudoclient change.
         self.callHooks([self.sid, 'PYLINK_SPAWNMAIN', {'olduser': olduserobj}])
+
+    def __repr__(self):
+        return "<classes.Irc object for %r>" % self.name
 
 class IrcUser():
     def __init__(self, nick, ts, uid, ident='null', host='null',
@@ -407,6 +442,44 @@ class Protocol():
         self.irc = irc
         self.casemapping = 'rfc1459'
         self.hook_map = {}
+
+    def parseArgs(self, args):
+        """Parses a string of RFC1459-style arguments split into a list, where ":" may
+        be used for multi-word arguments that last until the end of a line.
+        """
+        real_args = []
+        for idx, arg in enumerate(args):
+            real_args.append(arg)
+            # If the argument starts with ':' and ISN'T the first argument.
+            # The first argument is used for denoting the source UID/SID.
+            if arg.startswith(':') and idx != 0:
+                # : is used for multi-word arguments that last until the end
+                # of the message. We can use list splicing here to turn them all
+                # into one argument.
+                # Set the last arg to a joined version of the remaining args
+                arg = args[idx:]
+                arg = ' '.join(arg)[1:]
+                # Cut the original argument list right before the multi-word arg,
+                # and then append the multi-word arg.
+                real_args = args[:idx]
+                real_args.append(arg)
+                break
+        return real_args
+
+    def removeClient(self, numeric):
+        """Internal function to remove a client from our internal state."""
+        for c, v in self.irc.channels.copy().items():
+            v.removeuser(numeric)
+            # Clear empty non-permanent channels.
+            if not (self.irc.channels[c].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[c].modes)):
+                del self.irc.channels[c]
+            assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
+
+        sid = numeric[:3]
+        log.debug('Removing client %s from self.irc.users', numeric)
+        del self.irc.users[numeric]
+        log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
+        self.irc.servers[sid].users.discard(numeric)
 
 class FakeProto(Protocol):
     """Dummy protocol module for testing purposes."""

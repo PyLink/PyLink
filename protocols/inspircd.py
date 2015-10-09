@@ -15,7 +15,7 @@ from ts6_common import TS6BaseProtocol
 class InspIRCdProtocol(TS6BaseProtocol):
     def __init__(self, irc):
         super(InspIRCdProtocol, self).__init__(irc)
-        # Set our case mapping (rfc1459 maps "\" and "|" together, for example".
+        # Set our case mapping (rfc1459 maps "\" and "|" together, for example).
         self.casemapping = 'rfc1459'
 
         # Raw commands sent from servers vary from protocol to protocol. Here, we map
@@ -190,24 +190,28 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink PseudoServer exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
+    def _sendKill(self, numeric, target, reason):
+        self._send(numeric, 'KILL %s :%s' % (target, reason))
+        # We only need to call removeClient here if the target is one of our
+        # clients, since any remote servers will send a QUIT from
+        # their target if the command succeeds.
+        if utils.isInternalClient(self.irc, target):
+            self.removeClient(target)
+
     def killServer(self, numeric, target, reason):
         """Sends a kill from a PyLink server."""
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
-        self._send(numeric, 'KILL %s :%s' % (target, reason))
-        # We don't need to call removeClient here, since the remote server
-        # will send a QUIT from the target if the command succeeds.
+        self._sendKill(numeric, target, reason)
 
     def killClient(self, numeric, target, reason):
         """Sends a kill from a PyLink client."""
         if not utils.isInternalClient(self.irc, numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
-        self._send(numeric, 'KILL %s :%s' % (target, reason))
-        # We don't need to call removeClient here, since the remote server
-        # will send a QUIT from the target if the command succeeds.
+        self._sendKill(numeric, target, reason)
 
     def topicServer(self, numeric, target, text):
-        """Sends a topic change from a PyLink server. This is usally used on burst."""
+        """Sends a topic change from a PyLink server. This is usually used on burst."""
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         ts = int(time.time())
@@ -251,7 +255,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if not (target is None or source is None):
             self._send(source, 'PING %s %s' % (source, target))
 
-    def numericServer(self, source, numeric, text):
+    def numericServer(self, source, numeric, target, text):
         raise NotImplementedError("Numeric sending is not yet implemented by this "
                                   "protocol module. WHOIS requests are handled "
                                   "locally by InspIRCd servers, so there is no "
@@ -266,7 +270,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(source, 'AWAY')
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None):
-        """Spawns a server off a PyLink server."""
+        """
+        Spawns a server off a PyLink server. desc (server description)
+        defaults to the one in the config. uplink defaults to the main PyLink
+        server, and sid (the server ID) is automatically generated if not
+        given.
+        """
         # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
         uplink = uplink or self.irc.sid
         name = name.lower()

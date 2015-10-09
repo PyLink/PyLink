@@ -3,20 +3,24 @@
 from collections import defaultdict
 import threading
 import subprocess
+import os
 
 # Global variable to indicate whether we're being ran directly, or imported
 # for a testcase.
 testing = True
 
-global bot_commands, command_hooks
+global commands, hooks
 # This should be a mapping of command names to functions
-bot_commands = defaultdict(list)
-command_hooks = defaultdict(list)
+commands = defaultdict(list)
+hooks = defaultdict(list)
 networkobjects = {}
 schedulers = {}
-plugins = []
+plugins = {}
 whois_handlers = []
 started = threading.Event()
+
+plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
+protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
 
 version = "<unknown>"
 source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
