@@ -326,6 +326,6 @@ class UnrealProtocol(TS6BaseProtocol):
             if their_ts <= our_ts:
                 utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in finalprefix])
             self.irc.channels[channel].users.add(user)
-        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
+        return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
 Class = UnrealProtocol
