@@ -30,7 +30,7 @@ class UnrealProtocol(TS6BaseProtocol):
                          'p': 'private', 'Q': 'nokick', 'P': 'permanent', 'k': 'key',
                          'C': 'noctcp', 'O': 'operonly', 'S': 'stripcolor',
                          'm': 'moderated', 'K': 'noknock', 'o': 'op', 'v': 'voice',
-                         'I': 'invex', 't': 'topiclock'}
+                         'I': 'invex', 't': 'topiclock', 'f': 'flood_unreal'}
         self._neededCaps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3"]
 
     ### OUTGOING COMMAND FUNCTIONS
@@ -192,6 +192,7 @@ class UnrealProtocol(TS6BaseProtocol):
                     if m in self._unrealCmodes:
                         self.irc.cmodes[self._unrealCmodes[m]] = m
                 self.caps['CHANMODES'] = True
+                self.irc.cmodes['*B'] += 'f'  # Add +f to the list too, dunno why it isn't there.
             # Because more than one PROTOCTL line is sent, we have to delay the
             # check to see whether our needed capabilities are all there...
             # That's done by handle_server(), which comes right after PROTOCTL.
@@ -327,5 +328,21 @@ class UnrealProtocol(TS6BaseProtocol):
                 utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in finalprefix])
             self.irc.channels[channel].users.add(user)
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
+
+    def handle_mode(self, numeric, command, args):
+        # <- :unreal.midnight.vpn MODE #endlessvoid +bb test!*@* *!*@bad.net
+        # <- :unreal.midnight.vpn MODE #endlessvoid +q GL 1444361345
+        # <- :unreal.midnight.vpn MODE #endlessvoid +ntCo GL 1444361345
+        # <- :unreal.midnight.vpn MODE #endlessvoid +mntClfo 5 [10t]:5  GL 1444361345
+        # Well... this seems relatively inconsistent.
+        # Why does only setting some modes show a TS?
+        # Also, we need to get rid of that extra space following the +f argument. :|
+        channel = utils.toLower(self.irc, args[0])
+        oldobj = self.irc.channels[channel].deepcopy()
+        modes = list(filter(None, args[1:]))
+        parsedmodes = utils.parseModes(self.irc, channel, modes)
+        if parsedmodes:
+            utils.applyModes(self.irc, channel, parsedmodes)
+        return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
 
 Class = UnrealProtocol
