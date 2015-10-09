@@ -34,7 +34,12 @@ class UnrealProtocol(TS6BaseProtocol):
 
     ### OUTGOING COMMAND FUNCTIONS
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
-            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None):
+            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
+            manipulatable=True):
+        """Spawns a client with nick <nick> on the given IRC connection.
+
+        Note: No nick collision / valid nickname checks are done here; it is
+        up to plugins to make sure they don't introduce anything invalid."""
         server = server or self.irc.sid
         if not utils.isInternalServer(self.irc, server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
@@ -61,6 +66,8 @@ class UnrealProtocol(TS6BaseProtocol):
         pass
 
     def pingServer(self, source=None, target=None):
+        """Sends a PING to a target server. Periodic PINGs are sent to our uplink
+        automatically by the Irc() internals; plugins shouldn't have to use this."""
         source = source or self.irc.sid
         target = target or self.irc.uplink
         if not (target is None or source is None):
@@ -69,6 +76,7 @@ class UnrealProtocol(TS6BaseProtocol):
     ### HANDLERS
 
     def connect(self):
+        """Initializes a connection to a server."""
         ts = self.irc.start_ts
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
         ### XXX: fill out self.irc.umodes
@@ -194,43 +202,46 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.caps['SJ3'] = True
 
     def _sidToServer(self, sname):
-        """<self.irc object> <server name>
-
-        Returns the SID of a server named <server name>, if present."""
+        """Returns the SID of a server with the given name, if present."""
         nick = sname.lower()
         for k, v in self.irc.servers.items():
             if v.name.lower() == nick:
                 return k
 
     def _convertNick(self, target):
+        """Converts a nick argument to its matching UID."""
         target = utils.nickToUid(self.irc, target) or target
         if target not in self.irc.users:
             log.warning("(%s) Possible desync? Got command target %s, who "
-                        "isn't in our user list!")
+                        "isn't in our user list!", self.irc.name, target)
         return target
 
     def handle_events(self, data):
-        # Unreal's protocol has three styles of commands, @servernumeric, :user, and plain commands.
-        # e.g. NICK introduction looks like:
-        #   <- NICK nick hopcount timestamp	username hostname server service-identifier-token +usermodes virtualhost :realname
-        # while PRIVMSG looks like:
-        #   <- :source ! target :message
-        # and SJOIN looks like:
-        #   <- @servernumeric SJOIN <ts> <chname> [<modes>] [<mode para> ...] :<[[*~@%+]member] [&"ban/except] ...>
-        # Same deal as TS6 with :'s indicating a long argument lasting to the
-        # end of the line.
-        args = self.parseArgs(data.split(" "))
-        # Message starts with a SID/UID prefix.
-        if args[0][0] in ':@':
-            sender = args[0].lstrip(':@')
+        """Event handler for the UnrealIRCd 3.4+ protocol.
+
+        This passes most commands to the various handle_ABCD() functions
+        elsewhere in this module, coersing various sender prefixes from nicks
+        to UIDs wherever possible.
+
+        Unreal 3.4's protocol operates similarly to TS6, where lines can have :
+        indicating a long argument lasting to the end of the line. Not all commands
+        send an explicit sender prefix, in which case, it will be set to the SID
+        of the uplink server.
+        """
+        data = data.split(" ")
+        try:  # Message starts with a SID/UID prefix.
+            args = self.parseTS6Args(data)
+            sender = args[0]
             command = args[1]
             args = args[2:]
             # If the sender isn't in UID format, try to convert it automatically.
             # Unreal's protocol isn't quite consistent with this yet!
             numeric = self._sidToServer(sender) or utils.nickToUid(self.irc, sender) or \
                 sender
-        else:
+        # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
+        except IndexError:
             # Raw command without an explicit sender; assume it's being sent by our uplink.
+            args = self.parseArgs(data)
             numeric = self.irc.uplink
             command = args[0]
             args = args[1:]
@@ -265,7 +276,8 @@ class UnrealProtocol(TS6BaseProtocol):
                     self.irc.channels[ch].users.discard(numeric)
                     self.irc.users[numeric].channels.discard(ch)
                 return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
-            # Call hooks manually, because one JOIN command can have multiple channels...
+            # Call hooks manually, because one JOIN command in UnrealIRCd can
+            # have multiple channels...
             self.irc.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
                                               c.modes, 'ts': c.ts}])
 
