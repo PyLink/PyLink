@@ -190,21 +190,25 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink PseudoServer exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
+    def _sendKill(self, numeric, target, reason):
+        self._send(numeric, 'KILL %s :%s' % (target, reason))
+        # We only need to call removeClient here if the target is one of our
+        # clients, since any remote servers will send a QUIT from
+        # their target if the command succeeds.
+        if utils.isInternalClient(self.irc, target):
+            self.removeClient(target)
+
     def killServer(self, numeric, target, reason):
         """Sends a kill from a PyLink server."""
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
-        self._send(numeric, 'KILL %s :%s' % (target, reason))
-        # We don't need to call removeClient here, since the remote server
-        # will send a QUIT from the target if the command succeeds.
+        self._sendKill(numeric, target, reason)
 
     def killClient(self, numeric, target, reason):
         """Sends a kill from a PyLink client."""
         if not utils.isInternalClient(self.irc, numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
-        self._send(numeric, 'KILL %s :%s' % (target, reason))
-        # We don't need to call removeClient here, since the remote server
-        # will send a QUIT from the target if the command succeeds.
+        self._sendKill(numeric, target, reason)
 
     def topicServer(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
