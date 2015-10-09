@@ -3,6 +3,7 @@ import sys
 import os
 import time
 import ipaddress
+import re
 
 curdir = os.path.dirname(__file__)
 sys.path += [curdir, os.path.dirname(curdir)]
@@ -264,6 +265,7 @@ class UnrealProtocol(TS6BaseProtocol):
     handle_notice = handle_privmsg
 
     def handle_join(self, numeric, command, args):
+        """Handles the UnrealIRCd JOIN command."""
         # <- :GL JOIN #pylink,#test
         for channel in args[0].split(','):
             c = self.irc.channels[channel]
@@ -283,5 +285,47 @@ class UnrealProtocol(TS6BaseProtocol):
             # have multiple channels...
             self.irc.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
                                                    c.modes, 'ts': c.ts}])
+
+    def handle_sjoin(self, numeric, command, args):
+        """Handles the UnrealIRCd SJOIN command."""
+        # <- :001 SJOIN 1444361345 #endlessvoid :001DJ1O02
+        # memberlist should be a list of UIDs with their channel status prefixes, as
+        # in ":001AAAAAA @001AAAAAB +001AAAAAC".
+        # Interestingly, no modes are ever sent in this command as far as I've seen.
+        channel = utils.toLower(self.irc, args[1])
+        userlist = args[-1].split()
+        our_ts = self.irc.channels[channel].ts
+        their_ts = int(args[0])
+        if their_ts < our_ts:
+            # Channel timestamp was reset on burst
+            log.debug('(%s) Setting channel TS of %s to %s from %s',
+                      self.irc.name, channel, their_ts, our_ts)
+            self.irc.channels[channel].ts = their_ts
+            self.irc.channels[channel].modes.clear()
+            for p in self.irc.channels[channel].prefixmodes.values():
+                p.clear()
+
+        namelist = []
+        log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
+        for userpair in userlist:
+            r = re.search(r'([^\d]*)(.*)', userpair)
+            user = r.group(2)
+            modeprefix = r.group(1) or ''
+            finalprefix = ''
+            assert user, 'Failed to get the UID from %r; our regex needs updating?' % userpair
+            log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.irc.name, modeprefix, user)
+            for m in modeprefix:
+                # Iterate over the mapping of prefix chars to prefixes, and
+                # find the characters that match.
+                for char, prefix in self.irc.prefixmodes.items():
+                    if m == prefix:
+                        finalprefix += char
+            namelist.append(user)
+            self.irc.users[user].channels.add(channel)
+            # Only merge prefix modes if our TS is smaller or equal to theirs.
+            if their_ts <= our_ts:
+                utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in finalprefix])
+            self.irc.channels[channel].users.add(user)
+        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
 Class = UnrealProtocol
