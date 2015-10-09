@@ -159,7 +159,8 @@ def isServerName(s):
 hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
 def isHostmask(text):
     """Returns whether the given text is a valid hostmask."""
-    return bool(hostmaskRe.match(text))
+    # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
+    return hostmaskRe.match(text) and '#' not in text
 
 def parseModes(irc, target, args):
     """Parses a modestring list into a list of (mode, argument) tuples.
