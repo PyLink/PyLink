@@ -1,6 +1,6 @@
 # PyLink
 
-PyLink is an extensible, plugin-based IRC Services framework written in Python. It aims to be a replacement for the now-defunct Janus.
+PyLink is an extensible, plugin-based IRC Services framework written in Python. It aims to be 1) a replacement for the now-defunct Janus 2) a versatile framework and gateway to IRC.
 
 ## Usage
 
