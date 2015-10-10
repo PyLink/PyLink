@@ -288,7 +288,7 @@ class TS6Protocol(TS6BaseProtocol):
     def squitServer(self, source, target, text='No reason given'):
         """SQUITs a PyLink server."""
         # -> SQUIT 9PZ :blah, blah
-        self.irc.send('SQUIT %s :%s' % (target, text))
+        self._send(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
     def connect(self):
