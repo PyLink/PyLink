@@ -189,6 +189,7 @@ def getRemoteSid(irc, remoteirc):
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
                 irc.aborted.set()
+                return
             else:
                 irc.servers[sid].remote = remoteirc.name
             relayservers[irc.name][remoteirc.name] = sid
