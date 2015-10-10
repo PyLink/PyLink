@@ -1005,7 +1005,7 @@ def handle_disconnect(irc, numeric, command, args):
                 del relayusers[k]
             except KeyError:
                 pass
-    for name, ircobj in world.networkobjects.items():
+    for name, ircobj in world.networkobjects.copy().items():
         if name != irc.name:
             rsid = getRemoteSid(ircobj, irc)
             # Let's be super extra careful here...
