@@ -18,7 +18,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example".
         self.casemapping = 'ascii'
         self.proto_ver = 2351
-        self.hook_map = {}
+        self.hook_map = {'UMODE2': 'MODE'}
         self.uidgen = {}
 
         self.caps = {}
@@ -337,12 +337,23 @@ class UnrealProtocol(TS6BaseProtocol):
         # Well... this seems relatively inconsistent.
         # Why does only setting some modes show a TS?
         # Also, we need to get rid of that extra space following the +f argument. :|
-        channel = utils.toLower(self.irc, args[0])
-        oldobj = self.irc.channels[channel].deepcopy()
-        modes = list(filter(None, args[1:]))
-        parsedmodes = utils.parseModes(self.irc, channel, modes)
-        if parsedmodes:
-            utils.applyModes(self.irc, channel, parsedmodes)
-        return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
+        if utils.isChannel(args[0]):
+            channel = utils.toLower(self.irc, args[0])
+            oldobj = self.irc.channels[channel].deepcopy()
+            modes = list(filter(None, args[1:]))
+            parsedmodes = utils.parseModes(self.irc, channel, modes)
+            if parsedmodes:
+                utils.applyModes(self.irc, channel, parsedmodes)
+            return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
+        else:
+            log.warning("(%s) received MODE for non-channel target: %r",
+                        self.irc.name, args)
+
+    def handle_umode2(self, numeric, command, args):
+        """Handles UMODE2, used to set user modes on oneself."""
+        parsedmodes = utils.parseModes(self.irc, numeric, args)
+        utils.applyModes(self.irc, numeric, parsedmodes)
+        return {'target': numeric, 'modes': parsedmodes}
+
 
 Class = UnrealProtocol
