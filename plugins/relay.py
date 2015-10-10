@@ -1013,7 +1013,7 @@ def handle_disconnect(irc, numeric, command, args):
             except KeyError:
                 pass
     for name, ircobj in world.networkobjects.copy().items():
-        if name != irc.name:
+        if name != irc.name and ircobj.connected.is_set():
             rsid = getRemoteSid(ircobj, irc)
             # Let's be super extra careful here...
             if rsid and name in relayservers and irc.name in relayservers[name]:
