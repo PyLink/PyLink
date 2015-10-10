@@ -152,7 +152,6 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_server(self, numeric, command, args):
         # <- SERVER unreal.midnight.vpn 1 :U2351-Fhin6OoEM UnrealIRCd test server
         sname = args[0]
-        # TODO: handle introductions for other servers
         if numeric == self.irc.uplink:
             for cap in self._neededCaps:
                 if cap not in self.caps:
@@ -176,7 +175,25 @@ class UnrealProtocol(TS6BaseProtocol):
                                     "(Unreal 3.4-beta1/2), got %s)" % protover)
             self.irc.servers[numeric] = IrcServer(None, sname)
         else:
-            raise NotImplementedError
+            # Legacy servers can still be introduced this way (without a SID).
+            raise NotImplementedError("FIXME: we don't handle legacy server "
+                "introduction yet (using SERVER instead of SID).")
+
+    def handle_sid(self, numeric, command, args):
+        """Handles the SID command, used for introducing remote servers by our uplink."""
+        # <- SID services.int 2 00A :Shaltúre IRC Services
+        sname = args[0].lower()
+        sid = args[2]
+        sdesc = args[-1]
+        self.irc.servers[sid] = IrcServer(numeric, sname, desc=sdesc)
+        return {'name': sname, 'sid': sid, 'text': sdesc}
+
+    def handle_squit(self, numeric, command, args):
+        """Handles the SQUIT command."""
+        # <- SQUIT services.int :Read error
+        # Convert the server name to a SID...
+        args[0] = self._sidToServer(args[0])
+        return super(UnrealProtocol, self).handle_squit(numeric, 'SQUIT', args)
 
     def handle_protoctl(self, numeric, command, args):
         # <- PROTOCTL NOQUIT NICKv2 SJOIN SJOIN2 UMODE2 VL SJ3 TKLEXT TKLEXT2 NICKIP ESVID
@@ -354,6 +371,5 @@ class UnrealProtocol(TS6BaseProtocol):
         parsedmodes = utils.parseModes(self.irc, numeric, args)
         utils.applyModes(self.irc, numeric, parsedmodes)
         return {'target': numeric, 'modes': parsedmodes}
-
 
 Class = UnrealProtocol
