@@ -1003,6 +1003,9 @@ def handle_endburst(irc, numeric, command, args):
 utils.add_hook(handle_endburst, "ENDBURST")
 
 def handle_disconnect(irc, numeric, command, args):
+    """Handles IRC network disconnections (internal hook)."""
+    # Quit all of our users' representations on other nets, and remove
+    # them from our relay clients index.
     for k, v in relayusers.copy().items():
         if irc.name in v:
             del relayusers[k][irc.name]
@@ -1012,11 +1015,15 @@ def handle_disconnect(irc, numeric, command, args):
                 del relayusers[k]
             except KeyError:
                 pass
+    # SQUIT all relay pseudoservers spawned for us, and remove them
+    # from our relay subservers index.
     for name, ircobj in world.networkobjects.copy().items():
         if name != irc.name and ircobj.connected.is_set():
-            rsid = getRemoteSid(ircobj, irc)
-            # Let's be super extra careful here...
-            if rsid and name in relayservers and irc.name in relayservers[name]:
+            try:
+                rsid = relayservers[ircobj.name][irc.name]
+            except KeyError:
+                continue
+            else:
                 ircobj.proto.squitServer(ircobj.sid, rsid, text='Home network lost connection.')
                 del relayservers[name][irc.name]
     try:
