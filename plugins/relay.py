@@ -32,6 +32,10 @@ relay_started = True
 
 def initializeAll(irc):
     """Initializes all relay channels for the given IRC object."""
+    # Wait for all IRC objects to initialize first. This prevents
+    # relay servers from being spawned too early (before server authentication),
+    # which would break connections.
+    world.started.wait(2)
     for chanpair, entrydata in db.items():
         network, channel = chanpair
         initializeChannel(irc, channel)
@@ -164,6 +168,8 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
 def getRemoteSid(irc, remoteirc):
     """Gets the remote server SID representing remoteirc on irc, spawning
     it if it doesn't exist."""
+    # Don't spawn servers too early.
+    irc.connected.wait(2)
     try:
         spawnservers = irc.conf['relay']['spawn_servers']
     except KeyError:
