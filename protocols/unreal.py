@@ -323,7 +323,7 @@ class UnrealProtocol(TS6BaseProtocol):
                         finalprefix += char
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
-            # Only merge prefix modes if our TS is smaller or equal to theirs.
+            # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
             if their_ts <= our_ts:
                 utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in finalprefix])
             self.irc.channels[channel].users.add(user)
