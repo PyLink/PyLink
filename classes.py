@@ -248,6 +248,7 @@ class Irc():
         except Exception:
             log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
             log.error('(%s) The offending line was: <- %s', self.name, line)
+            self.aborted.set()
             return
         # Only call our hooks if there's data to process. Handlers that support
         # hooks will return a dict of parsed arguments, which can be passed on

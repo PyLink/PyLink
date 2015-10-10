@@ -374,7 +374,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self.irc.maxnicklen = int(caps['NICKMAX'])
                 self.irc.maxchanlen = int(caps['CHANMAX'])
                 # Modes are divided into A, B, C, and D classes
-                # See http://www.self.irc.org/tech_docs/005.html
+                # See http://www.irc.org/tech_docs/005.html
 
                 # FIXME: Find a better way to assign/store this.
                 self.irc.cmodes['*A'], self.irc.cmodes['*B'], self.irc.cmodes['*C'], self.irc.cmodes['*D'] \
