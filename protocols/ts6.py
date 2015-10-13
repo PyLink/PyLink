@@ -288,7 +288,7 @@ class TS6Protocol(TS6BaseProtocol):
     def squitServer(self, source, target, text='No reason given'):
         """SQUITs a PyLink server."""
         # -> SQUIT 9PZ :blah, blah
-        self.irc.send('SQUIT %s :%s' % (target, text))
+        self._send(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
     def connect(self):
@@ -588,22 +588,23 @@ class TS6Protocol(TS6BaseProtocol):
         raise ProtocolError("Servers should use EUID instead of UID to send users! "
                             "This IS a required capability after all...")
 
-    def handle_server(self, numeric, command, args):
-        """Handles incoming SERVER introductions."""
+    def handle_sid(self, numeric, command, args):
+        """Handles incoming server introductions."""
         # parameters: server name, hopcount, sid, server description
         servername = args[0].lower()
-        try:
-            sid = args[2]
-        except IndexError:
-            # It is allowed to send JUPEd servers that exist without a SID.
-            # That's not very fun to handle, though.
-            # XXX: don't just save these by their server names; that's ugly!
-            sid = servername
+        sid = args[2]
         sdesc = args[-1]
         self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': sid, 'text': sdesc}
 
-    handle_sid = handle_server
+    def handle_server(self, sender, command, args):
+        """Handles incoming legacy (no SID) server introductions."""
+        # <- :services.int SERVER a.bc 2 :(H) [GL] a
+        numeric = self._getSid(sender)  # Convert the server name prefix to a SID.
+        servername = args[0].lower()
+        sdesc = args[-1]
+        self.irc.servers[servername] = IrcServer(numeric, servername, desc=sdesc)
+        return {'name': servername, 'sid': None, 'text': sdesc}
 
     def handle_tmode(self, numeric, command, args):
         """Handles incoming TMODE commands (channel mode change)."""

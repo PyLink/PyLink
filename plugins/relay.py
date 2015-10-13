@@ -32,6 +32,10 @@ relay_started = True
 
 def initializeAll(irc):
     """Initializes all relay channels for the given IRC object."""
+    # Wait for all IRC objects to initialize first. This prevents
+    # relay servers from being spawned too early (before server authentication),
+    # which would break connections.
+    world.started.wait(2)
     for chanpair, entrydata in db.items():
         network, channel = chanpair
         initializeChannel(irc, channel)
@@ -164,6 +168,8 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
 def getRemoteSid(irc, remoteirc):
     """Gets the remote server SID representing remoteirc on irc, spawning
     it if it doesn't exist."""
+    # Don't spawn servers too early.
+    irc.connected.wait(2)
     try:
         spawnservers = irc.conf['relay']['spawn_servers']
     except KeyError:
@@ -183,6 +189,7 @@ def getRemoteSid(irc, remoteirc):
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
                 irc.aborted.set()
+                return
             else:
                 irc.servers[sid].remote = remoteirc.name
             relayservers[irc.name][remoteirc.name] = sid
@@ -996,6 +1003,9 @@ def handle_endburst(irc, numeric, command, args):
 utils.add_hook(handle_endburst, "ENDBURST")
 
 def handle_disconnect(irc, numeric, command, args):
+    """Handles IRC network disconnections (internal hook)."""
+    # Quit all of our users' representations on other nets, and remove
+    # them from our relay clients index.
     for k, v in relayusers.copy().items():
         if irc.name in v:
             del relayusers[k][irc.name]
@@ -1005,11 +1015,15 @@ def handle_disconnect(irc, numeric, command, args):
                 del relayusers[k]
             except KeyError:
                 pass
-    for name, ircobj in world.networkobjects.items():
-        if name != irc.name:
-            rsid = getRemoteSid(ircobj, irc)
-            # Let's be super extra careful here...
-            if rsid and name in relayservers and irc.name in relayservers[name]:
+    # SQUIT all relay pseudoservers spawned for us, and remove them
+    # from our relay subservers index.
+    for name, ircobj in world.networkobjects.copy().items():
+        if name != irc.name and ircobj.connected.is_set():
+            try:
+                rsid = relayservers[ircobj.name][irc.name]
+            except KeyError:
+                continue
+            else:
                 ircobj.proto.squitServer(ircobj.sid, rsid, text='Home network lost connection.')
                 del relayservers[name][irc.name]
     try:
