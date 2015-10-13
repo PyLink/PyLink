@@ -175,9 +175,12 @@ class UnrealProtocol(TS6BaseProtocol):
                                     "(Unreal 3.4-beta1/2), got %s)" % protover)
             self.irc.servers[numeric] = IrcServer(None, sname)
         else:
-            # Legacy servers can still be introduced this way (without a SID).
-            raise NotImplementedError("FIXME: we don't handle legacy server "
-                "introduction yet (using SERVER instead of SID).")
+            # Legacy (non-SID) servers can still be introduced using the SERVER command.
+            # <- :services.int SERVER a.bc 2 :(H) [GL] a
+            servername = args[0].lower()
+            sdesc = args[-1]
+            self.irc.servers[servername] = IrcServer(numeric, servername, desc=sdesc)
+            return {'name': servername, 'sid': None, 'text': sdesc}
 
     def handle_sid(self, numeric, command, args):
         """Handles the SID command, used for introducing remote servers by our uplink."""
@@ -193,6 +196,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- SQUIT services.int :Read error
         # Convert the server name to a SID...
         args[0] = self._getSid(args[0])
+        # Then, use the SQUIT handler in TS6BaseProtocol as usual.
         return super(UnrealProtocol, self).handle_squit(numeric, 'SQUIT', args)
 
     def handle_protoctl(self, numeric, command, args):
