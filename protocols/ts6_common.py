@@ -19,6 +19,13 @@ class TS6BaseProtocol(Protocol):
         args[0] = args[0].split(':', 1)[1]
         return args
 
+    def _getSid(self, sname):
+        """Returns the SID of a server with the given name, if present."""
+        nick = sname.lower()
+        for k, v in self.irc.servers.items():
+            if v.name.lower() == nick:
+                return k
+
     ### OUTGOING COMMANDS
 
     def _sendKick(self, numeric, channel, target, reason=None):

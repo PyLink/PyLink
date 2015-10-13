@@ -597,14 +597,14 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': sid, 'text': sdesc}
 
-    def handle_server(self, numeric, command, args):
+    def handle_server(self, sender, command, args):
         """Handles incoming legacy (no SID) server introductions."""
         # <- :services.int SERVER a.bc 2 :(H) [GL] a
-        raise NotImplementedError
+        numeric = self._getSid(sender)  # Convert the server name prefix to a SID.
         servername = args[0].lower()
         sdesc = args[-1]
         self.irc.servers[servername] = IrcServer(numeric, servername, desc=sdesc)
-        return {'name': servername, 'sid': sid, 'text': sdesc}
+        return {'name': servername, 'sid': None, 'text': sdesc}
 
     def handle_tmode(self, numeric, command, args):
         """Handles incoming TMODE commands (channel mode change)."""
