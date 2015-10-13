@@ -17,7 +17,8 @@ class UnrealProtocol(TS6BaseProtocol):
         super(UnrealProtocol, self).__init__(irc)
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example".
         self.casemapping = 'ascii'
-        self.proto_ver = 2351
+        self.proto_ver = 3999
+        self.min_proto_ver = 3999
         self.hook_map = {'UMODE2': 'MODE'}
         self.uidgen = {}
 
@@ -150,9 +151,11 @@ class UnrealProtocol(TS6BaseProtocol):
             self.irc.lastping = time.time()
 
     def handle_server(self, numeric, command, args):
-        # <- SERVER unreal.midnight.vpn 1 :U2351-Fhin6OoEM UnrealIRCd test server
+        """Handles the SERVER command, which is used for both authentication and
+        introducing legacy (non-SID) servers."""
+        # <- SERVER unreal.midnight.vpn 1 :U3999-Fhin6OoEM UnrealIRCd test server
         sname = args[0]
-        if numeric == self.irc.uplink:
+        if numeric == self.irc.uplink:  # We're doing authentication
             for cap in self._neededCaps:
                 if cap not in self.caps:
                     raise ProtocolError("Not all required capabilities were met "
@@ -166,13 +169,13 @@ class UnrealProtocol(TS6BaseProtocol):
             try:
                 protover = int(vline[0].strip('U'))
             except ValueError:
-                raise ProtocolError("Protocol version too old! (needs at least 2351 "
-                                    "(Unreal 3.4-beta1/2), got something invalid; "
-                                    "is VL being sent?)")
+                raise ProtocolError("Protocol version too old! (needs at least %s "
+                                    "(Unreal 4.0.0-rc1), got something invalid; "
+                                    "is VL being sent?)" % self.min_proto_ver)
             sdesc = args[-1][1:]
-            if protover < 2351:
-                raise ProtocolError("Protocol version too old! (needs at least 2351 "
-                                    "(Unreal 3.4-beta1/2), got %s)" % protover)
+            if protover < self.min_proto_ver:
+                raise ProtocolError("Protocol version too old! (needs at least %s "
+                                    "(Unreal 4.0.0-rc1), got %s)" % (self.min_proto_ver, protover))
             self.irc.servers[numeric] = IrcServer(None, sname)
         else:
             # Legacy (non-SID) servers can still be introduced using the SERVER command.
