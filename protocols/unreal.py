@@ -23,6 +23,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.uidgen = {}
 
         self.caps = {}
+        self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
         self._unrealCmodes = {'l': 'limit', 'c': 'blockcolor', 'G': 'censor',
                          'D': 'delayjoin', 'n': 'noextmsg', 's': 'secret',
                          'T': 'nonotice', 'z': 'sslonly', 'b': 'ban', 'V': 'noinvite',
@@ -65,7 +66,75 @@ class UnrealProtocol(TS6BaseProtocol):
         return u
 
     def joinClient(self, client, channel):
-        pass
+        """Joins a PyLink client to a channel."""
+        channel = utils.toLower(self.irc, channel)
+        if not utils.isInternalClient(self.irc, client):
+            raise LookupError('No such PyLink client exists.')
+        self._send(client, "JOIN %s" % channel)
+        self.irc.channels[channel].users.add(client)
+        self.irc.users[client].channels.add(channel)
+
+
+    def sjoinServer(self, server, channel, users, ts=None):
+        """Sends an SJOIN for a group of users to a channel.
+
+        The sender should always be a Server ID (SID). TS is optional, and defaults
+        to the one we've stored in the channel state if not given.
+        <users> is a list of (prefix mode, UID) pairs:
+
+        Example uses:
+            sjoinServer('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
+            sjoinServer(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
+
+        Note that for UnrealIRCd, no mode data is sent in an SJOIN command, only
+        The channel name, TS, and user list.
+        """
+        # <- :001 SJOIN 1444361345 #endlessvoid :001DJ1O02
+        # The nicklist consists of users joining the channel, with status prefixes for
+        # their status ('@+', '@', '+' or ''), for example:
+        # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'.
+        channel = utils.toLower(self.irc, channel)
+        server = server or self.irc.sid
+        assert users, "sjoinServer: No users sent?"
+        if not server:
+            raise LookupError('No such PyLink server exists.')
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
+        if ts < orig_ts:
+            # If the TS we're sending is lower than the one that existing, clear the
+            # mode lists from our channel state and reset the timestamp.
+            log.debug('(%s) sjoinServer: resetting TS of %r from %s to %s (clearing modes)',
+                      self.irc.name, channel, orig_ts, ts)
+            self.irc.channels[channel].ts = ts
+            self.irc.channels[channel].modes.clear()
+            for p in self.irc.channels[channel].prefixmodes.values():
+                p.clear()
+        changedmodes = []
+        uids = []
+        namelist = []
+        for userpair in users:
+            assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
+            prefixes, user = userpair
+            # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
+            # and +a is ~ instead of &.
+            # &, ", and ' are used for bursting bans.
+            sjoin_prefixes = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+'}
+            prefixchars = ''.join([sjoin_prefixes.get(prefix, '') for prefix in prefixes])
+            if prefixchars:
+                changedmodes + [('+%s' % prefix, user) for prefix in prefixes]
+            namelist.append(prefixchars+user)
+            uids.append(user)
+            try:
+                self.irc.users[user].channels.add(channel)
+            except KeyError:  # Not initialized yet?
+                log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
+        namelist = ' '.join(namelist)
+        self._send(server, "SJOIN {ts} {channel} :{users}".format(
+                   ts=ts, users=namelist, channel=channel))
+        self.irc.channels[channel].users.update(uids)
+        if ts <= orig_ts:
+           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
+            utils.applyModes(self.irc, channel, changedmodes)
 
     def pingServer(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
@@ -223,12 +292,14 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.caps['NOQUIT'] = True
             elif cap == 'SJ3':
                 self.caps['SJ3'] = True
+        self.irc.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
+                                'op': 'o', 'voice': 'v'})
 
     def _getNick(self, target):
         """Converts a nick argument to its matching UID. This differs from utils.nickToUid()
         in that it returns the original text instead of None, if no matching nick is found."""
         target = utils.nickToUid(self.irc, target) or target
-        if target not in self.irc.users:
+        if target not in self.irc.users and not utils.isChannel(target):
             log.warning("(%s) Possible desync? Got command target %s, who "
                         "isn't in our user list!", self.irc.name, target)
         return target
@@ -324,9 +395,15 @@ class UnrealProtocol(TS6BaseProtocol):
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
         for userpair in userlist:
+            if userpair.startswith("&\"'"):  # TODO: handle ban bursts too
+                # &, ", and ' entries are used for bursting bans:
+                # https://www.unrealircd.org/files/docs/technical/serverprotocol.html#S5_1
+                break
             r = re.search(r'([^\d]*)(.*)', userpair)
             user = r.group(2)
-            modeprefix = r.group(1) or ''
+            # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
+            # and +a is ~ instead of &.
+            modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
             finalprefix = ''
             assert user, 'Failed to get the UID from %r; our regex needs updating?' % userpair
             log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.irc.name, modeprefix, user)
