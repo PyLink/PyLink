@@ -2,7 +2,7 @@ import time
 import sys
 import os
 import time
-import ipaddress
+import codecs
 import re
 
 curdir = os.path.dirname(__file__)
@@ -95,7 +95,6 @@ class UnrealProtocol(TS6BaseProtocol):
         # VL - Sends version string in below SERVER message
         # UMODE2 - used for users setting modes on themselves (one less argument needed)
         # EAUTH - Early auth? (Unreal 3.4 linking protocol)
-        # ~~NICKIP - sends the IP in the NICK/UID command~~ Doesn't work with SID/UID support
         f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL EAUTH=%s SID=%s' % (self.irc.serverdata["hostname"], self.irc.sid))
         sdesc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
@@ -106,19 +105,26 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
         # <- :001 UID GL| 0 1441389007 gl 10.120.0.6 001ZO8F03 0 +iwx * 391A9CB9.26A16454.D9847B69.IP CngABg== :realname
         # arguments: nick, number???, ts, ident, real-host, UID, number???, modes,
-        #            star???, hidden host, some base64 thing???, and realname
+        #            star???, hidden host, base64-encoded IP, and realname
         # TODO: find out what all the "???" fields mean.
         nick = args[0]
         ts, ident, realhost, uid = args[2:6]
         modestring = args[7]
         host = args[9]
-        try:
-            ip = ipaddress.ip_address(host)
-        except ValueError:  # Invalid for IP
-            # XXX: find a way of getting the real IP of the user (protocol-wise)
-            #      without looking up every hostname ourselves (that's expensive!)
-            #      NICKIP doesn't seem to work for the UID command...
-            ip = "0.0.0.0"
+        raw_ip = args[10].encode()  # codecs.decode only takes bytes, not str
+        if raw_ip == b'*':  # Dummy IP (for services, etc.)
+            ip = '0.0.0.0'
+        else:
+            # Each base64-encoded character represents a bit in the IP.
+            raw_ip = codecs.decode(raw_ip, "base64")
+            ipbits = list(map(str, raw_ip))  # Decode every bit
+
+            if len(ipbits) == 4:  # IPv4 address.
+                ip = '.'.join(ipbits)
+            elif len(ipbits) == 16:  # IPv6 address.
+                ip = ':'.join(ipbits)
+            else:
+                raise ProtocolError("Invalid number of bits in IP address field (got %s, expected 4 or 16)." % len(ipbits))
         realname = args[-1]
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
         parsedmodes = utils.parseModes(self.irc, uid, [modestring])
