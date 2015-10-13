@@ -220,8 +220,9 @@ class UnrealProtocol(TS6BaseProtocol):
             elif cap == 'SJ3':
                 self.caps['SJ3'] = True
 
-    def _convertNick(self, target):
-        """Converts a nick argument to its matching UID."""
+    def _getNick(self, target):
+        """Converts a nick argument to its matching UID. This differs from utils.nickToUid()
+        in that it returns the original text instead of None, if no matching nick is found."""
         target = utils.nickToUid(self.irc, target) or target
         if target not in self.irc.users:
             log.warning("(%s) Possible desync? Got command target %s, who "
@@ -268,7 +269,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_privmsg(self, source, command, args):
         # Convert nicks to UIDs, where they exist.
-        target = self._convertNick(args[0])
+        target = self._getNick(args[0])
         # We use lowercase channels internally, but uppercase UIDs.
         if utils.isChannel(target):
             target = utils.toLower(self.irc, target)
