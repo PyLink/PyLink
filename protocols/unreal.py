@@ -99,16 +99,7 @@ class UnrealProtocol(TS6BaseProtocol):
         f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL EAUTH=%s SID=%s' % (self.irc.serverdata["hostname"], self.irc.sid))
         sdesc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
-        # Now, we wait until remote sends its NETINFO command (handle_netinfo),
-        # so we can find and use a matching netname, preventing netname mismatch
-        # errors.
-
-    def handle_netinfo(self, numeric, command, args):
-        # <- NETINFO maxglobal currenttime protocolversion cloakhash 0 0 0 :networkname
-        # "maxglobal" is the amount of maximum global users we've seen so far.
-        # We'll just set it to 1 (the PyLink client), since this is completely
-        # arbitrary.
-        self.irc.send('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, args[-1]))
+        f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
         self._send(self.irc.sid, 'EOS')
 
     def handle_uid(self, numeric, command, args):
