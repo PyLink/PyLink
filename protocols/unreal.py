@@ -364,4 +364,16 @@ class UnrealProtocol(TS6BaseProtocol):
         utils.applyModes(self.irc, numeric, parsedmodes)
         return {'target': numeric, 'modes': parsedmodes}
 
+    def handle_topic(self, numeric, command, args):
+        """Handles the TOPIC command."""
+        # <- GL TOPIC #services GL 1444699395 :weeee
+        channel = utils.toLower(self.irc, args[0])
+        topic = args[-1]
+        ts = args[2]
+        oldtopic = self.irc.channels[channel].topic
+        self.irc.channels[channel].topic = topic
+        self.irc.channels[channel].topicset = True
+        return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic,
+                'oldtopic': oldtopic}
+
 Class = UnrealProtocol
