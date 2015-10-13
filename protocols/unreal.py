@@ -192,7 +192,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles the SQUIT command."""
         # <- SQUIT services.int :Read error
         # Convert the server name to a SID...
-        args[0] = self._sidToServer(args[0])
+        args[0] = self._getSid(args[0])
         return super(UnrealProtocol, self).handle_squit(numeric, 'SQUIT', args)
 
     def handle_protoctl(self, numeric, command, args):
@@ -219,13 +219,6 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.caps['NOQUIT'] = True
             elif cap == 'SJ3':
                 self.caps['SJ3'] = True
-
-    def _sidToServer(self, sname):
-        """Returns the SID of a server with the given name, if present."""
-        nick = sname.lower()
-        for k, v in self.irc.servers.items():
-            if v.name.lower() == nick:
-                return k
 
     def _convertNick(self, target):
         """Converts a nick argument to its matching UID."""
@@ -255,7 +248,7 @@ class UnrealProtocol(TS6BaseProtocol):
             args = args[2:]
             # If the sender isn't in UID format, try to convert it automatically.
             # Unreal's protocol isn't quite consistent with this yet!
-            numeric = self._sidToServer(sender) or utils.nickToUid(self.irc, sender) or \
+            numeric = self._getSid(sender) or utils.nickToUid(self.irc, sender) or \
                 sender
         # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
         except IndexError:
