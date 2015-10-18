@@ -32,6 +32,7 @@ def identify(irc, source, args):
     if utils.isChannel(irc.called_by):
         irc.msg(irc.called_by, 'Error: This command must be sent in private. '
                 '(Would you really type a password inside a public channel?)')
+        return
     try:
         username, password = args[0], args[1]
     except IndexError:
