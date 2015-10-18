@@ -822,8 +822,8 @@ def handle_kick(irc, source, command, args):
             remoteirc.proto.kickServer(rsid, remotechan, real_target, text)
 
         # If the target isn't on any channels, quit them.
-        if origuser and origuser[0] != remoteirc.name and not remoteirc.users[real_target].channels:
-            del relayusers[origuser][remoteirc.name]
+        if remoteirc != irc and (not remoteirc.users[real_target].channels) and not origuser:
+            del relayusers[(irc.name, target)][remoteirc.name]
             remoteirc.proto.quitClient(real_target, 'Left all shared channels.')
 
     if origuser and not irc.users[target].channels:
