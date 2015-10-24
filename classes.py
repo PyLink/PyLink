@@ -178,11 +178,13 @@ class Irc():
                 return
 
     def callCommand(self, source, text):
+        """Calls a PyLink bot command."""
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         if cmd not in world.commands:
             self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
+            log.info('(%s) Received unknown command %r from %s', self.name, cmd, utils.getHostmask(self, source))
             return
         log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
         for func in world.commands[cmd]:
