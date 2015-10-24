@@ -104,15 +104,18 @@ class TS6SIDGenerator():
         return sid
 
 def add_cmd(func, name=None):
+    """Binds a command to the given command name."""
     if name is None:
         name = func.__name__
     name = name.lower()
     world.commands[name].append(func)
+    return func
 
 def add_hook(func, command):
-    """Add a hook <func> for command <command>."""
+    """Binds a hook function to the given command."""
     command = command.upper()
     world.hooks[command].append(func)
+    return func
 
 def toLower(irc, text):
     """Returns a lowercase representation of text based on the IRC object's
