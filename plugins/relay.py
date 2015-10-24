@@ -1011,7 +1011,7 @@ def handle_disconnect(irc, numeric, command, args):
             del relayusers[k][irc.name]
         if k[0] == irc.name:
             try:
-                handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Home network lost connection.'})
+                handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Relay network lost connection.'})
                 del relayusers[k]
             except KeyError:
                 pass
@@ -1024,7 +1024,7 @@ def handle_disconnect(irc, numeric, command, args):
             except KeyError:
                 continue
             else:
-                ircobj.proto.squitServer(ircobj.sid, rsid, text='Home network lost connection.')
+                ircobj.proto.squitServer(ircobj.sid, rsid, text='Relay network lost connection.')
                 del relayservers[name][irc.name]
     try:
         del relayservers[irc.name]
