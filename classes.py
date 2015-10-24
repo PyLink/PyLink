@@ -206,6 +206,10 @@ class Irc():
             cmd = 'PYLINK_SELF_PRIVMSG'
         self.callHooks([source, cmd, {'target': target, 'text': text}])
 
+    def reply(self, text, notice=False, source=None):
+        """Replies to the last caller in context."""
+        self.msg(self.called_by, text, notice=notice, source=source)
+
     def _disconnect(self):
         log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
         self.connected.clear()
