@@ -133,12 +133,12 @@ def identify(irc, source, args):
         realuser = irc.conf['login']['user']
         irc.users[source].identified = realuser
         irc.msg(source, 'Successfully logged in as %s.' % realuser)
-        log.info("(%s) Successful login to %r by %s.",
+        log.info("(%s) Successful login to %r by %s",
                  irc.name, username, utils.getHostmask(irc, source))
     else:
         irc.msg(source, 'Error: Incorrect credentials.')
         u = irc.users[source]
-        log.warning("(%s) Failed login to %r from %s.",
+        log.warning("(%s) Failed login to %r from %s",
                     irc.name, username, utils.getHostmask(irc, source))
 
 @utils.add_cmd
