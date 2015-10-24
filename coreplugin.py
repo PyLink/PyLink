@@ -120,7 +120,7 @@ def identify(irc, source, args):
 
     Logs in to PyLink using the configured administrator account."""
     if utils.isChannel(irc.called_by):
-        irc.msg(irc.called_by, 'Error: This command must be sent in private. '
+        irc.reply('Error: This command must be sent in private. '
                 '(Would you really type a password inside a channel?)')
         return
     try:
@@ -163,10 +163,10 @@ def load(irc, source, args):
     try:
         name = args[0]
     except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: plugin name.")
+        irc.reply("Error: Not enough arguments. Needs 1: plugin name.")
         return
     if name in world.plugins:
-        irc.msg(irc.called_by, "Error: %r is already loaded." % name)
+        irc.reply("Error: %r is already loaded." % name)
         return
     try:
         world.plugins[name] = pl = utils.loadModuleFromFolder(name, world.plugins_folder)
@@ -180,7 +180,7 @@ def load(irc, source, args):
         if hasattr(pl, 'main'):
             log.debug('Calling main() function of plugin %r', pl)
             pl.main(irc)
-    irc.msg(irc.called_by, "Loaded plugin %r." % name)
+    irc.reply("Loaded plugin %r." % name)
 utils.add_cmd(load)
 
 def unload(irc, source, args):
@@ -191,7 +191,7 @@ def unload(irc, source, args):
     try:
         name = args[0]
     except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: plugin name.")
+        irc.reply("Error: Not enough arguments. Needs 1: plugin name.")
         return
     if name in world.plugins:
         pl = world.plugins[name]
@@ -240,10 +240,10 @@ def unload(irc, source, args):
         # Garbage collect.
         gc.collect()
 
-        irc.msg(irc.called_by, "Unloaded plugin %r." % name)
+        irc.reply("Unloaded plugin %r." % name)
         return True  # We succeeded, make it clear (this status is used by reload() below)
     else:
-        irc.msg(irc.called_by, "Unknown plugin %r." % name)
+        irc.reply("Unknown plugin %r." % name)
 utils.add_cmd(unload)
 
 @utils.add_cmd
@@ -254,7 +254,7 @@ def reload(irc, source, args):
     try:
         name = args[0]
     except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: plugin name.")
+        irc.reply("Error: Not enough arguments. Needs 1: plugin name.")
         return
     if unload(irc, source, args):
         load(irc, source, args)

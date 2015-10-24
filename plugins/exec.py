@@ -17,7 +17,7 @@ def _exec(irc, source, args):
     utils.checkAuthenticated(irc, source, allowOper=False)
     args = ' '.join(args)
     if not args.strip():
-        irc.msg(irc.called_by, 'No code entered!')
+        irc.reply('No code entered!')
         return
     log.info('(%s) Executing %r for %s', irc.name, args, utils.getHostmask(irc, source))
     exec(args, globals(), locals())
@@ -31,8 +31,8 @@ def _eval(irc, source, args):
     utils.checkAuthenticated(irc, source, allowOper=False)
     args = ' '.join(args)
     if not args.strip():
-        irc.msg(irc.called_by, 'No code entered!')
+        irc.reply('No code entered!')
         return
     log.info('(%s) Evaluating %r for %s', irc.name, args, utils.getHostmask(irc, source))
-    irc.msg(irc.called_by, eval(args))
+    irc.reply(eval(args))
 utils.add_cmd(_eval, 'eval')

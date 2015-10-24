@@ -17,10 +17,10 @@ def status(irc, source, args):
     Returns your current PyLink login status."""
     identified = irc.users[source].identified
     if identified:
-        irc.msg(irc.called_by, 'You are identified as \x02%s\x02.' % identified)
+        irc.reply('You are identified as \x02%s\x02.' % identified)
     else:
-        irc.msg(irc.called_by, 'You are not identified as anyone.')
-    irc.msg(irc.called_by, 'Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
+        irc.reply('You are not identified as anyone.')
+    irc.reply('Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
 
 def listcommands(irc, source, args):
     """takes no arguments.
@@ -32,8 +32,8 @@ def listcommands(irc, source, args):
         nfuncs = len(world.commands[cmd])
         if nfuncs > 1:
             cmds[idx] = '%s(x%s)' % (cmd, nfuncs)
-    irc.msg(irc.called_by, 'Available commands include: %s' % ', '.join(cmds))
-    irc.msg(irc.called_by, 'To see help on a specific command, type \x02help <command>\x02.')
+    irc.reply('Available commands include: %s' % ', '.join(cmds))
+    irc.reply('To see help on a specific command, type \x02help <command>\x02.')
 utils.add_cmd(listcommands, 'list')
 
 @utils.add_cmd
@@ -52,7 +52,7 @@ def help(irc, source, args):
     else:
         funcs = world.commands[command]
         if len(funcs) > 1:
-            irc.msg(irc.called_by, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
+            irc.reply('The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
                       % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
         for func in funcs:
             doc = func.__doc__
@@ -63,7 +63,7 @@ def help(irc, source, args):
                 # arguments the command takes.
                 lines[0] = '\x02%s %s\x02 (plugin: %r)' % (command, lines[0], mod)
                 for line in lines:
-                    irc.msg(irc.called_by, line.strip())
+                    irc.reply(line.strip())
             else:
                 irc.msg(source, "Error: Command %r (from plugin %r) "
                                        "doesn't offer any help." % (command, mod))
@@ -77,14 +77,14 @@ def showuser(irc, source, args):
     try:
         target = args[0]
     except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: nick.")
+        irc.reply("Error: Not enough arguments. Needs 1: nick.")
         return
     u = utils.nickToUid(irc, target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
     verbose = utils.isOper(irc, source) or u == source
     if u not in irc.users:
-        irc.msg(irc.called_by, 'Error: Unknown user %r.' % target)
+        irc.reply('Error: Unknown user %r.' % target)
         return
 
     f = lambda s: irc.msg(source, s)
@@ -112,10 +112,10 @@ def showchan(irc, source, args):
     try:
         channel = utils.toLower(irc, args[0])
     except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: channel.")
+        irc.reply("Error: Not enough arguments. Needs 1: channel.")
         return
     if channel not in irc.channels:
-        irc.msg(irc.called_by, 'Error: Unknown channel %r.' % channel)
+        irc.reply('Error: Unknown channel %r.' % channel)
         return
 
     f = lambda s: irc.msg(source, s)
@@ -155,15 +155,15 @@ def version(irc, source, args):
     """takes no arguments.
 
     Returns the version of the currently running PyLink instance."""
-    irc.msg(irc.called_by, "PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
-    irc.msg(irc.called_by, "The source of this program is available at \x02%s\x02." % world.source)
+    irc.reply("PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
+    irc.reply("The source of this program is available at \x02%s\x02." % world.source)
 
 @utils.add_cmd
 def echo(irc, source, args):
     """<text>
 
     Echoes the text given."""
-    irc.msg(irc.called_by, ' '.join(args))
+    irc.reply(' '.join(args))
 
 @utils.add_cmd
 def rehash(irc, source, args):
@@ -178,7 +178,7 @@ def rehash(irc, source, args):
         new_conf = conf.validateConf(conf.loadConf(fname))
     except Exception as e:  # Something went wrong, abort.
         log.exception("Error REHASH'ing config: ")
-        irc.msg(irc.called_by, "Error loading configuration file: %s: %s", type(e).__name__, e)
+        irc.reply("Error loading configuration file: %s: %s", type(e).__name__, e)
         return
     conf.conf = new_conf
     for network, ircobj in world.networkobjects.copy().items():
@@ -198,4 +198,4 @@ def rehash(irc, source, args):
         if network not in world.networkobjects:
             proto = utils.getProtoModule(sdata['protocol'])
             world.networkobjects[network] = classes.Irc(network, proto, new_conf)
-    irc.msg(irc.called_by, "Done.")
+    irc.reply("Done.")
