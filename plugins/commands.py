@@ -199,3 +199,24 @@ def rehash(irc, source, args):
             proto = utils.getProtoModule(sdata['protocol'])
             world.networkobjects[network] = classes.Irc(network, proto, new_conf)
     irc.reply("Done.")
+
+loglevels = {'DEBUG': 10, 'INFO': 20, 'WARNING': 30, 'ERROR': 40, 'CRITICAL': 50}
+@utils.add_cmd
+def loglevel(irc, source, args):
+    """<level>
+
+    Sets the log level to the given <level>. <level> must be either DEBUG, INFO, WARNING, ERROR, or CRITICAL.
+    If no log level is given, shows the current one."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    try:
+        level = args[0].upper()
+        try:
+            loglevel = loglevels[level]
+        except KeyError:
+            irc.reply('Error: Unknown log level "%s".' % level)
+            return
+        else:
+            log.setLevel(loglevel)
+            irc.reply("Done.")
+    except IndexError:
+        irc.reply(log.getEffectiveLevel())
