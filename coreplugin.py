@@ -173,6 +173,7 @@ def load(irc, source, args):
     if name in world.plugins:
         irc.reply("Error: %r is already loaded." % name)
         return
+    log.info('(%s) Loading plugin %r for %s', irc.name, name, utils.getHostmask(irc, source))
     try:
         world.plugins[name] = pl = utils.loadModuleFromFolder(name, world.plugins_folder)
     except ImportError as e:
@@ -199,6 +200,7 @@ def unload(irc, source, args):
         irc.reply("Error: Not enough arguments. Needs 1: plugin name.")
         return
     if name in world.plugins:
+        log.info('(%s) Unloading plugin %r for %s', irc.name, name, utils.getHostmask(irc, source))
         pl = world.plugins[name]
         log.debug('sys.getrefcount of plugin %s is %s', pl, sys.getrefcount(pl))
         # Remove any command functions set by the plugin.
