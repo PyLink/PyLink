@@ -363,7 +363,8 @@ def initializeChannel(irc, channel):
         # Send our users and channel modes to the other nets
         log.debug('(%s) initializeChannel: joining our (%s) users: %s', irc.name, remotenet, irc.channels[channel].users)
         relayJoins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
-        irc.proto.joinClient(irc.pseudoclient.uid, channel)
+        if irc.pseudoclient.uid not in irc.channels[channel].users:
+            irc.proto.joinClient(irc.pseudoclient.uid, channel)
 
 def removeChannel(irc, channel):
     """Destroys a relay channel by parting all of its users."""
