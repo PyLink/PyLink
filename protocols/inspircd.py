@@ -23,7 +23,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # are called with the right hooks.
         self.hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
                     'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
-                    'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME'}
+                    'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC'}
         self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
 
@@ -513,6 +513,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
+
+    # SVSTOPIC is used by InspIRCd module m_topiclock - its arguments are the same as FTOPIC
+    handle_svstopic = handle_ftopic
 
     def handle_invite(self, numeric, command, args):
         """Handles incoming INVITEs."""
