@@ -178,11 +178,13 @@ class Irc():
                 return
 
     def callCommand(self, source, text):
+        """Calls a PyLink bot command."""
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         if cmd not in world.commands:
             self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
+            log.info('(%s) Received unknown command %r from %s', self.name, cmd, utils.getHostmask(self, source))
             return
         log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
         for func in world.commands[cmd]:
@@ -205,6 +207,10 @@ class Irc():
             self.proto.messageClient(source, target, text)
             cmd = 'PYLINK_SELF_PRIVMSG'
         self.callHooks([source, cmd, {'target': target, 'text': text}])
+
+    def reply(self, text, notice=False, source=None):
+        """Replies to the last caller in context."""
+        self.msg(self.called_by, text, notice=notice, source=source)
 
     def _disconnect(self):
         log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())

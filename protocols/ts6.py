@@ -578,9 +578,9 @@ class TS6Protocol(TS6BaseProtocol):
         log.debug('Applying modes %s for %s', parsedmodes, uid)
         utils.applyModes(self.irc, uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
-        # Call the OPERED UP hook if +o is in the mode list.
-        if ('o', None) in parsedmodes:
-            otype = 'Server_Administrator' if ('a', None) in parsedmodes else 'IRC_Operator'
+        # Call the OPERED UP hook if +o is being added to the mode list.
+        if ('+o', None) in parsedmodes:
+            otype = 'Server_Administrator' if ('+a', None) in parsedmodes else 'IRC_Operator'
             self.irc.callHooks([uid, 'PYLINK_CLIENT_OPERED', {'text': otype}])
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 

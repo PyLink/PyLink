@@ -2,8 +2,6 @@
 import sys
 import os
 from time import ctime
-import itertools
-import gc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
@@ -19,36 +17,10 @@ def status(irc, source, args):
     Returns your current PyLink login status."""
     identified = irc.users[source].identified
     if identified:
-        irc.msg(irc.called_by, 'You are identified as \x02%s\x02.' % identified)
+        irc.reply('You are identified as \x02%s\x02.' % identified)
     else:
-        irc.msg(irc.called_by, 'You are not identified as anyone.')
-    irc.msg(irc.called_by, 'Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
-
-@utils.add_cmd
-def identify(irc, source, args):
-    """<username> <password>
-
-    Logs in to PyLink using the configured administrator account."""
-    if utils.isChannel(irc.called_by):
-        irc.msg(irc.called_by, 'Error: This command must be sent in private. '
-                '(Would you really type a password inside a public channel?)')
-    try:
-        username, password = args[0], args[1]
-    except IndexError:
-        irc.msg(source, 'Error: Not enough arguments.')
-        return
-    # Usernames are case-insensitive, passwords are NOT.
-    if username.lower() == irc.conf['login']['user'].lower() and password == irc.conf['login']['password']:
-        realuser = irc.conf['login']['user']
-        irc.users[source].identified = realuser
-        irc.msg(source, 'Successfully logged in as %s.' % realuser)
-        log.info("(%s) Successful login to %r by %s.",
-                 irc.name, username, utils.getHostmask(irc, source))
-    else:
-        irc.msg(source, 'Error: Incorrect credentials.')
-        u = irc.users[source]
-        log.warning("(%s) Failed login to %r from %s.",
-                    irc.name, username, utils.getHostmask(irc, source))
+        irc.reply('You are not identified as anyone.')
+    irc.reply('Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
 
 def listcommands(irc, source, args):
     """takes no arguments.
@@ -60,8 +32,8 @@ def listcommands(irc, source, args):
         nfuncs = len(world.commands[cmd])
         if nfuncs > 1:
             cmds[idx] = '%s(x%s)' % (cmd, nfuncs)
-    irc.msg(irc.called_by, 'Available commands include: %s' % ', '.join(cmds))
-    irc.msg(irc.called_by, 'To see help on a specific command, type \x02help <command>\x02.')
+    irc.reply('Available commands include: %s' % ', '.join(cmds))
+    irc.reply('To see help on a specific command, type \x02help <command>\x02.')
 utils.add_cmd(listcommands, 'list')
 
 @utils.add_cmd
@@ -80,7 +52,7 @@ def help(irc, source, args):
     else:
         funcs = world.commands[command]
         if len(funcs) > 1:
-            irc.msg(irc.called_by, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
+            irc.reply('The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
                       % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
         for func in funcs:
             doc = func.__doc__
@@ -91,7 +63,7 @@ def help(irc, source, args):
                 # arguments the command takes.
                 lines[0] = '\x02%s %s\x02 (plugin: %r)' % (command, lines[0], mod)
                 for line in lines:
-                    irc.msg(irc.called_by, line.strip())
+                    irc.reply(line.strip())
             else:
                 irc.msg(source, "Error: Command %r (from plugin %r) "
                                        "doesn't offer any help." % (command, mod))
@@ -105,14 +77,14 @@ def showuser(irc, source, args):
     try:
         target = args[0]
     except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: nick.")
+        irc.reply("Error: Not enough arguments. Needs 1: nick.")
         return
     u = utils.nickToUid(irc, target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
     verbose = utils.isOper(irc, source) or u == source
     if u not in irc.users:
-        irc.msg(irc.called_by, 'Error: Unknown user %r.' % target)
+        irc.reply('Error: Unknown user %r.' % target)
         return
 
     f = lambda s: irc.msg(source, s)
@@ -140,10 +112,10 @@ def showchan(irc, source, args):
     try:
         channel = utils.toLower(irc, args[0])
     except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: channel.")
+        irc.reply("Error: Not enough arguments. Needs 1: channel.")
         return
     if channel not in irc.channels:
-        irc.msg(irc.called_by, 'Error: Unknown channel %r.' % channel)
+        irc.reply('Error: Unknown channel %r.' % channel)
         return
 
     f = lambda s: irc.msg(source, s)
@@ -179,140 +151,19 @@ def showchan(irc, source, args):
             nicklist = nicklist[20:]
 
 @utils.add_cmd
-def shutdown(irc, source, args):
-    """takes no arguments.
-
-    Exits PyLink by disconnecting all networks."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
-    u = irc.users[source]
-    log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
-             u.ident, u.host)
-    for ircobj in world.networkobjects.values():
-        # Disable auto-connect first by setting the time to negative.
-        ircobj.serverdata['autoconnect'] = -1
-        ircobj.aborted.set()
-
-@utils.add_cmd
 def version(irc, source, args):
     """takes no arguments.
 
     Returns the version of the currently running PyLink instance."""
-    irc.msg(irc.called_by, "PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
-    irc.msg(irc.called_by, "The source of this program is available at \x02%s\x02." % world.source)
+    irc.reply("PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
+    irc.reply("The source of this program is available at \x02%s\x02." % world.source)
 
 @utils.add_cmd
 def echo(irc, source, args):
     """<text>
 
     Echoes the text given."""
-    irc.msg(irc.called_by, ' '.join(args))
-
-def load(irc, source, args):
-    """<plugin name>.
-
-    Loads a plugin from the plugin folder."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
-    try:
-        name = args[0]
-    except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: plugin name.")
-        return
-    if name in world.plugins:
-        irc.msg(irc.called_by, "Error: %r is already loaded." % name)
-        return
-    try:
-        world.plugins[name] = pl = utils.loadModuleFromFolder(name, world.plugins_folder)
-    except ImportError as e:
-        if str(e) == ('No module named %r' % name):
-            log.exception('Failed to load plugin %r: The plugin could not be found.', name)
-        else:
-            log.exception('Failed to load plugin %r: ImportError.', name)
-        raise
-    else:
-        if hasattr(pl, 'main'):
-            log.debug('Calling main() function of plugin %r', pl)
-            pl.main(irc)
-    irc.msg(irc.called_by, "Loaded plugin %r." % name)
-utils.add_cmd(load)
-
-def unload(irc, source, args):
-    """<plugin name>.
-
-    Unloads a currently loaded plugin."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
-    try:
-        name = args[0]
-    except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: plugin name.")
-        return
-    if name == 'commands':
-        irc.msg(irc.called_by, "Error: Cannot unload the commands plugin!")
-        return
-    elif name in world.plugins:
-        pl = world.plugins[name]
-        log.debug('sys.getrefcount of plugin %s is %s', pl, sys.getrefcount(pl))
-        # Remove any command functions set by the plugin.
-        for cmdname, cmdfuncs in world.commands.copy().items():
-            log.debug('cmdname=%s, cmdfuncs=%s', cmdname, cmdfuncs)
-            for cmdfunc in cmdfuncs:
-                log.debug('__module__ of cmdfunc %s is %s', cmdfunc, cmdfunc.__module__)
-                if cmdfunc.__module__ == name:
-                    log.debug('Removing %s from world.commands[%s]', cmdfunc, cmdname)
-                    world.commands[cmdname].remove(cmdfunc)
-                    # If the cmdfunc list is empty, remove it.
-                    if not cmdfuncs:
-                        log.debug("Removing world.commands[%s] (it's empty now)", cmdname)
-                        del world.commands[cmdname]
-
-        # Remove any command hooks set by the plugin.
-        for hookname, hookfuncs in world.hooks.copy().items():
-            for hookfunc in hookfuncs:
-                if hookfunc.__module__ == name:
-                    world.hooks[hookname].remove(hookfunc)
-                    # If the hookfuncs list is empty, remove it.
-                    if not hookfuncs:
-                        del world.hooks[hookname]
-
-        # Remove whois handlers too.
-        for f in world.whois_handlers:
-            if f.__module__ == name:
-                world.whois_handlers.remove(f)
-
-        # Call the die() function in the plugin, if present.
-        if hasattr(pl, 'die'):
-            try:
-                pl.die(irc)
-            except:  # But don't allow it to crash the server.
-                log.exception('(%s) Error occurred in die() of plugin %s, skipping...', irc.name, pl)
-
-        # Delete it from memory (hopefully).
-        del world.plugins[name]
-        if name in sys.modules:
-            del sys.modules[name]
-        if name in globals():
-            del globals()[name]
-
-        # Garbage collect.
-        gc.collect()
-
-        irc.msg(irc.called_by, "Unloaded plugin %r." % name)
-        return True  # We succeeded, make it clear (this status is used by reload() below)
-    else:
-        irc.msg(irc.called_by, "Unknown plugin %r." % name)
-utils.add_cmd(unload)
-
-@utils.add_cmd
-def reload(irc, source, args):
-    """<plugin name>.
-
-    Loads a plugin from the plugin folder."""
-    try:
-        name = args[0]
-    except IndexError:
-        irc.msg(irc.called_by, "Error: Not enough arguments. Needs 1: plugin name.")
-        return
-    if unload(irc, source, args):
-        load(irc, source, args)
+    irc.reply(' '.join(args))
 
 @utils.add_cmd
 def rehash(irc, source, args):
@@ -327,7 +178,7 @@ def rehash(irc, source, args):
         new_conf = conf.validateConf(conf.loadConf(fname))
     except Exception as e:  # Something went wrong, abort.
         log.exception("Error REHASH'ing config: ")
-        irc.msg(irc.called_by, "Error loading configuration file: %s: %s", type(e).__name__, e)
+        irc.reply("Error loading configuration file: %s: %s", type(e).__name__, e)
         return
     conf.conf = new_conf
     for network, ircobj in world.networkobjects.copy().items():
@@ -347,4 +198,25 @@ def rehash(irc, source, args):
         if network not in world.networkobjects:
             proto = utils.getProtoModule(sdata['protocol'])
             world.networkobjects[network] = classes.Irc(network, proto, new_conf)
-    irc.msg(irc.called_by, "Done.")
+    irc.reply("Done.")
+
+loglevels = {'DEBUG': 10, 'INFO': 20, 'WARNING': 30, 'ERROR': 40, 'CRITICAL': 50}
+@utils.add_cmd
+def loglevel(irc, source, args):
+    """<level>
+
+    Sets the log level to the given <level>. <level> must be either DEBUG, INFO, WARNING, ERROR, or CRITICAL.
+    If no log level is given, shows the current one."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    try:
+        level = args[0].upper()
+        try:
+            loglevel = loglevels[level]
+        except KeyError:
+            irc.reply('Error: Unknown log level "%s".' % level)
+            return
+        else:
+            log.setLevel(loglevel)
+            irc.reply("Done.")
+    except IndexError:
+        irc.reply(log.getEffectiveLevel())
