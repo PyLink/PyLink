@@ -383,7 +383,7 @@ class UnrealProtocol(TS6BaseProtocol):
         userlist = args[-1].split()
         our_ts = self.irc.channels[channel].ts
         their_ts = int(args[0])
-        if their_ts < our_ts:
+        if their_ts < our_ts and their_ts > 0:
             # Channel timestamp was reset on burst
             log.debug('(%s) Setting channel TS of %s to %s from %s',
                       self.irc.name, channel, their_ts, our_ts)
@@ -426,20 +426,39 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :unreal.midnight.vpn MODE #endlessvoid +q GL 1444361345
         # <- :unreal.midnight.vpn MODE #endlessvoid +ntCo GL 1444361345
         # <- :unreal.midnight.vpn MODE #endlessvoid +mntClfo 5 [10t]:5  GL 1444361345
-        # Well... this seems relatively inconsistent.
-        # Why does only setting some modes show a TS?
+        # <- :GL MODE #services +v GL
+
+        # This seems pretty relatively inconsistent - why do some commands have a TS at the end while others don't?
+        # Answer: the first syntax (MODE sent by SERVER) is used for channel bursts - according to Unreal 3.2 docs,
+        # the last argument should be interpreted as a timestamp ONLY if it is a number and the sender is a server.
+        # Ban bursting does not give any TS, nor do normal users setting modes. SAMODE is special though, it will
+        # send 0 as a TS argument (which should be ignored unless breaking the internal channel TS is desired).
+
         # Also, we need to get rid of that extra space following the +f argument. :|
         if utils.isChannel(args[0]):
             channel = utils.toLower(self.irc, args[0])
             oldobj = self.irc.channels[channel].deepcopy()
-            modes = list(filter(None, args[1:]))
+            modes = list(filter(None, args[1:]))  # normalize whitespace
             parsedmodes = utils.parseModes(self.irc, channel, modes)
             if parsedmodes:
                 utils.applyModes(self.irc, channel, parsedmodes)
+            if numeric in self.irc.servers and args[-1].isdigit():
+                # Sender is a server AND last arg is number. Perform TS updates.
+                our_ts = self.irc.channels[channel].ts
+                their_ts = int(args[-1])
+                if their_ts < our_ts and their_ts > 0:
+                    # Channel timestamp was reset on burst
+                    log.debug('(%s) Setting channel TS of %s to %s from %s',
+                              self.irc.name, channel, their_ts, our_ts)
+                    self.irc.channels[channel].ts = their_ts
+                    self.irc.channels[channel].modes.clear()
+                    for p in self.irc.channels[channel].prefixmodes.values():
+                        p.clear()
             return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
         else:
             log.warning("(%s) received MODE for non-channel target: %r",
                         self.irc.name, args)
+            raise NotImplementedError
 
     def handle_umode2(self, numeric, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
