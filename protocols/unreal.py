@@ -19,7 +19,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.casemapping = 'ascii'
         self.proto_ver = 3999
         self.min_proto_ver = 3999
-        self.hook_map = {'UMODE2': 'MODE'}
+        self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL'}
         self.uidgen = {}
 
         self.caps = {}
@@ -34,6 +34,8 @@ class UnrealProtocol(TS6BaseProtocol):
                          'm': 'moderated', 'K': 'noknock', 'o': 'op', 'v': 'voice',
                          'I': 'invex', 't': 'topiclock', 'f': 'flood_unreal'}
         self._neededCaps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3"]
+
+        self.handle_svskill = self.handle_kill
 
     ### OUTGOING COMMAND FUNCTIONS
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
