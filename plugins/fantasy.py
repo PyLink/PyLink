@@ -12,7 +12,7 @@ def handle_fantasy(irc, source, command, args):
         prefix = irc.botdata["prefix"]
     except KeyError:
         log.warning("(%s) Fantasy prefix was not set in configuration - "
-                    "fantasy commands will not work!", self.name)
+                    "fantasy commands will not work!", irc.name)
         return
     channel = args['target']
     text = args['text']
