@@ -287,8 +287,10 @@ class Irc():
                 hook_func(self, numeric, command, parsed_args)
             except Exception:
                 # We don't want plugins to crash our servers...
-                log.exception('(%s) Unhandled exception caught in %r',
-                              self.name, hook_func)
+                log.exception('(%s) Unhandled exception caught in hook %r from plugin "%s"',
+                              self.name, hook_func, hook_func.__module__)
+                log.error('(%s) The offending hook data was: %s', self.name,
+                          hook_args)
                 continue
 
     def send(self, data):
