@@ -94,7 +94,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink PseudoClient exists.')
 
         orig_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, ts or orig_ts)
+        ts = ts or orig_ts
+        self.updateTS(channel, ts)
 
         log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, self.irc.name, ts,
                   time.strftime("%c", time.localtime(ts)))
