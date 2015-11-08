@@ -76,11 +76,10 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-
     def sjoinServer(self, server, channel, users, ts=None):
         """Sends an SJOIN for a group of users to a channel.
 
-        The sender should always be a Server ID (SID). TS is optional, and defaults
+        The sender should always be a server (SID). TS is optional, and defaults
         to the one we've stored in the channel state if not given.
         <users> is a list of (prefix mode, UID) pairs:
 
@@ -100,17 +99,11 @@ class UnrealProtocol(TS6BaseProtocol):
         assert users, "sjoinServer: No users sent?"
         if not server:
             raise LookupError('No such PyLink server exists.')
+
         orig_ts = self.irc.channels[channel].ts
         ts = ts or orig_ts
-        if ts < orig_ts:
-            # If the TS we're sending is lower than the one that existing, clear the
-            # mode lists from our channel state and reset the timestamp.
-            log.debug('(%s) sjoinServer: resetting TS of %r from %s to %s (clearing modes)',
-                      self.irc.name, channel, orig_ts, ts)
-            self.irc.channels[channel].ts = ts
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
-                p.clear()
+        self.updateTS(channel, ts)
+
         changedmodes = []
         uids = []
         namelist = []
@@ -383,16 +376,10 @@ class UnrealProtocol(TS6BaseProtocol):
         # Interestingly, no modes are ever sent in this command as far as I've seen.
         channel = utils.toLower(self.irc, args[1])
         userlist = args[-1].split()
+
         our_ts = self.irc.channels[channel].ts
         their_ts = int(args[0])
-        if their_ts < our_ts and their_ts > 0:
-            # Channel timestamp was reset on burst
-            log.debug('(%s) Setting channel TS of %s to %s from %s',
-                      self.irc.name, channel, their_ts, our_ts)
-            self.irc.channels[channel].ts = their_ts
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
-                p.clear()
+        self.updateTS(self, channel, their_ts)
 
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
@@ -446,16 +433,8 @@ class UnrealProtocol(TS6BaseProtocol):
                 utils.applyModes(self.irc, channel, parsedmodes)
             if numeric in self.irc.servers and args[-1].isdigit():
                 # Sender is a server AND last arg is number. Perform TS updates.
-                our_ts = self.irc.channels[channel].ts
                 their_ts = int(args[-1])
-                if their_ts < our_ts and their_ts > 0:
-                    # Channel timestamp was reset on burst
-                    log.debug('(%s) Setting channel TS of %s to %s from %s',
-                              self.irc.name, channel, their_ts, our_ts)
-                    self.irc.channels[channel].ts = their_ts
-                    self.irc.channels[channel].modes.clear()
-                    for p in self.irc.channels[channel].prefixmodes.values():
-                        p.clear()
+                self.updateTS(channel, their_ts)
             return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
         else:
             log.warning("(%s) received MODE for non-channel target: %r",
