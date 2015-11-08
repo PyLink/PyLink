@@ -89,17 +89,10 @@ class TS6Protocol(TS6BaseProtocol):
         log.debug('(%s) sjoinServer: got %r for users', self.irc.name, users)
         if not server:
             raise LookupError('No such PyLink PseudoClient exists.')
+
         orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
-        if ts < orig_ts:
-            # If the TS we're sending is lower than the one that existing, clear the
-            # mode lists from our channel state and reset the timestamp.
-            log.debug('(%s) sjoinServer: resetting TS of %r from %s to %s (clearing modes)',
-                      self.irc.name, channel, orig_ts, ts)
-            self.irc.channels[channel].ts = ts
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
-                p.clear()
+        self.updateTS(channel, ts or orig_ts)
+
         log.debug("(%s) sending SJOIN to %s with ts %s (that's %r)", self.irc.name, channel, ts,
                   time.strftime("%c", time.localtime(ts)))
         modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
@@ -497,16 +490,11 @@ class TS6Protocol(TS6BaseProtocol):
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
         channel = utils.toLower(self.irc, args[1])
         userlist = args[-1].split()
-        our_ts = self.irc.channels[channel].ts
         their_ts = int(args[0])
-        if their_ts < our_ts:
-            # Channel timestamp was reset on burst
-            log.debug('(%s) Setting channel TS of %s to %s from %s',
-                      self.irc.name, channel, their_ts, our_ts)
-            self.irc.channels[channel].ts = their_ts
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
-                p.clear()
+        our_ts = self.irc.channels[channel].ts
+
+        self.updateTS(channel, their_ts)
+
         modestring = args[2:-1] or args[2]
         parsedmodes = utils.parseModes(self.irc, channel, modestring)
         utils.applyModes(self.irc, channel, parsedmodes)
@@ -548,14 +536,7 @@ class TS6Protocol(TS6BaseProtocol):
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
             channel = utils.toLower(self.irc, args[1])
-            our_ts = self.irc.channels[channel].ts
-            if ts < our_ts:
-                # Channel timestamp was reset on burst
-                log.debug('(%s) Setting channel TS of %s to %s from %s',
-                          self.irc.name, channel, ts, our_ts)
-                self.irc.channels[channel].ts = ts
-            self.irc.channels[channel].users.add(numeric)
-            self.irc.users[numeric].channels.add(channel)
+            self.updateTS(channel, ts)
         # We send users and modes here because SJOIN and JOIN both use one hook,
         # for simplicity's sake (with plugins).
         return {'channel': channel, 'users': [numeric], 'modes':
