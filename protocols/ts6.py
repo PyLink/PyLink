@@ -91,7 +91,8 @@ class TS6Protocol(TS6BaseProtocol):
             raise LookupError('No such PyLink PseudoClient exists.')
 
         orig_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, ts or orig_ts)
+        ts = ts or orig_ts
+        self.updateTS(channel, ts)
 
         log.debug("(%s) sending SJOIN to %s with ts %s (that's %r)", self.irc.name, channel, ts,
                   time.strftime("%c", time.localtime(ts)))
