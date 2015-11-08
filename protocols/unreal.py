@@ -441,6 +441,16 @@ class UnrealProtocol(TS6BaseProtocol):
                         self.irc.name, args)
             raise NotImplementedError
 
+    def handle_svsmode(self, numeric, command, args):
+        """Handle SVSMODE/SVS2MODE, used for setting user modes on others (services)."""
+        # <- :source SVSMODE target +usermodes
+        target = args[0]
+        modes = args[1:]
+        parsedmodes = utils.parseModes(self.irc, numeric, modes)
+        utils.applyModes(self.irc, numeric, parsedmodes)
+        return {'target': numeric, 'modes': parsedmodes}
+    handle_svs2mode = handle_svsmode
+
     def handle_umode2(self, numeric, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
         parsedmodes = utils.parseModes(self.irc, numeric, args)
