@@ -92,17 +92,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
         log.debug('(%s) sjoinServer: got %r for users', self.irc.name, users)
         if not server:
             raise LookupError('No such PyLink PseudoClient exists.')
+
         orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
-        if ts < orig_ts:
-            # If the TS we're sending is lower than the one that existing, clear the
-            # mode lists from our channel state and reset the timestamp.
-            log.debug('(%s) sjoinServer: resetting TS of %r from %s to %s (clearing modes)',
-                      self.irc.name, channel, orig_ts, ts)
-            self.irc.channels[channel].ts = ts
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
-                p.clear()
+        self.updateTS(channel, ts or orig_ts)
+
         log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, self.irc.name, ts,
                   time.strftime("%c", time.localtime(ts)))
         # Strip out list-modes, they shouldn't ever be sent in FJOIN (protocol rules).
@@ -426,16 +419,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
         channel = utils.toLower(self.irc, args[0])
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
-        our_ts = self.irc.channels[channel].ts
+
         their_ts = int(args[1])
-        if their_ts < our_ts:
-            # Channel timestamp was reset on burst
-            log.debug('(%s) Setting channel TS of %s to %s from %s',
-                      self.irc.name, channel, their_ts, our_ts)
-            self.irc.channels[channel].ts = their_ts
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
-                p.clear()
+        our_ts = self.irc.channels[channel].ts
+        self.updateTS(channel, their_ts)
+
         modestring = args[2:-1] or args[2]
         parsedmodes = utils.parseModes(self.irc, channel, modestring)
         utils.applyModes(self.irc, channel, parsedmodes)

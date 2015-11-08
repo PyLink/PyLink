@@ -287,8 +287,10 @@ class Irc():
                 hook_func(self, numeric, command, parsed_args)
             except Exception:
                 # We don't want plugins to crash our servers...
-                log.exception('(%s) Unhandled exception caught in %r',
-                              self.name, hook_func)
+                log.exception('(%s) Unhandled exception caught in hook %r from plugin "%s"',
+                              self.name, hook_func, hook_func.__module__)
+                log.error('(%s) The offending hook data was: %s', self.name,
+                          hook_args)
                 continue
 
     def send(self, data):
@@ -487,6 +489,18 @@ class Protocol():
         del self.irc.users[numeric]
         log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
         self.irc.servers[sid].users.discard(numeric)
+
+    def updateTS(self, channel, their_ts):
+        our_ts = self.irc.channels[channel].ts
+        if their_ts < our_ts:
+            # Channel timestamp was reset on burst
+            log.debug('(%s) Setting channel TS of %s to %s from %s',
+                      self.irc.name, channel, their_ts, our_ts)
+            self.irc.channels[channel].ts = their_ts
+            # When TS is reset, clear all modes we currently have
+            self.irc.channels[channel].modes.clear()
+            for p in self.irc.channels[channel].prefixmodes.values():
+                p.clear()
 
 class FakeProto(Protocol):
     """Dummy protocol module for testing purposes."""
