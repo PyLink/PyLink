@@ -175,30 +175,32 @@ def rehash(irc, source, args):
     old_conf = conf.conf.copy()
     fname = conf.fname
     try:
-        new_conf = conf.validateConf(conf.loadConf(fname))
+        new_conf = conf.loadConf(fname, errors_fatal=False)
     except Exception as e:  # Something went wrong, abort.
         log.exception("Error REHASH'ing config: ")
-        irc.reply("Error loading configuration file: %s: %s", type(e).__name__, e)
+        irc.reply("Error loading configuration file: %s: %s" % (type(e).__name__, e))
         return
-    conf.conf = new_conf
-    for network, ircobj in world.networkobjects.copy().items():
-        # Server was removed from the config file, disconnect them.
-        log.debug('(%s) rehash: checking if %r is in new conf still.', irc.name, network)
-        if network not in new_conf['servers']:
-            # Disable autoconnect first.
-            log.debug('(%s) rehash: removing connection to %r (removed from config).', irc.name, network)
-            ircobj.serverdata['autoconnect'] = -1
-            ircobj.aborted.set()
-            del world.networkobjects[network]
-        else:
-            ircobj.conf = new_conf
-            ircobj.serverdata = new_conf['servers'][network]
-    for network, sdata in new_conf['servers'].items():
-        # New server was added. Connect them if not already connected.
-        if network not in world.networkobjects:
-            proto = utils.getProtoModule(sdata['protocol'])
-            world.networkobjects[network] = classes.Irc(network, proto, new_conf)
-    irc.reply("Done.")
+    else:
+        new_conf = conf.validateConf(new_conf)
+        conf.conf = new_conf
+        for network, ircobj in world.networkobjects.copy().items():
+            # Server was removed from the config file, disconnect them.
+            log.debug('(%s) rehash: checking if %r is in new conf still.', irc.name, network)
+            if network not in new_conf['servers']:
+                log.debug('(%s) rehash: removing connection to %r (removed from config).', irc.name, network)
+                # Disable autoconnect first.
+                ircobj.serverdata['autoconnect'] = -1
+                ircobj.aborted.set()
+                del world.networkobjects[network]
+            else:
+                ircobj.conf = new_conf
+                ircobj.serverdata = new_conf['servers'][network]
+        for network, sdata in new_conf['servers'].items():
+            # New server was added. Connect them if not already connected.
+            if network not in world.networkobjects:
+                proto = utils.getProtoModule(sdata['protocol'])
+                world.networkobjects[network] = classes.Irc(network, proto, new_conf)
+        irc.reply("Done.")
 
 loglevels = {'DEBUG': 10, 'INFO': 20, 'WARNING': 30, 'ERROR': 40, 'CRITICAL': 50}
 @utils.add_cmd
