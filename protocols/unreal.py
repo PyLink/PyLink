@@ -159,6 +159,42 @@ class UnrealProtocol(TS6BaseProtocol):
         self._send(numeric, 'KILL %s :%s!PyLink (%s)' % (target, self.irc.serverdata['hostname'], reason))
         self.removeClient(target)
 
+    def _sendModes(self, numeric, target, modes, ts=None):
+        """Internal function to send mode changes from a PyLink client/server."""
+        # <- :unreal.midnight.vpn MODE #endlessvoid +ntCo GL 1444361345
+        utils.applyModes(self.irc, target, modes)
+        joinedmodes = utils.joinModes(modes)
+        if utils.isChannel(target):
+            # The MODE command is used for channel mode changes only
+            ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
+            self._send(numeric, 'MODE %s %s %s' % (target, joinedmodes, ts))
+        else:
+            # For user modes, the only way to set modes (for non-U:Lined servers)
+            # is through UMODE2, which sets the modes on the caller.
+            # U:Lines can use SVSMODE/SVS2MODE, but I won't expect people to
+            # U:Line a PyLink daemon...
+            if not utils.isInternalClient(self.irc, target):
+                raise ProtocolError('Cannot force mode change on external clients!')
+            self._send(target, 'UMODE2 %s' % joinedmodes)
+
+    def modeClient(self, numeric, target, modes, ts=None):
+        """
+        Sends mode changes from a PyLink client. The mode list should be
+        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
+        """
+        if not utils.isInternalClient(self.irc, numeric):
+            raise LookupError('No such PyLink client exists.')
+        self._sendModes(numeric, target, modes, ts=ts)
+
+    def modeServer(self, numeric, target, modes, ts=None):
+        """
+        Sends mode changes from a PyLink server. The mode list should be
+        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
+        """
+        if not utils.isInternalServer(self.irc, numeric):
+            raise LookupError('No such PyLink server exists.')
+        self._sendModes(numeric, target, modes, ts=ts)
+
     ### HANDLERS
 
     def connect(self):
@@ -473,6 +509,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_umode2(self, numeric, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
+        # <- :GL UMODE2 +W
         parsedmodes = utils.parseModes(self.irc, numeric, args)
         utils.applyModes(self.irc, numeric, parsedmodes)
         return {'target': numeric, 'modes': parsedmodes}
