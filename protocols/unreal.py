@@ -380,7 +380,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         our_ts = self.irc.channels[channel].ts
         their_ts = int(args[0])
-        self.updateTS(self, channel, their_ts)
+        self.updateTS(channel, their_ts)
 
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
