@@ -140,6 +140,25 @@ class UnrealProtocol(TS6BaseProtocol):
         if not (target is None or source is None):
             self._send(source, 'PING %s %s' % (self.irc.servers[source].name, self.irc.servers[target].name))
 
+    def killServer(self, numeric, target, reason):
+        """Sends a kill from a PyLink server."""
+        # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
+        if not utils.isInternalServer(self.irc, numeric):
+            raise LookupError('No such PyLink server exists.')
+
+        assert target in self.irc.users, "Unknown target %r for killServer!" % target
+        # The killpath doesn't really matter here...
+        self._send(numeric, 'KILL %s :%s!PyLink (%s)' % (target, self.irc.serverdata['hostname'], reason))
+        self.removeClient(target)
+
+    def killClient(self, numeric, target, reason):
+        """Sends a kill from a PyLink client."""
+        if not utils.isInternalClient(self.irc, numeric):
+            raise LookupError('No such PyLink client exists.')
+        assert target in self.irc.users, "Unknown target %r for killClient!" % target
+        self._send(numeric, 'KILL %s :%s!PyLink (%s)' % (target, self.irc.serverdata['hostname'], reason))
+        self.removeClient(target)
+
     ### HANDLERS
 
     def connect(self):
