@@ -239,11 +239,6 @@ class TS6Protocol(TS6BaseProtocol):
         else:
             self._send(source, 'PING %s' % source)
 
-    def numericServer(self, source, numeric, target, text):
-        """Sends raw numerics from a server to a remote client, used for WHOIS
-        replies."""
-        self._send(source, '%s %s %s' % (numeric, target, text))
-
     def awayClient(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""

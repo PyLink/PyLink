@@ -28,6 +28,11 @@ class TS6BaseProtocol(Protocol):
 
     ### OUTGOING COMMANDS
 
+    def numericServer(self, source, numeric, target, text):
+        """Sends raw numerics from a server to a remote client, used for WHOIS
+        replies."""
+        self._send(source, '%s %s %s' % (numeric, target, text))
+
     def _sendKick(self, numeric, channel, target, reason=None):
         """Internal function to send kicks from a PyLink client/server."""
         channel = utils.toLower(self.irc, channel)
