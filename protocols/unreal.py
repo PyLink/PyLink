@@ -19,7 +19,8 @@ class UnrealProtocol(TS6BaseProtocol):
         self.casemapping = 'ascii'
         self.proto_ver = 3999
         self.min_proto_ver = 3999
-        self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL'}
+        self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
+                         'SVS2MODE': 'MODE'}
         self.uidgen = {}
 
         self.caps = {}
@@ -444,10 +445,10 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_svsmode(self, numeric, command, args):
         """Handle SVSMODE/SVS2MODE, used for setting user modes on others (services)."""
         # <- :source SVSMODE target +usermodes
-        target = args[0]
+        target = self._getNick(args[0])
         modes = args[1:]
-        parsedmodes = utils.parseModes(self.irc, numeric, modes)
-        utils.applyModes(self.irc, numeric, parsedmodes)
+        parsedmodes = utils.parseModes(self.irc, target, modes)
+        utils.applyModes(self.irc, target, parsedmodes)
         return {'target': numeric, 'modes': parsedmodes}
     handle_svs2mode = handle_svsmode
 
