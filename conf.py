@@ -47,15 +47,18 @@ def validateConf(conf):
         conf['login']['password'] != "changeme", "You have not set the login details correctly!"
     return conf
 
-def loadConf(fname):
+def loadConf(fname, errors_fatal=True):
     """Loads a PyLink configuration file from the filename given."""
     with open(fname, 'r') as f:
         try:
             conf = yaml.load(f)
         except Exception as e:
             print('ERROR: Failed to load config from %r: %s: %s' % (fname, type(e).__name__, e))
-            sys.exit(4)
-        return conf
+            if errors_fatal:
+                sys.exit(4)
+            raise
+        else:
+            return conf
 
 if world.testing:
     conf = testconf
