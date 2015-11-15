@@ -25,6 +25,8 @@ class TS6BaseProtocol(Protocol):
         for k, v in self.irc.servers.items():
             if v.name.lower() == nick:
                 return k
+        else:
+            return sname  # Fall back to given text instead of None
 
     ### OUTGOING COMMANDS
 
@@ -103,6 +105,40 @@ class TS6BaseProtocol(Protocol):
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
+    def spawnServer(self, name, sid=None, uplink=None, desc=None):
+        """
+        Spawns a server off a PyLink server. desc (server description)
+        defaults to the one in the config. uplink defaults to the main PyLink
+        server, and sid (the server ID) is automatically generated if not
+        given.
+        """
+        # -> :0AL SID test.server 1 0XY :some silly pseudoserver
+        uplink = uplink or self.irc.sid
+        name = name.lower()
+        desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
+        if sid is None:  # No sid given; generate one!
+            sid = self.sidgen.next_sid()
+        assert len(sid) == 3, "Incorrect SID length"
+        if sid in self.irc.servers:
+            raise ValueError('A server with SID %r already exists!' % sid)
+        for server in self.irc.servers.values():
+            if name == server.name:
+                raise ValueError('A server named %r already exists!' % name)
+        if not utils.isInternalServer(self.irc, uplink):
+            raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
+        if not utils.isServerName(name):
+            raise ValueError('Invalid server name %r' % name)
+        self._send(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
+        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
+        return sid
+
+    def squitServer(self, source, target, text='No reason given'):
+        """SQUITs a PyLink server."""
+        # -> SQUIT 9PZ :blah, blah
+        log.debug('source=%s, target=%s', source, target)
+        self._send(source, 'SQUIT %s :%s' % (target, text))
+        self.handle_squit(source, 'SQUIT', [target, text])
+
     ### HANDLERS
 
     def handle_privmsg(self, source, command, args):
@@ -172,6 +208,7 @@ class TS6BaseProtocol(Protocol):
     def handle_squit(self, numeric, command, args):
         """Handles incoming SQUITs (netsplits)."""
         # :70M SQUIT 1ML :Server quit by GL!gl@0::1
+        log.debug('handle_squit args: %s', args)
         split_server = args[0]
         affected_users = []
         log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])

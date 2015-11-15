@@ -247,39 +247,6 @@ class TS6Protocol(TS6BaseProtocol):
         else:
             self._send(source, 'AWAY')
 
-    def spawnServer(self, name, sid=None, uplink=None, desc=None):
-        """
-        Spawns a server off a PyLink server. desc (server description)
-        defaults to the one in the config. uplink defaults to the main PyLink
-        server, and sid (the server ID) is automatically generated if not
-        given.
-        """
-        # -> :0AL SID test.server 1 0XY :some silly pseudoserver
-        uplink = uplink or self.irc.sid
-        name = name.lower()
-        desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
-        if sid is None:  # No sid given; generate one!
-            sid = self.sidgen.next_sid()
-        assert len(sid) == 3, "Incorrect SID length"
-        if sid in self.irc.servers:
-            raise ValueError('A server with SID %r already exists!' % sid)
-        for server in self.irc.servers.values():
-            if name == server.name:
-                raise ValueError('A server named %r already exists!' % name)
-        if not utils.isInternalServer(self.irc, uplink):
-            raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
-        if not utils.isServerName(name):
-            raise ValueError('Invalid server name %r' % name)
-        self._send(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
-        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
-        return sid
-
-    def squitServer(self, source, target, text='No reason given'):
-        """SQUITs a PyLink server."""
-        # -> SQUIT 9PZ :blah, blah
-        self._send(source, 'SQUIT %s :%s' % (target, text))
-        self.handle_squit(source, 'SQUIT', [target, text])
-
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts

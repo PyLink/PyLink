@@ -22,6 +22,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
                          'SVS2MODE': 'MODE'}
         self.uidgen = {}
+        self.sidgen = utils.TS6SIDGenerator(self.irc)
 
         self.caps = {}
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
@@ -36,6 +37,7 @@ class UnrealProtocol(TS6BaseProtocol):
                          'I': 'invex', 't': 'topiclock', 'f': 'flood_unreal'}
         self._neededCaps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3"]
 
+        # Some command aliases
         self.handle_svskill = self.handle_kill
 
     ### OUTGOING COMMAND FUNCTIONS
@@ -194,6 +196,14 @@ class UnrealProtocol(TS6BaseProtocol):
         if not utils.isInternalServer(self.irc, numeric):
             raise LookupError('No such PyLink server exists.')
         self._sendModes(numeric, target, modes, ts=ts)
+
+    def topicServer(self, numeric, target, text):
+        """Sends a TOPIC change from a PyLink server."""
+        if not utils.isInternalServer(self.irc, numeric):
+            raise LookupError('No such PyLink server exists.')
+        self._send(numeric, 'TOPIC %s :%s' % (target, text))
+        self.irc.channels[target].topic = text
+        self.irc.channels[target].topicset = True
 
     ### HANDLERS
 
@@ -375,8 +385,13 @@ class UnrealProtocol(TS6BaseProtocol):
             args = args[2:]
             # If the sender isn't in UID format, try to convert it automatically.
             # Unreal's protocol isn't quite consistent with this yet!
-            numeric = self._getSid(sender) or utils.nickToUid(self.irc, sender) or \
-                sender
+            sender_server = self._getSid(sender)
+            if sender_server in self.irc.servers:
+                # Sender is a server when converted from name to SID.
+                numeric = sender_server
+            else:
+                # Sender is a user.
+                numeric = self._getNick(sender)
         # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
         except IndexError:
             # Raw command without an explicit sender; assume it's being sent by our uplink.
