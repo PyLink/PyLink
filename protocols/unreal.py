@@ -205,6 +205,22 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
+    def updateClient(self, numeric, field, text):
+        """Updates the ident, host, or realname of a PyLink client."""
+        field = field.upper()
+        if field == 'IDENT':
+            self.irc.users[numeric].ident = text
+            self._send(numeric, 'SETIDENT %s' % text)
+        elif field == 'HOST':
+            self.irc.users[numeric].host = text
+            self._send(numeric, 'SETHOST %s' % text)
+        elif field in ('REALNAME', 'GECOS'):
+            self.irc.users[numeric].realname = text
+            self._send(numeric, 'SETNAME :%s' % text)
+        else:
+            raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
+
+
     ### HANDLERS
 
     def connect(self):
