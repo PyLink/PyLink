@@ -239,14 +239,6 @@ class TS6Protocol(TS6BaseProtocol):
         else:
             self._send(source, 'PING %s' % source)
 
-    def awayClient(self, source, text):
-        """Sends an AWAY message from a PyLink client. <text> can be an empty string
-        to unset AWAY status."""
-        if text:
-            self._send(source, 'AWAY :%s' % text)
-        else:
-            self._send(source, 'AWAY')
-
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
@@ -644,14 +636,5 @@ class TS6Protocol(TS6BaseProtocol):
                         ' desyncs, try adding the line "loadmodule "extensions/%s.so";" to '
                         'your IRCd configuration.', self.irc.name, setter, badmode,
                         charlist[badmode])
-
-    def handle_away(self, numeric, command, args):
-        """Handles incoming AWAY messages."""
-        # <- :6ELAAAAAB AWAY :Auto-away
-        try:
-            self.irc.users[numeric].away = text = args[0]
-        except IndexError:  # User is unsetting away status
-            self.irc.users[numeric].away = text = ''
-        return {'text': text}
 
 Class = TS6Protocol

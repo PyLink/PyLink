@@ -139,6 +139,14 @@ class TS6BaseProtocol(Protocol):
         self._send(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
+    def awayClient(self, source, text):
+        """Sends an AWAY message from a PyLink client. <text> can be an empty string
+        to unset AWAY status."""
+        if text:
+            self._send(source, 'AWAY :%s' % text)
+        else:
+            self._send(source, 'AWAY')
+
     ### HANDLERS
 
     def handle_privmsg(self, source, command, args):
@@ -262,3 +270,12 @@ class TS6BaseProtocol(Protocol):
             if not (self.irc.channels[channel].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[channel].modes)):
                 del self.irc.channels[channel]
         return {'channels': channels, 'text': reason}
+
+    def handle_away(self, numeric, command, args):
+        """Handles incoming AWAY messages."""
+        # <- :6ELAAAAAB AWAY :Auto-away
+        try:
+            self.irc.users[numeric].away = text = args[0]
+        except IndexError:  # User is unsetting away status
+            self.irc.users[numeric].away = text = ''
+        return {'text': text}
