@@ -553,4 +553,43 @@ class UnrealProtocol(TS6BaseProtocol):
         # The actual WHOIS handling is done protocol-independently by coreplugin.
         return {'target': self._getNick(args[-1])}
 
+    def handle_setident(self, numeric, command, args):
+        """Handles SETIDENT, used for self ident changes."""
+        # <- :70MAAAAAB SETIDENT test
+        self.irc.users[numeric].ident = newident = args[0]
+        return {'target': numeric, 'newident': newident}
+
+    def handle_sethost(self, numeric, command, args):
+        """Handles CHGHOST, used for self hostname changes."""
+        # <- :70MAAAAAB SETIDENT some.host
+        self.irc.users[numeric].host = newhost = args[0]
+        return {'target': numeric, 'newhost': newhost}
+
+    def handle_setname(self, numeric, command, args):
+        """Handles SETNAME, used for self real name/gecos changes."""
+        # <- :70MAAAAAB SETNAME :afdsafasf
+        self.irc.users[numeric].realname = newgecos = args[0]
+        return {'target': numeric, 'newgecos': newgecos}
+
+    def handle_chgident(self, numeric, command, args):
+        """Handles CHGIDENT, used for denoting ident changes."""
+        # <- :GL CHGIDENT GL test
+        target = self._getNick(args[0])
+        self.irc.users[target].ident = newident = args[1]
+        return {'target': target, 'newident': newident}
+
+    def handle_chghost(self, numeric, command, args):
+        """Handles CHGHOST, used for denoting hostname changes."""
+        # <- :GL CHGHOST GL some.host
+        target = self._getNick(args[0])
+        self.irc.users[target].host = newhost = args[1]
+        return {'target': target, 'newhost': newhost}
+
+    def handle_chgname(self, numeric, command, args):
+        """Handles CHGNAME, used for denoting real name/gecos changes."""
+        # <- :GL CHGNAME GL :afdsafasf
+        target = self._getNick(args[0])
+        self.irc.users[target].realname = newgecos = args[1]
+        return {'target': target, 'newgecos': newgecos}
+
 Class = UnrealProtocol
