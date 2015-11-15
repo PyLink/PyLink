@@ -521,7 +521,8 @@ class UnrealProtocol(TS6BaseProtocol):
             if numeric in self.irc.servers and args[-1].isdigit():
                 # Sender is a server AND last arg is number. Perform TS updates.
                 their_ts = int(args[-1])
-                self.updateTS(channel, their_ts)
+                if their_ts > 0:
+                    self.updateTS(channel, their_ts)
             return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
         else:
             log.warning("(%s) received MODE for non-channel target: %r",
