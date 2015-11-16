@@ -220,6 +220,11 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
+    def inviteClient(self, numeric, target, channel):
+        """Sends an INVITE from a PyLink client.."""
+        if not utils.isInternalClient(self.irc, numeric):
+            raise LookupError('No such PyLink client exists.')
+        self._send(numeric, 'INVITE %s %s' % (target, channel))
 
     ### HANDLERS
 
@@ -608,5 +613,13 @@ class UnrealProtocol(TS6BaseProtocol):
         target = self._getNick(args[0])
         self.irc.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
+
+    def handle_invite(self, numeric, command, args):
+        """Handles incoming INVITEs."""
+        # <- :GL INVITE PyLink-devel :#a
+        target = self._getNick(args[0])
+        channel = args[1].lower()
+        # We don't actually need to process this; it's just something plugins/hooks can use
+        return {'target': target, 'channel': channel}
 
 Class = UnrealProtocol
