@@ -23,6 +23,7 @@ Dependencies currently include:
 * InspIRCd 2.0.x - module `inspircd`
 * charybdis (3.5.x / git master) - module `ts6`
 * Elemental-IRCd (6.6.x / git master) - module `ts6`
+* UnrealIRCd 4.x (**experimental**) - module `unreal` (*NOT* Unreal 3.2 or lower)
 
 ### Setup
 
