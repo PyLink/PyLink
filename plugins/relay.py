@@ -170,6 +170,7 @@ def getRemoteSid(irc, remoteirc):
     it if it doesn't exist."""
     # Don't spawn servers too early.
     irc.connected.wait(2)
+
     try:
         spawnservers = irc.conf['relay']['spawn_servers']
     except KeyError:

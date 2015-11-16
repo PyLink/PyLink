@@ -20,7 +20,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.proto_ver = 3999
         self.min_proto_ver = 3999
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
-                         'SVS2MODE': 'MODE'}
+                         'SVS2MODE': 'MODE', 'SJOIN': 'JOIN'}
         self.uidgen = {}
         self.sidgen = utils.TS6SIDGenerator(self.irc)
 
@@ -261,6 +261,7 @@ class UnrealProtocol(TS6BaseProtocol):
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
         self._send(self.irc.sid, 'EOS')
+        self.irc.connected.set()
 
     def handle_uid(self, numeric, command, args):
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
