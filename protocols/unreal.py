@@ -226,6 +226,16 @@ class UnrealProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client exists.')
         self._send(numeric, 'INVITE %s %s' % (target, channel))
 
+    def knockClient(self, numeric, target, text):
+        """Sends a KNOCK from a PyLink client."""
+        # KNOCKs in UnrealIRCd are actually just specially formatted NOTICEs,
+        # sent to all ops in a channel.
+        # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by GL|!gl@hidden-1C620195 (test)
+        assert utils.isChannel(target), "Can only knock on channels!"
+        sender = utils.clientToServer(self.irc, numeric)
+        s = '[Knock] by %s (%s)' % (utils.getHostmask(self.irc, numeric), text)
+        self._send(sender, 'NOTICE @%s :%s' % (target, s))
+
     ### HANDLERS
 
     def connect(self):
