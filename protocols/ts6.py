@@ -588,7 +588,7 @@ class TS6Protocol(TS6BaseProtocol):
         except IndexError:
             ts = int(time.time())
         # We don't actually need to process this; it's just something plugins/hooks can use
-        return {'target': target, 'channel': channel}
+        return {'target': target, 'channel': channel, 'ts': ts}
 
     def handle_chghost(self, numeric, command, args):
         """Handles incoming CHGHOST commands."""
