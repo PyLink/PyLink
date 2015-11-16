@@ -18,6 +18,8 @@ Protocol modules have some *very* ***important*** jobs. If any of these aren't d
 
 5) Implement a series of camelCase `commandServer/Client` functions - plugins use these for sending outgoing commands. See the `Outbound commands` section below for a list of which ones are needed.
 
+6) Set the threaded event `irc.connected` (via `irc.connected.set()`) when the initial connection + burst phase is complete. This is important for plugins like relay that do state checking, and they will fail to work if this is not set.
+
 ## Core functions
 
 The following functions *must* be implemented by any protocol module within its main class, since they are used by the IRC internals.
