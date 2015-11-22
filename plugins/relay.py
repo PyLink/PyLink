@@ -124,6 +124,14 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
 
     return nick
 
+def normalizeHost(irc, host):
+    """Creates a normalized hostname for the given host suitable for
+    introduction to a remote network (as a relay client)."""
+    if irc.protoname == 'unreal':
+        # UnrealIRCd doesn't allow slashes in hostnames
+        host = host.replace('/', '.')
+    return host[:64]  # Limited to 64 chars
+
 def loadDB():
     """Loads the relay database, creating a new one if this fails."""
     global db
@@ -219,8 +227,8 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             nick = normalizeNick(remoteirc, irc.name, userobj.nick)
             # Truncate idents at 10 characters, because TS6 won't like them otherwise!
             ident = userobj.ident[:10]
-            # Ditto hostname at 64 chars.
-            host = userobj.host[:64]
+            # Normalize hostnames
+            host = normalizeHost(remoteirc, userobj.host)
             realname = userobj.realname
             modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
             opertype = ''
@@ -849,6 +857,8 @@ def handle_chgclient(irc, source, command, args):
         for netname, user in relayusers[(irc.name, target)].items():
             remoteirc = world.networkobjects[netname]
             try:
+                if field == 'HOST':
+                    text = normalizeHost(remoteirc, text)
                 remoteirc.proto.updateClient(user, field, text)
             except NotImplementedError:  # IRCd doesn't support changing the field we want
                 log.debug('(%s) Ignoring changing field %r of %s on %s (for %s/%s);'
