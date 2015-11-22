@@ -230,7 +230,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             # Normalize hostnames
             host = normalizeHost(remoteirc, userobj.host)
             realname = userobj.realname
-            modes = getSupportedUmodes(irc, remoteirc, userobj.modes)
+            modes = set(getSupportedUmodes(irc, remoteirc, userobj.modes))
             opertype = ''
             if ('o', None) in userobj.modes:
                 if hasattr(userobj, 'opertype'):
@@ -255,7 +255,8 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
                 except KeyError:
                     use_hideoper = True
                 if hideoper_mode and use_hideoper:
-                    modes.append((hideoper_mode, None))
+                    modes.add((hideoper_mode, None))
+
             rsid = getRemoteSid(remoteirc, irc)
             try:
                 showRealIP = irc.conf['relay']['show_ips']
@@ -537,7 +538,7 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
                       'stripcolor', 'topiclock', 'voice'}
 whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
                       'regdeaf', 'u_stripcolor', 'u_noctcp', 'wallops',
-                      'cloak', 'hideidle'}
+                      'hideidle'}
 def relayModes(irc, remoteirc, sender, channel, modes=None):
     remotechan = getRemoteChan(irc, remoteirc, channel)
     log.debug('(%s) Relay mode: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
