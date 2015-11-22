@@ -20,7 +20,8 @@ class UnrealProtocol(TS6BaseProtocol):
         self.proto_ver = 3999
         self.min_proto_ver = 3999
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
-                         'SVS2MODE': 'MODE', 'SJOIN': 'JOIN'}
+                         'SVS2MODE': 'MODE', 'SJOIN': 'JOIN', 'SETHOST': 'CHGHOST',
+                         'SETIDENT': 'CHGIDENT', 'SETNAME': 'CHGNAME'}
         self.uidgen = {}
         self.sidgen = utils.TS6SIDGenerator(self.irc)
 
