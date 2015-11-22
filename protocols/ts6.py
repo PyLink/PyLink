@@ -289,7 +289,7 @@ class TS6Protocol(TS6BaseProtocol):
                         'invisible': 'i', 'oper': 'o', 'wallops': 'w',
                         'snomask': 's', 'u_noforward': 'Q', 'regdeaf': 'R',
                         'callerid': 'g', 'chary_operwall': 'z', 'chary_locops':
-                        'l',
+                        'l', 'cloak': 'x',
                          # Now, map all the ABCD type modes:
                          '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzl'}
         self.irc.umodes.update(chary_umodes)

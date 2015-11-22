@@ -36,6 +36,7 @@ class UnrealProtocol(TS6BaseProtocol):
                          'C': 'noctcp', 'O': 'operonly', 'S': 'stripcolor',
                          'm': 'moderated', 'K': 'noknock', 'o': 'op', 'v': 'voice',
                          'I': 'invex', 't': 'topiclock', 'f': 'flood_unreal'}
+
         self._neededCaps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3"]
 
         # Some command aliases
@@ -243,7 +244,15 @@ class UnrealProtocol(TS6BaseProtocol):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
-        ### XXX: fill out self.irc.umodes
+
+        self.irc.umodes.update({'deaf': 'd', 'invisible': 'i', 'hidechans': 'p',
+                                'protected': 'q', 'registered': 'r',
+                                'snomask': 's', 'vhost': 't', 'wallops': 'w',
+                                'bot': 'B', 'cloak': 'x', 'ssl': 'z',
+                                'filter': 'G', 'hideoper': 'H', 'hideidle': 'I',
+                                'regdeaf': 'R', 'servprotect': 'S',
+                                'u_noctcp': 'T', 'showwhois': 'W',
+                                '*A': '', '*B': '', '*C': '', '*D': 'dipqrstwBxzGHIRSTW'})
 
         f = self.irc.send
         host = self.irc.serverdata["hostname"]
@@ -262,6 +271,7 @@ class UnrealProtocol(TS6BaseProtocol):
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
         self._send(self.irc.sid, 'EOS')
+
         self.irc.connected.set()
 
     def handle_uid(self, numeric, command, args):
