@@ -66,7 +66,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.servers[server].users.add(uid)
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
         self._send(server, "UID {nick} 0 {ts} {ident} {realhost} {uid} 0 {modes} "
-                           "* {host} * :{realname}".format(ts=ts, host=host,
+                           "{host} * * :{realname}".format(ts=ts, host=host,
                                 nick=nick, ident=ident, uid=uid,
                                 modes=raw_modes, realname=realname,
                                 realhost=realhost))
@@ -277,13 +277,17 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_uid(self, numeric, command, args):
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
         # <- :001 UID GL| 0 1441389007 gl 10.120.0.6 001ZO8F03 0 +iwx * 391A9CB9.26A16454.D9847B69.IP CngABg== :realname
-        # arguments: nick, number???, ts, ident, real-host, UID, number???, modes,
-        #            star???, hidden host, base64-encoded IP, and realname
+        # arguments: nick, hopcount???, ts, ident, real-host, UID, number???, modes,
+        #            displayed host, cloaked (+x) host, base64-encoded IP, and realname
         # TODO: find out what all the "???" fields mean.
         nick = args[0]
         ts, ident, realhost, uid = args[2:6]
         modestring = args[7]
-        host = args[9]
+        host = args[8]
+        if host == '*':
+            # A single * means that there is no displayed/virtual host, and
+            # that it's the same as the real host
+            host = realhost
         raw_ip = args[10].encode()  # codecs.decode only takes bytes, not str
         if raw_ip == b'*':  # Dummy IP (for services, etc.)
             ip = '0.0.0.0'
@@ -303,6 +307,14 @@ class UnrealProtocol(TS6BaseProtocol):
         parsedmodes = utils.parseModes(self.irc, uid, [modestring])
         utils.applyModes(self.irc, uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
+
+        # The cloaked (+x) host is completely separate from the displayed host
+        # and real host in that it is ONLY shown if the user is +x (cloak mode
+        # enabled) but NOT +t (vHost set). We'll store this separately for now,
+        # but more handling is needed so that plugins can update the cloak host
+        # appropriately.
+        self.irc.users[uid].cloaked_host = args[9]
+
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_pass(self, numeric, command, args):
