@@ -1,12 +1,12 @@
 import string
 import re
 import inspect
-import imp
+import importlib
+import os
 
 from log import log
 import world
 
-# This is separate from classes.py to prevent import loops.
 class NotAuthenticatedError(Exception):
     pass
 
@@ -104,7 +104,7 @@ class TS6SIDGenerator():
         return sid
 
 def add_cmd(func, name=None):
-    """Binds a command to the given command name."""
+    """Binds an IRC command function to the given command name."""
     if name is None:
         name = func.__name__
     name = name.lower()
@@ -112,7 +112,7 @@ def add_cmd(func, name=None):
     return func
 
 def add_hook(func, command):
-    """Binds a hook function to the given command."""
+    """Binds a hook function to the given command name."""
     command = command.upper()
     world.hooks[command].append(func)
     return func
@@ -142,21 +142,22 @@ def clientToServer(irc, numeric):
 
 _nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
 def isNick(s, nicklen=None):
-    """Checks whether the string given is a valid nick."""
+    """Returns whether the string given is a valid nick."""
     if nicklen and len(s) > nicklen:
         return False
     return bool(re.match(_nickregex, s))
 
 def isChannel(s):
-    """Checks whether the string given is a valid channel name."""
+    """Returns whether the string given is a valid channel name."""
     return str(s).startswith('#')
 
 def _isASCII(s):
+    """Returns whether the string given is valid ASCII."""
     chars = string.ascii_letters + string.digits + string.punctuation
     return all(char in chars for char in s)
 
 def isServerName(s):
-    """Checks whether the string given is a server name."""
+    """Returns whether the string given is a valid IRC server name."""
     return _isASCII(s) and '.' in s and not s.startswith('.')
 
 hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
@@ -504,9 +505,10 @@ def getHostmask(irc, user):
     return '%s!%s@%s' % (nick, ident, host)
 
 def loadModuleFromFolder(name, folder):
-    """Attempts an import of name from a specific folder, returning the resulting module."""
-    moduleinfo = imp.find_module(name, folder)
-    m = imp.load_source(name, moduleinfo[1])
+    """Attempts and returns an import of the given module name from a specific
+    folder."""
+    fullpath = os.path.join(folder, '%s.py' % name)
+    m = importlib.machinery.SourceFileLoader(name, fullpath).load_module()
     return m
 
 def getProtoModule(protoname):

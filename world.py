@@ -19,8 +19,8 @@ plugins = {}
 whois_handlers = []
 started = threading.Event()
 
-plugins_folder = [os.path.join(os.getcwd(), 'plugins')]
-protocols_folder = [os.path.join(os.getcwd(), 'protocols')]
+plugins_folder = os.path.join(os.getcwd(), 'plugins')
+protocols_folder = os.path.join(os.getcwd(), 'protocols')
 
 version = "<unknown>"
 source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
