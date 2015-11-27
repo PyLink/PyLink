@@ -446,7 +446,7 @@ class UnrealProtocol(TS6BaseProtocol):
         in that it returns the original text instead of None, if no matching nick is found."""
         target = utils.nickToUid(self.irc, target) or target
         if target not in self.irc.users and not utils.isChannel(target):
-            log.warning("(%s) Possible desync? Got command target %s, who "
+            log.debug("(%s) Possible desync? Got command target %s, who "
                         "isn't in our user list!", self.irc.name, target)
         return target
 
