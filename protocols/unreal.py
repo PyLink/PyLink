@@ -3,6 +3,7 @@ import sys
 import os
 import time
 import codecs
+import socket
 import re
 
 curdir = os.path.dirname(__file__)
@@ -64,12 +65,31 @@ class UnrealProtocol(TS6BaseProtocol):
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         utils.applyModes(self.irc, uid, modes)
         self.irc.servers[server].users.add(uid)
+
+        # UnrealIRCd requires encoding the IP by first packing it into a binary format,
+        # and then encoding the binary with Base64.
+        if ip == '0.0.0.0':  # Dummy IP (for services, etc.) use a single *.
+            encoded_ip = '*'
+        else:
+            try:  # Try encoding as IPv4 first.
+                binary_ip = socket.inet_pton(socket.AF_INET, ip)
+            except OSError:
+                try:  # That failed, try IPv6 next.
+                    binary_ip = socket.inet_pton(socket.AF_INET6, ip)
+                except OSError:
+                    raise ValueError("Invalid IPv4 or IPv6 address %r." % ip)
+
+            # Encode in Base64.
+            encoded_ip = codecs.encode(binary_ip, "base64")
+            # Now, strip the trailing \n and decode into a string again.
+            encoded_ip = encoded_ip.strip().decode()
+
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
         self._send(server, "UID {nick} 0 {ts} {ident} {realhost} {uid} 0 {modes} "
-                           "{host} * * :{realname}".format(ts=ts, host=host,
+                           "{host} * {ip} :{realname}".format(ts=ts, host=host,
                                 nick=nick, ident=ident, uid=uid,
                                 modes=raw_modes, realname=realname,
-                                realhost=realhost))
+                                realhost=realhost, ip=encoded_ip))
         return u
 
     def joinClient(self, client, channel):
@@ -292,14 +312,18 @@ class UnrealProtocol(TS6BaseProtocol):
         if raw_ip == b'*':  # Dummy IP (for services, etc.)
             ip = '0.0.0.0'
         else:
-            # Each base64-encoded character represents a bit in the IP.
-            raw_ip = codecs.decode(raw_ip, "base64")
-            ipbits = list(map(str, raw_ip))  # Decode every bit
+            # First, decode the Base64 string into a packed binary IP address.
+            ip = codecs.decode(raw_ip, "base64")
 
-            if len(ipbits) == 4:  # IPv4 address.
-                ip = '.'.join(ipbits)
-            elif len(ipbits) == 16:  # IPv6 address.
-                ip = ':'.join(ipbits)
+            try:  # IPv4 address.
+                ip = socket.inet_ntop(socket.AF_INET, ip)
+            except ValueError:  # IPv6 address.
+                ip = socket.inet_ntop(socket.AF_INET6, ip)
+                # HACK: make sure a leading ":" in the IPv6 address (e.g. ::1)
+                # doesn't cause it to be misinterpreted as the last argument
+                # in a line, should it be mirrored to other networks.
+                if ip.startswith(':'):
+                    ip = '0' + ip
             else:
                 raise ProtocolError("Invalid number of bits in IP address field (got %s, expected 4 or 16)." % len(ipbits))
         realname = args[-1]
