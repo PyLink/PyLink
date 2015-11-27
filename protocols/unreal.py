@@ -90,6 +90,12 @@ class UnrealProtocol(TS6BaseProtocol):
                                 nick=nick, ident=ident, uid=uid,
                                 modes=raw_modes, realname=realname,
                                 realhost=realhost, ip=encoded_ip))
+
+        # Force the virtual hostname to show correctly by running SETHOST on
+        # the user. Otherwise, Unreal will show the real host of the person
+        # instead, which is probably not what we want.
+        self.updateClient(uid, 'HOST', host)
+
         return u
 
     def joinClient(self, client, channel):
