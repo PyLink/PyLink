@@ -707,6 +707,18 @@ def handle_messages(irc, numeric, command, args):
     target = args['target']
     text = args['text']
     if utils.isInternalClient(irc, numeric) and utils.isInternalClient(irc, target):
+        # Drop attempted PMs between internal clients (this shouldn't happen,
+        # but whatever).
+        return
+    elif numeric in irc.servers:
+        # Sender is a server? This shouldn't be allowed, except for some truly
+        # special cases... We'll route these through the main PyLink client,
+        # tagging the message with the sender name.
+        text = '[from %s] %s' % (irc.servers[numeric].name, text)
+        numeric = irc.pseudoclient.uid
+    elif numeric not in irc.users:
+        # Sender didn't pass the check above, AND isn't a user.
+        log.debug('(%s) relay: Unknown message sender %s.', numeric)
         return
     relay = getRelay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
