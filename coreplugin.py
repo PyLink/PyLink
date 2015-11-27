@@ -271,7 +271,7 @@ def main(irc=None):
     # its job.
     if irc and not irc.connected.wait(2):
         log.warning('(%s) IRC network %s (protocol %s) has not set '
-                    'irc.connected state after 2 seconds - this may be an '
-                    'in the protocol module code, and will cause plugins like '
+                    'irc.connected state after 2 seconds - this may be a bug '
+                    'in the protocol module, and will cause plugins like '
                     'relay to not work correctly!', irc.name, irc.name,
                     irc.protoname)
