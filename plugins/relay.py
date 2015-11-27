@@ -471,7 +471,7 @@ def isRelayClient(irc, user):
 ### EVENT HANDLER INTERNALS
 
 def relayJoins(irc, channel, users, ts, burst=True):
-    for name, remoteirc in world.networkobjects.items():
+    for name, remoteirc in world.networkobjects.copy().items():
         queued_users = []
         if name == irc.name or not remoteirc.connected.is_set():
             # Don't relay things to their source network...
