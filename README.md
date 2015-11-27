@@ -8,7 +8,7 @@ PyLink is an extensible, plugin-based IRC Services framework written in Python. 
 
 That said, please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute: note that **master** is bugfix only; new stuff goes to the **devel** branch.
 
-You can also find support via our IRC channel: `#PyLink at irc.overdrive.pw` ([webchat](http://webchat.overdrive.pw/?channels=PyLink)). Ask your question and be patient.
+You can also find support via our IRC channel: `#PyLink at irc.overdrivenetworks.com` ([webchat](https://webchat.overdrivenetworks.com/?channels=PyLink,dev)). Ask your question and be patient.
 
 ### Dependencies
 
