@@ -313,7 +313,7 @@ class UnrealProtocol(TS6BaseProtocol):
         if host == '*':
             # A single * means that there is no displayed/virtual host, and
             # that it's the same as the real host
-            host = realhost
+            host = args[9]
         raw_ip = args[10].encode()  # codecs.decode only takes bytes, not str
         if raw_ip == b'*':  # Dummy IP (for services, etc.)
             ip = '0.0.0.0'
