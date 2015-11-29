@@ -1109,11 +1109,19 @@ def create(irc, source, args):
         irc.reply('Error: You must be in %r to complete this operation.' % channel)
         return
     utils.checkAuthenticated(irc, source)
+
+    # Check to see whether the channel requested is already part of a different
+    # relay.
     localentry = getRelay((irc.name, channel))
     if localentry:
         irc.reply('Error: Channel %r is already part of a relay.' % channel)
         return
-    db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(), 'blocked_nets': set()}
+
+    # Create the relay database entry with the (network name, channel name)
+    # pair - this is just a dict with various keys.
+    db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(),
+                               'blocked_nets': set(),
+                               'creator': utils.getHostmask(irc, source)}
     initializeChannel(irc, channel)
     irc.reply('Done.')
 
@@ -1242,24 +1250,34 @@ def linked(irc, source, args):
     networks.remove(irc.name)
     s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(networks))
     irc.msg(source, s)
-    # Sort relay DB by channel name, and then sort.
-    for k, v in sorted(db.items(), key=lambda channel: channel[0][1]):
+
+    # Sort the list of shared channels when displaying
+    for k, v in sorted(db.items()):
+        # Bold each network/channel name pair
         s = '\x02%s%s\x02 ' % k
         remoteirc = world.networkobjects.get(k[0])
-        channel = k[1]
+        channel = k[1]  # Get the channel name from the network/channel pair
         if remoteirc and channel in remoteirc.channels:
             c = remoteirc.channels[channel]
             if ('s', None) in c.modes or ('p', None) in c.modes:
-                # Only show hidden channels to opers.
+                # Only show secret channels to opers, and tag them with
+                # [secret].
                 if utils.isOper(irc, source):
                     s += '\x02[secret]\x02 '
                 else:
                     continue
-        if v['links']:
+
+        if v['links']:  # Join up and output all the linked channel names.
             s += ' '.join([''.join(link) for link in v['links']])
-        else:
+        else:  # Unless it's empty; then, well... just say no relays yet.
             s += '(no relays yet)'
+
         irc.msg(source, s)
+
+        if utils.isOper(irc, source):
+            # If the caller is an oper, we can show the hostmasks of people
+            # that created all the available channels (Janus does this too!!)
+            irc.msg(source, '    Channel created by \x02%s\x02.' % v.get('creator', '(N/A)'))
 
 @utils.add_cmd
 def linkacl(irc, source, args):
