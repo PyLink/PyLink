@@ -15,8 +15,13 @@ bot:
     # Console log verbosity: see https://docs.python.org/3/library/logging.html#logging-levels
     loglevel: DEBUG
 
-    # Fantasy command prefix, if the fantasy plugin is loaded.
+    # Sets the fantasy command prefix for calling commands inside channels
+    # (requires fantasy plugin).
     prefix: "."
+
+    # Determines whether the bot will reply to commands prefixed with its nick
+    # (case sensitive and requires the fantasy plugin).
+    respondtonick: true
 
 login:
     # PyLink administrative login - Change this, or the service will not start!
