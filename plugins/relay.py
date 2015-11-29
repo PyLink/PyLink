@@ -1117,11 +1117,12 @@ def create(irc, source, args):
         irc.reply('Error: Channel %r is already part of a relay.' % channel)
         return
 
+    creator = utils.getHostmask(irc, source)
     # Create the relay database entry with the (network name, channel name)
     # pair - this is just a dict with various keys.
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(),
-                               'blocked_nets': set(),
-                               'creator': utils.getHostmask(irc, source)}
+                               'blocked_nets': set(), 'creator': creator}
+    log.info('(%s) relay: Channel %s created by %s.', irc.name, channel, creator)
     initializeChannel(irc, channel)
     irc.reply('Done.')
 
@@ -1147,6 +1148,8 @@ def destroy(irc, source, args):
         removeChannel(irc, channel)
         del db[entry]
         irc.reply('Done.')
+        log.info('(%s) relay: Channel %s destroyed by %s.', irc.name,
+                 channel, utils.getHostmask(irc, source))
     else:
         irc.reply('Error: No such relay %r exists.' % channel)
         return
@@ -1193,11 +1196,12 @@ def link(irc, source, args):
             return
         for link in entry['links']:
             if link[0] == irc.name:
-                irc.reply("Error: Remote channel '%s%s' is already"
-                                       " linked here as %r." % (remotenet,
-                                                                channel, link[1]))
+                irc.reply("Error: Remote channel '%s%s' is already linked here "
+                          "as %r." % (remotenet, channel, link[1]))
                 return
         entry['links'].add((irc.name, localchan))
+        log.info('(%s) relay: Channel %s linked to %s%s by %s.', irc.name,
+                 localchan, remotenet, channel, utils.getHostmask(irc, source))
         initializeChannel(irc, localchan)
         irc.reply('Done.')
 
@@ -1238,6 +1242,8 @@ def delink(irc, source, args):
             removeChannel(irc, channel)
             db[entry]['links'].remove((irc.name, channel))
         irc.reply('Done.')
+        log.info('(%s) relay: Channel %s delinked from %s%s by %s.', irc.name,
+                 channel, entry[0], entry[1], utils.getHostmask(irc, source))
     else:
         irc.reply('Error: No such relay %r.' % channel)
 
