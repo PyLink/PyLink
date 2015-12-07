@@ -715,7 +715,7 @@ def handle_messages(irc, numeric, command, args):
         numeric = irc.pseudoclient.uid
     elif numeric not in irc.users:
         # Sender didn't pass the check above, AND isn't a user.
-        log.debug('(%s) relay: Unknown message sender %s.', numeric)
+        log.debug('(%s) relay: Unknown message sender %s.', irc.name, numeric)
         return
     relay = getRelay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
