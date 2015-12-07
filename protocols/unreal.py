@@ -1,7 +1,6 @@
 import time
 import sys
 import os
-import time
 import codecs
 import socket
 import re
@@ -282,6 +281,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         f = self.irc.send
         host = self.irc.serverdata["hostname"]
+
         f('PASS :%s' % self.irc.serverdata["sendpass"])
         # https://github.com/unrealself.ircd/unrealself.ircd/blob/2f8cb55e/doc/technical/protoctl.txt
         # We support the following protocol features:
