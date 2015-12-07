@@ -12,14 +12,9 @@ from expiringdict import ExpiringDict
 
 import utils
 from log import log
-from conf import confname
 import world
 
-dbname = "pylinkrelay"
-if confname != 'pylink':
-    dbname += '-%s' % confname
-dbname += '.db'
-
+### GLOBAL (statekeeping) VARIABLES
 relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.RLock)
@@ -27,6 +22,8 @@ spawnlocks_servers = defaultdict(threading.RLock)
 savecache = ExpiringDict(max_len=5, max_age_seconds=10)
 killcache = ExpiringDict(max_len=5, max_age_seconds=10)
 relay_started = True
+
+dbname = utils.getDatabaseName('pylinkrelay')
 
 ### INTERNAL FUNCTIONS
 

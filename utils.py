@@ -6,6 +6,7 @@ import os
 
 from log import log
 import world
+import conf
 
 class NotAuthenticatedError(Exception):
     pass
@@ -514,3 +515,17 @@ def loadModuleFromFolder(name, folder):
 def getProtoModule(protoname):
     """Imports and returns the protocol module requested."""
     return loadModuleFromFolder(protoname, world.protocols_folder)
+
+def getDatabaseName(dbname):
+    """
+    Returns a database filename with the given base DB name appropriate for the
+    current PyLink instance.
+
+    This returns '<dbname>.db' if the running config name is PyLink's default
+    (config.yml), and '<dbname>-<config name>.db' for anything else. For example,
+    if this is called from an instance running as './pylink testing.yml', it
+    would return '<dbname>-testing.db'."""
+    if conf.confname != 'pylink':
+        dbname += '-%s' % conf.confname
+    dbname += '.db'
+    return dbname
