@@ -1,3 +1,12 @@
+"""
+classes.py - Base classes for PyLink IRC Services.
+
+This module contains the base classes used by PyLink, including threaded IRC
+connections and objects used to represent IRC servers, users, and channels.
+
+Here be dragons.
+"""
+
 import threading
 from random import randint
 import time
@@ -20,55 +29,14 @@ class ProtocolError(Exception):
 ### Internal classes (users, servers, channels)
 
 class Irc():
-    def initVars(self):
-        self.sid = self.serverdata["sid"]
-        self.botdata = self.conf['bot']
-        self.pingfreq = self.serverdata.get('pingfreq') or 30
-        self.pingtimeout = self.pingfreq * 2
-
-        self.connected.clear()
-        self.aborted.clear()
-        self.pseudoclient = None
-        self.lastping = time.time()
-
-        # Internal variable to set the place the last command was called (in PM
-        # or in a channel), used by fantasy command support.
-        self.called_by = None
-
-        # Server, channel, and user indexes to be populated by our protocol module
-        self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'],
-                        internal=True, desc=self.serverdata.get('serverdesc')
-                        or self.botdata['serverdesc'])}
-        self.users = {}
-        self.channels = defaultdict(IrcChannel)
-        # Sets flags such as whether to use halfops, etc. The default RFC1459
-        # modes are implied.
-        self.cmodes = {'op': 'o', 'secret': 's', 'private': 'p',
-                       'noextmsg': 'n', 'moderated': 'm', 'inviteonly': 'i',
-                       'topiclock': 't', 'limit': 'l', 'ban': 'b',
-                       'voice': 'v', 'key': 'k',
-                       # Type A, B, and C modes
-                       '*A': 'b',
-                       '*B': 'k',
-                       '*C': 'l',
-                       '*D': 'imnpstr'}
-        self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
-                       'oper': 'o',
-                       '*A': '', '*B': '', '*C': 's', '*D': 'iow'}
-
-        # This max nick length starts off as the config value, but may be
-        # overwritten later by the protocol module if such information is
-        # received. Note that only some IRCds (InspIRCd) give us nick length
-        # during link, so it is still required that the config value be set!
-        self.maxnicklen = self.serverdata['maxnicklen']
-        self.prefixmodes = {'o': '@', 'v': '+'}
-
-        # Uplink SID (filled in by protocol module)
-        self.uplink = None
-        self.start_ts = int(time.time())
+    """Base IRC object for PyLink."""
 
     def __init__(self, netname, proto, conf):
-        # Initialize some variables
+        """
+        Initializes an IRC object. This takes 3 variables: the network name
+        (a string), the name of the protocol module to use for this connection,
+        and a configuration object.
+        """
         self.name = netname.lower()
         self.conf = conf
         self.serverdata = conf['servers'][netname]
@@ -92,19 +60,99 @@ class Irc():
             self.connection_thread.start()
         self.pingTimer = None
 
+    def initVars(self):
+        """
+        (Re)sets an IRC object to its default state. This should be called when
+        an IRC object is first created, and on every reconnection to a network.
+        """
+        self.sid = self.serverdata["sid"]
+        self.botdata = self.conf['bot']
+        self.pingfreq = self.serverdata.get('pingfreq') or 30
+        self.pingtimeout = self.pingfreq * 2
+
+        self.connected.clear()
+        self.aborted.clear()
+        self.pseudoclient = None
+        self.lastping = time.time()
+
+        # Internal variable to set the place the last command was called (in PM
+        # or in a channel), used by fantasy command support.
+        self.called_by = None
+
+        # Intialize the server, channel, and user indexes to be populated by
+        # our protocol module. For the server index, we can add ourselves right
+        # now.
+        self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'],
+                        internal=True, desc=self.serverdata.get('serverdesc')
+                        or self.botdata['serverdesc'])}
+        self.users = {}
+        self.channels = defaultdict(IrcChannel)
+
+        # This sets the list of supported channel and user modes: the default
+        # RFC1459 modes are implied. Named modes are used here to make
+        # protocol-independent code easier to write, as mode chars vary by
+        # IRCd.
+        # Protocol modules should add to and/or replace this with what their
+        # protocol supports. This can be a hardcoded list or something
+        # negotiated on connect, depending on the nature of their protocol.
+        self.cmodes = {'op': 'o', 'secret': 's', 'private': 'p',
+                       'noextmsg': 'n', 'moderated': 'm', 'inviteonly': 'i',
+                       'topiclock': 't', 'limit': 'l', 'ban': 'b',
+                       'voice': 'v', 'key': 'k',
+                       # This fills in the type of mode each mode character is.
+                       # A-type modes are list modes (i.e. bans, ban exceptions, etc.),
+                       # B-type modes require an argument to both set and unset,
+                       #   but there can only be one value at a time
+                       #   (i.e. cmode +k).
+                       # C-type modes require an argument to set but not to unset
+                       #   (one sets "+l limit" and # "-l"),
+                       # and D-type modes take no arguments at all.
+                       '*A': 'b',
+                       '*B': 'k',
+                       '*C': 'l',
+                       '*D': 'imnpstr'}
+        self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
+                       'oper': 'o',
+                       '*A': '', '*B': '', '*C': 's', '*D': 'iow'}
+
+        # This max nick length starts off as the config value, but may be
+        # overwritten later by the protocol module if such information is
+        # received. Note that only some IRCds (InspIRCd) give us nick length
+        # during link, so it is still required that the config value be set!
+        self.maxnicklen = self.serverdata['maxnicklen']
+
+        # Defines a list of supported prefix modes.
+        self.prefixmodes = {'o': '@', 'v': '+'}
+
+        # Defines the uplink SID (to be filled in by protocol module).
+        self.uplink = None
+        self.start_ts = int(time.time())
+
     def connect(self):
+        """
+        Runs the connect loop for the IRC object. This is usually called by
+        __init__ in a separate thread to allow multiple concurrent connections.
+        """
         while True:
             self.initVars()
             ip = self.serverdata["ip"]
             port = self.serverdata["port"]
             checks_ok = True
             try:
+                # Set the socket type (IPv6 or IPv4).
                 stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
+
+                # Creat the socket.
                 self.socket = socket.socket(stype)
                 self.socket.setblocking(0)
-                # Initial connection timeout is a lot smaller than the timeout after
-                # we've connected; this is intentional.
+
+                # Set the connection timeouts. Initial connection timeout is a
+                # lot smaller than the timeout after we've connected; this is
+                # intentional.
                 self.socket.settimeout(self.pingfreq)
+
+                # Enable SSL if set to do so. This requires a valid keyfile and
+                # certfile to be present.
                 self.ssl = self.serverdata.get('ssl')
                 if self.ssl:
                     log.info('(%s) Attempting SSL for this connection...', self.name)
@@ -122,20 +170,26 @@ class Irc():
                                            '"ssl_keyfile" set correctly?',
                                            self.name)
                              checks_ok = False
-                    else:
+                    else:  # SSL was misconfigured, abort.
                         log.error('(%s) SSL certfile/keyfile was not set '
                                   'correctly, aborting... ', self.name)
                         checks_ok = False
+
                 log.info("Connecting to network %r on %s:%s", self.name, ip, port)
                 self.socket.connect((ip, port))
                 self.socket.settimeout(self.pingtimeout)
 
+                # If SSL was enabled, optionally verify the certificate
+                # fingerprint for some added security. I don't bother to check
+                # the entire certificate for validity, since most IRC networks
+                # self-sign their certificates anyways.
                 if self.ssl and checks_ok:
                     peercert = self.socket.getpeercert(binary_form=True)
                     sha1fp = hashlib.sha1(peercert).hexdigest()
                     expected_fp = self.serverdata.get('ssl_fingerprint')
                     if expected_fp:
                         if sha1fp != expected_fp:
+                            # SSL Fingerprint doesn't match; break.
                             log.error('(%s) Uplink\'s SSL certificate '
                                       'fingerprint (SHA1) does not match the '
                                       'one configured: expected %r, got %r; '
@@ -153,21 +207,30 @@ class Irc():
                                  sha1fp)
 
                 if checks_ok:
+                    # All our checks passed, get the protocol module to connect
+                    # and run the listen loop.
                     self.proto.connect()
                     self.spawnMain()
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self.schedulePing()
                     log.info('(%s) Server ready; listening for data.', self.name)
                     self.run()
-                else:
+                else:  # Configuration error :(
                     log.error('(%s) A configuration error was encountered '
                               'trying to set up this connection. Please check'
                               ' your configuration file and try again.',
                               self.name)
             except (socket.error, ProtocolError, ConnectionError) as e:
+                # self.run() or the protocol module it called raised an
+                # exception, meaning we've disconnected!
                 log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
+
+            # The run() loop above was broken, meaning we've disconnected.
             self._disconnect()
+
+            # If autoconnect is enabled, loop back to the start. Otherwise,
+            # return and stop.
             autoconnect = self.serverdata.get('autoconnect')
             log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
             if autoconnect is not None and autoconnect >= 1:
@@ -178,7 +241,10 @@ class Irc():
                 return
 
     def callCommand(self, source, text):
-        """Calls a PyLink bot command."""
+        """
+        Calls a PyLink bot command. source is the caller's UID, and text is the
+        full, unparsed text of the message.
+        """
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
@@ -209,10 +275,11 @@ class Irc():
         self.callHooks([source, cmd, {'target': target, 'text': text}])
 
     def reply(self, text, notice=False, source=None):
-        """Replies to the last caller in context."""
+        """Replies to the last caller in the right context (channel or PM)."""
         self.msg(self.called_by, text, notice=notice, source=source)
 
     def _disconnect(self):
+        """Handle disconnects from the remote server."""
         log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
         self.connected.clear()
         try:
@@ -225,9 +292,12 @@ class Irc():
 
     def disconnect(self):
         """Closes the IRC connection."""
-        self.aborted.set()
+        self.aborted.set()  # This will cause run() to abort.
 
     def run(self):
+        """Main IRC loop which listens for messages."""
+        # Some magic below cause this to work, though anything that's
+        # not encoded in UTF-8 doesn't work very well.
         buf = b""
         data = b""
         while not self.aborted.is_set():
@@ -265,6 +335,7 @@ class Irc():
             self.callHooks(hook_args)
 
     def callHooks(self, hook_args):
+        """Calls a hook function with the given hook args."""
         numeric, command, parsed_args = hook_args
         # Always make sure TS is sent.
         if 'ts' not in parsed_args:
@@ -294,6 +365,7 @@ class Irc():
                 continue
 
     def send(self, data):
+        """Sends raw text to the uplink server."""
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
@@ -306,6 +378,7 @@ class Irc():
             log.debug("(%s) Dropping message %r; network isn't connected!", self.name, stripped_data)
 
     def schedulePing(self):
+        """Schedules periodic pings in a loop."""
         self.proto.pingServer()
         self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
         self.pingTimer.daemon = True
@@ -313,6 +386,7 @@ class Irc():
         log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
     def spawnMain(self):
+        """Spawns the main PyLink client."""
         nick = self.botdata.get('nick') or 'PyLink'
         ident = self.botdata.get('ident') or 'pylink'
         host = self.serverdata["hostname"]
@@ -331,6 +405,7 @@ class Irc():
         return "<classes.Irc object for %r>" % self.name
 
 class IrcUser():
+    """PyLink IRC user class."""
     def __init__(self, nick, ts, uid, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
                  ip='0.0.0.0', manipulatable=False):
@@ -348,16 +423,17 @@ class IrcUser():
         self.channels = set()
         self.away = ''
 
-        # Whether the client should be marked as manipulatable
-        # (i.e. we are allowed to play with it using bots.py's commands).
-        # For internal services clients, this should always be False.
+        # This sets whether the client should be marked as manipulatable.
+        # Plugins like bots.py's commands should take caution against
+        # manipulating these "protected" clients, to prevent desyncs and such.
+        # For "serious" service clients, this should always be False.
         self.manipulatable = manipulatable
 
     def __repr__(self):
         return repr(self.__dict__)
 
 class IrcServer():
-    """PyLink IRC Server class.
+    """PyLink IRC server class.
 
     uplink: The SID of this IrcServer instance's uplink. This is set to None
             for the main PyLink PseudoServer!
@@ -374,29 +450,37 @@ class IrcServer():
         return repr(self.__dict__)
 
 class IrcChannel():
+    """PyLink IRC channel class."""
     def __init__(self):
+        # Initialize variables, such as the topic, user list, TS, who's opped, etc.
         self.users = set()
         self.modes = {('n', None), ('t', None)}
         self.topic = ''
         self.ts = int(time.time())
-        self.topicset = False
         self.prefixmodes = {'ops': set(), 'halfops': set(), 'voices': set(),
                             'owners': set(), 'admins': set()}
+
+        # Determines whether a topic has been set here or not. Protocol modules
+        # should set this.
+        self.topicset = False
 
     def __repr__(self):
         return repr(self.__dict__)
 
     def removeuser(self, target):
+        """Removes a user from a channel."""
         for s in self.prefixmodes.values():
             s.discard(target)
         self.users.discard(target)
 
     def deepcopy(self):
+        """Returns a deep copy of the channel object."""
         return deepcopy(self)
 
 ### FakeIRC classes, used for test cases
 
 class FakeIRC(Irc):
+    """Fake IRC object used for unit tests."""
     def connect(self):
         self.messages = []
         self.hookargs = []

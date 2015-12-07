@@ -1,3 +1,11 @@
+"""
+log.py - PyLink logging module.
+
+This module contains the logging portion of the PyLink framework. Plugins can
+access the global logger object by importing "log" from this module
+(from log import log).
+"""
+
 import logging
 import sys
 import os

@@ -1,3 +1,10 @@
+"""
+utils.py - PyLink utilities module.
+
+This module contains various utility functions related to IRC and/or the PyLink
+framework.
+"""
+
 import string
 import re
 import inspect

@@ -1,4 +1,6 @@
-# coreplugin.py - Implements core PyLink functions as a plugin
+"""
+coreplugin.py - Implements core PyLink functions as a plugin.
+"""
 
 import gc
 import sys

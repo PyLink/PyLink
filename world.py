@@ -1,4 +1,6 @@
-# world.py: global state variables go here
+"""
+world.py: Stores global state variables for PyLink.
+"""
 
 from collections import defaultdict
 import threading
