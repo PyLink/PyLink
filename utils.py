@@ -138,7 +138,7 @@ def toLower(irc, text):
 def nickToUid(irc, nick):
     """Returns the UID of a user named nick, if present."""
     nick = toLower(irc, nick)
-    for k, v in irc.users.items():
+    for k, v in irc.users.copy().items():
         if toLower(irc, v.nick) == nick:
             return k
 
