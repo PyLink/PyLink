@@ -2,6 +2,7 @@ import time
 import sys
 import os
 import re
+import threading
 
 # Import hacks to access utils and classes...
 curdir = os.path.dirname(__file__)
@@ -263,12 +264,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         else:
             self._send(source, 'AWAY')
 
-    def spawnServer(self, name, sid=None, uplink=None, desc=None):
+    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
         Spawns a server off a PyLink server. desc (server description)
         defaults to the one in the config. uplink defaults to the main PyLink
         server, and sid (the server ID) is automatically generated if not
         given.
+
+        If endburst_delay is set greater than zero, the sending of ENDBURST
+        will be delayed by the amount given. This can be used to prevent
+        pseudoserver bursts from triggering IRCd join-flood preventions,
+        and prevent connections from filling up the snomasks too much.
         """
         # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
         uplink = uplink or self.irc.sid
@@ -289,7 +295,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise ValueError('Invalid server name %r' % name)
         self._send(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
         self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
-        self._send(sid, 'ENDBURST')
+
+        endburstf = lambda: self._send(sid, 'ENDBURST')
+        if endburst_delay:
+            # Delay ENDBURST by X seconds if requested.
+            threading.Timer(endburst_delay, endburstf, ()).start()
+        else:  # Else, send burst immediately
+            endburstf()
         return sid
 
     def squitServer(self, source, target, text='No reason given'):
