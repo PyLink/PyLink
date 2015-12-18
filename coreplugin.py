@@ -44,14 +44,17 @@ def handle_whois(irc, source, command, args):
     nick = user.nick
     sourceisOper = ('o', None) in irc.users[source].modes
     # https://www.alien.net.au/irc/irc2numerics.html
+
     # 311: sends nick!user@host information
     f(server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
-    # 319: RPL_WHOISCHANNELS, shows channel list
+
+    # 319: RPL_WHOISCHANNELS, shows public channel list of target
     public_chans = []
     for chan in user.channels:
+        c = irc.channels[chan]
         # Here, we'll want to hide secret/private channels from non-opers
         # who are not in them.
-        c = irc.channels[chan]
+
         if ((irc.cmodes.get('secret'), None) in c.modes or \
             (irc.cmodes.get('private'), None) in c.modes) \
             and not (sourceisOper or source in c.users):
@@ -62,30 +65,44 @@ def handle_whois(irc, source, command, args):
             if modename and target in c.prefixmodes[modename[0]+'s']:
                 chan = prefixchar + chan
         public_chans.append(chan)
-    if public_chans:
+    if public_chans:  # Only send the line if the person is in any visible channels...
         f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
+
     # 312: sends the server the target is on, and its server description.
     f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
       irc.servers[server].desc))
+
     # 313: sends a string denoting the target's operator privilege,
     # only if they have umode +o.
     if ('o', None) in user.modes:
         if hasattr(user, 'opertype'):
             opertype = user.opertype
-        else:
+        else:  # If the IRCd OPERTYPE doesn't exist, just write "IRC Operator"
             opertype = "IRC Operator"
-        # Let's be gramatically correct.
+
+        # Let's be gramatically correct. (If the opertype starts with a vowel,
+        # write "an Operator" instead of "a Operator")
         n = 'n' if opertype[0].lower() in 'aeiou' else ''
+
         f(server, 313, source, "%s :is a%s %s" % (nick, n, opertype))
-    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd.
+
+    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
     # Only show this to opers!
     if sourceisOper:
         f(server, 378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
         f(server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
+
+    # 301: used to show away information if present
+    away_text = user.away
+    log.debug('(%s) coreplugin/handle_whois: away_text for %s is %r', irc.name, target, away_text)
+    if away_text:
+        f(server, 301, source, '%s :%s' % (nick, away_text))
+
     # 317: shows idle and signon time. However, we don't track the user's real
     # idle time, so we simply return 0.
     # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
+
     for func in world.whois_handlers:
     # Iterate over custom plugin WHOIS handlers. They return a tuple
     # or list with two arguments: the numeric, and the text to send.
