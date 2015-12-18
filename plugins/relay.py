@@ -187,10 +187,12 @@ def getRemoteSid(irc, remoteirc):
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
             try:
+                # ENDBURST is delayed by 3 secs on supported IRCds to prevent
+                # triggering join-flood protection and the like.
                 sid = irc.proto.spawnServer('%s.relay' % remoteirc.name,
                                             desc="PyLink Relay network - %s" %
                                             (remoteirc.serverdata.get('netname')\
-                                            or remoteirc.name))
+                                            or remoteirc.name), endburst_delay=3)
             except ValueError:  # Network not initialized yet.
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
