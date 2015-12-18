@@ -149,6 +149,7 @@ class TS6BaseProtocol(Protocol):
             self._send(source, 'AWAY :%s' % text)
         else:
             self._send(source, 'AWAY')
+        self.irc.users[source].away = text
 
     ### HANDLERS
 

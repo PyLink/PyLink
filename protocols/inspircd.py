@@ -263,6 +263,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(source, 'AWAY %s :%s' % (int(time.time()), text))
         else:
             self._send(source, 'AWAY')
+        self.irc.users[source].away = text
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
