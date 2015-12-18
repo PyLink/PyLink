@@ -345,6 +345,10 @@ class UnrealProtocol(TS6BaseProtocol):
         # appropriately.
         self.irc.users[uid].cloaked_host = args[9]
 
+        if ('+o', None) in parsedmodes:
+            # If +o being set, call the PYLINK_CLIENT_OPERED internal hook.
+            self.irc.callHooks([uid, 'PYLINK_CLIENT_OPERED', {'text': 'IRC_Operator'}])
+
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_pass(self, numeric, command, args):
@@ -613,6 +617,11 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :GL UMODE2 +W
         parsedmodes = utils.parseModes(self.irc, numeric, args)
         utils.applyModes(self.irc, numeric, parsedmodes)
+
+        if ('+o', None) in parsedmodes:
+            # If +o being set, call the PYLINK_CLIENT_OPERED internal hook.
+            self.irc.callHooks([uid, 'PYLINK_CLIENT_OPERED', {'text': 'IRC_Operator'}])
+
         return {'target': numeric, 'modes': parsedmodes}
 
     def handle_topic(self, numeric, command, args):
