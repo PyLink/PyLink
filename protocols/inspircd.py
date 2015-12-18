@@ -156,7 +156,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
         log.debug('(%s) inspircd._sendModes: received %r for mode list', self.irc.name, modes)
         if ('+o', None) in modes and not utils.isChannel(target):
-            # https://github.com/inspself.ircd/inspself.ircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
+            # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
             self._operUp(target)
         utils.applyModes(self.irc, target, modes)
@@ -533,7 +533,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         For InspIRCd, the only ENCAP command we handle right now is KNOCK."""
         # <- :70MAAAAAA ENCAP * KNOCK #blah :agsdfas
-        # From charybdis TS6 docs: https://github.com/grawity/self.irc-docs/blob/03ba884a54f1cef2193cd62b6a86803d89c1ac41/server/ts6.txt
+        # From charybdis TS6 docs: https://github.com/grawity/irc-docs/blob/03ba884a54f1cef2193cd62b6a86803d89c1ac41/server/ts6.txt
 
         # ENCAP
         # source: any
