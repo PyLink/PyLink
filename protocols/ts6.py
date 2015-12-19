@@ -576,7 +576,7 @@ class TS6Protocol(TS6BaseProtocol):
         topic = args[-1]
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
-        return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
+        return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     def handle_invite(self, numeric, command, args):
         """Handles incoming INVITEs."""

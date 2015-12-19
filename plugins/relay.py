@@ -917,7 +917,7 @@ utils.add_hook(handle_mode, 'MODE')
 def handle_topic(irc, numeric, command, args):
     channel = args['channel']
     oldtopic = args.get('oldtopic')
-    topic = args['topic']
+    topic = args['text']
     if checkClaim(irc, channel, numeric):
         for name, remoteirc in world.networkobjects.items():
             if irc.name == name or not remoteirc.connected.is_set():

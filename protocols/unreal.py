@@ -633,7 +633,7 @@ class UnrealProtocol(TS6BaseProtocol):
         oldtopic = self.irc.channels[channel].topic
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
-        return {'channel': channel, 'setter': numeric, 'ts': ts, 'topic': topic,
+        return {'channel': channel, 'setter': numeric, 'ts': ts, 'text': topic,
                 'oldtopic': oldtopic}
 
     def handle_whois(self, numeric, command, args):

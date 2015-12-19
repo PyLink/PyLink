@@ -514,7 +514,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         topic = args[-1]
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
-        return {'channel': channel, 'setter': setter, 'ts': ts, 'topic': topic}
+        return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     # SVSTOPIC is used by InspIRCd module m_topiclock - its arguments are the same as FTOPIC
     handle_svstopic = handle_ftopic
