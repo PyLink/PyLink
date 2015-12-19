@@ -14,7 +14,7 @@ from log import log
 def kick(irc, source, args):
     """<source> <channel> <user> [<reason>]
 
-    Oper only. Kicks <user> from <channel> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
+    Admin only. Kicks <user> from <channel> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
     utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         sourcenick = args[0]
@@ -53,3 +53,26 @@ def kick(irc, source, args):
 
     irc.callHooks([u, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
                                         'text': reason, 'parse_as': 'KICK'}])
+
+@utils.add_cmd
+def topic(irc, source, args):
+    """<channel> <topic>
+
+    Admin only. Updates the topic in a channel."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    try:
+        channel = args[0]
+        topic = ' '.join(args[1:])
+    except IndexError:
+        irc.reply("Error: Not enough arguments. Needs 2: channel, topic.")
+        return
+
+    if channel not in irc.channels:
+        irc.reply("Error: Unknown channel %r." % channel)
+        return
+
+    irc.proto.topicClient(irc.pseudoclient.uid, channel, topic)
+
+    irc.callHooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
+                   {'channel': channel, 'text': topic, 'setter': source,
+                    'parse_as': 'TOPIC'}])
