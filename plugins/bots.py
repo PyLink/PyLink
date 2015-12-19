@@ -122,31 +122,6 @@ def part(irc, source, args):
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
 @utils.add_cmd
-def kick(irc, source, args):
-    """<source> <channel> <user> [<reason>]
-
-    Admin-only. Kicks <user> from <channel> via <source>, where <source> is the nick of a PyLink client."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
-    try:
-        nick = args[0]
-        channel = args[1]
-        target = args[2]
-        reason = ' '.join(args[3:])
-    except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
-        return
-    u = utils.nickToUid(irc, nick) or nick
-    targetu = utils.nickToUid(irc, target)
-    if not utils.isChannel(channel):
-        irc.reply("Error: Invalid channel name %r." % channel)
-        return
-    if utils.isInternalServer(irc, u):
-        irc.proto.kickServer(u, channel, targetu, reason)
-    else:
-        irc.proto.kickClient(u, channel, targetu, reason)
-    irc.callHooks([u, 'PYLINK_BOTSPLUGIN_KICK', {'channel': channel, 'target': targetu, 'text': reason, 'parse_as': 'KICK'}])
-
-@utils.add_cmd
 def mode(irc, source, args):
     """<source> <target> <modes>
 
