@@ -152,6 +152,15 @@ plugins:
     # Networks plugin: allows you to manage (dis)connections to networks while PyLink is running.
     - networks
 
+    # Oper commands plugin: provides a subset of network management commands.
+    # (KILL, JUPE, etc.)
+    # Channel commands plugin: provides a subset of channel management
+    # commands (KICK, TOPIC, etc.).
+    # Note: these commands will be made available to anyone who's opered on your
+    # network, so make sure your opers are trustworthy!
+    # - opercmds
+    # - chancmds
+
     # Bots plugin: allows you to manipulate pseudo-clients (bots) on networks.
     # - bots
 
