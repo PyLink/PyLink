@@ -1,4 +1,7 @@
-# exec.py: Provides an 'exec' command to execute raw code
+"""
+exec.py: Provides commands for executing raw code and debugging PyLink.
+"""
+
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -34,10 +37,49 @@ def _eval(irc, source, args):
     Admin-only. Evaluates the given Python expression and returns the result.
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
     utils.checkAuthenticated(irc, source, allowOper=False)
+
     args = ' '.join(args)
     if not args.strip():
         irc.reply('No code entered!')
         return
-    log.info('(%s) Evaluating %r for %s', irc.name, args, utils.getHostmask(irc, source))
+
+    log.info('(%s) Evaluating %r for %s', irc.name, args,
+             utils.getHostmask(irc, source))
     irc.reply(eval(args))
 utils.add_cmd(_eval, 'eval')
+
+@utils.add_cmd
+def raw(irc, source, args):
+    """<text>
+
+    Admin-only. Sends raw text to the uplink IRC server.
+    \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+
+    args = ' '.join(args)
+    if not args.strip():
+        irc.reply('No text entered!')
+        return
+
+    log.info('(%s) Sending raw text %r to IRC for %s', irc.name, args,
+             utils.getHostmask(irc, source))
+    irc.send(args)
+
+    irc.reply("Done.")
+
+@utils.add_cmd
+def inject(irc, source, args):
+    """<text>
+
+    Admin-only. Injects raw text into the running PyLink protocol module, replying with the hook data returned.
+    \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+
+    args = ' '.join(args)
+    if not args.strip():
+        irc.reply('No text entered!')
+        return
+
+    log.info('(%s) Injecting raw text %r into protocol module for %s', irc.name,
+             args, utils.getHostmask(irc, source))
+    irc.reply(irc.runline(args))
