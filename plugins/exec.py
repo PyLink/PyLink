@@ -12,15 +12,20 @@ import world
 def _exec(irc, source, args):
     """<code>
 
-    Admin-only. Executes <code> in the current PyLink instance.
+    Admin-only. Executes <code> in the current PyLink instance. This command performs backslash escaping of characters, so things like \\n and \\ will work.
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
     utils.checkAuthenticated(irc, source, allowOper=False)
-    args = ' '.join(args)
+
+    # Allow using \n in the code, while escaping backslashes correctly otherwise.
+    args = bytes(' '.join(args), 'utf-8').decode("unicode_escape")
     if not args.strip():
         irc.reply('No code entered!')
         return
-    log.info('(%s) Executing %r for %s', irc.name, args, utils.getHostmask(irc, source))
+
+    log.info('(%s) Executing %r for %s', irc.name, args,
+             utils.getHostmask(irc, source))
     exec(args, globals(), locals())
+
 utils.add_cmd(_exec, 'exec')
 
 def _eval(irc, source, args):
