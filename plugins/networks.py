@@ -76,3 +76,39 @@ def autoconnect(irc, source, args):
         return
     network.serverdata['autoconnect'] = seconds
     irc.reply("Done.")
+
+@utils.add_cmd
+def remote(irc, source, args):
+    """<network> <command>
+
+    Runs <command> on the remote network <network>. No replies are sent back due to protocol limitations."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+
+    try:
+        netname = args[0]
+        cmd_args = ' '.join(args[1:]).strip()
+        remoteirc = world.networkobjects[netname]
+    except IndexError:  # Arguments not given.
+        irc.reply('Error: Not enough arguments (needs 2 or more: network name (case sensitive), command name & arguments).')
+        return
+    except KeyError:  # Unknown network.
+        irc.reply('Error: No such network "%s" (case sensitive).' % netname)
+        return
+
+    if not cmd_args:
+        irc.reply('No text entered!')
+        return
+
+    # Force remoteirc.called_by to something private in order to prevent
+    # accidental information leakage from replies.
+    remoteirc.called_by = remoteirc.pseudoclient.uid
+
+    # Set PyLink's identification to admin.
+    remoteirc.pseudoclient.identified = "<PyLink networks.remote override>"
+
+    try:  # Remotely call the command (use the PyLink client as a dummy user).
+        remoteirc.callCommand(remoteirc.pseudoclient.uid, cmd_args)
+    finally:  # Remove the identification override after we finish.
+        remoteirc.pseudoclient.identified = False
+
+    irc.reply("Done.")
