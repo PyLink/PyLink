@@ -334,6 +334,8 @@ class Irc():
         if hook_args is not None:
             self.callHooks(hook_args)
 
+        return hook_args
+
     def callHooks(self, hook_args):
         """Calls a hook function with the given hook args."""
         numeric, command, parsed_args = hook_args
