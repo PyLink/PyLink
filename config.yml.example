@@ -49,7 +49,7 @@ relay:
     spawn_servers: true
 
 servers:
-    yournet:
+    inspnet:
         # Server IP, port, and passwords
         ip: 127.0.0.1
         port: 7000
@@ -57,10 +57,10 @@ servers:
         sendpass: "abcd"
 
         # The full network name, used by plugins.
-        netname: "yournet"
+        netname: "InspIRCd Network"
 
         # Hostname we will use to connect to the remote server
-        hostname: "pylink.yournet"
+        hostname: "pylink.yournet.local"
 
         # SID - required for InspIRCd and TS6 based servers. This must be three characters long.
         # The first char must be a digit [0-9], and the remaining two chars may be letters [A-Z] or digits.
@@ -116,7 +116,8 @@ servers:
         sendpass: "abcd"
         hostname: "pylink.example.com"
         sid: "8PY"
-        netname: "some network"
+        netname: "some TS6 network"
+        sidrange: "8P#"
 
         # Leave this as an empty list if you don't want to join any channels.
         channels: []
