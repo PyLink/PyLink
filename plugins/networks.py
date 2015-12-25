@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import threading
 
-import conf
+import coreplugin
 import utils
 import world
 from log import log
@@ -49,9 +49,19 @@ def connect(irc, source, args):
     if network.connection_thread.is_alive():
         irc.reply('Error: Network "%s" seems to be already connected.' % netname)
     else:  # Reconnect the network!
-        network.initVars()
         network.connection_thread = threading.Thread(target=network.connect)
         network.connection_thread.start()
+
+        # Call coreplugin's initialization method
+        log.debug('(%s) Calling main() function of coreplugin', irc.name)
+        coreplugin.main(irc)
+
+        # And the plugins we have too.
+        for plugin in world.plugins.values():
+            if hasattr(plugin, 'main'):
+                log.debug('(%s) Calling main() function of plugin %r', irc.name, plugin)
+                plugin.main(irc)
+
         irc.reply("Done.")
 
 @utils.add_cmd
