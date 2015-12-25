@@ -600,4 +600,33 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self.irc.users[numeric].away = ''
             return {'text': ''}
 
+    def handle_rsquit(self, numeric, command, args):
+        """
+        Handles the RSQUIT command, which is sent by opers to SQUIT remote
+        servers.
+        """
+        # <- :1MLAAAAIG RSQUIT :ayy.lmao
+        # <- :1MLAAAAIG RSQUIT ayy.lmao :some reason
+
+        # RSQUIT is sent by opers to SQUIT remote servers. However, it differs from
+        # a regular SQUIT in that:
+        #    1) It takes a server name instead of a SID,
+        #    2) Responses have to be be explicitly sent; i.e. The target server has
+        #       to agree with splitting the target, and could ignore such requests
+        #       entirely.
+
+        # If we receive such a remote SQUIT, just forward it as a regular
+        # SQUIT, in order to be consistent with other IRCds which make SQUITs
+        # implicit.
+        target = self._getSid(args[0])
+        if utils.isInternalServer(self.irc, target):
+            # The target has to be one of our servers in order to work...
+            uplink = self.irc.servers[target].uplink
+            reason = 'Requested by %s' % utils.getHostmask(self.irc, numeric)
+            self._send(uplink, 'SQUIT %s :%s' % (target, reason))
+            return self.handle_squit(numeric, 'SQUIT', [target, reason])
+        else:
+            log.debug("(%s) Got RSQUIT for '%s', which is either invalid or not "
+                      "a server of ours!", self.irc.name, args[0])
+
 Class = InspIRCdProtocol
