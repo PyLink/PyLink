@@ -49,7 +49,7 @@ if __name__ == '__main__':
         world.networkobjects[network] = irc = classes.Irc(network, proto, conf.conf)
 
         # Call coreplugin's initialization method
-        log.debug('Calling main() function of coreplugin on network %s', irc.name)
+        log.debug('(%s) Calling main() function of coreplugin', irc.name)
         coreplugin.main(irc)
 
     world.started.set()
