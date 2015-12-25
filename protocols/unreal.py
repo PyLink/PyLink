@@ -21,7 +21,8 @@ class UnrealProtocol(TS6BaseProtocol):
         self.min_proto_ver = 3999
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
                          'SVS2MODE': 'MODE', 'SJOIN': 'JOIN', 'SETHOST': 'CHGHOST',
-                         'SETIDENT': 'CHGIDENT', 'SETNAME': 'CHGNAME'}
+                         'SETIDENT': 'CHGIDENT', 'SETNAME': 'CHGNAME',
+                         'EOS': 'ENDBURST'}
         self.uidgen = {}
         self.sidgen = utils.TS6SIDGenerator(self.irc)
 
@@ -298,7 +299,9 @@ class UnrealProtocol(TS6BaseProtocol):
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
         self._send(self.irc.sid, 'EOS')
 
-        self.irc.connected.set()
+    def handle_eos(self, numeric, command, args):
+        """EOS is used to denote end of burst."""
+        return {}
 
     def handle_uid(self, numeric, command, args):
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
@@ -444,6 +447,10 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.caps['SJ3'] = True
         self.irc.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
                                 'op': 'o', 'voice': 'v'})
+
+        # Set irc.connected to True, meaning that protocol negotiation passed.
+        log.debug('(%s) self.irc.connected set!', self.irc.name)
+        self.irc.connected.set()
 
     def _getNick(self, target):
         """Converts a nick argument to its matching UID. This differs from utils.nickToUid()
