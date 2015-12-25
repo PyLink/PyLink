@@ -5,12 +5,13 @@ import unittest
 
 import world
 import classes
+import conf
 
 world.started.set()
 
 class PluginTestCase(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('unittest', world.testing)
+        self.irc = classes.FakeIRC('unittest', world.testing_ircd, conf.testconf)
         self.proto = self.irc.proto
         self.irc.connect()
         self.sdata = self.irc.serverdata

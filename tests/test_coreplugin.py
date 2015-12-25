@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-import inspircd
 import unittest
+
 import world
 import coreplugin
-
+import utils
 import tests_common
 
-world.testing = inspircd
+inspircd = utils.getProtocolModule('inspircd')
+world.testing = True
 
 class CorePluginTestCase(tests_common.PluginTestCase):
     @unittest.skip("Test doesn't work yet.")
@@ -28,7 +29,7 @@ class CorePluginTestCase(tests_common.PluginTestCase):
         # Also make sure that we're updating the irc.pseudoclient field
         self.assertNotEqual(self.irc.pseudoclient.uid, spmain[0]['olduser'])
 
-    def testKickrejoin(self):
+    def testKickRejoin(self):
         self.proto.kickClient(self.u, '#pylink', self.u, 'test')
         msgs = self.irc.takeMsgs()
         commands = self.irc.takeCommands(msgs)

@@ -6,6 +6,7 @@ import itertools
 
 import utils
 import classes
+import conf
 import world
 
 def dummyf():
@@ -13,7 +14,7 @@ def dummyf():
 
 class TestUtils(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('fakeirc', classes.FakeProto)
+        self.irc = classes.FakeIRC('fakeirc', classes.FakeProto, conf.testconf)
 
     def testTS6UIDGenerator(self):
         uidgen = utils.TS6UIDGenerator('9PY')

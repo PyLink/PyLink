@@ -8,8 +8,11 @@ import subprocess
 import os
 
 # Global variable to indicate whether we're being ran directly, or imported
-# for a testcase.
+# for a testcase. This defaults to True.
 testing = True
+
+# Sets the default protocol module to use with tests.
+testing_ircd = 'inspircd'
 
 global commands, hooks
 # This should be a mapping of command names to functions

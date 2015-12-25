@@ -4,10 +4,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import classes
 import unittest
+import conf
 
 class TestFakeIRC(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('unittest', classes.FakeProto)
+        self.irc = classes.FakeIRC('unittest', classes.FakeProto, conf.testconf)
 
     def testFakeIRC(self):
         self.irc.run('this should do nothing')
