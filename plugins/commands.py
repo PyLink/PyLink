@@ -199,7 +199,7 @@ def rehash(irc, source, args):
         for network, sdata in new_conf['servers'].items():
             # New server was added. Connect them if not already connected.
             if network not in world.networkobjects:
-                proto = utils.getProtoModule(sdata['protocol'])
+                proto = utils.getProtocolModule(sdata['protocol'])
                 world.networkobjects[network] = classes.Irc(network, proto, new_conf)
         irc.reply("Done.")
 

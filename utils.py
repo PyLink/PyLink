@@ -519,7 +519,7 @@ def loadModuleFromFolder(name, folder):
     m = importlib.machinery.SourceFileLoader(name, fullpath).load_module()
     return m
 
-def getProtoModule(protoname):
+def getProtocolModule(protoname):
     """Imports and returns the protocol module requested."""
     return loadModuleFromFolder(protoname, world.protocols_folder)
 
