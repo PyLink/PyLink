@@ -333,6 +333,11 @@ class HybridProtocol(TS6BaseProtocol):
         if utils.isInternalServer(self.irc, destination):
             self._send(destination, 'PONG %s :%s' % (self.irc.servers[destination].name, source))
 
+    def handle_pong(self, source, command, args):
+        """Handles incoming PONG commands."""
+        if source == self.irc.uplink and args[1] == self.irc.sid:
+            self.irc.lastping = time.time()
+
     # empty handlers
     # TODO: there's a better way to do this
     def handle_svinfo(self, numeric, command, args):
