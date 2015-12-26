@@ -1,3 +1,7 @@
+"""
+unreal.py: UnrealIRCd 4.0 protocol module for PyLink.
+"""
+
 import time
 import sys
 import os
@@ -5,8 +9,10 @@ import codecs
 import socket
 import re
 
+# Import hacks to access utils and classes...
 curdir = os.path.dirname(__file__)
 sys.path += [curdir, os.path.dirname(curdir)]
+
 import utils
 from log import log
 from classes import *

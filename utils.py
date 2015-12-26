@@ -16,10 +16,15 @@ import world
 import conf
 
 class NotAuthenticatedError(Exception):
+    """
+    Exception raised by checkAuthenticated() when a user fails authentication
+    requirements.
+    """
     pass
 
 class TS6UIDGenerator():
-    """TS6 UID Generator module, adapted from InspIRCd source
+    """
+    TS6 UID Generator module, adapted from InspIRCd source:
     https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156
     """
 
@@ -32,6 +37,9 @@ class TS6UIDGenerator():
         self.sid = sid
 
     def increment(self, pos=5):
+        """
+        Increments the SID generator to the next available SID.
+        """
         # If we're at the last character in the list of allowed ones, reset
         # and increment the next level above.
         if self.uidchars[pos] == self.allowedchars[-1]:
@@ -44,6 +52,9 @@ class TS6UIDGenerator():
             self.uidchars[pos] = self.allowedchars[idx+1]
 
     def next_uid(self):
+        """
+        Returns the next unused TS6 UID for the server.
+        """
         uid = self.sid + ''.join(self.uidchars)
         self.increment()
         return uid
@@ -71,13 +82,18 @@ class TS6SIDGenerator():
             self.query = query = list(irc.serverdata["sidrange"])
         except KeyError:
             raise RuntimeError('(%s) "sidrange" is missing from your server configuration block!' % irc.name)
+
         self.iters = self.query.copy()
         self.output = self.query.copy()
         self.allowedchars = {}
         qlen = len(query)
+
         assert qlen == 3, 'Incorrect length for a SID (must be 3, got %s)' % qlen
         assert '#' in query, "Must be at least one wildcard (#) in query"
+
         for idx, char in enumerate(query):
+            # Iterate over each character in the query string we got, along
+            # with its index in the string.
             assert char in (string.digits+string.ascii_uppercase+"#"), \
                 "Invalid character %r found." % char
             if char == '#':
@@ -91,6 +107,9 @@ class TS6SIDGenerator():
 
 
     def increment(self, pos=2):
+        """
+        Increments the SID generator to the next available SID.
+        """
         if pos < 0:
             # Oh no, we've wrapped back to the start!
             raise RuntimeError('No more available SIDs!')
@@ -106,7 +125,11 @@ class TS6SIDGenerator():
             self.increment(pos-1)
 
     def next_sid(self):
+        """
+        Returns the next unused TS6 SID for the server.
+        """
         while ''.join(self.output) in self.irc.servers:
+            # Increment until the SID we have doesn't already exist.
             self.increment()
         sid = ''.join(self.output)
         return sid
@@ -474,7 +497,7 @@ def isOper(irc, uid, allowAuthed=True, allowOper=True):
 
 def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
     """
-    Checks whetherthe given user has operator status on PyLink, raising
+    Checks whether the given user has operator status on PyLink, raising
     NotAuthenticatedError and logging the access denial if not.
     """
     lastfunc = inspect.stack()[1][3]
@@ -494,7 +517,7 @@ def isManipulatableClient(irc, uid):
     return isInternalClient(irc, uid) and irc.users[uid].manipulatable
 
 def getHostmask(irc, user):
-    """Gets the hostmask of the given user, if present."""
+    """Returns the hostmask of the given user, if present."""
     userobj = irc.users.get(user)
     if userobj is None:
         return '<user object not found>'
@@ -513,14 +536,17 @@ def getHostmask(irc, user):
     return '%s!%s@%s' % (nick, ident, host)
 
 def loadModuleFromFolder(name, folder):
-    """Attempts and returns an import of the given module name from a specific
-    folder."""
+    """
+    Imports and returns a module, if existing, from a specific folder.
+    """
     fullpath = os.path.join(folder, '%s.py' % name)
     m = importlib.machinery.SourceFileLoader(name, fullpath).load_module()
     return m
 
 def getProtocolModule(protoname):
-    """Imports and returns the protocol module requested."""
+    """
+    Imports and returns the protocol module requested.
+    """
     return loadModuleFromFolder(protoname, world.protocols_folder)
 
 def getDatabaseName(dbname):

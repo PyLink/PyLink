@@ -1,3 +1,7 @@
+"""
+ts6.py: PyLink protocol module for TS6-based IRCds (charybdis, elemental-ircd).
+"""
+
 import time
 import sys
 import os

@@ -9,7 +9,7 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>inspircd</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/gl/pylink/protocols/inspircd.py">/home/gl/pylink/protocols/inspircd.py</a></font></td></tr></table>
-    <p></p>
+    <p><tt>inspircd.py:&nbsp;InspIRCd&nbsp;2.x&nbsp;protocol&nbsp;module&nbsp;for&nbsp;PyLink.</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -111,7 +111,12 @@ This&nbsp;is&nbsp;used&nbsp;to&nbsp;keep&nbsp;track&nbsp;of&nbsp;whether&nbsp;th
 internals&nbsp;-&nbsp;a&nbsp;server&nbsp;that&nbsp;fails&nbsp;to&nbsp;reply&nbsp;to&nbsp;our&nbsp;PINGs&nbsp;eventually<br>
 times&nbsp;out&nbsp;and&nbsp;is&nbsp;disconnected.</tt></dd></dl>
 
+<dl><dt><a name="InspIRCdProtocol-handle_rsquit"><strong>handle_rsquit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;RSQUIT&nbsp;command,&nbsp;which&nbsp;is&nbsp;sent&nbsp;by&nbsp;opers&nbsp;to&nbsp;SQUIT&nbsp;remote<br>
+servers.</tt></dd></dl>
+
 <dl><dt><a name="InspIRCdProtocol-handle_server"><strong>handle_server</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SERVER&nbsp;commands&nbsp;(introduction&nbsp;of&nbsp;servers).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_svstopic"><strong>handle_svstopic</strong></a> = <a href="#InspIRCdProtocol-handle_ftopic">handle_ftopic</a>(self, numeric, command, args)</dt></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_uid"><strong>handle_uid</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;UID&nbsp;commands&nbsp;(user&nbsp;introduction).</tt></dd></dl>
 
@@ -151,10 +156,15 @@ Example&nbsp;uses:<br>
 Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
 up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;desc&nbsp;(server&nbsp;description)<br>
+<dl><dt><a name="InspIRCdProtocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None, endburst_delay=0)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;desc&nbsp;(server&nbsp;description)<br>
 defaults&nbsp;to&nbsp;the&nbsp;one&nbsp;in&nbsp;the&nbsp;config.&nbsp;uplink&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink<br>
 server,&nbsp;and&nbsp;sid&nbsp;(the&nbsp;server&nbsp;ID)&nbsp;is&nbsp;automatically&nbsp;generated&nbsp;if&nbsp;not<br>
-given.</tt></dd></dl>
+given.<br>
+&nbsp;<br>
+If&nbsp;endburst_delay&nbsp;is&nbsp;set&nbsp;greater&nbsp;than&nbsp;zero,&nbsp;the&nbsp;sending&nbsp;of&nbsp;ENDBURST<br>
+will&nbsp;be&nbsp;delayed&nbsp;by&nbsp;the&nbsp;amount&nbsp;given.&nbsp;This&nbsp;can&nbsp;be&nbsp;used&nbsp;to&nbsp;prevent<br>
+pseudoserver&nbsp;bursts&nbsp;from&nbsp;triggering&nbsp;IRCd&nbsp;join-flood&nbsp;preventions,<br>
+and&nbsp;prevent&nbsp;connections&nbsp;from&nbsp;filling&nbsp;up&nbsp;the&nbsp;snomasks&nbsp;too&nbsp;much.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-squitServer"><strong>squitServer</strong></a>(self, source, target, text='No reason given')</dt><dd><tt>SQUITs&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
 
@@ -212,6 +222,8 @@ Methods inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
 be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-updateTS"><strong>updateTS</strong></a>(self, channel, their_ts)</dt></dl>
 
 <hr>
 Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
@@ -290,7 +302,12 @@ This&nbsp;is&nbsp;used&nbsp;to&nbsp;keep&nbsp;track&nbsp;of&nbsp;whether&nbsp;th
 internals&nbsp;-&nbsp;a&nbsp;server&nbsp;that&nbsp;fails&nbsp;to&nbsp;reply&nbsp;to&nbsp;our&nbsp;PINGs&nbsp;eventually<br>
 times&nbsp;out&nbsp;and&nbsp;is&nbsp;disconnected.</tt></dd></dl>
 
+<dl><dt><a name="InspIRCdProtocol-handle_rsquit"><strong>handle_rsquit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;RSQUIT&nbsp;command,&nbsp;which&nbsp;is&nbsp;sent&nbsp;by&nbsp;opers&nbsp;to&nbsp;SQUIT&nbsp;remote<br>
+servers.</tt></dd></dl>
+
 <dl><dt><a name="InspIRCdProtocol-handle_server"><strong>handle_server</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SERVER&nbsp;commands&nbsp;(introduction&nbsp;of&nbsp;servers).</tt></dd></dl>
+
+<dl><dt><a name="InspIRCdProtocol-handle_svstopic"><strong>handle_svstopic</strong></a> = <a href="#InspIRCdProtocol-handle_ftopic">handle_ftopic</a>(self, numeric, command, args)</dt></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_uid"><strong>handle_uid</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;UID&nbsp;commands&nbsp;(user&nbsp;introduction).</tt></dd></dl>
 
@@ -330,10 +347,15 @@ Example&nbsp;uses:<br>
 Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
 up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;desc&nbsp;(server&nbsp;description)<br>
+<dl><dt><a name="InspIRCdProtocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None, endburst_delay=0)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;desc&nbsp;(server&nbsp;description)<br>
 defaults&nbsp;to&nbsp;the&nbsp;one&nbsp;in&nbsp;the&nbsp;config.&nbsp;uplink&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink<br>
 server,&nbsp;and&nbsp;sid&nbsp;(the&nbsp;server&nbsp;ID)&nbsp;is&nbsp;automatically&nbsp;generated&nbsp;if&nbsp;not<br>
-given.</tt></dd></dl>
+given.<br>
+&nbsp;<br>
+If&nbsp;endburst_delay&nbsp;is&nbsp;set&nbsp;greater&nbsp;than&nbsp;zero,&nbsp;the&nbsp;sending&nbsp;of&nbsp;ENDBURST<br>
+will&nbsp;be&nbsp;delayed&nbsp;by&nbsp;the&nbsp;amount&nbsp;given.&nbsp;This&nbsp;can&nbsp;be&nbsp;used&nbsp;to&nbsp;prevent<br>
+pseudoserver&nbsp;bursts&nbsp;from&nbsp;triggering&nbsp;IRCd&nbsp;join-flood&nbsp;preventions,<br>
+and&nbsp;prevent&nbsp;connections&nbsp;from&nbsp;filling&nbsp;up&nbsp;the&nbsp;snomasks&nbsp;too&nbsp;much.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-squitServer"><strong>squitServer</strong></a>(self, source, target, text='No reason given')</dt><dd><tt>SQUITs&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
 
@@ -392,6 +414,8 @@ be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;un
 
 <dl><dt><a name="InspIRCdProtocol-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
 
+<dl><dt><a name="InspIRCdProtocol-updateTS"><strong>updateTS</strong></a>(self, channel, their_ts)</dt></dl>
+
 <hr>
 Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
 <dl><dt><strong>__dict__</strong></dt>
@@ -407,6 +431,6 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>curdir</strong> = 'protocols'<br>
+<td width="100%"><strong>curdir</strong> = '../../protocols'<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;</td></tr></table>
 </body></html>

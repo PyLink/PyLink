@@ -1,3 +1,7 @@
+"""
+inspircd.py: InspIRCd 2.x protocol module for PyLink.
+"""
+
 import time
 import sys
 import os

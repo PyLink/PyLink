@@ -9,7 +9,10 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>utils</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/gl/pylink/utils.py">/home/gl/pylink/utils.py</a></font></td></tr></table>
-    <p></p>
+    <p><tt>utils.py&nbsp;-&nbsp;PyLink&nbsp;utilities&nbsp;module.<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;contains&nbsp;various&nbsp;utility&nbsp;functions&nbsp;related&nbsp;to&nbsp;IRC&nbsp;and/or&nbsp;the&nbsp;PyLink<br>
+framework.</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -17,12 +20,14 @@
 <font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="imp.html">imp</a><br>
-<a href="inspect.html">inspect</a><br>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="conf.html">conf</a><br>
+<a href="importlib.html">importlib</a><br>
+</td><td width="25%" valign=top><a href="inspect.html">inspect</a><br>
+<a href="os.html">os</a><br>
 </td><td width="25%" valign=top><a href="re.html">re</a><br>
 <a href="string.html">string</a><br>
 </td><td width="25%" valign=top><a href="world.html">world</a><br>
-</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+</td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -51,7 +56,8 @@
 <font color="#000000" face="helvetica, arial"><a name="NotAuthenticatedError">class <strong>NotAuthenticatedError</strong></a>(<a href="builtins.html#Exception">builtins.Exception</a>)</font></td></tr>
     
 <tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>#&nbsp;This&nbsp;is&nbsp;separate&nbsp;from&nbsp;classes.py&nbsp;to&nbsp;prevent&nbsp;import&nbsp;loops.<br>&nbsp;</tt></td></tr>
+<td colspan=2><tt><a href="builtins.html#Exception">Exception</a>&nbsp;raised&nbsp;by&nbsp;<a href="#-checkAuthenticated">checkAuthenticated</a>()&nbsp;when&nbsp;a&nbsp;user&nbsp;fails&nbsp;authentication<br>
+requirements.<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="utils.html#NotAuthenticatedError">NotAuthenticatedError</a></dd>
@@ -129,9 +135,9 @@ Example&nbsp;queries:<br>
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="TS6SIDGenerator-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
 
-<dl><dt><a name="TS6SIDGenerator-increment"><strong>increment</strong></a>(self, pos=2)</dt></dl>
+<dl><dt><a name="TS6SIDGenerator-increment"><strong>increment</strong></a>(self, pos=2)</dt><dd><tt>Increments&nbsp;the&nbsp;SID&nbsp;generator&nbsp;to&nbsp;the&nbsp;next&nbsp;available&nbsp;SID.</tt></dd></dl>
 
-<dl><dt><a name="TS6SIDGenerator-next_sid"><strong>next_sid</strong></a>(self)</dt></dl>
+<dl><dt><a name="TS6SIDGenerator-next_sid"><strong>next_sid</strong></a>(self)</dt><dd><tt>Returns&nbsp;the&nbsp;next&nbsp;unused&nbsp;TS6&nbsp;SID&nbsp;for&nbsp;the&nbsp;server.</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -148,15 +154,15 @@ Data descriptors defined here:<br>
 <font color="#000000" face="helvetica, arial"><a name="TS6UIDGenerator">class <strong>TS6UIDGenerator</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
     
 <tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>TS6&nbsp;UID&nbsp;Generator&nbsp;module,&nbsp;adapted&nbsp;from&nbsp;InspIRCd&nbsp;source<br>
+<td colspan=2><tt>TS6&nbsp;UID&nbsp;Generator&nbsp;module,&nbsp;adapted&nbsp;from&nbsp;InspIRCd&nbsp;source:<br>
 https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="TS6UIDGenerator-__init__"><strong>__init__</strong></a>(self, sid)</dt></dl>
 
-<dl><dt><a name="TS6UIDGenerator-increment"><strong>increment</strong></a>(self, pos=5)</dt></dl>
+<dl><dt><a name="TS6UIDGenerator-increment"><strong>increment</strong></a>(self, pos=5)</dt><dd><tt>Increments&nbsp;the&nbsp;SID&nbsp;generator&nbsp;to&nbsp;the&nbsp;next&nbsp;available&nbsp;SID.</tt></dd></dl>
 
-<dl><dt><a name="TS6UIDGenerator-next_uid"><strong>next_uid</strong></a>(self)</dt></dl>
+<dl><dt><a name="TS6UIDGenerator-next_uid"><strong>next_uid</strong></a>(self)</dt><dd><tt>Returns&nbsp;the&nbsp;next&nbsp;unused&nbsp;TS6&nbsp;UID&nbsp;for&nbsp;the&nbsp;server.</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -173,17 +179,24 @@ Data descriptors defined here:<br>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-add_cmd"><strong>add_cmd</strong></a>(func, name=None)</dt></dl>
- <dl><dt><a name="-add_hook"><strong>add_hook</strong></a>(func, command)</dt><dd><tt>Add&nbsp;a&nbsp;hook&nbsp;&lt;func&gt;&nbsp;for&nbsp;command&nbsp;&lt;command&gt;.</tt></dd></dl>
+<td width="100%"><dl><dt><a name="-add_cmd"><strong>add_cmd</strong></a>(func, name=None)</dt><dd><tt>Binds&nbsp;an&nbsp;IRC&nbsp;command&nbsp;function&nbsp;to&nbsp;the&nbsp;given&nbsp;command&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-add_hook"><strong>add_hook</strong></a>(func, command)</dt><dd><tt>Binds&nbsp;a&nbsp;hook&nbsp;function&nbsp;to&nbsp;the&nbsp;given&nbsp;command&nbsp;name.</tt></dd></dl>
  <dl><dt><a name="-applyModes"><strong>applyModes</strong></a>(irc, target, changedmodes)</dt><dd><tt>Takes&nbsp;a&nbsp;list&nbsp;of&nbsp;parsed&nbsp;IRC&nbsp;modes,&nbsp;and&nbsp;applies&nbsp;them&nbsp;on&nbsp;the&nbsp;given&nbsp;target.<br>
 &nbsp;<br>
 The&nbsp;target&nbsp;can&nbsp;be&nbsp;either&nbsp;a&nbsp;channel&nbsp;or&nbsp;a&nbsp;user;&nbsp;this&nbsp;is&nbsp;handled&nbsp;automatically.</tt></dd></dl>
- <dl><dt><a name="-checkAuthenticated"><strong>checkAuthenticated</strong></a>(irc, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Checks&nbsp;whetherthe&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink,&nbsp;raising<br>
+ <dl><dt><a name="-checkAuthenticated"><strong>checkAuthenticated</strong></a>(irc, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink,&nbsp;raising<br>
 <a href="#NotAuthenticatedError">NotAuthenticatedError</a>&nbsp;and&nbsp;logging&nbsp;the&nbsp;access&nbsp;denial&nbsp;if&nbsp;not.</tt></dd></dl>
  <dl><dt><a name="-clientToServer"><strong>clientToServer</strong></a>(irc, numeric)</dt><dd><tt>Finds&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;a&nbsp;user&nbsp;is&nbsp;on.</tt></dd></dl>
- <dl><dt><a name="-getHostmask"><strong>getHostmask</strong></a>(irc, user)</dt><dd><tt>Gets&nbsp;the&nbsp;hostmask&nbsp;of&nbsp;the&nbsp;given&nbsp;user,&nbsp;if&nbsp;present.</tt></dd></dl>
- <dl><dt><a name="-getProtoModule"><strong>getProtoModule</strong></a>(protoname)</dt><dd><tt>Imports&nbsp;and&nbsp;returns&nbsp;the&nbsp;protocol&nbsp;module&nbsp;requested.</tt></dd></dl>
- <dl><dt><a name="-isChannel"><strong>isChannel</strong></a>(s)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;string&nbsp;given&nbsp;is&nbsp;a&nbsp;valid&nbsp;channel&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-getDatabaseName"><strong>getDatabaseName</strong></a>(dbname)</dt><dd><tt>Returns&nbsp;a&nbsp;database&nbsp;filename&nbsp;with&nbsp;the&nbsp;given&nbsp;base&nbsp;DB&nbsp;name&nbsp;appropriate&nbsp;for&nbsp;the<br>
+current&nbsp;PyLink&nbsp;instance.<br>
+&nbsp;<br>
+This&nbsp;returns&nbsp;'&lt;dbname&gt;.db'&nbsp;if&nbsp;the&nbsp;running&nbsp;config&nbsp;name&nbsp;is&nbsp;PyLink's&nbsp;default<br>
+(config.yml),&nbsp;and&nbsp;'&lt;dbname&gt;-&lt;config&nbsp;name&gt;.db'&nbsp;for&nbsp;anything&nbsp;else.&nbsp;For&nbsp;example,<br>
+if&nbsp;this&nbsp;is&nbsp;called&nbsp;from&nbsp;an&nbsp;instance&nbsp;running&nbsp;as&nbsp;'./pylink&nbsp;testing.yml',&nbsp;it<br>
+would&nbsp;return&nbsp;'&lt;dbname&gt;-testing.db'.</tt></dd></dl>
+ <dl><dt><a name="-getHostmask"><strong>getHostmask</strong></a>(irc, user)</dt><dd><tt>Returns&nbsp;the&nbsp;hostmask&nbsp;of&nbsp;the&nbsp;given&nbsp;user,&nbsp;if&nbsp;present.</tt></dd></dl>
+ <dl><dt><a name="-getProtocolModule"><strong>getProtocolModule</strong></a>(protoname)</dt><dd><tt>Imports&nbsp;and&nbsp;returns&nbsp;the&nbsp;protocol&nbsp;module&nbsp;requested.</tt></dd></dl>
+ <dl><dt><a name="-isChannel"><strong>isChannel</strong></a>(s)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;string&nbsp;given&nbsp;is&nbsp;a&nbsp;valid&nbsp;channel&nbsp;name.</tt></dd></dl>
  <dl><dt><a name="-isHostmask"><strong>isHostmask</strong></a>(text)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;text&nbsp;is&nbsp;a&nbsp;valid&nbsp;hostmask.</tt></dd></dl>
  <dl><dt><a name="-isInternalClient"><strong>isInternalClient</strong></a>(irc, numeric)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;given&nbsp;numeric&nbsp;is&nbsp;a&nbsp;PyLink&nbsp;Client,<br>
 returning&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;it's&nbsp;on&nbsp;if&nbsp;so.</tt></dd></dl>
@@ -192,18 +205,18 @@ returning&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;it's&nbsp;on&nbsp;
 client.&nbsp;Usually,&nbsp;automatically&nbsp;spawned&nbsp;services&nbsp;clients&nbsp;should&nbsp;have&nbsp;this<br>
 set&nbsp;True&nbsp;to&nbsp;prevent&nbsp;interactions&nbsp;with&nbsp;opers&nbsp;(like&nbsp;mode&nbsp;changes)&nbsp;from<br>
 causing&nbsp;desyncs.</tt></dd></dl>
- <dl><dt><a name="-isNick"><strong>isNick</strong></a>(s, nicklen=None)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;string&nbsp;given&nbsp;is&nbsp;a&nbsp;valid&nbsp;nick.</tt></dd></dl>
+ <dl><dt><a name="-isNick"><strong>isNick</strong></a>(s, nicklen=None)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;string&nbsp;given&nbsp;is&nbsp;a&nbsp;valid&nbsp;nick.</tt></dd></dl>
  <dl><dt><a name="-isOper"><strong>isOper</strong></a>(irc, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink.&nbsp;This&nbsp;can&nbsp;be&nbsp;achieved<br>
 by&nbsp;either&nbsp;identifying&nbsp;to&nbsp;PyLink&nbsp;as&nbsp;admin&nbsp;(if&nbsp;allowAuthed&nbsp;is&nbsp;True),<br>
 or&nbsp;having&nbsp;user&nbsp;mode&nbsp;+o&nbsp;set&nbsp;(if&nbsp;allowOper&nbsp;is&nbsp;True).&nbsp;At&nbsp;least&nbsp;one&nbsp;of<br>
 allowAuthed&nbsp;or&nbsp;allowOper&nbsp;must&nbsp;be&nbsp;True&nbsp;for&nbsp;this&nbsp;to&nbsp;give&nbsp;any&nbsp;meaningful<br>
 results.</tt></dd></dl>
- <dl><dt><a name="-isServerName"><strong>isServerName</strong></a>(s)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;string&nbsp;given&nbsp;is&nbsp;a&nbsp;server&nbsp;name.</tt></dd></dl>
+ <dl><dt><a name="-isServerName"><strong>isServerName</strong></a>(s)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;string&nbsp;given&nbsp;is&nbsp;a&nbsp;valid&nbsp;IRC&nbsp;server&nbsp;name.</tt></dd></dl>
  <dl><dt><a name="-joinModes"><strong>joinModes</strong></a>(modes)</dt><dd><tt>Takes&nbsp;a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;arg)&nbsp;tuples&nbsp;in&nbsp;<a href="#-parseModes">parseModes</a>()&nbsp;format,&nbsp;and<br>
 joins&nbsp;them&nbsp;into&nbsp;a&nbsp;string.<br>
 &nbsp;<br>
 See&nbsp;testJoinModes&nbsp;in&nbsp;tests/test_utils.py&nbsp;for&nbsp;some&nbsp;examples.</tt></dd></dl>
- <dl><dt><a name="-loadModuleFromFolder"><strong>loadModuleFromFolder</strong></a>(name, folder)</dt><dd><tt>Attempts&nbsp;an&nbsp;import&nbsp;of&nbsp;name&nbsp;from&nbsp;a&nbsp;specific&nbsp;folder,&nbsp;returning&nbsp;the&nbsp;resulting&nbsp;module.</tt></dd></dl>
+ <dl><dt><a name="-loadModuleFromFolder"><strong>loadModuleFromFolder</strong></a>(name, folder)</dt><dd><tt>Imports&nbsp;and&nbsp;returns&nbsp;a&nbsp;module,&nbsp;if&nbsp;existing,&nbsp;from&nbsp;a&nbsp;specific&nbsp;folder.</tt></dd></dl>
  <dl><dt><a name="-nickToUid"><strong>nickToUid</strong></a>(irc, nick)</dt><dd><tt>Returns&nbsp;the&nbsp;UID&nbsp;of&nbsp;a&nbsp;user&nbsp;named&nbsp;nick,&nbsp;if&nbsp;present.</tt></dd></dl>
  <dl><dt><a name="-parseModes"><strong>parseModes</strong></a>(irc, target, args)</dt><dd><tt>Parses&nbsp;a&nbsp;modestring&nbsp;list&nbsp;into&nbsp;a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;argument)&nbsp;tuples.<br>
 ['+mitl-o',&nbsp;'3',&nbsp;'person']&nbsp;=&gt;&nbsp;[('+m',&nbsp;None),&nbsp;('+i',&nbsp;None),&nbsp;('+t',&nbsp;None),&nbsp;('+l',&nbsp;'3'),&nbsp;('-o',&nbsp;'person')]</tt></dd></dl>
