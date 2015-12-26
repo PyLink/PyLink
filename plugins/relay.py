@@ -1282,7 +1282,11 @@ def linked(irc, source, args):
         if utils.isOper(irc, source):
             # If the caller is an oper, we can show the hostmasks of people
             # that created all the available channels (Janus does this too!!)
-            irc.msg(source, '    Channel created by \x02%s\x02.' % v.get('creator', '(N/A)'))
+            creator = v.get('creator')
+            if creator:
+                # But only if the value actually exists (old DBs will have it
+                # missing).
+                irc.msg(source, '    Channel created by \x02%s\x02.' % creator)
 
 @utils.add_cmd
 def linkacl(irc, source, args):
