@@ -47,7 +47,7 @@ class HybridProtocol(TS6BaseProtocol):
             'blockcolor': 'c', 'inviteonly': 'i', 'noctcp': 'C',
             'regmoderated': 'M', 'operonly': 'O', 'regonly': 'R',
             'sslonly': 'S', 'banexception': 'e', 'paranoia': 'p',
-            'registered': 'r', 'inviteexempt': 'I',
+            'registered': 'r', 'invex': 'I',
             # Now, map all the ABCD type modes:
             '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'cimnprstCMORS'
         }
