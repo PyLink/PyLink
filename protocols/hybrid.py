@@ -17,10 +17,12 @@ class HybridProtocol(TS6BaseProtocol):
         self.casemapping = 'ascii'
         self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
-        self.eob = False
 
         self.caps = {}
+        # halfops is mandatory on Hybrid
         self.irc.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}
+
+        self.hook_map = {'EOB': 'ENDBURST'}
 
     def connect(self):
         """Initializes a connection to a server."""
@@ -44,16 +46,11 @@ class HybridProtocol(TS6BaseProtocol):
             # hybrid-specific modes:
             'blockcolor': 'c', 'inviteonly': 'i', 'noctcp': 'C',
             'regmoderated': 'M', 'operonly': 'O', 'regonly': 'R',
-            'sslonly': 'S', 'banexception': 'e',
-            #  # cannot handle?
-            # 'paranoia': 'p', 'registered': 'r', 'inviteexempt': 'I',
+            'sslonly': 'S', 'banexception': 'e', 'paranoia': 'p',
+            'registered': 'r', 'inviteexempt': 'I',
             # Now, map all the ABCD type modes:
             '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'cimnprstCMORS'
         }
-
-        if self.irc.serverdata.get('use_halfop'):
-            cmodes['halfop'] = 'h'
-            self.irc.prefixmodes['h'] = '%'
 
         self.irc.cmodes.update(cmodes)
 
@@ -63,14 +60,12 @@ class HybridProtocol(TS6BaseProtocol):
         umodes = {
             'oper': 'o', 'invisible': 'i', 'wallops': 'w', 'chary_locops': 'l',
             'cloak': 'x', 'hidechans': 'p', 'regdeaf': 'R', 'deaf': 'D',
-            'callerid': 'g',
-            # # can't handle?
-            # 'webirc': 'W', 'client_connections': 'c', 'bad_client_connections': 'u',
-            # 'rejected_clients': 'j', 'skill_notices': 'k', 'fullauthblock': 'f',
-            # 'remote_client_connections': 'F', 'admin_requests': 'y', 'debug': 'd',
-            # 'nickchange_notices': 'n', 'hideidle': 'q', 'registered': 'r',
-            # 'smessages': 's', 'ssl': 'S', 'sjoins': 'e', 'botfloods': 'b',
-            # 'showadmin': 'a', 'softcallerid': 'G', 'hideops': 'H',
+            'callerid': 'g', 'showadmin': 'a', 'softcallerid': 'G', 'hideops': 'H',
+            'webirc': 'W', 'client_connections': 'c', 'bad_client_connections': 'u',
+            'rejected_clients': 'j', 'skill_notices': 'k', 'fullauthblock': 'f',
+            'remote_client_connections': 'F', 'admin_requests': 'y', 'debug': 'd',
+            'nickchange_notices': 'n', 'hideidle': 'q', 'registered': 'r',
+            'smessages': 's', 'ssl': 'S', 'sjoins': 'e', 'botfloods': 'b',
             # Now, map all the ABCD type modes:
             '*A': '', '*B': '', '*C': '', '*D': 'oiwlxpRDg'
         }
@@ -102,6 +97,9 @@ class HybridProtocol(TS6BaseProtocol):
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
 
+        f(':%s EOB' % (self.irc.sid,))
+        print('SENT DSID')
+
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
@@ -130,21 +128,6 @@ class HybridProtocol(TS6BaseProtocol):
                 "* :{realname}".format(ts=ts, host=host,
                 nick=nick, ident=ident, uid=uid,
                 modes=raw_modes, ip=ip, realname=realname))
-        # self._send(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
-        #         "{realhost} * :{realname}".format(ts=ts, host=host,
-        #         nick=nick, ident=ident, uid=uid,
-        #         modes=raw_modes, ip=ip, realname=realname,
-        #         realhost=realhost))
-        # # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
-        # self._send(server, "UID {nick} 0 {ts} {ident} {realhost} {uid} 0 {modes} "
-        #                    "{host} * {ip} :{realname}".format(ts=ts, host=host,
-        #                         nick=nick, ident=ident, uid=uid,
-        #                         modes=raw_modes, realname=realname,
-        #                         realhost=realhost, ip=encoded_ip))
-        # # Force the virtual hostname to show correctly by running SETHOST on
-        # # the user. Otherwise, Unreal will show the real host of the person
-        # # instead, which is probably not what we want.
-        # self.updateClient(uid, 'HOST', host)
         return u
 
     def updateClient(self, numeric, field, text):
@@ -211,6 +194,7 @@ class HybridProtocol(TS6BaseProtocol):
             command = args[0]
             args = args[1:]
         try:
+            command = self.hook_map.get(command.upper(), command).lower()
             func = getattr(self, 'handle_'+command.lower())
         except AttributeError:  # unhandled command
             # self._send(self.irc.sid, 'ERROR', 'Unknown Command')
@@ -264,10 +248,6 @@ class HybridProtocol(TS6BaseProtocol):
         # According to the TS6 protocol documentation, we should send SVINFO
         # when we get our uplink's SERVER command.
         self.irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
-
-    def handle_svinfo(self, numeric, command, args):
-        # TODO: do things here?
-        pass
 
     def handle_uid(self, numeric, command, args):
         """Handles incoming UID commands (user introduction)."""
@@ -352,14 +332,13 @@ class HybridProtocol(TS6BaseProtocol):
             destination = self.irc.sid
         if utils.isInternalServer(self.irc, destination):
             self._send(destination, 'PONG %s :%s' % (self.irc.servers[destination].name, source))
-            if not self.eob:
-                self._send(destination, 'EOB')
 
-    def handle_eob(self, source, command, args):
-        """Handles incoming EOB commands."""
-        self.irc.callHooks([source, 'ENDBURST', {
-            'ts': int(time.time()),
-        }])
+    # empty handlers
+    # TODO: there's a better way to do this
+    def handle_svinfo(self, numeric, command, args):
+        pass
 
+    def handle_endburst(self, numeric, command, args):
+        pass
 
 Class = HybridProtocol
