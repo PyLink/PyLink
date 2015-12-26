@@ -67,4 +67,13 @@ Plugins receive data from the underlying protocol module, and communicate back u
 
 These functions are usually called in this fashion: `irc.proto.abcdClient(arg1, arg2)`. For example, the command `irc.proto.joinClient('10XAAAAAB', '#bots')` would join a PyLink client with UID `10XAAAAAB` to channel `#bots`.
 
-For sending messages (e.g. replies to commands), a simpler form of `irc.msg(targetUID, text, notice=False, source=None)` is also used. The sender UID can be set here with the `source` argument, and defaults to the main PyLink client.
+For sending messages (e.g. replies to commands), simpler forms of:
+
+- `irc.reply(text, notice=False, source=None)`
+- and `irc.msg(targetUID, text, notice=False, source=None)`
+
+are also used.
+
+`irc.reply()` is a special form of `irc.msg` in that it automatically finds the target to reply to. If the command was called in a channel using fantasy, it will send the reply in that channel. Otherwise, the reply will be sent in a PM to the caller.
+
+The sender UID for both can be set using the `source` argument, and defaults to the main PyLink client.
