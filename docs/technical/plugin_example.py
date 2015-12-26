@@ -50,7 +50,12 @@ def randint(irc, source, args):
     except IndexError:
        rmin, rmax = 1, 10
     n = random.randint(rmin, rmax)
-    irc.msg(source, str(n))
+
+    # irc.reply() is intelligent and will automatically reply to the caller in
+    # right context. If fantasy is loaded and you call the command via it,
+    # it will send replies into the channel instead of in your PM.
+    irc.reply(str(n))
+
 # You can also bind a command function multiple times, and/or to different command names via a
 # second argument.
 # Note: no checking is done at the moment to prevent multiple plugins from binding to the same
