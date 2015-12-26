@@ -635,7 +635,7 @@ def handle_operup(irc, numeric, command, args):
                   irc.name, user, netname, newtype)
         remoteirc = world.networkobjects[netname]
         remoteirc.users[user].opertype = newtype
-utils.add_hook(handle_operup, 'PYLINK_CLIENT_OPERED')
+utils.add_hook(handle_operup, 'CLIENT_OPERED')
 
 def handle_join(irc, numeric, command, args):
     channel = args['channel']

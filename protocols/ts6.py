@@ -521,7 +521,7 @@ class TS6Protocol(TS6BaseProtocol):
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
             otype = 'Server_Administrator' if ('+a', None) in parsedmodes else 'IRC_Operator'
-            self.irc.callHooks([uid, 'PYLINK_CLIENT_OPERED', {'text': otype}])
+            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': otype}])
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_uid(self, numeric, command, args):
@@ -568,7 +568,7 @@ class TS6Protocol(TS6BaseProtocol):
         # Call the OPERED UP hook if +o is being set.
         if ('+o', None) in changedmodes:
             otype = 'Server_Administrator' if ('a', None) in self.irc.users[target].modes else 'IRC_Operator'
-            self.irc.callHooks([target, 'PYLINK_CLIENT_OPERED', {'text': otype}])
+            self.irc.callHooks([target, 'CLIENT_OPERED', {'text': otype}])
         return {'target': target, 'modes': changedmodes}
 
     def handle_tb(self, numeric, command, args):

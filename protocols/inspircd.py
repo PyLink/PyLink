@@ -558,7 +558,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_opertype(self, numeric, command, args):
         """Handles incoming OPERTYPE, which is used to denote an oper up.
 
-        This calls the internal hook PYLINK_CLIENT_OPERED, sets the internal
+        This calls the internal hook CLIENT_OPERED, sets the internal
         opertype of the client, and assumes setting user mode +o on the caller."""
         # This is used by InspIRCd to denote an oper up; there is no MODE
         # command sent for it.
@@ -568,7 +568,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         utils.applyModes(self.irc, numeric, omode)
         # OPERTYPE is essentially umode +o and metadata in one command;
         # we'll call that too.
-        self.irc.callHooks([numeric, 'PYLINK_CLIENT_OPERED', {'text': opertype}])
+        self.irc.callHooks([numeric, 'CLIENT_OPERED', {'text': opertype}])
         return {'target': numeric, 'modes': omode}
 
     def handle_fident(self, numeric, command, args):
