@@ -3,6 +3,7 @@ import os
 sys.path.append(os.getcwd())
 import unittest
 import itertools
+from copy import deepcopy
 
 import utils
 import classes
@@ -102,12 +103,13 @@ class TestUtils(unittest.TestCase):
                                ('+b', '*!*@*.badisp.net')])
         self.assertEqual(res, '-o+l-nm+kb 9PYAAAAAA 50 hello *!*@*.badisp.net')
 
-    def _reverseModes(self, query, expected, target='#test'):
-        res = utils.reverseModes(self.irc, target, query)
+    def _reverseModes(self, query, expected, target='#PyLink', oldobj=None):
+        res = utils.reverseModes(self.irc, target, query, oldobj=oldobj)
         self.assertEqual(res, expected)
 
     def testReverseModes(self):
-        test = lambda x, y: self.assertEqual(utils.reverseModes(self.irc, '#test', x), y)
+        # Initialize the channe, first.
+        utils.applyModes(self.irc, '#PyLink', [])
         # Strings.
         self._reverseModes("+mk-t test", "-mk+t test")
         self._reverseModes("ml-n 111", "-ml+n")
@@ -124,7 +126,7 @@ class TestUtils(unittest.TestCase):
                            target=self.irc.pseudoclient.uid)
 
     def testReverseModesExisting(self):
-        utils.applyModes(self.irc, '#test', [('+m', None), ('+l', '50'), ('+k', 'supersecret'),
+        utils.applyModes(self.irc, '#PyLink', [('+m', None), ('+l', '50'), ('+k', 'supersecret'),
                                              ('+o', '9PYAAAAAA')])
 
         self._reverseModes({('+i', None), ('+l', '3')}, {('-i', None), ('+l', '50')})
@@ -133,18 +135,20 @@ class TestUtils(unittest.TestCase):
         self._reverseModes('+k derp', '+k supersecret')
         self._reverseModes('-mk *', '+mk supersecret')
 
+        self.irc.proto.spawnClient("tester2")
+        oldobj = deepcopy(self.irc.channels['#PyLink'])
+
         # Existing modes are ignored.
         self._reverseModes([('+t', None)], set())
         self._reverseModes('+n', '+')
-        self._reverseModes('+oo GLolol 9PYAAAAAA', '-o GLolol')
+        #self._reverseModes('+oo 9PYAAAAAB 9PYAAAAAA', '-o 9PYAAAAAB', oldobj=oldobj)
         self._reverseModes('+o 9PYAAAAAA', '+')
-        self._reverseModes('+vvvvM test abcde atat abcd', '-vvvvM test abcde atat abcd')
+        self._reverseModes('+vM 9PYAAAAAA', '-M')
 
         # Ignore unsetting prefixmodes/list modes that were never set.
         self._reverseModes([('-v', '10XAAAAAA')], set())
         self._reverseModes('-ob 10XAAAAAA derp!*@*', '+')
-        utils.applyModes(self.irc, '#test', [('+o', 'GLolol'), ('+b', '*!user@badisp.tk')])
-        self._reverseModes('-voo GLolol GLolol 10XAAAAAA', '+o GLolol')
+        utils.applyModes(self.irc, '#PyLink', [('+b', '*!user@badisp.tk')])
         self._reverseModes('-bb *!*@* *!user@badisp.tk', '+b *!user@badisp.tk')
 
 if __name__ == '__main__':

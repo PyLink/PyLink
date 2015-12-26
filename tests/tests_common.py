@@ -4,6 +4,7 @@ sys.path += [os.getcwd(), os.path.join(os.getcwd(), 'protocols')]
 import unittest
 
 import world
+import utils
 import classes
 import conf
 
@@ -11,7 +12,8 @@ world.started.set()
 
 class PluginTestCase(unittest.TestCase):
     def setUp(self):
-        self.irc = classes.FakeIRC('unittest', world.testing_ircd, conf.testconf)
+        proto = utils.getProtocolModule(world.testing_ircd)
+        self.irc = classes.FakeIRC('unittest', proto, conf.testconf)
         self.proto = self.irc.proto
         self.irc.connect()
         self.sdata = self.irc.serverdata
