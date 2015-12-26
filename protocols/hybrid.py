@@ -266,7 +266,7 @@ class HybridProtocol(TS6BaseProtocol):
         self.irc.servers[numeric].users.add(uid)
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
-            self.irc.callHooks([uid, 'PYLINK_CLIENT_OPERED', {'text': 'IRC_Operator'}])
+            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_svstag(self, numeric, command, args):
