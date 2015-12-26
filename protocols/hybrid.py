@@ -98,7 +98,6 @@ class HybridProtocol(TS6BaseProtocol):
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
 
         f(':%s EOB' % (self.irc.sid,))
-        print('SENT DSID')
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
