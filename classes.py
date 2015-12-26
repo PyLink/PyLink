@@ -577,7 +577,13 @@ class Protocol():
         self.irc.servers[sid].users.discard(numeric)
 
     def updateTS(self, channel, their_ts):
+        """
+        Compares the current TS of the channel given with the new TS, resetting
+        all modes we have if the one given is older.
+        """
+
         our_ts = self.irc.channels[channel].ts
+
         if their_ts < our_ts:
             # Channel timestamp was reset on burst
             log.debug('(%s) Setting channel TS of %s to %s from %s',
