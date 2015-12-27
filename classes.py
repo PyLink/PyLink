@@ -344,15 +344,24 @@ class Irc():
             parsed_args['ts'] = int(time.time())
         hook_cmd = command
         hook_map = self.proto.hook_map
-        # Handlers can return a 'parse_as' key to send their payload to a
-        # different hook. An example of this is "/join 0" being interpreted
-        # as leaving all channels (PART).
+
+        # If the hook name is present in the protocol module's hook_map, then we
+        # should set the hook name to the name that points to instead.
+        # For example, plugins will read SETHOST as CHGHOST, EOS (end of sync)
+        # as ENDBURST, etc.
         if command in hook_map:
             hook_cmd = hook_map[command]
+
+        # However, individual handlers can also return a 'parse_as' key to send
+        # their payload to a different hook. An example of this is "/join 0"
+        # being interpreted as leaving all channels (PART).
         hook_cmd = parsed_args.get('parse_as') or hook_cmd
-        log.debug('(%s) Parsed args %r received from %s handler (calling hook %s)',
-                  self.name, parsed_args, command, hook_cmd)
-        # Iterate over hooked functions, catching errors accordingly
+
+        log.debug('(%s) Raw hook data: [%r, %r, %r] received from %s handler '
+                  '(calling hook %s)', self.name, numeric, hook_cmd, parsed_args,
+                  command, hook_cmd)
+
+        # Iterate over registered hook functions, catching errors accordingly.
         for hook_func in world.hooks[hook_cmd]:
             try:
                 log.debug('(%s) Calling hook function %s from plugin "%s"', self.name,
