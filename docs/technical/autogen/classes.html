@@ -1,0 +1,402 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module classes</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>classes</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/gl/pylink/classes.py">/home/gl/pylink/classes.py</a></font></td></tr></table>
+    <p><tt>classes.py&nbsp;-&nbsp;Base&nbsp;classes&nbsp;for&nbsp;PyLink&nbsp;IRC&nbsp;Services.<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;contains&nbsp;the&nbsp;base&nbsp;classes&nbsp;used&nbsp;by&nbsp;PyLink,&nbsp;including&nbsp;threaded&nbsp;IRC<br>
+connections&nbsp;and&nbsp;objects&nbsp;used&nbsp;to&nbsp;represent&nbsp;IRC&nbsp;servers,&nbsp;users,&nbsp;and&nbsp;channels.<br>
+&nbsp;<br>
+Here&nbsp;be&nbsp;dragons.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="hashlib.html">hashlib</a><br>
+<a href="socket.html">socket</a><br>
+</td><td width="25%" valign=top><a href="ssl.html">ssl</a><br>
+<a href="threading.html">threading</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+<a href="utils.html">utils</a><br>
+</td><td width="25%" valign=top><a href="world.html">world</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#Exception">builtins.Exception</a>(<a href="builtins.html#BaseException">builtins.BaseException</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="classes.html#ProtocolError">ProtocolError</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="classes.html#Irc">Irc</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="classes.html#FakeIRC">FakeIRC</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="classes.html#IrcChannel">IrcChannel</a>
+</font></dt><dt><font face="helvetica, arial"><a href="classes.html#IrcServer">IrcServer</a>
+</font></dt><dt><font face="helvetica, arial"><a href="classes.html#IrcUser">IrcUser</a>
+</font></dt><dt><font face="helvetica, arial"><a href="classes.html#Protocol">Protocol</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="classes.html#FakeProto">FakeProto</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FakeIRC">class <strong>FakeIRC</strong></a>(<a href="classes.html#Irc">Irc</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Fake&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>&nbsp;used&nbsp;for&nbsp;unit&nbsp;tests.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="classes.html#FakeIRC">FakeIRC</a></dd>
+<dd><a href="classes.html#Irc">Irc</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="FakeIRC-connect"><strong>connect</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="FakeIRC-run"><strong>run</strong></a>(self, data)</dt><dd><tt>Queues&nbsp;a&nbsp;message&nbsp;to&nbsp;the&nbsp;fake&nbsp;IRC&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-send"><strong>send</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="FakeIRC-takeCommands"><strong>takeCommands</strong></a>(self, msgs)</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;commands&nbsp;parsed&nbsp;from&nbsp;the&nbsp;output&nbsp;of&nbsp;<a href="#FakeIRC-takeMsgs">takeMsgs</a>().</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-takeHooks"><strong>takeHooks</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;hook&nbsp;arguments&nbsp;sent&nbsp;by&nbsp;the&nbsp;protocol&nbsp;module&nbsp;since<br>
+the&nbsp;last&nbsp;<a href="#FakeIRC-takeHooks">takeHooks</a>()&nbsp;call.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-takeMsgs"><strong>takeMsgs</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;messages&nbsp;sent&nbsp;by&nbsp;the&nbsp;protocol&nbsp;module&nbsp;since<br>
+the&nbsp;last&nbsp;<a href="#FakeIRC-takeMsgs">takeMsgs</a>()&nbsp;call,&nbsp;so&nbsp;we&nbsp;can&nbsp;track&nbsp;what&nbsp;has&nbsp;been&nbsp;sent.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="classes.html#Irc">Irc</a>:<br>
+<dl><dt><a name="FakeIRC-__init__"><strong>__init__</strong></a>(self, netname, proto, conf)</dt><dd><tt>Initializes&nbsp;an&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>.&nbsp;This&nbsp;takes&nbsp;3&nbsp;variables:&nbsp;the&nbsp;network&nbsp;name<br>
+(a&nbsp;string),&nbsp;the&nbsp;name&nbsp;of&nbsp;the&nbsp;protocol&nbsp;module&nbsp;to&nbsp;use&nbsp;for&nbsp;this&nbsp;connection,<br>
+and&nbsp;a&nbsp;configuration&nbsp;<a href="builtins.html#object">object</a>.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="FakeIRC-callCommand"><strong>callCommand</strong></a>(self, source, text)</dt><dd><tt>Calls&nbsp;a&nbsp;PyLink&nbsp;bot&nbsp;command.&nbsp;source&nbsp;is&nbsp;the&nbsp;caller's&nbsp;UID,&nbsp;and&nbsp;text&nbsp;is&nbsp;the<br>
+full,&nbsp;unparsed&nbsp;text&nbsp;of&nbsp;the&nbsp;message.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-callHooks"><strong>callHooks</strong></a>(self, hook_args)</dt><dd><tt>Calls&nbsp;a&nbsp;hook&nbsp;function&nbsp;with&nbsp;the&nbsp;given&nbsp;hook&nbsp;args.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-disconnect"><strong>disconnect</strong></a>(self)</dt><dd><tt>Closes&nbsp;the&nbsp;IRC&nbsp;connection.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-initVars"><strong>initVars</strong></a>(self)</dt><dd><tt>(Re)sets&nbsp;an&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>&nbsp;to&nbsp;its&nbsp;default&nbsp;state.&nbsp;This&nbsp;should&nbsp;be&nbsp;called&nbsp;when<br>
+an&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>&nbsp;is&nbsp;first&nbsp;created,&nbsp;and&nbsp;on&nbsp;every&nbsp;reconnection&nbsp;to&nbsp;a&nbsp;network.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-msg"><strong>msg</strong></a>(self, target, text, notice=False, source=None)</dt><dd><tt>Handy&nbsp;function&nbsp;to&nbsp;send&nbsp;messages/notices&nbsp;to&nbsp;clients.&nbsp;Source<br>
+is&nbsp;optional,&nbsp;and&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client&nbsp;if&nbsp;not&nbsp;specified.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-reply"><strong>reply</strong></a>(self, text, notice=False, source=None)</dt><dd><tt>Replies&nbsp;to&nbsp;the&nbsp;last&nbsp;caller&nbsp;in&nbsp;the&nbsp;right&nbsp;context&nbsp;(channel&nbsp;or&nbsp;PM).</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-runline"><strong>runline</strong></a>(self, line)</dt><dd><tt>Sends&nbsp;a&nbsp;command&nbsp;to&nbsp;the&nbsp;protocol&nbsp;module.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-schedulePing"><strong>schedulePing</strong></a>(self)</dt><dd><tt>Schedules&nbsp;periodic&nbsp;pings&nbsp;in&nbsp;a&nbsp;loop.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-spawnMain"><strong>spawnMain</strong></a>(self)</dt><dd><tt>Spawns&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="classes.html#Irc">Irc</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FakeProto">class <strong>FakeProto</strong></a>(<a href="classes.html#Protocol">Protocol</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Dummy&nbsp;protocol&nbsp;module&nbsp;for&nbsp;testing&nbsp;purposes.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="classes.html#FakeProto">FakeProto</a></dd>
+<dd><a href="classes.html#Protocol">Protocol</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="FakeProto-connect"><strong>connect</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="FakeProto-handle_events"><strong>handle_events</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="FakeProto-joinClient"><strong>joinClient</strong></a>(self, client, channel)</dt></dl>
+
+<dl><dt><a name="FakeProto-spawnClient"><strong>spawnClient</strong></a>(self, nick, *args, **kwargs)</dt></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>Class</strong> = &lt;class 'classes.FakeProto'&gt;<dd><tt>Dummy&nbsp;protocol&nbsp;module&nbsp;for&nbsp;testing&nbsp;purposes.</tt></dl>
+
+<hr>
+Methods inherited from <a href="classes.html#Protocol">Protocol</a>:<br>
+<dl><dt><a name="FakeProto-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>#&nbsp;TODO:&nbsp;Future&nbsp;state-keeping&nbsp;things&nbsp;will&nbsp;go&nbsp;here</tt></dd></dl>
+
+<dl><dt><a name="FakeProto-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
+be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="FakeProto-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="FakeProto-updateTS"><strong>updateTS</strong></a>(self, channel, their_ts)</dt><dd><tt>Compares&nbsp;the&nbsp;current&nbsp;TS&nbsp;of&nbsp;the&nbsp;channel&nbsp;given&nbsp;with&nbsp;the&nbsp;new&nbsp;TS,&nbsp;resetting<br>
+all&nbsp;modes&nbsp;we&nbsp;have&nbsp;if&nbsp;the&nbsp;one&nbsp;given&nbsp;is&nbsp;older.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="classes.html#Protocol">Protocol</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Irc">class <strong>Irc</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Base&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Irc-__init__"><strong>__init__</strong></a>(self, netname, proto, conf)</dt><dd><tt>Initializes&nbsp;an&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>.&nbsp;This&nbsp;takes&nbsp;3&nbsp;variables:&nbsp;the&nbsp;network&nbsp;name<br>
+(a&nbsp;string),&nbsp;the&nbsp;name&nbsp;of&nbsp;the&nbsp;protocol&nbsp;module&nbsp;to&nbsp;use&nbsp;for&nbsp;this&nbsp;connection,<br>
+and&nbsp;a&nbsp;configuration&nbsp;<a href="builtins.html#object">object</a>.</tt></dd></dl>
+
+<dl><dt><a name="Irc-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Irc-callCommand"><strong>callCommand</strong></a>(self, source, text)</dt><dd><tt>Calls&nbsp;a&nbsp;PyLink&nbsp;bot&nbsp;command.&nbsp;source&nbsp;is&nbsp;the&nbsp;caller's&nbsp;UID,&nbsp;and&nbsp;text&nbsp;is&nbsp;the<br>
+full,&nbsp;unparsed&nbsp;text&nbsp;of&nbsp;the&nbsp;message.</tt></dd></dl>
+
+<dl><dt><a name="Irc-callHooks"><strong>callHooks</strong></a>(self, hook_args)</dt><dd><tt>Calls&nbsp;a&nbsp;hook&nbsp;function&nbsp;with&nbsp;the&nbsp;given&nbsp;hook&nbsp;args.</tt></dd></dl>
+
+<dl><dt><a name="Irc-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Runs&nbsp;the&nbsp;connect&nbsp;loop&nbsp;for&nbsp;the&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>.&nbsp;This&nbsp;is&nbsp;usually&nbsp;called&nbsp;by<br>
+__init__&nbsp;in&nbsp;a&nbsp;separate&nbsp;thread&nbsp;to&nbsp;allow&nbsp;multiple&nbsp;concurrent&nbsp;connections.</tt></dd></dl>
+
+<dl><dt><a name="Irc-disconnect"><strong>disconnect</strong></a>(self)</dt><dd><tt>Closes&nbsp;the&nbsp;IRC&nbsp;connection.</tt></dd></dl>
+
+<dl><dt><a name="Irc-initVars"><strong>initVars</strong></a>(self)</dt><dd><tt>(Re)sets&nbsp;an&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>&nbsp;to&nbsp;its&nbsp;default&nbsp;state.&nbsp;This&nbsp;should&nbsp;be&nbsp;called&nbsp;when<br>
+an&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>&nbsp;is&nbsp;first&nbsp;created,&nbsp;and&nbsp;on&nbsp;every&nbsp;reconnection&nbsp;to&nbsp;a&nbsp;network.</tt></dd></dl>
+
+<dl><dt><a name="Irc-msg"><strong>msg</strong></a>(self, target, text, notice=False, source=None)</dt><dd><tt>Handy&nbsp;function&nbsp;to&nbsp;send&nbsp;messages/notices&nbsp;to&nbsp;clients.&nbsp;Source<br>
+is&nbsp;optional,&nbsp;and&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client&nbsp;if&nbsp;not&nbsp;specified.</tt></dd></dl>
+
+<dl><dt><a name="Irc-reply"><strong>reply</strong></a>(self, text, notice=False, source=None)</dt><dd><tt>Replies&nbsp;to&nbsp;the&nbsp;last&nbsp;caller&nbsp;in&nbsp;the&nbsp;right&nbsp;context&nbsp;(channel&nbsp;or&nbsp;PM).</tt></dd></dl>
+
+<dl><dt><a name="Irc-run"><strong>run</strong></a>(self)</dt><dd><tt>Main&nbsp;IRC&nbsp;loop&nbsp;which&nbsp;listens&nbsp;for&nbsp;messages.</tt></dd></dl>
+
+<dl><dt><a name="Irc-runline"><strong>runline</strong></a>(self, line)</dt><dd><tt>Sends&nbsp;a&nbsp;command&nbsp;to&nbsp;the&nbsp;protocol&nbsp;module.</tt></dd></dl>
+
+<dl><dt><a name="Irc-schedulePing"><strong>schedulePing</strong></a>(self)</dt><dd><tt>Schedules&nbsp;periodic&nbsp;pings&nbsp;in&nbsp;a&nbsp;loop.</tt></dd></dl>
+
+<dl><dt><a name="Irc-send"><strong>send</strong></a>(self, data)</dt><dd><tt>Sends&nbsp;raw&nbsp;text&nbsp;to&nbsp;the&nbsp;uplink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="Irc-spawnMain"><strong>spawnMain</strong></a>(self)</dt><dd><tt>Spawns&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="IrcChannel">class <strong>IrcChannel</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>PyLink&nbsp;IRC&nbsp;channel&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="IrcChannel-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="IrcChannel-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="IrcChannel-deepcopy"><strong>deepcopy</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;deep&nbsp;copy&nbsp;of&nbsp;the&nbsp;channel&nbsp;<a href="builtins.html#object">object</a>.</tt></dd></dl>
+
+<dl><dt><a name="IrcChannel-removeuser"><strong>removeuser</strong></a>(self, target)</dt><dd><tt>Removes&nbsp;a&nbsp;user&nbsp;from&nbsp;a&nbsp;channel.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="IrcServer">class <strong>IrcServer</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>PyLink&nbsp;IRC&nbsp;server&nbsp;class.<br>
+&nbsp;<br>
+uplink:&nbsp;The&nbsp;SID&nbsp;of&nbsp;this&nbsp;<a href="#IrcServer">IrcServer</a>&nbsp;instance's&nbsp;uplink.&nbsp;This&nbsp;is&nbsp;set&nbsp;to&nbsp;None<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;PseudoServer!<br>
+name:&nbsp;The&nbsp;name&nbsp;of&nbsp;the&nbsp;server.<br>
+internal:&nbsp;Whether&nbsp;the&nbsp;server&nbsp;is&nbsp;an&nbsp;internal&nbsp;PyLink&nbsp;PseudoServer.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="IrcServer-__init__"><strong>__init__</strong></a>(self, uplink, name, internal=False, desc='(None given)')</dt></dl>
+
+<dl><dt><a name="IrcServer-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="IrcUser">class <strong>IrcUser</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>PyLink&nbsp;IRC&nbsp;user&nbsp;class.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="IrcUser-__init__"><strong>__init__</strong></a>(self, nick, ts, uid, ident='null', host='null', realname='PyLink dummy client', realhost='null', ip='0.0.0.0', manipulatable=False)</dt></dl>
+
+<dl><dt><a name="IrcUser-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Protocol">class <strong>Protocol</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Protocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>#&nbsp;TODO:&nbsp;Future&nbsp;state-keeping&nbsp;things&nbsp;will&nbsp;go&nbsp;here</tt></dd></dl>
+
+<dl><dt><a name="Protocol-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
+be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="Protocol-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="Protocol-updateTS"><strong>updateTS</strong></a>(self, channel, their_ts)</dt><dd><tt>Compares&nbsp;the&nbsp;current&nbsp;TS&nbsp;of&nbsp;the&nbsp;channel&nbsp;given&nbsp;with&nbsp;the&nbsp;new&nbsp;TS,&nbsp;resetting<br>
+all&nbsp;modes&nbsp;we&nbsp;have&nbsp;if&nbsp;the&nbsp;one&nbsp;given&nbsp;is&nbsp;older.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ProtocolError">class <strong>ProtocolError</strong></a>(<a href="builtins.html#Exception">builtins.Exception</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="classes.html#ProtocolError">ProtocolError</a></dd>
+<dd><a href="builtins.html#Exception">builtins.Exception</a></dd>
+<dd><a href="builtins.html#BaseException">builtins.BaseException</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="builtins.html#Exception">builtins.Exception</a>:<br>
+<dl><dt><a name="ProtocolError-__init__"><strong>__init__</strong></a>(self, /, *args, **kwargs)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+
+<dl><dt><a name="ProtocolError-__new__"><strong>__new__</strong></a>(*args, **kwargs)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>Create&nbsp;and&nbsp;return&nbsp;a&nbsp;new&nbsp;<a href="builtins.html#object">object</a>.&nbsp;&nbsp;See&nbsp;help(type)&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="builtins.html#BaseException">builtins.BaseException</a>:<br>
+<dl><dt><a name="ProtocolError-__delattr__"><strong>__delattr__</strong></a>(self, name, /)</dt><dd><tt>Implement&nbsp;delattr(self,&nbsp;name).</tt></dd></dl>
+
+<dl><dt><a name="ProtocolError-__getattribute__"><strong>__getattribute__</strong></a>(self, name, /)</dt><dd><tt>Return&nbsp;getattr(self,&nbsp;name).</tt></dd></dl>
+
+<dl><dt><a name="ProtocolError-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ProtocolError-__repr__"><strong>__repr__</strong></a>(self, /)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
+
+<dl><dt><a name="ProtocolError-__setattr__"><strong>__setattr__</strong></a>(self, name, value, /)</dt><dd><tt>Implement&nbsp;setattr(self,&nbsp;name,&nbsp;value).</tt></dd></dl>
+
+<dl><dt><a name="ProtocolError-__setstate__"><strong>__setstate__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="ProtocolError-__str__"><strong>__str__</strong></a>(self, /)</dt><dd><tt>Return&nbsp;str(self).</tt></dd></dl>
+
+<dl><dt><a name="ProtocolError-with_traceback"><strong>with_traceback</strong></a>(...)</dt><dd><tt><a href="builtins.html#Exception">Exception</a>.<a href="#ProtocolError-with_traceback">with_traceback</a>(tb)&nbsp;--<br>
+set&nbsp;self.<strong>__traceback__</strong>&nbsp;to&nbsp;tb&nbsp;and&nbsp;return&nbsp;self.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="builtins.html#BaseException">builtins.BaseException</a>:<br>
+<dl><dt><strong>__cause__</strong></dt>
+<dd><tt>exception&nbsp;cause</tt></dd>
+</dl>
+<dl><dt><strong>__context__</strong></dt>
+<dd><tt>exception&nbsp;context</tt></dd>
+</dl>
+<dl><dt><strong>__dict__</strong></dt>
+</dl>
+<dl><dt><strong>__suppress_context__</strong></dt>
+</dl>
+<dl><dt><strong>__traceback__</strong></dt>
+</dl>
+<dl><dt><strong>args</strong></dt>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>log</strong> = &lt;logging.RootLogger object&gt;</td></tr></table>
+</body></html>
