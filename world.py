@@ -19,7 +19,6 @@ global commands, hooks
 commands = defaultdict(list)
 hooks = defaultdict(list)
 networkobjects = {}
-schedulers = {}
 plugins = {}
 whois_handlers = []
 started = threading.Event()
