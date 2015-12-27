@@ -25,7 +25,7 @@ On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would re
 
 Some hooks, like MODE, are more complex and can include the entire state of a channel!  This will be further described later. `:GL MODE #chat +o PyLink-devel` is converted into (pretty-printed for readability):
 
-- ```
+```
 ['001ZJZW01',
  'MODE',
  {'modes': [('+o', '38QAAAAAA')],
@@ -59,5 +59,5 @@ Plugins like Relay need this to know that the uplink has finished bursting all i
 
 The following hooks represent regular IRC commands sent between servers.
 
-<br><br><br>
+<br><br>
 (under construction)

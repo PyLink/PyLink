@@ -126,7 +126,7 @@ Then, the parsed mode lists can be applied to channel using `utils.applyModes(ir
 
 Modes are stored in channels and users as sets: `(userobj or chanobj).modes`:
 
-- ```
+```
 <+GLolol> PyLink-devel, eval irc.users[source].modes
 <@PyLink-devel> {('i', None), ('x', None), ('w', None), ('o', None)}
 <+GLolol> PyLink-devel, eval irc.channels['#chat'].modes
@@ -135,7 +135,7 @@ Modes are stored in channels and users as sets: `(userobj or chanobj).modes`:
 
 *With the exception of channel prefix modes* (op, voice, etc.), which are stored as a dict of sets in `chanobj.prefixmodes`:
 
-- ```
+```
 <@GLolol> PyLink-devel, eval irc.channels['#chat'].prefixmodes
 <+PyLink-devel> {'ops': set(), 'halfops': set(), 'voices': {'38QAAAAAA'}, 'owners': set(), 'admins': set()}
 ```
