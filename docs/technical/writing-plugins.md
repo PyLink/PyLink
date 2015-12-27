@@ -10,7 +10,7 @@ Plugins have three main ways of communicating with IRC: hooks, WHOIS handlers, a
 
 ### Hooks
 
-Hooks are probably the most versatile form of communication. Each hook payload is formatted as a Python `dict`, with different data keys depending on the command.
+Hooks are probably the most versatile form of communication. The data in each hook payload is formatted as a Python `dict`, with different data keys depending on the command.
 For example, a `PRIVMSG` payload would give you the fields `target` and `text`, while a `PART` payload would only give you `channels` and `reason` fields.
 
 There are many hook types available (one for each supported IRC command), and you can read more about them in the [PyLink hooks reference](hooks-reference.md).

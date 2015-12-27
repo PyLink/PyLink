@@ -90,10 +90,54 @@ optional, and defaults to the one we've stored in the channel state if not given
 - **`updateClient`**`(self, source, field, text)` - Updates the ident, host, or realname of a PyLink client. `field` should be either "IDENT", "HOST", "GECOS", or
 "REALNAME". If changing the field given on the IRCd isn't supported, `NotImplementedError` should be raised.
 
-## Special variables
+## Things to note
+
+### Special variables
 
 A protocol module should also set the following variables in their protocol class:
 
 - `self.casemapping`: set this to `rfc1459` (default) or `ascii` to determine which case mapping the IRCd uses.
 - `self.hook_map`: this is a `dict`, which maps non-standard command names sent by the IRCd to those that PyLink plugins use internally.
     - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/unreal.py#L22) and [InspIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/inspircd.py#L24) modules.
+
+### Topics
+
+When receiving or sending topics, there is a `topicset` attribute in the IRC channel (IrcChannel) object that should be set **True**. It simply denotes that a topic has been set in the channel at least once.
+
+(Relay uses this so it doesn't overwrite topics with empty ones during burst, when a relay channel initialize before the uplink has sent the topic for it)
+
+### Mode formats
+
+Modes are stored a special format in PyLink, different from raw mode strings in order to make them easier to parse. Mode strings can be turned into mode *lists*, which are used to both represent mode changes in hooks, and when storing them internally.
+
+`utils.parseModes(irc, target, split_modestring)` is used to convert mode strings to mode lists, where `irc` is the IRC object, `target` is the channel or user the mode is being set on, and `split_modestring` is the string of modes to parse, *split at each space* (really a list).
+
+- `utils.parseModes(irc, '#chat', ['+tHIs', '*!*@is.sparta'])` would give:
+    - `[('+t', None), ('+H', None), ('+I', '*!*@is.sparta'), ('+s', None)]`
+
+Also, it will automatically convert prefix mode targets from nicks to UIDs, and drop invalid modes
+
+- `utils.parseModes(irc, '#chat', ['+ol', 'invalidnick'])`:
+    - `[]`
+- `utils.parseModes(irc, '#chat', ['+o', 'GLolol'])`:
+    - `[('+o', '001ZJZW01')]`
+
+Then, the parsed mode lists can be applied to channel using `utils.applyModes(irc, target, parsed_modelist)`.
+
+Modes are stored in channels and users as sets: `(userobj or chanobj).modes`:
+
+- ```
+<+GLolol> PyLink-devel, eval irc.users[source].modes
+<@PyLink-devel> {('i', None), ('x', None), ('w', None), ('o', None)}
+<+GLolol> PyLink-devel, eval irc.channels['#chat'].modes
+<@PyLink-devel> {('n', None), ('t', None)}
+```
+
+*With the exception of channel prefix modes* (op, voice, etc.), which are stored as a dict of sets in `chanobj.prefixmodes`:
+
+- ```
+<@GLolol> PyLink-devel, eval irc.channels['#chat'].prefixmodes
+<+PyLink-devel> {'ops': set(), 'halfops': set(), 'voices': {'38QAAAAAA'}, 'owners': set(), 'admins': set()}
+```
+
+When a certain mode (e.g. owner) isn't supported on a network, the key still exists in `prefixmodes` but is simply unused.
