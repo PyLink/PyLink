@@ -310,8 +310,8 @@ class Irc():
         while not self.aborted.is_set():
             data = self.socket.recv(2048)
             buf += data
-            if self.connected.is_set() and not data:
-                log.warning('(%s) No data received and self.connected is set; disconnecting!', self.name)
+            if not data:
+                log.warning('(%s) No data received, disconnecting!', self.name)
                 return
             elif (time.time() - self.lastping) > self.pingtimeout:
                 log.warning('(%s) Connection timed out.', self.name)
