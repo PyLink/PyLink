@@ -9,8 +9,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 from log import log
 
-# Easier access to world through eval/exec.
+# These imports are not strictly necessary, but make the following modules
+# easier to access through eval and exec.
 import world
+import threading
+import re
+import time
 
 def _exec(irc, source, args):
     """<code>
