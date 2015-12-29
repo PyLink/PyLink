@@ -28,6 +28,9 @@ The following functions *must* be implemented by any protocol module within its 
 
 - **`handle_events`**`(self, line)` - Handles inbound data (lines of text) from the uplink IRC server. Normally, this will pass commands to other command handlers within the protocol module, while dropping commands that are unrecognized (wildcard handling). But, it's really up to you how to structure your modules. You will want to be able to parse command arguments properly into a list: many protocols send RFC1459-style commands that can be parsed using the [`Protocol.parseArgs()`](https://github.com/GLolol/PyLink/blob/e4fb64aebaf542122c70a8f3a49061386a00b0ca/classes.py#L539) function.
 
+- **`pingServer`**`(self, source=None, target=None)` - Sends a PING to a target server. Periodic PINGs are sent to our uplink automatically by the [`Irc()`
+internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272); plugins shouldn't have to use this.
+
 ### Outgoing command functions
 
 - **`spawnClient`**`(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)` - Spawns a client on the PyLink server. No nick collision / valid nickname checks are done by protocol modules, as it is up to plugins to make sure they don't introduce anything invalid.
@@ -68,9 +71,6 @@ The following functions *must* be implemented by any protocol module within its 
 - **`numericServer`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
 
 - **`partClient`**`(self, client, channel, reason=None)` - Sends a part from a PyLink client.
-
-- **`pingServer`**`(self, source=None, target=None)` - Sends a PING to a target server. Periodic PINGs are sent to our uplink automatically by the [`Irc()`
-internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272); plugins shouldn't have to use this.
 
 - **`quitClient`**`(self, source, reason)` - Quits a PyLink client.
 
