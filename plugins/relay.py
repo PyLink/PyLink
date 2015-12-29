@@ -2,8 +2,9 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pickle
-import sched
+import time
 import threading
 import string
 from collections import defaultdict
@@ -21,9 +22,6 @@ spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
 savecache = ExpiringDict(max_len=5, max_age_seconds=10)
 killcache = ExpiringDict(max_len=5, max_age_seconds=10)
-
-exportdb_scheduler = None
-exportdb_event = None
 
 dbname = utils.getDatabaseName('pylinkrelay')
 
@@ -47,15 +45,11 @@ def main(irc=None):
 
     loadDB()
 
-    global exportdb_scheduler, exportdb_event
-    exportdb_scheduler = sched.scheduler()
-    exportdb_event = exportdb_scheduler.enter(30, 1, exportDB, argument=(True,))
-
     # Thread this because exportDB() queues itself as part of its
     # execution, in order to get a repeating loop.
-    thread = threading.Thread(target=exportdb_scheduler.run)
-    thread.daemon = True
-    thread.start()
+    exportdb_thread = threading.Thread(target=exportDB, args=(True,), name="PyLink Relay exportDB Loop")
+    exportdb_thread.daemon = True
+    exportdb_thread.start()
 
     if irc is not None:
         for ircobj in world.networkobjects.values():
@@ -75,10 +69,6 @@ def die(sourceirc):
     relayusers.clear()
 
     exportDB(reschedule=False)
-
-    # Stop all scheduled DB exports
-    global exportdb_scheduler, exportdb_event
-    exportdb_scheduler.cancel(exportdb_event)
 
 def normalizeNick(irc, netname, nick, separator=None, uid=''):
     """Creates a normalized nickname for the given nick suitable for
@@ -153,12 +143,20 @@ def loadDB():
 def exportDB(reschedule=False):
     """Exports the relay database, optionally creating a loop to do this
     automatically."""
-    global exportdb_scheduler, exportdb_event
-    if reschedule and exportdb_scheduler:
-        exportdb_event = exportdb_scheduler.enter(30, 1, exportDB, argument=(True,))
-    log.debug("Relay: exporting links database to %s", dbname)
-    with open(dbname, 'wb') as f:
-        pickle.dump(db, f, protocol=4)
+
+    def dump():
+        log.debug("Relay: exporting links database to %s", dbname)
+        with open(dbname, 'wb') as f:
+            pickle.dump(db, f, protocol=4)
+
+    if reschedule:
+        while True:
+            # Sleep for 30 seconds between DB exports. Seems sort of
+            # arbitrary, but whatever.
+            time.sleep(30)
+            dump()
+    else:  # Rescheduling was disabled; just dump the DB once.
+        dump()
 
 def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
     """
