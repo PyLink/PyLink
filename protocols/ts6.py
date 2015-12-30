@@ -223,14 +223,20 @@ class TS6Protocol(TS6BaseProtocol):
         # No text value is supported here; drop it.
         self._send(numeric, 'KNOCK %s' % target)
 
-    def updateClient(self, numeric, field, text):
-        """Updates the hostname of a PyLink client."""
+    def updateClient(self, target, field, text):
+        """Updates the hostname of any connected client."""
         field = field.upper()
         if field == 'HOST':
-            self.irc.users[numeric].host = text
-            self._send(self.irc.sid, 'CHGHOST %s :%s' % (numeric, text))
+            self.irc.users[target].host = text
+            self._send(self.irc.sid, 'CHGHOST %s :%s' % (target, text))
+            if not utils.isInternalClient(self.irc, target):
+                # If the target isn't one of our clients, send hook payload
+                # for other plugins to listen to.
+                self.irc.callHooks([self.irc.sid, 'CHGHOST',
+                                   {'target': target, 'newhost': text}])
         else:
-            raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
+            raise NotImplementedError("Changing field %r of a client is "
+                                      "unsupported by this protocol." % field)
 
     def pingServer(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink

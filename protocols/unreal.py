@@ -239,20 +239,48 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
-    def updateClient(self, numeric, field, text):
-        """Updates the ident, host, or realname of a PyLink client."""
+    def updateClient(self, target, field, text):
+        """Updates the ident, host, or realname of any connected client."""
         field = field.upper()
-        if field == 'IDENT':
-            self.irc.users[numeric].ident = text
-            self._send(numeric, 'SETIDENT %s' % text)
-        elif field == 'HOST':
-            self.irc.users[numeric].host = text
-            self._send(numeric, 'SETHOST %s' % text)
-        elif field in ('REALNAME', 'GECOS'):
-            self.irc.users[numeric].realname = text
-            self._send(numeric, 'SETNAME :%s' % text)
+
+        if field not in ('IDENT', 'HOST', 'REALNAME', 'GECOS'):
+            raise NotImplementedError("Changing field %r of a client is "
+                                      "unsupported by this protocol." % field)
+
+        if utils.isInternalClient(self.irc, target):
+            # It is one of our clients, use SETIDENT/HOST/NAME.
+            if field == 'IDENT':
+                self.irc.users[target].ident = text
+                self._send(target, 'SETIDENT %s' % text)
+            elif field == 'HOST':
+                self.irc.users[target].host = text
+                self._send(target, 'SETHOST %s' % text)
+            elif field in ('REALNAME', 'GECOS'):
+                self.irc.users[target].realname = text
+                self._send(target, 'SETNAME :%s' % text)
         else:
-            raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
+            # It is a client on another server, use CHGIDENT/HOST/NAME.
+            if field == 'IDENT':
+                self.irc.users[target].ident = text
+                self._send(self.irc.sid, 'CHGIDENT %s %s' % (target, text))
+
+                # Send hook payloads for other plugins to listen to.
+                self.irc.callHooks([self.irc.sid, 'CHGIDENT',
+                                   {'target': target, 'newident': text}])
+
+            elif field == 'HOST':
+                self.irc.users[target].host = text
+                self._send(self.irc.sid, 'CHGHOST %s %s' % (target, text))
+
+                self.irc.callHooks([self.irc.sid, 'CHGHOST',
+                                   {'target': target, 'newhost': text}])
+
+            elif field in ('REALNAME', 'GECOS'):
+                self.irc.users[target].realname = text
+                self._send(self.irc.sid, 'CHGNAME %s :%s' % (target, text))
+
+                self.irc.callHooks([self.irc.sid, 'CHGNAME',
+                                   {'target': target, 'newgecos': text}])
 
     def inviteClient(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""

@@ -231,20 +231,47 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
-    def updateClient(self, numeric, field, text):
-        """Updates the ident, host, or realname of a PyLink client."""
+    def updateClient(self, target, field, text):
+        """Updates the ident, host, or realname of any connected client."""
         field = field.upper()
-        if field == 'IDENT':
-            self.irc.users[numeric].ident = text
-            self._send(numeric, 'FIDENT %s' % text)
-        elif field == 'HOST':
-            self.irc.users[numeric].host = text
-            self._send(numeric, 'FHOST %s' % text)
-        elif field in ('REALNAME', 'GECOS'):
-            self.irc.users[numeric].realname = text
-            self._send(numeric, 'FNAME :%s' % text)
+
+        if field not in ('IDENT', 'HOST', 'REALNAME', 'GECOS'):
+            raise NotImplementedError("Changing field %r of a client is "
+                                      "unsupported by this protocol." % field)
+
+        if utils.isInternalClient(self.irc, target):
+            # It is one of our clients, use FIDENT/HOST/NAME.
+            if field == 'IDENT':
+                self.irc.users[target].ident = text
+                self._send(target, 'FIDENT %s' % text)
+            elif field == 'HOST':
+                self.irc.users[target].host = text
+                self._send(target, 'FHOST %s' % text)
+            elif field in ('REALNAME', 'GECOS'):
+                self.irc.users[target].realname = text
+                self._send(target, 'FNAME :%s' % text)
         else:
-            raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
+            # It is a client on another server, use CHGIDENT/HOST/NAME.
+            if field == 'IDENT':
+                self.irc.users[target].ident = text
+                self._send(self.irc.sid, 'CHGIDENT %s %s' % (target, text))
+
+                # Send hook payloads for other plugins to listen to.
+                self.irc.callHooks([self.irc.sid, 'CHGIDENT',
+                                   {'target': target, 'newident': text}])
+            elif field == 'HOST':
+                self.irc.users[target].host = text
+                self._send(self.irc.sid, 'CHGHOST %s %s' % (target, text))
+
+                self.irc.callHooks([self.irc.sid, 'CHGHOST',
+                                   {'target': target, 'newhost': text}])
+
+            elif field in ('REALNAME', 'GECOS'):
+                self.irc.users[target].realname = text
+                self._send(self.irc.sid, 'CHGNAME %s :%s' % (target, text))
+
+                self.irc.callHooks([self.irc.sid, 'CHGNAME',
+                                   {'target': target, 'newgecos': text}])
 
     def pingServer(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
