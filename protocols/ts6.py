@@ -598,7 +598,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming CHGHOST commands."""
         target = args[0]
         self.irc.users[target].host = newhost = args[1]
-        return {'target': numeric, 'newhost': newhost}
+        return {'target': target, 'newhost': newhost}
 
     def handle_bmask(self, numeric, command, args):
         """Handles incoming BMASK commands (ban propagation on burst)."""
