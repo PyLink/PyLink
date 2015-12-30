@@ -17,8 +17,8 @@ You can also find support via our IRC channel: `#PyLink at irc.overdrivenetworks
 ## Dependencies
 
 * Python 3.4+
-* PyYAML (`pip install pyyaml` or `apt-get install python3-yaml`)
-* *For the relay plugin*: expiringdict (`pip install expiringdict`/`apt-get install python3-expiringdict`)
+* PyYAML (`pip install pyyaml`)
+* *For the relay plugin*: expiringdict (`pip install expiringdict`)
 
 ### Supported IRCds
 
