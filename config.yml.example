@@ -12,7 +12,9 @@ bot:
     # Server description (shown in /links, /whois, etc.)
     serverdesc: PyLink Server
 
-    # Console log verbosity: see https://docs.python.org/3/library/logging.html#logging-levels
+    # Console log verbosity: see
+    # https://docs.python.org/3/library/logging.html#logging-levels
+    # for available settings.
     loglevel: DEBUG
 
     # Sets the fantasy command prefix for calling commands inside channels
@@ -28,26 +30,6 @@ login:
     user: admin
     password: changeme
 
-relay:
-    # This block defines various options for the Relay plugin. You don't need this
-    # if you aren't using it.
-
-    # Determines whether remote opers will have user mode +H (hideoper) set on them.
-    # This has the benefit of lowering the oper count in /lusers and /stats (P|p),
-    # but only on IRCds that supported the mode.
-    # It defaults to true if not set.
-    hideoper: true
-
-    # Determines whether real IPs should be sent across the relay. You should
-    # generally have a consensus with your linked networks whether this should
-    # be turned on. You will see other networks' user IP addresses, and they
-    # will see yours.
-    show_ips: false
-
-    # Whether subservers should be spawned for each relay network (requires reload to change).
-    # Defaults to true.
-    spawn_servers: true
-
 servers:
     inspnet:
         # Server IP, port, and passwords
@@ -62,40 +44,47 @@ servers:
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet.local"
 
-        # SID - required for InspIRCd and TS6 based servers. This must be three characters long.
-        # The first char must be a digit [0-9], and the remaining two chars may be letters [A-Z] or digits.
+        # SID - required for InspIRCd and TS6 based servers. This must be three
+        # characters long.
+        # The first char must be a digit [0-9], and the remaining two chars may
+        # be either uppercase letters [A-Z] or digits.
         sid: "0AL"
 
-        # SID range - the range of SIDs PyLink is allowed to use to generate server IDs. On TS6,
-        # this should be a combination of digits, letters, and #'s. Each # denotes a range (0-9A-Z)
-        # of characters that can be used by PyLink. You will want to make sure no other servers
-        # are using this range. There must be at least one # in the entry.
+        # SID range - the range of SIDs PyLink is allowed to use to generate
+        # server IDs. On TS6, this should be a combination of digits, letters,
+        # and #'s. Each # denotes a range (0-9A-Z) of characters that can be
+        # used by PyLink to generate appropriate SIDs. You will want to make
+        # sure no other servers are using this range.
+        # There must be at least one # in the entry.
         sidrange: "8##"
 
         # Autojoin channels
         channels: ["#pylink"]
 
-        # Sets the protocol module to use - see the protocols/ folder for a list of valid values
-        # (omitting the .py extension).
+        # Sets the protocol module to use - see the protocols/ folder for a list
+        # of valid values (omitting the .py extension).
         protocol: "inspircd"
 
-        # Sets autoconnect delay - comment this out or set the value below 1 to disable autoconnect entirely.
+        # Sets autoconnect delay - comment this out or set the value below 1 to
+        # disable autoconnect entirely.
         autoconnect: 5
 
-        # Sets ping frequency (i.e. how long we should wait between sending pings to our uplink).
-        # When more than two consecutive pings are missed, PyLink will disconnect with a ping timeout.
-        # Defaults to 30 if not set.
+        # Sets ping frequency (i.e. how long we should wait between sending
+        # pings to our uplink). When more than two consecutive pings are missed,
+        # PyLink will disconnect with a ping timeout. This defaults to 30 if
+        # not set.
         pingfreq: 30
 
         # Separator character (used by relay)
         separator: "/"
 
-        # Sets the max nick length for the network. It is important this is set correctly, or
-        # PyLink might introduce a nick that is too long and cause netsplits!
+        # Sets the max nick length for the network. It is important this is
+        # set correctly, or PyLink might introduce a nick that is too long and
+        # cause netsplits!
         maxnicklen: 30
 
-        # Toggles SSL for this network. Defaults to false if not specified, and requires the
-        # ssl_certfile and ssl_keyfile options to work.
+        # Toggles SSL for this network. Defaults to false if not specified, and
+        # requires the ssl_certfile and ssl_keyfile options to work.
         # ssl: true
 
         # ssl_certfile: pylink-cert.pem
@@ -127,47 +116,107 @@ servers:
         pingfreq: 30
         maxnicklen: 30
 
-        # /'s in nicks are automatically converted to |'s for TS6 networks, since they
-        # don't allow "/" in nicks
+        # Note: /'s in nicks are automatically converted to |'s for TS6
+        # networks, since they don't allow "/" in nicks.
         separator: "|"
 
         # The following options are specific to TS6 servers:
-        # Toggles owner (+y), admin (+a), and halfop (+h) support for shadowircd/elemental-ircd.
+        # Toggles owner (+y), admin (+a), and halfop (+h) support for
+        # shadowircd/elemental-ircd.
         # This defaults to off for the best compatibility.
         use_owner: false
         use_admin: false
         use_halfop: false
 
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
-        # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
+        # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks
+        # kickrejoin),
         # +K (no repeat messages), +d (no nick changes), and user modes:
-        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides channel list)
+        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides
+        # channel list)
         use_elemental_modes: false
 
 # Plugins to load (omit the .py extension)
 plugins:
-    # Commands plugin: provides core commands such as logging in, shutting down PyLink, and
-    # various command help.
+    # Commands plugin: Provides core commands such as logging in, shutting down
+    # PyLink, and various command help.
     - commands
 
-    # Networks plugin: allows you to manage (dis)connections to networks while PyLink is running.
+    # Networks plugin: Allows you to manage (dis)connections to networks while
+    # PyLink is running.
     - networks
 
-    # Oper commands plugin: provides a subset of network management commands.
+    # Oper commands plugin: Provides a subset of network management commands.
     # (KILL, JUPE, etc.)
-    # Channel commands plugin: provides a subset of channel management
+    # Channel commands plugin: Provides a subset of channel management
     # commands (KICK, TOPIC, etc.).
     # Note: these commands will be made available to anyone who's opered on your
     # network, so make sure your opers are trustworthy!
     # - opercmds
     # - chancmds
 
-    # Bots plugin: allows you to manipulate pseudo-clients (bots) on networks.
+    # Bots plugin: Allows you to manipulate pseudo-clients (bots) on networks.
     # - bots
 
-    # Relay plugin: Janus-style server-side relay plugin.
+    # Relay plugin: Janus-style server-side relay plugin. See the relay: block
+    # below for configuration.
     # - relay
 
-    # Fantasy plugin: allows you to trigger commands in channels by PyLink's nick or a
-    # configurable prefix character.
+    # Fantasy plugin: Allows you to trigger commands in channels by PyLink's
+    # nick or a configurable prefix character.
     # - fantasy
+
+    # Changehost plugin: Automatically changes the hostmask of matching users
+    # to a template string, as they connect. This requires the changehost: block
+    # to be configured correctly below.
+    # - changehost
+
+changehost:
+    # This block configures the Changehost plugin. You don't need this if you
+    # aren't using it.
+
+    # Sets the networks where Changehost should be enabled.
+    enabled_nets:
+        - inspnet
+        - ts6net
+
+    # This sets the hostmasks that Changehost should look for. Whenever someone
+    # with a matching nick!user@host connects, their host will be set to the
+    # text defined. The following substitutions are available here:
+    # $uid, $ts (time of connection), $nick, $realhost, $host, $ident, $ip.
+    # Invalid characters in hosts are replaced with a "-".
+    # Also, make sure you quote each entry so the YAML parser treats them as
+    # raw strings.
+    hosts:
+
+        # Here are some examples. Note that to keep your users' details
+        # private, you should probably refrain from using $ip or $realhost,
+        # in these hostmasks, unless cloaking is already disabled.
+        "*!GLolol@*.yournet.com": "$nick.opers.yournet.com"
+        "*!*@localhost": "some-server.hostname"
+
+        # Freenode-style masks are possible with this (though without the
+        # hashing)
+        "*!*@bnc-server.yournet.com": "yournet/bnc-users/$ident"
+        "*!*@ircip?.mibbit.com": "$ident.$realhost"
+        "WebchatUser*!*@*": "webchat/users/$ident"
+
+relay:
+    # This block defines various options for the Relay plugin. You don't need this
+    # if you aren't using it.
+
+    # Determines whether remote opers will have user mode +H (hideoper) set on
+    # them. This has the benefit of lowering the oper count in /lusers and
+    # /stats (P|p), but only on IRCds that support it. This defaults to true
+    # if not set.
+    hideoper: true
+
+    # Determines whether real IPs should be sent across the relay. You should
+    # generally have a consensus with your linked networks whether this should
+    # be turned on. You will see other networks' user IP addresses, and they
+    # will see yours.
+    show_ips: false
+
+    # Whether subservers should be spawned for each relay network (requires
+    # reloading the plugin to change). Defaults to true.
+    spawn_servers: true
