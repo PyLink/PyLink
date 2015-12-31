@@ -18,7 +18,7 @@ import world
 from log import log
 
 # Characters allowed in a hostname.
-allowed_chars = string.ascii_letters + '-./:'
+allowed_chars = string.ascii_letters + '-./:' + string.digits
 
 def handle_uid(irc, sender, command, args):
     """
