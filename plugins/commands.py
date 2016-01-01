@@ -79,7 +79,7 @@ def showuser(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1: nick.")
         return
-    u = utils.nickToUid(irc, target) or target
+    u = irc.nickToUid(target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
     verbose = utils.isOper(irc, source) or u == source
@@ -91,7 +91,8 @@ def showuser(irc, source, args):
     userobj = irc.users[u]
     f('Information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
       userobj.host, userobj.realname))
-    sid = utils.clientToServer(irc, u)
+
+    sid = irc.getServer(u)
     serverobj = irc.servers[sid]
     ts = userobj.ts
     f('\x02Home server\x02: %s (%s); \x02Signon time:\x02 %s (%s)' % \

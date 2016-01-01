@@ -54,19 +54,19 @@ class TS6BaseProtocol(Protocol):
 
     def kickClient(self, numeric, channel, target, reason=None):
         """Sends a kick from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._sendKick(numeric, channel, target, reason=reason)
 
     def kickServer(self, numeric, channel, target, reason=None):
         """Sends a kick from a PyLink server."""
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         self._sendKick(numeric, channel, target, reason=reason)
 
     def nickClient(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
         self.irc.users[numeric].nick = newnick
@@ -74,7 +74,7 @@ class TS6BaseProtocol(Protocol):
     def partClient(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
         channel = utils.toLower(self.irc, channel)
-        if not utils.isInternalClient(self.irc, client):
+        if not self.irc.isInternalClient(client):
             log.error('(%s) Error trying to part client %r to %r (no such pseudoclient exists)', self.irc.name, client, channel)
             raise LookupError('No such PyLink PseudoClient exists.')
         msg = "PART %s" % channel
@@ -85,7 +85,7 @@ class TS6BaseProtocol(Protocol):
 
     def quitClient(self, numeric, reason):
         """Quits a PyLink client."""
-        if utils.isInternalClient(self.irc, numeric):
+        if self.irc.isInternalClient(numeric):
             self._send(numeric, "QUIT :%s" % reason)
             self.removeClient(numeric)
         else:
@@ -93,19 +93,19 @@ class TS6BaseProtocol(Protocol):
 
     def messageClient(self, numeric, target, text):
         """Sends a PRIVMSG from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'PRIVMSG %s :%s' % (target, text))
 
     def noticeClient(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'NOTICE %s :%s' % (target, text))
 
     def topicClient(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'TOPIC %s :%s' % (target, text))
         self.irc.channels[target].topic = text
@@ -133,7 +133,7 @@ class TS6BaseProtocol(Protocol):
         for server in self.irc.servers.values():
             if name == server.name:
                 raise ValueError('A server named %r already exists!' % name)
-        if not utils.isInternalServer(self.irc, uplink):
+        if not self.irc.isInternalServer(uplink):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)

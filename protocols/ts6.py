@@ -33,7 +33,7 @@ class TS6Protocol(TS6BaseProtocol):
         Note: No nick collision / valid nickname checks are done here; it is
         up to plugins to make sure they don't introduce anything invalid."""
         server = server or self.irc.sid
-        if not utils.isInternalServer(self.irc, server):
+        if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
         # Create an UIDGenerator instance for every SID, so that each gets
         # distinct values.
@@ -61,7 +61,7 @@ class TS6Protocol(TS6BaseProtocol):
         channel = utils.toLower(self.irc, channel)
         # JOIN:
         # parameters: channelTS, channel, '+' (a plus sign)
-        if not utils.isInternalClient(self.irc, client):
+        if not self.irc.isInternalClient(client):
             log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', self.irc.name, client, channel)
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(client, "JOIN {ts} {channel} +".format(ts=self.irc.channels[channel].ts, channel=channel))
@@ -156,7 +156,7 @@ class TS6Protocol(TS6BaseProtocol):
         Sends mode changes from a PyLink client. <modes> should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
@@ -165,13 +165,13 @@ class TS6Protocol(TS6BaseProtocol):
         Sends mode changes from a PyLink server. <list of modes> should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
     def killServer(self, numeric, target, reason):
         """Sends a kill from a PyLink server."""
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         # KILL:
         # parameters: target user, path
@@ -186,7 +186,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def killClient(self, numeric, target, reason):
         """Sends a kill from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         assert target in self.irc.users, "Unknown target %r for killClient!" % target
         self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
@@ -194,7 +194,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def topicServer(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         # TB
         # capab: TB
@@ -209,7 +209,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def inviteClient(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'INVITE %s %s %s' % (target, channel, self.irc.channels[channel].ts))
 
@@ -219,7 +219,7 @@ class TS6Protocol(TS6BaseProtocol):
             log.debug('(%s) knockClient: Dropping KNOCK to %r since the IRCd '
                       'doesn\'t support it.', self.irc.name, target)
             return
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         # No text value is supported here; drop it.
         self._send(numeric, 'KNOCK %s' % target)
@@ -230,7 +230,7 @@ class TS6Protocol(TS6BaseProtocol):
         if field == 'HOST':
             self.irc.users[target].host = text
             self._send(self.irc.sid, 'CHGHOST %s :%s' % (target, text))
-            if not utils.isInternalClient(self.irc, target):
+            if not self.irc.isInternalClient(target):
                 # If the target isn't one of our clients, send hook payload
                 # for other plugins to listen to.
                 self.irc.callHooks([self.irc.sid, 'CHGHOST',
@@ -443,7 +443,7 @@ class TS6Protocol(TS6BaseProtocol):
             destination = args[1]
         except IndexError:
             destination = self.irc.sid
-        if utils.isInternalServer(self.irc, destination):
+        if self.irc.isInternalServer(destination):
             self._send(destination, 'PONG %s %s' % (destination, source))
 
     def handle_pong(self, source, command, args):

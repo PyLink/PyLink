@@ -158,19 +158,6 @@ def toLower(irc, text):
         text = text.replace('~', '^')
     return text.lower()
 
-def nickToUid(irc, nick):
-    """Returns the UID of a user named nick, if present."""
-    nick = toLower(irc, nick)
-    for k, v in irc.users.copy().items():
-        if toLower(irc, v.nick) == nick:
-            return k
-
-def clientToServer(irc, numeric):
-    """Finds the SID of the server a user is on."""
-    for server in irc.servers:
-        if numeric in irc.servers[server].users:
-            return server
-
 _nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
 def isNick(s, nicklen=None):
     """Returns whether the string given is a valid nick."""
@@ -252,7 +239,7 @@ def parseModes(irc, target, args):
                     arg = args.pop(0)
                     # Convert nicks to UIDs implicitly; most IRCds will want
                     # this already.
-                    arg = nickToUid(irc, arg) or arg
+                    arg = irc.nickToUid(arg) or arg
                     if arg not in irc.users:  # Target doesn't exist, skip it.
                         log.debug('(%s) Skipping setting mode "%s %s"; the '
                                   'target doesn\'t seem to exist!', irc.name,
@@ -467,19 +454,6 @@ def reverseModes(irc, target, modes, oldobj=None):
     else:
         return set(newmodes)
 
-def isInternalClient(irc, numeric):
-    """
-    Checks whether the given numeric is a PyLink Client,
-    returning the SID of the server it's on if so.
-    """
-    for sid in irc.servers:
-        if irc.servers[sid].internal and numeric in irc.servers[sid].users:
-            return sid
-
-def isInternalServer(irc, sid):
-    """Returns whether the given SID is an internal PyLink server."""
-    return (sid in irc.servers and irc.servers[sid].internal)
-
 def isOper(irc, uid, allowAuthed=True, allowOper=True):
     """
     Returns whether the given user has operator status on PyLink. This can be achieved
@@ -514,7 +488,7 @@ def isManipulatableClient(irc, uid):
     set True to prevent interactions with opers (like mode changes) from
     causing desyncs.
     """
-    return isInternalClient(irc, uid) and irc.users[uid].manipulatable
+    return irc.isInternalClient(uid) and irc.users[uid].manipulatable
 
 def getHostmask(irc, user):
     """Returns the hostmask of the given user, if present."""

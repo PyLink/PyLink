@@ -26,14 +26,14 @@ def kick(irc, source, args):
         return
 
     # Convert the source and target nicks to UIDs.
-    u = utils.nickToUid(irc, sourcenick) or sourcenick
-    targetu = utils.nickToUid(irc, target)
+    u = irc.nickToUid(sourcenick) or sourcenick
+    targetu = irc.nickToUid(target)
 
     if channel not in irc.channels:  # KICK only works on channels that exist.
         irc.reply("Error: Unknown channel %r." % channel)
         return
 
-    if utils.isInternalServer(irc, u):
+    if irc.isInternalServer(u):
         # Send kick from server if the given kicker is a SID
         irc.proto.kickServer(u, channel, targetu, reason)
     elif u not in irc.users:

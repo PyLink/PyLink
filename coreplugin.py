@@ -25,7 +25,7 @@ utils.add_hook(handle_kick, 'KICK')
 
 def handle_commands(irc, source, command, args):
     """Handle commands sent to the PyLink client (PRIVMSG)."""
-    if args['target'] == irc.pseudoclient.uid and not utils.isInternalClient(irc, source):
+    if args['target'] == irc.pseudoclient.uid and not irc.isInternalClient(source):
         irc.called_by = source
         irc.callCommand(source, args['text'])
 
@@ -40,7 +40,7 @@ def handle_whois(irc, source, command, args):
                     'doesn\'t exist in irc.users!', irc.name, target, source)
         return
     f = irc.proto.numericServer
-    server = utils.clientToServer(irc, target) or irc.sid
+    server = irc.getServer(target) or irc.sid
     nick = user.nick
     sourceisOper = ('o', None) in irc.users[source].modes
     # https://www.alien.net.au/irc/irc2numerics.html
@@ -125,7 +125,7 @@ def handle_mode(irc, source, command, args):
     modes = args['modes']
     # If the sender is not a PyLink client, and the target IS a protected
     # client, revert any forced deoper attempts.
-    if utils.isInternalClient(irc, target) and not utils.isInternalClient(irc, source):
+    if irc.isInternalClient(target) and not irc.isInternalClient(source):
         if ('-o', None) in modes and (target == irc.pseudoclient.uid or not utils.isManipulatableClient(irc, target)):
             irc.proto.modeServer(irc.sid, target, {('+o', None)})
 utils.add_hook(handle_mode, 'MODE')

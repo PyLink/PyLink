@@ -35,10 +35,10 @@ def quit(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
-    if irc.pseudoclient.uid == utils.nickToUid(irc, nick):
+    if irc.pseudoclient.uid == irc.nickToUid(nick):
         irc.reply("Error: Cannot quit the main PyLink PseudoClient!")
         return
-    u = utils.nickToUid(irc, nick)
+    u = irc.nickToUid(nick)
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
     if not utils.isManipulatableClient(irc, u):
         irc.reply("Error: Cannot force quit a protected PyLink services client.")
@@ -59,7 +59,7 @@ def joinclient(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
-    u = utils.nickToUid(irc, nick)
+    u = irc.nickToUid(nick)
     if not utils.isManipulatableClient(irc, u):
         irc.reply("Error: Cannot force join a protected PyLink services client.")
         return
@@ -85,7 +85,7 @@ def nick(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 2: nick, newnick.")
         return
-    u = utils.nickToUid(irc, nick)
+    u = irc.nickToUid(nick)
     if newnick in ('0', u):
         newnick = u
     elif not utils.isNick(newnick):
@@ -110,7 +110,7 @@ def part(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 2: nick, comma separated list of channels.")
         return
-    u = utils.nickToUid(irc, nick)
+    u = irc.nickToUid(nick)
     if not utils.isManipulatableClient(irc, u):
         irc.reply("Error: Cannot force part a protected PyLink services client.")
         return
@@ -132,12 +132,12 @@ def msg(irc, source, args):
     except IndexError:
         irc.reply('Error: Not enough arguments. Needs 3: source nick, target, text.')
         return
-    sourceuid = utils.nickToUid(irc, msgsource)
+    sourceuid = irc.nickToUid(msgsource)
     if not sourceuid:
         irc.reply('Error: Unknown user %r.' % msgsource)
         return
     if not utils.isChannel(target):
-        real_target = utils.nickToUid(irc, target)
+        real_target = irc.nickToUid(target)
         if real_target is None:
             irc.reply('Error: Unknown user %r.' % target)
             return

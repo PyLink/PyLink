@@ -40,7 +40,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         Note: No nick collision / valid nickname checks are done here; it is
         up to plugins to make sure they don't introduce anything invalid."""
         server = server or self.irc.sid
-        if not utils.isInternalServer(self.irc, server):
+        if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
         # Create an UIDGenerator instance for every SID, so that each gets
         # distinct values.
@@ -68,7 +68,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # so what we're actually doing here is sending FJOIN from the server,
         # on behalf of the clients that are joining.
         channel = utils.toLower(self.irc, channel)
-        server = utils.isInternalClient(self.irc, client)
+        server = self.irc.isInternalClient(client)
         if not server:
             log.error('(%s) Error trying to join client %r to %r (no such pseudoclient exists)', self.irc.name, client, channel)
             raise LookupError('No such PyLink PseudoClient exists.')
@@ -176,7 +176,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         Sends mode changes from a PyLink client. <modes> should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
@@ -185,7 +185,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         Sends mode changes from a PyLink server. <list of modes> should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
@@ -194,24 +194,24 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # We only need to call removeClient here if the target is one of our
         # clients, since any remote servers will send a QUIT from
         # their target if the command succeeds.
-        if utils.isInternalClient(self.irc, target):
+        if self.irc.isInternalClient(target):
             self.removeClient(target)
 
     def killServer(self, numeric, target, reason):
         """Sends a kill from a PyLink server."""
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         self._sendKill(numeric, target, reason)
 
     def killClient(self, numeric, target, reason):
         """Sends a kill from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._sendKill(numeric, target, reason)
 
     def topicServer(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink PseudoServer exists.')
         ts = int(time.time())
         servername = self.irc.servers[numeric].name
@@ -221,13 +221,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def inviteClient(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'INVITE %s %s' % (target, channel))
 
     def knockClient(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink PseudoClient exists.')
         self._send(numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
@@ -239,7 +239,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise NotImplementedError("Changing field %r of a client is "
                                       "unsupported by this protocol." % field)
 
-        if utils.isInternalClient(self.irc, target):
+        if self.irc.isInternalClient(target):
             # It is one of our clients, use FIDENT/HOST/NAME.
             if field == 'IDENT':
                 self.irc.users[target].ident = text
@@ -321,7 +321,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         for server in self.irc.servers.values():
             if name == server.name:
                 raise ValueError('A server named %r already exists!' % name)
-        if not utils.isInternalServer(self.irc, uplink):
+        if not self.irc.isInternalServer(uplink):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % uplink)
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
@@ -446,7 +446,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming PING commands, so we don't time out."""
         # <- :70M PING 70M 0AL
         # -> :0AL PONG 0AL 70M
-        if utils.isInternalServer(self.irc, args[1]):
+        if self.irc.isInternalServer(args[1]):
             self._send(args[1], 'PONG %s %s' % (args[1], source))
 
     def handle_pong(self, source, command, args):
@@ -650,7 +650,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # SQUIT, in order to be consistent with other IRCds which make SQUITs
         # implicit.
         target = self._getSid(args[0])
-        if utils.isInternalServer(self.irc, target):
+        if self.irc.isInternalServer(target):
             # The target has to be one of our servers in order to work...
             uplink = self.irc.servers[target].uplink
             reason = 'Requested by %s' % utils.getHostmask(self.irc, numeric)

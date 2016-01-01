@@ -111,7 +111,7 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
     # somecutoffnick/net would otherwise be erroneous NICK'ed to somecutoffnic//net,
     # even though there would be no collision because the old and new nicks are from
     # the same client.
-    while utils.nickToUid(irc, nick) and utils.nickToUid(irc, nick) != uid:
+    while irc.nickToUid(nick) and irc.nickToUid(nick) != uid:
         new_sep = separator + separator[-1]
         log.debug('(%s) normalizeNick: nick %r is in use; using %r as new_sep.', irc.name, nick, new_sep)
         nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
@@ -429,8 +429,8 @@ def checkClaim(irc, channel, sender, chanobj=None):
     return (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
         irc.name in db[relay]['claim'] or \
         any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
-        or utils.isInternalClient(irc, sender) or \
-        utils.isInternalServer(irc, sender)
+        or irc.isInternalClient(sender) or \
+        irc.isInternalServer(sender)
 
 def getSupportedUmodes(irc, remoteirc, modes):
     """Given a list of user modes, filters out all of those not supported by the
@@ -713,7 +713,7 @@ def handle_messages(irc, numeric, command, args):
     notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
     target = args['target']
     text = args['text']
-    if utils.isInternalClient(irc, numeric) and utils.isInternalClient(irc, target):
+    if irc.isInternalClient(numeric) and irc.isInternalClient(target):
         # Drop attempted PMs between internal clients (this shouldn't happen,
         # but whatever).
         return
@@ -1351,7 +1351,7 @@ def showuser(irc, source, args):
         # No errors here; showuser from the commands plugin already does this
         # for us.
         return
-    u = utils.nickToUid(irc, target)
+    u = irc.nickToUid(target)
     if u:
         try:
             userpair = getOrigUser(irc, u) or (irc.name, u)

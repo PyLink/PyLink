@@ -58,7 +58,7 @@ class UnrealProtocol(TS6BaseProtocol):
         Note: No nick collision / valid nickname checks are done here; it is
         up to plugins to make sure they don't introduce anything invalid."""
         server = server or self.irc.sid
-        if not utils.isInternalServer(self.irc, server):
+        if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
         # Unreal 3.4 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
         # do, but we can do that fine...
@@ -107,7 +107,7 @@ class UnrealProtocol(TS6BaseProtocol):
     def joinClient(self, client, channel):
         """Joins a PyLink client to a channel."""
         channel = utils.toLower(self.irc, channel)
-        if not utils.isInternalClient(self.irc, client):
+        if not self.irc.isInternalClient(client):
             raise LookupError('No such PyLink client exists.')
         self._send(client, "JOIN %s" % channel)
         self.irc.channels[channel].users.add(client)
@@ -179,7 +179,7 @@ class UnrealProtocol(TS6BaseProtocol):
     def killServer(self, numeric, target, reason):
         """Sends a kill from a PyLink server."""
         # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink server exists.')
 
         assert target in self.irc.users, "Unknown target %r for killServer!" % target
@@ -189,7 +189,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def killClient(self, numeric, target, reason):
         """Sends a kill from a PyLink client."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
         assert target in self.irc.users, "Unknown target %r for killClient!" % target
         self._send(numeric, 'KILL %s :%s!PyLink (%s)' % (target, self.irc.serverdata['hostname'], reason))
@@ -209,7 +209,7 @@ class UnrealProtocol(TS6BaseProtocol):
             # is through UMODE2, which sets the modes on the caller.
             # U:Lines can use SVSMODE/SVS2MODE, but I won't expect people to
             # U:Line a PyLink daemon...
-            if not utils.isInternalClient(self.irc, target):
+            if not self.irc.isInternalClient(target):
                 raise ProtocolError('Cannot force mode change on external clients!')
             self._send(target, 'UMODE2 %s' % joinedmodes)
 
@@ -218,7 +218,7 @@ class UnrealProtocol(TS6BaseProtocol):
         Sends mode changes from a PyLink client. The mode list should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
@@ -227,13 +227,13 @@ class UnrealProtocol(TS6BaseProtocol):
         Sends mode changes from a PyLink server. The mode list should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink server exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
     def topicServer(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink server."""
-        if not utils.isInternalServer(self.irc, numeric):
+        if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink server exists.')
         self._send(numeric, 'TOPIC %s :%s' % (target, text))
         self.irc.channels[target].topic = text
@@ -247,7 +247,7 @@ class UnrealProtocol(TS6BaseProtocol):
             raise NotImplementedError("Changing field %r of a client is "
                                       "unsupported by this protocol." % field)
 
-        if utils.isInternalClient(self.irc, target):
+        if self.irc.isInternalClient(target):
             # It is one of our clients, use SETIDENT/HOST/NAME.
             if field == 'IDENT':
                 self.irc.users[target].ident = text
@@ -284,7 +284,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def inviteClient(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
-        if not utils.isInternalClient(self.irc, numeric):
+        if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
         self._send(numeric, 'INVITE %s %s' % (target, channel))
 
@@ -294,7 +294,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # sent to all ops in a channel.
         # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by GL|!gl@hidden-1C620195 (test)
         assert utils.isChannel(target), "Can only knock on channels!"
-        sender = utils.clientToServer(self.irc, numeric)
+        sender = self.irc.getServer(numeric)
         s = '[Knock] by %s (%s)' % (utils.getHostmask(self.irc, numeric), text)
         self._send(sender, 'NOTICE @%s :%s' % (target, s))
 
@@ -487,9 +487,9 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.connected.set()
 
     def _getNick(self, target):
-        """Converts a nick argument to its matching UID. This differs from utils.nickToUid()
+        """Converts a nick argument to its matching UID. This differs from irc.nickToUid()
         in that it returns the original text instead of None, if no matching nick is found."""
-        target = utils.nickToUid(self.irc, target) or target
+        target = self.irc.nickToUid(target) or target
         if target not in self.irc.users and not utils.isChannel(target):
             log.debug("(%s) Possible desync? Got command target %s, who "
                         "isn't in our user list!", self.irc.name, target)

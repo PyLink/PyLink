@@ -38,7 +38,7 @@ def handle_fantasy(irc, source, command, args):
         #      message loops).
         if utils.isChannel(channel) and text.startswith(prefix) and \
                 irc.pseudoclient.uid in irc.channels[channel].users and not \
-                utils.isInternalClient(irc, source):
+                irc.isInternalClient(source):
 
             # Cut off the length of the prefix from the text.
             text = text[len(prefix):]

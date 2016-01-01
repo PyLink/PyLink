@@ -248,44 +248,6 @@ class Irc():
                 log.info('(%s) Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
                 return
 
-    def callCommand(self, source, text):
-        """
-        Calls a PyLink bot command. source is the caller's UID, and text is the
-        full, unparsed text of the message.
-        """
-        cmd_args = text.strip().split(' ')
-        cmd = cmd_args[0].lower()
-        cmd_args = cmd_args[1:]
-        if cmd not in world.commands:
-            self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
-            log.info('(%s) Received unknown command %r from %s', self.name, cmd, utils.getHostmask(self, source))
-            return
-        log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
-        for func in world.commands[cmd]:
-            try:
-                func(self, source, cmd_args)
-            except utils.NotAuthenticatedError:
-                self.msg(self.called_by or source, 'Error: You are not authorized to perform this operation.')
-            except Exception as e:
-                log.exception('Unhandled exception caught in command %r', cmd)
-                self.msg(self.called_by or source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
-
-    def msg(self, target, text, notice=False, source=None):
-        """Handy function to send messages/notices to clients. Source
-        is optional, and defaults to the main PyLink client if not specified."""
-        source = source or self.pseudoclient.uid
-        if notice:
-            self.proto.noticeClient(source, target, text)
-            cmd = 'PYLINK_SELF_NOTICE'
-        else:
-            self.proto.messageClient(source, target, text)
-            cmd = 'PYLINK_SELF_PRIVMSG'
-        self.callHooks([source, cmd, {'target': target, 'text': text}])
-
-    def reply(self, text, notice=False, source=None):
-        """Replies to the last caller in the right context (channel or PM)."""
-        self.msg(self.called_by, text, notice=notice, source=source)
-
     def _disconnect(self):
         """Handle disconnects from the remote server."""
         self.connected.clear()
@@ -435,6 +397,71 @@ class Irc():
     def __repr__(self):
         return "<classes.Irc object for %r>" % self.name
 
+    ### Utility functions
+    def callCommand(self, source, text):
+        """
+        Calls a PyLink bot command. source is the caller's UID, and text is the
+        full, unparsed text of the message.
+        """
+        cmd_args = text.strip().split(' ')
+        cmd = cmd_args[0].lower()
+        cmd_args = cmd_args[1:]
+        if cmd not in world.commands:
+            self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
+            log.info('(%s) Received unknown command %r from %s', self.name, cmd, utils.getHostmask(self, source))
+            return
+        log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
+        for func in world.commands[cmd]:
+            try:
+                func(self, source, cmd_args)
+            except utils.NotAuthenticatedError:
+                self.msg(self.called_by or source, 'Error: You are not authorized to perform this operation.')
+            except Exception as e:
+                log.exception('Unhandled exception caught in command %r', cmd)
+                self.msg(self.called_by or source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+
+    def msg(self, target, text, notice=False, source=None):
+        """Handy function to send messages/notices to clients. Source
+        is optional, and defaults to the main PyLink client if not specified."""
+        source = source or self.pseudoclient.uid
+        if notice:
+            self.proto.noticeClient(source, target, text)
+            cmd = 'PYLINK_SELF_NOTICE'
+        else:
+            self.proto.messageClient(source, target, text)
+            cmd = 'PYLINK_SELF_PRIVMSG'
+        self.callHooks([source, cmd, {'target': target, 'text': text}])
+
+    def reply(self, text, notice=False, source=None):
+        """Replies to the last caller in the right context (channel or PM)."""
+        self.msg(self.called_by, text, notice=notice, source=source)
+
+    def nickToUid(self, nick):
+        """Looks up the UID of a user with the given nick, if one is present."""
+        nick = utils.toLower(self, nick)
+        for k, v in self.users.copy().items():
+            if utils.toLower(self, v.nick) == nick:
+                return k
+
+    def isInternalClient(self, numeric):
+        """
+        Checks whether the given numeric is a PyLink Client,
+        returning the SID of the server it's on if so.
+        """
+        for sid in self.servers:
+            if self.servers[sid].internal and numeric in self.servers[sid].users:
+                return sid
+
+    def isInternalServer(self, sid):
+        """Returns whether the given SID is an internal PyLink server."""
+        return (sid in self.servers and self.servers[sid].internal)
+
+    def getServer(self, numeric):
+        """Finds the SID of the server a user is on."""
+        for server in self.servers:
+            if numeric in self.servers[server].users:
+                return server
+
 class IrcUser():
     """PyLink IRC user class."""
     def __init__(self, nick, ts, uid, ident='null', host='null',
@@ -511,60 +538,8 @@ class IrcChannel():
         """Returns a deep copy of the channel object."""
         return deepcopy(self)
 
-### FakeIRC classes, used for test cases
-
-class FakeIRC(Irc):
-    """Fake IRC object used for unit tests."""
-    def connect(self):
-        self.messages = []
-        self.hookargs = []
-        self.hookmsgs = []
-        self.socket = None
-        self.initVars()
-        self.spawnMain()
-        self.connected = threading.Event()
-        self.connected.set()
-
-    def run(self, data):
-        """Queues a message to the fake IRC server."""
-        log.debug('<- ' + data)
-        hook_args = self.proto.handle_events(data)
-        if hook_args is not None:
-            self.hookmsgs.append(hook_args)
-            self.callHooks(hook_args)
-
-    def send(self, data):
-        self.messages.append(data)
-        log.debug('-> ' + data)
-
-    def takeMsgs(self):
-        """Returns a list of messages sent by the protocol module since
-        the last takeMsgs() call, so we can track what has been sent."""
-        msgs = self.messages
-        self.messages = []
-        return msgs
-
-    def takeCommands(self, msgs):
-        """Returns a list of commands parsed from the output of takeMsgs()."""
-        sidprefix = ':' + self.sid
-        commands = []
-        for m in msgs:
-            args = m.split()
-            if m.startswith(sidprefix):
-                commands.append(args[1])
-            else:
-                commands.append(args[0])
-        return commands
-
-    def takeHooks(self):
-        """Returns a list of hook arguments sent by the protocol module since
-        the last takeHooks() call."""
-        hookmsgs = self.hookmsgs
-        self.hookmsgs = []
-        return hookmsgs
-
 class Protocol():
-    # TODO: Future state-keeping things will go here
+    """Base Protocol module class for PyLink."""
     def __init__(self, irc):
         self.irc = irc
         self.casemapping = 'rfc1459'
@@ -625,6 +600,58 @@ class Protocol():
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
                 p.clear()
+
+### FakeIRC classes, used for test cases
+
+class FakeIRC(Irc):
+    """Fake IRC object used for unit tests."""
+    def connect(self):
+        self.messages = []
+        self.hookargs = []
+        self.hookmsgs = []
+        self.socket = None
+        self.initVars()
+        self.spawnMain()
+        self.connected = threading.Event()
+        self.connected.set()
+
+    def run(self, data):
+        """Queues a message to the fake IRC server."""
+        log.debug('<- ' + data)
+        hook_args = self.proto.handle_events(data)
+        if hook_args is not None:
+            self.hookmsgs.append(hook_args)
+            self.callHooks(hook_args)
+
+    def send(self, data):
+        self.messages.append(data)
+        log.debug('-> ' + data)
+
+    def takeMsgs(self):
+        """Returns a list of messages sent by the protocol module since
+        the last takeMsgs() call, so we can track what has been sent."""
+        msgs = self.messages
+        self.messages = []
+        return msgs
+
+    def takeCommands(self, msgs):
+        """Returns a list of commands parsed from the output of takeMsgs()."""
+        sidprefix = ':' + self.sid
+        commands = []
+        for m in msgs:
+            args = m.split()
+            if m.startswith(sidprefix):
+                commands.append(args[1])
+            else:
+                commands.append(args[0])
+        return commands
+
+    def takeHooks(self):
+        """Returns a list of hook arguments sent by the protocol module since
+        the last takeHooks() call."""
+        hookmsgs = self.hookmsgs
+        self.hookmsgs = []
+        return hookmsgs
 
 class FakeProto(Protocol):
     """Dummy protocol module for testing purposes."""
