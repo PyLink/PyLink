@@ -490,23 +490,30 @@ def isManipulatableClient(irc, uid):
     """
     return irc.isInternalClient(uid) and irc.users[uid].manipulatable
 
-def getHostmask(irc, user):
-    """Returns the hostmask of the given user, if present."""
+def getHostmask(irc, user, realhost=False):
+    """
+    Returns the hostmask of the given user, if present. If the realhost option
+    is given, return the real host of the user instead of the displayed host."""
     userobj = irc.users.get(user)
-    if userobj is None:
-        return '<user object not found>'
+
     try:
         nick = userobj.nick
     except AttributeError:
-        nick = '<unknown nick>'
+        nick = '<unknown-nick>'
+
     try:
         ident = userobj.ident
     except AttributeError:
-        ident = '<unknown ident>'
+        ident = '<unknown-ident>'
+
     try:
-        host = userobj.host
+        if realhost:
+            host = userobj.realhost
+        else:
+            host = userobj.host
     except AttributeError:
-        host = '<unknown host>'
+        host = '<unknown-host>'
+
     return '%s!%s@%s' % (nick, ident, host)
 
 def loadModuleFromFolder(name, folder):
