@@ -451,6 +451,7 @@ class Irc():
         for sid in self.servers:
             if self.servers[sid].internal and numeric in self.servers[sid].users:
                 return sid
+        return False
 
     def isInternalServer(self, sid):
         """Returns whether the given SID is an internal PyLink server."""
