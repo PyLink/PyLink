@@ -42,9 +42,10 @@ def handle_uid(irc, sender, command, args):
         return
 
     target = args['uid']
+    target_host = utils.getHostmask(irc, target, realhost=True)
 
     for host_glob, host_template in changehost_hosts.items():
-        if ircmatch.match(0, host_glob, utils.getHostmask(irc, target)):
+        if ircmatch.match(0, host_glob, target_host):
             # This uses template strings for simple substitution:
             # https://docs.python.org/3/library/string.html#template-strings
             template = string.Template(host_template)
