@@ -746,6 +746,11 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles CHGHOST, used for self hostname changes."""
         # <- :70MAAAAAB SETIDENT some.host
         self.irc.users[numeric].host = newhost = args[0]
+
+        # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
+        # target.
+        utils.applyModes(self.irc, numeric, [('+x', None), ('+t', None)])
+
         return {'target': numeric, 'newhost': newhost}
 
     def handle_setname(self, numeric, command, args):
@@ -766,6 +771,11 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :GL CHGHOST GL some.host
         target = self._getNick(args[0])
         self.irc.users[target].host = newhost = args[1]
+
+        # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
+        # target.
+        utils.applyModes(self.irc, target, [('+x', None), ('+t', None)])
+
         return {'target': target, 'newhost': newhost}
 
     def handle_chgname(self, numeric, command, args):
