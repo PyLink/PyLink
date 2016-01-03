@@ -370,10 +370,12 @@ class UnrealProtocol(TS6BaseProtocol):
             else:
                 raise ProtocolError("Invalid number of bits in IP address field (got %s, expected 4 or 16)." % len(ipbits))
         realname = args[-1]
+
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+        self.irc.servers[numeric].users.add(uid)
+
         parsedmodes = utils.parseModes(self.irc, uid, [modestring])
         utils.applyModes(self.irc, uid, parsedmodes)
-        self.irc.servers[numeric].users.add(uid)
 
         # The cloaked (+x) host is completely separate from the displayed host
         # and real host in that it is ONLY shown if the user is +x (cloak mode
@@ -385,6 +387,10 @@ class UnrealProtocol(TS6BaseProtocol):
         if ('+o', None) in parsedmodes:
             # If +o being set, call the CLIENT_OPERED internal hook.
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+
+        if ('+x', None) not in parsedmodes:
+            # If +x is not set, update to use the person's real host.
+            self.updateClient(uid, 'HOST', realhost)
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -643,13 +649,52 @@ class UnrealProtocol(TS6BaseProtocol):
                         self.irc.name, args)
             raise NotImplementedError
 
+    def checkCloakChange(self, uid, parsedmodes):
+        """
+        Checks whether +x/-x was set in the mode query, and changes the
+        hostname of the user given to or from their cloaked host if True.
+        """
+
+        userobj = self.irc.users[uid]
+        final_modes = userobj.modes
+        oldhost = userobj.host
+
+        if (('+x', None) in parsedmodes and ('t', None) not in final_modes) \
+                or (('-t', None) in parsedmodes and ('x', None) in final_modes):
+            # If either:
+            #    1) +x is being set, and the user does NOT have +t.
+            #    2) -t is being set, but the user has +x set already.
+            # We should update the user's host to their cloaked host and send
+            # out a hook payload saying that the host has changed.
+            newhost = userobj.host = userobj.cloaked_host
+        elif ('-x', None) in parsedmodes or ('-t', None) in parsedmodes:
+            # Otherwise, if either:
+            #    1) -x is being set.
+            #    2) -t is being set, but the person doesn't have +x set already.
+            #       (the case where the person DOES have +x is handled above)
+            # Restore the person's host to the uncloaked real host.
+            newhost = userobj.host = userobj.realhost
+        else:
+            # Nothing changed, just return.
+            return
+
+        if newhost != oldhost:
+            # Only send a payload if the old and new hosts are different.
+            self.irc.callHooks([uid, 'SETHOST',
+                               {'target': uid, 'newhost': newhost}])
+
     def handle_svsmode(self, numeric, command, args):
         """Handle SVSMODE/SVS2MODE, used for setting user modes on others (services)."""
         # <- :source SVSMODE target +usermodes
         target = self._getNick(args[0])
         modes = args[1:]
+
         parsedmodes = utils.parseModes(self.irc, target, modes)
         utils.applyModes(self.irc, target, parsedmodes)
+
+        # If +x/-x is being set, update cloaked host info.
+        self.checkCloakChange(numeric, parsedmodes)
+
         return {'target': numeric, 'modes': parsedmodes}
     handle_svs2mode = handle_svsmode
 
@@ -662,6 +707,8 @@ class UnrealProtocol(TS6BaseProtocol):
         if ('+o', None) in parsedmodes:
             # If +o being set, call the CLIENT_OPERED internal hook.
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+
+        self.checkCloakChange(numeric, parsedmodes)
 
         return {'target': numeric, 'modes': parsedmodes}
 
