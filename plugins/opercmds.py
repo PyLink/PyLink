@@ -44,7 +44,36 @@ def mode(irc, source, args):
 
     irc.proto.modeClient(irc.pseudoclient.uid, target, parsedmodes)
 
-    # Call the appropriate hooks for plugin like relay.
+    # Call the appropriate hooks for plugins like relay.
     irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_MODEOVERRIDE',
                    {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
 
+    irc.reply("Done.")
+
+@utils.add_cmd
+def jupe(irc, source, args):
+    """<server> [<reason>]
+
+    Oper-only, jupes the given server."""
+
+    # Check that the caller is either opered or logged in as admin.
+    utils.checkAuthenticated(irc, source)
+
+    try:
+        servername = args[0]
+        reason = ' '.join(args[1:]) or "No reason given"
+        desc = "Juped by %s: [%s]" % (utils.getHostmask(irc, source), reason)
+    except IndexError:
+        irc.reply('Error: Not enough arguments. Needs 1-2: servername, reason (optional).')
+        return
+
+    if not utils.isServerName(servername):
+        irc.reply("Error: Invalid server name '%s'." % servername)
+        return
+
+    sid = irc.proto.spawnServer(servername, desc=desc)
+
+    irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_SPAWNSERVER',
+                   {'name': servername, 'sid': sid, 'text': desc}])
+
+    irc.reply("Done.")
