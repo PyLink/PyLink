@@ -29,11 +29,8 @@ if __name__ == '__main__':
     for plugin in to_load:
         try:
             world.plugins[plugin] = pl = utils.loadModuleFromFolder(plugin, world.plugins_folder)
-        except ImportError as e:
-            if str(e) == ('No module named %r' % plugin):
-                log.error('Failed to load plugin %r: The plugin could not be found.', plugin)
-            else:
-                log.error('Failed to load plugin %r: ImportError: %s', plugin, str(e))
+        except (OSError, ImportError) as e:
+            log.exception('Failed to load plugin %r: %s: %s', plugin, type(e).__name__, str(e))
         else:
             if hasattr(pl, 'main'):
                 log.debug('Calling main() function of plugin %r', pl)
