@@ -29,7 +29,7 @@ You can also find support via our IRC channel: `#PyLink at irc.overdrivenetworks
 
 ## Setup
 
-1) Rename `config.yml.example` to `config.yml` and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
+1) Rename `example-conf.yml` to `config.yml` and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
 
 2) Run `./pylink` from the command line.
 

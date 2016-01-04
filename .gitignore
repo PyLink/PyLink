@@ -1,4 +1,7 @@
+# Ignore config files except the example ones
 *.yml
+!example-*.yml
+
 build/
 __pycache__/
 *.py[cod]
