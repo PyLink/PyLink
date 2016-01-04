@@ -7,8 +7,78 @@ import os
 # Add the base PyLink folder to path, so we can import utils and log.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# ircmatch library from https://github.com/mammon-ircd/ircmatch
+# (pip install ircmatch)
+try:
+    import ircmatch
+except ImportError:
+    ircmatch = None
+
 import utils
 from log import log
+
+@utils.add_cmd
+def checkban(irc, source, args):
+    """<banmask (nick!user@host or user@host)> [<nick or hostmask to check>]
+
+    Oper only. If a nick or hostmask is given, return whether the given banmask will match it. Otherwise, returns a list of connected users that would be affected by such a ban, up to 50 results."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+
+    if ircmatch is None:
+        irc.reply("Error: missing ircmatch module (install it via 'pip install ircmatch').")
+        return
+
+    try:
+        banmask = args[0]
+    except IndexError:
+        irc.reply("Error: Not enough arguments. Needs 1-2: banmask, nick or hostmask to check (optional).")
+        return
+
+    # Casemapping value (0 is rfc1459, 1 is ascii) used by ircmatch.
+    if irc.proto.casemapping == 'rfc1459':
+        casemapping = 0
+    else:
+        casemapping = 1
+
+
+    try:
+        targetmask = args[1]
+    except IndexError:
+        # No hostmask was given, return a list of affected users.
+
+        irc.msg(source, "Checking matches for \x02%s\x02:" % banmask, notice=True)
+
+        results = 0
+        for uid, userobj in irc.users.copy().items():
+            targetmask = utils.getHostmask(irc, uid)
+            if ircmatch.match(casemapping, banmask, targetmask):
+                if results < 50:  # XXX rather arbitrary limit
+                    serverobj = irc.servers[irc.getServer(uid)]
+                    s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
+                        userobj.host, userobj.realname, serverobj.name)
+
+                    # Always reply in private to prevent information leaks.
+                    irc.msg(source, s, notice=True)
+                results += 1
+        else:
+            if results:
+                irc.msg(source, "\x02%s\x02 out of \x02%s\x02 results shown." %
+                        (min([results, 50]), results), notice=True)
+            else:
+                irc.msg(source, "No results found.", notice=True)
+    else:
+        # Target can be both a nick (of an online user) or a hostmask.
+        uid = irc.nickToUid(targetmask)
+        if uid:
+            targetmask = utils.getHostmask(irc, uid)
+        elif not utils.isHostmask(targetmask):
+            irc.reply("Error: Invalid nick or hostmask '%s'." % targetmask)
+            return
+
+        if ircmatch.match(casemapping, banmask, targetmask):
+            irc.reply('Yes, \x02%s\x02 matches \x02%s\x02.' % (targetmask, banmask))
+        else:
+            irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (targetmask, banmask))
 
 @utils.add_cmd
 def jupe(irc, source, args):
