@@ -148,12 +148,9 @@ plugins:
 
     # Oper commands plugin: Provides a subset of network management commands.
     # (KILL, JUPE, etc.)
-    # Channel commands plugin: Provides a subset of channel management
-    # commands (KICK, TOPIC, etc.).
     # Note: these commands will be made available to anyone who's opered on your
     # network, so make sure your opers are trustworthy!
     # - opercmds
-    # - chancmds
 
     # Bots plugin: Allows you to manipulate pseudo-clients (bots) on networks.
     # - bots

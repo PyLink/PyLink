@@ -11,6 +11,79 @@ import utils
 from log import log
 
 @utils.add_cmd
+def jupe(irc, source, args):
+    """<server> [<reason>]
+
+    Oper-only, jupes the given server."""
+
+    # Check that the caller is either opered or logged in as admin.
+    utils.checkAuthenticated(irc, source)
+
+    try:
+        servername = args[0]
+        reason = ' '.join(args[1:]) or "No reason given"
+        desc = "Juped by %s: [%s]" % (utils.getHostmask(irc, source), reason)
+    except IndexError:
+        irc.reply('Error: Not enough arguments. Needs 1-2: servername, reason (optional).')
+        return
+
+    if not utils.isServerName(servername):
+        irc.reply("Error: Invalid server name '%s'." % servername)
+        return
+
+    sid = irc.proto.spawnServer(servername, desc=desc)
+
+    irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_SPAWNSERVER',
+                   {'name': servername, 'sid': sid, 'text': desc}])
+
+    irc.reply("Done.")
+
+
+@utils.add_cmd
+def kick(irc, source, args):
+    """<source> <channel> <user> [<reason>]
+
+    Admin only. Kicks <user> from <channel> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    try:
+        sourcenick = args[0]
+        channel = args[1]
+        target = args[2]
+        reason = ' '.join(args[3:])
+    except IndexError:
+        irc.reply("Error: Not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
+        return
+
+    # Convert the source and target nicks to UIDs.
+    u = irc.nickToUid(sourcenick) or sourcenick
+    targetu = irc.nickToUid(target)
+
+    if channel not in irc.channels:  # KICK only works on channels that exist.
+        irc.reply("Error: Unknown channel %r." % channel)
+        return
+
+    if irc.isInternalServer(u):
+        # Send kick from server if the given kicker is a SID
+        irc.proto.kickServer(u, channel, targetu, reason)
+    elif u not in irc.users:
+        # Whatever we were told to send the kick from wasn't valid; try to be
+        # somewhat user friendly in the error. message
+        irc.reply("Error: No such PyLink client '%s'. The first argument to "
+                  "KICK should be the name of a PyLink client (e.g. '%s'; see "
+                  "'help kick' for details." % (sourcenick,
+                  irc.pseudoclient.nick))
+        return
+    elif targetu not in irc.users:
+        # Whatever we were told to kick doesn't exist!
+        irc.reply("Error: No such nick '%s'." % target)
+        return
+    else:
+        irc.proto.kickClient(u, channel, targetu, reason)
+
+    irc.callHooks([u, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
+                                        'text': reason, 'parse_as': 'KICK'}])
+
+@utils.add_cmd
 def mode(irc, source, args):
     """<channel> <modes>
 
@@ -51,29 +124,24 @@ def mode(irc, source, args):
     irc.reply("Done.")
 
 @utils.add_cmd
-def jupe(irc, source, args):
-    """<server> [<reason>]
+def topic(irc, source, args):
+    """<channel> <topic>
 
-    Oper-only, jupes the given server."""
-
-    # Check that the caller is either opered or logged in as admin.
-    utils.checkAuthenticated(irc, source)
-
+    Admin only. Updates the topic in a channel."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
     try:
-        servername = args[0]
-        reason = ' '.join(args[1:]) or "No reason given"
-        desc = "Juped by %s: [%s]" % (utils.getHostmask(irc, source), reason)
+        channel = args[0]
+        topic = ' '.join(args[1:])
     except IndexError:
-        irc.reply('Error: Not enough arguments. Needs 1-2: servername, reason (optional).')
+        irc.reply("Error: Not enough arguments. Needs 2: channel, topic.")
         return
 
-    if not utils.isServerName(servername):
-        irc.reply("Error: Invalid server name '%s'." % servername)
+    if channel not in irc.channels:
+        irc.reply("Error: Unknown channel %r." % channel)
         return
 
-    sid = irc.proto.spawnServer(servername, desc=desc)
+    irc.proto.topicClient(irc.pseudoclient.uid, channel, topic)
 
-    irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_SPAWNSERVER',
-                   {'name': servername, 'sid': sid, 'text': desc}])
-
-    irc.reply("Done.")
+    irc.callHooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
+                   {'channel': channel, 'text': topic, 'setter': source,
+                    'parse_as': 'TOPIC'}])
