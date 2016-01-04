@@ -19,6 +19,7 @@ You can also find support via our IRC channel: `#PyLink at irc.overdrivenetworks
 * Python 3.4+
 * PyYAML (`pip install pyyaml`)
 * *For the relay plugin*: expiringdict (`pip install expiringdict`)
+* *For the changehost and opercmds plugins*: ircmatch (`pip install ircmatch`)
 
 ### Supported IRCds
 
