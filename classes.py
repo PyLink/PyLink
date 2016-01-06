@@ -398,23 +398,14 @@ class Irc():
     def schedulePing(self):
         """Schedules periodic pings in a loop."""
 
-        if not self.connection_thread:
-            # We're running in a non-threaded context, abort.
-            log.debug('(%s) Ignoring schedulePing() request since threading '
-                      'seems to be disabled.', self.name)
-            return
-
-        # Only run this loop for the duration where the listener thread
-        # is active! The goal is to stop the ping threads as soon as possible
-        # after the relevant listeners die.
-        while self.connection_thread.is_alive():
+        while not self.aborted.is_set():
             log.debug('(%s) Ping sent at %s', self.name, time.time())
             self.proto.pingServer()
 
             # Sleep for the time (frequency) between pings.
             time.sleep(self.pingfreq)
 
-        log.debug('(%s) Canceling ping_thread at %s due to listener thread stopping.', self.name, time.time())
+        log.debug('(%s) Canceling ping_thread at %s due to self.aborted being set.', self.name, time.time())
 
     def spawnMain(self):
         """Spawns the main PyLink client."""
