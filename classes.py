@@ -56,9 +56,9 @@ class Irc():
             # HACK: Don't thread if we're running tests.
             self.connect()
         else:
-            self.connection_thread = threading.Thread(target=self.connect,
-                name="Listener for %s" % self.name)
+            self.connection_thread = threading.Thread(target = self.connect)
             self.connection_thread.start()
+        self.pingTimer = None
 
     def initVars(self):
         """
@@ -127,8 +127,6 @@ class Irc():
         # Defines the uplink SID (to be filled in by protocol module).
         self.uplink = None
         self.start_ts = int(time.time())
-
-        self.ping_thread = None
 
     def connect(self):
         """
@@ -213,14 +211,8 @@ class Irc():
                     # and run the listen loop.
                     self.proto.connect()
                     self.spawnMain()
-
-                    # Spawn the ping loop as a separate thread.
-                    log.info('(%s) Starting ping loop...', self.name)
-                    self.ping_thread = threading.Thread(target=self.schedulePing,
-                        name="Ping loop for %s" % self.name)
-                    self.ping_thread.daemon = True
-                    self.ping_thread.start()
-
+                    log.info('(%s) Starting ping schedulers....', self.name)
+                    self.schedulePing()
                     log.info('(%s) Server ready; listening for data.', self.name)
                     self.run()
                 else:  # Configuration error :(
@@ -288,12 +280,13 @@ class Irc():
 
     def _disconnect(self):
         """Handle disconnects from the remote server."""
+        log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
         self.connected.clear()
         try:
             self.socket.close()
+            self.pingTimer.cancel()
         except:  # Socket timed out during creation; ignore
             pass
-
         # Internal hook signifying that a network has disconnected.
         self.callHooks([None, 'PYLINK_DISCONNECT', {}])
 
@@ -397,15 +390,11 @@ class Irc():
 
     def schedulePing(self):
         """Schedules periodic pings in a loop."""
-
-        while not self.aborted.is_set():
-            log.debug('(%s) Ping sent at %s', self.name, time.time())
-            self.proto.pingServer()
-
-            # Sleep for the time (frequency) between pings.
-            time.sleep(self.pingfreq)
-
-        log.debug('(%s) Canceling ping_thread at %s due to self.aborted being set.', self.name, time.time())
+        self.proto.pingServer()
+        self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
+        self.pingTimer.daemon = True
+        self.pingTimer.start()
+        log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
     def spawnMain(self):
         """Spawns the main PyLink client."""
@@ -462,20 +451,17 @@ class IrcServer():
     name: The name of the server.
     internal: Whether the server is an internal PyLink PseudoServer.
     """
-
     def __init__(self, uplink, name, internal=False, desc="(None given)"):
         self.uplink = uplink
         self.users = set()
         self.internal = internal
         self.name = name.lower()
         self.desc = desc
-
     def __repr__(self):
         return repr(self.__dict__)
 
 class IrcChannel():
     """PyLink IRC channel class."""
-
     def __init__(self):
         # Initialize variables, such as the topic, user list, TS, who's opped, etc.
         self.users = set()
