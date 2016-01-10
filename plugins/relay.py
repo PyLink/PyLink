@@ -204,7 +204,7 @@ def getRemoteSid(irc, remoteirc):
             except ValueError:  # Network not initialized yet.
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
-                irc.aborted.set()
+                irc.disconnect()
                 return
             else:
                 irc.servers[sid].remote = remoteirc.name
@@ -981,7 +981,7 @@ def handle_kill(irc, numeric, command, args):
         else:
             log.error('(%s) Too many kills received for target %s, aborting!',
                       irc.name, userdata.nick)
-            irc.aborted.set()
+            irc.disconnect()
         killcache[irc.name] += 1
 
     # Target user was local.

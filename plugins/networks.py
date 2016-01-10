@@ -28,8 +28,9 @@ def disconnect(irc, source, args):
         irc.reply('Error: No such network "%s" (case sensitive).' % netname)
         return
     irc.reply("Done.")
+
     # Abort the connection! Simple as that.
-    network.aborted.set()
+    network.disconnect()
 
 @utils.add_cmd
 def connect(irc, source, args):

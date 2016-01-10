@@ -177,7 +177,7 @@ def shutdown(irc, source, args):
     for ircobj in world.networkobjects.values():
         # Disable auto-connect first by setting the time to negative.
         ircobj.serverdata['autoconnect'] = -1
-        ircobj.disconnect(callhook=False)
+        ircobj.disconnect()
 
 def load(irc, source, args):
     """<plugin name>.
