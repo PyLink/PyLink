@@ -59,7 +59,7 @@ class UnrealProtocol(TS6BaseProtocol):
         up to plugins to make sure they don't introduce anything invalid."""
         server = server or self.irc.sid
         if not self.irc.isInternalServer(server):
-            raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
+            raise ValueError('Server %r is not a PyLink server!' % server)
         # Unreal 3.4 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
         # do, but we can do that fine...
         uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
