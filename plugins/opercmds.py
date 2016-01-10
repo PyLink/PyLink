@@ -154,6 +154,46 @@ def kick(irc, source, args):
                                         'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
+def kill(irc, source, args):
+    """<source> <channel> <user> [<reason>]
+
+    Admin only. Kills <user> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    try:
+        sourcenick = args[0]
+        target = args[1]
+        reason = ' '.join(args[2:])
+    except IndexError:
+        irc.reply("Error: Not enough arguments. Needs 3-4: source nick, target, reason (optional).")
+        return
+
+    # Convert the source and target nicks to UIDs.
+    u = irc.nickToUid(sourcenick) or sourcenick
+    targetu = irc.nickToUid(target)
+    userdata = irc.users.get(targetu)
+
+    if irc.isInternalServer(u):
+        # Send kill from server if the given kicker is a SID
+        irc.proto.killServer(u, targetu, reason)
+    elif u not in irc.users:
+        # Whatever we were told to send the kick from wasn't valid; try to be
+        # somewhat user friendly in the error. message
+        irc.reply("Error: No such PyLink client '%s'. The first argument to "
+                  "KILL should be the name of a PyLink client (e.g. '%s'; see "
+                  "'help kick' for details." % (sourcenick,
+                  irc.pseudoclient.nick))
+        return
+    elif targetu not in irc.users:
+        # Whatever we were told to kick doesn't exist!
+        irc.reply("Error: No such nick '%s'." % target)
+        return
+    else:
+        irc.proto.killClient(u, targetu, reason)
+
+    irc.callHooks([u, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
+                                        'userdata': userdata, 'parse_as': 'KILL'}])
+
+@utils.add_cmd
 def mode(irc, source, args):
     """<channel> <modes>
 
