@@ -227,7 +227,11 @@ class Irc():
                 # exception, meaning we've disconnected!
                 log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
-                self.disconnect()
+
+                if not self.aborted.is_set():
+                    # Only start a disconnection process if one doesn't already
+                    # exist.
+                    self.disconnect()
 
             # Internal hook signifying that a network has disconnected.
             self.callHooks([None, 'PYLINK_DISCONNECT', {}])
