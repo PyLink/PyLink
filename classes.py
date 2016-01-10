@@ -274,7 +274,16 @@ class Irc():
         buf = b""
         data = b""
         while not self.aborted.is_set():
-            data = self.socket.recv(2048)
+
+            try:
+                data = self.socket.recv(2048)
+            except OSError:
+                # Suppress socket read warnings from lingering recv() calls if
+                # we've been told to shutdown.
+                if self.aborted.is_set():
+                    return
+                raise
+
             buf += data
             if not data:
                 log.warning('(%s) No data received, disconnecting!', self.name)
