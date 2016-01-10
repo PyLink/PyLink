@@ -318,7 +318,7 @@ class UnrealProtocol(TS6BaseProtocol):
         host = self.irc.serverdata["hostname"]
 
         f('PASS :%s' % self.irc.serverdata["sendpass"])
-        # https://github.com/unrealself.ircd/unrealself.ircd/blob/2f8cb55e/doc/technical/protoctl.txt
+        # https://github.com/unrealircd/unrealself.ircd/blob/2f8cb55e/doc/technical/protoctl.txt
         # We support the following protocol features:
         # SJ3 - extended SJOIN
         # NOQUIT - QUIT messages aren't sent for all users in a netsplit

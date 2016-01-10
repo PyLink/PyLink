@@ -174,9 +174,11 @@ class TS6BaseProtocol(Protocol):
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""
         killed = args[0]
-        # Depending on whether the self.ircd sends explicit QUIT messages for
-        # KILLed clients, the user may or may not have automatically been removed.
-        # If not, we have to assume that KILL = QUIT and remove them ourselves.
+        # Depending on whether the IRCd sends explicit QUIT messages for
+        # killed clients, the user may or may not have automatically been
+        # removed from our user list.
+        # If not, we have to assume that KILL = QUIT and remove them
+        # ourselves.
         data = self.irc.users.get(killed)
         if data:
             self.removeClient(killed)
@@ -212,7 +214,7 @@ class TS6BaseProtocol(Protocol):
         """Handles incoming SAVE messages, used to handle nick collisions."""
         # In this below example, the client Derp_ already exists,
         # and trying to change someone's nick to it will cause a nick
-        # collision. On TS6 self.ircds, this will simply set the collided user's
+        # collision. On TS6 IRCds, this will simply set the collided user's
         # nick to its UID.
 
         # <- :70MAAAAAA PRIVMSG 0AL000001 :nickclient PyLink Derp_
