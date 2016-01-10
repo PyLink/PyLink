@@ -56,7 +56,9 @@ class Irc():
             # HACK: Don't thread if we're running tests.
             self.connect()
         else:
-            self.connection_thread = threading.Thread(target = self.connect)
+            self.connection_thread = threading.Thread(target=self.connect,
+                                                      name="Listener for %s" %
+                                                      self.name)
             self.connection_thread.start()
         self.pingTimer = None
 
@@ -225,9 +227,10 @@ class Irc():
                 # exception, meaning we've disconnected!
                 log.warning('(%s) Disconnected from IRC: %s: %s',
                             self.name, type(e).__name__, str(e))
+                self.disconnect()
 
-            # The run() loop above was broken, meaning we've disconnected.
-            self._disconnect()
+            # Internal hook signifying that a network has disconnected.
+            self.callHooks([None, 'PYLINK_DISCONNECT', {}])
 
             # If autoconnect is enabled, loop back to the start. Otherwise,
             # return and stop.
@@ -240,21 +243,25 @@ class Irc():
                 log.info('(%s) Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
                 return
 
-    def _disconnect(self):
-        """Handle disconnects from the remote server."""
-        log.debug('(%s) Canceling pingTimer at %s due to _disconnect() call', self.name, time.time())
-        self.connected.clear()
-        try:
-            self.socket.close()
-            self.pingTimer.cancel()
-        except:  # Socket timed out during creation; ignore
-            pass
-        # Internal hook signifying that a network has disconnected.
-        self.callHooks([None, 'PYLINK_DISCONNECT', {}])
-
     def disconnect(self):
-        """Closes the IRC connection."""
-        self.aborted.set()  # This will cause run() to abort.
+        """Handle disconnects from the remote server."""
+
+        log.debug('(%s) _disconnect: Clearing self.connected state.', self.name)
+        self.connected.clear()
+
+        log.debug('(%s) _disconnect: Setting self.aborted to True.', self.name)
+        self.aborted.set()
+
+        try:
+            log.debug('(%s) _disconnect: Shutting down and closing socket.', self.name)
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
+        except:  # Socket timed out during creation; ignore
+            log.exception('(%s) _disconnect: Failed to close/shutdown socket.', self.name)
+
+        if self.pingTimer:
+            log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
+            self.pingTimer.cancel()
 
     def run(self):
         """Main IRC loop which listens for messages."""
@@ -353,9 +360,12 @@ class Irc():
     def schedulePing(self):
         """Schedules periodic pings in a loop."""
         self.proto.pingServer()
+
         self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
         self.pingTimer.daemon = True
+        self.pingTimer.name = 'Ping timer loop for %s' % self.name
         self.pingTimer.start()
+
         log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
     def spawnMain(self):
