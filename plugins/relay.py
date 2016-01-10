@@ -1128,7 +1128,8 @@ def create(irc, source, args):
     # Create the relay database entry with the (network name, channel name)
     # pair - this is just a dict with various keys.
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(),
-                               'blocked_nets': set(), 'creator': creator}
+                               'blocked_nets': set(), 'creator': creator,
+                               'ts': time.time()}
     log.info('(%s) relay: Channel %s created by %s.', irc.name, channel, creator)
     initializeChannel(irc, channel)
     irc.reply('Done.')
@@ -1288,13 +1289,23 @@ def linked(irc, source, args):
         irc.msg(source, s)
 
         if utils.isOper(irc, source):
+            s = ''
+
             # If the caller is an oper, we can show the hostmasks of people
             # that created all the available channels (Janus does this too!!)
             creator = v.get('creator')
             if creator:
                 # But only if the value actually exists (old DBs will have it
                 # missing).
-                irc.msg(source, '    Channel created by \x02%s\x02.' % creator)
+                s += ' by \x02%s\x02' % creator
+
+            # Ditto for creation date
+            ts = v.get('ts')
+            if ts:
+                s += ' on %s' % time.ctime(ts)
+
+            if s:
+                irc.msg(source, '    Channel created%s.' % s)
 
 @utils.add_cmd
 def linkacl(irc, source, args):
