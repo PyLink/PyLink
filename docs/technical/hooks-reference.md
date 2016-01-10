@@ -29,31 +29,53 @@ Some hooks, like MODE, are more complex and can include the entire state of a ch
 ['001ZJZW01',
  'MODE',
  {'modes': [('+o', '38QAAAAAA')],
-  'oldchan': {'modes': set(),
-              'prefixmodes': {'admins': set(),
-                              'halfops': set(),
-                              'ops': set(),
-                              'owners': set(),
-                              'voices': set()},
-              'topic': '',
-              'topicset': False,
-              'ts': 1451169448,
-              'users': {'38QAAAAAA', '001ZJZW01'}},
+  'oldchan': IrcChannel({'modes': set(),
+                        'prefixmodes': {'admins': set(),
+                                        'halfops': set(),
+                                        'ops': set(),
+                                        'owners': set(),
+                                        'voices': set()},
+                        'topic': '',
+                        'topicset': False,
+                        'ts': 1451169448,
+                        'users': {'38QAAAAAA', '001ZJZW01'}}),
   'target': '#chat',
   'ts': 1451174702}]
 ```
 
 ## Core hooks
 
-The following hooks are required for PyLink's basic functioning.
+The following hooks, sent with their correct data keys, are required for PyLink's basic functioning.
 
-- **ENDBURST**: `{}` - Although the hook data is empty, this should be sent whenever a server finishes its burst. The sender should be the server that finishes bursting.
-<br>
-Plugins like Relay need this to know that the uplink has finished bursting all its users!
+- **ENDBURST**: `{}`
+    - The hook data here is empty.
+    - This payload should be sent whenever a server finishes its burst, with the SID of the bursted server as the sender.
+    - Plugins like Relay need this to know that the uplink has finished bursting all its users!
 
-- **PYLINK_DISCONNECT**: `{}` - This is sent to plugins by the IRC objects when their network has disconnected. The sender (numeric) is **None** in this case.
+- **PYLINK_DISCONNECT**: `{}`
+    - This is sent to plugins by IRC object instances whenever their network has disconnected. The sender (numeric) here is always **None**.
 
-- **PYLINK_SPAWNMAIN**: `{'olduser': olduserobj}` - This is sent whenever `Irc.spawnMain()` is called to (re)spawn the main PyLink client, for example to rejoin it from a KILL. It basically tells plugins that the UID of the main PyLink client has changed, while giving them the old data too.
+- **PYLINK_SPAWNMAIN**: `{'olduser': olduserobj}`
+    - This is sent whenever `Irc.spawnMain()` is called to (re)spawn the main PyLink client, for example to rejoin it from a KILL. It basically tells plugins that the UID of the main PyLink client has changed, while giving them the old data too.
+    - Example payload:
+
+    - ```
+{'olduser': IrcUser({'away': '',
+                     'channels': {'#chat'},
+                     'host': 'pylink-devel.overdrivenetworks.com',
+                     'ident': 'pylink',
+                     'identified': False,
+                     'ip': '0.0.0.0',
+                     'manipulatable': True,
+                     'modes': {('o', None)},
+                     'nick': 'PyLink-devel',
+                     'realhost': 'pylink-devel.overdrivenetworks.com',
+                     'realname': 'PyLink development server',
+                     'ts': 1452393682,
+                     'uid': '7PYAAAAAE'}),
+ 'ts': 1452393899)}
+```
+
 
 ## IRC command hooks
 

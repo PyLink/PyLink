@@ -79,7 +79,7 @@ optional, and defaults to the one we've stored in the channel state if not given
     - `sjoinServer('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])`
     - `sjoinServer(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])`
 
-- **`spawnServer`**`(self, name, sid=None, uplink=None, desc=None)` - Spawns a server off another PyLink server. `desc` (server description) defaults to the one in the config. `uplink` defaults to the main PyLink server, and `sid` (the server ID) is automatically generated if not given.
+- **`spawnServer`**`(self, name, sid=None, uplink=None, desc=None)` - Spawns a server off another PyLink server. `desc` (server description) defaults to the one in the config. `uplink` defaults to the main PyLink server, and `sid` (the server ID) is automatically generated if not given. Sanity checks for server name and SID validity ARE done by the protocol module here.
 
 - **`squitServer`**`(self, source, target, text='No reason given')` - SQUITs a PyLink server.
 
