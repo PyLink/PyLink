@@ -469,7 +469,7 @@ class IrcUser():
         self.manipulatable = manipulatable
 
     def __repr__(self):
-        return repr(self.__dict__)
+        return 'IrcUser(%s)' % self.__dict__
 
 class IrcServer():
     """PyLink IRC server class.
@@ -479,14 +479,16 @@ class IrcServer():
     name: The name of the server.
     internal: Whether the server is an internal PyLink PseudoServer.
     """
+
     def __init__(self, uplink, name, internal=False, desc="(None given)"):
         self.uplink = uplink
         self.users = set()
         self.internal = internal
         self.name = name.lower()
         self.desc = desc
+
     def __repr__(self):
-        return repr(self.__dict__)
+        return 'IrcServer(%s)' % self.__dict__
 
 class IrcChannel():
     """PyLink IRC channel class."""
@@ -504,7 +506,7 @@ class IrcChannel():
         self.topicset = False
 
     def __repr__(self):
-        return repr(self.__dict__)
+        return 'IrcChannel(%s)' % self.__dict__
 
     def removeuser(self, target):
         """Removes a user from a channel."""
