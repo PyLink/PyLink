@@ -81,7 +81,7 @@ optional, and defaults to the one we've stored in the channel state if not given
 
 - **`spawnServer`**`(self, name, sid=None, uplink=None, desc=None)` - Spawns a server off another PyLink server. `desc` (server description) defaults to the one in the config. `uplink` defaults to the main PyLink server, and `sid` (the server ID) is automatically generated if not given. Sanity checks for server name and SID validity ARE done by the protocol module here.
 
-- **`squitServer`**`(self, source, target, text='No reason given')` - SQUITs a PyLink server.
+- **`squit`**`(self, source, target, text='No reason given')` - SQUITs a PyLink server.
 
 - **`topicClient`**`(self, source, target, text)` - Sends a topic change from a PyLink client.
 

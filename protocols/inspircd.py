@@ -336,7 +336,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             endburstf()
         return sid
 
-    def squitServer(self, source, target, text='No reason given'):
+    def squit(self, source, target, text='No reason given'):
         """SQUITs a PyLink server."""
         # -> :9PY SQUIT 9PZ :blah, blah
         self._send(source, 'SQUIT %s :%s' % (target, text))

@@ -141,7 +141,7 @@ class TS6BaseProtocol(Protocol):
         self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
         return sid
 
-    def squitServer(self, source, target, text='No reason given'):
+    def squit(self, source, target, text='No reason given'):
         """SQUITs a PyLink server."""
         # -> SQUIT 9PZ :blah, blah
         log.debug('source=%s, target=%s', source, target)

@@ -64,7 +64,7 @@ def die(sourceirc):
                 irc.proto.quit(user, "Relay plugin unloaded.")
         for server, sobj in irc.servers.copy().items():
             if hasattr(sobj, 'remote'):
-                irc.proto.squitServer(irc.sid, server, text="Relay plugin unloaded.")
+                irc.proto.squit(irc.sid, server, text="Relay plugin unloaded.")
     relayservers.clear()
     relayusers.clear()
 
@@ -1057,7 +1057,7 @@ def handle_disconnect(irc, numeric, command, args):
             except KeyError:
                 continue
             else:
-                ircobj.proto.squitServer(ircobj.sid, rsid, text='Relay network lost connection.')
+                ircobj.proto.squit(ircobj.sid, rsid, text='Relay network lost connection.')
                 del relayservers[name][irc.name]
     try:
         del relayservers[irc.name]
