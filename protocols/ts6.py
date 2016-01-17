@@ -25,6 +25,8 @@ class TS6Protocol(TS6BaseProtocol):
         self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
 
+    ### OUTGOING COMMANDS
+
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
@@ -235,6 +237,8 @@ class TS6Protocol(TS6BaseProtocol):
         else:
             self._send(source, 'PING %s' % source)
 
+    ### Core / handlers
+
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
@@ -329,88 +333,60 @@ class TS6Protocol(TS6BaseProtocol):
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
 
-    def handle_events(self, data):
-        """Generic event handler for the TS6 protocol: does protocol negotation
-        and passes commands to handle_ABCD() functions elsewhere in this module."""
-        # TS6 messages:
-        # :42X COMMAND arg1 arg2 :final long arg
-        # :42XAAAAAA PRIVMSG #somewhere :hello!
-        args = data.split(" ")
-        if not args:
-            # No data??
-            return
-        if args[0] == 'PASS':
-            # <- PASS $somepassword TS 6 :42X
-            if args[1] != self.irc.serverdata['recvpass']:
-                # Check if recvpass is correct
-                raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
-            if 'TS 6' not in data:
-                raise ProtocolError("Remote protocol version is too old! Is this even TS6?")
-            # Server name and SID are sent in different messages, grr
-            numeric = data.rsplit(':', 1)[1]
-            log.debug('(%s) Found uplink SID as %r', self.irc.name, numeric)
-            self.irc.servers[numeric] = IrcServer(None, 'unknown')
-            self.irc.uplink = numeric
-            return
-        elif args[0] == 'SERVER':
-            # <- SERVER charybdis.midnight.vpn 1 :charybdis test server
-            sname = args[1].lower()
-            log.debug('(%s) Found uplink server name as %r', self.irc.name, sname)
-            self.irc.servers[self.irc.uplink].name = sname
-            self.irc.servers[self.irc.uplink].desc = ' '.join(args).split(':', 1)[1]
-            # According to the TS6 protocol documentation, we should send SVINFO
-            # when we get our uplink's SERVER command.
-            self.irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
-        elif args[0] == 'SQUIT':
-            # What? Charybdis send this in a different format!
-            # <- SQUIT 00A :Remote host closed the connection
-            split_server = args[1]
-            res = self.handle_squit(split_server, 'SQUIT', [split_server])
-            self.irc.callHooks([split_server, 'SQUIT', res])
-        elif args[0] == 'CAPAB':
-            # We only get a list of keywords here. Charybdis obviously assumes that
-            # we know what modes it supports (indeed, this is a standard list).
-            # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
-            self.irc.caps = caps = data.split(':', 1)[1].split()
-            for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS'):
-                if required_cap not in caps:
-                    raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
+    def handle_pass(self, numeric, command, args):
+        """
+        Handles the PASS command, used to send the server's SID and negotiate
+        passwords on connect.
+        """
+        # <- PASS $somepassword TS 6 :42X
 
-            if 'EX' in caps:
-                self.irc.cmodes['banexception'] = 'e'
-            if 'IE' in caps:
-                self.irc.cmodes['invex'] = 'I'
-            if 'SERVICES' in caps:
-                self.irc.cmodes['regonly'] = 'r'
+        if args[0] != self.irc.serverdata['recvpass']:
+            # Check if recvpass is correct
+            raise ProtocolError('Recvpass from uplink server %s does not match configuration!' % servername)
 
-            log.debug('(%s) self.irc.connected set!', self.irc.name)
-            self.irc.connected.set()
+        if args[1] != 'TS' and args[2] != '6':
+            raise ProtocolError("Remote protocol version is too old! Is this even TS6?")
 
-            # Charybdis doesn't have the idea of an explicit endburst; but some plugins
-            # like relay require it to know that the network's connected.
-            # We'll set a timer to manually call endburst. It's not beautiful,
-            # but it's the best we can do.
-            endburst_timer = threading.Timer(1, self.irc.callHooks, args=([self.irc.uplink, 'ENDBURST', {}],))
-            log.debug('(%s) Starting delay to send ENDBURST', self.irc.name)
-            endburst_timer.start()
-        try:
-            args = self.parseTS6Args(args)
+        numeric = args[-1]
+        log.debug('(%s) Found uplink SID as %r', self.irc.name, numeric)
 
-            numeric = args[0]
-            command = args[1]
-            args = args[2:]
-        except IndexError:
-            return
+        # Server name and SID are sent in different messages, so we fill this
+        # with dummy information until we get the actual sid.
+        self.irc.servers[numeric] = IrcServer(None, '')
+        self.irc.uplink = numeric
 
-        # We will do wildcard command handling here. Unhandled commands are just ignored.
-        try:
-            func = getattr(self, 'handle_'+command.lower())
-        except AttributeError:  # Unhandled command
-            pass
-        else:
-            parsed_args = func(numeric, command, args)
-            if parsed_args is not None:
-                return [numeric, command, parsed_args]
+    def handle_capab(self, numeric, command, args):
+        """
+        Handles the CAPAB command, used for TS6 capability negotiation.
+        """
+        # We only get a list of keywords here. Charybdis obviously assumes that
+        # we know what modes it supports (indeed, this is a standard list).
+        # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
+        self.irc.caps = caps = args[0].split()
+
+        for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS'):
+            if required_cap not in caps:
+                raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
+
+        if 'EX' in caps:
+            self.irc.cmodes['banexception'] = 'e'
+        if 'IE' in caps:
+            self.irc.cmodes['invex'] = 'I'
+        if 'SERVICES' in caps:
+            self.irc.cmodes['regonly'] = 'r'
+
+        log.debug('(%s) self.irc.connected set!', self.irc.name)
+        self.irc.connected.set()
+
+        # Charybdis doesn't have the idea of an explicit endburst; but some plugins
+        # like relay require it to know that the network's connected.
+        # We'll set a timer to manually call endburst. It's not beautiful,
+        # but it's the best we can do.
+        endburst_timer = threading.Timer(1, self.irc.callHooks,
+                                         args=([self.irc.uplink, 'ENDBURST', {}],))
+
+        log.debug('(%s) Starting delay to send ENDBURST', self.irc.name)
+        endburst_timer.start()
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands."""
@@ -529,10 +505,26 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': sid, 'text': sdesc}
 
-    def handle_server(self, sender, command, args):
-        """Handles incoming legacy (no SID) server introductions."""
+    def handle_server(self, numeric, command, args):
+        """
+        Handles 1) incoming legacy (no SID) server introductions,
+        2) Sending server data in initial connection.
+        """
+        if numeric == self.irc.uplink and not self.irc.servers[numeric].name:
+            # <- SERVER charybdis.midnight.vpn 1 :charybdis test server
+            sname = args[0].lower()
+
+            log.debug('(%s) Found uplink server name as %r', self.irc.name, sname)
+            self.irc.servers[numeric].name = sname
+            self.irc.servers[numeric].desc = args[-1]
+
+            # According to the TS6 protocol documentation, we should send SVINFO
+            # when we get our uplink's SERVER command.
+            self.irc.send('SVINFO 6 6 0 :%s' % int(time.time()))
+
+            return
+
         # <- :services.int SERVER a.bc 2 :(H) [GL] a
-        numeric = self._getSid(sender)  # Convert the server name prefix to a SID.
         servername = args[0].lower()
         sdesc = args[-1]
         self.irc.servers[servername] = IrcServer(numeric, servername, desc=sdesc)
