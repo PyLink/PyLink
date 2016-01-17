@@ -618,10 +618,10 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
         # Check if the sender is a user; remember servers are allowed to set modes too.
         u = getRemoteUser(irc, remoteirc, sender, spawnIfMissing=False)
         if u:
-            remoteirc.proto.modeClient(u, remotechan, supported_modes)
+            remoteirc.proto.mode(u, remotechan, supported_modes)
         else:
             rsid = getRemoteSid(remoteirc, irc)
-            remoteirc.proto.modeServer(rsid, remotechan, supported_modes)
+            remoteirc.proto.mode(rsid, remotechan, supported_modes)
 
 def relayWhoisHandler(irc, target):
     user = irc.users[target]
@@ -904,7 +904,7 @@ def handle_mode(irc, numeric, command, args):
                 reversed_modes = utils.reverseModes(irc, target, modes, oldobj=oldchan)
                 log.debug('(%s) Reversing mode changes of %r with %r (CLAIM).',
                           irc.name, modes, reversed_modes)
-                irc.proto.modeClient(irc.pseudoclient.uid, target, reversed_modes)
+                irc.proto.mode(irc.pseudoclient.uid, target, reversed_modes)
                 break
         else:
             # Set hideoper on remote opers, to prevent inflating
@@ -918,7 +918,7 @@ def handle_mode(irc, numeric, command, args):
                     modes.append(('-%s' % hideoper_mode, None))
             remoteuser = getRemoteUser(irc, remoteirc, target, spawnIfMissing=False)
             if remoteuser and modes:
-                remoteirc.proto.modeClient(remoteuser, remoteuser, modes)
+                remoteirc.proto.mode(remoteuser, remoteuser, modes)
 
 utils.add_hook(handle_mode, 'MODE')
 

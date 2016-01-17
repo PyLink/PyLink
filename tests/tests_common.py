@@ -43,12 +43,12 @@ class CommonProtoTestCase(PluginTestCase):
     def testModeClient(self):
         testuser = self.proto.spawnClient('testcakes')
         self.irc.takeMsgs()
-        self.proto.modeClient(self.u, testuser.uid, [('+i', None), ('+w', None)])
+        self.proto.mode(self.u, testuser.uid, [('+i', None), ('+w', None)])
         self.assertEqual({('i', None), ('w', None)}, testuser.modes)
 
         # Default channels start with +nt
         self.assertEqual({('n', None), ('t', None)}, self.irc.channels['#pylink'].modes)
-        self.proto.modeClient(self.u, '#pylink', [('+s', None), ('+l', '30')])
+        self.proto.mode(self.u, '#pylink', [('+s', None), ('+l', '30')])
         self.assertEqual({('s', None), ('l', '30'), ('n', None), ('t', None)}, self.irc.channels['#pylink'].modes)
 
         cmds = self.irc.takeCommands(self.irc.takeMsgs())

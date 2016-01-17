@@ -154,10 +154,15 @@ class InspIRCdProtocol(TS6BaseProtocol):
         userobj.opertype = otype
         self._send(target, 'OPERTYPE %s' % otype.replace(" ", "_"))
 
-    def _sendModes(self, numeric, target, modes, ts=None):
-        """Internal function to send mode changes from a PyLink client/server."""
+    def mode(self, numeric, target, modes, ts=None):
+        """Sends mode changes from a PyLink client/server."""
         # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
         # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
         log.debug('(%s) inspircd._sendModes: received %r for mode list', self.irc.name, modes)
         if ('+o', None) in modes and not utils.isChannel(target):
             # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
@@ -170,24 +175,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
         else:
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
-
-    def modeClient(self, numeric, target, modes, ts=None):
-        """
-        Sends mode changes from a PyLink client. <modes> should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
-        """
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._sendModes(numeric, target, modes, ts=ts)
-
-    def modeServer(self, numeric, target, modes, ts=None):
-        """
-        Sends mode changes from a PyLink server. <list of modes> should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
-        """
-        if not self.irc.isInternalServer(numeric):
-            raise LookupError('No such PyLink server exists.')
-        self._sendModes(numeric, target, modes, ts=ts)
 
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""

@@ -190,9 +190,17 @@ class UnrealProtocol(TS6BaseProtocol):
         self._send(numeric, 'KILL %s :%s!PyLink (%s)' % (target, self.irc.serverdata['hostname'], reason))
         self.removeClient(target)
 
-    def _sendModes(self, numeric, target, modes, ts=None):
-        """Internal function to send mode changes from a PyLink client/server."""
+    def mode(self, numeric, target, modes, ts=None):
+        """
+        Sends mode changes from a PyLink client/server. The mode list should be
+        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
+        """
         # <- :unreal.midnight.vpn MODE #endlessvoid +ntCo GL 1444361345
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
         utils.applyModes(self.irc, target, modes)
         joinedmodes = utils.joinModes(modes)
         if utils.isChannel(target):
@@ -207,24 +215,6 @@ class UnrealProtocol(TS6BaseProtocol):
             if not self.irc.isInternalClient(target):
                 raise ProtocolError('Cannot force mode change on external clients!')
             self._send(target, 'UMODE2 %s' % joinedmodes)
-
-    def modeClient(self, numeric, target, modes, ts=None):
-        """
-        Sends mode changes from a PyLink client. The mode list should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
-        """
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._sendModes(numeric, target, modes, ts=ts)
-
-    def modeServer(self, numeric, target, modes, ts=None):
-        """
-        Sends mode changes from a PyLink server. The mode list should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
-        """
-        if not self.irc.isInternalServer(numeric):
-            raise LookupError('No such PyLink server exists.')
-        self._sendModes(numeric, target, modes, ts=ts)
 
     def topicServer(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink server."""

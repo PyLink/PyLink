@@ -132,10 +132,16 @@ class TS6Protocol(TS6BaseProtocol):
            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
             utils.applyModes(self.irc, channel, changedmodes)
 
-    def _sendModes(self, numeric, target, modes, ts=None):
-        """Internal function to send mode changes from a PyLink client/server."""
+    def mode(self, numeric, target, modes, ts=None):
+        """Sends mode changes from a PyLink client/server."""
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
         utils.applyModes(self.irc, target, modes)
         modes = list(modes)
+
         if utils.isChannel(target):
             ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
             # TMODE:
@@ -144,30 +150,14 @@ class TS6Protocol(TS6BaseProtocol):
             # On output, at most ten cmode parameters should be sent; if there are more,
             # multiple TMODE messages should be sent.
             while modes[:9]:
+                # Seriously, though. If you send more than 10 mode parameters in
+                # a line, charybdis will silently REJECT the entire command!
                 joinedmodes = utils.joinModes(modes = [m for m in modes[:9] if m[0] not in self.irc.cmodes['*A']])
                 modes = modes[9:]
                 self._send(numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
         else:
             joinedmodes = utils.joinModes(modes)
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
-
-    def modeClient(self, numeric, target, modes, ts=None):
-        """
-        Sends mode changes from a PyLink client. <modes> should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
-        """
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._sendModes(numeric, target, modes, ts=ts)
-
-    def modeServer(self, numeric, target, modes, ts=None):
-        """
-        Sends mode changes from a PyLink server. <list of modes> should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
-        """
-        if not self.irc.isInternalServer(numeric):
-            raise LookupError('No such PyLink server exists.')
-        self._sendModes(numeric, target, modes, ts=ts)
 
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""

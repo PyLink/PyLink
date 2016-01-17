@@ -127,7 +127,7 @@ def handle_mode(irc, source, command, args):
     # client, revert any forced deoper attempts.
     if irc.isInternalClient(target) and not irc.isInternalClient(source):
         if ('-o', None) in modes and (target == irc.pseudoclient.uid or not utils.isManipulatableClient(irc, target)):
-            irc.proto.modeServer(irc.sid, target, {('+o', None)})
+            irc.proto.mode(irc.sid, target, {('+o', None)})
 utils.add_hook(handle_mode, 'MODE')
 
 def handle_operup(irc, source, command, args):

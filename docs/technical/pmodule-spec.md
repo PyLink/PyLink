@@ -60,9 +60,9 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`message`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
 
-- **`modeClient`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink client. `modes` takes a set of `([+/-]mode char, mode arg)` tuples.
+- **`mode`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink client. `modes` takes a set of `([+/-]mode char, mode arg)` tuples.
 
-- **`modeServer`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink server.
+- **`mode`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink server.
 
 - **`nick`**`(self, source, newnick)` - Changes the nick of a PyLink client.
 

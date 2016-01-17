@@ -225,7 +225,7 @@ def mode(irc, source, args):
         irc.reply("Error: No valid modes were given.")
         return
 
-    irc.proto.modeClient(irc.pseudoclient.uid, target, parsedmodes)
+    irc.proto.mode(irc.pseudoclient.uid, target, parsedmodes)
 
     # Call the appropriate hooks for plugins like relay.
     irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_MODEOVERRIDE',
