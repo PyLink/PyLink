@@ -68,7 +68,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`notice`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client.
 
-- **`numericServer`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
+- **`numeric`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
 
 - **`partClient`**`(self, client, channel, reason=None)` - Sends a part from a PyLink client.
 

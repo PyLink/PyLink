@@ -39,7 +39,7 @@ def handle_whois(irc, source, command, args):
         log.warning('(%s) Got a WHOIS request for %r from %r, but the target '
                     'doesn\'t exist in irc.users!', irc.name, target, source)
         return
-    f = irc.proto.numericServer
+    f = irc.proto.numeric
     server = irc.getServer(target) or irc.sid
     nick = user.nick
     sourceisOper = ('o', None) in irc.users[source].modes

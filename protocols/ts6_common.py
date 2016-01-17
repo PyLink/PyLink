@@ -36,7 +36,7 @@ class TS6BaseProtocol(Protocol):
 
     ### OUTGOING COMMANDS
 
-    def numericServer(self, source, numeric, target, text):
+    def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client, used for WHOIS
         replies."""
         self._send(source, '%s %s %s' % (numeric, target, text))
