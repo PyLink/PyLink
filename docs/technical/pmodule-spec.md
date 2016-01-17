@@ -16,7 +16,7 @@ Protocol modules have some very important jobs. If any of these aren't done corr
 
 4) Respond to both pings *and* pongs - the `irc.lastping` attribute **must** be set to the current time whenever a `PONG` is received from the uplink, so PyLink's doesn't [lag out the uplink thinking that it isn't responding to our pings](https://github.com/GLolol/PyLink/blob/e4fb64aebaf542122c70a8f3a49061386a00b0ca/classes.py#L309-L311).
 
-5) Implement a series of camelCase `commandServer/Client` functions - plugins use these for sending outgoing commands. See the `Outbound commands` section below for a list of which ones are needed.
+5) Implement a series of outgoing command functions, used by plugins to send commands to IRC. See the `Outbound commands` section below for a list of which ones are needed.
 
 6) Set the threading.Event object `irc.connected` (via `irc.connected.set()`) when the protocol negotiation with the uplink is complete. This is important for plugins like relay which must check that links are ready before spawning clients, and they will fail to work if this is not set.
 
@@ -48,21 +48,15 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`invite`**`(self, source, target, channel)` - Sends an INVITE from a PyLink client.
 
-- **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink client.
+- **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink client/server.
 
-- **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink server.
-
-- **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink client.
-
-- **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink server.
+- **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink client/server.
 
 - **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client.
 
 - **`message`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
 
-- **`mode`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink client. `modes` takes a set of `([+/-]mode char, mode arg)` tuples.
-
-- **`mode`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink server.
+- **`mode`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink client/server. `modes` takes a set of `([+/-]mode char, mode arg)` tuples.
 
 - **`nick`**`(self, source, newnick)` - Changes the nick of a PyLink client.
 
