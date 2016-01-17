@@ -64,7 +64,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`modeServer`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink server.
 
-- **`nickClient`**`(self, source, newnick)` - Changes the nick of a PyLink client.
+- **`nick`**`(self, source, newnick)` - Changes the nick of a PyLink client.
 
 - **`notice`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client.
 

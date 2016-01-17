@@ -64,7 +64,7 @@ class TS6BaseProtocol(Protocol):
             raise LookupError('No such PyLink server exists.')
         self._sendKick(numeric, channel, target, reason=reason)
 
-    def nickClient(self, numeric, newnick):
+    def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')

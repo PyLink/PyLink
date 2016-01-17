@@ -94,7 +94,7 @@ def nick(irc, source, args):
     elif not utils.isManipulatableClient(irc, u):
         irc.reply("Error: Cannot force nick changes for a protected PyLink services client.")
         return
-    irc.proto.nickClient(u, newnick)
+    irc.proto.nick(u, newnick)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
 @utils.add_cmd

@@ -688,7 +688,7 @@ def handle_nick(irc, numeric, command, args):
         remoteirc = world.networkobjects[netname]
         newnick = normalizeNick(remoteirc, irc.name, args['newnick'], uid=user)
         if remoteirc.users[user].nick != newnick:
-            remoteirc.proto.nickClient(user, newnick)
+            remoteirc.proto.nick(user, newnick)
 utils.add_hook(handle_nick, 'NICK')
 
 def handle_part(irc, numeric, command, args):
@@ -1084,7 +1084,7 @@ def handle_save(irc, numeric, command, args):
             newnick = normalizeNick(irc, remotenet, nick)
             log.info('(%s) SAVE received for relay client %r (%s), fixing nick to %s',
                       irc.name, target, nick, newnick)
-            irc.proto.nickClient(target, newnick)
+            irc.proto.nick(target, newnick)
         else:
             log.warning('(%s) SAVE received for relay client %r (%s), not '
                         'fixing nick again due to 5 failed attempts in '

@@ -55,7 +55,7 @@ class CommonProtoTestCase(PluginTestCase):
         self.assertEqual(cmds, ['MODE', 'FMODE'])
 
     def testNickClient(self):
-        self.proto.nickClient(self.u, 'NotPyLink')
+        self.proto.nick(self.u, 'NotPyLink')
         self.assertEqual('NotPyLink', self.irc.users[self.u].nick)
 
     def testPartClient(self):
