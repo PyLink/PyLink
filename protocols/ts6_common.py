@@ -34,6 +34,15 @@ class TS6BaseProtocol(Protocol):
         else:
             return sname  # Fall back to given text instead of None
 
+    def _getNick(self, target):
+        """Converts a nick argument to its matching UID. This differs from irc.nickToUid()
+        in that it returns the original text instead of None, if no matching nick is found."""
+        target = self.irc.nickToUid(target) or target
+        if target not in self.irc.users and not utils.isChannel(target):
+            log.debug("(%s) Possible desync? Got command target %s, who "
+                        "isn't in our user list!", self.irc.name, target)
+        return target
+
     ### OUTGOING COMMANDS
 
     def numeric(self, source, numeric, target, text):
@@ -152,6 +161,50 @@ class TS6BaseProtocol(Protocol):
         self.irc.users[source].away = text
 
     ### HANDLERS
+
+    def handle_events(self, data):
+        """Event handler for TS6 protocols.
+
+        This passes most commands to the various handle_ABCD() functions
+        elsewhere defined protocol modules, coersing various sender prefixes
+        from nicks and server names to UIDs and SIDs respectively,
+        whenever possible.
+
+        Commands sent without an explicit sender prefix will have them set to
+        the SID of the uplink server.
+        """
+        data = data.split(" ")
+        try:  # Message starts with a SID/UID prefix.
+            args = self.parseTS6Args(data)
+            sender = args[0]
+            command = args[1]
+            args = args[2:]
+            # If the sender isn't in UID format, try to convert it automatically.
+            # Unreal's protocol, for example, isn't quite consistent with this yet!
+            sender_server = self._getSid(sender)
+            if sender_server in self.irc.servers:
+                # Sender is a server when converted from name to SID.
+                numeric = sender_server
+            else:
+                # Sender is a user.
+                numeric = self._getNick(sender)
+
+        # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
+        except IndexError:
+            # Raw command without an explicit sender; assume it's being sent by our uplink.
+            args = self.parseArgs(data)
+            numeric = self.irc.uplink
+            command = args[0]
+            args = args[1:]
+
+        try:
+            func = getattr(self, 'handle_'+command.lower())
+        except AttributeError:  # unhandled command
+            pass
+        else:
+            parsed_args = func(numeric, command, args)
+            if parsed_args is not None:
+                return [numeric, command, parsed_args]
 
     def handle_privmsg(self, source, command, args):
         """Handles incoming PRIVMSG/NOTICE."""

@@ -477,58 +477,6 @@ class UnrealProtocol(TS6BaseProtocol):
         log.debug('(%s) self.irc.connected set!', self.irc.name)
         self.irc.connected.set()
 
-    def _getNick(self, target):
-        """Converts a nick argument to its matching UID. This differs from irc.nickToUid()
-        in that it returns the original text instead of None, if no matching nick is found."""
-        target = self.irc.nickToUid(target) or target
-        if target not in self.irc.users and not utils.isChannel(target):
-            log.debug("(%s) Possible desync? Got command target %s, who "
-                        "isn't in our user list!", self.irc.name, target)
-        return target
-
-    def handle_events(self, data):
-        """Event handler for the UnrealIRCd 3.4+ protocol.
-
-        This passes most commands to the various handle_ABCD() functions
-        elsewhere in this module, coersing various sender prefixes from nicks
-        to UIDs wherever possible.
-
-        Unreal 3.4's protocol operates similarly to TS6, where lines can have :
-        indicating a long argument lasting to the end of the line. Not all commands
-        send an explicit sender prefix, in which case, it will be set to the SID
-        of the uplink server.
-        """
-        data = data.split(" ")
-        try:  # Message starts with a SID/UID prefix.
-            args = self.parseTS6Args(data)
-            sender = args[0]
-            command = args[1]
-            args = args[2:]
-            # If the sender isn't in UID format, try to convert it automatically.
-            # Unreal's protocol isn't quite consistent with this yet!
-            sender_server = self._getSid(sender)
-            if sender_server in self.irc.servers:
-                # Sender is a server when converted from name to SID.
-                numeric = sender_server
-            else:
-                # Sender is a user.
-                numeric = self._getNick(sender)
-        # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
-        except IndexError:
-            # Raw command without an explicit sender; assume it's being sent by our uplink.
-            args = self.parseArgs(data)
-            numeric = self.irc.uplink
-            command = args[0]
-            args = args[1:]
-        try:
-            func = getattr(self, 'handle_'+command.lower())
-        except AttributeError:  # unhandled command
-            pass
-        else:
-            parsed_args = func(numeric, command, args)
-            if parsed_args is not None:
-                return [numeric, command, parsed_args]
-
     def handle_privmsg(self, source, command, args):
         # Convert nicks to UIDs, where they exist.
         target = self._getNick(args[0])
