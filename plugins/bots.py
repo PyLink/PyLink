@@ -43,7 +43,7 @@ def quit(irc, source, args):
     if not utils.isManipulatableClient(irc, u):
         irc.reply("Error: Cannot force quit a protected PyLink services client.")
         return
-    irc.proto.quitClient(u, quitmsg)
+    irc.proto.quit(u, quitmsg)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
 def joinclient(irc, source, args):
@@ -118,7 +118,7 @@ def part(irc, source, args):
         if not utils.isChannel(channel):
             irc.reply("Error: Invalid channel name %r." % channel)
             return
-        irc.proto.partClient(u, channel, reason)
+        irc.proto.part(u, channel, reason)
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
 @utils.add_cmd

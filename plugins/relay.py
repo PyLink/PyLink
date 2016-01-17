@@ -61,7 +61,7 @@ def die(sourceirc):
     for irc in world.networkobjects.values():
         for user in irc.users.copy():
             if isRelayClient(irc, user):
-                irc.proto.quitClient(user, "Relay plugin unloaded.")
+                irc.proto.quit(user, "Relay plugin unloaded.")
         for server, sobj in irc.servers.copy().items():
             if hasattr(sobj, 'remote'):
                 irc.proto.squitServer(irc.sid, server, text="Relay plugin unloaded.")
@@ -388,7 +388,7 @@ def removeChannel(irc, channel):
     if irc is None:
         return
     if channel not in map(str.lower, irc.serverdata['channels']):
-        irc.proto.partClient(irc.pseudoclient.uid, channel, 'Channel delinked.')
+        irc.proto.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
     relay = getRelay((irc.name, channel))
     if relay:
         for user in irc.channels[channel].users.copy():
@@ -399,12 +399,12 @@ def removeChannel(irc, channel):
                 if user == irc.pseudoclient.uid and channel in \
                         irc.serverdata['channels']:
                     continue
-                irc.proto.partClient(user, channel, 'Channel delinked.')
+                irc.proto.part(user, channel, 'Channel delinked.')
                 # Don't ever quit it either...
                 if user != irc.pseudoclient.uid and not irc.users[user].channels:
                     remoteuser = getOrigUser(irc, user)
                     del relayusers[remoteuser][irc.name]
-                    irc.proto.quitClient(user, 'Left all shared channels.')
+                    irc.proto.quit(user, 'Left all shared channels.')
 
 def checkClaim(irc, channel, sender, chanobj=None):
     """
@@ -530,9 +530,9 @@ def relayPart(irc, channel, user):
         log.debug('(%s) relayPart: remoteuser for %s/%s found as %s', irc.name, user, irc.name, remoteuser)
         if remotechan is None or remoteuser is None:
             continue
-        remoteirc.proto.partClient(remoteuser, remotechan, 'Channel delinked.')
+        remoteirc.proto.part(remoteuser, remotechan, 'Channel delinked.')
         if isRelayClient(remoteirc, remoteuser) and not remoteirc.users[remoteuser].channels:
-            remoteirc.proto.quitClient(remoteuser, 'Left all shared channels.')
+            remoteirc.proto.quit(remoteuser, 'Left all shared channels.')
             del relayusers[(irc.name, user)][remoteirc.name]
 
 
@@ -658,7 +658,7 @@ utils.add_hook(handle_join, 'JOIN')
 def handle_quit(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].copy().items():
         remoteirc = world.networkobjects[netname]
-        remoteirc.proto.quitClient(user, args['text'])
+        remoteirc.proto.quit(user, args['text'])
     del relayusers[(irc.name, numeric)]
 utils.add_hook(handle_quit, 'QUIT')
 
@@ -703,9 +703,9 @@ def handle_part(irc, numeric, command, args):
             remotechan = getRemoteChan(irc, remoteirc, channel)
             if remotechan is None:
                 continue
-            remoteirc.proto.partClient(user, remotechan, text)
+            remoteirc.proto.part(user, remotechan, text)
             if not remoteirc.users[user].channels:
-                remoteirc.proto.quitClient(user, 'Left all shared channels.')
+                remoteirc.proto.quit(user, 'Left all shared channels.')
                 del relayusers[(irc.name, numeric)][remoteirc.name]
 utils.add_hook(handle_part, 'PART')
 
@@ -855,11 +855,11 @@ def handle_kick(irc, source, command, args):
         # If the target isn't on any channels, quit them.
         if remoteirc != irc and (not remoteirc.users[real_target].channels) and not origuser:
             del relayusers[(irc.name, target)][remoteirc.name]
-            remoteirc.proto.quitClient(real_target, 'Left all shared channels.')
+            remoteirc.proto.quit(real_target, 'Left all shared channels.')
 
     if origuser and not irc.users[target].channels:
         del relayusers[origuser][irc.name]
-        irc.proto.quitClient(target, 'Left all shared channels.')
+        irc.proto.quit(target, 'Left all shared channels.')
 
 utils.add_hook(handle_kick, 'KICK')
 

@@ -61,14 +61,14 @@ class CommonProtoTestCase(PluginTestCase):
     def testPartClient(self):
         u = self.u
         self.proto.join(u, '#channel')
-        self.proto.partClient(u, '#channel')
+        self.proto.part(u, '#channel')
         self.assertNotIn(u, self.irc.channels['#channel'].users)
 
     def testQuitClient(self):
         u = self.proto.spawnClient('testuser3', 'moo', 'hello.world').uid
         self.proto.join(u, '#channel')
-        self.assertRaises(LookupError, self.proto.quitClient, '9PYZZZZZZ', 'quit reason')
-        self.proto.quitClient(u, 'quit reason')
+        self.assertRaises(LookupError, self.proto.quit, '9PYZZZZZZ', 'quit reason')
+        self.proto.quit(u, 'quit reason')
         self.assertNotIn(u, self.irc.channels['#channel'].users)
         self.assertNotIn(u, self.irc.users)
         self.assertNotIn(u, self.irc.servers[self.irc.sid].users)

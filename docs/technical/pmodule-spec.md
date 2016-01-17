@@ -70,9 +70,9 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`numeric`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
 
-- **`partClient`**`(self, client, channel, reason=None)` - Sends a part from a PyLink client.
+- **`part`**`(self, client, channel, reason=None)` - Sends a part from a PyLink client.
 
-- **`quitClient`**`(self, source, reason)` - Quits a PyLink client.
+- **`quit`**`(self, source, reason)` - Quits a PyLink client.
 
 - **`sjoinServer`**`(self, server, channel, users, ts=None)` - Sends an SJOIN for a group of users to a channel. The sender should always be a Server ID (SID). TS is
 optional, and defaults to the one we've stored in the channel state if not given. `users` is a list of `(prefix mode, UID)` pairs. Example uses:

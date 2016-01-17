@@ -71,7 +71,7 @@ class TS6BaseProtocol(Protocol):
         self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
         self.irc.users[numeric].nick = newnick
 
-    def partClient(self, client, channel, reason=None):
+    def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
         channel = utils.toLower(self.irc, channel)
         if not self.irc.isInternalClient(client):
@@ -83,7 +83,7 @@ class TS6BaseProtocol(Protocol):
         self._send(client, msg)
         self.handle_part(client, 'PART', [channel])
 
-    def quitClient(self, numeric, reason):
+    def quit(self, numeric, reason):
         """Quits a PyLink client."""
         if self.irc.isInternalClient(numeric):
             self._send(numeric, "QUIT :%s" % reason)
