@@ -177,7 +177,7 @@ class TS6Protocol(TS6BaseProtocol):
         self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
         self.removeClient(target)
 
-    def topicServer(self, numeric, target, text):
+    def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink server exists.')
@@ -321,7 +321,7 @@ class TS6Protocol(TS6BaseProtocol):
         # KNOCK: support for /knock
         # SAVE: support for SAVE (forces user to UID in nick collision)
         # SERVICES: adds mode +r (only registered users can join a channel)
-        # TB: topic burst command; we send this in topicServer
+        # TB: topic burst command; we send this in topicBurst
         # EUID: extended UID command, which includes real hostname + account data info,
         #       and allows sending CHGHOST without ENCAP.
         f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID')

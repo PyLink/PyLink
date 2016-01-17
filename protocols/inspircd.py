@@ -190,7 +190,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if self.irc.isInternalClient(target):
             self.removeClient(target)
 
-    def topicServer(self, numeric, target, text):
+    def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink server exists.')

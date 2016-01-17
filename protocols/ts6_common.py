@@ -97,7 +97,7 @@ class TS6BaseProtocol(Protocol):
             raise LookupError('No such PyLink client exists.')
         self._send(numeric, 'NOTICE %s :%s' % (target, text))
 
-    def topicClient(self, numeric, target, text):
+    def topic(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')

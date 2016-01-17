@@ -250,7 +250,7 @@ def topic(irc, source, args):
         irc.reply("Error: Unknown channel %r." % channel)
         return
 
-    irc.proto.topicClient(irc.pseudoclient.uid, channel, topic)
+    irc.proto.topic(irc.pseudoclient.uid, channel, topic)
 
     irc.callHooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
                    {'channel': channel, 'text': topic, 'setter': source,

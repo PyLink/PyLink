@@ -83,9 +83,9 @@ optional, and defaults to the one we've stored in the channel state if not given
 
 - **`squit`**`(self, source, target, text='No reason given')` - SQUITs a PyLink server.
 
-- **`topicClient`**`(self, source, target, text)` - Sends a topic change from a PyLink client.
+- **`topic`**`(self, source, target, text)` - Sends a topic change from a PyLink client.
 
-- **`topicServer`**`(self, source, target, text)` - Sends a topic change from a PyLink server. This is usually used on burst.
+- **`topicBurst`**`(self, source, target, text)` - Sends a topic change from a PyLink server. This is usually used on burst.
 
 - **`updateClient`**`(self, source, field, text)` - Updates the ident, host, or realname of a PyLink client. `field` should be either "IDENT", "HOST", "GECOS", or
 "REALNAME". If changing the field given on the IRCd isn't supported, `NotImplementedError` should be raised.

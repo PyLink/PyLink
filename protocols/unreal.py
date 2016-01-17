@@ -216,7 +216,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 raise ProtocolError('Cannot force mode change on external clients!')
             self._send(target, 'UMODE2 %s' % joinedmodes)
 
-    def topicServer(self, numeric, target, text):
+    def topicBurst(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink server."""
         if not self.irc.isInternalServer(numeric):
             raise LookupError('No such PyLink server exists.')

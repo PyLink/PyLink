@@ -376,7 +376,7 @@ def initializeChannel(irc, channel):
             # Only update the topic if it's different from what we already have,
             # and topic bursting is complete.
             if remoteirc.channels[remotechan].topicset and topic != irc.channels[channel].topic:
-                irc.proto.topicServer(getRemoteSid(irc, remoteirc), channel, topic)
+                irc.proto.topicBurst(getRemoteSid(irc, remoteirc), channel, topic)
         # Send our users and channel modes to the other nets
         log.debug('(%s) initializeChannel: joining our (%s) users: %s', irc.name, remotenet, irc.channels[channel].users)
         relayJoins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
@@ -938,12 +938,12 @@ def handle_topic(irc, numeric, command, args):
             # This might originate from a server too.
             remoteuser = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
             if remoteuser:
-                remoteirc.proto.topicClient(remoteuser, remotechan, topic)
+                remoteirc.proto.topic(remoteuser, remotechan, topic)
             else:
                 rsid = getRemoteSid(remoteirc, irc)
-                remoteirc.proto.topicServer(rsid, remotechan, topic)
+                remoteirc.proto.topicBurst(rsid, remotechan, topic)
     elif oldtopic:  # Topic change blocked by claim.
-        irc.proto.topicClient(irc.pseudoclient.uid, channel, oldtopic)
+        irc.proto.topic(irc.pseudoclient.uid, channel, oldtopic)
 
 utils.add_hook(handle_topic, 'TOPIC')
 
