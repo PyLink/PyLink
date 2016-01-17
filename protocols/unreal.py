@@ -282,7 +282,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.irc.callHooks([self.irc.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
 
-    def inviteClient(self, numeric, target, channel):
+    def invite(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')

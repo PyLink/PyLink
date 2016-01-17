@@ -46,7 +46,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`awayClient`**`(self, source, text)` - Sends an AWAY message from a PyLink client. `text` can be an empty string to unset AWAY status.
 
-- **`inviteClient`**`(self, source, target, channel)` - Sends an INVITE from a PyLink client.
+- **`invite`**`(self, source, target, channel)` - Sends an INVITE from a PyLink client.
 
 - **`kickClient`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink client.
 

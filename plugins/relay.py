@@ -1026,7 +1026,7 @@ def handle_invite(irc, source, command, args):
                                    'channel not on their network!',
                                    notice=True)
         else:
-            remoteirc.proto.inviteClient(remotesource, remoteuser,
+            remoteirc.proto.invite(remotesource, remoteuser,
                                          remotechan)
 utils.add_hook(handle_invite, 'INVITE')
 

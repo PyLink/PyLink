@@ -219,7 +219,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
-    def inviteClient(self, numeric, target, channel):
+    def invite(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
