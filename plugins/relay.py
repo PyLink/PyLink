@@ -284,7 +284,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
             remoteirc.users[u].opertype = opertype
             away = userobj.away
             if away:
-                remoteirc.proto.awayClient(u, away)
+                remoteirc.proto.away(u, away)
         relayusers[(irc.name, user)][remoteirc.name] = u
         return u
 
@@ -998,7 +998,7 @@ utils.add_hook(handle_kill, 'KILL')
 def handle_away(irc, numeric, command, args):
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = world.networkobjects[netname]
-        remoteirc.proto.awayClient(user, args['text'])
+        remoteirc.proto.away(user, args['text'])
 utils.add_hook(handle_away, 'AWAY')
 
 def handle_spawnmain(irc, numeric, command, args):

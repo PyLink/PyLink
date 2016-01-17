@@ -44,7 +44,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`join`**`(self, client, channel)` - Joins the given client UID given to a channel.
 
-- **`awayClient`**`(self, source, text)` - Sends an AWAY message from a PyLink client. `text` can be an empty string to unset AWAY status.
+- **`away`**`(self, source, text)` - Sends an AWAY message from a PyLink client. `text` can be an empty string to unset AWAY status.
 
 - **`invite`**`(self, source, target, channel)` - Sends an INVITE from a PyLink client.
 

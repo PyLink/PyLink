@@ -148,7 +148,7 @@ class TS6BaseProtocol(Protocol):
         self._send(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
-    def awayClient(self, source, text):
+    def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
         if text:

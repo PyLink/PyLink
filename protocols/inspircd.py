@@ -287,7 +287,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                   "locally by InspIRCd servers, so there is no "
                                   "need for PyLink to send numerics directly yet.")
 
-    def awayClient(self, source, text):
+    def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
         if text:
