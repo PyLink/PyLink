@@ -56,7 +56,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`killServer`**`(self, source, target, reason)` - Sends a kill from a PyLink server.
 
-- **`knockClient`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client.
+- **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client.
 
 - **`messageClient`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
 

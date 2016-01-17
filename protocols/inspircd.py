@@ -225,7 +225,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client exists.')
         self._send(numeric, 'INVITE %s %s' % (target, channel))
 
-    def knockClient(self, numeric, target, text):
+    def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')

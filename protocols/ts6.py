@@ -213,10 +213,10 @@ class TS6Protocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client exists.')
         self._send(numeric, 'INVITE %s %s %s' % (target, channel, self.irc.channels[channel].ts))
 
-    def knockClient(self, numeric, target, text):
+    def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
         if 'KNOCK' not in self.irc.caps:
-            log.debug('(%s) knockClient: Dropping KNOCK to %r since the IRCd '
+            log.debug('(%s) knock: Dropping KNOCK to %r since the IRCd '
                       'doesn\'t support it.', self.irc.name, target)
             return
         if not self.irc.isInternalClient(numeric):
