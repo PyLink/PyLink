@@ -48,9 +48,9 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`invite`**`(self, source, target, channel)` - Sends an INVITE from a PyLink client.
 
-- **`kickClient`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink client.
+- **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink client.
 
-- **`kickServer`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink server.
+- **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink server.
 
 - **`killClient`**`(self, source, target, reason)` - Sends a kill from a PyLink client.
 

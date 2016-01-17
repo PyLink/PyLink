@@ -37,7 +37,7 @@ class CommonProtoTestCase(PluginTestCase):
         self.proto.join(target, '#pylink')
         self.assertIn(self.u, self.irc.channels['#pylink'].users)
         self.assertIn(target, self.irc.channels['#pylink'].users)
-        self.proto.kickClient(self.u, '#pylink', target, 'Pow!')
+        self.proto.kick(self.u, '#pylink', target, 'Pow!')
         self.assertNotIn(target, self.irc.channels['#pylink'].users)
 
     def testModeClient(self):

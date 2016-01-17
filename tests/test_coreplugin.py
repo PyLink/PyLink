@@ -30,7 +30,7 @@ class CorePluginTestCase(tests_common.PluginTestCase):
         self.assertNotEqual(self.irc.pseudoclient.uid, spmain[0]['olduser'])
 
     def testKickRejoin(self):
-        self.proto.kickClient(self.u, '#pylink', self.u, 'test')
+        self.proto.kick(self.u, '#pylink', self.u, 'test')
         msgs = self.irc.takeMsgs()
         commands = self.irc.takeCommands(msgs)
         self.assertIn('FJOIN', commands)
