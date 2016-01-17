@@ -753,9 +753,9 @@ def handle_messages(irc, numeric, command, args):
             user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
             real_target = prefix + real_target
             if notice:
-                remoteirc.proto.noticeClient(user, real_target, text)
+                remoteirc.proto.notice(user, real_target, text)
             else:
-                remoteirc.proto.messageClient(user, real_target, text)
+                remoteirc.proto.message(user, real_target, text)
     else:
         remoteuser = getOrigUser(irc, target)
         if remoteuser is None:
@@ -773,9 +773,9 @@ def handle_messages(irc, numeric, command, args):
         remoteirc = world.networkobjects[homenet]
         user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
         if notice:
-            remoteirc.proto.noticeClient(user, real_target, text)
+            remoteirc.proto.notice(user, real_target, text)
         else:
-            remoteirc.proto.messageClient(user, real_target, text)
+            remoteirc.proto.message(user, real_target, text)
 for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
     utils.add_hook(handle_messages, cmd)
 

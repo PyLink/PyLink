@@ -428,10 +428,10 @@ class Irc():
         is optional, and defaults to the main PyLink client if not specified."""
         source = source or self.pseudoclient.uid
         if notice:
-            self.proto.noticeClient(source, target, text)
+            self.proto.notice(source, target, text)
             cmd = 'PYLINK_SELF_NOTICE'
         else:
-            self.proto.messageClient(source, target, text)
+            self.proto.message(source, target, text)
             cmd = 'PYLINK_SELF_PRIVMSG'
         self.callHooks([source, cmd, {'target': target, 'text': text}])
 

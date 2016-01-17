@@ -58,7 +58,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client.
 
-- **`messageClient`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
+- **`message`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
 
 - **`modeClient`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink client. `modes` takes a set of `([+/-]mode char, mode arg)` tuples.
 
@@ -66,7 +66,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`nickClient`**`(self, source, newnick)` - Changes the nick of a PyLink client.
 
-- **`noticeClient`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client.
+- **`notice`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client.
 
 - **`numericServer`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
 

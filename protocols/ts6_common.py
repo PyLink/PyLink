@@ -91,13 +91,13 @@ class TS6BaseProtocol(Protocol):
         else:
             raise LookupError("No such PyLink client exists.")
 
-    def messageClient(self, numeric, target, text):
+    def message(self, numeric, target, text):
         """Sends a PRIVMSG from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
         self._send(numeric, 'PRIVMSG %s :%s' % (target, text))
 
-    def noticeClient(self, numeric, target, text):
+    def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')

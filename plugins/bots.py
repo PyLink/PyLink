@@ -146,5 +146,5 @@ def msg(irc, source, args):
     if not text:
         irc.reply('Error: No text given.')
         return
-    irc.proto.messageClient(sourceuid, real_target, text)
+    irc.proto.message(sourceuid, real_target, text)
     irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
