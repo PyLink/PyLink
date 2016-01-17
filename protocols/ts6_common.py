@@ -41,28 +41,22 @@ class TS6BaseProtocol(Protocol):
         replies."""
         self._send(source, '%s %s %s' % (numeric, target, text))
 
-    def _sendKick(self, numeric, channel, target, reason=None):
-        """Internal function to send kicks from a PyLink client/server."""
+    def kick(self, numeric, channel, target, reason=None):
+        """Sends kicks from a PyLink client/server."""
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
         channel = utils.toLower(self.irc, channel)
         if not reason:
             reason = 'No reason given'
         self._send(numeric, 'KICK %s %s :%s' % (channel, target, reason))
+
         # We can pretend the target left by its own will; all we really care about
         # is that the target gets removed from the channel userlist, and calling
         # handle_part() does that just fine.
         self.handle_part(target, 'KICK', [channel])
-
-    def kickClient(self, numeric, channel, target, reason=None):
-        """Sends a kick from a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._sendKick(numeric, channel, target, reason=reason)
-
-    def kickServer(self, numeric, channel, target, reason=None):
-        """Sends a kick from a PyLink server."""
-        if not self.irc.isInternalServer(numeric):
-            raise LookupError('No such PyLink server exists.')
-        self._sendKick(numeric, channel, target, reason=reason)
 
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
