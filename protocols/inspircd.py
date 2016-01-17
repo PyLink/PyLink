@@ -62,7 +62,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._operUp(uid, opertype=opertype or 'IRC Operator')
         return u
 
-    def joinClient(self, client, channel):
+    def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # InspIRCd doesn't distinguish between burst joins and regular joins,
         # so what we're actually doing here is sending FJOIN from the server,

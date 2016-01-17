@@ -56,7 +56,7 @@ class TS6Protocol(TS6BaseProtocol):
                 realhost=realhost))
         return u
 
-    def joinClient(self, client, channel):
+    def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         channel = utils.toLower(self.irc, channel)
         # JOIN:

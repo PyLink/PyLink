@@ -42,7 +42,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
     - The `manipulatable` option toggles whether the client spawned should be considered protected. Currently, all this does is prevent commands from plugins like `bots` from modifying these clients, but future client protections (anti-kill flood, etc.) may also depend on this.
     - The `server` option optionally takes a SID of any PyLink server, and spawns the client on the one given. It will default to the root PyLink server.
 
-- **`joinClient`**`(self, client, channel)` - Joins the given client UID given to a channel.
+- **`join`**`(self, client, channel)` - Joins the given client UID given to a channel.
 
 - **`awayClient`**`(self, source, text)` - Sends an AWAY message from a PyLink client. `text` can be an empty string to unset AWAY status.
 

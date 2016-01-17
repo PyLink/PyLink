@@ -104,7 +104,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         return u
 
-    def joinClient(self, client, channel):
+    def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         channel = utils.toLower(self.irc, channel)
         if not self.irc.isInternalClient(client):

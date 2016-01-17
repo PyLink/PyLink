@@ -392,7 +392,7 @@ class Irc():
                                                    modes={("+o", None)},
                                                    manipulatable=True)
         for chan in self.serverdata['channels']:
-            self.proto.joinClient(self.pseudoclient.uid, chan)
+            self.proto.join(self.pseudoclient.uid, chan)
         # PyLink internal hook called when spawnMain is called and the
         # contents of Irc().pseudoclient change.
         self.callHooks([self.sid, 'PYLINK_SPAWNMAIN', {'olduser': olduserobj}])
@@ -670,7 +670,7 @@ class FakeProto(Protocol):
         self.irc.users[uid] = user = IrcUser(nick, ts, uid)
         return user
 
-    def joinClient(self, client, channel):
+    def join(self, client, channel):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 

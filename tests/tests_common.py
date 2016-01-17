@@ -27,14 +27,14 @@ class PluginTestCase(unittest.TestCase):
 class CommonProtoTestCase(PluginTestCase):
     def testJoinClient(self):
         u = self.u
-        self.proto.joinClient(u, '#Channel')
+        self.proto.join(u, '#Channel')
         self.assertIn(u, self.irc.channels['#channel'].users)
         # Non-existant user.
-        self.assertRaises(LookupError, self.proto.joinClient, '9PYZZZZZZ', '#test')
+        self.assertRaises(LookupError, self.proto.join, '9PYZZZZZZ', '#test')
 
     def testKickClient(self):
         target = self.proto.spawnClient('soccerball', 'soccerball', 'abcd').uid
-        self.proto.joinClient(target, '#pylink')
+        self.proto.join(target, '#pylink')
         self.assertIn(self.u, self.irc.channels['#pylink'].users)
         self.assertIn(target, self.irc.channels['#pylink'].users)
         self.proto.kickClient(self.u, '#pylink', target, 'Pow!')
@@ -60,13 +60,13 @@ class CommonProtoTestCase(PluginTestCase):
 
     def testPartClient(self):
         u = self.u
-        self.proto.joinClient(u, '#channel')
+        self.proto.join(u, '#channel')
         self.proto.partClient(u, '#channel')
         self.assertNotIn(u, self.irc.channels['#channel'].users)
 
     def testQuitClient(self):
         u = self.proto.spawnClient('testuser3', 'moo', 'hello.world').uid
-        self.proto.joinClient(u, '#channel')
+        self.proto.join(u, '#channel')
         self.assertRaises(LookupError, self.proto.quitClient, '9PYZZZZZZ', 'quit reason')
         self.proto.quitClient(u, 'quit reason')
         self.assertNotIn(u, self.irc.channels['#channel'].users)

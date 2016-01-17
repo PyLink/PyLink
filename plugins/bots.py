@@ -67,7 +67,7 @@ def joinclient(irc, source, args):
         if not utils.isChannel(channel):
             irc.reply("Error: Invalid channel name %r." % channel)
             return
-        irc.proto.joinClient(u, channel)
+        irc.proto.join(u, channel)
         irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': channel, 'users': [u],
                                                 'modes': irc.channels[channel].modes,
                                                 'parse_as': 'JOIN'}])

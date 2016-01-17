@@ -20,7 +20,7 @@ def handle_kick(irc, source, command, args):
     kicked = args['target']
     channel = args['channel']
     if kicked == irc.pseudoclient.uid:
-        irc.proto.joinClient(irc.pseudoclient.uid, channel)
+        irc.proto.join(irc.pseudoclient.uid, channel)
 utils.add_hook(handle_kick, 'KICK')
 
 def handle_commands(irc, source, command, args):
