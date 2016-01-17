@@ -169,10 +169,13 @@ class TS6Protocol(TS6BaseProtocol):
             raise LookupError('No such PyLink server exists.')
         self._sendModes(numeric, target, modes, ts=ts)
 
-    def killServer(self, numeric, target, reason):
-        """Sends a kill from a PyLink server."""
-        if not self.irc.isInternalServer(numeric):
-            raise LookupError('No such PyLink server exists.')
+    def kill(self, numeric, target, reason):
+        """Sends a kill from a PyLink client/server."""
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
         # KILL:
         # parameters: target user, path
 
@@ -180,15 +183,7 @@ class TS6Protocol(TS6BaseProtocol):
         # the kill followed by a space and a parenthesized reason. To avoid overflow,
         # it is recommended not to add anything to the path.
 
-        assert target in self.irc.users, "Unknown target %r for killServer!" % target
-        self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
-        self.removeClient(target)
-
-    def killClient(self, numeric, target, reason):
-        """Sends a kill from a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-        assert target in self.irc.users, "Unknown target %r for killClient!" % target
+        assert target in self.irc.users, "Unknown target %r for kill()!" % target
         self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
         self.removeClient(target)
 
