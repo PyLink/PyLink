@@ -74,10 +74,10 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`quit`**`(self, source, reason)` - Quits a PyLink client.
 
-- **`sjoinServer`**`(self, server, channel, users, ts=None)` - Sends an SJOIN for a group of users to a channel. The sender should always be a Server ID (SID). TS is
+- **`sjoin`**`(self, server, channel, users, ts=None)` - Sends an SJOIN for a group of users to a channel. The sender should always be a Server ID (SID). TS is
 optional, and defaults to the one we've stored in the channel state if not given. `users` is a list of `(prefix mode, UID)` pairs. Example uses:
-    - `sjoinServer('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])`
-    - `sjoinServer(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])`
+    - `sjoin('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])`
+    - `sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])`
 
 - **`spawnServer`**`(self, name, sid=None, uplink=None, desc=None)` - Spawns a server off another PyLink server. `desc` (server description) defaults to the one in the config. `uplink` defaults to the main PyLink server, and `sid` (the server ID) is automatically generated if not given. Sanity checks for server name and SID validity ARE done by the protocol module here.
 

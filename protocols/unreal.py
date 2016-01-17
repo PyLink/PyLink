@@ -113,7 +113,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoinServer(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a server (SID). TS is optional, and defaults
@@ -121,8 +121,8 @@ class UnrealProtocol(TS6BaseProtocol):
         <users> is a list of (prefix mode, UID) pairs:
 
         Example uses:
-            sjoinServer('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
-            sjoinServer(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
+            sjoin('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
+            sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
 
         Note that for UnrealIRCd, no mode data is sent in an SJOIN command, only
         The channel name, TS, and user list.
@@ -133,7 +133,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'.
         channel = utils.toLower(self.irc, channel)
         server = server or self.irc.sid
-        assert users, "sjoinServer: No users sent?"
+        assert users, "sjoin: No users sent?"
         if not server:
             raise LookupError('No such PyLink server exists.')
 
@@ -159,7 +159,7 @@ class UnrealProtocol(TS6BaseProtocol):
             try:
                 self.irc.users[user].channels.add(channel)
             except KeyError:  # Not initialized yet?
-                log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
+                log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
         namelist = ' '.join(namelist)
         self._send(server, "SJOIN {ts} {channel} :{users}".format(
                    ts=ts, users=namelist, channel=channel))

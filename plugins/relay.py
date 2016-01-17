@@ -513,7 +513,7 @@ def relayJoins(irc, channel, users, ts, burst=True):
             # users/someone with a prefix.
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 rsid = getRemoteSid(remoteirc, irc)
-                remoteirc.proto.sjoinServer(rsid, remotechan, queued_users, ts=ts)
+                remoteirc.proto.sjoin(rsid, remotechan, queued_users, ts=ts)
                 relayModes(irc, remoteirc, getRemoteSid(irc, remoteirc), channel, irc.channels[channel].modes)
             else:
                 remoteirc.proto.join(queued_users[0][1], remotechan)
@@ -817,7 +817,7 @@ def handle_kick(irc, source, command, args):
                 # kick ops, admins can't kick owners, etc.
                 modes = getPrefixModes(remoteirc, irc, remotechan, real_target)
                 # Join the kicked client back with its respective modes.
-                irc.proto.sjoinServer(irc.sid, channel, [(modes, target)])
+                irc.proto.sjoin(irc.sid, channel, [(modes, target)])
                 if kicker in irc.users:
                     log.info('(%s) Relay claim: Blocked KICK (reason %r) from %s to relay client %s on %s.',
                              irc.name, args['text'], irc.users[source].nick,
@@ -965,7 +965,7 @@ def handle_kill(irc, numeric, command, args):
                     modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
                     log.debug('(%s) relay handle_kill: userpair: %s, %s', irc.name, modes, realuser)
                     client = getRemoteUser(remoteirc, irc, realuser[1])
-                    irc.proto.sjoinServer(getRemoteSid(irc, remoteirc), localchan, [(modes, client)])
+                    irc.proto.sjoin(getRemoteSid(irc, remoteirc), localchan, [(modes, client)])
             if userdata and numeric in irc.users:
                 log.info('(%s) Relay claim: Blocked KILL (reason %r) from %s to relay client %s/%s.',
                          irc.name, args['text'], irc.users[numeric].nick,

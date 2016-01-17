@@ -68,7 +68,7 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoinServer(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a Server ID (SID). TS is optional, and defaults
@@ -76,8 +76,8 @@ class TS6Protocol(TS6BaseProtocol):
         <users> is a list of (prefix mode, UID) pairs:
 
         Example uses:
-            sjoinServer('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
-            sjoinServer(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
+            sjoin('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
+            sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
         """
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L821
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
@@ -90,8 +90,8 @@ class TS6Protocol(TS6BaseProtocol):
         # so it is not possible to use this message to force users to join a channel.
         channel = utils.toLower(self.irc, channel)
         server = server or self.irc.sid
-        assert users, "sjoinServer: No users sent?"
-        log.debug('(%s) sjoinServer: got %r for users', self.irc.name, users)
+        assert users, "sjoin: No users sent?"
+        log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
         if not server:
             raise LookupError('No such PyLink client exists.')
 
@@ -121,7 +121,7 @@ class TS6Protocol(TS6BaseProtocol):
                 try:
                     self.irc.users[user].channels.add(channel)
                 except KeyError:  # Not initialized yet?
-                    log.debug("(%s) sjoinServer: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
+                    log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
             users = users[10:]
             namelist = ' '.join(namelist)
             self._send(server, "SJOIN {ts} {channel} {modes} :{users}".format(
