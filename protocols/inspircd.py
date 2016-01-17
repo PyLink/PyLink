@@ -254,7 +254,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self.irc.callHooks([self.irc.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
 
-    def pingServer(self, source=None, target=None):
+    def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
         automatically by the Irc() internals; plugins shouldn't have to use this."""
         source = source or self.irc.sid

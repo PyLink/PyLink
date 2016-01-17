@@ -168,7 +168,7 @@ class UnrealProtocol(TS6BaseProtocol):
            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
             utils.applyModes(self.irc, channel, changedmodes)
 
-    def pingServer(self, source=None, target=None):
+    def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
         automatically by the Irc() internals; plugins shouldn't have to use this."""
         source = source or self.irc.sid

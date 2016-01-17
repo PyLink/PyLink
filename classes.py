@@ -372,7 +372,7 @@ class Irc():
 
     def schedulePing(self):
         """Schedules periodic pings in a loop."""
-        self.proto.pingServer()
+        self.proto.ping()
 
         self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
         self.pingTimer.daemon = True
