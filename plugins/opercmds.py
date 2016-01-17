@@ -174,7 +174,7 @@ def kill(irc, source, args):
 
     if irc.isInternalServer(u):
         # Send kill from server if the given kicker is a SID
-        irc.proto.killServer(u, targetu, reason)
+        irc.proto.kill(u, targetu, reason)
     elif u not in irc.users:
         # Whatever we were told to send the kick from wasn't valid; try to be
         # somewhat user friendly in the error. message
@@ -188,7 +188,7 @@ def kill(irc, source, args):
         irc.reply("Error: No such nick '%s'." % target)
         return
     else:
-        irc.proto.killClient(u, targetu, reason)
+        irc.proto.kill(u, targetu, reason)
 
     irc.callHooks([u, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
                                         'userdata': userdata, 'parse_as': 'KILL'}])

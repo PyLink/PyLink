@@ -52,9 +52,9 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink server.
 
-- **`killClient`**`(self, source, target, reason)` - Sends a kill from a PyLink client.
+- **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink client.
 
-- **`killServer`**`(self, source, target, reason)` - Sends a kill from a PyLink server.
+- **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink server.
 
 - **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client.
 
