@@ -125,32 +125,29 @@ def kick(irc, source, args):
         return
 
     # Convert the source and target nicks to UIDs.
-    u = irc.nickToUid(sourcenick) or sourcenick
+    sender = irc.nickToUid(sourcenick) or sourcenick
     targetu = irc.nickToUid(target)
 
     if channel not in irc.channels:  # KICK only works on channels that exist.
         irc.reply("Error: Unknown channel %r." % channel)
         return
 
-    if irc.isInternalServer(u):
-        # Send kick from server if the given kicker is a SID
-        irc.proto.kick(u, channel, targetu, reason)
-    elif u not in irc.users:
+    if (not irc.isInternalClient(sender)) and \
+            (not irc.isInternalServer(sender)):
         # Whatever we were told to send the kick from wasn't valid; try to be
-        # somewhat user friendly in the error. message
+        # somewhat user friendly in the error message
         irc.reply("Error: No such PyLink client '%s'. The first argument to "
                   "KICK should be the name of a PyLink client (e.g. '%s'; see "
                   "'help kick' for details." % (sourcenick,
                   irc.pseudoclient.nick))
         return
-    elif targetu not in irc.users:
+    elif not targetu:
         # Whatever we were told to kick doesn't exist!
-        irc.reply("Error: No such nick '%s'." % target)
+        irc.reply("Error: No such target nick '%s'." % target)
         return
-    else:
-        irc.proto.kick(u, channel, targetu, reason)
 
-    irc.callHooks([u, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
+    irc.proto.kick(sender, channel, targetu, reason)
+    irc.callHooks([sender, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
                                         'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
@@ -168,16 +165,14 @@ def kill(irc, source, args):
         return
 
     # Convert the source and target nicks to UIDs.
-    u = irc.nickToUid(sourcenick) or sourcenick
+    sender = irc.nickToUid(sourcenick) or sourcenick
     targetu = irc.nickToUid(target)
     userdata = irc.users.get(targetu)
 
-    if irc.isInternalServer(u):
-        # Send kill from server if the given kicker is a SID
-        irc.proto.kill(u, targetu, reason)
-    elif u not in irc.users:
+    if (not irc.isInternalClient(sender)) and \
+            (not irc.isInternalServer(sender)):
         # Whatever we were told to send the kick from wasn't valid; try to be
-        # somewhat user friendly in the error. message
+        # somewhat user friendly in the error message
         irc.reply("Error: No such PyLink client '%s'. The first argument to "
                   "KILL should be the name of a PyLink client (e.g. '%s'; see "
                   "'help kick' for details." % (sourcenick,
@@ -187,10 +182,9 @@ def kill(irc, source, args):
         # Whatever we were told to kick doesn't exist!
         irc.reply("Error: No such nick '%s'." % target)
         return
-    else:
-        irc.proto.kill(u, targetu, reason)
 
-    irc.callHooks([u, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
+    irc.proto.kill(sender, targetu, reason)
+    irc.callHooks([sender, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
                                         'userdata': userdata, 'parse_as': 'KILL'}])
 
 @utils.add_cmd
