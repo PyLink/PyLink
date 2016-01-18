@@ -32,6 +32,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
 
+    ### Outgoing commands
+
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
@@ -323,6 +325,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
+    ### Core / command handlers
+
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
@@ -337,91 +341,98 @@ class InspIRCdProtocol(TS6BaseProtocol):
         f(':%s BURST %s' % (self.irc.sid, ts))
         f(':%s ENDBURST' % (self.irc.sid))
 
-    def handle_events(self, data):
-        """Event handler for the InspIRCd protocol.
+    def handle_capab(self, source, command, args):
+        """
+        Handles the CAPAB command, used for capability negotiation with our
+        uplink.
+        """
+        # 6 CAPAB commands are usually sent on connect: CAPAB START, MODULES,
+        # MODSUPPORT, CHANMODES, USERMODES, and CAPABILITIES.
+        # The only ones of interest to us are CHANMODES, USERMODES, and
+        # CAPABILITIES.
 
-        This passes most commands to the various handle_ABCD() functions
-        elsewhere in this module, but also handles commands sent in the
-        initial server linking phase."""
-        # Each server message looks something like this:
-        # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :v,1SRAAESWE
-        # :<sid> <command> <argument1> <argument2> ... :final multi word argument
-        args = data.split(" ")
-        if not args:
-            # No data??
-            return
-        if args[0] == 'SERVER':
-           # <- SERVER whatever.net abcdefgh 0 10X :something
-           servername = args[1].lower()
-           numeric = args[4]
-           if args[2] != self.irc.serverdata['recvpass']:
-                # Check if recvpass is correct
-                raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
-           sdesc = ' '.join(args).split(':', 1)[1]
-           self.irc.servers[numeric] = IrcServer(None, servername, desc=sdesc)
-           self.irc.uplink = numeric
-           return
-        elif args[0] == 'CAPAB':
-            # Capability negotiation with our uplink
-            if args[1] == 'CHANMODES':
-                # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b banexception=e blockcolor=c c_registered=r exemptchanops=X filter=g flood=f halfop=%h history=H invex=I inviteonly=i joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T official-join=!Y op=@o operonly=O opmoderated=U owner=~q permanent=P private=p redirect=L reginvite=R regmoderated=M secret=s sslonly=z stripcolor=S topiclock=t voice=+v
+        if args[0] == 'CHANMODES':
+            # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b
+            # banexception=e blockcolor=c c_registered=r exemptchanops=X
+            # filter=g flood=f halfop=%h history=H invex=I inviteonly=i
+            # joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F
+            # noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T
+            # official-join=!Y op=@o operonly=O opmoderated=U owner=~q
+            # permanent=P private=p redirect=L reginvite=R regmoderated=M
+            # secret=s sslonly=z stripcolor=S topiclock=t voice=+v
 
-                # Named modes are essential for a cross-protocol IRC service. We
-                # can use InspIRCd as a model here and assign a similar mode map to our cmodes list.
-                for modepair in args[2:]:
-                    name, char = modepair.split('=')
-                    if name == 'reginvite':  # Reginvite? That's a dumb name.
-                        name = 'regonly'
-                    if name == 'founder':  # Channel mode +q
-                        # Founder, owner; same thing. m_customprefix allows you to name it anything you like
-                        # (the former is config default, but I personally prefer the latter.)
-                        name = 'owner'
-                    # We don't really care about mode prefixes; just the mode char
-                    self.irc.cmodes[name.lstrip(':')] = char[-1]
-            elif args[1] == 'USERMODES':
-                # <- CAPAB USERMODES :bot=B callerid=g cloak=x deaf_commonchan=c helpop=h hidechans=I hideoper=H invisible=i oper=o regdeaf=R servprotect=k showwhois=W snomask=s u_registered=r u_stripcolor=S wallops=w
-                # Ditto above.
-                for modepair in args[2:]:
-                    name, char = modepair.split('=')
-                    self.irc.umodes[name.lstrip(':')] = char
-            elif args[1] == 'CAPABILITIES':
-                # <- CAPAB CAPABILITIES :NICKMAX=21 CHANMAX=64 MAXMODES=20 IDENTMAX=11 MAXQUIT=255 MAXTOPIC=307 MAXKICK=255 MAXGECOS=128 MAXAWAY=200 IP6SUPPORT=1 PROTOCOL=1202 PREFIX=(Yqaohv)!~&@%+ CHANMODES=IXbegw,k,FHJLfjl,ACKMNOPQRSTUcimnprstz USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
-                caps = dict([x.lstrip(':').split('=') for x in args[2:]])
-                protocol_version = int(caps['PROTOCOL'])
-                if protocol_version < 1202:
-                    raise ProtocolError("Remote protocol version is too old! At least 1202 (InspIRCd 2.0.x) is needed. (got %s)" % protocol_version)
-                self.irc.maxnicklen = int(caps['NICKMAX'])
-                self.irc.maxchanlen = int(caps['CHANMAX'])
-                # Modes are divided into A, B, C, and D classes
-                # See http://www.irc.org/tech_docs/005.html
+            # Named modes are essential for a cross-protocol IRC service. We
+            # can use InspIRCd as a model here and assign a similar mode map to
+            # our cmodes list.
+            for modepair in args[-1].split():
+                name, char = modepair.split('=')
 
-                # FIXME: Find a better way to assign/store this.
-                self.irc.cmodes['*A'], self.irc.cmodes['*B'], self.irc.cmodes['*C'], self.irc.cmodes['*D'] \
-                    = caps['CHANMODES'].split(',')
-                self.irc.umodes['*A'], self.irc.umodes['*B'], self.irc.umodes['*C'], self.irc.umodes['*D'] \
-                    = caps['USERMODES'].split(',')
-                prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', caps['PREFIX'])
-                self.irc.prefixmodes = dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
-                log.debug('(%s) self.irc.prefixmodes set to %r', self.irc.name, self.irc.prefixmodes)
-                # Sanity check: set this AFTER we fetch the capabilities for the network!
-                self.irc.connected.set()
-        try:
-            args = self.parseTS6Args(args)
-            numeric = args[0]
-            command = args[1]
-            args = args[2:]
-        except IndexError:
-            return
+                if name == 'reginvite':  # Reginvite? That's a dumb name.
+                    name = 'regonly'
 
-        # We will do wildcard event handling here. Unhandled events are just ignored.
-        try:
-            func = getattr(self, 'handle_'+command.lower())
-        except AttributeError:  # unhandled event
-            pass
-        else:
-            parsed_args = func(numeric, command, args)
-            if parsed_args is not None:
-                return [numeric, command, parsed_args]
+                if name == 'founder':  # Channel mode +q
+                    # Founder, owner; same thing. m_customprefix allows you to
+                    # name it anything you like. The former is config default,
+                    # but I personally prefer the latter.
+                    name = 'owner'
+
+                # We don't really care about mode prefixes; just the mode char
+                self.irc.cmodes[name] = char[-1]
+
+
+        elif args[0] == 'USERMODES':
+            # <- CAPAB USERMODES :bot=B callerid=g cloak=x deaf_commonchan=c
+            # helpop=h hidechans=I hideoper=H invisible=i oper=o regdeaf=R
+            # servprotect=k showwhois=W snomask=s u_registered=r u_stripcolor=S
+            # wallops=w
+
+            # Ditto above.
+            for modepair in args[-1].split():
+                name, char = modepair.split('=')
+                self.irc.umodes[name] = char
+
+        elif args[0] == 'CAPABILITIES':
+            # <- CAPAB CAPABILITIES :NICKMAX=21 CHANMAX=64 MAXMODES=20
+            # IDENTMAX=11 MAXQUIT=255 MAXTOPIC=307 MAXKICK=255 MAXGECOS=128
+            # MAXAWAY=200 IP6SUPPORT=1 PROTOCOL=1202 PREFIX=(Yqaohv)!~&@%+
+            # CHANMODES=IXbegw,k,FHJLfjl,ACKMNOPQRSTUcimnprstz
+            # USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
+
+            # First, turn the arguments into a dict
+            caps = dict([x.split('=') for x in args[-1].split()])
+
+
+            # Check the protocol version
+            protocol_version = int(caps['PROTOCOL'])
+            if protocol_version < 1202:
+                raise ProtocolError("Remote protocol version is too old! "
+                                    "At least 1202 (InspIRCd 2.0.x) is "
+                                    "needed. (got %s)" % protocol_version)
+
+            # Store the max nick and channel lengths
+            self.irc.maxnicklen = int(caps['NICKMAX'])
+            self.irc.maxchanlen = int(caps['CHANMAX'])
+
+            # Modes are divided into A, B, C, and D classes
+            # See http://www.irc.org/tech_docs/005.html
+
+            # FIXME: Find a neater way to assign/store this.
+            self.irc.cmodes['*A'], self.irc.cmodes['*B'], self.irc.cmodes['*C'], self.irc.cmodes['*D'] \
+                = caps['CHANMODES'].split(',')
+            self.irc.umodes['*A'], self.irc.umodes['*B'], self.irc.umodes['*C'], self.irc.umodes['*D'] \
+                = caps['USERMODES'].split(',')
+
+            # Separate the prefixes field (e.g. "(Yqaohv)!~&@%+") into a
+            # dict mapping mode characters to mode prefixes.
+            prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', caps['PREFIX'])
+            self.irc.prefixmodes = dict(zip(prefixsearch.group(1),
+                                            prefixsearch.group(2)))
+            log.debug('(%s) self.irc.prefixmodes set to %r', self.irc.name,
+                      self.irc.prefixmodes)
+
+            # Finally, set the irc.connected (protocol negotiation complete)
+            # state to True.
+            self.irc.connected.set()
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands, so we don't time out."""
@@ -477,13 +488,29 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_server(self, numeric, command, args):
         """Handles incoming SERVER commands (introduction of servers)."""
-        # SERVER is sent by our uplink or any other server to introduce others.
+
+        # Initial SERVER command on connect.
+        if self.irc.uplink is None:
+            # <- SERVER whatever.net abcdefgh 0 10X :some server description
+            servername = args[0].lower()
+            numeric = args[3]
+
+            if args[1] != self.irc.serverdata['recvpass']:
+                 # Check if recvpass is correct
+                 raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
+
+            sdesc = args[-1]
+            self.irc.servers[numeric] = IrcServer(None, servername, desc=sdesc)
+            self.irc.uplink = numeric
+            return
+
+        # Other server introductions.
         # <- :00A SERVER test.server * 1 00C :testing raw message syntax
-        # <- :70M SERVER millennium.overdrive.pw * 1 1ML :a relatively long period of time... (Fremont, California)
         servername = args[0].lower()
         sid = args[3]
         sdesc = args[-1]
         self.irc.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
+
         return {'name': servername, 'sid': args[3], 'text': sdesc}
 
     def handle_fmode(self, numeric, command, args):
