@@ -15,9 +15,9 @@ Note that the `ts` key is *automatically added* (using the current time) to all 
 
 ### Example syntax
 
-The command `:42XAAAAAB PRIVMSG #endlessvoid :test` would result in the following raw hook data:
+The command `:42XAAAAAB PRIVMSG #dev :test` would result in the following raw hook data:
 
-- `['42XAAAAAB', 'PRIVMSG', {'target': '#endlessvoid', 'text': 'test', 'ts': 1451174041}]`
+- `['42XAAAAAB', 'PRIVMSG', {'target': '#dev', 'text': 'test', 'ts': 1451174041}]`
 
 On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would return the raw hook data of this (with the nick converted into UID by the UnrealIRCd protocol module):
 
@@ -62,14 +62,14 @@ The following hooks, sent with their correct data keys, are required for PyLink'
     - ```
 {'olduser': IrcUser({'away': '',
                      'channels': {'#chat'},
-                     'host': 'pylink-devel.overdrivenetworks.com',
+                     'host': 'pylink.local',
                      'ident': 'pylink',
                      'identified': False,
                      'ip': '0.0.0.0',
                      'manipulatable': True,
                      'modes': {('o', None)},
                      'nick': 'PyLink-devel',
-                     'realhost': 'pylink-devel.overdrivenetworks.com',
+                     'realhost': 'pylink.local',
                      'realname': 'PyLink development server',
                      'ts': 1452393682,
                      'uid': '7PYAAAAAE'}),

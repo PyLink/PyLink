@@ -85,7 +85,7 @@ class CommonProtoTestCase(PluginTestCase):
 
     def testSpawnClientOnServer(self):
         self.proto.spawnServer('subserver.pylink', '34Q')
-        u = self.proto.spawnClient('person1', 'person', 'users.overdrive.pw', server='34Q')
+        u = self.proto.spawnClient('person1', 'person', 'users.somenet.local', server='34Q')
         # We're spawning clients on the right server, hopefully...
         self.assertIn(u.uid, self.irc.servers['34Q'].users)
         self.assertNotIn(u.uid, self.irc.servers[self.irc.sid].users)

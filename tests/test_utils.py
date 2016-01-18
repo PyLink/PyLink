@@ -63,7 +63,7 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(utils.isServerName('.s.s.s'))
         self.assertTrue(utils.isServerName('Hello.world'))
         self.assertFalse(utils.isServerName(''))
-        self.assertTrue(utils.isServerName('pylink.overdrive.pw'))
+        self.assertTrue(utils.isServerName('pylink.somenet.local'))
         self.assertFalse(utils.isServerName(' i lost th.e game'))
 
     def testJoinModes(self):
