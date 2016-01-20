@@ -532,7 +532,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
         target = args[0]
         modestrings = args[1:]
-        changedmodes = utils.parseModes(self.irc, numeric, modestrings)
+        changedmodes = utils.parseModes(self.irc, target, modestrings)
         utils.applyModes(self.irc, target, changedmodes)
         return {'target': target, 'modes': changedmodes}
 

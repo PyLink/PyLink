@@ -547,7 +547,7 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
         target = args[0]
         modestrings = args[1:]
-        changedmodes = utils.parseModes(self.irc, numeric, modestrings)
+        changedmodes = utils.parseModes(self.irc, target, modestrings)
         utils.applyModes(self.irc, target, changedmodes)
         # Call the OPERED UP hook if +o is being set.
         if ('+o', None) in changedmodes:
