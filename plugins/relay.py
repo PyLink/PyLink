@@ -1282,7 +1282,7 @@ def linked(irc, source, args):
                     continue
 
         if v['links']:  # Join up and output all the linked channel names.
-            s += ' '.join([''.join(link) for link in v['links']])
+            s += ' '.join([''.join(link) for link in sorted(v['links'])])
         else:  # Unless it's empty; then, well... just say no relays yet.
             s += '(no relays yet)'
 
