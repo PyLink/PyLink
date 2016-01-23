@@ -35,3 +35,33 @@ logfile.setFormatter(logformat)
 global log
 log = logging.getLogger()
 log.addHandler(logfile)
+
+class PyLinkChannelLogger(logging.Handler):
+    """
+    Log handler to log to channels in PyLink.
+    """
+    def __init__(self, irc, channels):
+        super(PyLinkChannelLogger, self).__init__()
+        self.irc = irc
+        self.channels = channels
+
+        # Use a slightly simpler message formatter - logging to IRC doesn't need
+        # logging the time.
+        formatter = logging.Formatter('[%(levelname)s] %(message)s')
+        self.setFormatter(formatter)
+
+        # Log level has to be at least 20 (INFO) to prevent loops due
+        # to outgoing messages being logged
+        loglevel = max(log.getEffectiveLevel(), 20)
+        self.setLevel(loglevel)
+
+    def emit(self, record):
+        """
+        Logs a record to the configured channels for the network given.
+        """
+        # Only start logging if we're finished bursting
+        if hasattr(self.irc, 'pseudoclient') and self.irc.connected.is_set():
+            msg = self.format(record)
+            for channel in self.channels:
+                self.irc.msg(channel, msg)
+

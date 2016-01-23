@@ -17,7 +17,7 @@ from collections import defaultdict
 import hashlib
 from copy import deepcopy
 
-from log import log
+from log import *
 import world
 import utils
 
@@ -37,6 +37,7 @@ class Irc():
         (a string), the name of the protocol module to use for this connection,
         and a configuration object.
         """
+        self.loghandler = None
         self.name = netname.lower()
         self.conf = conf
         self.serverdata = conf['servers'][netname]
@@ -59,6 +60,23 @@ class Irc():
                                                       self.name)
             self.connection_thread.start()
         self.pingTimer = None
+
+    def logSetup(self):
+        """
+        Initializes any channel loggers defined for the current network.
+        """
+        try:
+            channels = self.conf['logging']['channels'][self.name]
+        except KeyError:  # Not set up; just ignore.
+            return
+
+        log.debug('(%s) Setting up channel logging to channels %r', self.name,
+                  channels)
+        if channels and not self.loghandler:
+            # Only create a handler if we have channels to log to, and one
+            # doesn't already exist.
+            self.loghandler = PyLinkChannelLogger(self, channels)
+            log.addHandler(self.loghandler)
 
     def initVars(self):
         """
@@ -127,6 +145,9 @@ class Irc():
         # Defines the uplink SID (to be filled in by protocol module).
         self.uplink = None
         self.start_ts = int(time.time())
+
+        # Set up channel logging for the network
+        self.logSetup()
 
     def connect(self):
         """
@@ -253,6 +274,11 @@ class Irc():
 
         log.debug('(%s) _disconnect: Setting self.aborted to True.', self.name)
         self.aborted.set()
+
+        if self.loghandler is not None:
+            log.debug('(%s) Removing channel logging handler due to disconnect.', self.name)
+            log.removeHandler(self.loghandler)
+            self.loghandler = None
 
         try:
             log.debug('(%s) _disconnect: Shutting down and closing socket.', self.name)

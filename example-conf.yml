@@ -30,6 +30,15 @@ login:
     user: admin
     password: changeme
 
+logging:
+    # This configuration block defines channels that PyLink can log to.
+
+    # Note: DEBUG logging is not supported here: any log level settings below
+    # INFO be automatically raised to INFO.
+    channels:
+        inspnet:
+            - "#services"
+
 servers:
     inspnet:
         # Server IP, port, and passwords
