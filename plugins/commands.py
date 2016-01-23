@@ -197,6 +197,13 @@ def rehash(irc, source, args):
                 ircobj.conf = new_conf
                 ircobj.serverdata = new_conf['servers'][network]
                 ircobj.botdata = new_conf['bot']
+
+                # Clear the IRC object's channel logger and replace it with a
+                # new one by re-running logSetup().
+                log.removeHandler(ircobj.loghandler)
+                ircobj.loghandler = None
+                ircobj.logSetup()
+
         for network, sdata in new_conf['servers'].items():
             # New server was added. Connect them if not already connected.
             if network not in world.networkobjects:
