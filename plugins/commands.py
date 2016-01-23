@@ -191,7 +191,7 @@ def rehash(irc, source, args):
                 log.debug('(%s) rehash: removing connection to %r (removed from config).', irc.name, network)
                 # Disable autoconnect first.
                 ircobj.serverdata['autoconnect'] = -1
-                ircobj.aborted.set()
+                ircobj.disconnect()
                 del world.networkobjects[network]
             else:
                 ircobj.conf = new_conf
