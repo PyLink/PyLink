@@ -8,9 +8,7 @@ PyLink is an extensible, plugin-based IRC services framework written in Python. 
 
 ## Support
 
-**PyLink is a work in progress and thus may be very unstable**! No warranty is provided if this completely wrecks your network and causes widespread rioting amongst your users!
-
-That said, please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
+Please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
 You can also find support via our IRC channel: `#PyLink at irc.overdrivenetworks.com` ([webchat](https://webchat.overdrivenetworks.com/?channels=PyLink,dev)). Ask your questions and be patient for a response.
 
@@ -26,7 +24,7 @@ You can also find support via our IRC channel: `#PyLink at irc.overdrivenetworks
 * InspIRCd 2.0.x - module `inspircd`
 * charybdis (3.5.x / git master) - module `ts6`
 * Elemental-IRCd (6.6.x / git master) - module `ts6`
-* UnrealIRCd 4.x (**experimental**) - module `unreal` (*NOT* Unreal 3.2 or lower)
+* UnrealIRCd 4.x - module `unreal` (*NOT* Unreal 3.2 or lower)
 
 ## Setup
 
