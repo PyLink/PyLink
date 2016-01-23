@@ -352,8 +352,6 @@ class UnrealProtocol(TS6BaseProtocol):
                 # in a line, should it be mirrored to other networks.
                 if ip.startswith(':'):
                     ip = '0' + ip
-            else:
-                raise ProtocolError("Invalid number of bits in IP address field (got %s, expected 4 or 16)." % len(ipbits))
         realname = args[-1]
 
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
