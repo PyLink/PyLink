@@ -25,6 +25,9 @@ class TS6Protocol(TS6BaseProtocol):
         self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
 
+        # Track whether we've received end-of-burst from the uplink.
+        self.has_eob = False
+
     ### OUTGOING COMMANDS
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -333,6 +336,10 @@ class TS6Protocol(TS6BaseProtocol):
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
 
+        # Finally, end all the initialization with a PING - that's Charybdis'
+        # way of saying end-of-burst :)
+        self.ping()
+
     def handle_pass(self, numeric, command, args):
         """
         Handles the PASS command, used to send the server's SID and negotiate
@@ -378,16 +385,6 @@ class TS6Protocol(TS6BaseProtocol):
         log.debug('(%s) self.irc.connected set!', self.irc.name)
         self.irc.connected.set()
 
-        # Charybdis doesn't have the idea of an explicit endburst; but some plugins
-        # like relay require it to know that the network's connected.
-        # We'll set a timer to manually call endburst. It's not beautiful,
-        # but it's the best we can do.
-        endburst_timer = threading.Timer(1, self.irc.callHooks,
-                                         args=([self.irc.uplink, 'ENDBURST', {}],))
-
-        log.debug('(%s) Starting delay to send ENDBURST', self.irc.name)
-        endburst_timer.start()
-
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands."""
         # PING:
@@ -406,6 +403,15 @@ class TS6Protocol(TS6BaseProtocol):
             destination = self.irc.sid
         if self.irc.isInternalServer(destination):
             self._send(destination, 'PONG %s %s' % (destination, source))
+
+            if destination == self.irc.sid and not self.has_eob:
+                # Charybdis' idea of endburst is just sending a PING. No, really!
+                # https://github.com/charybdis-ircd/charybdis/blob/dc336d1/modules/core/m_server.c#L484-L485
+                self.has_eob = True
+
+                # Return the endburst hook.
+                return {'parse_as': 'ENDBURST'}
+
 
     def handle_pong(self, source, command, args):
         """Handles incoming PONG commands."""
