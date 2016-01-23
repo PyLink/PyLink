@@ -481,6 +481,9 @@ class TS6Protocol(TS6BaseProtocol):
                   'host=%s realname=%s realhost=%s ip=%s', self.irc.name, nick, ts, uid,
                   ident, host, realname, realhost, ip)
 
+        if ip == '0':  # IP was invalid; something used for services.
+            ip = '0.0.0.0'
+
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
         parsedmodes = utils.parseModes(self.irc, uid, [modes])
         log.debug('Applying modes %s for %s', parsedmodes, uid)
