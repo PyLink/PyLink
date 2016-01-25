@@ -12,11 +12,6 @@ bot:
     # Server description (shown in /links, /whois, etc.)
     serverdesc: PyLink Server
 
-    # Console log verbosity: see
-    # https://docs.python.org/3/library/logging.html#logging-levels
-    # for available settings.
-    loglevel: DEBUG
-
     # Sets the fantasy command prefix for calling commands inside channels
     # (requires fantasy plugin).
     prefix: "."
@@ -31,13 +26,45 @@ login:
     password: changeme
 
 logging:
-    # This configuration block defines channels that PyLink can log to.
+    # This configuration block defines targets that PyLink should log commands,
+    # errors, etc., to.
 
-    # Note: DEBUG logging is not supported here: any log level settings below
-    # INFO be automatically raised to INFO.
+    # This sets the level for STDOUT logging, which is always enabled. Valid
+    # settings include DEBUG, INFO, WARNING, ERROR, and CRITICAL: see
+    # https://docs.python.org/3/library/logging.html#logging-levels for details.
+    stdout: INFO
+
     channels:
+        # Log to channels on the specified networks.
+        # Note: DEBUG logging is not supported here: any log level settings
+        # below INFO be automatically raised to INFO.
+        # Log messages are forwarded over relay, so you will get duplicate
+        # messages if you add log blocks for more than one channel in one
+        # relay.
+        loglevel: INFO
+
         inspnet:
             - "#services"
+            - "#pylink-log"
+
+        ts6net:
+            - "#services"
+
+    files:
+        # Logs to file targets. These will be placed in the log/ folder in the
+        # PyLink directory, with a filename based on the current instance name
+        # and the target name defined: instancename-targetname.log
+        # Changing settings in this block will require a restart to take effect.
+
+        # When running with ./pylink, this will create log/pylink-errors.log
+        # When running with ./pylink someconf.yml, this will create log/someconf-errors.log
+        - "errors"
+            loglevel: ERROR
+
+        # Ditto above. When running with ./pylink, it will use log/pylink-commands.log
+        # When running with ./pylink someconf.yml, this will create log/someconf-commands.log
+        - "commands"
+            loglevel: INFO
 
 servers:
     inspnet:

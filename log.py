@@ -12,36 +12,52 @@ import os
 
 from conf import conf, confname
 
-level = conf['bot'].get('loglevel') or 'INFO'
+stdout_level = conf['logging'].get('stdout') or 'INFO'
 
-try:
-    level = getattr(logging, level.upper())
-except AttributeError:
-    print('ERROR: Invalid log level %r specified in config.' % level)
-    sys.exit(3)
-
+# Set the logging directory to $CURDIR/log, creating it if it doesn't
+# already exist
 curdir = os.path.dirname(os.path.realpath(__file__))
 logdir = os.path.join(curdir, 'log')
-# Make sure our log/ directory exists
 os.makedirs(logdir, exist_ok=True)
 
+# Basic logging setup, set up here on first import, logs to STDOUT based
+# on the log level configured.
 _format = '%(asctime)s [%(levelname)s] %(message)s'
-logging.basicConfig(level=level, format=_format)
+logformatter = logging.Formatter(_format)
+logging.basicConfig(level=stdout_level, format=_format)
 
-# Set log file to $CURDIR/log/pylink
-logformat = logging.Formatter(_format)
-logfile = logging.FileHandler(os.path.join(logdir, '%s.log' % confname), mode='w')
-logfile.setFormatter(logformat)
-
-global log
+# Get the main logger object; plugins can import this variable for convenience.
 log = logging.getLogger()
-log.addHandler(logfile)
+
+def makeFileLogger(filename, level=None):
+    """
+    Initializes a file logging target with the given filename and level.
+    """
+    # Use log names specific to the current instance, to prevent multiple
+    # PyLink instances from overwriting each others' log files.
+    target = os.path.join(logdir, '%s-%s.log' % (confname, filename))
+
+    filelogger = logging.FileHandler(target, mode='w')
+    filelogger.setFormatter(logformatter)
+
+    if level:  # Custom log level was defined, use that instead.
+        filelogger.setLevel(level)
+
+    log.addHandler(filelogger)
+
+    return filelogger
+
+# Set up file logging now, creating a file logger for each block.
+files = conf['logging'].get('files')
+if files:
+    for filename, config in files.items():
+        makeFileLogger(filename, config.get('loglevel'))
 
 class PyLinkChannelLogger(logging.Handler):
     """
     Log handler to log to channels in PyLink.
     """
-    def __init__(self, irc, channels):
+    def __init__(self, irc, channels, level=None):
         super(PyLinkChannelLogger, self).__init__()
         self.irc = irc
         self.channels = channels
@@ -53,7 +69,8 @@ class PyLinkChannelLogger(logging.Handler):
 
         # Log level has to be at least 20 (INFO) to prevent loops due
         # to outgoing messages being logged
-        loglevel = max(log.getEffectiveLevel(), 20)
+        level = level or log.getEffectiveLevel()
+        loglevel = max(level, 20)
         self.setLevel(loglevel)
 
     def emit(self, record):
