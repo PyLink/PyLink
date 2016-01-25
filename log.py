@@ -12,7 +12,8 @@ import os
 
 from conf import conf, confname
 
-level = conf['bot'].get('loglevel') or 'DEBUG'
+level = conf['bot'].get('loglevel') or 'INFO'
+
 try:
     level = getattr(logging, level.upper())
 except AttributeError:
