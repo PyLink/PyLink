@@ -467,6 +467,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
         namelist = []
         for user in userlist:
             modeprefix, user = user.split(',', 1)
+
+            # Don't crash when we get an invalid UID.
+            if user not in self.irc.users:
+                log.debug('(%s) handle_fjoin: tried to introduce user %s not in our user list, ignoring...',
+                          self.irc.name, user)
+                continue
+
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
             if their_ts <= our_ts:
