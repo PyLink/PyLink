@@ -441,6 +441,13 @@ class TS6Protocol(TS6BaseProtocol):
             finalprefix = ''
             assert user, 'Failed to get the UID from %r; our regex needs updating?' % userpair
             log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.irc.name, modeprefix, user)
+
+            # Don't crash when we get an invalid UID.
+            if user not in self.irc.users:
+                log.debug('(%s) handle_sjoin: tried to introduce user %s not in our user list, ignoring...',
+                          self.irc.name, user)
+                continue
+
             for m in modeprefix:
                 # Iterate over the mapping of prefix chars to prefixes, and
                 # find the characters that match.
