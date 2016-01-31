@@ -206,26 +206,40 @@ class Irc():
                 # self-sign their certificates anyways.
                 if self.ssl and checks_ok:
                     peercert = self.socket.getpeercert(binary_form=True)
-                    sha1fp = hashlib.sha1(peercert).hexdigest()
-                    expected_fp = self.serverdata.get('ssl_fingerprint')
-                    if expected_fp:
-                        if sha1fp != expected_fp:
-                            # SSL Fingerprint doesn't match; break.
-                            log.error('(%s) Uplink\'s SSL certificate '
-                                      'fingerprint (SHA1) does not match the '
-                                      'one configured: expected %r, got %r; '
-                                      'disconnecting...', self.name,
-                                      expected_fp, sha1fp)
-                            checks_ok = False
-                        else:
-                            log.info('(%s) Uplink SSL certificate fingerprint '
-                                     '(SHA1) verified: %r', self.name, sha1fp)
+
+                    # Hash type is configurable using the ssl_fingerprint_type
+                    # value, and defaults to sha256.
+                    hashtype = self.serverdata.get('ssl_fingerprint_type', 'sha256').lower()
+
+                    try:
+                        hashfunc = getattr(hashlib, hashtype)
+                    except AttributeError:
+                        log.error('(%s) Unsupported SSL certificate fingerprint type %r given, disconnecting...',
+                                  self.name, hashtype)
+                        checks_ok = False
                     else:
-                        log.info('(%s) Uplink\'s SSL certificate fingerprint '
-                                 'is %r. You can enhance the security of your '
-                                 'link by specifying this in a "ssl_fingerprint"'
-                                 ' option in your server block.', self.name,
-                                 sha1fp)
+                        fp = hashfunc(peercert).hexdigest()
+                        expected_fp = self.serverdata.get('ssl_fingerprint')
+
+                        if expected_fp and checks_ok:
+                            if fp != expected_fp:
+                                # SSL Fingerprint doesn't match; break.
+                                log.error('(%s) Uplink\'s SSL certificate '
+                                          'fingerprint (%s) does not match the '
+                                          'one configured: expected %r, got %r; '
+                                          'disconnecting...', self.name, hashtype,
+                                          expected_fp, fp)
+                                checks_ok = False
+                            else:
+                                log.info('(%s) Uplink SSL certificate fingerprint '
+                                         '(%s) verified: %r', self.name, hashtype,
+                                         fp)
+                        else:
+                            log.info('(%s) Uplink\'s SSL certificate fingerprint (%s)'
+                                     'is %r. You can enhance the security of your '
+                                     'link by specifying this in a "ssl_fingerprint"'
+                                     ' option in your server block.', self.name,
+                                     hashtype, fp)
 
                 if checks_ok:
                     # All our checks passed, get the protocol module to connect

@@ -127,8 +127,15 @@ servers:
         # ssl_keyfile: pylink-key.pem
 
         # Optionally, you can set this option to verify the SSL certificate
-        # fingerprint (SHA1) of your uplink.
-        # ssl_fingerprint: "e0fee1adf795c84eec4735f039503eb18d9c35cc"
+        # fingerprint of your uplink.
+        #ssl_fingerprint: "e0fee1adf795c84eec4735f039503eb18d9c35cc"
+
+        # This sets the hash type for the fingerprint (md5, sha1, sha256, etc.)
+        # Valid values include md5 and sha1-sha512, though others may be
+        # supported depending on your system: see
+        # https://docs.python.org/3/library/hashlib.html
+        # This setting defaults to sha256.
+        #ssl_fingerprint_type: sha256
 
     ts6net:
         ip: ::1
