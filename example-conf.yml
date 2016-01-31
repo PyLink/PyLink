@@ -124,10 +124,10 @@ servers:
 
         # Toggles SSL for this network. Defaults to false if not specified, and
         # requires the ssl_certfile and ssl_keyfile options to work.
-        # ssl: true
+        #ssl: true
 
-        # ssl_certfile: pylink-cert.pem
-        # ssl_keyfile: pylink-key.pem
+        #ssl_certfile: pylink-cert.pem
+        #ssl_keyfile: pylink-key.pem
 
         # Optionally, you can set this option to verify the SSL certificate
         # fingerprint of your uplink.
@@ -196,23 +196,23 @@ plugins:
     # (KILL, JUPE, etc.)
     # Note: these commands will be made available to anyone who's opered on your
     # network, so make sure your opers are trustworthy!
-    # - opercmds
+    #- opercmds
 
     # Bots plugin: Allows you to manipulate pseudo-clients (bots) on networks.
-    # - bots
+    #- bots
 
     # Relay plugin: Janus-style server-side relay plugin. See the relay: block
     # below for configuration.
-    # - relay
+    #- relay
 
     # Fantasy plugin: Allows you to trigger commands in channels by PyLink's
     # nick or a configurable prefix character.
-    # - fantasy
+    #- fantasy
 
     # Changehost plugin: Automatically changes the hostmask of matching users
     # to a template string, as they connect. This requires the changehost: block
     # to be configured correctly below.
-    # - changehost
+    #- changehost
 
 changehost:
     # This block configures the Changehost plugin. You don't need this if you
