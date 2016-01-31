@@ -37,7 +37,7 @@ class Irc():
         (a string), the name of the protocol module to use for this connection,
         and a configuration object.
         """
-        self.loghandler = None
+        self.loghandlers = []
         self.name = netname.lower()
         self.conf = conf
         self.serverdata = conf['servers'][netname]
@@ -72,11 +72,19 @@ class Irc():
 
         log.debug('(%s) Setting up channel logging to channels %r', self.name,
                   channels)
-        if channels and not self.loghandler:
-            # Only create a handler if we have channels to log to, and one
-            # doesn't already exist.
-            self.loghandler = PyLinkChannelLogger(self, channels)
-            log.addHandler(self.loghandler)
+
+        if not self.loghandlers:
+            # Only create handlers if they haven't already been set up.
+
+            for channel, chandata in channels.items():
+                # Fetch the log level for this channel block.
+                level = None
+                if chandata is not None:
+                    level = chandata.get('loglevel')
+
+                handler = PyLinkChannelLogger(self, channel, level=level)
+                self.loghandlers.append(handler)
+                log.addHandler(handler)
 
     def initVars(self):
         """
@@ -289,10 +297,9 @@ class Irc():
         log.debug('(%s) _disconnect: Setting self.aborted to True.', self.name)
         self.aborted.set()
 
-        if self.loghandler is not None:
-            log.debug('(%s) Removing channel logging handler due to disconnect.', self.name)
-            log.removeHandler(self.loghandler)
-            self.loghandler = None
+        log.debug('(%s) Removing channel logging handlers due to disconnect.', self.name)
+        while self.loghandlers:
+            log.removeHandler(self.loghandlers.pop())
 
         try:
             log.debug('(%s) _disconnect: Shutting down and closing socket.', self.name)

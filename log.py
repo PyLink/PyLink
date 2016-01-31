@@ -57,20 +57,24 @@ class PyLinkChannelLogger(logging.Handler):
     """
     Log handler to log to channels in PyLink.
     """
-    def __init__(self, irc, channels, level=None):
+    def __init__(self, irc, channel, level=None):
         super(PyLinkChannelLogger, self).__init__()
         self.irc = irc
-        self.channels = channels
+        self.channel = channel
 
         # Use a slightly simpler message formatter - logging to IRC doesn't need
         # logging the time.
         formatter = logging.Formatter('[%(levelname)s] %(message)s')
         self.setFormatter(formatter)
 
+        # HACK: Use setLevel twice to first coerse string log levels to ints,
+        # for easier comparison.
+        level = level or log.getEffectiveLevel()
+        self.setLevel(level)
+
         # Log level has to be at least 20 (INFO) to prevent loops due
         # to outgoing messages being logged
-        level = level or log.getEffectiveLevel()
-        loglevel = max(level, 20)
+        loglevel = max(self.level, 20)
         self.setLevel(loglevel)
 
     def emit(self, record):
@@ -80,6 +84,5 @@ class PyLinkChannelLogger(logging.Handler):
         # Only start logging if we're finished bursting
         if hasattr(self.irc, 'pseudoclient') and self.irc.connected.is_set():
             msg = self.format(record)
-            for channel in self.channels:
-                self.irc.msg(channel, msg)
+            self.irc.msg(self.channel, msg)
 
