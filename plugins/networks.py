@@ -120,6 +120,6 @@ def remote(irc, source, args):
     try:  # Remotely call the command (use the PyLink client as a dummy user).
         remoteirc.callCommand(remoteirc.pseudoclient.uid, cmd_args)
     finally:  # Remove the identification override after we finish.
-        remoteirc.pseudoclient.identified = False
+        remoteirc.pseudoclient.identified = ''
 
     irc.reply("Done.")

@@ -524,10 +524,18 @@ class IrcUser():
         self.realhost = realhost
         self.ip = ip
         self.realname = realname
-        self.modes = set()
+        self.modes = set()  # Tracks user modes
 
-        self.identified = False
+        # Tracks PyLink identification status
+        self.identified = ''
+
+        # Tracks services identification status
+        self.services_account = ''
+
+        # Tracks channels the user is in
         self.channels = set()
+
+        # Tracks away message status
         self.away = ''
 
         # This sets whether the client should be marked as manipulatable.
