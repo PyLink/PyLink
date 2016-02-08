@@ -486,10 +486,10 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming EUID commands (user introduction)."""
         # <- :42X EUID GL 1 1437505322 +ailoswz ~gl 127.0.0.1 127.0.0.1 42XAAAAAB * * :realname
         nick = args[0]
-        ts, modes, ident, host, ip, uid, realhost = args[2:9]
+        ts, modes, ident, host, ip, uid, realhost, accountname, realname = args[2:11]
         if realhost == '*':
             realhost = None
-        realname = args[-1]
+
         log.debug('(%s) handle_euid got args: nick=%s ts=%s uid=%s ident=%s '
                   'host=%s realname=%s realhost=%s ip=%s', self.irc.name, nick, ts, uid,
                   ident, host, realname, realhost, ip)
@@ -498,14 +498,21 @@ class TS6Protocol(TS6BaseProtocol):
             ip = '0.0.0.0'
 
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+
         parsedmodes = utils.parseModes(self.irc, uid, [modes])
         log.debug('Applying modes %s for %s', parsedmodes, uid)
         utils.applyModes(self.irc, uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
+
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
             otype = 'Server_Administrator' if ('+a', None) in parsedmodes else 'IRC_Operator'
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': otype}])
+
+        # Set the accountname if present
+        if accountname != "*":
+            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_uid(self, numeric, command, args):
@@ -640,5 +647,24 @@ class TS6Protocol(TS6BaseProtocol):
                         ' desyncs, try adding the line "loadmodule "extensions/%s.so";" to '
                         'your IRCd configuration.', self.irc.name, setter, badmode,
                         charlist[badmode])
+
+    def handle_encap(self, numeric, command, args):
+        """
+        Handles the ENCAP command - encapsulated TS6 commands with a variety of
+        subcommands used for different purposes.
+        """
+        commandname = args[1]
+
+        if commandname == 'SU':
+            # Handles SU, which is used for setting login information
+            # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+            # <- :00A ENCAP * SU 42XAAAAAC
+            try:
+                account = args[3]  # Account name is being set
+            except IndexError:
+                account = ''  # No account name means a logout
+
+            uid = args[2]
+            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
 Class = TS6Protocol

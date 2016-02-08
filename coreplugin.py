@@ -135,6 +135,11 @@ def handle_operup(irc, source, command, args):
     log.info("(%s) Successful oper-up (opertype %r) from %s", irc.name, args.get('text'), utils.getHostmask(irc, source))
 utils.add_hook(handle_operup, 'CLIENT_OPERED')
 
+def handle_services_login(irc, source, command, args):
+    """Sets services login status for users."""
+    irc.users[source].services_account = args['text']
+utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
+
 # Essential, core commands go here so that the "commands" plugin with less-important,
 # but still generic functions can be reloaded.
 
