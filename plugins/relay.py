@@ -717,18 +717,22 @@ def handle_messages(irc, numeric, command, args):
         # Drop attempted PMs between internal clients (this shouldn't happen,
         # but whatever).
         return
+
     elif numeric in irc.servers:
         # Sender is a server? This shouldn't be allowed, except for some truly
         # special cases... We'll route these through the main PyLink client,
         # tagging the message with the sender name.
         text = '[from %s] %s' % (irc.servers[numeric].name, text)
         numeric = irc.pseudoclient.uid
+
     elif numeric not in irc.users:
         # Sender didn't pass the check above, AND isn't a user.
         log.debug('(%s) relay: Unknown message sender %s.', irc.name, numeric)
         return
+
     relay = getRelay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
+
     # HACK: Don't break on sending to @#channel or similar.
     try:
         prefix, target = target.split('#', 1)
@@ -736,6 +740,7 @@ def handle_messages(irc, numeric, command, args):
         prefix = ''
     else:
         target = '#' + target
+
     log.debug('(%s) relay privmsg: prefix is %r, target is %r', irc.name, prefix, target)
     if utils.isChannel(target) and relay and numeric not in irc.channels[target].users:
         # The sender must be in the target channel to send messages over the relay;
@@ -745,22 +750,33 @@ def handle_messages(irc, numeric, command, args):
         irc.msg(numeric, 'Error: You must be in %r in order to send '
                   'messages over the relay.' % target, notice=True)
         return
+
     if utils.isChannel(target):
         for name, remoteirc in world.networkobjects.items():
             real_target = getRemoteChan(irc, remoteirc, target)
-            if irc.name == name or not remoteirc.connected.is_set() or not real_target:
+
+            # Don't relay anything back to the source net, or to disconnected networks
+            # and networks without a relay for this channel
+            if irc.name == name or (not remoteirc.connected.is_set()) or (not real_target) \
+                    or (not irc.connected.is_set()):
                 continue
+
             user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
             real_target = prefix + real_target
+            log.debug('(%s) relay: sending message to %s from %s on behalf of %s',
+                      irc.name, real_target, user, numeric)
             if notice:
                 remoteirc.proto.notice(user, real_target, text)
             else:
                 remoteirc.proto.message(user, real_target, text)
+
     else:
-        remoteuser = getOrigUser(irc, target)
-        if remoteuser is None:
+        # Get the real user that the PM was meant for
+        origuser = getOrigUser(irc, target)
+        if origuser is None:  # Not a relay client, return
             return
-        homenet, real_target = remoteuser
+        homenet, real_target = origuser
+
         # For PMs, we must be on a common channel with the target.
         # Otherwise, the sender doesn't have a client representing them
         # on the remote network, and we won't have anything to send our
@@ -772,10 +788,12 @@ def handle_messages(irc, numeric, command, args):
             return
         remoteirc = world.networkobjects[homenet]
         user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
+
         if notice:
             remoteirc.proto.notice(user, real_target, text)
         else:
             remoteirc.proto.message(user, real_target, text)
+
 for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
     utils.add_hook(handle_messages, cmd)
 
