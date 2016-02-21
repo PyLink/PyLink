@@ -375,7 +375,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         if ('+x', None) not in parsedmodes:
             # If +x is not set, update to use the person's real host.
-            self.updateClient(uid, 'HOST', realhost)
+            self.irc.users[uid].host = realhost
 
         # Set the accountname if present
         if accountname != "0":
