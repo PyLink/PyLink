@@ -69,6 +69,7 @@ def help(irc, source, args):
                                        "doesn't offer any help." % (command, mod))
                 return
 
+_none = '\x1D(none)\x1D'
 @utils.add_cmd
 def showuser(irc, source, args):
     """<user>
@@ -95,15 +96,21 @@ def showuser(irc, source, args):
     sid = irc.getServer(u)
     serverobj = irc.servers[sid]
     ts = userobj.ts
+
+    # Show connected server & signon time
     f('\x02Home server\x02: %s (%s); \x02Signon time:\x02 %s (%s)' % \
       (serverobj.name, sid, ctime(float(ts)), ts))
-    if verbose:
-        f('\x02Protocol UID\x02: %s; \x02PyLink identification\x02: %s' % \
-          (u, userobj.identified))
+
+    if verbose:  # Oper only data: user modes, channels on, account info, etc.
+
         f('\x02User modes\x02: %s' % utils.joinModes(userobj.modes))
-        f('\x02Real host\x02: %s; \x02IP\x02: %s; \x02Away status\x02: %s' % \
-          (userobj.realhost, userobj.ip, userobj.away or '\x1D(not set)\x1D'))
-        f('\x02Channels\x02: %s' % (' '.join(userobj.channels).strip() or '\x1D(none)\x1D'))
+        f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
+          (u, userobj.realhost, userobj.ip))
+        f('\x02Channels\x02: %s' % (' '.join(userobj.channels).strip() or _none))
+        f('\x02PyLink identification\x02: %s; \x02Services account\x02: %s; \x02Away status\x02: %s' % \
+          ((userobj.identified or _none), (userobj.services_account or _none), userobj.away or _none))
+
+
 
 @utils.add_cmd
 def showchan(irc, source, args):
