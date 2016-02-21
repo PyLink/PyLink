@@ -132,7 +132,7 @@ utils.add_hook(handle_mode, 'MODE')
 
 def handle_operup(irc, source, command, args):
     """Logs successful oper-ups on networks."""
-    log.info("(%s) Successful oper-up (opertype %r) from %s", irc.name, args.get('text'), utils.getHostmask(irc, source))
+    log.debug("(%s) Successful oper-up (opertype %r) from %s", irc.name, args.get('text'), utils.getHostmask(irc, source))
 utils.add_hook(handle_operup, 'CLIENT_OPERED')
 
 def handle_services_login(irc, source, command, args):
