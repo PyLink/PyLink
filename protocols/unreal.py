@@ -325,17 +325,17 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_uid(self, numeric, command, args):
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
         # <- :001 UID GL| 0 1441389007 gl 10.120.0.6 001ZO8F03 0 +iwx * 391A9CB9.26A16454.D9847B69.IP CngABg== :realname
-        # arguments: nick, hopcount???, ts, ident, real-host, UID, number???, modes,
+        # arguments: nick, hopcount?, ts, ident, real-host, UID, services account (0 if none), modes,
         #            displayed host, cloaked (+x) host, base64-encoded IP, and realname
-        # TODO: find out what all the "???" fields mean.
         nick = args[0]
-        ts, ident, realhost, uid = args[2:6]
-        modestring = args[7]
-        host = args[8]
+        ts, ident, realhost, uid, accountname, modestring, host = args[2:9]
+
         if host == '*':
             # A single * means that there is no displayed/virtual host, and
             # that it's the same as the real host
             host = args[9]
+
+        # Decode UnrealIRCd's IPs, which are stored in base64-encoded network structure
         raw_ip = args[10].encode()  # codecs.decode only takes bytes, not str
         if raw_ip == b'*':  # Dummy IP (for services, etc.)
             ip = '0.0.0.0'
@@ -352,11 +352,13 @@ class UnrealProtocol(TS6BaseProtocol):
                 # in a line, should it be mirrored to other networks.
                 if ip.startswith(':'):
                     ip = '0' + ip
+
         realname = args[-1]
 
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
         self.irc.servers[numeric].users.add(uid)
 
+        # Handle user modes
         parsedmodes = utils.parseModes(self.irc, uid, [modestring])
         utils.applyModes(self.irc, uid, parsedmodes)
 
@@ -374,6 +376,10 @@ class UnrealProtocol(TS6BaseProtocol):
         if ('+x', None) not in parsedmodes:
             # If +x is not set, update to use the person's real host.
             self.updateClient(uid, 'HOST', realhost)
+
+        # Set the accountname if present
+        if accountname != "0":
+            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -615,7 +621,7 @@ class UnrealProtocol(TS6BaseProtocol):
                                {'target': uid, 'newhost': newhost}])
 
     def handle_svsmode(self, numeric, command, args):
-        """Handle SVSMODE/SVS2MODE, used for setting user modes on others (services)."""
+        """Handles SVSMODE, used by services for setting user modes on others."""
         # <- :source SVSMODE target +usermodes
         target = self._getNick(args[0])
         modes = args[1:]
@@ -624,10 +630,40 @@ class UnrealProtocol(TS6BaseProtocol):
         utils.applyModes(self.irc, target, parsedmodes)
 
         # If +x/-x is being set, update cloaked host info.
-        self.checkCloakChange(numeric, parsedmodes)
+        self.checkCloakChange(target, parsedmodes)
 
-        return {'target': numeric, 'modes': parsedmodes}
-    handle_svs2mode = handle_svsmode
+        return {'target': target, 'modes': parsedmodes}
+
+    def handle_svs2mode(self, sender, command, args):
+        """
+        Handles SVS2MODE, which sets services login information, and user modes on
+        the given target.
+        """
+        # Logging in:
+        # <- :NickServ SVS2MODE GL +rd GL
+
+        # Logging out:
+        # <- :NickServ SVS2MODE GL -r+d 0
+
+        # Logging in to account from a different nick:
+        # <- :NickServ SVS2MODE somenick +d GL
+
+        # Handle the mode part first, the same was as SVSMODE.
+        mode_hook = self.handle_svsmode(sender, command, args)
+        self.irc.callHooks([sender, 'SVSMODE', mode_hook])
+
+        # Get the target and the account name being set. 0 for accountname
+        # indicates a logout.
+        target = self._getNick(args[0])
+        try:
+            account = args[2]
+            if account == '0':
+                account = ''
+        except IndexError:
+            # No services account change, ignore
+            return
+        else:
+            self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
     def handle_umode2(self, numeric, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
