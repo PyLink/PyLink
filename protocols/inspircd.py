@@ -675,4 +675,18 @@ class InspIRCdProtocol(TS6BaseProtocol):
             log.debug("(%s) Got RSQUIT for '%s', which is either invalid or not "
                       "a server of ours!", self.irc.name, args[0])
 
+    def handle_metadata(self, numeric, command, args):
+        """
+        Handles the METADATA command, used by servers to send metadata (services
+        login name, certfp data, etc.) for clients.
+        """
+        uid = args[0]
+
+        if args[1] == 'accountname':
+            # <- :00A METADATA 1MLAAAJET accountname :
+            # <- :00A METADATA 1MLAAAJET accountname :tester
+            # Sets the services login name of the client.
+
+            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': args[-1]}])
+
 Class = InspIRCdProtocol
