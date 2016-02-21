@@ -62,6 +62,10 @@ class PyLinkChannelLogger(logging.Handler):
         self.irc = irc
         self.channel = channel
 
+        # Set whether we've been called already. This is used to prevent recursive
+        # loops when logging.
+        self.called = False
+
         # Use a slightly simpler message formatter - logging to IRC doesn't need
         # logging the time.
         formatter = logging.Formatter('[%(levelname)s] %(message)s')
@@ -81,8 +85,26 @@ class PyLinkChannelLogger(logging.Handler):
         """
         Logs a record to the configured channels for the network given.
         """
-        # Only start logging if we're finished bursting
-        if hasattr(self.irc, 'pseudoclient') and self.irc.connected.is_set():
+        # Only start logging if we're finished bursting, and our main client is in
+        # a stable condition.
+        # 1) irc.pseudoclient must be initialized already
+        # 2) IRC object must be finished bursting
+        # 3) Target channel must exist
+        # 4) Main PyLink client must be in this target channel
+        # 5) This function hasn't been called already (prevents recursive loops).
+        if hasattr(self.irc, 'pseudoclient') and self.irc.connected.is_set() \
+                and self.channel in self.irc.channels and self.irc.pseudoclient.uid in \
+                self.irc.channels[self.channel].users and not self.called:
+
+            self.called = True
             msg = self.format(record)
-            self.irc.msg(self.channel, msg)
+
+            # Send the message. If this fails, abort. No more messages will be
+            # sent from this logger until the next sending succeeds.
+            try:
+                self.irc.msg(self.channel, msg)
+            except:
+                return
+            else:
+                self.called = False
 
