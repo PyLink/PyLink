@@ -1278,17 +1278,27 @@ def linked(irc, source, args):
     """takes no arguments.
 
     Returns a list of channels shared across the relay."""
-    networks = list(world.networkobjects.keys())
-    networks.remove(irc.name)
-    s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(networks))
+
+    # Only show remote networks that are marked as connected.
+    remote_networks = [netname for netname, ircobj in world.networkobjects.items()
+                       if ircobj.connected.is_set()]
+
+    # But remove the current network from the list, so that it isn't shown twice.
+    remote_networks.remove(irc.name)
+
+    remote_networks.sort()
+
+    s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(remote_networks))
     irc.msg(source, s)
 
     # Sort the list of shared channels when displaying
     for k, v in sorted(db.items()):
+
         # Bold each network/channel name pair
         s = '\x02%s%s\x02 ' % k
         remoteirc = world.networkobjects.get(k[0])
         channel = k[1]  # Get the channel name from the network/channel pair
+
         if remoteirc and channel in remoteirc.channels:
             c = remoteirc.channels[channel]
             if ('s', None) in c.modes or ('p', None) in c.modes:
@@ -1301,6 +1311,7 @@ def linked(irc, source, args):
 
         if v['links']:  # Join up and output all the linked channel names.
             s += ' '.join([''.join(link) for link in sorted(v['links'])])
+
         else:  # Unless it's empty; then, well... just say no relays yet.
             s += '(no relays yet)'
 
@@ -1322,7 +1333,7 @@ def linked(irc, source, args):
             if ts:
                 s += ' on %s' % time.ctime(ts)
 
-            if s:
+            if s:  # Indent to make the list look nicer
                 irc.msg(source, '    Channel created%s.' % s)
 
 @utils.add_cmd
