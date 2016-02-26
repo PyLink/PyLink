@@ -184,7 +184,15 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        self._send(numeric, 'KILL %s :%s' % (target, reason))
+        # InspIRCd will show the raw kill message sent from our server as the quit message.
+        # So, make the kill look actually like a kill instead of someone quitting with
+        # an arbitrary message.
+        if target in self.irc.servers:
+            sourcenick = self.irc.servers[numeric].name
+        else:
+            sourcenick = self.irc.users[numeric].nick
+
+        self._send(numeric, 'KILL %s :Killed (%s (%s))' % (target, sourcenick, reason))
 
         # We only need to call removeClient here if the target is one of our
         # clients, since any remote servers will send a QUIT from
