@@ -202,7 +202,7 @@ def msg(irc, source, args):
             target = args[0]
             text = ' '.join(args[1:])
         except IndexError:
-            irc.reply('Error: Not enough arguments. Needs 3: source nick, target, text.')
+            irc.reply('Error: Not enough arguments. Needs 2-3: source nick (optional), target, text.')
             return
 
     if not text:
