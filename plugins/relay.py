@@ -22,6 +22,7 @@ spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
 savecache = ExpiringDict(max_len=5, max_age_seconds=10)
 killcache = ExpiringDict(max_len=5, max_age_seconds=10)
+exportdb_timer = None
 
 dbname = utils.getDatabaseName('pylinkrelay')
 
@@ -43,32 +44,47 @@ def initializeAll(irc):
 def main(irc=None):
     """Main function, called during plugin loading at start."""
 
+    # Load the relay links database.
     loadDB()
 
-    # Thread this because exportDB() queues itself as part of its
-    # execution, in order to get a repeating loop.
-    exportdb_thread = threading.Thread(target=exportDB, args=(True,), name="PyLink Relay exportDB Loop")
-    exportdb_thread.daemon = True
-    exportdb_thread.start()
+    # Schedule periodic exports of the links database.
+    scheduleExport(starting=True)
 
     if irc is not None:
+        # irc is defined when the plugin is reloaded. Otherweise,
+        # it means that we've just started the server.
+        # Iterate over all known networks and initialize them.
         for ircobj in world.networkobjects.values():
             initializeAll(ircobj)
 
 def die(sourceirc):
     """Deinitialize PyLink Relay by quitting all relay clients and saving the
     relay DB."""
+
+    # For every connected network:
     for irc in world.networkobjects.values():
+        # 1) Find all the relay clients and quit them.
         for user in irc.users.copy():
             if isRelayClient(irc, user):
                 irc.proto.quit(user, "Relay plugin unloaded.")
+
+        # 2) SQUIT every relay subserver.
         for server, sobj in irc.servers.copy().items():
             if hasattr(sobj, 'remote'):
                 irc.proto.squit(irc.sid, server, text="Relay plugin unloaded.")
+
+    # 3) Clear our internal servers and users caches.
     relayservers.clear()
     relayusers.clear()
 
-    exportDB(reschedule=False)
+    # 4) Export the relay links database.
+    exportDB()
+
+    # 5) Kill the scheduling for any other exports.
+    global exportdb_timer
+    if exportdb_timer:
+        log.debug("Relay: cancelling exportDB timer thread %s due to die()", threading.get_ident())
+        exportdb_timer.cancel()
 
 def normalizeNick(irc, netname, nick, separator=None, uid=''):
     """Creates a normalized nickname for the given nick suitable for
@@ -140,23 +156,28 @@ def loadDB():
             ", creating a new one in memory...", dbname)
         db = {}
 
-def exportDB(reschedule=False):
-    """Exports the relay database, optionally creating a loop to do this
-    automatically."""
+def exportDB():
+    """Exports the relay database."""
 
-    def dump():
-        log.debug("Relay: exporting links database to %s", dbname)
-        with open(dbname, 'wb') as f:
-            pickle.dump(db, f, protocol=4)
+    log.debug("Relay: exporting links database to %s", dbname)
+    with open(dbname, 'wb') as f:
+        pickle.dump(db, f, protocol=4)
 
-    if reschedule:
-        while True:
-            # Sleep for 30 seconds between DB exports. Seems sort of
-            # arbitrary, but whatever.
-            time.sleep(30)
-            dump()
-    else:  # Rescheduling was disabled; just dump the DB once.
-        dump()
+def scheduleExport(starting=False):
+    """
+    Schedules exporting of the relay database in a repeated loop.
+    """
+    global exportdb_timer
+
+    if not starting:
+        # Export the datbase, unless this is being called the first
+        # thing after start (i.e. DB has just been loaded).
+        exportDB()
+
+    # TODO: possibly make delay between exports configurable
+    exportdb_timer = threading.Timer(30, scheduleExport)
+    exportdb_timer.name = 'PyLink Relay exportDB Loop'
+    exportdb_timer.start()
 
 def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
     """
