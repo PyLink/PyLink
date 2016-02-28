@@ -152,9 +152,9 @@ def kick(irc, source, args):
 
 @utils.add_cmd
 def kill(irc, source, args):
-    """<source> <channel> <user> [<reason>]
+    """<source> <target> [<reason>]
 
-    Admin only. Kills <user> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
+    Admin only. Kills <target> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
     utils.checkAuthenticated(irc, source, allowOper=False)
     try:
         sourcenick = args[0]
