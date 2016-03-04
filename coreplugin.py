@@ -137,7 +137,12 @@ utils.add_hook(handle_operup, 'CLIENT_OPERED')
 
 def handle_services_login(irc, source, command, args):
     """Sets services login status for users."""
-    irc.users[source].services_account = args['text']
+
+    try:
+        irc.users[source].services_account = args['text']
+    except KeyError:  # User doesn't exist
+        log.debug("(%s) Ignoring early account name setting for %s (UID hasn't been sent yet)", irc.name, source)
+
 utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
 
 # Essential, core commands go here so that the "commands" plugin with less-important,
