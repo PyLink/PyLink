@@ -428,8 +428,10 @@ def removeChannel(irc, channel):
     """Destroys a relay channel by parting all of its users."""
     if irc is None:
         return
+
     if channel not in map(str.lower, irc.serverdata['channels']):
         irc.proto.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
+
     relay = getRelay((irc.name, channel))
     if relay:
         for user in irc.channels[channel].users.copy():
@@ -1265,28 +1267,43 @@ def create(irc, source, args):
 
 @utils.add_cmd
 def destroy(irc, source, args):
-    """<channel>
+    """[<home network>] <channel>
 
-    Removes <channel> from the relay, delinking all networks linked to it."""
-    try:
-        channel = utils.toLower(irc, args[0])
+    Removes <channel> from the relay, delinking all networks linked to it. If <home network> is given and you are logged in as admin, this can also remove relay channels from other networks."""
+    try:  # Two args were given: first one is network name, second is channel.
+        channel = utils.toLower(irc, args[1])
+        network = args[0]
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 1: channel.")
-        return
+        try:  # One argument was given; assume it's just the channel.
+            channel = utils.toLower(irc, args[0])
+            network = irc.name
+        except IndexError:
+            irc.reply("Error: Not enough arguments. Needs 1-2: channel, network (optional).")
+            return
+
     if not utils.isChannel(channel):
         irc.reply('Error: Invalid channel %r.' % channel)
         return
-    utils.checkAuthenticated(irc, source)
 
-    entry = (irc.name, channel)
+    if network == irc.name:
+        # If we're destroying a channel on the current network, only oper is needed.
+        utils.checkAuthenticated(irc, source)
+    else:
+        # Otherwise, we'll need to be logged in as admin.
+        utils.checkAuthenticated(irc, source, allowOper=False)
+
+    entry = (network, channel)
+
     if entry in db:
+        # Iterate over all the channel links and deinitialize them.
         for link in db[entry]['links']:
             removeChannel(world.networkobjects.get(link[0]), link[1])
-        removeChannel(irc, channel)
+        removeChannel(world.networkobjects.get(network), channel)
+
         del db[entry]
-        irc.reply('Done.')
         log.info('(%s) relay: Channel %s destroyed by %s.', irc.name,
                  channel, utils.getHostmask(irc, source))
+        irc.reply('Done.')
     else:
         irc.reply('Error: No such relay %r exists.' % channel)
         return
