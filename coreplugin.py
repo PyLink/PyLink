@@ -182,10 +182,22 @@ def shutdown(irc, source, args):
     Exits PyLink by disconnecting all networks."""
     utils.checkAuthenticated(irc, source, allowOper=False)
     u = irc.users[source]
+
     log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
              u.ident, u.host)
+
+    for name, plugin in world.plugins.items():
+        # Before closing connections, tell all plugins to shutdown cleanly first.
+        if hasattr(plugin, 'die'):
+            log.debug('coreplugin: Running die() on plugin %s due to shutdown.', name)
+            try:
+                plugin.die(irc)
+            except:  # But don't allow it to crash the server.
+                log.exception('coreplugin: Error occurred in die() of plugin %s, skipping...', name)
+
     for ircobj in world.networkobjects.values():
-        # Disable auto-connect first by setting the time to negative.
+        # Disconnect all our networks. Disable auto-connect first by setting
+        # the time to negative.
         ircobj.serverdata['autoconnect'] = -1
         ircobj.disconnect()
 
