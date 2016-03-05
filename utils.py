@@ -490,10 +490,12 @@ def isManipulatableClient(irc, uid):
     """
     return irc.isInternalClient(uid) and irc.users[uid].manipulatable
 
-def getHostmask(irc, user, realhost=False):
+def getHostmask(irc, user, realhost=False, ip=False):
     """
     Returns the hostmask of the given user, if present. If the realhost option
-    is given, return the real host of the user instead of the displayed host."""
+    is given, return the real host of the user instead of the displayed host.
+    If the ip option is given, return the IP address of the user (this overrides
+    realhost)."""
     userobj = irc.users.get(user)
 
     try:
@@ -507,7 +509,9 @@ def getHostmask(irc, user, realhost=False):
         ident = '<unknown-ident>'
 
     try:
-        if realhost:
+        if ip:
+            host = userobj.ip
+        elif realhost:
             host = userobj.realhost
         else:
             host = userobj.host
