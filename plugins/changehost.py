@@ -20,11 +20,7 @@ from log import log
 # Characters allowed in a hostname.
 allowed_chars = string.ascii_letters + '-./:' + string.digits
 
-def handle_uid(irc, sender, command, args):
-    """
-    Listener for new connections.
-    """
-
+def _changehost(irc, target, args):
     changehost_conf = irc.conf.get("changehost")
 
     if not changehost_conf:
@@ -41,11 +37,12 @@ def handle_uid(irc, sender, command, args):
                     "Changehost will not function correctly!", irc.name)
         return
 
-    target = args['uid']
+    # Match against both the user's IP and real host.
     target_host = utils.getHostmask(irc, target, realhost=True)
+    target_ip = utils.getHostmask(irc, target, ip=True)
 
     for host_glob, host_template in changehost_hosts.items():
-        if ircmatch.match(0, host_glob, target_host):
+        if ircmatch.match(0, host_glob, target_host) or ircmatch.match(0, host_glob, target_ip):
             # This uses template strings for simple substitution:
             # https://docs.python.org/3/library/string.html#template-strings
             template = string.Template(host_template)
@@ -65,4 +62,31 @@ def handle_uid(irc, sender, command, args):
             # Only operate on the first match.
             break
 
+def handle_uid(irc, sender, command, args):
+    """
+    Changehost listener for new connections.
+    """
+
+    target = args['uid']
+    _changehost(irc, target, args)
+
 utils.add_hook(handle_uid, 'UID')
+
+@utils.add_cmd
+def applyhosts(irc, sender, args):
+    """[<network>]
+
+    Applies all configured hosts for users on the given network, or the current network if none is specified."""
+
+    try:  # Try to get network from the command line.
+        network = world.networkobjects[args[0]]
+    except IndexError:  # No network was given
+        network = irc
+    except KeyError:  # Unknown network
+        irc.reply("Error: Unknown network '%s'." % network)
+        return
+
+    for user, userdata in network.users.copy().items():
+        _changehost(network, user, userdata.__dict__)
+
+    irc.reply("Done.")
