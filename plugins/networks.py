@@ -32,6 +32,9 @@ def disconnect(irc, source, args):
     # Abort the connection! Simple as that.
     network.disconnect()
 
+    if network.serverdata["autoconnect"] < 1:  # Remove networks if autoconnect is disabled.
+        del world.networkobjects[netname]
+
 @utils.add_cmd
 def connect(irc, source, args):
     """<network>
