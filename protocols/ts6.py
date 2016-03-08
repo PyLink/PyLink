@@ -271,6 +271,7 @@ class TS6Protocol(TS6BaseProtocol):
                         'g', 'opmoderated': 'z', 'noctcp': 'C',
                          # charybdis-specific modes provided by EXTENSIONS
                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
+                        'nonotice': 'T',
                          # Now, map all the ABCD type modes:
                         '*A': 'beIq', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
 
@@ -302,7 +303,7 @@ class TS6Protocol(TS6BaseProtocol):
         # +K (no repeat messages), +d (no nick changes), and user modes:
         # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides channel list)
         if self.irc.serverdata.get('use_elemental_modes'):
-            elemental_cmodes = {'nonotice': 'T', 'hiddenbans': 'u', 'nokick': 'E',
+            elemental_cmodes = {'hiddenbans': 'u', 'nokick': 'E',
                                 'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd'}
             self.irc.cmodes.update(elemental_cmodes)
             self.irc.cmodes['*D'] += ''.join(elemental_cmodes.values())
@@ -640,7 +641,8 @@ class TS6Protocol(TS6BaseProtocol):
         badmode = args[1]
         reason = args[-1]
         setter = args[0]
-        charlist = {'A': 'chm_adminonly', 'O': 'chm_operonly', 'S': 'chm_sslonly'}
+        charlist = {'A': 'chm_adminonly', 'O': 'chm_operonly', 'S': 'chm_sslonly',
+                    'T': 'chm_nonotice'}
         if badmode in charlist:
             log.warning('(%s) User %r attempted to set channel mode %r, but the '
                         'extension providing it isn\'t loaded! To prevent possible'
