@@ -1081,8 +1081,15 @@ utils.add_hook(handle_topic, 'TOPIC')
 def handle_kill(irc, numeric, command, args):
     target = args['target']
     userdata = args['userdata']
-    realuser = getOrigUser(irc, target) or userdata.__dict__.get('remote')
+
+    # Try to find the original client of the target being killed
+    if userdata and hasattr(userdata, 'remote'):
+        realuser = userdata.remote
+    else:
+        realuser = getOrigUser(irc, target)
+
     log.debug('(%s) relay.handle_kill: realuser is %r', irc.name, realuser)
+
     # Target user was remote:
     if realuser and realuser[0] != irc.name:
         # We don't allow killing over the relay, so we must respawn the affected
@@ -1097,6 +1104,7 @@ def handle_kill(irc, numeric, command, args):
                     log.debug('(%s) relay.handle_kill: userpair: %s, %s', irc.name, modes, realuser)
                     client = getRemoteUser(remoteirc, irc, realuser[1])
                     irc.proto.sjoin(getRemoteSid(irc, remoteirc), localchan, [(modes, client)])
+
             if userdata and numeric in irc.users:
                 log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from %s to relay client %s/%s.',
                          irc.name, args['text'], irc.users[numeric].nick,
