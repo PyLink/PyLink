@@ -243,7 +243,7 @@ class Irc():
                                          '(%s) verified: %r', self.name, hashtype,
                                          fp)
                         else:
-                            log.info('(%s) Uplink\'s SSL certificate fingerprint (%s)'
+                            log.info('(%s) Uplink\'s SSL certificate fingerprint (%s) '
                                      'is %r. You can enhance the security of your '
                                      'link by specifying this in a "ssl_fingerprint"'
                                      ' option in your server block.', self.name,
