@@ -220,3 +220,4 @@ def msg(irc, source, args):
 
     irc.proto.message(sourceuid, real_target, text)
     irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
+utils.add_cmd(msg, 'say')
