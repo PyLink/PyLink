@@ -82,7 +82,7 @@ Methods inherited from <a href="builtins.html#BaseException">builtins.BaseExcept
 
 <dl><dt><a name="NotAuthenticatedError-__getattribute__"><strong>__getattribute__</strong></a>(self, name, /)</dt><dd><tt>Return&nbsp;getattr(self,&nbsp;name).</tt></dd></dl>
 
-<dl><dt><a name="NotAuthenticatedError-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
+<dl><dt><a name="NotAuthenticatedError-__reduce__"><strong>__reduce__</strong></a>(...)</dt><dd><tt>helper&nbsp;for&nbsp;pickle</tt></dd></dl>
 
 <dl><dt><a name="NotAuthenticatedError-__repr__"><strong>__repr__</strong></a>(self, /)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
 
@@ -133,7 +133,7 @@ Example&nbsp;queries:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"6##"&nbsp;would&nbsp;give:&nbsp;600,&nbsp;601,&nbsp;602,&nbsp;...&nbsp;60Y,&nbsp;60Z,&nbsp;610,&nbsp;611,&nbsp;...&nbsp;6ZZ&nbsp;(1296&nbsp;total&nbsp;results)<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="TS6SIDGenerator-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+<dl><dt><a name="TS6SIDGenerator-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
 
 <dl><dt><a name="TS6SIDGenerator-increment"><strong>increment</strong></a>(self, pos=2)</dt><dd><tt>Increments&nbsp;the&nbsp;SID&nbsp;generator&nbsp;to&nbsp;the&nbsp;next&nbsp;available&nbsp;SID.</tt></dd></dl>
 
@@ -158,7 +158,7 @@ Data descriptors defined here:<br>
 https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="TS6UIDGenerator-__init__"><strong>__init__</strong></a>(self, sid)</dt></dl>
+<dl><dt><a name="TS6UIDGenerator-__init__"><strong>__init__</strong></a>(self, sid)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
 
 <dl><dt><a name="TS6UIDGenerator-increment"><strong>increment</strong></a>(self, pos=5)</dt><dd><tt>Increments&nbsp;the&nbsp;SID&nbsp;generator&nbsp;to&nbsp;the&nbsp;next&nbsp;available&nbsp;SID.</tt></dd></dl>
 
@@ -186,7 +186,6 @@ Data descriptors defined here:<br>
 The&nbsp;target&nbsp;can&nbsp;be&nbsp;either&nbsp;a&nbsp;channel&nbsp;or&nbsp;a&nbsp;user;&nbsp;this&nbsp;is&nbsp;handled&nbsp;automatically.</tt></dd></dl>
  <dl><dt><a name="-checkAuthenticated"><strong>checkAuthenticated</strong></a>(irc, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink,&nbsp;raising<br>
 <a href="#NotAuthenticatedError">NotAuthenticatedError</a>&nbsp;and&nbsp;logging&nbsp;the&nbsp;access&nbsp;denial&nbsp;if&nbsp;not.</tt></dd></dl>
- <dl><dt><a name="-clientToServer"><strong>clientToServer</strong></a>(irc, numeric)</dt><dd><tt>Finds&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;a&nbsp;user&nbsp;is&nbsp;on.</tt></dd></dl>
  <dl><dt><a name="-getDatabaseName"><strong>getDatabaseName</strong></a>(dbname)</dt><dd><tt>Returns&nbsp;a&nbsp;database&nbsp;filename&nbsp;with&nbsp;the&nbsp;given&nbsp;base&nbsp;DB&nbsp;name&nbsp;appropriate&nbsp;for&nbsp;the<br>
 current&nbsp;PyLink&nbsp;instance.<br>
 &nbsp;<br>
@@ -194,13 +193,13 @@ This&nbsp;returns&nbsp;'&lt;dbname&gt;.db'&nbsp;if&nbsp;the&nbsp;running&nbsp;co
 (config.yml),&nbsp;and&nbsp;'&lt;dbname&gt;-&lt;config&nbsp;name&gt;.db'&nbsp;for&nbsp;anything&nbsp;else.&nbsp;For&nbsp;example,<br>
 if&nbsp;this&nbsp;is&nbsp;called&nbsp;from&nbsp;an&nbsp;instance&nbsp;running&nbsp;as&nbsp;'./pylink&nbsp;testing.yml',&nbsp;it<br>
 would&nbsp;return&nbsp;'&lt;dbname&gt;-testing.db'.</tt></dd></dl>
- <dl><dt><a name="-getHostmask"><strong>getHostmask</strong></a>(irc, user)</dt><dd><tt>Returns&nbsp;the&nbsp;hostmask&nbsp;of&nbsp;the&nbsp;given&nbsp;user,&nbsp;if&nbsp;present.</tt></dd></dl>
+ <dl><dt><a name="-getHostmask"><strong>getHostmask</strong></a>(irc, user, realhost=False, ip=False)</dt><dd><tt>Returns&nbsp;the&nbsp;hostmask&nbsp;of&nbsp;the&nbsp;given&nbsp;user,&nbsp;if&nbsp;present.&nbsp;If&nbsp;the&nbsp;realhost&nbsp;option<br>
+is&nbsp;given,&nbsp;return&nbsp;the&nbsp;real&nbsp;host&nbsp;of&nbsp;the&nbsp;user&nbsp;instead&nbsp;of&nbsp;the&nbsp;displayed&nbsp;host.<br>
+If&nbsp;the&nbsp;ip&nbsp;option&nbsp;is&nbsp;given,&nbsp;return&nbsp;the&nbsp;IP&nbsp;address&nbsp;of&nbsp;the&nbsp;user&nbsp;(this&nbsp;overrides<br>
+realhost).</tt></dd></dl>
  <dl><dt><a name="-getProtocolModule"><strong>getProtocolModule</strong></a>(protoname)</dt><dd><tt>Imports&nbsp;and&nbsp;returns&nbsp;the&nbsp;protocol&nbsp;module&nbsp;requested.</tt></dd></dl>
  <dl><dt><a name="-isChannel"><strong>isChannel</strong></a>(s)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;string&nbsp;given&nbsp;is&nbsp;a&nbsp;valid&nbsp;channel&nbsp;name.</tt></dd></dl>
  <dl><dt><a name="-isHostmask"><strong>isHostmask</strong></a>(text)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;text&nbsp;is&nbsp;a&nbsp;valid&nbsp;hostmask.</tt></dd></dl>
- <dl><dt><a name="-isInternalClient"><strong>isInternalClient</strong></a>(irc, numeric)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;given&nbsp;numeric&nbsp;is&nbsp;a&nbsp;PyLink&nbsp;Client,<br>
-returning&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;it's&nbsp;on&nbsp;if&nbsp;so.</tt></dd></dl>
- <dl><dt><a name="-isInternalServer"><strong>isInternalServer</strong></a>(irc, sid)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;SID&nbsp;is&nbsp;an&nbsp;internal&nbsp;PyLink&nbsp;server.</tt></dd></dl>
  <dl><dt><a name="-isManipulatableClient"><strong>isManipulatableClient</strong></a>(irc, uid)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;is&nbsp;marked&nbsp;as&nbsp;an&nbsp;internal,&nbsp;manipulatable<br>
 client.&nbsp;Usually,&nbsp;automatically&nbsp;spawned&nbsp;services&nbsp;clients&nbsp;should&nbsp;have&nbsp;this<br>
 set&nbsp;True&nbsp;to&nbsp;prevent&nbsp;interactions&nbsp;with&nbsp;opers&nbsp;(like&nbsp;mode&nbsp;changes)&nbsp;from<br>
@@ -217,7 +216,6 @@ joins&nbsp;them&nbsp;into&nbsp;a&nbsp;string.<br>
 &nbsp;<br>
 See&nbsp;testJoinModes&nbsp;in&nbsp;tests/test_utils.py&nbsp;for&nbsp;some&nbsp;examples.</tt></dd></dl>
  <dl><dt><a name="-loadModuleFromFolder"><strong>loadModuleFromFolder</strong></a>(name, folder)</dt><dd><tt>Imports&nbsp;and&nbsp;returns&nbsp;a&nbsp;module,&nbsp;if&nbsp;existing,&nbsp;from&nbsp;a&nbsp;specific&nbsp;folder.</tt></dd></dl>
- <dl><dt><a name="-nickToUid"><strong>nickToUid</strong></a>(irc, nick)</dt><dd><tt>Returns&nbsp;the&nbsp;UID&nbsp;of&nbsp;a&nbsp;user&nbsp;named&nbsp;nick,&nbsp;if&nbsp;present.</tt></dd></dl>
  <dl><dt><a name="-parseModes"><strong>parseModes</strong></a>(irc, target, args)</dt><dd><tt>Parses&nbsp;a&nbsp;modestring&nbsp;list&nbsp;into&nbsp;a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;argument)&nbsp;tuples.<br>
 ['+mitl-o',&nbsp;'3',&nbsp;'person']&nbsp;=&gt;&nbsp;[('+m',&nbsp;None),&nbsp;('+i',&nbsp;None),&nbsp;('+t',&nbsp;None),&nbsp;('+l',&nbsp;'3'),&nbsp;('-o',&nbsp;'person')]</tt></dd></dl>
  <dl><dt><a name="-reverseModes"><strong>reverseModes</strong></a>(irc, target, modes, oldobj=None)</dt><dd><tt>Reverses/Inverts&nbsp;the&nbsp;mode&nbsp;string&nbsp;or&nbsp;mode&nbsp;list&nbsp;given.<br>
