@@ -3,15 +3,15 @@
 ## Introduction
 
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
-Each hook payload is formatted as a Python `list`, with three arguments `(numeric, command, args)`:
+Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
 
-1) **numeric**: The sender of the message (UID).
+1) **numeric**: The sender of the hook payload (normally a UID or SID).
 
-2) **command**: The command name (hook name) of the payload. These are *always* UPPERCASE, and those starting with "PYLINK_" indicate hooks sent out by IRC objects themselves, that don't require protocol modules to send.
+2) **command**: The command name (hook name) of the payload. These are *always* UPPERCASE, and those starting with "PYLINK_" indicate hooks sent out by PyLink IRC objects themselves; i.e. they don't require protocol modules to handle them.
 
-3) **args**: The hook data (args), a Python `dict`, with different data keys depending on the command given.
+3) **args**: The hook data (args), a Python `dict`, with different data keys and values depending on the command given.
 
-Note that the `ts` key is *automatically added* (using the current time) to all hook data dicts that don't include it - such a key should only be provided if the command the uplink IRCd send has a TS value itself.
+*Note:* the `ts` key is **automatically added** (using the current time) to all hook data dicts that don't include it - such a key should only be provided if the command the uplink IRCd sends a TS value itself.
 
 ### Example syntax
 
@@ -19,11 +19,11 @@ The command `:42XAAAAAB PRIVMSG #dev :test` would result in the following raw ho
 
 - `['42XAAAAAB', 'PRIVMSG', {'target': '#dev', 'text': 'test', 'ts': 1451174041}]`
 
-On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would return the raw hook data of this (with the nick converted into UID by the UnrealIRCd protocol module):
+On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would return the raw hook data of this (with the nick converted into UID automatically by the UnrealIRCd protocol module):
 
 - `['001ZJZW01', 'CHGHOST', {'ts': 1451174512, 'target': '001ZJZW01', 'newhost': 'blah'}]`
 
-Some hooks, like MODE, are more complex and can include the entire state of a channel!  This will be further described later. `:GL MODE #chat +o PyLink-devel` is converted into (pretty-printed for readability):
+Some hooks, like MODE, are more complex and can include the entire state of a channel! This will be further described later. `:GL MODE #chat +o PyLink-devel` is converted into (pretty-printed for readability):
 
 ```
 ['001ZJZW01',
@@ -45,7 +45,7 @@ Some hooks, like MODE, are more complex and can include the entire state of a ch
 
 ## Core hooks
 
-The following hooks, sent with their correct data keys, are required for PyLink's basic functioning.
+These following hooks, sent with their correct data keys, are required for PyLink's basic functioning.
 
 - **ENDBURST**: `{}`
     - The hook data here is empty.
@@ -53,13 +53,12 @@ The following hooks, sent with their correct data keys, are required for PyLink'
     - Plugins like Relay need this to know that the uplink has finished bursting all its users!
 
 - **PYLINK_DISCONNECT**: `{}`
-    - This is sent to plugins by IRC object instances whenever their network has disconnected. The sender (numeric) here is always **None**.
+    - This is sent to plugins by IRC object instances whenever their network has disconnected. The sender here is always **None**.
 
 - **PYLINK_SPAWNMAIN**: `{'olduser': olduserobj}`
-    - This is sent whenever `Irc.spawnMain()` is called to (re)spawn the main PyLink client, for example to rejoin it from a KILL. It basically tells plugins that the UID of the main PyLink client has changed, while giving them the old data too.
+    - This is sent whenever `Irc.spawnMain()` is called to (re)spawn the main PyLink client, for example to rejoin it from a KILL. It basically tells plugins that the UID of the main PyLink client has changed, while giving them the original data too for whatever reason. `olduserobj` represents a `classes.IrcUser` instance.
     - Example payload:
-
-    - ```
+```
 {'olduser': IrcUser({'away': '',
                      'channels': {'#chat'},
                      'host': 'pylink.local',
@@ -81,5 +80,87 @@ The following hooks, sent with their correct data keys, are required for PyLink'
 
 The following hooks represent regular IRC commands sent between servers.
 
-<br><br>
-(under construction)
+### Basic commands
+
+- **JOIN**: `{'channel': '#channel', 'users': ['UID1', 'UID2', 'UID3'], 'modes': [('n', None), ('t', None), ('k', 'somesecretkey')], 'ts': 1234567890}`
+    - This hook handles both SJOIN and JOIN commands, to make writing plugins slightly easier (they only need to listen to one hook).
+    - `channel` sends the channel name, `users` sends a list of joining UIDs, and `ts` returns the TS (an `int`) that we have for the channel.
+    - `modes` returns a list of parsed modes: `(mode character, mode argument)` tuples, where the mode argument is either `None` (for modes without arguments), or a string.
+    - The sender of this hook payload is IRCd-dependent, and is determined by whether the command was originally a SJOIN or regular JOIN - SJOIN is only sent by servers, and JOIN is only sent by users.
+    - For IRCds that support joining multiple channels in one command (`/join #channel1,#channel2`), consecutive JOIN hook payloads of this format will be sent (one per channel).
+
+- **KICK**: `{'channel': '#channel', 'target': 'UID1', 'text': 'some reason'}`
+    - `text` refers to the kick reason. The `target` and `channel` fields send the target's UID and the channel they were kicked from, and the sender of the hook payload is the kicker.
+
+- **KILL**: `{'target': killed, 'text': args[1], 'userdata': data}`
+    - `text` refers to the kill reason. `target` is the target's UID.
+    - The `userdata` key may include an `IrcUser` instance, depending on the IRCd. On IRCds where QUITs are explicitly sent (InspIRCd), `userdata` will be `None`. Other IRCds do not explicitly send QUIT messages for KILLed clients, so the daemon must assume that they've quit, and deliver their last state to plugins that require this info.
+
+- **MODE**: `{'target': '#channel', 'modes': [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')], 'oldchan': IrcChannel(...)}`
+    - `target` is the target the mode is being set on: it may be either a channel (for channel modes) OR a UID (for user modes).
+    - `modes` is a list of prefixed parsed modes: `(mode character, mode argument)` tuples, but with `+/-` prefixes to denote whether each mode is being set or unset.
+    - For channels, the `oldchan` key is also sent, with the state of the channel BEFORE this MODE hook was processed.
+        - One such use for this is to prevent oper-override hacks: checks for whether a sender is opped have to be done before the MODE is processed; otherwise, someone can simply op themselves and circumvent this detection.
+
+- **NICK**: `{'newnick': 'Alakazam', 'oldnick': 'Abracadabra', 'ts': 1234567890}`
+
+- **NOTICE**: `{'target': 'UID3', 'text': 'hi there!'}`
+    - *Note:* `target` can not only be a channel or a UID, but also a channel with a prefix attached (e.g. `@#lounge`). These cases should not be overlooked!
+
+- **PART**: `{'channels': ['#channel1', '#channel2'], 'text': 'some reason'}`
+    - `text` can also be an empty string, as part messages are *optional* on IRC.
+    - Unlike the JOIN hook, multiple channels can be specified in a list for PART. This means that a user PARTing one channel will cause a payload to be sent with `channels` as a one-length *list* with the channel name.
+
+- **PRIVMSG**: `{'target': 'UID3', 'text': 'hi there!'}`
+    - Ditto with NOTICE: `target` can be a channel or a UID, or a channel with a prefix attached (e.g. `@#lounge`).
+
+- **QUIT**: `{'text': 'Quit: Bye everyone!'}`
+    - `text` corresponds to the quit reason.
+
+- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server'}`
+    - `target` is the SID of the server being split, while `name` is the server's name.
+    - `users` is a list of all UIDs affected by the netsplit.
+
+- **TOPIC**: `{'channel': channel, 'setter': numeric, 'text': 'Welcome to #Lounge!, 'oldtopic': 'Welcome to#Lounge!'}`
+    - `oldtopic` denotes the original topic, and `text` indicates the new one being set.
+    - `setter` is the raw sender field given to us by the IRCd; it may be a `nick!user@host`, a UID, a SID, a server name, or a nick. This is not processed any further.
+
+- **UID**: `{'uid': 'UID1', 'ts': 1234567891, 'nick': 'supercoder', 'realhost': 'localhost', 'host': 'admin.testnet.local', 'ident': ident, 'ip': '127.0.0.1'}`
+    - This command is used to introduce users; the sender of the message should be the server bursting or announcing the connection.
+    - `ts` refers to the user's signon time. 
+
+### Extra commands (where supported by the IRCd)
+
+- **AWAY**: `{'text': text}`
+    - `text` denotes the away reason. It is an empty string (`''`) when a user is unsetting their away status.
+
+- **CHGHOST**: `{'target': 'UID2', 'newhost': 'some.silly.host'}`
+    - SETHOST, CHGHOST, and any other events that cause host changes should return a CHGHOST hook payload. The point of this is to track changes in users' hostmasks.
+
+- **CHGIDENT**: `{'target': 'UID2', 'newident': 'evilone'}`
+    - SETIDENT and CHGIDENT commands, where available, both share this hook name.
+
+- **CHGNAME**: `{'target': 'UID2', 'newgecos': "I ain't telling you!"}`
+    - SETNAME and CHGNAME commands, where available, both share this hook name.
+
+- **INVITE**: `{'target': 'UID3', 'channel': '#myroom'}`
+
+- **KNOCK**: `{'text': 'let me in please!', 'channel': '#myroom'}`
+    - This is not actually implemented by any protocol module as of writing.
+
+- **SAVE**: `{'target': 'UID8', 'ts': 1234567892, 'oldnick': 'Abracadabra'}`
+    - For protocols that use TS6-style nick saving. During nick collisions, instead of killing the losing client, servers that support SAVE will send such a command targeting the losing client, which forces that user's nick to their UID.
+
+
+## Hooks that don't map to IRC commands
+Some hooks do not map directly to IRC commands, but to events that protocol modules should handle.
+
+- **CLIENT_SERVICES_LOGIN**: `{'text': 'supercoder'}`
+    - This hook is sent whenever a user logs in to a services account, where `text` is the account name. The sender of the hook is the UID of the user logging in.
+
+- **CLIENT_OPERED**: `{'text': 'IRC_Operator'}`
+    - This hook is sent whenever an oper-up is successful: when a user with umode `+o` is bursted, when umode `+o` is set, etc.
+    - The `text` field denotes the oper type (not the SWHOIS), which is used for WHOIS replies on different IRCds.
+
+## Commands handled WITHOUT hooks
+At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
