@@ -25,9 +25,12 @@ testconf = {'bot':
                     'nick': 'PyLink',
                     'user': 'pylink',
                     'realname': 'PyLink Service Client',
-                    # Suppress logging in the test output for the most part.
-                    'loglevel': 'CRITICAL',
                     'serverdesc': 'PyLink unit tests'
+                },
+            'logging':
+                {
+                    # Suppress logging in the test output for the most part.
+                    'stdout': 'CRITICAL'
                 },
             'servers':
                 # Wildcard defaultdict! This means that
