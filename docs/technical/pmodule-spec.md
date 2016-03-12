@@ -2,7 +2,7 @@
 
 In PyLink, each protocol module is a single file consisting of a protocol class, and a global `Class` attribute that is set equal to it (e.g. `Class = InspIRCdProtocol`). These classes should be based off of either [`classes.Protocol`](https://github.com/GLolol/PyLink/blob/e4fb64aebaf542122c70a8f3a49061386a00b0ca/classes.py#L532), a boilerplate class that only defines a few basic things, or [`ts6_common.TS6BaseProtocol`](https://github.com/GLolol/PyLink/blob/0.5.0-dev/protocols/ts6_common.py), which includes elements of the TS6 protocol that are shared by the InspIRCd, UnrealIRCd, and TS6 protocols. IRC objects load protocol modules by creating an instance of its main class, and sends it commands accordingly.
 
-See also: [autogen/inspircd.html](autogen/inspircd.html) for auto-generated documentation the InspIRCd protocol module.
+See also: [autogen/inspircd.html](https://cdn.rawgit.com/GLolol/PyLink/506ae011a4a13531a66272573441f6f6bf5471f6/docs/technical/autogen/inspircd.html) for auto-generated documentation the InspIRCd protocol module.
 
 ## Tasks
 
