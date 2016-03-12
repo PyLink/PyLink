@@ -1,5 +1,5 @@
 """
-world.py: Stores global state variables for PyLink.
+world.py: Stores global variables for PyLink, including lists of active IRC objects and plugins.
 """
 
 from collections import defaultdict
