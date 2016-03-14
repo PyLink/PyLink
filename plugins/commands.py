@@ -106,10 +106,10 @@ def showuser(irc, source, args):
         f('\x02User modes\x02: %s' % utils.joinModes(userobj.modes))
         f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
           (u, userobj.realhost, userobj.ip))
-        f('\x02Channels\x02: %s' % (' '.join(userobj.channels).strip() or _none))
+        channels = sorted(userobj.channels)
+        f('\x02Channels\x02: %s' % (' '.join(channels) or _none))
         f('\x02PyLink identification\x02: %s; \x02Services account\x02: %s; \x02Away status\x02: %s' % \
           ((userobj.identified or _none), (userobj.services_account or _none), userobj.away or _none))
-
 
 
 @utils.add_cmd
