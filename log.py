@@ -101,10 +101,11 @@ class PyLinkChannelLogger(logging.Handler):
 
             # Send the message. If this fails, abort. No more messages will be
             # sent from this logger until the next sending succeeds.
-            try:
-                self.irc.msg(self.channel, msg)
-            except:
-                return
-            else:
-                self.called = False
+            for line in msg.splitlines():
+                try:
+                    self.irc.msg(self.channel, line)
+                except:
+                    return
+                else:
+                    self.called = False
 
