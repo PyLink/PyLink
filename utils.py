@@ -297,16 +297,15 @@ def applyModes(irc, target, changedmodes):
             # if the IRCd supports this mode and it is the one being set, add/remove
             # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
             # for ops).
-            for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
+            for pmode, pmodelist in irc.channels[target].prefixmodes.items():
                 if pmode in irc.cmodes and real_mode[0] == irc.cmodes[pmode]:
-                    pmodelist = irc.channels[target].prefixmodes[pmode]
-                    log.debug('(%s) Initial prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
+                    log.debug('(%s) Initial prefixmodes list: %s', irc.name, pmodelist)
                     if mode[0][0] == '+':
                         pmodelist.add(mode[1])
                     else:
                         pmodelist.discard(mode[1])
 
-                    log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
+                    log.debug('(%s) Final prefixmodes list: %s', irc.name, pmodelist)
 
             if real_mode[0] in irc.prefixmodes:
                 # Don't add prefix modes to IrcChannel.modes; they belong in the
