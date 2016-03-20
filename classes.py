@@ -616,6 +616,25 @@ class IrcChannel():
         """Returns whether the given user is owner (~) in the channel."""
         return uid in self.prefixmodes['owner']
 
+    def isVoicePlus(self, uid):
+        """Returns whether the given user is voice or above in the channel."""
+        # If the user has any prefix mode, it has to be voice or greater.
+        return bool(self.getPrefixModes(uid))
+
+    def isHalfopPlus(self, uid):
+        """Returns whether the given user is halfop or above in the channel."""
+        for mode in ('halfop', 'op', 'admin', 'owner'):
+            if uid in self.prefixmodes[mode]:
+                return True
+        return False
+
+    def isOpPlus(self, uid):
+        """Returns whether the given user is op or above in the channel."""
+        for mode in ('op', 'admin', 'owner'):
+            if uid in self.prefixmodes[mode]:
+                return True
+        return False
+
     def getPrefixModes(self, uid):
         """Returns a list of all named prefix modes the given user has in the channel."""
 
