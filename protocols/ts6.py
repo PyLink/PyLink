@@ -245,6 +245,7 @@ class TS6Protocol(TS6BaseProtocol):
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
+        self.has_eob = False
 
         f = self.irc.send
         # Valid keywords (from mostly InspIRCd's named modes):
