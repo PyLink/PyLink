@@ -573,8 +573,8 @@ class IrcChannel():
         self.modes = {('n', None), ('t', None)}
         self.topic = ''
         self.ts = int(time.time())
-        self.prefixmodes = {'ops': set(), 'halfops': set(), 'voices': set(),
-                            'owners': set(), 'admins': set()}
+        self.prefixmodes = {'op': set(), 'halfop': set(), 'voice': set(),
+                            'owner': set(), 'admin': set()}
 
         # Determines whether a topic has been set here or not. Protocol modules
         # should set this.

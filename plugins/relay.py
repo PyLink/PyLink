@@ -203,8 +203,8 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
         if pmode in remoteirc.cmodes:  # If the mode supported by IRCd
             # Check if the caller is in the prefix modes list for that
             # prefix.prefixmodes mapping looks like:
-            #     {'ops': ['user1', 'user2'], 'voices': ['user3', 'user4'], ...}
-            userlist = mlist[pmode+'s']
+            #     {'op': ['user1', 'user2'], 'voice': ['user3', 'user4'], ...}
+            userlist = mlist[pmode]
             log.debug('(%s) relay.getPrefixModes: checking if %r is in %s list: %r',
                       irc.name, user, pmode, userlist)
             if user in userlist:
@@ -683,7 +683,7 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     log.debug("(%s) relay.relayModes: argument found as (%r, %r) "
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
-                    oplist = remoteirc.channels[remotechan].prefixmodes[name+'s']
+                    oplist = remoteirc.channels[remotechan].prefixmodes[name]
 
                     log.debug("(%s) relay.relayModes: list of %ss on %r is: %s",
                               irc.name, name, remotechan, oplist)

@@ -62,7 +62,7 @@ def handle_whois(irc, source, command, args):
         # Show prefix modes like a regular IRCd does.
         for prefixmode, prefixchar in irc.prefixmodes.items():
             modename = [mname for mname, char in irc.cmodes.items() if char == prefixmode]
-            if modename and target in c.prefixmodes[modename[0]+'s']:
+            if modename and target in c.prefixmodes[modename[0]]:
                 chan = prefixchar + chan
         public_chans.append(chan)
     if public_chans:  # Only send the line if the person is in any visible channels...

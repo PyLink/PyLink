@@ -151,7 +151,7 @@ def showchan(irc, source, args):
         for user, nick in sorted(zip(c.users, nicks),
                                  key=lambda userpair: userpair[1].lower()):
             prefixmodes = [irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '')
-                           for pmode in pmodes if user in c.prefixmodes[pmode+'s']]
+                           for pmode in pmodes if user in c.prefixmodes[pmode]]
             nicklist.append(''.join(prefixmodes) + nick)
 
         while nicklist[:20]:  # 20 nicks per line to prevent message cutoff.

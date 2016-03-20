@@ -291,25 +291,30 @@ def applyModes(irc, target, changedmodes):
             real_mode = (mode[0][1], mode[1])
         except IndexError:
             real_mode = mode
+
         if not usermodes:
-            pmode = ''
-            for m in ('owner', 'admin', 'op', 'halfop', 'voice'):
-                if m in irc.cmodes and real_mode[0] == irc.cmodes[m]:
-                    pmode = m+'s'
-            if pmode:
-                pmodelist = irc.channels[target].prefixmodes[pmode]
-                log.debug('(%s) Initial prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
-                if mode[0][0] == '+':
-                    pmodelist.add(mode[1])
-                else:
-                    pmodelist.discard(mode[1])
-                irc.channels[target].prefixmodes[pmode] = pmodelist
-                log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
+            # We only handle +qaohv for now. Iterate over every supported mode:
+            # if the IRCd supports this mode and it is the one being set, add/remove
+            # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
+            # for ops).
+            for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
+                if pmode in irc.cmodes and real_mode[0] == irc.cmodes[pmode]:
+                    pmodelist = irc.channels[target].prefixmodes[pmode]
+                    log.debug('(%s) Initial prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
+                    if mode[0][0] == '+':
+                        pmodelist.add(mode[1])
+                    else:
+                        pmodelist.discard(mode[1])
+
+                    log.debug('(%s) Final prefixmodes list: %s', irc.name, irc.channels[target].prefixmodes)
+
             if real_mode[0] in irc.prefixmodes:
-                # Ignore other prefix modes such as InspIRCd's +Yy
+                # Don't add prefix modes to IrcChannel.modes; they belong in the
+                # prefixmodes mapping handled above.
                 log.debug('(%s) Not adding mode %s to IrcChannel.modes because '
-                          'it\'s a prefix mode we don\'t care about.', irc.name, str(mode))
+                          'it\'s a prefix mode.', irc.name, str(mode))
                 continue
+
         if mode[0][0] == '+':
             # We're adding a mode
             existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
@@ -417,7 +422,7 @@ def reverseModes(irc, target, modes, oldobj=None):
         possible_modes['*A'] += ''.join(irc.prefixmodes)
         for name, userlist in c.prefixmodes.items():
             try:
-                oldmodes.update([(irc.cmodes[name[:-1]], u) for u in userlist])
+                oldmodes.update([(irc.cmodes[name], u) for u in userlist])
             except KeyError:
                 continue
     else:
