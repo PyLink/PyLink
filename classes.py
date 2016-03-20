@@ -644,7 +644,7 @@ class IrcChannel():
         """
 
         if uid not in self.users:
-            return KeyError("User %s does not exist or is not in the channel" % uid)
+            raise KeyError("User %s does not exist or is not in the channel" % uid)
 
         result = []
         prefixmodes = prefixmodes or self.prefixmodes
