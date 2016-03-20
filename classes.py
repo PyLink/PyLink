@@ -635,15 +635,21 @@ class IrcChannel():
                 return True
         return False
 
-    def getPrefixModes(self, uid):
-        """Returns a list of all named prefix modes the given user has in the channel."""
+    def getPrefixModes(self, uid, prefixmodes=None):
+        """Returns a list of all named prefix modes the given user has in the channel.
+
+        Optionally, a prefixmodes argument can be given to look at an earlier state of
+        the channel's prefix modes mapping, e.g. for checking the op status of a mode
+        setter before their modes are processed and added to the channel state.
+        """
 
         if uid not in self.users:
             return KeyError("User %s does not exist or is not in the channel" % uid)
 
         result = []
+        prefixmodes = prefixmodes or self.prefixmodes
 
-        for mode, modelist in self.prefixmodes.items():
+        for mode, modelist in prefixmodes.items():
             if uid in modelist:
                 result.append(mode)
 
