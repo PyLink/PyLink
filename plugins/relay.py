@@ -195,19 +195,10 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
     """
     modes = ''
 
-    # Get the mapping of all the channel's prefix modes
-    mlist = mlist or irc.channels[channel].prefixmodes
-
-    # Iterate over the the supported prefix modes for relay
-    for pmode in ('owner', 'admin', 'op', 'halfop', 'voice'):
-        if pmode in remoteirc.cmodes:  # If the mode supported by IRCd
-            # Check if the caller is in the prefix modes list for that
-            # prefix.prefixmodes mapping looks like:
-            #     {'op': ['user1', 'user2'], 'voice': ['user3', 'user4'], ...}
-            userlist = mlist[pmode]
-            log.debug('(%s) relay.getPrefixModes: checking if %r is in %s list: %r',
-                      irc.name, user, pmode, userlist)
-            if user in userlist:
+    if user in irc.channels[channel].users:
+        # Iterate over the the prefix modes for relay supported by IRCd
+        for pmode in irc.channels[channel].getPrefixModes(user, prefixmodes=mlist):
+            if pmode in remoteirc.cmodes:
                 modes += remoteirc.cmodes[pmode]
     return modes
 
@@ -466,9 +457,11 @@ def checkClaim(irc, channel, sender, chanobj=None):
         mlist = chanobj.prefixmodes
     except AttributeError:
         mlist = None
+
     sender_modes = getPrefixModes(irc, irc, channel, sender, mlist=mlist)
     log.debug('(%s) relay.checkClaim: sender modes (%s/%s) are %s (mlist=%s)', irc.name,
               sender, channel, sender_modes, mlist)
+    # XXX: stop hardcoding modes to check for and support mlist in isHalfopPlus and friends
     return (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
         irc.name in db[relay]['claim'] or \
         any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
