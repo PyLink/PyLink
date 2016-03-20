@@ -596,6 +596,40 @@ class IrcChannel():
         """Returns a deep copy of the channel object."""
         return deepcopy(self)
 
+    def isVoice(self, uid):
+        """Returns whether the given user is voice in the channel."""
+        return uid in self.prefixmodes['voice']
+
+    def isHalfop(self, uid):
+        """Returns whether the given user is halfop in the channel."""
+        return uid in self.prefixmodes['halfop']
+
+    def isOp(self, uid):
+        """Returns whether the given user is op in the channel."""
+        return uid in self.prefixmodes['op']
+
+    def isAdmin(self, uid):
+        """Returns whether the given user is admin (&) in the channel."""
+        return uid in self.prefixmodes['admin']
+
+    def isOwner(self, uid):
+        """Returns whether the given user is owner (~) in the channel."""
+        return uid in self.prefixmodes['owner']
+
+    def getPrefixModes(self, uid):
+        """Returns a list of all named prefix modes the given user has in the channel."""
+
+        if uid not in self.users:
+            return KeyError("User %s does not exist or is not in the channel" % uid)
+
+        result = []
+
+        for mode, modelist in self.prefixmodes.items():
+            if uid in modelist:
+                result.append(mode)
+
+        return result
+
 class Protocol():
     """Base Protocol module class for PyLink."""
     def __init__(self, irc):
