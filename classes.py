@@ -13,7 +13,6 @@ import time
 import socket
 import threading
 import ssl
-from collections import defaultdict
 import hashlib
 from copy import deepcopy
 
@@ -112,7 +111,7 @@ class Irc():
                         internal=True, desc=self.serverdata.get('serverdesc')
                         or self.botdata['serverdesc'])}
         self.users = {}
-        self.channels = defaultdict(IrcChannel)
+        self.channels = utils.KeyedDefaultdict(IrcChannel)
 
         # This sets the list of supported channel and user modes: the default
         # RFC1459 modes are implied. Named modes are used here to make
@@ -568,7 +567,7 @@ class IrcServer():
 
 class IrcChannel():
     """PyLink IRC channel class."""
-    def __init__(self):
+    def __init__(self, name=None):
         # Initialize variables, such as the topic, user list, TS, who's opped, etc.
         self.users = set()
         self.modes = {('n', None), ('t', None)}
@@ -580,6 +579,9 @@ class IrcChannel():
         # Determines whether a topic has been set here or not. Protocol modules
         # should set this.
         self.topicset = False
+
+        # Saves the channel name (may be useful to plugins, etc.)
+        self.name = name
 
     def __repr__(self):
         return 'IrcChannel(%s)' % self.__dict__
