@@ -127,7 +127,7 @@ class UnrealProtocol(TS6BaseProtocol):
         Note that for UnrealIRCd, no mode data is sent in an SJOIN command, only
         The channel name, TS, and user list.
         """
-        # <- :001 SJOIN 1444361345 #endlessvoid :001DJ1O02
+        # <- :001 SJOIN 1444361345 #test :001DJ1O02
         # The nicklist consists of users joining the channel, with status prefixes for
         # their status ('@+', '@', '+' or ''), for example:
         # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'.
@@ -195,7 +195,7 @@ class UnrealProtocol(TS6BaseProtocol):
         Sends mode changes from a PyLink client/server. The mode list should be
         a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
         """
-        # <- :unreal.midnight.vpn MODE #endlessvoid +ntCo GL 1444361345
+        # <- :unreal.midnight.vpn MODE #test +ntCo GL 1444361345
 
         if (not self.irc.isInternalClient(numeric)) and \
                 (not self.irc.isInternalServer(numeric)):
@@ -514,7 +514,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_sjoin(self, numeric, command, args):
         """Handles the UnrealIRCd SJOIN command."""
-        # <- :001 SJOIN 1444361345 #endlessvoid :001DJ1O02
+        # <- :001 SJOIN 1444361345 #test :001DJ1O02
         # memberlist should be a list of UIDs with their channel status prefixes, as
         # in ":001AAAAAA @001AAAAAB +001AAAAAC".
         # Interestingly, no modes are ever sent in this command as far as I've seen.
@@ -555,10 +555,10 @@ class UnrealProtocol(TS6BaseProtocol):
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
     def handle_mode(self, numeric, command, args):
-        # <- :unreal.midnight.vpn MODE #endlessvoid +bb test!*@* *!*@bad.net
-        # <- :unreal.midnight.vpn MODE #endlessvoid +q GL 1444361345
-        # <- :unreal.midnight.vpn MODE #endlessvoid +ntCo GL 1444361345
-        # <- :unreal.midnight.vpn MODE #endlessvoid +mntClfo 5 [10t]:5  GL 1444361345
+        # <- :unreal.midnight.vpn MODE #test +bb test!*@* *!*@bad.net
+        # <- :unreal.midnight.vpn MODE #test +q GL 1444361345
+        # <- :unreal.midnight.vpn MODE #test +ntCo GL 1444361345
+        # <- :unreal.midnight.vpn MODE #test +mntClfo 5 [10t]:5  GL 1444361345
         # <- :GL MODE #services +v GL
 
         # This seems pretty relatively inconsistent - why do some commands have a TS at the end while others don't?

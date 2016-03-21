@@ -233,7 +233,7 @@ class TS6BaseProtocol(Protocol):
 
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
-        # :70MAAAAAA KICK #endlessvoid 70MAAAAAA :some reason
+        # :70MAAAAAA KICK #test 70MAAAAAA :some reason
         channel = utils.toLower(self.irc, args[0])
         kicked = args[1]
         self.handle_part(kicked, 'KICK', [channel, args[2]])

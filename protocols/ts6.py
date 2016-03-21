@@ -557,7 +557,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_tmode(self, numeric, command, args):
         """Handles incoming TMODE commands (channel mode change)."""
-        # <- :42XAAAAAB TMODE 1437450768 #endlessvoid -c+lkC 3 agte4
+        # <- :42XAAAAAB TMODE 1437450768 #test -c+lkC 3 agte4
         channel = utils.toLower(self.irc, args[1])
         oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
