@@ -200,12 +200,18 @@ def parseModes(irc, target, args):
     args = args[1:]
     if usermodes:
         log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
-        assert target in irc.users, "Unknown user %r." % target
+
+        if target not in irc.users:
+            log.warning('(%s) Possible desync! Mode target %s is not in the users index.', irc.name, target)
+
         supported_modes = irc.umodes
         oldmodes = irc.users[target].modes
     else:
         log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
-        assert target in irc.channels, "Unknown channel %r." % target
+
+        if target not in irc.channels:
+            log.warning('(%s) Possible desync! Mode target %s is not in the channels index.', irc.name, target)
+
         supported_modes = irc.cmodes
         oldmodes = irc.channels[target].modes
     res = []
