@@ -51,6 +51,8 @@ class Irc():
         self.connected = threading.Event()
         self.aborted = threading.Event()
 
+        self.initVars()
+
         if world.testing:
             # HACK: Don't thread if we're running tests.
             self.connect()
