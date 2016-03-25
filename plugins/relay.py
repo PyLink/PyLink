@@ -1185,12 +1185,17 @@ def handle_disconnect(irc, numeric, command, args):
     for name, ircobj in world.networkobjects.copy().items():
         if name != irc.name and ircobj.connected.is_set():
             try:
-                rsid = relayservers[ircobj.name][irc.name]
+                rsid = relayservers[name][irc.name]
             except KeyError:
                 continue
             else:
                 ircobj.proto.squit(ircobj.sid, rsid, text='Relay network lost connection.')
-                del relayservers[name][irc.name]
+
+        try:
+            del relayservers[name][irc.name]
+        except KeyError:
+            pass
+
     try:
         del relayservers[irc.name]
     except KeyError:
