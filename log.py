@@ -20,14 +20,22 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 logdir = os.path.join(curdir, 'log')
 os.makedirs(logdir, exist_ok=True)
 
-# Basic logging setup, set up here on first import, logs to STDOUT based
-# on the log level configured.
 _format = '%(asctime)s [%(levelname)s] %(message)s'
 logformatter = logging.Formatter(_format)
-logging.basicConfig(level=stdout_level, format=_format)
+
+# Set up logging to STDERR
+stdout_handler = logging.StreamHandler()
+stdout_handler.setFormatter(logformatter)
+stdout_handler.setLevel(stdout_level)
 
 # Get the main logger object; plugins can import this variable for convenience.
 log = logging.getLogger()
+log.addHandler(stdout_handler)
+
+# This is confusing, but we have to set the root logger to accept all events. Only this way
+# can other loggers filter out events on their own, instead of having everything dropped by
+# the root logger. https://stackoverflow.com/questions/16624695
+log.setLevel(1)
 
 def makeFileLogger(filename, level=None):
     """
@@ -40,8 +48,9 @@ def makeFileLogger(filename, level=None):
     filelogger = logging.FileHandler(target, mode='w')
     filelogger.setFormatter(logformatter)
 
-    if level:  # Custom log level was defined, use that instead.
-        filelogger.setLevel(level)
+    # If no log level is specified, use the same one as STDOUT.
+    level = level or stdout_level
+    filelogger.setLevel(level)
 
     log.addHandler(filelogger)
 
