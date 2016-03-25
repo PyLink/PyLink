@@ -165,7 +165,6 @@ class Irc():
         __init__ in a separate thread to allow multiple concurrent connections.
         """
         while True:
-            self.initVars()
             ip = self.serverdata["ip"]
             port = self.serverdata["port"]
             checks_ok = True
@@ -298,6 +297,9 @@ class Irc():
 
         log.debug('(%s) _disconnect: Setting self.aborted to True.', self.name)
         self.aborted.set()
+
+        log.debug('(%s) disconnect: Clearing state via initVars().', self.name)
+        self.initVars()
 
         log.debug('(%s) Removing channel logging handlers due to disconnect.', self.name)
         while self.loghandlers:
