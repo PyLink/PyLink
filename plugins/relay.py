@@ -9,8 +9,6 @@ import threading
 import string
 from collections import defaultdict
 
-from expiringdict import ExpiringDict
-
 import utils
 from log import log
 import world
@@ -20,8 +18,7 @@ relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
-savecache = ExpiringDict(max_len=5, max_age_seconds=10)
-killcache = ExpiringDict(max_len=5, max_age_seconds=10)
+
 exportdb_timer = None
 
 dbname = utils.getDatabaseName('pylinkrelay')
@@ -1088,33 +1085,27 @@ def handle_kill(irc, numeric, command, args):
         # We don't allow killing over the relay, so we must respawn the affected
         # client and rejoin it to its channels.
         del relayusers[realuser][irc.name]
-        if killcache.setdefault(irc.name, 0) <= 5:
-            remoteirc = world.networkobjects[realuser[0]]
-            for remotechan in remoteirc.users[realuser[1]].channels:
-                localchan = getRemoteChan(remoteirc, irc, remotechan)
-                if localchan:
-                    modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
-                    log.debug('(%s) relay.handle_kill: userpair: %s, %s', irc.name, modes, realuser)
-                    client = getRemoteUser(remoteirc, irc, realuser[1])
-                    irc.proto.sjoin(getRemoteSid(irc, remoteirc), localchan, [(modes, client)])
+        remoteirc = world.networkobjects[realuser[0]]
+        for remotechan in remoteirc.users[realuser[1]].channels:
+            localchan = getRemoteChan(remoteirc, irc, remotechan)
+            if localchan:
+                modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
+                log.debug('(%s) relay.handle_kill: userpair: %s, %s', irc.name, modes, realuser)
+                client = getRemoteUser(remoteirc, irc, realuser[1])
+                irc.proto.sjoin(getRemoteSid(irc, remoteirc), localchan, [(modes, client)])
 
-            if userdata and numeric in irc.users:
-                log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from %s to relay client %s/%s.',
-                         irc.name, args['text'], irc.users[numeric].nick,
-                         remoteirc.users[realuser[1]].nick, realuser[0])
-                irc.msg(numeric, "Your kill to %s has been blocked "
-                                 "because PyLink does not allow killing"
-                                 " users over the relay at this time." % \
-                                 userdata.nick, notice=True)
-            else:
-                log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from server %s to relay client %s/%s.',
-                         irc.name, args['text'], irc.servers[numeric].name,
-                         remoteirc.users[realuser[1]].nick, realuser[0])
+        if userdata and numeric in irc.users:
+            log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from %s to relay client %s/%s.',
+                     irc.name, args['text'], irc.users[numeric].nick,
+                     remoteirc.users[realuser[1]].nick, realuser[0])
+            irc.msg(numeric, "Your kill to %s has been blocked "
+                             "because PyLink does not allow killing"
+                             " users over the relay at this time." % \
+                             userdata.nick, notice=True)
         else:
-            log.error('(%s) relay.handle_kill: Too many kills received for target %s, aborting!',
-                      irc.name, userdata.nick)
-            irc.disconnect()
-        killcache[irc.name] += 1
+            log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from server %s to relay client %s/%s.',
+                     irc.name, args['text'], irc.servers[numeric].name,
+                     remoteirc.users[realuser[1]].nick, realuser[0])
 
     # Target user was local.
     else:
@@ -1215,18 +1206,11 @@ def handle_save(irc, numeric, command, args):
         remotenet, remoteuser = realuser
         remoteirc = world.networkobjects[remotenet]
         nick = remoteirc.users[remoteuser].nick
-        # Limit how many times we can attempt to fix our nick, to prevent
-        # floods and such.
-        if savecache.setdefault(irc.name, 0) <= 5:
-            newnick = normalizeNick(irc, remotenet, nick)
-            log.info('(%s) relay.handle_save: SAVE received for relay client %r (%s), fixing nick to %s',
-                      irc.name, target, nick, newnick)
-            irc.proto.nick(target, newnick)
-        else:
-            log.warning('(%s) relay.handle_save: SAVE received for relay client %r (%s), not '
-                        'fixing nick again due to 5 failed attempts in '
-                        'the last 10 seconds!', irc.name, target, nick)
-        savecache[irc.name] += 1
+
+        newnick = normalizeNick(irc, remotenet, nick)
+        log.info('(%s) relay.handle_save: SAVE received for relay client %r (%s), fixing nick to %s',
+                 irc.name, target, nick, newnick)
+        irc.proto.nick(target, newnick)
     else:
         # Somebody else on the network (not a PyLink client) had a nick collision;
         # relay this as a nick change appropriately.
