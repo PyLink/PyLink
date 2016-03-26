@@ -50,4 +50,4 @@ if __name__ == '__main__':
         coreplugin.main(irc)
 
     world.started.set()
-    log.info("loaded plugins: %s", world.plugins)
+    log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
