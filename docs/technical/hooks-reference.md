@@ -127,7 +127,7 @@ The following hooks represent regular IRC commands sent between servers.
 
 - **UID**: `{'uid': 'UID1', 'ts': 1234567891, 'nick': 'supercoder', 'realhost': 'localhost', 'host': 'admin.testnet.local', 'ident': ident, 'ip': '127.0.0.1'}`
     - This command is used to introduce users; the sender of the message should be the server bursting or announcing the connection.
-    - `ts` refers to the user's signon time. 
+    - `ts` refers to the user's signon time.
 
 ### Extra commands (where supported by the IRCd)
 
@@ -151,6 +151,13 @@ The following hooks represent regular IRC commands sent between servers.
 - **SAVE**: `{'target': 'UID8', 'ts': 1234567892, 'oldnick': 'Abracadabra'}`
     - For protocols that use TS6-style nick saving. During nick collisions, instead of killing the losing client, servers that support SAVE will send such a command targeting the losing client, which forces that user's nick to their UID.
 
+- **VERSION**: `{}`
+    - This is used for protocols that send VERSION requests between servers when a client requests it (e.g. `/raw version pylink.local`).
+    - `coreplugin` automatically handles this by responding with a 351 numeric, with the data being the output of `utils.fullVersion(irc)`.
+
+- **WHOIS**: `{'target': 'UID1'}`
+    - On protocols supporting it (everything except InspIRCd), the WHOIS command is sent between servers for remote WHOIS requests.
+    - This requires servers to respond with a complete WHOIS reply (using all the different numerics), as done in `coreplugin`.
 
 ## Hooks that don't map to IRC commands
 Some hooks do not map directly to IRC commands, but to events that protocol modules should handle.
