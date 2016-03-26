@@ -21,7 +21,7 @@ from ts6_common import TS6BaseProtocol
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
         super(UnrealProtocol, self).__init__(irc)
-        # Set our case mapping (rfc1459 maps "\" and "|" together, for example".
+        # Set our case mapping (rfc1459 maps "\" and "|" together, for example)
         self.casemapping = 'ascii'
         self.proto_ver = 4000
         self.min_proto_ver = 4000
