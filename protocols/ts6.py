@@ -31,7 +31,7 @@ class TS6Protocol(TS6BaseProtocol):
     ### OUTGOING COMMANDS
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
-            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
+            server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
         """Spawns a client with nick <nick> on the given IRC connection.
 
@@ -51,7 +51,7 @@ class TS6Protocol(TS6BaseProtocol):
         realhost = realhost or host
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-            realhost=realhost, ip=ip, manipulatable=manipulatable)
+            realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
         utils.applyModes(self.irc, uid, modes)
         self.irc.servers[server].users.add(uid)
         self._send(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "

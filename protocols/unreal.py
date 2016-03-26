@@ -51,7 +51,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     ### OUTGOING COMMAND FUNCTIONS
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
-            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
+            server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
         """Spawns a client with nick <nick> on the given IRC connection.
 
@@ -60,15 +60,15 @@ class UnrealProtocol(TS6BaseProtocol):
         server = server or self.irc.sid
         if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
-        # Unreal 3.4 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
-        # do, but we can do that fine...
+        # Unreal 4.0 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
+        # do, but that doesn't matter to us...
         uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-            realhost=realhost, ip=ip, manipulatable=manipulatable)
+            realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
         utils.applyModes(self.irc, uid, modes)
         self.irc.servers[server].users.add(uid)
 
