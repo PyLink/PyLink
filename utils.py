@@ -571,3 +571,11 @@ def getDatabaseName(dbname):
         dbname += '-%s' % conf.confname
     dbname += '.db'
     return dbname
+
+def fullVersion(irc):
+    """
+    Returns a detailed version string including the PyLink daemon version,
+    the protocol module in use, and the server hostname.
+    """
+    fullversion = 'PyLink-%s. %s :[protocol:%s]' % (world.version, irc.serverdata['hostname'], irc.protoname)
+    return fullversion
