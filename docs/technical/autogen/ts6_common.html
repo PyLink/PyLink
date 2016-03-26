@@ -96,6 +96,8 @@ the&nbsp;SID&nbsp;of&nbsp;the&nbsp;uplink&nbsp;server.</tt></dd></dl>
 <dl><dt><a name="TS6BaseProtocol-handle_topic"><strong>handle_topic</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;TOPIC&nbsp;changes&nbsp;from&nbsp;clients.&nbsp;For&nbsp;topic&nbsp;bursts,<br>
 TB&nbsp;(TS6/charybdis)&nbsp;and&nbsp;FTOPIC&nbsp;(InspIRCd)&nbsp;are&nbsp;used&nbsp;instead.</tt></dd></dl>
 
+<dl><dt><a name="TS6BaseProtocol-handle_version"><strong>handle_version</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;requests&nbsp;for&nbsp;the&nbsp;PyLink&nbsp;server&nbsp;version.</tt></dd></dl>
+
 <dl><dt><a name="TS6BaseProtocol-kick"><strong>kick</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;kicks&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
 
 <dl><dt><a name="TS6BaseProtocol-message"><strong>message</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;PRIVMSG&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
@@ -153,12 +155,13 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7fc131b711e0&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f2667895488&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
 <strong>logdir</strong> = '/home/gl/pylink/log'<br>
 <strong>logformatter</strong> = &lt;logging.Formatter object&gt;<br>
+<strong>stdout_handler</strong> = &lt;logging.StreamHandler object&gt;<br>
 <strong>stdout_level</strong> = 'CRITICAL'</td></tr></table>
 </body></html>

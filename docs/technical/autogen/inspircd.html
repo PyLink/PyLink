@@ -123,6 +123,8 @@ servers.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_uid"><strong>handle_uid</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;UID&nbsp;commands&nbsp;(user&nbsp;introduction).</tt></dd></dl>
 
+<dl><dt><a name="InspIRCdProtocol-handle_version"><strong>handle_version</strong></a>(self, numeric, command, args)</dt><dd><tt>Stub&nbsp;VERSION&nbsp;handler&nbsp;(does&nbsp;nothing)&nbsp;to&nbsp;override&nbsp;the&nbsp;one&nbsp;in&nbsp;ts6_common.</tt></dd></dl>
+
 <dl><dt><a name="InspIRCdProtocol-invite"><strong>invite</strong></a>(self, numeric, target, channel)</dt><dd><tt>Sends&nbsp;an&nbsp;INVITE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client..</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-join"><strong>join</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;a&nbsp;PyLink&nbsp;client&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
@@ -320,6 +322,8 @@ servers.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-handle_uid"><strong>handle_uid</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;UID&nbsp;commands&nbsp;(user&nbsp;introduction).</tt></dd></dl>
 
+<dl><dt><a name="InspIRCdProtocol-handle_version"><strong>handle_version</strong></a>(self, numeric, command, args)</dt><dd><tt>Stub&nbsp;VERSION&nbsp;handler&nbsp;(does&nbsp;nothing)&nbsp;to&nbsp;override&nbsp;the&nbsp;one&nbsp;in&nbsp;ts6_common.</tt></dd></dl>
+
 <dl><dt><a name="InspIRCdProtocol-invite"><strong>invite</strong></a>(self, numeric, target, channel)</dt><dd><tt>Sends&nbsp;an&nbsp;INVITE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client..</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-join"><strong>join</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;a&nbsp;PyLink&nbsp;client&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
@@ -444,12 +448,13 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f67e167a378&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f5f06e526a8&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
 <strong>logdir</strong> = '/home/gl/pylink/log'<br>
 <strong>logformatter</strong> = &lt;logging.Formatter object&gt;<br>
+<strong>stdout_handler</strong> = &lt;logging.StreamHandler object&gt;<br>
 <strong>stdout_level</strong> = 'CRITICAL'</td></tr></table>
 </body></html>
