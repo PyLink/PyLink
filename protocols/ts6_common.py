@@ -339,3 +339,7 @@ class TS6BaseProtocol(Protocol):
         except IndexError:  # User is unsetting away status
             self.irc.users[numeric].away = text = ''
         return {'text': text}
+
+    def handle_version(self, numeric, command, args):
+        """Handles requests for the PyLink server version."""
+        return {}  # See coreplugin.py for how this hook is used

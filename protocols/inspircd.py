@@ -697,4 +697,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': args[-1]}])
 
+    def handle_version(self, numeric, command, args):
+        """
+        Stub VERSION handler (does nothing) to override the one in ts6_common.
+        """
+        pass
+
 Class = InspIRCdProtocol
