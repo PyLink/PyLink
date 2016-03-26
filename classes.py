@@ -440,7 +440,8 @@ class Irc():
         olduserobj = self.pseudoclient
         self.pseudoclient = self.proto.spawnClient(nick, ident, host,
                                                    modes={("+o", None)},
-                                                   manipulatable=True)
+                                                   manipulatable=True,
+                                                   opertype="PyLink Service")
         for chan in self.serverdata['channels']:
             self.proto.join(self.pseudoclient.uid, chan)
         # PyLink internal hook called when spawnMain is called and the
