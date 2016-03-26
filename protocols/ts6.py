@@ -508,7 +508,7 @@ class TS6Protocol(TS6BaseProtocol):
 
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
-            otype = 'Server_Administrator' if ('+a', None) in parsedmodes else 'IRC_Operator'
+            otype = 'Server Administrator' if ('+a', None) in parsedmodes else 'IRC Operator'
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': otype}])
 
         # Set the accountname if present
@@ -576,7 +576,7 @@ class TS6Protocol(TS6BaseProtocol):
         utils.applyModes(self.irc, target, changedmodes)
         # Call the OPERED UP hook if +o is being set.
         if ('+o', None) in changedmodes:
-            otype = 'Server_Administrator' if ('a', None) in self.irc.users[target].modes else 'IRC_Operator'
+            otype = 'Server Administrator' if ('a', None) in self.irc.users[target].modes else 'IRC Operator'
             self.irc.callHooks([target, 'CLIENT_OPERED', {'text': otype}])
         return {'target': target, 'modes': changedmodes}
 

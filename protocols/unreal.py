@@ -371,7 +371,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         if ('+o', None) in parsedmodes:
             # If +o being set, call the CLIENT_OPERED internal hook.
-            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
         if ('+x', None) not in parsedmodes:
             # If +x is not set, update to use the person's real host.
@@ -673,7 +673,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         if ('+o', None) in parsedmodes:
             # If +o being set, call the CLIENT_OPERED internal hook.
-            self.irc.callHooks([numeric, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+            self.irc.callHooks([numeric, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
         self.checkCloakChange(numeric, parsedmodes)
 
