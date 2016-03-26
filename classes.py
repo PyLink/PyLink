@@ -305,11 +305,12 @@ class Irc():
             log.removeHandler(self.loghandlers.pop())
 
         try:
-            log.debug('(%s) _disconnect: Shutting down and closing socket.', self.name)
+            log.debug('(%s) _disconnect: Shutting down socket.', self.name)
             self.socket.shutdown(socket.SHUT_RDWR)
-            self.socket.close()
         except:  # Socket timed out during creation; ignore
-            log.exception('(%s) _disconnect: Failed to close/shutdown socket.', self.name)
+            pass
+
+        self.socket.close()
 
         if self.pingTimer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
