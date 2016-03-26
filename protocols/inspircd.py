@@ -32,6 +32,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.sidgen = utils.TS6SIDGenerator(self.irc)
         self.uidgen = {}
 
+        self.min_proto_ver = 1202
+        self.proto_ver = 1202
+
     ### Outgoing commands
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -340,8 +343,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         ts = self.irc.start_ts
 
         f = self.irc.send
-        f('CAPAB START 1202')
-        f('CAPAB CAPABILITIES :PROTOCOL=1202')
+        f('CAPAB START %s' % self.proto_ver)
+        f('CAPAB CAPABILITIES :PROTOCOL=%s' % self.proto_ver)
         f('CAPAB END')
 
         host = self.irc.serverdata["hostname"]
@@ -417,10 +420,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             # Check the protocol version
             protocol_version = int(caps['PROTOCOL'])
-            if protocol_version < 1202:
+            if protocol_version < self.min_proto_ver:
                 raise ProtocolError("Remote protocol version is too old! "
-                                    "At least 1202 (InspIRCd 2.0.x) is "
-                                    "needed. (got %s)" % protocol_version)
+                                    "At least %s (InspIRCd 2.0.x) is "
+                                    "needed. (got %s)" % (self.min_proto_ver,
+                                                          protocol_version))
 
             # Store the max nick and channel lengths
             self.irc.maxnicklen = int(caps['NICKMAX'])
