@@ -343,11 +343,16 @@ class InspIRCdProtocol(TS6BaseProtocol):
         f('CAPAB START 1202')
         f('CAPAB CAPABILITIES :PROTOCOL=1202')
         f('CAPAB END')
-        f('SERVER {host} {Pass} 0 {sid} :{sdesc}'.format(host=self.irc.serverdata["hostname"],
+
+        host = self.irc.serverdata["hostname"]
+        f('SERVER {host} {Pass} 0 {sid} :{sdesc}'.format(host=host,
           Pass=self.irc.serverdata["sendpass"], sid=self.irc.sid,
           sdesc=self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
-        f(':%s BURST %s' % (self.irc.sid, ts))
-        f(':%s ENDBURST' % (self.irc.sid))
+
+        self._send(self.irc.sid, 'BURST %s' % ts)
+        # InspIRCd sends VERSION data on link, instead of whenever requested by a client.
+        self._send(self.irc.sid, 'VERSION :%s' % utils.fullVersion(self.irc))
+        self._send(self.irc.sid, 'ENDBURST')
 
     def handle_capab(self, source, command, args):
         """
