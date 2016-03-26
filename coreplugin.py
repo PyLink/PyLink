@@ -43,8 +43,11 @@ def handle_whois(irc, source, command, args):
     server = irc.getServer(target) or irc.sid
     nick = user.nick
     sourceisOper = ('o', None) in irc.users[source].modes
-    # https://www.alien.net.au/irc/irc2numerics.html
 
+    # Get the full network name.
+    netname = irc.serverdata.get('netname', irc.name)
+
+    # https://www.alien.net.au/irc/irc2numerics.html
     # 311: sends nick!user@host information
     f(server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
 
@@ -77,16 +80,14 @@ def handle_whois(irc, source, command, args):
     # 313: sends a string denoting the target's operator privilege,
     # only if they have umode +o.
     if ('o', None) in user.modes:
-        if hasattr(user, 'opertype'):
-            opertype = user.opertype
-        else:  # If the IRCd OPERTYPE doesn't exist, just write "IRC Operator"
-            opertype = "IRC Operator"
-
         # Let's be gramatically correct. (If the opertype starts with a vowel,
         # write "an Operator" instead of "a Operator")
-        n = 'n' if opertype[0].lower() in 'aeiou' else ''
+        n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
 
-        f(server, 313, source, "%s :is a%s %s" % (nick, n, opertype))
+        # I want to normalize the syntax: PERSON is an OPERTYPE on NETWORKNAME.
+        # This is the only syntax InspIRCd supports, but for others it doesn't
+        # really matter since we're handling the WHOIS requests by ourselves.
+        f(server, 313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
 
     # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
     # Only show this to opers!
