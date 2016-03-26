@@ -164,6 +164,7 @@ class Irc():
         __init__ in a separate thread to allow multiple concurrent connections.
         """
         while True:
+            self.initVars()
             ip = self.serverdata["ip"]
             port = self.serverdata["port"]
             checks_ok = True
