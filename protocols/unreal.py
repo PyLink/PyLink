@@ -23,8 +23,8 @@ class UnrealProtocol(TS6BaseProtocol):
         super(UnrealProtocol, self).__init__(irc)
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example".
         self.casemapping = 'ascii'
-        self.proto_ver = 3999
-        self.min_proto_ver = 3999
+        self.proto_ver = 4000
+        self.min_proto_ver = 4000
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
                          'SVS2MODE': 'MODE', 'SJOIN': 'JOIN', 'SETHOST': 'CHGHOST',
                          'SETIDENT': 'CHGIDENT', 'SETNAME': 'CHGNAME',
