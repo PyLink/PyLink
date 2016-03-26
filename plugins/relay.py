@@ -1124,13 +1124,6 @@ def handle_away(irc, numeric, command, args):
         remoteirc.proto.away(user, args['text'])
 utils.add_hook(handle_away, 'AWAY')
 
-def handle_spawnmain(irc, numeric, command, args):
-    if args['olduser'] and irc.connected.is_set():
-        # Kills to the main PyLink client force reinitialization; this makes sure
-        # it joins all the relay channels like it's supposed to.
-        initializeAll(irc)
-utils.add_hook(handle_spawnmain, 'PYLINK_SPAWNMAIN')
-
 def handle_invite(irc, source, command, args):
     target = args['target']
     channel = args['channel']
