@@ -285,12 +285,18 @@ def applyModes(irc, target, changedmodes):
     The target can be either a channel or a user; this is handled automatically."""
     usermodes = not isChannel(target)
     log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
-    if usermodes:
-        old_modelist = irc.users[target].modes
-        supported_modes = irc.umodes
-    else:
-        old_modelist = irc.channels[target].modes
-        supported_modes = irc.cmodes
+
+    try:
+        if usermodes:
+            old_modelist = irc.users[target].modes
+            supported_modes = irc.umodes
+        else:
+            old_modelist = irc.channels[target].modes
+            supported_modes = irc.cmodes
+    except KeyError:
+        log.warning('(%s) Possible desync? Mode target %s is unknown.', irc.name, target)
+        return
+
     modelist = set(old_modelist)
     log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
     for mode in changedmodes:
