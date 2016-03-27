@@ -582,7 +582,7 @@ def relayPart(irc, channel, user):
     """
     Relays a user part from a channel to its relay links, as part of a channel delink.
     """
-    for name, remoteirc in world.networkobjects.items():
+    for name, remoteirc in world.networkobjects.copy().items():
         if name == irc.name or not remoteirc.connected.is_set():
             # Don't relay things to their source network...
             continue
@@ -849,7 +849,7 @@ def handle_messages(irc, numeric, command, args):
         return
 
     if utils.isChannel(target):
-        for name, remoteirc in world.networkobjects.items():
+        for name, remoteirc in world.networkobjects.copy().items():
             real_target = getRemoteChan(irc, remoteirc, target)
 
             # Don't relay anything back to the source net, or to disconnected networks
@@ -904,7 +904,7 @@ def handle_kick(irc, source, command, args):
     if relay is None or target == irc.pseudoclient.uid:
         return
     origuser = getOrigUser(irc, target)
-    for name, remoteirc in world.networkobjects.items():
+    for name, remoteirc in world.networkobjects.copy().items():
         if irc.name == name or not remoteirc.connected.is_set():
             continue
         remotechan = getRemoteChan(irc, remoteirc, channel)
@@ -1008,7 +1008,7 @@ for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
 def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
-    for name, remoteirc in world.networkobjects.items():
+    for name, remoteirc in world.networkobjects.copy().items():
         if irc.name == name or not remoteirc.connected.is_set():
             continue
 
@@ -1048,7 +1048,7 @@ def handle_topic(irc, numeric, command, args):
     oldtopic = args.get('oldtopic')
     topic = args['text']
     if checkClaim(irc, channel, numeric):
-        for name, remoteirc in world.networkobjects.items():
+        for name, remoteirc in world.networkobjects.copy().items():
             if irc.name == name or not remoteirc.connected.is_set():
                 continue
 
@@ -1391,7 +1391,7 @@ def linked(irc, source, args):
     Returns a list of channels shared across the relay."""
 
     # Only show remote networks that are marked as connected.
-    remote_networks = [netname for netname, ircobj in world.networkobjects.items()
+    remote_networks = [netname for netname, ircobj in world.networkobjects.copy().items()
                        if ircobj.connected.is_set()]
 
     # But remove the current network from the list, so that it isn't shown twice.
