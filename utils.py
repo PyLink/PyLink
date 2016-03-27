@@ -217,6 +217,7 @@ def parseModes(irc, target, args):
 
         if target not in irc.users:
             log.warning('(%s) Possible desync! Mode target %s is not in the users index.', irc.name, target)
+            return []  # Return an empty mode list
 
         supported_modes = irc.umodes
         oldmodes = irc.users[target].modes
@@ -225,6 +226,7 @@ def parseModes(irc, target, args):
 
         if target not in irc.channels:
             log.warning('(%s) Possible desync! Mode target %s is not in the channels index.', irc.name, target)
+            return []
 
         supported_modes = irc.cmodes
         oldmodes = irc.channels[target].modes
