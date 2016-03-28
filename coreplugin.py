@@ -4,10 +4,35 @@ coreplugin.py - Implements core PyLink functions as a plugin.
 
 import gc
 import sys
+import signal
 
 import utils
 from log import log
 import world
+
+def _shutdown(irc=None):
+    """Shuts down the Pylink daemon."""
+    for name, plugin in world.plugins.items():
+        # Before closing connections, tell all plugins to shutdown cleanly first.
+        if hasattr(plugin, 'die'):
+            log.debug('coreplugin: Running die() on plugin %s due to shutdown.', name)
+            try:
+                plugin.die(irc)
+            except:  # But don't allow it to crash the server.
+                log.exception('coreplugin: Error occurred in die() of plugin %s, skipping...', name)
+
+    for ircobj in world.networkobjects.values():
+        # Disconnect all our networks. Disable auto-connect first by setting
+        # the time to negative.
+        ircobj.serverdata['autoconnect'] = -1
+        ircobj.disconnect()
+
+def sigterm_handler(_signo, _stack_frame):
+    """Handles SIGTERM gracefully by shutting down the PyLink daemon."""
+    log.info("Shutting down on SIGTERM.")
+    _shutdown()
+
+signal.signal(signal.SIGTERM, sigterm_handler)
 
 def handle_kill(irc, source, command, args):
     """Handle KILLs to the main PyLink client, respawning it as needed."""
@@ -199,20 +224,7 @@ def shutdown(irc, source, args):
     log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
              u.ident, u.host)
 
-    for name, plugin in world.plugins.items():
-        # Before closing connections, tell all plugins to shutdown cleanly first.
-        if hasattr(plugin, 'die'):
-            log.debug('coreplugin: Running die() on plugin %s due to shutdown.', name)
-            try:
-                plugin.die(irc)
-            except:  # But don't allow it to crash the server.
-                log.exception('coreplugin: Error occurred in die() of plugin %s, skipping...', name)
-
-    for ircobj in world.networkobjects.values():
-        # Disconnect all our networks. Disable auto-connect first by setting
-        # the time to negative.
-        ircobj.serverdata['autoconnect'] = -1
-        ircobj.disconnect()
+    _shutdown(irc)
 
 def load(irc, source, args):
     """<plugin name>.
