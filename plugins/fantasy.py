@@ -8,6 +8,11 @@ from log import log
 
 def handle_fantasy(irc, source, command, args):
     """Fantasy command handler."""
+
+    if not irc.connected.is_set():
+        # Break if the IRC network isn't ready.
+        return
+
     try:  # First, try to fetch the config-defined prefix.
         prefixes = [irc.botdata["prefix"]]
     except KeyError:  # Config option is missing.
