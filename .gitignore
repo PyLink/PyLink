@@ -2,6 +2,7 @@
 *.yml
 !example-*.yml
 
+env/
 build/
 __pycache__/
 *.py[cod]
