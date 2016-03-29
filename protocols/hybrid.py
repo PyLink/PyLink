@@ -97,8 +97,6 @@ class HybridProtocol(TS6BaseProtocol):
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
 
-        f(':%s EOB' % (self.irc.sid,))
-
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
@@ -149,7 +147,7 @@ class HybridProtocol(TS6BaseProtocol):
         channel = utils.toLower(self.irc, channel)
         if not self.irc.isInternalClient(client):
             raise LookupError('No such PyLink client exists.')
-        self._send(client, "JOIN %s" % channel)
+        self._send(client, "JOIN 0 %s +" % channel)
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
@@ -200,6 +198,7 @@ class HybridProtocol(TS6BaseProtocol):
             print('Unknown command.\nOffending line: {}'.format(data))
             exit(1)
         else:
+            log.debug('(%s) Handling event %s - %s - %s', self.irc.name, numeric, command, str(args))
             parsed_args = func(numeric, command, args)
             if parsed_args is not None:
                 return [numeric, command, parsed_args]
@@ -261,13 +260,37 @@ class HybridProtocol(TS6BaseProtocol):
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_svstag(self, numeric, command, args):
-        if args[2] in ['313']:
+        tag = args[2]
+        if tag in ['313']:
             return
         raise Exception('COULD NOT PARSE SVSTAG: {} {} {}'.format(numeric, command, args))
 
-    def handle_sjoin(self, numeric, command, args):
+    def handle_join(self, numeric, command, args):
         """Handles incoming channel JOINs."""
         # parameters: channelTS, channel, '+' (a plus sign)
+        # <- :0UYAAAAAF JOIN 0 #channel +
+        ts = int(args[0])
+        uid = numeric
+        channel = args[1]
+        if channel == '0':
+            # /join 0; part the user from all channels
+            oldchans = self.irc.users[uid].channels.copy()
+            log.debug('(%s) Got /join 0 from %r, channel list is %r',
+                      self.irc.name, uid, oldchans)
+            for channel in oldchans:
+                self.irc.channels[channel].users.discard(uid)
+                self.irc.users[uid].channels.discard(channel)
+        else:
+            channel = utils.toLower(self.irc, args[1])
+            self.updateTS(channel, ts)
+        parsedmodes = utils.parseModes(self.irc, channel, [args[2]])
+        utils.applyModes(self.irc, channel, parsedmodes)
+        return {'channel': channel, 'users': [uid], 'modes':
+                self.irc.channels[channel].modes, 'ts': ts}
+
+    def handle_sjoin(self, numeric, command, args):
+        """Handles incoming channel SJOINs."""
+        # parameters: channelTS, channel, modes, prefixed uids
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
         ts = int(args[0])
         uids = args[3].split()
@@ -325,7 +348,9 @@ class HybridProtocol(TS6BaseProtocol):
 
     def handle_pong(self, source, command, args):
         """Handles incoming PONG commands."""
+        log.debug('(%s) Ping received from %s for %s.', self.irc.name, source, args[1])
         if source == self.irc.uplink and args[1] == self.irc.sid:
+            log.debug('(%s) Set self.irc.lastping.', self.irc.name)
             self.irc.lastping = time.time()
 
     # empty handlers
@@ -334,6 +359,7 @@ class HybridProtocol(TS6BaseProtocol):
         pass
 
     def handle_endburst(self, numeric, command, args):
+        self.irc.send(':%s EOB' % (self.irc.sid,))
         pass
 
 Class = HybridProtocol
