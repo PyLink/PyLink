@@ -107,7 +107,7 @@ class HybridProtocol(TS6BaseProtocol):
         Note: No nick collision / valid nickname checks are done here; it is
         up to plugins to make sure they don't introduce anything invalid."""
         server = server or self.irc.sid
-        if not utils.isInternalServer(self.irc, server):
+        if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
         # Create an UIDGenerator instance for every SID, so that each gets
         # distinct values.
@@ -144,16 +144,16 @@ class HybridProtocol(TS6BaseProtocol):
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
-    def joinClient(self, client, channel):
+    def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         channel = utils.toLower(self.irc, channel)
-        if not utils.isInternalClient(self.irc, client):
+        if not self.irc.isInternalClient(client):
             raise LookupError('No such PyLink client exists.')
         self._send(client, "JOIN %s" % channel)
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def pingServer(self, source=None, target=None):
+    def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
         automatically by the Irc() internals; plugins shouldn't have to use this."""
         source = source or self.irc.sid
@@ -203,15 +203,6 @@ class HybridProtocol(TS6BaseProtocol):
             parsed_args = func(numeric, command, args)
             if parsed_args is not None:
                 return [numeric, command, parsed_args]
-
-    def _getNick(self, target):
-        """Converts a nick argument to its matching UID. This differs from utils.nickToUid()
-        in that it returns the original text instead of None, if no matching nick is found."""
-        target = utils.nickToUid(self.irc, target) or target
-        if target not in self.irc.users and not utils.isChannel(target):
-            log.debug("(%s) Possible desync? Got command target %s, who "
-                        "isn't in our user list!", self.irc.name, target)
-        return target
 
     # command handlers
     def handle_pass(self, numeric, command, args):
@@ -329,7 +320,7 @@ class HybridProtocol(TS6BaseProtocol):
             destination = args[1]
         except IndexError:
             destination = self.irc.sid
-        if utils.isInternalServer(self.irc, destination):
+        if self.irc.isInternalServer(destination):
             self._send(destination, 'PONG %s :%s' % (self.irc.servers[destination].name, source))
 
     def handle_pong(self, source, command, args):
