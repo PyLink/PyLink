@@ -155,6 +155,42 @@ class HybridProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
+    def invite(self, numeric, target, channel):
+        """Sends an INVITE from a PyLink client.."""
+        if not self.irc.isInternalClient(numeric):
+            raise LookupError('No such PyLink client exists.')
+        self._send(numeric, 'INVITE %s %s %d' % (target, channel, int(time.time())))
+
+    def mode(self, numeric, target, modes, ts=None):
+        """Sends mode changes from a PyLink client/server."""
+        # c <- :0UYAAAAAA TMODE 0 #a +o 0T4AAAAAC
+        # u <- :0UYAAAAAA MODE 0UYAAAAAA :-Facdefklnou
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        utils.applyModes(self.irc, target, modes)
+        modes = list(modes)
+
+        if utils.isChannel(target):
+            ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
+            # TMODE:
+            # parameters: channelTS, channel, cmode changes, opt. cmode parameters...
+
+            # On output, at most ten cmode parameters should be sent; if there are more,
+            # multiple TMODE messages should be sent.
+            # TODO(dan): this may not be required on Hybrid?
+            while modes[:9]:
+                # Seriously, though. If you send more than 10 mode parameters in
+                # a line, charybdis will silently REJECT the entire command!
+                joinedmodes = utils.joinModes(modes = [m for m in modes[:9] if m[0] not in self.irc.cmodes['*A']])
+                modes = modes[9:]
+                self._send(numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
+        else:
+            joinedmodes = utils.joinModes(modes)
+            self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
+
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
         automatically by the Irc() internals; plugins shouldn't have to use this."""
@@ -393,6 +429,18 @@ class HybridProtocol(TS6BaseProtocol):
             self.updateTS(channel, ts)
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
                 'oldchan': oldobj}
+
+    def handle_invite(self, numeric, command, args):
+        """Handles incoming INVITEs."""
+        # <- :0UYAAAAAA INVITE 0T4AAAAAA #testchan 1459316899
+        target = args[0]
+        channel = args[1].lower()
+        try:
+            ts = args[3]
+        except IndexError:
+            ts = int(time.time())
+        # We don't actually need to process this; it's just something plugins/hooks can use
+        return {'target': target, 'channel': channel, 'ts': ts}
 
     def handle_svstag(self, numeric, command, args):
         tag = args[2]
