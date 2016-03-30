@@ -98,6 +98,9 @@ class HybridProtocol(TS6BaseProtocol):
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
 
+        # send endburst now
+        self.irc.send(':%s EOB' % (self.irc.sid,))
+
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
@@ -260,12 +263,6 @@ class HybridProtocol(TS6BaseProtocol):
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip}
 
-    def handle_svstag(self, numeric, command, args):
-        tag = args[2]
-        if tag in ['313']:
-            return
-        raise Exception('COULD NOT PARSE SVSTAG: {} {} {}'.format(numeric, command, args))
-
     def handle_join(self, numeric, command, args):
         """Handles incoming channel JOINs."""
         # parameters: channelTS, channel, '+' (a plus sign)
@@ -352,10 +349,6 @@ class HybridProtocol(TS6BaseProtocol):
             log.debug('(%s) Set self.irc.lastping.', self.irc.name)
             self.irc.lastping = time.time()
 
-    def handle_endburst(self, numeric, command, args):
-        self.irc.send(':%s EOB' % (self.irc.sid,))
-        pass
-
     def handle_mode(self, numeric, command, args):
         # <- :0UYAAAAAD MODE 0UYAAAAAD :-i
         target = args[0]
@@ -380,6 +373,15 @@ class HybridProtocol(TS6BaseProtocol):
             self.updateTS(channel, ts)
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
                 'oldchan': oldobj}
+
+    def handle_svstag(self, numeric, command, args):
+        tag = args[2]
+        if tag in ['313']:
+            return
+        raise Exception('COULD NOT PARSE SVSTAG: {} {} {}'.format(numeric, command, args))
+
+    def handle_endburst(self, numeric, command, args):
+        pass
 
     # empty handlers
     # TODO: there's a better way to do this
