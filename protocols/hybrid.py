@@ -19,8 +19,6 @@ class HybridProtocol(TS6BaseProtocol):
         self.uidgen = {}
 
         self.caps = {}
-        # halfops is mandatory on Hybrid
-        self.irc.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}
 
         self.hook_map = {'EOB': 'ENDBURST'}
 
@@ -40,8 +38,8 @@ class HybridProtocol(TS6BaseProtocol):
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
         cmodes = {
             # TS6 generic modes:
-            'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
-            'l', 'moderated': 'm', 'noextmsg': 'n',
+            'op': 'o', 'halfop': 'h', 'voice': 'v', 'ban': 'b', 'key': 'k',
+            'limit': 'l', 'moderated': 'm', 'noextmsg': 'n',
             'secret': 's', 'topiclock': 't',
             # hybrid-specific modes:
             'blockcolor': 'c', 'inviteonly': 'i', 'noctcp': 'C',
@@ -71,6 +69,9 @@ class HybridProtocol(TS6BaseProtocol):
         }
 
         self.irc.umodes.update(umodes)
+
+        # halfops is mandatory on Hybrid
+        self.irc.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
         f('PASS %s TS 6 %s' % (self.irc.serverdata["sendpass"], self.irc.sid))
@@ -283,8 +284,6 @@ class HybridProtocol(TS6BaseProtocol):
         else:
             channel = utils.toLower(self.irc, args[1])
             self.updateTS(channel, ts)
-        parsedmodes = utils.parseModes(self.irc, channel, [args[2]])
-        utils.applyModes(self.irc, channel, parsedmodes)
         return {'channel': channel, 'users': [uid], 'modes':
                 self.irc.channels[channel].modes, 'ts': ts}
 
@@ -353,13 +352,41 @@ class HybridProtocol(TS6BaseProtocol):
             log.debug('(%s) Set self.irc.lastping.', self.irc.name)
             self.irc.lastping = time.time()
 
-    # empty handlers
-    # TODO: there's a better way to do this
-    def handle_svinfo(self, numeric, command, args):
-        pass
-
     def handle_endburst(self, numeric, command, args):
         self.irc.send(':%s EOB' % (self.irc.sid,))
+        pass
+
+    def handle_mode(self, numeric, command, args):
+        # <- :0UYAAAAAD MODE 0UYAAAAAD :-i
+        target = args[0]
+        modestrings = args[1:]
+        changedmodes = utils.parseModes(self.irc, target, modestrings)
+        utils.applyModes(self.irc, target, changedmodes)
+        # Call the OPERED UP hook if +o is being set.
+        if ('+o', None) in changedmodes:
+            otype = 'IRC Operator'
+            self.irc.callHooks([target, 'CLIENT_OPERED', {'text': otype}])
+        return {'target': target, 'modes': changedmodes}
+
+    def handle_tmode(self, numeric, command, args):
+        # <- :0UYAAAAAD TMODE 0 #a +h 0UYAAAAAD
+        channel = utils.toLower(self.irc, args[1])
+        oldobj = self.irc.channels[channel].deepcopy()
+        modes = args[2:]
+        changedmodes = utils.parseModes(self.irc, channel, modes)
+        utils.applyModes(self.irc, channel, changedmodes)
+        ts = int(args[0])
+        if ts > 0:
+            self.updateTS(channel, ts)
+        return {'target': channel, 'modes': changedmodes, 'ts': ts,
+                'oldchan': oldobj}
+
+    # empty handlers
+    # TODO: there's a better way to do this
+    def handle_globops(self, numeric, command, args):
+        pass
+
+    def handle_svinfo(self, numeric, command, args):
         pass
 
 Class = HybridProtocol
