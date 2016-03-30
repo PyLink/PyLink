@@ -269,6 +269,9 @@ class HybridProtocol(TS6BaseProtocol):
         #     if required_cap not in caps:
         #         raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
+        log.debug('(%s) self.irc.connected set!', self.irc.name)
+        self.irc.connected.set()
+
     def handle_server(self, numeric, command, args):
         # <- SERVER charybdis.midnight.vpn 1 :charybdis test server
         sname = args[0].lower()
@@ -450,8 +453,6 @@ class HybridProtocol(TS6BaseProtocol):
 
     def handle_endburst(self, numeric, command, args):
         log.debug('(%s) end of burst received', self.irc.name)
-        log.debug('(%s) self.irc.connected set!', self.irc.name)
-        self.irc.connected.set()
 
     # empty handlers
     # TODO: there's a better way to do this
