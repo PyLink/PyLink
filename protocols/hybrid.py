@@ -167,19 +167,21 @@ class HybridProtocol(TS6BaseProtocol):
         """Event handler for the Hybrid protocol.
 
         This passes most commands to the various handle_ABCD() functions
-        elsewhere in this module, coersing various sender prefixes from nicks
-        to UIDs wherever possible.
+        elsewhere defined protocol modules, coersing various sender prefixes
+        from nicks and server names to UIDs and SIDs respectively,
+        whenever possible.
+
+        Commands sent without an explicit sender prefix will have them set to
+        the SID of the uplink server.
         """
         data = data.split(" ")
-        if not data:
-            # No data??
-            return
         try:  # Message starts with a SID/UID prefix.
             args = self.parseTS6Args(data)
             sender = args[0]
             command = args[1]
             args = args[2:]
-            # If the sender isn't in UID format, try to convert it automatically
+            # If the sender isn't in UID format, try to convert it automatically.
+            # Unreal's protocol, for example, isn't quite consistent with this yet!
             sender_server = self._getSid(sender)
             if sender_server in self.irc.servers:
                 # Sender is a server when converted from name to SID.
@@ -187,6 +189,7 @@ class HybridProtocol(TS6BaseProtocol):
             else:
                 # Sender is a user.
                 numeric = self._getNick(sender)
+
         # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
         except IndexError:
             # Raw command without an explicit sender; assume it's being sent by our uplink.
@@ -194,8 +197,9 @@ class HybridProtocol(TS6BaseProtocol):
             numeric = self.irc.uplink
             command = args[0]
             args = args[1:]
+
         try:
-            command = self.hook_map.get(command.upper(), command).lower()
+            command = self.hook_map.get(command.upper(), command)
             func = getattr(self, 'handle_'+command.lower())
         except AttributeError:  # unhandled command
             # self._send(self.irc.sid, 'ERROR', 'Unknown Command')
