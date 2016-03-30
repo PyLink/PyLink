@@ -20,7 +20,7 @@ class HybridProtocol(TS6BaseProtocol):
 
         self.caps = {}
 
-        self.hook_map = {'EOB': 'ENDBURST', 'TBURST', 'TOPIC'}
+        self.hook_map = {'EOB': 'ENDBURST', 'TBURST': 'TOPIC'}
 
     def connect(self):
         """Initializes a connection to a server."""
@@ -337,6 +337,14 @@ class HybridProtocol(TS6BaseProtocol):
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
+
+    def handle_whois(self, numeric, command, args):
+        """Handles incoming WHOIS commands.
+
+        Note: The core of WHOIS handling is done by coreplugin.py
+        (IRCd-independent), and not here."""
+        # <- :0UYAAAAAH WHOIS 0T4AAAAAA :pylink
+        return {'target': args[0]}
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands."""
