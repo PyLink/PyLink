@@ -225,16 +225,13 @@ class HybridProtocol(TS6BaseProtocol):
         self.irc.uplink = numeric
 
     def handle_capab(self, numeric, command, args):
-        # We only get a list of keywords here. Charybdis obviously assumes that
+        # We only get a list of keywords here. Hybrid obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
         # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
         self.irc.caps = caps = args[0].split()
         # for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS'):
         #     if required_cap not in caps:
         #         raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
-
-        log.debug('(%s) self.irc.connected set!', self.irc.name)
-        self.irc.connected.set()
 
     def handle_server(self, numeric, command, args):
         # <- SERVER charybdis.midnight.vpn 1 :charybdis test server
@@ -404,7 +401,9 @@ class HybridProtocol(TS6BaseProtocol):
         raise Exception('COULD NOT PARSE SVSTAG: {} {} {}'.format(numeric, command, args))
 
     def handle_endburst(self, numeric, command, args):
-        pass
+        log.debug('(%s) end of burst received', self.irc.name)
+        log.debug('(%s) self.irc.connected set!', self.irc.name)
+        self.irc.connected.set()
 
     # empty handlers
     # TODO: there's a better way to do this
