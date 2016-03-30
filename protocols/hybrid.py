@@ -20,7 +20,7 @@ class HybridProtocol(TS6BaseProtocol):
 
         self.caps = {}
 
-        self.hook_map = {'EOB': 'ENDBURST'}
+        self.hook_map = {'EOB': 'ENDBURST', 'TBURST', 'TOPIC'}
 
     def connect(self):
         """Initializes a connection to a server."""
@@ -326,6 +326,17 @@ class HybridProtocol(TS6BaseProtocol):
         # for simplicity's sake (with plugins).
         return {'channel': channel, 'users': uids, 'modes':
                 self.irc.channels[channel].modes, 'ts': ts}
+
+    def handle_tburst(self, numeric, command, args):
+        """Handles incoming topic burst (TBURST) commands."""
+        # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
+        channel = args[1].lower()
+        ts = args[2]
+        setter = args[3]
+        topic = args[-1]
+        self.irc.channels[channel].topic = topic
+        self.irc.channels[channel].topicset = True
+        return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands."""
