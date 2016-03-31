@@ -175,7 +175,7 @@ def scheduleExport(starting=False):
     global exportdb_timer
 
     if not starting:
-        # Export the datbase, unless this is being called the first
+        # Export the database, unless this is being called the first
         # thing after start (i.e. DB has just been loaded).
         exportDB()
 
