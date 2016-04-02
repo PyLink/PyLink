@@ -25,7 +25,7 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 * charybdis (3.5.x / git master) - module `ts6`
 * Elemental-IRCd (6.6.x / git master) - module `ts6`
 * UnrealIRCd 4.x - module `unreal`
-   - Note: Support for mixed UnrealIRCd 3.2/4.0 networks is experimental, and requires you to enable a `mixed_link` option in the configuration, This may in turn void your support.
+   - Note: Support for mixed UnrealIRCd 3.2/4.0 networks is experimental, and requires you to enable a `mixed_link` option in the configuration. This may in turn void your support.
 
 ## Setup
 
