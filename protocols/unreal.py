@@ -65,7 +65,8 @@ class UnrealProtocol(TS6BaseProtocol):
 
             for idx, arg in enumerate(args[:-1]):
                 # Look at every arg except the last one, which is usually message
-                # text or whatnot.
+                # text or whatnot. For each, check if the argument is in the user
+                # DB and has a @ in it, since we reserve those for PUIDs.
                 if arg in self.irc.users and '@' in arg:
                     args[idx] = self.irc.users[arg].nick
             msg = ' '.join(args)
@@ -610,11 +611,11 @@ class UnrealProtocol(TS6BaseProtocol):
 
             log.debug('(%s) translating legacy NICK args to: %s', self.irc.name, ' '.join(new_args))
 
-            self.handle_uid(numeric, 'UID_LEGACY', new_args)
+            return self.handle_uid(numeric, 'UID_LEGACY', new_args)
         else:
             # Normal NICK change, just let ts6_common handle it.
             # :70MAAAAAA NICK GL-devel 1434744242
-            super().handle_nick(numeric, command, args)
+            return super().handle_nick(numeric, command, args)
 
     def handle_mode(self, numeric, command, args):
         # <- :unreal.midnight.vpn MODE #test +bb test!*@* *!*@bad.net
@@ -830,6 +831,6 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles incoming KILLs."""
         # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)
         # Use ts6_common's handle_kill, but coerse UIDs to nicks first.
-        super().handle_kill(numeric, command, [self._getNick(args[0]), *args[1:]])
+        return super().handle_kill(numeric, command, [self._getNick(args[0]), *args[1:]])
 
 Class = UnrealProtocol
