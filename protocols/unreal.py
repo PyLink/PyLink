@@ -600,7 +600,7 @@ class UnrealProtocol(TS6BaseProtocol):
             log.debug('(%s) got legacy NICK args: %s', self.irc.name, ' '.join(args))
 
             new_args = args[:]  # Clone the old args list
-            servername = new_args[5]  # Get the name of the users' server.
+            servername = new_args[5].lower()  # Get the name of the users' server.
 
             # Fake a UID and put it where it belongs in the new-style UID command.
             fake_uid = '%s@%s' % (args[0], self.legacy_nickcount)
