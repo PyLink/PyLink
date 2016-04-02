@@ -222,10 +222,13 @@ def getRemoteSid(irc, remoteirc):
                                             desc="PyLink Relay network - %s" %
                                             (remoteirc.serverdata.get('netname')\
                                             or remoteirc.name), endburst_delay=3)
-            except ValueError:  # Network not initialized yet.
+            except ValueError:  # Network not initialized yet, or a server name conflict.
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
-                return
+                # We will just bail here. Disconnect the bad network.
+                handle_disconnect(irc, None, 'PYLINK_DISCONNECT_RELAY_FORCED', {})
+                irc.disconnect()
+                raise
             else:
                 irc.servers[sid].remote = remoteirc.name
             relayservers[irc.name][remoteirc.name] = sid
