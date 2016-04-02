@@ -153,9 +153,9 @@ def loadDB():
     try:
         with open(dbname, "rb") as f:
             db = pickle.load(f)
-    except (ValueError, IOError):
-        log.exception("Relay: failed to load links database %s"
-            ", creating a new one in memory...", dbname)
+    except (ValueError, IOError, OSError):
+        log.info("Relay: failed to load links database %s"
+                 ", creating a new one in memory...", dbname)
         db = {}
 
 def exportDB():
@@ -172,7 +172,7 @@ def scheduleExport(starting=False):
     global exportdb_timer
 
     if not starting:
-        # Export the datbase, unless this is being called the first
+        # Export the database, unless this is being called the first
         # thing after start (i.e. DB has just been loaded).
         exportDB()
 
@@ -225,7 +225,6 @@ def getRemoteSid(irc, remoteirc):
             except ValueError:  # Network not initialized yet.
                 log.exception('(%s) Failed to spawn server for %r:',
                               irc.name, remoteirc.name)
-                irc.disconnect()
                 return
             else:
                 irc.servers[sid].remote = remoteirc.name
@@ -1155,35 +1154,37 @@ def handle_disconnect(irc, numeric, command, args):
     """Handles IRC network disconnections (internal hook)."""
     # Quit all of our users' representations on other nets, and remove
     # them from our relay clients index.
-    for k, v in relayusers.copy().items():
-        if irc.name in v:
-            del relayusers[k][irc.name]
-        if k[0] == irc.name:
-            try:
-                handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Relay network lost connection.'})
-                del relayusers[k]
-            except KeyError:
-                pass
+    with spawnlocks[irc.name]:
+        for k, v in relayusers.copy().items():
+            if irc.name in v:
+                del relayusers[k][irc.name]
+            if k[0] == irc.name:
+                try:
+                    handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Relay network lost connection.'})
+                    del relayusers[k]
+                except KeyError:
+                    pass
     # SQUIT all relay pseudoservers spawned for us, and remove them
     # from our relay subservers index.
-    for name, ircobj in world.networkobjects.copy().items():
-        if name != irc.name and ircobj.connected.is_set():
+    with spawnlocks_servers[irc.name]:
+        for name, ircobj in world.networkobjects.copy().items():
+            if name != irc.name and ircobj.connected.is_set():
+                try:
+                    rsid = relayservers[name][irc.name]
+                except KeyError:
+                    continue
+                else:
+                    ircobj.proto.squit(ircobj.sid, rsid, text='Relay network lost connection.')
+
             try:
-                rsid = relayservers[name][irc.name]
+                del relayservers[name][irc.name]
             except KeyError:
-                continue
-            else:
-                ircobj.proto.squit(ircobj.sid, rsid, text='Relay network lost connection.')
+                pass
 
         try:
-            del relayservers[name][irc.name]
+            del relayservers[irc.name]
         except KeyError:
             pass
-
-    try:
-        del relayservers[irc.name]
-    except KeyError:
-        pass
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
