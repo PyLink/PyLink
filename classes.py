@@ -37,7 +37,7 @@ class Irc():
         and a configuration object.
         """
         self.loghandlers = []
-        self.name = netname.lower()
+        self.name = netname
         self.conf = conf
         self.serverdata = conf['servers'][netname]
         self.sid = self.serverdata["sid"]
