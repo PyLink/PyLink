@@ -1300,7 +1300,7 @@ def link(irc, source, args):
     If <local channel> is not specified, it defaults to the same name as <channel>."""
     try:
         channel = utils.toLower(irc, args[1])
-        remotenet = args[0].lower()
+        remotenet = args[0]
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
         return
@@ -1355,7 +1355,7 @@ def delink(irc, source, args):
         irc.reply("Error: Not enough arguments. Needs 1-2: channel, remote netname (optional).")
         return
     try:
-        remotenet = args[1].lower()
+        remotenet = args[1]
     except IndexError:
         remotenet = None
     utils.checkAuthenticated(irc, source)
