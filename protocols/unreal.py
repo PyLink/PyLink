@@ -483,7 +483,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # Convert the server name to a SID...
         args[0] = self._getSid(args[0])
         # Then, use the SQUIT handler in TS6BaseProtocol as usual.
-        return super(UnrealProtocol, self).handle_squit(numeric, 'SQUIT', args)
+        return super().handle_squit(numeric, 'SQUIT', args)
 
     def handle_protoctl(self, numeric, command, args):
         # <- PROTOCTL NOQUIT NICKv2 SJOIN SJOIN2 UMODE2 VL SJ3 TKLEXT TKLEXT2 NICKIP ESVID
