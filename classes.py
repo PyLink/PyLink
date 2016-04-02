@@ -704,7 +704,7 @@ class Protocol():
                 del self.irc.channels[c]
             assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
 
-        sid = numeric[:3]
+        sid = self.irc.getServer(numeric)
         log.debug('Removing client %s from self.irc.users', numeric)
         del self.irc.users[numeric]
         log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
