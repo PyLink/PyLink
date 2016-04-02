@@ -587,8 +587,8 @@ class UnrealProtocol(TS6BaseProtocol):
             # Handle legacy NICK introduction here.
             # I don't want to rewrite all the user introduction stuff, so I'll just reorder the arguments
             # so that handle_uid can handle this instead.
-            #  ut since legacy nicks don't have any UIDs attached, we'll have to store
-            # theses users internally by their nicks. In other words, we need to convert from this:
+            # But since legacy nicks don't have any UIDs attached, we'll have to store the users
+            # internally by their nicks. In other words, we need to convert from this:
             #   <- NICK Global 3 1456843578 services novernet.com services.novernet.com 0 +ioS * :Global Noticer
             #   & nick hopcount timestamp username hostname server service-identifier-token :realname
             # to this:
