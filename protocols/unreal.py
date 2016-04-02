@@ -18,6 +18,9 @@ from log import log
 from classes import *
 from ts6_common import TS6BaseProtocol
 
+def is_uid(s):
+    return s[0].isdigit()
+
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
         super(UnrealProtocol, self).__init__(irc)
@@ -48,6 +51,9 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Some command aliases
         self.handle_svskill = self.handle_kill
+
+        # Toggle whether we're using super hack mode for Unreal 3.2 mixed links.
+        self.mixed_link = self.irc.serverdata.get('mixed_link')
 
     ### OUTGOING COMMAND FUNCTIONS
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -289,6 +295,9 @@ class UnrealProtocol(TS6BaseProtocol):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
+
+        # Track usages of legacy nicks.
+        self.legacy_nickcount = 1
 
         self.irc.umodes.update({'deaf': 'd', 'invisible': 'i', 'hidechans': 'p',
                                 'protected': 'q', 'registered': 'r',
@@ -554,6 +563,53 @@ class UnrealProtocol(TS6BaseProtocol):
             self.irc.channels[channel].users.add(user)
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
+    def handle_nick(self, numeric, command, args):
+        """Handles NICK changes, and legacy NICK introductions from pre-4.0 servers."""
+        if self.mixed_link and len(args) > 2:
+            # Handle legacy NICK introduction here.
+            # I don't want to rewrite all the user introduction stuff, so I'll just reorder the arguments
+            # so that handle_uid can handle this instead.
+            #  ut since legacy nicks don't have any UIDs attached, we'll have to store
+            # theses users internally by their nicks. In other words, we need to convert from this:
+            #   <- NICK Global 3 1456843578 services novernet.com services.novernet.com 0 +ioS * :Global Noticer
+            #   & nick hopcount timestamp username hostname server service-identifier-token :realname
+            # to this:
+            #   <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
+            log.debug('(%s) got legacy NICK args: %s', self.irc.name, ' '.join(args))
+
+            new_args = args[:]  # Clone the old args list
+            servername = new_args[5]  # Get the name of the users' server.
+
+            # Fake a UID and put it where it belongs in the new-style UID command.
+            fake_uid = '%s@%s' % (args[0], self.legacy_nickcount)
+            self.legacy_nickcount += 1
+            new_args[5] = fake_uid
+
+            # Insert a fake IP for the user (this isn't sent by the NICK command)
+            new_args.insert(-1, '*')
+
+            # Insert a fake cloaked host (just make it equal the real host, I don't care)
+            new_args.insert(-2, args[4])
+
+            log.debug('(%s) translating legacy NICK args to: %s', self.irc.name, ' '.join(new_args))
+
+            self.handle_uid(numeric, 'UID_LEGACY', new_args)
+        else:
+            # Normal NICK change, just let ts6_common handle it.
+            # :70MAAAAAA NICK GL-devel 1434744242
+            super().handle_nick(numeric, command, args)
+
+            '''
+            # NICK changed, rename the person in the users index accordingly.
+            oldnick = numeric
+            newnick = args[0]
+            if self.mixed_link and not oldnick[0].isdigit():
+
+                log.debug('(%s) got NICK change for legacy user: %s -> %s', self.irc.name, oldnick, newnick)
+                self.irc.users[newnick] = self.irc.users[oldnick]
+                del self.irc.users[oldnick]
+            '''
+
     def handle_mode(self, numeric, command, args):
         # <- :unreal.midnight.vpn MODE #test +bb test!*@* *!*@bad.net
         # <- :unreal.midnight.vpn MODE #test +q GL 1444361345
@@ -763,5 +819,11 @@ class UnrealProtocol(TS6BaseProtocol):
         channel = args[1].lower()
         # We don't actually need to process this; it's just something plugins/hooks can use
         return {'target': target, 'channel': channel}
+
+    def handle_kill(self, numeric, command, args):
+        """Handles incoming KILLs."""
+        # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)
+        # Use ts6_common's handle_kill, but coerse UIDs to nicks first.
+        super().handle_kill(numeric, command, [self._getNick(args[0]), *args[1:]])
 
 Class = UnrealProtocol
