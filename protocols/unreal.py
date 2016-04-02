@@ -403,7 +403,7 @@ class UnrealProtocol(TS6BaseProtocol):
         introducing legacy (non-SID) servers."""
         # <- SERVER unreal.midnight.vpn 1 :U3999-Fhin6OoEM UnrealIRCd test server
         sname = args[0]
-        if numeric == self.irc.uplink:  # We're doing authentication
+        if numeric == self.irc.uplink and not irc.connected.is_set():  # We're doing authentication
             for cap in self._neededCaps:
                 if cap not in self.caps:
                     raise ProtocolError("Not all required capabilities were met "
@@ -425,6 +425,10 @@ class UnrealProtocol(TS6BaseProtocol):
                 raise ProtocolError("Protocol version too old! (needs at least %s "
                                     "(Unreal 4.0.0-rc1), got %s)" % (self.min_proto_ver, protover))
             self.irc.servers[numeric] = IrcServer(None, sname)
+
+            # Set irc.connected to True, meaning that protocol negotiation passed.
+            log.debug('(%s) self.irc.connected set!', self.irc.name)
+            self.irc.connected.set()
         else:
             # Legacy (non-SID) servers can still be introduced using the SERVER command.
             # <- :services.int SERVER a.bc 2 :(H) [GL] a
@@ -476,10 +480,6 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.caps['SJ3'] = True
         self.irc.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
                                 'op': 'o', 'voice': 'v'})
-
-        # Set irc.connected to True, meaning that protocol negotiation passed.
-        log.debug('(%s) self.irc.connected set!', self.irc.name)
-        self.irc.connected.set()
 
     def handle_privmsg(self, source, command, args):
         # Convert nicks to UIDs, where they exist.
