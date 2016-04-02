@@ -24,7 +24,8 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 * InspIRCd 2.0.x - module `inspircd`
 * charybdis (3.5.x / git master) - module `ts6`
 * Elemental-IRCd (6.6.x / git master) - module `ts6`
-* UnrealIRCd 4.x - module `unreal` (*NOT* Unreal 3.2 or lower)
+* UnrealIRCd 4.x - module `unreal`
+   - Note: Unreal 3.2, or any mixed 3.2/4.0 networks are **NOT** supported (see [issue #193](https://github.com/GLolol/PyLink/issues/193))
 
 ## Setup
 
