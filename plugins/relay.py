@@ -156,9 +156,9 @@ def loadDB():
     try:
         with open(dbname, "rb") as f:
             db = pickle.load(f)
-    except (ValueError, IOError):
-        log.exception("Relay: failed to load links database %s"
-            ", creating a new one in memory...", dbname)
+    except (ValueError, IOError, OSError):
+        log.info("Relay: failed to load links database %s"
+                 ", creating a new one in memory...", dbname)
         db = {}
 
 def exportDB():
