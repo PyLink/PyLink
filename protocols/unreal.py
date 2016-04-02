@@ -611,7 +611,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
             log.debug('(%s) translating legacy NICK args to: %s', self.irc.name, ' '.join(new_args))
 
-            return self.handle_uid(numeric, 'UID_LEGACY', new_args)
+            return self.handle_uid(servername, 'UID_LEGACY', new_args)
         else:
             # Normal NICK change, just let ts6_common handle it.
             # :70MAAAAAA NICK GL-devel 1434744242
