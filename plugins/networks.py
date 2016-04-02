@@ -74,7 +74,7 @@ def autoconnect(irc, source, args):
 
     Sets the autoconnect time for <network> to <seconds>.
     You can disable autoconnect for a network by setting <seconds> to a negative value."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    utils.checkAuthenticated(irc, source)
     try:
         netname = args[0]
         seconds = float(args[1])
