@@ -182,6 +182,30 @@ servers:
         # channel list)
         use_elemental_modes: false
 
+    unrealnet:
+        ip: 1.2.3.4
+        port: 8067
+        recvpass: "coffee"
+        sendpass: "tea"
+        hostname: "pylink.example.com"
+        sid: "2PY"
+        netname: "This should match your UnrealIRCd config"
+        sidrange: "8##"
+        channels: []
+        protocol: "unreal"
+        autoconnect: 5
+        pingfreq: 30
+        maxnicklen: 30
+
+        # This option enables SUPER HACKY UNREAL 3.2 COMPAT mode, which allows
+        # PyLink to link to mixed Unreal 3.2/4.0 networks, using a 4.0 server
+        # as a direct uplink.
+        # THIS IS EXPERIMENTAL, NOT WELL TESTED, AND MAY SET YOUR HOUSE ON FIRE
+        # AND G-LINE EVERYONE ON YOUR NETWORK.
+        # We encourage you to upgrade so that all your servers are running the
+        # same IRCd version.
+        #mixed_link: true
+
 # Plugins to load (omit the .py extension)
 plugins:
     # Commands plugin: Provides core commands such as logging in, shutting down
