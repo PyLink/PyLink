@@ -18,9 +18,6 @@ from log import log
 from classes import *
 from ts6_common import TS6BaseProtocol
 
-def is_uid(s):
-    return s[0].isdigit()
-
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
         super(UnrealProtocol, self).__init__(irc)
@@ -54,6 +51,26 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Toggle whether we're using super hack mode for Unreal 3.2 mixed links.
         self.mixed_link = self.irc.serverdata.get('mixed_link')
+
+    def _send(self, source, msg):
+        """
+        Sends a TS6-style raw command from a source numeric to the self.irc connection given.
+
+        This optionally provides the REALLY BAD HACK FOR UNREAL 3.2 SUPPORT edition, which
+        mangles message targets from pseudo UIDs to the target's nick.
+        """
+
+        if self.mixed_link:
+            args = msg.split(" ")
+
+            for idx, arg in enumerate(args[:-1]):
+                # Look at every arg except the last one, which is usually message
+                # text or whatnot.
+                if arg in self.irc.users and '@' in arg:
+                    args[idx] = self.irc.users[arg].nick
+            msg = ' '.join(args)
+
+        self.irc.send(':%s %s' % (source, msg))
 
     ### OUTGOING COMMAND FUNCTIONS
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -598,17 +615,6 @@ class UnrealProtocol(TS6BaseProtocol):
             # Normal NICK change, just let ts6_common handle it.
             # :70MAAAAAA NICK GL-devel 1434744242
             super().handle_nick(numeric, command, args)
-
-            '''
-            # NICK changed, rename the person in the users index accordingly.
-            oldnick = numeric
-            newnick = args[0]
-            if self.mixed_link and not oldnick[0].isdigit():
-
-                log.debug('(%s) got NICK change for legacy user: %s -> %s', self.irc.name, oldnick, newnick)
-                self.irc.users[newnick] = self.irc.users[oldnick]
-                del self.irc.users[oldnick]
-            '''
 
     def handle_mode(self, numeric, command, args):
         # <- :unreal.midnight.vpn MODE #test +bb test!*@* *!*@bad.net
