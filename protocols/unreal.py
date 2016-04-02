@@ -403,7 +403,7 @@ class UnrealProtocol(TS6BaseProtocol):
         introducing legacy (non-SID) servers."""
         # <- SERVER unreal.midnight.vpn 1 :U3999-Fhin6OoEM UnrealIRCd test server
         sname = args[0]
-        if numeric == self.irc.uplink and not irc.connected.is_set():  # We're doing authentication
+        if numeric == self.irc.uplink and not self.irc.connected.is_set():  # We're doing authentication
             for cap in self._neededCaps:
                 if cap not in self.caps:
                     raise ProtocolError("Not all required capabilities were met "
