@@ -52,6 +52,10 @@ class UnrealProtocol(TS6BaseProtocol):
         # Toggle whether we're using super hack mode for Unreal 3.2 mixed links.
         self.mixed_link = self.irc.serverdata.get('mixed_link')
 
+        if self.mixed_link:
+            log.warning('(%s) mixed_link is experimental and may cause problems. '
+                        'You have been warned!', self.irc.name)
+
     def _send(self, source, msg):
         """
         Sends a TS6-style raw command from a source numeric to the self.irc connection given.
@@ -615,7 +619,13 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             # Normal NICK change, just let ts6_common handle it.
             # :70MAAAAAA NICK GL-devel 1434744242
-            return super().handle_nick(numeric, command, args)
+            try:
+                return super().handle_nick(numeric, command, args)
+            except KeyError:
+                log.exception('(%s) Malformed NICK command received. If you are linking PyLink to a '
+                              'mixed UnrealIRCd 3.2/4.0 network, enable the mixed_link option in the '
+                              'server config and restart your PyLink daemon.', self.irc.name)
+                self.irc.disconnect()
 
     def handle_mode(self, numeric, command, args):
         # <- :unreal.midnight.vpn MODE #test +bb test!*@* *!*@bad.net
