@@ -831,6 +831,10 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles incoming KILLs."""
         # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)
         # Use ts6_common's handle_kill, but coerse UIDs to nicks first.
-        return super().handle_kill(numeric, command, [self._getNick(args[0]), *args[1:]])
+
+        new_args = [self._getNick(args[0])]
+        new_args.extend(args[1:])
+
+        return super().handle_kill(numeric, command, new_args)
 
 Class = UnrealProtocol
