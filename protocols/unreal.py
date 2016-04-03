@@ -542,7 +542,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 # &, ", and ' entries are used for bursting bans:
                 # https://www.unrealircd.org/files/docs/technical/serverprotocol.html#S5_1
                 break
-            r = re.search(r'([^\d]*)(.*)', userpair)
+            r = re.search(r'([^\w]*)(.*)', userpair)
             user = r.group(2)
             # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
             # and +a is ~ instead of &.
