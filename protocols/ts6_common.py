@@ -43,11 +43,23 @@ class TS6BaseProtocol(Protocol):
                         "isn't in our user list!", self.irc.name, target)
         return target
 
+    def _getOutgoingNick(self, uid):
+        """
+        Returns the outgoing nick for the given UID. In the base ts6_common implementation,
+        this does nothing, but other modules subclassing this can override it.
+        For example, this can be used to turn PUIDs (used to store legacy, UID-less users)
+        to actual nicks in outgoing messages, so that a remote IRCd can understand it.
+        """
+        return uid
+
     ### OUTGOING COMMANDS
 
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client, used for WHOIS
         replies."""
+        # Mangle the target for IRCds that require it.
+        target = self._getOutgoingNick(target)
+
         self._send(source, '%s %s %s' % (numeric, target, text))
 
     def kick(self, numeric, channel, target, reason=None):
@@ -60,6 +72,10 @@ class TS6BaseProtocol(Protocol):
         channel = utils.toLower(self.irc, channel)
         if not reason:
             reason = 'No reason given'
+
+        # Mangle kick targets for IRCds that require it.
+        target = self._getOutgoingNick(target)
+
         self._send(numeric, 'KICK %s %s :%s' % (channel, target, reason))
 
         # We can pretend the target left by its own will; all we really care about
@@ -98,12 +114,20 @@ class TS6BaseProtocol(Protocol):
         """Sends a PRIVMSG from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
+
+        # Mangle message targets for IRCds that require it.
+        target = self._getOutgoingNick(target)
+
         self._send(numeric, 'PRIVMSG %s :%s' % (target, text))
 
     def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
+
+        # Mangle message targets for IRCds that require it.
+        target = self._getOutgoingNick(target)
+
         self._send(numeric, 'NOTICE %s :%s' % (target, text))
 
     def topic(self, numeric, target, text):

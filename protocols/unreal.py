@@ -56,6 +56,18 @@ class UnrealProtocol(TS6BaseProtocol):
             log.warning('(%s) mixed_link is experimental and may cause problems. '
                         'You have been warned!', self.irc.name)
 
+    def _getOutgoingNick(self, uid):
+        """
+        Returns the outgoing nick for the given UID. For PUIDs (used to store UID-less
+        3.2 users), this will change the PUID given to the actual user's nick,
+        so that that the older IRCds can understand it.
+        """
+        if uid in self.irc.users and '@' in uid:
+            # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
+            # Return this user's nick accordingly.
+            return self.irc.users[uid].nick
+        return uid
+
     ### OUTGOING COMMAND FUNCTIONS
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
