@@ -56,27 +56,6 @@ class UnrealProtocol(TS6BaseProtocol):
             log.warning('(%s) mixed_link is experimental and may cause problems. '
                         'You have been warned!', self.irc.name)
 
-    def _send(self, source, msg):
-        """
-        Sends a TS6-style raw command from a source numeric to the self.irc connection given.
-
-        This optionally provides the REALLY BAD HACK FOR UNREAL 3.2 SUPPORT edition, which
-        mangles message targets from pseudo UIDs to the target's nick.
-        """
-
-        if self.mixed_link:
-            args = msg.split(" ")
-
-            for idx, arg in enumerate(args[:-1]):
-                # Look at every arg except the last one, which is usually message
-                # text or whatnot. For each, check if the argument is in the user
-                # DB and has a @ in it, since we reserve those for PUIDs.
-                if arg in self.irc.users and '@' in arg:
-                    args[idx] = self.irc.users[arg].nick
-            msg = ' '.join(args)
-
-        self.irc.send(':%s %s' % (source, msg))
-
     ### OUTGOING COMMAND FUNCTIONS
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
