@@ -65,7 +65,9 @@ class UnrealProtocol(TS6BaseProtocol):
         if uid in self.irc.users and '@' in uid:
             # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
             # Return this user's nick accordingly.
-            return self.irc.users[uid].nick
+            nick = self.irc.users[uid].nick
+            log.debug('(%s) Mangling target PUID %s to nick %s', self.irc.name, uid, nick)
+            return nick
         return uid
 
     ### OUTGOING COMMAND FUNCTIONS
