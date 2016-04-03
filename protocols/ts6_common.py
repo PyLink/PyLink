@@ -27,9 +27,9 @@ class TS6BaseProtocol(Protocol):
 
     def _getSid(self, sname):
         """Returns the SID of a server with the given name, if present."""
-        nick = sname.lower()
+        name = sname.lower()
         for k, v in self.irc.servers.items():
-            if v.name.lower() == nick:
+            if v.name.lower() == name:
                 return k
         else:
             return sname  # Fall back to given text instead of None
