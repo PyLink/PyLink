@@ -2,6 +2,7 @@
 # and begin your configuration there.
 
 # Note: lines starting with a "#" are comments and will be ignored.
+# Note 2: Use SPACES, NOT tabs to indent, or you will get parser errors on start!
 
 bot:
     # Sets nick, user/ident, and real name.
