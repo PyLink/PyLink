@@ -93,6 +93,16 @@ A protocol module should also set the following variables in their protocol clas
 - `self.casemapping`: set this to `rfc1459` (default) or `ascii` to determine which case mapping the IRCd uses.
 - `self.hook_map`: this is a `dict`, which maps non-standard command names sent by the IRCd to those that PyLink plugins use internally.
     - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/unreal.py#L22) and [InspIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/inspircd.py#L24) modules.
+- `self.cmodes` / `self.umodes`: These are mappings of named IRC modes to mode letters, that should be either negotiated during link or preset in the `connect()` function of the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which should each be filled with a list of mode characters for that type of modes.
+    - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
+        - A = Mode that adds or removes a nick or address to a list. Always has a parameter. 
+        - B = Mode that changes a setting and always has a parameter. 
+        - C = Mode that changes a setting and only has a parameter when set. 
+        - D = Mode that changes a setting and never has a parameter.
+    - Examples in the TS6 protocol module: https://github.com/GLolol/PyLink/blob/cb3187c/protocols/ts6.py#L259-L300
+    - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/cb3187c/classes.py#L118-L152
+- `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
+    - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 
 ### Topics
 
