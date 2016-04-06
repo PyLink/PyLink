@@ -22,8 +22,6 @@ class TS6Protocol(TS6BaseProtocol):
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
                          'EUID': 'UID'}
-        self.sidgen = utils.TS6SIDGenerator(self.irc)
-        self.uidgen = {}
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False

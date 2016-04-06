@@ -14,6 +14,16 @@ from log import log
 from classes import *
 
 class TS6BaseProtocol(Protocol):
+
+    def __init__(self, irc):
+        super().__init__(irc)
+
+        # Dictionary of UID generators (one for each server) that the protocol module will fill in.
+        self.uidgen = {}
+
+        # SID generator for TS6.
+        self.sidgen = utils.TS6SIDGenerator(irc)
+
     def _send(self, source, msg):
         """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""
         self.irc.send(':%s %s' % (source, msg))

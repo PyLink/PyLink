@@ -29,8 +29,6 @@ class UnrealProtocol(TS6BaseProtocol):
                          'SVS2MODE': 'MODE', 'SJOIN': 'JOIN', 'SETHOST': 'CHGHOST',
                          'SETIDENT': 'CHGIDENT', 'SETNAME': 'CHGNAME',
                          'EOS': 'ENDBURST'}
-        self.uidgen = {}
-        self.sidgen = utils.TS6SIDGenerator(self.irc)
 
         self.caps = {}
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}

@@ -29,8 +29,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
                     'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC'}
-        self.sidgen = utils.TS6SIDGenerator(self.irc)
-        self.uidgen = {}
 
         self.min_proto_ver = 1202
         self.proto_ver = 1202
