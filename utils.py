@@ -90,6 +90,14 @@ class TS6UIDGenerator(IncrementalUIDGenerator):
          self.length = 6
          super().__init__(sid)
 
+class P10UIDGenerator(IncrementalUIDGenerator):
+     """Implements an incremental P10 UID Generator."""
+
+     def __init__(self, sid):
+         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]'
+         self.length = 3
+         super().__init__(sid)
+
 class TS6SIDGenerator():
     """
     TS6 SID Generator. <query> is a 3 character string with any combination of
