@@ -36,9 +36,9 @@ class NotAuthenticatedError(Exception):
     """
     pass
 
-class TS6UIDGenerator():
+class IncrementalUIDGenerator():
     """
-    TS6 UID Generator module, adapted from InspIRCd source:
+    Incremental UID Generator module, adapted from InspIRCd source:
     https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156
     """
 
@@ -46,14 +46,20 @@ class TS6UIDGenerator():
         # TS6 UIDs are 6 characters in length (9 including the SID).
         # They wrap from ABCDEFGHIJKLMNOPQRSTUVWXYZ -> 0123456789 -> wrap around:
         # (e.g. AAAAAA, AAAAAB ..., AAAAA8, AAAAA9, AAAABA)
-        self.allowedchars = string.ascii_uppercase + string.digits
-        self.uidchars = [self.allowedchars[0]]*6
+        if not (hasattr(self, 'allowedchars') and hasattr(self, 'length')):
+             raise RuntimeError("Allowed characters list not defined. Subclass "
+                                "%s by defining self.allowedchars and self.length "
+                                "and then calling super().__init__()." % self.__class__.__name__)
+        self.uidchars = [self.allowedchars[0]]*self.length
         self.sid = sid
 
-    def increment(self, pos=5):
+    def increment(self, pos=None):
         """
-        Increments the SID generator to the next available SID.
+        Increments the UID generator to the next available UID.
         """
+        # Position starts at 1 less than the UID length.
+        pos = pos or (self.length - 1)
+
         # If we're at the last character in the list of allowed ones, reset
         # and increment the next level above.
         if self.uidchars[pos] == self.allowedchars[-1]:
@@ -67,11 +73,21 @@ class TS6UIDGenerator():
 
     def next_uid(self):
         """
-        Returns the next unused TS6 UID for the server.
+        Returns the next unused UID for the server.
         """
         uid = self.sid + ''.join(self.uidchars)
         self.increment()
         return uid
+
+class TS6UIDGenerator(IncrementalUIDGenerator):
+     """Implements an incremental TS6 UID Generator."""
+
+     def __init__(self, sid):
+         # Define the options for IncrementalUIDGenerator, and then
+         # initialize its functions.
+         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456879'
+         self.length = 6
+         super().__init__(sid)
 
 class TS6SIDGenerator():
     """
