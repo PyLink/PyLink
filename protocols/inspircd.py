@@ -19,7 +19,7 @@ from ts6_common import TS6BaseProtocol
 
 class InspIRCdProtocol(TS6BaseProtocol):
     def __init__(self, irc):
-        super(InspIRCdProtocol, self).__init__(irc)
+        super().__init__(irc)
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example).
         self.casemapping = 'rfc1459'
 

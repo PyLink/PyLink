@@ -18,7 +18,7 @@ from ts6_common import TS6BaseProtocol
 
 class TS6Protocol(TS6BaseProtocol):
     def __init__(self, irc):
-        super(TS6Protocol, self).__init__(irc)
+        super().__init__(irc)
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
                          'EUID': 'UID'}
