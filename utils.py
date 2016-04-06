@@ -58,7 +58,8 @@ class IncrementalUIDGenerator():
         Increments the UID generator to the next available UID.
         """
         # Position starts at 1 less than the UID length.
-        pos = pos or (self.length - 1)
+        if pos is None:
+            pos = self.length - 1
 
         # If we're at the last character in the list of allowed ones, reset
         # and increment the next level above.
