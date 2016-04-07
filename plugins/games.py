@@ -6,6 +6,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import random
 import threading
 import json
 import utils
@@ -19,10 +20,11 @@ dbname = utils.getDatabaseName('pylinkgames')
 
 # commands
 class Command:
-    def __init__(self, name, args, sender, target, from_to):
+    def __init__(self, name, args, sender, sender_nick, target, from_to):
         self.name = name
         self.args = args
         self.sender = sender
+        self.sender_nick = sender_nick
         self.target = target
         # from_to represents the channel if sent to a channel, and the sender
         # if sent to the user directly. stops commands from having to worry
@@ -87,7 +89,7 @@ class CommandHandler:
 
         command_name = command_name.casefold()
 
-        command = Command(command_name, command_args, numeric, target, from_to)
+        command = Command(command_name, command_args, numeric, irc.users[numeric].nick, target, from_to)
 
         # check for matching handler and dispatch
         handler = self.commands.get(command_name)
@@ -109,8 +111,92 @@ cmdhandler.add_command('help', help_cmd)
 
 def dice_cmd(command_handler, irc, command):
     "<dice string> -- Roll the dice!"
-    # TODO(dan): Write dice handler
-    irc.proto.message(irc.games_user.uid, command.from_to, '42')
+    try:
+        iline = command.args
+
+        if iline == '':
+            raise Exception
+
+        if iline[0] == '-':
+            iline = '0' + iline  # fixes negatives
+        oline = []
+        idice = []
+        odice = []
+        out_dice_line = ''
+
+        # split line into seperate parts
+        for split in iline.split('+'):
+            oline = oline + split.split('-')
+
+        for line in oline:
+            if('d' in line):
+                if line.split('d')[0].isdigit():
+                    if (len(str(line.split('d')[1])) > 6 or
+                            len(str(line.split('d')[0])) > 10):
+                        raise Exception
+                    idice.append(line.split('d'))
+                else:
+                    idice.append(['1', line.split('d')[1]])
+            else:
+                idice.append(line.split('d'))
+
+        # negatives
+        i = 1
+        for char in iline:
+            if char == '+':
+                i += 1
+            if char == '-':
+                if(len(idice[i]) == 2):
+                    idice[i][1] = str(-int(idice[i][1]))
+                else:
+                    idice[i][0] = str(-int(idice[i][0]))
+                i += 1
+
+        # run and construct random numbers
+        i = 0
+        for split in idice:
+            dice = []
+
+            if(len(split) == 2):
+                for i in range(int(split[0])):
+                    if(int(split[1]) > 0):
+                        result = random.randint(1, int(split[1]))
+                        dice.append(result)
+                        out_dice_line += str(result) + ', '
+                    else:
+                        result = random.randint(int(split[1]), -1)
+                        dice.append(result)
+                        out_dice_line += str(result) + ', '
+                    i += 1
+                    if i > 10000:
+                        raise Exception
+            else:
+                dice += split
+
+            odice.append(dice)
+
+        # use calculated numbers to form result
+        result = 0
+        for li1 in odice:
+            for li2 in li1:
+                result += int(li2)
+
+        output = command.sender_nick + ': '
+        output += iline + '    =    ' + str(result)
+        if len(out_dice_line.split(',')) < 13:
+            output += '    =    ' + out_dice_line[:-2]
+
+        irc.proto.message(irc.games_user.uid, command.from_to, output)
+
+    except Exception:
+        output_lines = ['DICE SYNTAX: {}d <dice>'.format(command_handler.public_command_prefix),
+                        '        <dice> is a string like d12+4d8-13',
+                        '        or any other permutation of rpg dice and numbers',]
+
+        for i in range(0, len(output_lines)):
+            output = output_lines[i]
+
+            irc.proto.message(irc.games_user.uid, command.from_to, output)
 
 cmdhandler.add_command('d', dice_cmd)
 cmdhandler.add_command('dice', dice_cmd)
@@ -119,6 +205,9 @@ cmdhandler.add_command('dice', dice_cmd)
 # loading
 def main(irc=None):
     """Main function, called during plugin loading at start."""
+
+    # seed the random
+    random.seed()
 
     # Load the games database.
     loadDB()
