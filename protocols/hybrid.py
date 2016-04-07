@@ -453,6 +453,7 @@ class HybridProtocol(TS6BaseProtocol):
 
     def handle_endburst(self, numeric, command, args):
         log.debug('(%s) end of burst received', self.irc.name)
+        return {}
 
     # empty handlers
     # TODO: there's a better way to do this
