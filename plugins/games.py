@@ -16,6 +16,69 @@ exportdb_timer = None
 
 dbname = utils.getDatabaseName('pylinkgames')
 
+# command handler
+class command_handler:
+    def __init__(self):
+        self.public_command_prefix = '.'
+        self.commands = {}
+        self.command_help = ''
+
+    def add_command(self, name, handler):
+        self.commands[name.casefold()] = handler
+        self.regenerate_help()
+
+    def regenerate_help(self):
+        log.warning('games: regenerate_help not written')
+
+    def handle_messages(self, irc, numeric, command, args):
+        notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
+        target = args['target']
+        text = args['text']
+
+        # check sender
+        if target != irc.games_user.uid:
+            # message not targeted at us
+            return
+        elif numeric not in irc.users:
+            # sender isn't a user.
+            log.debug('(%s) games.handle_messages: Unknown message sender %s.', irc.name, numeric)
+            return
+
+        # HACK: Don't break on sending to @#channel or similar.
+        try:
+            prefix, target = target.split('#', 1)
+        except ValueError:
+            prefix = ''
+        else:
+            target = '#' + target
+
+        log.debug('(%s) games.handle_messages: prefix is %r, target is %r', irc.name, prefix, target)
+
+        # check public command prefixes
+        if utils.isChannel(target):
+            if text.startswith(self.public_command.prefix):
+                text = text[len(self.public_command.prefix) - 1:]
+            else:
+                # not a command for us
+                return
+
+        # handle commands
+        if ' ' in text:
+            command_name, command_args = text.split(' ', 1)
+        else:
+            command_name = text
+            command_args = ''
+
+        command_name = command_name.casefold()
+
+        # check for matching handler and dispatch
+        handler = self.commands.get(command_name)
+        if handler:
+            handler(self, irc, command_name, command_args)
+
+cmdhandler = command_handler()
+
+# loading
 def main(irc=None):
     """Main function, called during plugin loading at start."""
 
@@ -41,9 +104,16 @@ def initializeAll(irc):
     world.started.wait(2)
 
 def handle_endburst(irc, numeric, command, args):
+    # TODO(dan): name/user/hostname to be configurable, possible status channel?
+    user = irc.proto.spawnClient("games", "g", irc.serverdata["hostname"])
+    irc.games_user = user
     if numeric == irc.uplink:
         initializeAll(irc)
 utils.add_hook(handle_endburst, "ENDBURST")
+
+# handle_messages
+for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
+    utils.add_hook(cmdhandler.handle_messages, cmd)
 
 def scheduleExport(starting=False):
     """
@@ -67,11 +137,14 @@ def loadDB():
     global db
     try:
         with open(dbname, "rb") as f:
-            db = json.loads(str(f.read()))
+            db = json.loads(f.read().decode('utf8'))
     except (ValueError, IOError, FileNotFoundError):
         log.exception("Games: failed to load links database %s"
             ", creating a new one in memory...", dbname)
-        db = {}
+        db = {
+            'version': 1,
+            'channels': {},
+        }
 
 def exportDB():
     """Exports the games database."""
