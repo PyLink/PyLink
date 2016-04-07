@@ -107,7 +107,7 @@ class CommandHandler:
 
 # bot clients
 class BotClient:
-    def __init__(self, name, cmd_handler=None):
+    def __init__(self, name, cmd_handler=None, process_self_messages=False):
         self.name = name
 
         # cmd_handler
@@ -116,9 +116,12 @@ class BotClient:
         self.cmds = cmd_handler
 
         # events
-        utils.add_hook(self.handle_endburst, "ENDBURST")
-        for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
+        utils.add_hook(self.handle_endburst, 'ENDBURST')
+        for cmd in ('PRIVMSG', 'NOTICE'):
             utils.add_hook(self.handle_messages, cmd)
+        if process_self_messages:
+            for cmd in ('PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
+                utils.add_hook(self.handle_messages, cmd)
 
     def handle_endburst(self, irc, numeric, command, args):
         # TODO(dan): name/user/hostname to be configurable, possible status channel?
