@@ -19,12 +19,16 @@ dbname = utils.getDatabaseName('pylinkgames')
 
 # commands
 class Command:
-    def __init__(self, irc, name, args, sender, target):
-        self.irc = irc
+    def __init__(self, name, args, sender, target, from_to):
         self.name = name
         self.args = args
         self.sender = sender
         self.target = target
+        # from_to represents the channel if sent to a channel, and the sender
+        # if sent to the user directly. stops commands from having to worry
+        # about and handle sender vs target themselves for responses that can
+        # be public, but can also be sent privately for privmsgs
+        self.from_to = from_to
 
 
 class CommandHandler:
@@ -65,7 +69,9 @@ class CommandHandler:
         log.debug('(%s) games.handle_messages: prefix is %r, target is %r', irc.name, prefix, target)
 
         # check public command prefixes
+        from_to = numeric
         if utils.isChannel(target):
+            from_to = target
             if text.startswith(self.public_command.prefix):
                 text = text[len(self.public_command.prefix) - 1:]
             else:
@@ -81,20 +87,34 @@ class CommandHandler:
 
         command_name = command_name.casefold()
 
-        command = Command(irc, command_name, command_args, numeric, target)
+        command = Command(command_name, command_args, numeric, target, from_to)
 
         # check for matching handler and dispatch
         handler = self.commands.get(command_name)
         if handler:
-            handler(self, command)
+            handler(self, irc, command)
 
 cmdhandler = CommandHandler()
 
-def help_cmd(command_handler, command):
+
+# commands
+def help_cmd(command_handler, irc, command):
     "[command] -- Help for the given commands"
     print('COMMAND DETAILS:', command)
+    # TODO(dan): Write help handler
+    irc.proto.notice(irc.games_user.uid, command.sender, '== Help ==')
 
 cmdhandler.add_command('help', help_cmd)
+
+
+def dice_cmd(command_handler, irc, command):
+    "<dice string> -- Roll the dice!"
+    # TODO(dan): Write dice handler
+    irc.proto.message(irc.games_user.uid, command.from_to, '42')
+
+cmdhandler.add_command('d', dice_cmd)
+cmdhandler.add_command('dice', dice_cmd)
+
 
 # loading
 def main(irc=None):
@@ -124,6 +144,8 @@ def initializeAll(irc):
 def handle_endburst(irc, numeric, command, args):
     # TODO(dan): name/user/hostname to be configurable, possible status channel?
     user = irc.proto.spawnClient("games", "g", irc.serverdata["hostname"])
+    # TODO(dan): handle this more nicely, don't just append to games_user (esp.
+    # when/as we make CommandHandler applicable to more bots)
     irc.games_user = user
     if numeric == irc.uplink:
         initializeAll(irc)
