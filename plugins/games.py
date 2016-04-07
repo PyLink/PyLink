@@ -34,25 +34,33 @@ class Command:
 
 
 class CommandHandler:
-    def __init__(self):
+    def __init__(self, default_help_cmd=True):
         self.public_command_prefix = '.'
         self.commands = {}
-        self.command_help = ''
+        self.command_help = None
 
-    def add_command(self, name, handler):
+        # default commands
+        if default_help_cmd:
+            self.add('help', self.help_cmd)
+
+    def add(self, name, handler):
         self.commands[name.casefold()] = handler
-        self.regenerate_help()
+        self.command_help = None
 
-    def regenerate_help(self):
-        log.warning('games: regenerate_help not written')
+    @staticmethod
+    def help_cmd(self, irc, user, command):
+        "[command] -- Help for the given commands"
+        print('COMMAND DETAILS:', command)
+        # TODO(dan): Write help handler
+        irc.proto.notice(user.uid, command.sender, '== Help ==')
 
-    def handle_messages(self, irc, numeric, command, args):
+    def handle_messages(self, user, irc, numeric, command, args):
         notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
         target = args['target']
         text = args['text']
 
         # check sender
-        if target != irc.games_user.uid:
+        if target != user.uid:
             # message not targeted at us
             return
         elif numeric not in irc.users:
@@ -94,22 +102,44 @@ class CommandHandler:
         # check for matching handler and dispatch
         handler = self.commands.get(command_name)
         if handler:
-            handler(self, irc, command)
+            handler(self, irc, user, command)
 
-cmdhandler = CommandHandler()
+
+# bot clients
+class BotClient:
+    def __init__(self, name, cmd_handler=None):
+        self.name = name
+
+        # cmd_handler
+        if cmd_handler is None:
+            cmd_handler = CommandHandler()
+        self.cmds = cmd_handler
+
+        # events
+        utils.add_hook(self.handle_endburst, "ENDBURST")
+        for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
+            utils.add_hook(self.handle_messages, cmd)
+
+    def handle_endburst(self, irc, numeric, command, args):
+        # TODO(dan): name/user/hostname to be configurable, possible status channel?
+        user = irc.proto.spawnClient(self.name, "g", irc.serverdata["hostname"])
+        irc.bot_clients[self.name] = user
+        if numeric == irc.uplink:
+            initializeAll(irc)
+
+    def handle_messages(self, irc, numeric, command, args):
+        # make sure we're spawned
+        user = irc.bot_clients.get(self.name)
+        if user is None:
+            return
+
+        self.cmds.handle_messages(user, irc, numeric, command, args)
+
+gameclient = BotClient('games')
 
 
 # commands
-def help_cmd(command_handler, irc, command):
-    "[command] -- Help for the given commands"
-    print('COMMAND DETAILS:', command)
-    # TODO(dan): Write help handler
-    irc.proto.notice(irc.games_user.uid, command.sender, '== Help ==')
-
-cmdhandler.add_command('help', help_cmd)
-
-
-def dice_cmd(command_handler, irc, command):
+def dice_cmd(command_handler, irc, user, command):
     "<dice string> -- Roll the dice!"
     try:
         iline = command.args
@@ -186,7 +216,7 @@ def dice_cmd(command_handler, irc, command):
         if len(out_dice_line.split(',')) < 13:
             output += '    =    ' + out_dice_line[:-2]
 
-        irc.proto.message(irc.games_user.uid, command.from_to, output)
+        irc.proto.message(user.uid, command.from_to, output)
 
     except Exception:
         output_lines = ['DICE SYNTAX: {}d <dice>'.format(command_handler.public_command_prefix),
@@ -196,10 +226,10 @@ def dice_cmd(command_handler, irc, command):
         for i in range(0, len(output_lines)):
             output = output_lines[i]
 
-            irc.proto.message(irc.games_user.uid, command.from_to, output)
+            irc.proto.message(user.uid, command.from_to, output)
 
-cmdhandler.add_command('d', dice_cmd)
-cmdhandler.add_command('dice', dice_cmd)
+gameclient.cmds.add('d', dice_cmd)
+gameclient.cmds.add('dice', dice_cmd)
 
 
 # loading
@@ -229,20 +259,6 @@ def initializeAll(irc):
     # games client from being spawned too early (before server authentication),
     # which would break connections.
     world.started.wait(2)
-
-def handle_endburst(irc, numeric, command, args):
-    # TODO(dan): name/user/hostname to be configurable, possible status channel?
-    user = irc.proto.spawnClient("games", "g", irc.serverdata["hostname"])
-    # TODO(dan): handle this more nicely, don't just append to games_user (esp.
-    # when/as we make CommandHandler applicable to more bots)
-    irc.games_user = user
-    if numeric == irc.uplink:
-        initializeAll(irc)
-utils.add_hook(handle_endburst, "ENDBURST")
-
-# handle_messages
-for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
-    utils.add_hook(cmdhandler.handle_messages, cmd)
 
 def scheduleExport(starting=False):
     """
@@ -281,4 +297,3 @@ def exportDB():
     log.debug("Games: exporting links database to %s", dbname)
     with open(dbname, 'wb') as f:
         f.write(json.dumps(db).encode('utf8'))
-

@@ -44,6 +44,7 @@ class Irc():
         self.serverdata = conf['servers'][netname]
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
+        self.bot_clients = {}
         self.protoname = proto.__name__
         self.proto = proto.Class(self)
         self.pingfreq = self.serverdata.get('pingfreq') or 30
