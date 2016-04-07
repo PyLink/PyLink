@@ -16,8 +16,18 @@ exportdb_timer = None
 
 dbname = utils.getDatabaseName('pylinkgames')
 
-# command handler
-class command_handler:
+
+# commands
+class Command:
+    def __init__(self, irc, name, args, sender, target):
+        self.irc = irc
+        self.name = name
+        self.args = args
+        self.sender = sender
+        self.target = target
+
+
+class CommandHandler:
     def __init__(self):
         self.public_command_prefix = '.'
         self.commands = {}
@@ -71,12 +81,20 @@ class command_handler:
 
         command_name = command_name.casefold()
 
+        command = Command(irc, command_name, command_args, numeric, target)
+
         # check for matching handler and dispatch
         handler = self.commands.get(command_name)
         if handler:
-            handler(self, irc, command_name, command_args)
+            handler(self, command)
 
-cmdhandler = command_handler()
+cmdhandler = CommandHandler()
+
+def help_cmd(command_handler, command):
+    "[command] -- Help for the given commands"
+    print('COMMAND DETAILS:', command)
+
+cmdhandler.add_command('help', help_cmd)
 
 # loading
 def main(irc=None):
