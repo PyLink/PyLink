@@ -137,6 +137,8 @@ class TS6Protocol(TS6BaseProtocol):
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
+        # c <- :0UYAAAAAA TMODE 0 #a +o 0T4AAAAAC
+        # u <- :0UYAAAAAA MODE 0UYAAAAAA :-Facdefklnou
 
         if (not self.irc.isInternalClient(numeric)) and \
                 (not self.irc.isInternalServer(numeric)):
@@ -421,6 +423,7 @@ class TS6Protocol(TS6BaseProtocol):
     def handle_sjoin(self, servernumeric, command, args):
         """Handles incoming SJOIN commands."""
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
+        # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
         channel = utils.toLower(self.irc, args[1])
         userlist = args[-1].split()
         their_ts = int(args[0])
@@ -464,6 +467,7 @@ class TS6Protocol(TS6BaseProtocol):
     def handle_join(self, numeric, command, args):
         """Handles incoming channel JOINs."""
         # parameters: channelTS, channel, '+' (a plus sign)
+        # <- :0UYAAAAAF JOIN 0 #channel +
         ts = int(args[0])
         if args[0] == '0':
             # /join 0; part the user from all channels
@@ -556,6 +560,7 @@ class TS6Protocol(TS6BaseProtocol):
     def handle_tmode(self, numeric, command, args):
         """Handles incoming TMODE commands (channel mode change)."""
         # <- :42XAAAAAB TMODE 1437450768 #test -c+lkC 3 agte4
+        # <- :0UYAAAAAD TMODE 0 #a +h 0UYAAAAAD
         channel = utils.toLower(self.irc, args[1])
         oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
