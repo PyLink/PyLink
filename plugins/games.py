@@ -27,15 +27,12 @@ class DataStore:
 
         self._filename = os.path.abspath(os.path.expanduser(filename))
         self._tmp_filename = self._filename + '.tmp'
-
         log.debug('(db:{}) database path set to {}'.format(self.name, self._filename))
 
         self._format = db_format
-
         log.debug('(db:{}) format set to {}'.format(self.name, self._format))
 
         self._save_frequency = timedelta(**save_frequency).total_seconds()
-
         log.debug('(db:{}) saving every {} seconds'.format(self.name, self._save_frequency))
 
     def create_or_load(self):
@@ -163,9 +160,29 @@ class CommandHandler:
     @staticmethod
     def help_cmd(self, bot, irc, user, command):
         "[command] -- Help for the given commands"
-        print('COMMAND DETAILS:', command)
-        # TODO(dan): Write help handler
-        irc.proto.notice(user.uid, command.sender, '== Help ==')
+        if command.args.strip() == '':
+            # regenerate command help if required
+            if self.command_help is None:
+                help = ['== Help ==']
+                for name, handler in sorted(self.commands.items()):
+                    if hasattr(handler, '__doc__'):
+                        help.append('  {}{} {}'.format(self.public_command_prefix, name, handler.__doc__))
+                self.command_help = help
+
+            # print out
+            for line in self.command_help:
+                irc.proto.notice(user.uid, command.sender, line)
+        else:
+            cmd = command.args.strip().split(' ', 1)[0].casefold()
+
+            if cmd.startswith(self.public_command_prefix):
+                cmd = cmd[len(self.public_command_prefix) - 1:]
+
+            handler = self.commands.get(cmd)
+            if handler:
+                irc.proto.notice(user.uid, command.sender, 'Help:  {}{} {}'.format(self.public_command_prefix, cmd, handler.__doc__))
+            else:
+                irc.proto.notice(user.uid, command.sender, 'Help: command not found')
 
     @staticmethod
     def request_cmd(self, bot, irc, user, command):
