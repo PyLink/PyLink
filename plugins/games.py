@@ -8,14 +8,125 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import random
 import threading
+from datetime import timedelta
 import json
 import utils
 from log import log
 import world
 
+# database
 exportdb_timer = None
 
-dbname = utils.getDatabaseName('pylinkgames')
+
+class DataStore:
+    default_store = {
+        'version': 1,
+        'channels': {},
+    }
+
+    def __init__(self, name, filename, db_format='json', save_frequency={'seconds': 30}):
+        self.name = name
+
+        self._filename = os.path.abspath(os.path.expanduser(filename))
+        self._tmp_filename = self._filename + '.tmp'
+
+        log.debug('(db:{}) database path set to {}'.format(self.name, self._filename))
+
+        self._format = db_format
+
+        log.debug('(db:{}) format set to {}'.format(self.name, self._format))
+
+        self._save_frequency = timedelta(**save_frequency).total_seconds()
+
+        log.debug('(db:{}) saving every {} seconds'.format(self.name, self._save_frequency))
+
+    def create_or_load(self):
+        log.debug('(db:{}) creating/loading datastore using {}'.format(self.name, self._format))
+
+        if self._format == 'json':
+            self._store = {}
+            self._store_lock = threading.Lock()
+
+            log.debug('(db:{}) loading json data store from {}'.format(self.name, self._filename))
+            try:
+                self._store = json.loads(open(self._filename, 'r').read())
+            except (ValueError, IOError, FileNotFoundError):
+                log.exception('(db:{}) failed to load existing db, creating new one in memory'.format(self.name))
+        else:
+            raise Exception('(db:{}) Data store format [{}] not recognised'.format(self.name, self._format))
+
+    def save_callback(self, starting=False):
+        """Start the DB save loop."""
+        if self._format == 'json':
+            # don't actually save the first time
+            if not starting:
+                self.save()
+
+            # schedule
+            global exportdb_timer
+            exportdb_timer = threading.Timer(self._save_frequency, self.save_callback)
+            exportdb_timer.name = 'PyLink {} save_callback Loop'.format(self.name)
+            exportdb_timer.start()
+        else:
+            raise Exception('(db:{}) Data store format [{}] not recognised'.format(self.name, self._format))
+
+    def save(self):
+        log.debug('(db:{}) saving datastore'.format(self.name))
+        if self._format == 'json':
+            with open(self._tmp_filename, 'w') as store_file:
+                store_file.write(json.dumps(self._store))
+            os.rename(self._tmp_filename, self._filename)
+
+    # single keys
+    def __contains__(self, key):
+        if self._format == 'json':
+            return key in self._store
+
+    def get(self, key, default=None):
+        if self._format == 'json':
+            return self._store.get(key, default)
+
+    def put(self, key, value):
+        if self._format == 'json':
+            # make sure we can serialize the given data
+            # so we don't choke later on saving the db out
+            json.dumps(value)
+
+            self._store[key] = value
+
+            return True
+
+    def delete(self, key):
+        if self._format == 'json':
+            try:
+                with self._store_lock:
+                    del self._store[key]
+            except KeyError:
+                # key is already gone, nothing to do
+                ...
+
+            return True
+
+    # multiple keys
+    def list_keys(self, prefix=None):
+        """Return all key names. If prefix given, return only keys that start with it."""
+        if self._format == 'json':
+            keys = []
+
+            with self._store_lock:
+                for key in self._store:
+                    if prefix is None or key.startswith(prefix):
+                        keys.append(key)
+
+            return keys
+
+    def delete_keys(self, prefix):
+        """Delete all keys with the given prefix."""
+        if self._format == 'json':
+            with self._store_lock:
+                for key in tuple(self._store):
+                    if key.startswith(prefix):
+                        del self._store[key]
 
 
 # commands
@@ -109,6 +220,7 @@ class CommandHandler:
 class BotClient:
     def __init__(self, name, cmd_handler=None, process_self_messages=False):
         self.name = name
+        self.db = None
 
         # cmd_handler
         if cmd_handler is None:
@@ -124,11 +236,10 @@ class BotClient:
                 utils.add_hook(self.handle_messages, cmd)
 
     def handle_endburst(self, irc, numeric, command, args):
-        # TODO(dan): name/user/hostname to be configurable, possible status channel?
-        user = irc.proto.spawnClient(self.name, "g", irc.serverdata["hostname"])
+        # TODO(dan): name/user/hostname to be configurable, just passed in with __init__?
+        # possible status channel?
+        user = irc.proto.spawnClient(self.name, self.name, irc.serverdata["hostname"])
         irc.bot_clients[self.name] = user
-        if numeric == irc.uplink:
-            initializeAll(irc)
 
     def handle_messages(self, irc, numeric, command, args):
         # make sure we're spawned
@@ -243,60 +354,13 @@ def main(irc=None):
     random.seed()
 
     # Load the games database.
-    loadDB()
+    db_filename = utils.getDatabaseName('pylinkgames')
+
+    # TODO: make db save frequency adjustable, pass in here
+    db = DataStore('games', db_filename)
+    db.create_or_load()
+
+    gameclient.db = db
 
     # Schedule periodic exports of the games database.
-    scheduleExport(starting=True)
-
-    if irc is not None:
-        # irc is defined when the plugin is reloaded. Otherweise,
-        # it means that we've just started the server.
-        # Iterate over all known networks and initialize them.
-        for ircobj in world.networkobjects.values():
-            initializeAll(ircobj)
-
-def initializeAll(irc):
-    """Initializes all games stuff for the given IRC object."""
-
-    # Wait for all IRC objects to be created first. This prevents the
-    # games client from being spawned too early (before server authentication),
-    # which would break connections.
-    world.started.wait(2)
-
-def scheduleExport(starting=False):
-    """
-    Schedules exporting of the games database in a repeated loop.
-    """
-    global exportdb_timer
-
-    if not starting:
-        # Export the datbase, unless this is being called the first
-        # thing after start (i.e. DB has just been loaded).
-        exportDB()
-
-    # TODO: possibly make delay between exports configurable
-    exportdb_timer = threading.Timer(30, scheduleExport)
-    exportdb_timer.name = 'PyLink Games exportDB Loop'
-    exportdb_timer.start()
-
-## DB
-def loadDB():
-    """Loads the games database, creating a new one if this fails."""
-    global db
-    try:
-        with open(dbname, "rb") as f:
-            db = json.loads(f.read().decode('utf8'))
-    except (ValueError, IOError, FileNotFoundError):
-        log.exception("Games: failed to load links database %s"
-            ", creating a new one in memory...", dbname)
-        db = {
-            'version': 1,
-            'channels': {},
-        }
-
-def exportDB():
-    """Exports the games database."""
-
-    log.debug("Games: exporting links database to %s", dbname)
-    with open(dbname, 'wb') as f:
-        f.write(json.dumps(db).encode('utf8'))
+    db.save_callback(starting=True)
