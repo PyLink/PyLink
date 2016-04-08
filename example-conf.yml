@@ -111,9 +111,9 @@ servers:
 
         # Sets ping frequency (i.e. how long we should wait between sending
         # pings to our uplink). When more than two consecutive pings are missed,
-        # PyLink will disconnect with a ping timeout. This defaults to 30 if
+        # PyLink will disconnect with a ping timeout. This defaults to 180 if
         # not set.
-        pingfreq: 30
+        pingfreq: 180
 
         # Separator character (used by relay)
         separator: "/"
