@@ -19,10 +19,8 @@ exportdb_timer = None
 
 
 class DataStore:
-    default_store = {
-        'version': 1,
-        'channels': {},
-    }
+    # will come into play with subclassing and db version upgrading
+    initial_version = 1
 
     def __init__(self, name, filename, db_format='json', save_frequency={'seconds': 30}):
         self.name = name
@@ -52,6 +50,7 @@ class DataStore:
                 self._store = json.loads(open(self._filename, 'r').read())
             except (ValueError, IOError, FileNotFoundError):
                 log.exception('(db:{}) failed to load existing db, creating new one in memory'.format(self.name))
+                self.put('db.version', self.initial_version)
         else:
             raise Exception('(db:{}) Data store format [{}] not recognised'.format(self.name, self._format))
 
@@ -145,7 +144,7 @@ class Command:
 
 
 class CommandHandler:
-    def __init__(self, default_help_cmd=True):
+    def __init__(self, default_help_cmd=True, default_request_cmds=True):
         self.public_command_prefix = '.'
         self.commands = {}
         self.command_help = None
@@ -153,19 +152,78 @@ class CommandHandler:
         # default commands
         if default_help_cmd:
             self.add('help', self.help_cmd)
+        if default_request_cmds:
+            self.add('request', self.request_cmd)
+            self.add('remove', self.remove_cmd)
 
     def add(self, name, handler):
         self.commands[name.casefold()] = handler
         self.command_help = None
 
     @staticmethod
-    def help_cmd(self, irc, user, command):
+    def help_cmd(self, bot, irc, user, command):
         "[command] -- Help for the given commands"
         print('COMMAND DETAILS:', command)
         # TODO(dan): Write help handler
         irc.proto.notice(user.uid, command.sender, '== Help ==')
 
-    def handle_messages(self, user, irc, numeric, command, args):
+    @staticmethod
+    def request_cmd(self, bot, irc, user, command):
+        "<channel> -- Make this bot join your channel!"
+        channel = command.args.split(' ', 1)[0]
+        if channel is None:
+            return
+        # TODO: casefold this as per irc net
+        channame = channel.lower()
+
+        # make sure they're an op in there
+        channel = irc.channels.get(channame)
+        if channel is None or not channel.isOpPlus(command.sender):
+            irc.proto.notice(user.uid, command.sender, "You are not an op in that channel")
+            return
+
+        # check if we're already joined to the channel
+        joinedkey = 'channels.joined_to {} {}'.format(irc.name, channame)
+        joined_to_chan = bot.db.get(joinedkey, default=False)
+
+        if joined_to_chan:
+            irc.proto.notice(user.uid, command.sender, "I'm already joined to that channel!")
+            return
+
+        # join the channel
+        irc.proto.notice(user.uid, command.sender, "Joining channel ".format(channame))
+        bot.db.put(joinedkey, True)
+        irc.proto.join(user.uid, channame)
+
+    @staticmethod
+    def remove_cmd(self, bot, irc, user, command):
+        "<channel> -- Make this bot leave your channel!"
+        channel = command.args.split(' ', 1)[0]
+        if channel is None:
+            return
+        # TODO: casefold this as per irc net
+        channame = channel.lower()
+
+        # make sure they're an op in there
+        channel = irc.channels.get(channame)
+        if channel is None or not channel.isOpPlus(command.sender):
+            irc.proto.notice(user.uid, command.sender, "You are not an op in that channel")
+            return
+
+        # check if we're already joined to the channel
+        joinedkey = 'channels.joined_to {} {}'.format(irc.name, channame)
+        joined_to_chan = bot.db.get(joinedkey, default=False)
+
+        if not joined_to_chan:
+            irc.proto.notice(user.uid, command.sender, "I'm not in that channel!")
+            return
+
+        # join the channel
+        irc.proto.notice(user.uid, command.sender, "Leaving channel ".format(channame))
+        bot.db.delete(joinedkey)
+        irc.proto.part(user.uid, channame)
+
+    def handle_messages(self, bot, user, irc, numeric, command, args):
         notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
         target = args['target']
         text = args['text']
@@ -213,7 +271,7 @@ class CommandHandler:
         # check for matching handler and dispatch
         handler = self.commands.get(command_name)
         if handler:
-            handler(self, irc, user, command)
+            handler(self, bot, irc, user, command)
 
 
 # bot clients
@@ -241,13 +299,18 @@ class BotClient:
         user = irc.proto.spawnClient(self.name, self.name, irc.serverdata["hostname"])
         irc.bot_clients[self.name] = user
 
+        # join required channels
+        for key in self.db.list_keys(prefix='channels.joined_to {}'.format(irc.name)):
+            channel = key.rsplit(' ', 1)[-1]
+            irc.proto.join(user.uid, channel)
+
     def handle_messages(self, irc, numeric, command, args):
         # make sure we're spawned
         user = irc.bot_clients.get(self.name)
         if user is None:
             return
 
-        self.cmds.handle_messages(user, irc, numeric, command, args)
+        self.cmds.handle_messages(self, user, irc, numeric, command, args)
 
 gameclient = BotClient('games')
 
