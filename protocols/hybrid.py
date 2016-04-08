@@ -173,9 +173,15 @@ class HybridProtocol(TS6Protocol):
         log.debug('Applying modes %s for %s', parsedmodes, uid)
         utils.applyModes(self.irc, uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
+
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+
+        # Set the account name if present
+        if account:
+            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_tburst(self, numeric, command, args):
