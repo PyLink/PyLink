@@ -176,7 +176,7 @@ class CommandHandler:
             cmd = command.args.strip().split(' ', 1)[0].casefold()
 
             if cmd.startswith(self.public_command_prefix):
-                cmd = cmd[len(self.public_command_prefix) - 1:]
+                cmd = cmd[len(self.public_command_prefix):]
 
             handler = self.commands.get(cmd)
             if handler:
