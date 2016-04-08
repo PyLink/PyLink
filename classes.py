@@ -94,7 +94,7 @@ class Irc():
         """
         self.sid = self.serverdata["sid"]
         self.botdata = self.conf['bot']
-        self.pingfreq = self.serverdata.get('pingfreq') or 30
+        self.pingfreq = self.serverdata.get('pingfreq') or 180
         self.pingtimeout = self.pingfreq * 2
 
         self.connected.clear()
