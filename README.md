@@ -17,15 +17,27 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 * Python 3.4+
 * PyYAML (`pip install pyyaml`)
 * *For the servprotect plugin*: [expiringdict](https://github.com/mailgun/expiringdict) (note: unfortunately, installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
-* *For the changehost and opercmds plugins*: ircmatch (`pip install ircmatch`)
+* *For the changehost and opercmds plugins*: [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip install ircmatch`)
 
-### Supported IRCds
+## Supported IRCds
 
-* InspIRCd 2.0.x - module `inspircd`
+### Primary support
+
+These IRCds are frequently tested and well supported. If any issues occur, please file a bug on the issue tracker.
+
 * charybdis (3.5.x / git master) - module `ts6`
-* Elemental-IRCd (6.6.x / git master) - module `ts6`
+* InspIRCd 2.0.x - module `inspircd`
 * UnrealIRCd 4.x - module `unreal`
-   - Note: Support for mixed UnrealIRCd 3.2/4.0 networks is experimental, and requires you to enable a `mixed_link` option in the configuration. This may in turn void your support.
+    - Note: Support for mixed UnrealIRCd 3.2/4.0 networks is experimental, and requires you to enable a `mixed_link` option in the configuration. This may in turn void your support.
+
+### Extended support
+
+Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not be always be fixed in a timely fashion.
+
+* Elemental-IRCd (6.6.x / git master) - module `ts6`
+* InspIRCd 2.2 (git master) - module `inspircd`
+* IRCd-Hybrid (8.2.x / svn trunk) - module `hybrid`
+    - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
 
 ## Setup
 
