@@ -330,11 +330,13 @@ class UnrealProtocol(TS6BaseProtocol):
         # SJ3 - extended SJOIN
         # NOQUIT - QUIT messages aren't sent for all users in a netsplit
         # NICKv2 - Extended NICK command, sending MODE and CHGHOST info with it
-        # SID - Use UIDs and SIDs (unreal 3.4)
+        # SID - Use UIDs and SIDs (Unreal 4)
         # VL - Sends version string in below SERVER message
         # UMODE2 - used for users setting modes on themselves (one less argument needed)
-        # EAUTH - Early auth? (Unreal 3.4 linking protocol)
-        f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL EAUTH=%s SID=%s' % (self.irc.serverdata["hostname"], self.irc.sid))
+        # EAUTH - Early auth? (Unreal 4 linking protocol)
+        # NICKIP - Extends the NICK command used for introduction (for Unreal 3.2 servers)
+        #          to include user IPs.
+        f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s' % (self.irc.serverdata["hostname"], self.irc.sid))
         sdesc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
@@ -586,6 +588,7 @@ class UnrealProtocol(TS6BaseProtocol):
             # internally by their nicks. In other words, we need to convert from this:
             #   <- NICK Global 3 1456843578 services novernet.com services.novernet.com 0 +ioS * :Global Noticer
             #   & nick hopcount timestamp username hostname server service-identifier-token :realname
+            #   <- NICK GL32 2 1460221959 gl localhost unreal32.midnight.vpn 0 +iowx * fwAAAQ== :realname (with NICKIP enabled)
             # to this:
             #   <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
             log.debug('(%s) got legacy NICK args: %s', self.irc.name, ' '.join(args))
@@ -597,9 +600,6 @@ class UnrealProtocol(TS6BaseProtocol):
             fake_uid = '%s@%s' % (args[0], self.legacy_nickcount)
             self.legacy_nickcount += 1
             new_args[5] = fake_uid
-
-            # Insert a fake IP for the user (this isn't sent by the NICK command)
-            new_args.insert(-1, '*')
 
             # Insert a fake cloaked host (just make it equal the real host, I don't care)
             new_args.insert(-2, args[4])
