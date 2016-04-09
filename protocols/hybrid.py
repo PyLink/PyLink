@@ -128,18 +128,23 @@ class HybridProtocol(TS6Protocol):
                 modes=raw_modes, ip=ip, realname=realname))
         return u
 
-    def updateClient(self, numeric, field, text):
+    def updateClient(self, target, field, text):
         """Updates the ident, host, or realname of a PyLink client."""
+        # https://github.com/ircd-hybrid/ircd-hybrid/blob/58323b8/modules/m_svsmode.c#L40-L103
+        # parv[0] = command
+        # parv[1] = nickname <-- UID works too -GLolol
+        # parv[2] = TS <-- Of the user, not the current time. -GLolol
+        # parv[3] = mode
+        # parv[4] = optional argument (services account, vhost)
         field = field.upper()
-        if field == 'IDENT':
-            self.irc.users[numeric].ident = text
-            self._send(numeric, 'SETIDENT %s' % text)
-        elif field == 'HOST':
-            self.irc.users[numeric].host = text
-            self._send(numeric, 'SETHOST %s' % text)
-        elif field in ('REALNAME', 'GECOS'):
-            self.irc.users[numeric].realname = text
-            self._send(numeric, 'SETNAME :%s' % text)
+
+        ts = irc.users[target].ts
+
+        if field == 'HOST':
+            self.irc.users[target].host = text
+            # On Hybrid, it appears that host changing is actually just forcing umode
+            # "+x <hostname>" on the target. -GLolol
+            self._send(self.irc.sid, 'SVSMODE %s %s +x %s' % (target, ts, text))
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
