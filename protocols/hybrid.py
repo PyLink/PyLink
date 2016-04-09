@@ -82,7 +82,7 @@ class HybridProtocol(TS6Protocol):
         # CHW: Allow sending messages to @#channel and the like.
         # KNOCK: Support for /knock
         # SVS: Deal with extended NICK/UID messages that contain service IDs/stamps
-        # TBURST: Topic Burst command; we send this in topicServer
+        # TBURST: Topic Burst command; we send this in topicBurst
         # DLN: DLINE command
         # UNDLN: UNDLINE command
         # KLN: KLINE command
@@ -166,11 +166,11 @@ class HybridProtocol(TS6Protocol):
     def handle_capab(self, numeric, command, args):
         # We only get a list of keywords here. Hybrid obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
-        # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
+        # <- CAPAB :UNDLN UNKLN KLN TBURST KNOCK ENCAP DLN IE EX HOPS CHW SVS CLUSTER EOB QS
         self.irc.caps = caps = args[0].split()
-        # for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS'):
-        #     if required_cap not in caps:
-        #         raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
+        for required_cap in ('EX', 'IE', 'SVS', 'EOB', 'HOPS', 'QS', 'TBURST', 'SVS'):
+             if required_cap not in caps:
+                 raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
         log.debug('(%s) self.irc.connected set!', self.irc.name)
         self.irc.connected.set()
