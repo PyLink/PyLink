@@ -63,7 +63,7 @@ class HybridProtocol(TS6Protocol):
             'nickchange_notices': 'n', 'hideidle': 'q', 'registered': 'r',
             'smessages': 's', 'ssl': 'S', 'sjoins': 'e', 'botfloods': 'b',
             # Now, map all the ABCD type modes:
-            '*A': 'dx', '*B': '', '*C': '', '*D': 'oiwlpRDg'
+            '*A': '', '*B': '', '*C': '', '*D': 'oiwlpRDgdx'
         }
 
         self.irc.umodes.update(umodes)
@@ -257,7 +257,7 @@ class HybridProtocol(TS6Protocol):
                 # SVSMODE is also used to set cloaks on Hybrid.
                 # "SVSMODE 001TARGET +x some.host" would change 001TARGET's host
                 # to some.host, for example.
-                host = modepair[1]
+                host = args[-1]
 
                 self.irc.users[target].host = host
 
