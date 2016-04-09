@@ -30,19 +30,10 @@ class UnrealProtocol(TS6BaseProtocol):
                          'SETIDENT': 'CHGIDENT', 'SETNAME': 'CHGNAME',
                          'EOS': 'ENDBURST'}
 
-        self.caps = {}
+        self.caps = []
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
-        self._unrealCmodes = {'l': 'limit', 'c': 'blockcolor', 'G': 'censor',
-                         'D': 'delayjoin', 'n': 'noextmsg', 's': 'secret',
-                         'T': 'nonotice', 'z': 'sslonly', 'b': 'ban', 'V': 'noinvite',
-                         'Z': 'issecure', 'r': 'registered', 'N': 'nonick',
-                         'e': 'banexception', 'R': 'regonly', 'M': 'regmoderated',
-                         'p': 'private', 'Q': 'nokick', 'P': 'permanent', 'k': 'key',
-                         'C': 'noctcp', 'O': 'operonly', 'S': 'stripcolor',
-                         'm': 'moderated', 'K': 'noknock', 'o': 'op', 'v': 'voice',
-                         'I': 'invex', 't': 'topiclock', 'f': 'flood_unreal'}
 
-        self._neededCaps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3"]
+        self.needed_caps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3", "NICKIP"]
 
         # Some command aliases
         self.handle_svskill = self.handle_kill
@@ -428,13 +419,12 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- SERVER unreal.midnight.vpn 1 :U3999-Fhin6OoEM UnrealIRCd test server
         sname = args[0]
         if numeric == self.irc.uplink and not self.irc.connected.is_set():  # We're doing authentication
-            for cap in self._neededCaps:
+            for cap in self.needed_caps:
                 if cap not in self.caps:
                     raise ProtocolError("Not all required capabilities were met "
                                         "by the remote server. Your version of UnrealIRCd "
                                         "is probably too old! (Got: %s, needed: %s)" %
-                                        (sorted(self.caps.keys()),
-                                         sorted(_neededCaps)))
+                                        (sorted(self.caps), sorted(self.needed_caps)))
             sdesc = args[-1].split(" ")
             # Get our protocol version :)
             vline = sdesc[0].split('-', 1)
@@ -479,29 +469,35 @@ class UnrealProtocol(TS6BaseProtocol):
         return super().handle_squit(numeric, 'SQUIT', args)
 
     def handle_protoctl(self, numeric, command, args):
+        """Handles protocol negotiation."""
+
+        cmodes = {'noknock': 'K', 'limit': 'l', 'registered': 'r', 'flood_unreal': 'f',
+                  'censor': 'G', 'noextmsg': 'n', 'invex': 'I', 'permanent': 'P',
+                  'sslonly': 'z', 'operonly': 'O', 'moderated': 'm', 'blockcolor': 'c',
+                  'regmoderated': 'M', 'noctcp': 'C', 'secret': 's', 'ban': 'b',
+                  'nokick': 'Q', 'private': 'p', 'stripcolor': 'S', 'key': 'k',
+                  'op': 'o', 'voice': 'v', 'regonly': 'R', 'noinvite': 'V',
+                  'banexception': 'e', 'nonick': 'N', 'issecure': 'Z', 'topiclock': 't',
+                  'nonotice': 'T', 'delayjoin': 'D'}
+
+        # Make a list of all our capability names.
+        self.caps += [arg.split('=')[0] for arg in args]
+
         # <- PROTOCTL NOQUIT NICKv2 SJOIN SJOIN2 UMODE2 VL SJ3 TKLEXT TKLEXT2 NICKIP ESVID
         # <- PROTOCTL CHANMODES=beI,k,l,psmntirzMQNRTOVKDdGPZSCc NICKCHARS= SID=001 MLOCK TS=1441314501 EXTSWHOIS
         for cap in args:
             if cap.startswith('SID'):
                 self.irc.uplink = cap.split('=', 1)[1]
-                self.caps['SID'] = True
             elif cap.startswith('CHANMODES'):
-                cmodes = cap.split('=', 1)[1]
-                self.irc.cmodes['*A'], self.irc.cmodes['*B'], self.irc.cmodes['*C'], self.irc.cmodes['*D'] = cmodes.split(',')
-                for m in cmodes:
-                    if m in self._unrealCmodes:
-                        self.irc.cmodes[self._unrealCmodes[m]] = m
-                self.caps['CHANMODES'] = True
+                # Parse all the supported channel modes.
+                supported_cmodes = cap.split('=', 1)[1]
+                self.irc.cmodes['*A'], self.irc.cmodes['*B'], self.irc.cmodes['*C'], self.irc.cmodes['*D'] = supported_cmodes.split(',')
+                for namedmode, modechar in cmodes.items():
+                    if modechar in supported_cmodes:
+                        self.irc.cmodes[namedmode] = modechar
                 self.irc.cmodes['*B'] += 'f'  # Add +f to the list too, dunno why it isn't there.
-            # Because more than one PROTOCTL line is sent, we have to delay the
-            # check to see whether our needed capabilities are all there...
-            # That's done by handle_server(), which comes right after PROTOCTL.
-            elif cap == 'VL':
-                self.caps['VL'] = True
-            elif cap == 'NOQUIT':
-                self.caps['NOQUIT'] = True
-            elif cap == 'SJ3':
-                self.caps['SJ3'] = True
+
+        # Add in the supported prefix modes.
         self.irc.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
                                 'op': 'o', 'voice': 'v'})
 
