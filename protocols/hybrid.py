@@ -143,6 +143,20 @@ class HybridProtocol(TS6Protocol):
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
+    def topicBurst(self, numeric, target, text):
+        """Sends a topic change from a PyLink server. This is usually used on burst."""
+        # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
+        if not self.irc.isInternalServer(numeric):
+            raise LookupError('No such PyLink server exists.')
+
+        ts = self.irc.channels[target].ts
+        servername = self.irc.servers[numeric].name
+
+        self._send(numeric, 'TBURST %s %s %s %s :%s' % (ts, target, int(time.time()), servername, text))
+        self.irc.channels[target].topic = text
+        self.irc.channels[target].topicset = True
+
+
     # command handlers
 
     def handle_capab(self, numeric, command, args):
