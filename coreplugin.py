@@ -7,6 +7,8 @@ import sys
 import signal
 
 import utils
+import conf
+import classes
 from log import log
 import world
 
@@ -331,6 +333,54 @@ def reload(irc, source, args):
         return
     if unload(irc, source, args):
         load(irc, source, args)
+
+@utils.add_cmd
+def rehash(irc, source, args):
+    """takes no arguments.
+
+    Reloads the configuration file for PyLink, (dis)connecting added/removed networks.
+    Plugins must be manually reloaded."""
+    utils.checkAuthenticated(irc, source, allowOper=False)
+    old_conf = conf.conf.copy()
+    fname = conf.fname
+    try:
+        new_conf = conf.loadConf(fname, errors_fatal=False)
+    except Exception as e:  # Something went wrong, abort.
+        log.exception("Error REHASH'ing config: ")
+        irc.reply("Error loading configuration file: %s: %s" % (type(e).__name__, e))
+        return
+    else:
+        new_conf = conf.validateConf(new_conf)
+        conf.conf = new_conf
+        for network, ircobj in world.networkobjects.copy().items():
+            # Server was removed from the config file, disconnect them.
+            log.debug('(%s) rehash: checking if %r is in new conf still.', irc.name, network)
+            if network not in new_conf['servers']:
+                log.debug('(%s) rehash: removing connection to %r (removed from config).', irc.name, network)
+                # Disable autoconnect first.
+                ircobj.serverdata['autoconnect'] = -1
+                ircobj.disconnect()
+                del world.networkobjects[network]
+            else:
+                ircobj.conf = new_conf
+                ircobj.serverdata = new_conf['servers'][network]
+                ircobj.botdata = new_conf['bot']
+
+                # Clear the IRC object's channel loggers and replace them with
+                # new ones by re-running logSetup().
+                while ircobj.loghandlers:
+                    log.removeHandler(ircobj.loghandlers.pop())
+
+                ircobj.logSetup()
+
+                # TODO: update file loggers here too.
+
+        for network, sdata in new_conf['servers'].items():
+            # New server was added. Connect them if not already connected.
+            if network not in world.networkobjects:
+                proto = utils.getProtocolModule(sdata['protocol'])
+                world.networkobjects[network] = classes.Irc(network, proto, new_conf)
+        irc.reply("Done.")
 
 def main(irc=None):
     # This is a global sanity check, to make sure the protocol module is doing
