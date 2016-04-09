@@ -138,7 +138,7 @@ class HybridProtocol(TS6Protocol):
         # parv[4] = optional argument (services account, vhost)
         field = field.upper()
 
-        ts = irc.users[target].ts
+        ts = self.irc.users[target].ts
 
         if field == 'HOST':
             self.irc.users[target].host = text
