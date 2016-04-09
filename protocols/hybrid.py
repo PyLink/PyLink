@@ -176,7 +176,10 @@ class HybridProtocol(TS6Protocol):
         self.irc.connected.set()
 
     def handle_uid(self, numeric, command, args):
-        """Handles incoming UID commands (user introduction)."""
+        """
+        Handles Hybrid-style UID commands (user introduction). This is INCOMPATIBLE
+        with standard TS6 implementations, as the arguments are slightly different.
+        """
         # <- :0UY UID dan 1 1451041551 +Facdeiklosuw ~ident localhost 127.0.0.1 0UYAAAAAB * :realname
         nick = args[0]
         ts, modes, ident, host, ip, uid, account, realname = args[2:10]
