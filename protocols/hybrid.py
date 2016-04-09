@@ -185,13 +185,14 @@ class HybridProtocol(TS6Protocol):
         ts, modes, ident, host, ip, uid, account, realname = args[2:10]
         if account == '*':
             account = None
-        log.debug('(%s) handle_uid got args: nick=%s ts=%s uid=%s ident=%s '
+        log.debug('(%s) handle_uid: got args nick=%s ts=%s uid=%s ident=%s '
                   'host=%s realname=%s ip=%s', self.irc.name, nick, ts, uid,
                   ident, host, realname, ip)
 
-        self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realname, ip)
+        self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, host, ip)
+
         parsedmodes = utils.parseModes(self.irc, uid, [modes])
-        log.debug('Applying modes %s for %s', parsedmodes, uid)
+        log.debug('(%s) handle_uid: Applying modes %s for %s', self.irc.name, parsedmodes, uid)
         utils.applyModes(self.irc, uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
 
