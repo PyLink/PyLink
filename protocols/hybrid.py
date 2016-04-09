@@ -253,6 +253,20 @@ class HybridProtocol(TS6Protocol):
                 self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
                 parsedmodes.remove(modepair)
 
+            elif modepair[0] == '+x':
+                # SVSMODE is also used to set cloaks on Hybrid.
+                # "SVSMODE 001TARGET +x some.host" would change 001TARGET's host
+                # to some.host, for example.
+                host = modepair[1]
+
+                self.irc.users[target].host = host
+
+                # Propagate the hostmask change as a hook.
+                self.irc.callHooks([numeric, 'CHGHOST',
+                                   {'target': target, 'newhost': host}])
+
+                parsedmodes.remove(modepair)
+
         if parsedmodes:
             utils.applyModes(self.irc, target, parsedmodes)
 
