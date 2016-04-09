@@ -156,7 +156,6 @@ class HybridProtocol(TS6Protocol):
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
-
     # command handlers
 
     def handle_capab(self, numeric, command, args):
@@ -208,12 +207,6 @@ class HybridProtocol(TS6Protocol):
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
-
-    def handle_svstag(self, numeric, command, args):
-        tag = args[2]
-        if tag in ['313']:
-            return
-        raise Exception('COULD NOT PARSE SVSTAG: {} {} {}'.format(numeric, command, args))
 
     def handle_endburst(self, numeric, command, args):
         log.debug('(%s) end of burst received', self.irc.name)
