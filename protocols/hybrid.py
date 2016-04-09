@@ -213,7 +213,7 @@ class HybridProtocol(TS6Protocol):
         self.irc.channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
-    def handle_endburst(self, numeric, command, args):
+    def handle_eob(self, numeric, command, args):
         log.debug('(%s) end of burst received', self.irc.name)
         return {}
 
