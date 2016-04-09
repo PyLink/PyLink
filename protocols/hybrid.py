@@ -55,7 +55,7 @@ class HybridProtocol(TS6Protocol):
         # regdeaf servprotect showwhois snomask u_registered u_stripcolor wallops
         umodes = {
             'oper': 'o', 'invisible': 'i', 'wallops': 'w', 'chary_locops': 'l',
-            'cloak': 'x', 'hidechans': 'p', 'regdeaf': 'R', 'deaf': 'D',
+            'cloak_hybrid': 'x', 'hidechans': 'p', 'regdeaf': 'R', 'deaf': 'D',
             'callerid': 'g', 'showadmin': 'a', 'softcallerid': 'G', 'hideops': 'H',
             'webirc': 'W', 'client_connections': 'c', 'bad_client_connections': 'u',
             'rejected_clients': 'j', 'skill_notices': 'k', 'fullauthblock': 'f',
@@ -63,7 +63,7 @@ class HybridProtocol(TS6Protocol):
             'nickchange_notices': 'n', 'hideidle': 'q', 'registered': 'r',
             'smessages': 's', 'ssl': 'S', 'sjoins': 'e', 'botfloods': 'b',
             # Now, map all the ABCD type modes:
-            '*A': '', '*B': '', '*C': '', '*D': 'oiwlxpRDg'
+            '*A': 'dx', '*B': '', '*C': '', '*D': 'oiwlpRDg'
         }
 
         self.irc.umodes.update(umodes)
@@ -221,5 +221,41 @@ class HybridProtocol(TS6Protocol):
         log.debug('(%s) end of burst received', self.irc.name)
         return {}
 
+    def handle_svsmode(self, numeric, command, args):
+        """
+        Handles SVSMODE, which is used for sending services metadata
+        (vhosts, account logins), and other forced usermode changes.
+        """
+
+        target = args[0]
+        ts = args[1]
+        modes = args[2:]
+        parsedmodes = utils.parseModes(self.irc, target, modes)
+
+        for modepair in parsedmodes:
+            if modepair[0] == '+d':
+                # Login sequence (tested with Anope 2.0.4-git):
+                # A mode change +d accountname is used to propagate logins,
+                # before setting umode +r on the target.
+                # <- :5ANAAAAAG SVSMODE 5HYAAAAAA 1460175209 +d GL
+                # <- :5ANAAAAAG SVSMODE 5HYAAAAAA 1460175209 +r
+
+                # Logout sequence:
+                # <- :5ANAAAAAG SVSMODE 5HYAAAAAA 1460175209 +d *
+                # <- :5ANAAAAAG SVSMODE 5HYAAAAAA 1460175209 -r
+
+                account = args[-1]
+                if account == '*':
+                    account = ''  # Logout
+
+                # Send the login hook, and remove this mode from the mode
+                # list, as it shouldn't be parsed literally.
+                self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+                parsedmodes.remove(modepair)
+
+        if parsedmodes:
+            utils.applyModes(self.irc, target, parsedmodes)
+
+        return {'target': target, 'modes': parsedmodes}
 
 Class = HybridProtocol
