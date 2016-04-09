@@ -505,7 +505,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_privmsg(self, source, command, args):
         # Convert nicks to UIDs, where they exist.
-        target = self._getNick(args[0])
+        target = self._getUid(args[0])
         # We use lowercase channels internally, but uppercase UIDs.
         if utils.isChannel(target):
             target = utils.toLower(self.irc, target)
@@ -687,7 +687,7 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_svsmode(self, numeric, command, args):
         """Handles SVSMODE, used by services for setting user modes on others."""
         # <- :source SVSMODE target +usermodes
-        target = self._getNick(args[0])
+        target = self._getUid(args[0])
         modes = args[1:]
 
         parsedmodes = utils.parseModes(self.irc, target, modes)
@@ -718,7 +718,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Get the target and the account name being set. 0 for accountname
         # indicates a logout.
-        target = self._getNick(args[0])
+        target = self._getUid(args[0])
         try:
             account = args[2]
             if account == '0':
@@ -769,7 +769,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # The second argument is the ACTUAL nick requested.
 
         # The actual WHOIS handling is done protocol-independently by coreplugin.
-        return {'target': self._getNick(args[-1])}
+        return {'target': self._getUid(args[-1])}
 
     def handle_setident(self, numeric, command, args):
         """Handles SETIDENT, used for self ident changes."""
@@ -797,14 +797,14 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_chgident(self, numeric, command, args):
         """Handles CHGIDENT, used for denoting ident changes."""
         # <- :GL CHGIDENT GL test
-        target = self._getNick(args[0])
+        target = self._getUid(args[0])
         self.irc.users[target].ident = newident = args[1]
         return {'target': target, 'newident': newident}
 
     def handle_chghost(self, numeric, command, args):
         """Handles CHGHOST, used for denoting hostname changes."""
         # <- :GL CHGHOST GL some.host
-        target = self._getNick(args[0])
+        target = self._getUid(args[0])
         self.irc.users[target].host = newhost = args[1]
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
@@ -816,14 +816,14 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_chgname(self, numeric, command, args):
         """Handles CHGNAME, used for denoting real name/gecos changes."""
         # <- :GL CHGNAME GL :afdsafasf
-        target = self._getNick(args[0])
+        target = self._getUid(args[0])
         self.irc.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
 
     def handle_invite(self, numeric, command, args):
         """Handles incoming INVITEs."""
         # <- :GL INVITE PyLink-devel :#a
-        target = self._getNick(args[0])
+        target = self._getUid(args[0])
         channel = args[1].lower()
         # We don't actually need to process this; it's just something plugins/hooks can use
         return {'target': target, 'channel': channel}
@@ -833,7 +833,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)
         # Use ts6_common's handle_kill, but coerse UIDs to nicks first.
 
-        new_args = [self._getNick(args[0])]
+        new_args = [self._getUid(args[0])]
         new_args.extend(args[1:])
 
         return super().handle_kill(numeric, command, new_args)

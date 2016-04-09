@@ -44,7 +44,7 @@ class TS6BaseProtocol(Protocol):
         else:
             return sname  # Fall back to given text instead of None
 
-    def _getNick(self, target):
+    def _getUid(self, target):
         """Converts a nick argument to its matching UID. This differs from irc.nickToUid()
         in that it returns the original text instead of None, if no matching nick is found."""
         target = self.irc.nickToUid(target) or target
@@ -221,7 +221,7 @@ class TS6BaseProtocol(Protocol):
                 numeric = sender_server
             else:
                 # Sender is a user.
-                numeric = self._getNick(sender)
+                numeric = self._getUid(sender)
 
         # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
         except IndexError:
@@ -269,7 +269,7 @@ class TS6BaseProtocol(Protocol):
         """Handles incoming KICKs."""
         # :70MAAAAAA KICK #test 70MAAAAAA :some reason
         channel = utils.toLower(self.irc, args[0])
-        kicked = self._getNick(args[1])
+        kicked = self._getUid(args[1])
         self.handle_part(kicked, 'KICK', [channel, args[2]])
         return {'channel': channel, 'target': kicked, 'text': args[2]}
 
