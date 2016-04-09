@@ -33,7 +33,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.caps = []
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
 
-        self.needed_caps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3", "NICKIP"]
+        self.needed_caps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3", "NICKIP", "UMODE2"]
 
         # Some command aliases
         self.handle_svskill = self.handle_kill
