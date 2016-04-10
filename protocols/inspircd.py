@@ -390,8 +390,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     # name it anything you like. The former is config default,
                     # but I personally prefer the latter.
                     name = 'owner'
+                
+                if name == 'c_registered':
+                    # Be consistent with other protocols
+                    name = 'registered'
 
-                # We don't really care about mode prefixes; just the mode char
+                # We don't care about mode prefixes; just the mode char.
                 self.irc.cmodes[name] = char[-1]
 
 
