@@ -112,23 +112,23 @@ When receiving or sending topics, there is a `topicset` attribute in the IRC cha
 
 ### Mode formats
 
-Modes are stored a special format in PyLink, different from raw mode strings in order to make them easier to parse. Mode strings can be turned into mode *lists*, which are used to both represent mode changes in hooks, and when storing them internally.
+Modes are stored a special format in PyLink, different from raw mode strings in order to make them easier to parse. Mode strings can be turned into mode *lists*, which are used to represent mode changes in hooks, and when storing modes internally.
 
-`utils.parseModes(irc, target, split_modestring)` is used to convert mode strings to mode lists, where `irc` is the IRC object, `target` is the channel or user the mode is being set on, and `split_modestring` is the string of modes to parse, *split at each space* (really a list).
+`utils.parseModes(irc, target, split_modestring)` is used to convert mode strings to mode lists, where `irc` is the IRC object, `target` is the channel name or UID the mode is being set on, and `split_modestring` is the string of modes to parse, *split at each space* (meaning that it's really a list).
 
 - `utils.parseModes(irc, '#chat', ['+tHIs', '*!*@is.sparta'])` would give:
     - `[('+t', None), ('+H', None), ('+I', '*!*@is.sparta'), ('+s', None)]`
 
-Also, it will automatically convert prefix mode targets from nicks to UIDs, and drop invalid modes
+Also, `parseModes` will automatically convert prefix mode targets from nicks to UIDs, and drop invalid modes settings.
 
 - `utils.parseModes(irc, '#chat', ['+ol', 'invalidnick'])`:
     - `[]`
 - `utils.parseModes(irc, '#chat', ['+o', 'GLolol'])`:
     - `[('+o', '001ZJZW01')]`
 
-Then, the parsed mode lists can be applied to channel using `utils.applyModes(irc, target, parsed_modelist)`.
+Then, a parsed mode list can be applied to channel name or UID using `utils.applyModes(irc, target, parsed_modelist)`.
 
-Modes are stored in channels and users as sets: `(userobj or chanobj).modes`:
+Internally, modes are stored in channel and user objects as sets: `(userobj or chanobj).modes`:
 
 ```
 <+GLolol> PyLink-devel, eval irc.users[source].modes
@@ -141,7 +141,7 @@ Modes are stored in channels and users as sets: `(userobj or chanobj).modes`:
 
 ```
 <@GLolol> PyLink-devel, eval irc.channels['#chat'].prefixmodes
-<+PyLink-devel> {'ops': set(), 'halfops': set(), 'voices': {'38QAAAAAA'}, 'owners': set(), 'admins': set()}
+<+PyLink-devel> {'op': set(), 'halfop': set(), 'voice': {'38QAAAAAA'}, 'owner': set(), 'admin': set()}
 ```
 
 When a certain mode (e.g. owner) isn't supported on a network, the key still exists in `prefixmodes` but is simply unused.
