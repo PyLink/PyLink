@@ -177,6 +177,8 @@ class P10Protocol(Protocol):
         # If the token isn't in the list, return it raw.
         return tokens.get(token, token)
 
+    ### COMMANDS
+
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
@@ -226,6 +228,8 @@ class P10Protocol(Protocol):
 
     def ping(*args):
         pass
+
+    ### HANDLERS
 
     def connect(self):
         """Initializes a connection to a server."""
@@ -279,26 +283,29 @@ class P10Protocol(Protocol):
             # a numeric. a P10 implementation must only send lines with a numeric source prefix.
             sender = sender[1:]
 
-        command_token = args[1].upper()
-
         # If the sender isn't in numeric format, try to convert it automatically.
         sender_sid = self._getSid(sender)
         sender_uid = self._getUid(sender)
         if sender_sid in self.irc.servers:
             # Sender is a server (converting from name to SID gave a valid result).
-            sender = sender_server
+            sender = sender_sid
         elif sender_uid in self.irc.users:
             # Sender is a user (converting from name to UID gave a valid result).
-            sender = self._getUid(sender)
+            sender = sender_uid
         else:
             # No sender prefix; treat as coming from uplink IRCd.
             sender = self.irc.uplink
+            args.insert(0, sender)
 
+        command_token = args[1].upper()
         args = args[2:]
+
+        log.debug('(%s) Found message sender as %s', self.irc.name, sender)
 
         try:
             # Convert the token given into a regular command, if present.
             command = self._getCommand(command_token)
+            log.debug('(%s) Translating token %s to command %s', self.irc.name, command_token, command)
 
             func = getattr(self, 'handle_'+command.lower())
 
@@ -306,8 +313,62 @@ class P10Protocol(Protocol):
             return
 
         else:  # Send a hook with the hook arguments given by the handler function.
-            parsed_args = func(numeric, command, args)
+            parsed_args = func(sender, command, args)
             if parsed_args is not None:
-                return [numeric, command, parsed_args]
+                return [sender, command, parsed_args]
+
+    def handle_server(self, source, command, args):
+        """Handles incoming server introductions."""
+        # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
+        servername = args[0].lower()
+        sid = args[5][:2]
+        sdesc = args[-1]
+        self.irc.servers[sid] = IrcServer(source, servername, desc=sdesc)
+
+        if self.irc.uplink is None:
+            # If we haven't already found our uplink, this is probably it.
+            self.irc.uplink = sid
+
+        return {'name': servername, 'sid': sid, 'text': sdesc}
+
+    def handle_nick(self, source, command, args):
+        """Handles the NICK command, used for user introductions and nick changes."""
+        if len(args) > 2:
+            # <- AB N GL 1 1460673049 ~gl nefarious.midnight.vpn +iw B]AAAB ABAAA :realname
+
+            nick = args[0]
+            ts, ident, host = args[2:5]
+
+            # TODO: fill this in
+            realhost = None
+            ip = '0.0.0.0'
+
+            uid = args[-2]
+            realname = args[-1]
+
+            log.debug('(%s) handle_nick got args: nick=%s ts=%s uid=%s ident=%s '
+                      'host=%s realname=%s realhost=%s ip=%s', self.irc.name, nick, ts, uid,
+                      ident, host, realname, realhost, ip)
+
+            self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+            self.irc.servers[source].users.add(uid)
+
+            # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L708
+            # Mode list is optional, and can be detected if the 6th argument starts with a +.
+            # This list can last until the 3rd LAST argument in the line, should there be mode
+            # parameters attached.
+            if args[5].startswith('+'):
+                modes = args[5:-3]
+                parsedmodes = utils.parseModes(self.irc, uid, modes)
+                utils.applyModes(self.irc, uid, parsedmodes)
+
+            # Call the OPERED UP hook if +o is being added to the mode list.
+            if ('+o', None) in parsedmodes:
+                self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+
+            # Set the accountname if present
+            #if accountname != "*":
+            #    self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+
 
 Class = P10Protocol
