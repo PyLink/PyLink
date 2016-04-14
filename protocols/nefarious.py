@@ -1,5 +1,5 @@
 """
-p10.py: P10 protocol module for PyLink, targetting Nefarious 2.
+nefarious.py: Nefarious IRCu protocol module for PyLink.
 """
 
 import sys
