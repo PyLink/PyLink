@@ -266,9 +266,8 @@ class P10Protocol(Protocol):
         protocol modules, coersing various sender prefixes from nicks and server names to P10
         "numeric nicks", whenever possible.
 
-        Per the P10 specification, commands sent without an explicit sender prefix are treated
-        as originating from the uplink server if they are SQUIT or KILL messages. Otherwise, they
-        are silently ignored.
+        Commands sent without an explicit sender prefix are treated as originating from the uplink
+        server.
         """
         data = data.split(" ")
         args = self.parseArgs(data)
@@ -291,16 +290,9 @@ class P10Protocol(Protocol):
         elif sender_uid in self.irc.users:
             # Sender is a user (converting from name to UID gave a valid result).
             sender = self._getUid(sender)
-        elif command_token in ('SQ', 'SQUIT', 'D',' KILL'):
-            # From https://github.com/evilnet/nefarious2/blob/a29b63144/doc/p10.txt#L142:
-            # if the source does not exist: if the command is SQUIT or KILL (or short token), the
-            # line must be parsed anyway, with the directly linked server from which the message
-            # came as the source. otherwise the line must be ignored.
-            sender = self.uplink
         else:
-            log.debug("(%s) Ignoring message '%s' with bad sender '%s'.", self.irc.name,
-                      args, args[0])
-            return
+            # No sender prefix; treat as coming from uplink IRCd.
+            sender = self.irc.uplink
 
         args = args[2:]
 
