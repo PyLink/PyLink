@@ -83,6 +83,8 @@ class P10Protocol(Protocol):
         # SID generator for P10.
         self.sidgen = P10SIDGenerator(irc)
 
+        self.hook_map = {'END_OF_BURST': 'ENDBURST'}
+
     def _send(self, source, text):
         self.irc.send("%s %s" % (source, text))
 
@@ -565,5 +567,12 @@ class P10Protocol(Protocol):
                 self.irc.channels[channel].modes, 'ts': ts}
 
     handle_create = handle_join
+
+    def handle_end_of_burst(self, source, command, args):
+        """Handles end of burst from our uplink."""
+        # Send EOB acknowledgement; this is required by the P10 specification,
+        # and needed if we want to be able to receive channel messages, etc.
+        self._send(self.irc.sid, 'EA')
+        return {}
 
 Class = P10Protocol
