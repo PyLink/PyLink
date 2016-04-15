@@ -252,6 +252,27 @@ class P10Protocol(Protocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
+    def kick(self, numeric, channel, target, reason=None):
+        """Sends kicks from a PyLink client/server."""
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        channel = utils.toLower(self.irc, channel)
+        if not reason:
+            reason = 'No reason given'
+
+        # Mangle kick targets for IRCds that require it.
+        target = self._getOutgoingNick(target)
+
+        self._send(numeric, 'K %s %s :%s' % (channel, target, reason))
+
+        # We can pretend the target left by its own will; all we really care about
+        # is that the target gets removed from the channel userlist, and calling
+        # handle_part() does that just fine.
+        self.handle_part(target, 'KICK', [channel])
+
     def message(self, numeric, target, text):
         """Sends a PRIVMSG from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
@@ -288,12 +309,34 @@ class P10Protocol(Protocol):
             modes = modes[12:]
             self._send(numeric, 'M %s %s%s' % (target, joinedmodes, ' %s' % ts if send_ts else ''))
 
+    def nick(self, numeric, newnick):
+        """Changes the nick of a PyLink client."""
+        # <- ABAAA N GL_ 1460753763
+        if not self.irc.isInternalClient(numeric):
+            raise LookupError('No such PyLink client exists.')
+
+        self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
+        self.irc.users[numeric].nick = newnick
+
     def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
         self._send(numeric, 'O %s :%s' % (target, text))
+
+    def part(self, client, channel, reason=None):
+        """Sends a part from a PyLink client."""
+        channel = utils.toLower(self.irc, channel)
+
+        if not self.irc.isInternalClient(client):
+            raise LookupError('No such PyLink client exists.')
+
+        msg = "L %s" % channel
+        if reason:
+            msg += " :%s" % reason
+        self._send(client, msg)
+        self.handle_part(client, 'PART', [channel])
 
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
@@ -305,6 +348,14 @@ class P10Protocol(Protocol):
             self._send(source, 'G %s %s' % (source, target))
         else:
             self._send(source, 'G %s' % source)
+
+    def quit(self, numeric, reason):
+        """Quits a PyLink client."""
+        if self.irc.isInternalClient(numeric):
+            self._send(numeric, "Q :%s" % reason)
+            self.removeClient(numeric)
+        else:
+            raise LookupError("No such PyLink client exists.")
 
     ### HANDLERS
 
@@ -474,6 +525,14 @@ class P10Protocol(Protocol):
             # Set the accountname if present
             #if accountname != "*":
             #    self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+
+            return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
+
+        else:
+            # <- ABAAA N GL_ 1460753763
+            oldnick = self.irc.users[numeric].nick
+            newnick = self.irc.users[numeric].nick = args[0]
+            return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING requests."""
@@ -651,5 +710,46 @@ class P10Protocol(Protocol):
         return {'target': target, 'modes': changedmodes}
     # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
     handle_opmode = handle_mode
+
+    def handle_part(self, source, command, args):
+        """Handles user parts."""
+        # <- ABAAA L #test,#test2
+        # <- ABAAA L #test :test
+
+        channels = utils.toLower(self.irc, args[0]).split(',')
+        for channel in channels:
+            # We should only get PART commands for channels that exist, right??
+            self.irc.channels[channel].removeuser(source)
+
+            try:
+                self.irc.users[source].channels.discard(channel)
+            except KeyError:
+                log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?",
+                          self.irc.name, channel, source)
+            try:
+                reason = args[1]
+            except IndexError:
+                reason = ''
+
+            # Clear empty non-permanent channels.
+            if not self.irc.channels[channel].users:
+                del self.irc.channels[channel]
+
+        return {'channels': channels, 'text': reason}
+
+    def handle_kick(self, source, command, args):
+        """Handles incoming KICKs."""
+        # <- ABAAA K #TEST AyAAA :PyLink-devel
+        channel = utils.toLower(self.irc, args[0])
+        kicked = args[1]
+
+        self.handle_part(kicked, 'KICK', [channel, args[2]])
+        return {'channel': channel, 'target': kicked, 'text': args[2]}
+
+    def handle_quit(self, numeric, command, args):
+        """Handles incoming QUIT commands."""
+        # <- ABAAB Q :Killed (GL_ (bangbang))
+        self.removeClient(numeric)
+        return {'text': args[0]}
 
 Class = P10Protocol
