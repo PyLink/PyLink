@@ -233,7 +233,22 @@ class P10Protocol(Protocol):
         return u
 
     def join(self, client, channel):
-        pass
+        """Joins a PyLink client to a channel."""
+        # <- ABAAB J #test3 1460744371
+        channel = utils.toLower(self.irc, channel)
+        ts = self.irc.channels[channel].ts
+
+        if not self.irc.isInternalClient(client):
+            raise LookupError('No such PyLink client exists.')
+
+        if not self.irc.channels[channel].users:
+            # Empty channels should be created with the CREATE command.
+            self._send(client, "C {channel} {ts}".format(ts=ts, channel=channel))
+        else:
+            self._send(client, "J {channel} {ts}".format(ts=ts, channel=channel))
+
+        self.irc.channels[channel].users.add(client)
+        self.irc.users[client].channels.add(channel)
 
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
@@ -421,12 +436,100 @@ class P10Protocol(Protocol):
         target = args[1]
         sid = self._getSid(target)
         if self.irc.isInternalServer(sid):
-            self._send(source, 'Z %s %s' % (source, target))
+            self._send(self.irc.sid, 'Z %s :%s' % (self.irc.sid, source))
 
     def handle_pong(self, source, command, args):
         """Handles incoming PONGs."""
         # <- AB Z AB :Ay
         if source == self.irc.uplink:
             self.irc.lastping = time.time()
+
+    def handle_burst(self, source, command, args):
+        """Handles the BURST command, used for bursting channels on link.
+
+        This is equivalent to SJOIN on most IRCds."""
+        # Oh no, we have to figure out which parameter is which...
+        # <- AB B #test 1460742014 ABAAB,ABAAA:o
+        # <- AB B #services 1460742014 ABAAA:o
+        # <- AB B #test 1460742014 +tnlk 10 testkey ABAAB,ABAAA:o :%*!*@bad.host
+        # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host *!*@bad.host
+        # <- AB B #test2 1460743539 +l 10 ABAAA:vo :%*!*@bad.host
+        # 1 <channel>
+        # 2 <timestamp>
+        # 3+ [<modes> [<mode extra parameters>]] [<users>] [<bans>]
+        channel = utils.toLower(self.irc, args[0])
+        userlist = args[-1].split()
+        their_ts = int(args[1])
+        our_ts = self.irc.channels[channel].ts
+
+        self.updateTS(channel, their_ts)
+
+        bans = []
+        if args[-1].startswith('%'):
+            # Ban lists start with a %.
+            bans = args[-1][1:].split(' ')
+
+            # Remove this argument from the args list.
+            args = args[:-1]
+
+        userlist = args[-1].split(',')
+
+        # Then, we can make the modestring just encompass all the text until the end of the long.
+        modestring = args[2:-1] or args[2]
+        parsedmodes = utils.parseModes(self.irc, channel, modestring)
+
+        # Add the ban list to the list of modes to process.
+        parsedmodes.extend([('+b', host) for host in bans])
+
+        utils.applyModes(self.irc, channel, parsedmodes)
+        namelist = []
+        log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
+        for userpair in userlist:
+            # This is given in the form UID1,UID2:prefixes
+            try:
+                user, prefixes = userpair.split(':')
+            except ValueError:
+                user = userpair
+                prefixes = ''
+            log.debug('(%s) handle_burst: got mode prefixes %r for user %r', self.irc.name, prefixes, user)
+
+            # Don't crash when we get an invalid UID.
+            if user not in self.irc.users:
+                log.warning('(%s) handle_burst: tried to introduce user %s not in our user list, ignoring...',
+                            self.irc.name, user)
+                continue
+
+            namelist.append(user)
+
+            self.irc.users[user].channels.add(channel)
+
+            if their_ts <= our_ts:
+                utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in prefixes])
+
+            self.irc.channels[channel].users.add(user)
+        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
+
+    def handle_join(self, source, command, args):
+        """Handles incoming JOINs and channel creations."""
+        # <- ABAAA C #test3 1460744371
+        # <- ABAAB J #test3 1460744371
+        ts = args[1]
+        if args[0] == '0' and command == 'JOIN':
+            # /join 0; part the user from all channels
+            oldchans = self.irc.users[numeric].channels.copy()
+            log.debug('(%s) Got /join 0 from %r, channel list is %r',
+                      self.irc.name, numeric, oldchans)
+            for channel in oldchans:
+                self.irc.channels[channel].users.discard(source)
+                self.irc.users[source].channels.discard(channel)
+            return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
+        else:
+            channel = utils.toLower(self.irc, args[0])
+            self.updateTS(channel, ts)
+
+        return {'channel': channel, 'users': [source], 'modes':
+                self.irc.channels[channel].modes, 'ts': ts}
+
+    handle_create = handle_join
 
 Class = P10Protocol
