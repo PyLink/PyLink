@@ -468,6 +468,7 @@ class P10Protocol(Protocol):
         # <- AB B #test 1460742014 +tnlk 10 testkey ABAAB,ABAAA:o :%*!*@bad.host
         # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host *!*@bad.host
         # <- AB B #test2 1460743539 +l 10 ABAAA:vo :%*!*@bad.host
+        # <- AB B #test 1460747615 ABAAA:o :% ~ *!*@test.host
         # 1 <channel>
         # 2 <timestamp>
         # 3+ [<modes> [<mode extra parameters>]] [<users>] [<bans>]
@@ -480,8 +481,21 @@ class P10Protocol(Protocol):
 
         bans = []
         if args[-1].startswith('%'):
-            # Ban lists start with a %.
-            bans = args[-1][1:].split(' ')
+            # Ban lists start with a %. However, if one argument is "~",
+            # Parse everything after it as an exempt (+e).
+            exempts = False
+            for host in args[-1][1:].split(' '):
+                if not host:
+                    # Space between % and ~ ignore.
+                    continue
+                elif host == '~':
+                    exempts = True
+                    continue
+
+                if exempts:
+                    bans.append(('+e', host))
+                else:
+                    bans.append(('+b', host))
 
             # Remove this argument from the args list.
             args = args[:-1]
@@ -497,7 +511,7 @@ class P10Protocol(Protocol):
             parsedmodes = []
 
         # Add the ban list to the list of modes to process.
-        parsedmodes.extend([('+b', host) for host in bans])
+        parsedmodes.extend(bans)
 
         if parsedmodes:
             utils.applyModes(self.irc, channel, parsedmodes)
