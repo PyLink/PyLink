@@ -235,8 +235,16 @@ class P10Protocol(Protocol):
     def join(self, client, channel):
         pass
 
-    def ping(*args):
-        pass
+    def ping(self, source=None, target=None):
+        """Sends a PING to a target server. Periodic PINGs are sent to our uplink
+        automatically by the Irc() internals; plugins shouldn't have to use this."""
+        source = source or self.irc.sid
+        if source is None:
+            return
+        if target is not None:
+            self._send(source, 'G %s %s' % (source, target))
+        else:
+            self._send(source, 'G %s' % source)
 
     ### HANDLERS
 
@@ -407,5 +415,18 @@ class P10Protocol(Protocol):
             #if accountname != "*":
             #    self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
+    def handle_ping(self, source, command, args):
+        """Handles incoming PING requests."""
+        # <- AB G !1460680329.145181 pylink.midnight.vpn 1460680329.145181
+        target = args[1]
+        sid = self._getSid(target)
+        if self.irc.isInternalServer(sid):
+            self._send(source, 'Z %s %s' % (source, target))
+
+    def handle_pong(self, source, command, args):
+        """Handles incoming PONGs."""
+        # <- AB Z AB :Ay
+        if source == self.irc.uplink:
+            self.irc.lastping = time.time()
 
 Class = P10Protocol
