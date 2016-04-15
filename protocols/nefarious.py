@@ -83,7 +83,7 @@ class P10Protocol(Protocol):
         # SID generator for P10.
         self.sidgen = P10SIDGenerator(irc)
 
-        self.hook_map = {'END_OF_BURST': 'ENDBURST'}
+        self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE'}
 
     def _send(self, source, text):
         self.irc.send("%s %s" % (source, text))
@@ -258,6 +258,35 @@ class P10Protocol(Protocol):
             raise LookupError('No such PyLink client exists.')
 
         self._send(numeric, 'P %s :%s' % (target, text))
+
+    def mode(self, numeric, target, modes, ts=None):
+        """Sends mode changes from a PyLink client/server."""
+        # <- ABAAA M GL -w
+        # <- ABAAA M #test +v ABAAB 1460747615
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        utils.applyModes(self.irc, target, modes)
+        modes = list(modes)
+
+        # According to the P10 specification:
+        # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L29
+        # One line can have a max of 15 parameters. Excluding the target and the first part of the
+        # modestring, this means we can send a max of 13 modes with arguments per line.
+        if utils.isChannel(target):
+            # Channel mode changes have a trailing TS. User mode changes do not.
+            cobj = self.irc.channels[utils.toLower(self.irc, target)]
+            ts = ts or cobj.ts
+            send_ts = True
+        else:
+            send_ts = False
+
+        while modes[:12]:
+            joinedmodes = utils.joinModes([m for m in modes[:12]])
+            modes = modes[12:]
+            self._send(numeric, 'M %s %s%s' % (target, joinedmodes, ' %s' % ts if send_ts else ''))
 
     def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client."""
@@ -601,5 +630,26 @@ class P10Protocol(Protocol):
         # and needed if we want to be able to receive channel messages, etc.
         self._send(self.irc.sid, 'EA')
         return {}
+
+    def handle_mode(self, source, command, args):
+        """Handles mode changes."""
+        # <- ABAAA M GL -w
+        # <- ABAAA M #test +v ABAAB 1460747615
+        # <- ABAAA OM #test +h ABAAA
+        target = args[0]
+        if utils.isChannel(target):
+            target = utils.toLower(self.irc, target)
+
+        modestrings = args[1:]
+        changedmodes = utils.parseModes(self.irc, target, modestrings)
+        utils.applyModes(self.irc, target, changedmodes)
+
+        # Call the CLIENT_OPERED hook if +o is being set.
+        if ('+o', None) in changedmodes and target in self.irc.users:
+            self.irc.callHooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+
+        return {'target': target, 'modes': changedmodes}
+    # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
+    handle_opmode = handle_mode
 
 Class = P10Protocol
