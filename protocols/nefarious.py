@@ -477,12 +477,17 @@ class P10Protocol(Protocol):
         # Then, we can make the modestring just encompass all the text until the end of the string.
         # If no modes are given, this will simply be empty.
         modestring = args[2:-1]
-        parsedmodes = utils.parseModes(self.irc, channel, modestring)
+        if modestring:
+            parsedmodes = utils.parseModes(self.irc, channel, modestring)
+        else:
+            parsedmodes = []
 
         # Add the ban list to the list of modes to process.
         parsedmodes.extend([('+b', host) for host in bans])
 
-        utils.applyModes(self.irc, channel, parsedmodes)
+        if parsedmodes:
+            utils.applyModes(self.irc, channel, parsedmodes)
+
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
         for userpair in userlist:
