@@ -432,11 +432,25 @@ class P10Protocol(Protocol):
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING requests."""
-        # <- AB G !1460680329.145181 pylink.midnight.vpn 1460680329.145181
+        # Snippet from Jobe @ evilnet, thanks! AFAIK, the P10 docs are out of date and don't
+        # show the right PING/PONG syntax used by nefarious.
+        # <- IA G !1460745823.89510 Channels.CollectiveIRC.Net 1460745823.89510
+        # -> X3 Z Channels.CollectiveIRC.Net 1460745823.89510 0 1460745823.089840
+        # Arguments of a PONG: our server hostname, the original TS of PING,
+        #                      difference between PING and PONG in seconds, the current TS.
+        # Why is this the way it is? I don't know... -GL
+
         target = args[1]
         sid = self._getSid(target)
+        orig_pingtime = args[0][1:]  # Strip the !, used to denote a TS instead of a server name.
+
+        currtime = time.time()
+        timediff = int(time.time() - float(orig_pingtime))
+
         if self.irc.isInternalServer(sid):
-            self._send(self.irc.sid, 'Z %s :%s' % (self.irc.sid, source))
+            # Only respond if the target server is ours. No forwarding is needed because
+            # no IRCds can ever connect behind us...
+            self._send(self.irc.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime))
 
     def handle_pong(self, source, command, args):
         """Handles incoming PONGs."""
