@@ -252,6 +252,20 @@ class P10Protocol(Protocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
+    def message(self, numeric, target, text):
+        """Sends a PRIVMSG from a PyLink client."""
+        if not self.irc.isInternalClient(numeric):
+            raise LookupError('No such PyLink client exists.')
+
+        self._send(numeric, 'P %s :%s' % (target, text))
+
+    def notice(self, numeric, target, text):
+        """Sends a NOTICE from a PyLink client."""
+        if not self.irc.isInternalClient(numeric):
+            raise LookupError('No such PyLink client exists.')
+
+        self._send(numeric, 'O %s :%s' % (target, text))
+
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
         automatically by the Irc() internals; plugins shouldn't have to use this."""
@@ -567,6 +581,19 @@ class P10Protocol(Protocol):
                 self.irc.channels[channel].modes, 'ts': ts}
 
     handle_create = handle_join
+
+    def handle_privmsg(self, source, command, args):
+        """Handles incoming PRIVMSG/NOTICE."""
+        # <- ABAAA P AyAAA :privmsg text
+        # <- ABAAA O AyAAA :notice text
+        target = args[0]
+
+        # We use lowercase channels internally, but uppercase UIDs.
+        if utils.isChannel(target):
+            target = utils.toLower(self.irc, target)
+        return {'target': target, 'text': args[1]}
+
+    handle_notice = handle_privmsg
 
     def handle_end_of_burst(self, source, command, args):
         """Handles end of burst from our uplink."""
