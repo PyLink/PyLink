@@ -4,6 +4,8 @@ nefarious.py: Nefarious IRCu protocol module for PyLink.
 
 import sys
 import os
+import base64
+from ipaddress import ip_address
 
 # Import hacks to access utils and classes...
 curdir = os.path.dirname(__file__)
@@ -215,10 +217,18 @@ class P10Protocol(Protocol):
         # Fill in modes and add it to our users index
         utils.applyModes(self.irc, uid, modes)
         self.irc.servers[server].users.add(uid)
-        # TODO: send IPs
-        self._send(server, "N {nick} 1 {ts} {ident} {host} {modes} AAAAAA {uid} "
+
+        # Encode IPs when sending
+        if ip_address(ip).version == 4:
+            # Thanks to Jobe @ evilnet for the tips here! -GL
+            ip = b'\x00\x00' + socket.inet_aton(ip)
+            b64ip = base64.b64encode(ip, b'[]')[2:].decode()
+        else:  # TODO: propagate IPv6 address, but only if uplink supports it
+            b64ip = 'AAAAAA'
+
+        self._send(server, "N {nick} 1 {ts} {ident} {host} {modes} {ip} {uid} "
                    ":{realname}".format(ts=ts, host=host, nick=nick, ident=ident, uid=uid,
-                                        modes=raw_modes, ip=ip, realname=realname,
+                                        modes=raw_modes, ip=b64ip, realname=realname,
                                         realhost=realhost))
         return u
 
@@ -251,7 +261,7 @@ class P10Protocol(Protocol):
 
         # HACK: Encode our SID everywhere, and replace it in the IrcServer index.
         old_sid = self.irc.sid
-        self.irc.sid = sid = self.sidgen.encode(self.irc.serverdata["sid"])
+        self.irc.sid = sid = p10b64encode(self.irc.serverdata["sid"])
         self.irc.servers[sid] = self.irc.servers[old_sid]
         del self.irc.servers[old_sid]
 
@@ -338,9 +348,37 @@ class P10Protocol(Protocol):
             nick = args[0]
             ts, ident, host = args[2:5]
 
-            # TODO: fill this in
+            # XXX: Is realhost ever sent?
             realhost = None
-            ip = '0.0.0.0'
+
+            # Thanks to Jobe @ evilnet for the code on what to do here. :) -GL
+            ip = args[-3]
+
+            if '_' in ip:  # IPv6
+                s = ''
+                # P10-encoded IPv6 addresses are formed with chunks, where each 16-bit
+                # portion of the address (each part between :'s) is encoded as 3 B64 chars.
+                # A single :: is translated into an underscore (_).
+                # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L723
+                # Example: 1:2::3 -> AABAAC_AAD
+                for b64chunk in re.findall('([A-Z]{3}|_)', ip):
+                    if b64chunk == '_':
+                        s += ':'
+                    else:
+                        ipchunk = base64.b64decode('A' + b64chunk, '[]')[1:]
+                        for char in ipchunk:
+                            s += str(char)
+                        s += ':'
+
+                ip = s.rstrip(':')
+
+            else:  # IPv4
+                # Pad the characters with two \x00's (represented in P10 B64 as AA)
+                ip = 'AA' + ip
+                # Decode it via Base64, dropping the initial padding characters.
+                ip = base64.b64decode(ip, altchars='[]')[2:]
+                # Convert the IP to a string.
+                ip = socket.inet_ntoa(ip)
 
             uid = args[-2]
             realname = args[-1]
