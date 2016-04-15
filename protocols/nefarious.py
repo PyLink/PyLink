@@ -474,8 +474,9 @@ class P10Protocol(Protocol):
 
         userlist = args[-1].split(',')
 
-        # Then, we can make the modestring just encompass all the text until the end of the long.
-        modestring = args[2:-1] or args[2]
+        # Then, we can make the modestring just encompass all the text until the end of the string.
+        # If no modes are given, this will simply be empty.
+        modestring = args[2:-1]
         parsedmodes = utils.parseModes(self.irc, channel, modestring)
 
         # Add the ban list to the list of modes to process.
