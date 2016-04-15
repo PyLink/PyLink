@@ -533,7 +533,7 @@ class P10Protocol(Protocol):
         """Handles incoming JOINs and channel creations."""
         # <- ABAAA C #test3 1460744371
         # <- ABAAB J #test3 1460744371
-        ts = args[1]
+        ts = int(args[1])
         if args[0] == '0' and command == 'JOIN':
             # /join 0; part the user from all channels
             oldchans = self.irc.users[numeric].channels.copy()
