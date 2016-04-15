@@ -349,7 +349,7 @@ class P10Protocol(Protocol):
             ts, ident, host = args[2:5]
 
             # XXX: Is realhost ever sent?
-            realhost = None
+            realhost = host
 
             # Thanks to Jobe @ evilnet for the code on what to do here. :) -GL
             ip = args[-3]
