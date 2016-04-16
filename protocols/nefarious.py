@@ -263,15 +263,23 @@ class P10Protocol(Protocol):
         if not reason:
             reason = 'No reason given'
 
-        # Mangle kick targets for IRCds that require it.
-        target = self._getOutgoingNick(target)
-
         self._send(numeric, 'K %s %s :%s' % (channel, target, reason))
 
         # We can pretend the target left by its own will; all we really care about
         # is that the target gets removed from the channel userlist, and calling
         # handle_part() does that just fine.
         self.handle_part(target, 'KICK', [channel])
+
+    def kill(self, numeric, target, reason):
+        """Sends a kill from a PyLink client/server."""
+        # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        self._send(numeric, 'D %s :Killed (%s)' % (target, reason))
+        self.removeClient(target)
 
     def message(self, numeric, target, text):
         """Sends a PRIVMSG from a PyLink client."""
@@ -651,7 +659,13 @@ class P10Protocol(Protocol):
         """Handles incoming JOINs and channel creations."""
         # <- ABAAA C #test3 1460744371
         # <- ABAAB J #test3 1460744371
-        ts = int(args[1])
+        # <- ABAAB J #test3
+        try:
+            # TS is optional
+            ts = int(args[1])
+        except IndexError:
+            ts = None
+
         if args[0] == '0' and command == 'JOIN':
             # /join 0; part the user from all channels
             oldchans = self.irc.users[numeric].channels.copy()
@@ -663,10 +677,11 @@ class P10Protocol(Protocol):
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
             channel = utils.toLower(self.irc, args[0])
-            self.updateTS(channel, ts)
+            if ts:  # Only update TS if one was sent.
+                self.updateTS(channel, ts)
 
         return {'channel': channel, 'users': [source], 'modes':
-                self.irc.channels[channel].modes, 'ts': ts}
+                self.irc.channels[channel].modes, 'ts': ts or int(time.time())}
 
     handle_create = handle_join
 
@@ -747,9 +762,17 @@ class P10Protocol(Protocol):
         return {'channel': channel, 'target': kicked, 'text': args[2]}
 
     def handle_quit(self, numeric, command, args):
-        """Handles incoming QUIT commands."""
+        """Handles incoming QUITs."""
         # <- ABAAB Q :Killed (GL_ (bangbang))
         self.removeClient(numeric)
         return {'text': args[0]}
+
+    def handle_kill(self, numeric, command, args):
+        """Handles incoming KILLs."""
+        # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
+        killed = args[0]
+        if killed in self.irc.users:
+            self.removeClient(killed)
+        return {'target': killed, 'text': args[1], 'userdata': self.irc.users.get(killed)}
 
 Class = P10Protocol
