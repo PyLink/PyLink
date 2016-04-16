@@ -775,4 +775,40 @@ class P10Protocol(Protocol):
             self.removeClient(killed)
         return {'target': killed, 'text': args[1], 'userdata': self.irc.users.get(killed)}
 
+    def handle_squit(self, numeric, command, args):
+        """Handles incoming SQUITs."""
+        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
+
+        split_server = self._getSid(args[0])
+
+        affected_users = []
+        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
+
+        if split_server not in self.irc.servers:
+            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
+            return
+
+        # Prevent RuntimeError: dictionary changed size during iteration
+        old_servers = self.irc.servers.copy()
+        # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
+        # remove them and all their users too.
+        for sid, data in old_servers.items():
+            if data.uplink == split_server:
+                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
+                # Recursively run SQUIT on any other hubs this server may have been connected to.
+                args = self.handle_squit(sid, 'SQUIT', [sid, "0",
+                                         "PyLink: Automatically splitting leaf servers of %s" % sid])
+                affected_users += args['users']
+
+        for user in self.irc.servers[split_server].users.copy():
+            affected_users.append(user)
+            log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
+            self.removeClient(user)
+
+        sname = self.irc.servers[split_server].name
+        del self.irc.servers[split_server]
+        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
+
+        return {'target': split_server, 'users': affected_users, 'name': sname}
+
 Class = P10Protocol
