@@ -495,6 +495,39 @@ class P10Protocol(Protocol):
         self._send(source, 'SQ %s 0 :%s' % (targetname, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
+    def topic(self, numeric, target, text):
+        """Sends a TOPIC change from a PyLink client."""
+        # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
+        # First timestamp is channel creation time, second is current time,
+
+        if not self.irc.isInternalClient(numeric):
+            raise LookupError('No such PyLink client exists.')
+
+        sendername = utils.getHostmask(self.irc, numeric)
+
+        creationts = self.irc.channels[target].ts
+
+        self._send(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
+                   int(time.time()), text))
+        self.irc.channels[target].topic = text
+        self.irc.channels[target].topicset = True
+
+    def topicBurst(self, numeric, target, text):
+        """Sends a TOPIC change from a PyLink server."""
+        # <- AB T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
+
+        if not self.irc.isInternalServer(numeric):
+            raise LookupError('No such PyLink server exists.')
+
+        sendername = self.irc.servers[numeric].name
+
+        creationts = self.irc.channels[target].ts
+
+        self._send(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
+                   int(time.time()), text))
+        self.irc.channels[target].topic = text
+        self.irc.channels[target].topicset = True
+
     ### HANDLERS
 
     def connect(self):
@@ -947,5 +980,18 @@ class P10Protocol(Protocol):
         log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
 
         return {'target': split_server, 'users': affected_users, 'name': sname}
+
+    def handle_topic(self, source, command, args):
+        """Handles TOPIC changes."""
+        # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
+        channel = utils.toLower(self.irc, args[0])
+        topic = args[-1]
+
+        oldtopic = self.irc.channels[channel].topic
+        self.irc.channels[channel].topic = topic
+        self.irc.channels[channel].topicset = True
+
+        return {'channel': channel, 'setter': args[1], 'text': topic,
+                'oldtopic': oldtopic}
 
 Class = P10Protocol
