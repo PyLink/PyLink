@@ -630,13 +630,17 @@ class P10Protocol(Protocol):
 
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
+
+        prefixes = ''
         for userpair in userlist:
-            # This is given in the form UID1,UID2:prefixes
+            # This is given in the form UID1,UID2:prefixes. However, when one userpair is given
+            # with a certain prefix, it implicitly applies to all other following UIDs, until
+            # another userpair is given with a prefix. For example: UID1,UID3:o,UID4,UID5 would
+            # assume that UID1 has no prefixes, but UID3-5 all have op when joining.
             try:
                 user, prefixes = userpair.split(':')
             except ValueError:
                 user = userpair
-                prefixes = ''
             log.debug('(%s) handle_burst: got mode prefixes %r for user %r', self.irc.name, prefixes, user)
 
             # Don't crash when we get an invalid UID.
