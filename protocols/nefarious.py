@@ -680,6 +680,9 @@ class P10Protocol(Protocol):
             if ts:  # Only update TS if one was sent.
                 self.updateTS(channel, ts)
 
+            self.irc.users[source].channels.add(channel)
+            self.irc.channels[channel].users.add(source)
+
         return {'channel': channel, 'users': [source], 'modes':
                 self.irc.channels[channel].modes, 'ts': ts or int(time.time())}
 
