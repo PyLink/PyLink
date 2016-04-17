@@ -365,6 +365,90 @@ class P10Protocol(Protocol):
         else:
             raise LookupError("No such PyLink client exists.")
 
+    def sjoin(self, server, channel, users, ts=None):
+        """Sends an SJOIN for a group of users to a channel.
+
+        The sender should always be a Server ID (SID). TS is optional, and defaults
+        to the one we've stored in the channel state if not given.
+        <users> is a list of (prefix mode, UID) pairs:
+
+        Example uses:
+            sjoin('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
+            sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
+        """
+        # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host ~ *!*@bad.host
+        channel = utils.toLower(self.irc, channel)
+        server = server or self.irc.sid
+
+        assert users, "sjoin: No users sent?"
+        log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
+        if not server:
+            raise LookupError('No such PyLink client exists.')
+
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
+        self.updateTS(channel, ts)
+
+        # Only send non-list modes in BURST. TODO: burst bans and banexempts too
+        modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
+
+        changedmodes = []
+        changedusers = []
+        namelist = []
+
+        # This is annoying because we have to sort our users by access before sending...
+        # Joins should look like: A0AAB,A0AAC,ABAAA:v,ABAAB:o,ABAAD,ACAAA:ov
+        # XXX: there HAS to be a better way of doing this
+        def access_sort(key):
+            prefixes, user = key
+            # This is some hocus pocus. Add the prefixes given for each userpair,
+            # giving each one a set value. This ensures that 'ohv' > 'oh' > 'ov' > 'o' > 'hv' > 'h' > 'v' > ''
+            accesses = {'o': 100, 'h': 10, 'v': 1}
+
+            num = 0
+            for prefix in prefixes:
+                num += accesses.get(prefix, 0)
+
+            return num
+        users = sorted(users, key=access_sort)
+
+        for userpair in users:
+            # We take <users> as a list of (prefixmodes, uid) pairs.
+            assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
+            prefixes, user = userpair
+
+            # Keep track of all the users and modes that are added. namelist is used
+            # to track what we actually send to the IRCd.
+            changedusers.append(user)
+            log.debug('(%s) sjoin: adding %s:%s to namelist', self.irc.name, user, prefixes)
+
+
+            if prefixes:
+                namelist.append('%s:%s' % (user, prefixes))
+            else:
+                namelist.append(user)
+            if prefixes:
+                for prefix in prefixes:
+                    changedmodes.append(('+%s' % prefix, user))
+
+            self.irc.users[user].channels.add(channel)
+
+        namelist = ','.join(namelist)
+        log.debug('(%s) sjoin: got %r for namelist', self.irc.name, namelist)
+        if modes:  # Only send modes if there are any.
+            self._send(server, "B {channel} {ts} {modes} :{users}".format(
+                       ts=ts, users=namelist, channel=channel,
+                       modes=utils.joinModes(modes)))
+        else:
+            self._send(server, "B {channel} {ts} :{users}".format(
+                       ts=ts, users=namelist, channel=channel))
+
+        self.irc.channels[channel].users.update(changedusers)
+
+        if ts <= orig_ts:
+           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
+            utils.applyModes(self.irc, channel, changedmodes)
+
     ### HANDLERS
 
     def connect(self):
