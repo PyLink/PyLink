@@ -449,6 +449,52 @@ class P10Protocol(Protocol):
            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
             utils.applyModes(self.irc, channel, changedmodes)
 
+    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+        """
+        Spawns a server off a PyLink server. desc (server description)
+        defaults to the one in the config. uplink defaults to the main PyLink
+        server, and sid (the server ID) is automatically generated if not
+        given.
+
+        Note: TS6 doesn't use a specific ENDBURST command, so the endburst_delay
+        option will be ignored if given.
+        """
+        # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
+        uplink = uplink or self.irc.sid
+        name = name.lower()
+        desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
+
+        if sid is None:  # No sid given; generate one!
+            sid = self.sidgen.next_sid()
+
+        assert len(sid) == 2, "Incorrect SID length"
+        if sid in self.irc.servers:
+            raise ValueError('A server with SID %r already exists!' % sid)
+
+        for server in self.irc.servers.values():
+            if name == server.name:
+                raise ValueError('A server named %r already exists!' % name)
+
+        if not self.irc.isInternalServer(uplink):
+            raise ValueError('Server %r is not a PyLink server!' % uplink)
+        if not utils.isServerName(name):
+            raise ValueError('Invalid server name %r' % name)
+
+        self._send(uplink, 'SERVER %s 1 %s %s P10 %s]]] +h6 :%s' % \
+                   (name, self.irc.start_ts, int(time.time()), sid, desc))
+
+        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
+        return sid
+
+    def squit(self, source, target, text='No reason given'):
+        """SQUITs a PyLink server."""
+        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
+
+        targetname = self.irc.servers[target].name
+
+        self._send(source, 'SQ %s 0 :%s' % (targetname, text))
+        self.handle_squit(source, 'SQUIT', [target, text])
+
     ### HANDLERS
 
     def connect(self):
