@@ -481,6 +481,10 @@ class TS6Protocol(TS6BaseProtocol):
         else:
             channel = utils.toLower(self.irc, args[1])
             self.updateTS(channel, ts)
+
+            self.irc.users[numeric].channels.add(channel)
+            self.irc.channels[channel].users.add(numeric)
+
         # We send users and modes here because SJOIN and JOIN both use one hook,
         # for simplicity's sake (with plugins).
         return {'channel': channel, 'users': [numeric], 'modes':
