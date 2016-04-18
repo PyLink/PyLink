@@ -20,6 +20,8 @@ Protocol modules have some very important jobs. If any of these aren't done corr
 
 6) Set the threading.Event object `irc.connected` (via `irc.connected.set()`) when the protocol negotiation with the uplink is complete. This is important for plugins like relay which must check that links are ready before spawning clients, and they will fail to work if this is not set.
 
+7) Check to see that RECVPASS is correct. Always.
+
 ## Core functions
 
 The following functions *must* be implemented by any protocol module within its main class, since they are used by the IRC object internals.
