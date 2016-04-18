@@ -38,6 +38,10 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * InspIRCd 2.2 (git master) - module `inspircd`
 * IRCd-Hybrid (8.2.x / svn trunk) - module `hybrid`
     - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
+* Nefarious IRCu (2.0.0+) - module `nefarious` (*experimental*)
+    - Note: FAKE hosts (`+f`), account cloaks (user and oper), and hashed IP cloaks are supported. Make sure you configure PyLink to match your IRCd settings.
+    - Host changing for internal PyLink clients does not work. It should work for other users though.
+    - Usermode `+h ident@host` is not fully supported.
 
 ## Setup
 
