@@ -289,7 +289,9 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
 
             rsid = getRemoteSid(remoteirc, irc)
             try:
-                showRealIP = irc.conf['relay']['show_ips']
+                showRealIP = irc.conf['relay']['show_ips'] and not \
+                             irc.serverdata.get('relay_no_ips') and not \
+                             remoteirc.serverdata.get('relay_no_ips')
             except KeyError:
                 showRealIP = False
             if showRealIP:
@@ -411,7 +413,7 @@ def initializeChannel(irc, channel):
         # Send our users and channel modes to the other nets
         log.debug('(%s) relay.initializeChannel: joining our (%s) users: %s', irc.name, remotenet, irc.channels[channel].users)
         relayJoins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
-        if irc.pseudoclient.uid not in irc.channels[channel].users:
+        if irc.pseudoclient and irc.pseudoclient.uid not in irc.channels[channel].users:
             irc.proto.join(irc.pseudoclient.uid, channel)
 
 def removeChannel(irc, channel):

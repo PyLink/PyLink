@@ -248,20 +248,9 @@ class TS6Protocol(TS6BaseProtocol):
         self.has_eob = False
 
         f = self.irc.send
-        # Valid keywords (from mostly InspIRCd's named modes):
-        # admin allowinvite autoop ban banexception blockcolor
-        # c_registered exemptchanops filter forward flood halfop history invex
-        # inviteonly joinflood key kicknorejoin limit moderated nickflood
-        # noctcp noextmsg nokick noknock nonick nonotice official-join op
-        # operonly opmoderated owner permanent private redirect regonly
-        # regmoderated secret sslonly stripcolor topiclock voice
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
-        chary_cmodes = { # TS6 generic modes:
-                         # Note: charybdis +p has the effect of being both
-                         # noknock AND private. Surprisingly, mapping it twice
-                         # works pretty well: setting +p on a charybdis relay
-                         # server sets +pK on an InspIRCd network.
+        chary_cmodes = { # TS6 generic modes (note that +p is noknock instead of private):
                         'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
                         'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
                         'secret': 's', 'topiclock': 't',
@@ -274,7 +263,7 @@ class TS6Protocol(TS6BaseProtocol):
                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
                         'nonotice': 'T',
                          # Now, map all the ABCD type modes:
-                        '*A': 'beIq', '*B': 'k', '*C': 'l', '*D': 'mnprst'}
+                        '*A': 'beIq', '*B': 'k', '*C': 'lfj', '*D': 'mnprstFLPQcgzCOAST'}
 
         if self.irc.serverdata.get('use_owner'):
             chary_cmodes['owner'] = 'y'
@@ -286,18 +275,17 @@ class TS6Protocol(TS6BaseProtocol):
             chary_cmodes['halfop'] = 'h'
             self.irc.prefixmodes['h'] = '%'
 
-        self.irc.cmodes.update(chary_cmodes)
+        self.irc.cmodes = chary_cmodes
 
-        # Same thing with umodes:
-        # bot callerid cloak deaf_commonchan helpop hidechans hideoper invisible oper regdeaf servprotect showwhois snomask u_registered u_stripcolor wallops
+        # Define supported user modes
         chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'u_admin': 'a',
                         'invisible': 'i', 'oper': 'o', 'wallops': 'w',
                         'snomask': 's', 'u_noforward': 'Q', 'regdeaf': 'R',
                         'callerid': 'g', 'chary_operwall': 'z', 'chary_locops':
                         'l', 'cloak': 'x',
                          # Now, map all the ABCD type modes:
-                         '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzl'}
-        self.irc.umodes.update(chary_umodes)
+                         '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlx'}
+        self.irc.umodes = chary_umodes
 
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
         # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
@@ -308,6 +296,7 @@ class TS6Protocol(TS6BaseProtocol):
                                 'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd'}
             self.irc.cmodes.update(elemental_cmodes)
             self.irc.cmodes['*D'] += ''.join(elemental_cmodes.values())
+
             elemental_umodes = {'u_noctcp': 'C', 'deaf': 'D', 'bot': 'B', 'u_noinvite': 'V',
                                 'hidechans': 'I'}
             self.irc.umodes.update(elemental_umodes)

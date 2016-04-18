@@ -35,24 +35,6 @@ class TS6BaseProtocol(Protocol):
         args[0] = args[0].split(':', 1)[1]
         return args
 
-    def _getSid(self, sname):
-        """Returns the SID of a server with the given name, if present."""
-        name = sname.lower()
-        for k, v in self.irc.servers.items():
-            if v.name.lower() == name:
-                return k
-        else:
-            return sname  # Fall back to given text instead of None
-
-    def _getUid(self, target):
-        """Converts a nick argument to its matching UID. This differs from irc.nickToUid()
-        in that it returns the original text instead of None, if no matching nick is found."""
-        target = self.irc.nickToUid(target) or target
-        if target not in self.irc.users and not utils.isChannel(target):
-            log.debug("(%s) Possible desync? Got command target %s, who "
-                        "isn't in our user list!", self.irc.name, target)
-        return target
-
     def _getOutgoingNick(self, uid):
         """
         Returns the outgoing nick for the given UID. In the base ts6_common implementation,

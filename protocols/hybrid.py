@@ -25,13 +25,6 @@ class HybridProtocol(TS6Protocol):
         ts = self.irc.start_ts
 
         f = self.irc.send
-        # Valid keywords (from mostly InspIRCd's named modes):
-        # admin allowinvite autoop ban banexception blockcolor
-        # c_registered exemptchanops filter forward flood halfop history invex
-        # inviteonly joinflood key kicknorejoin limit moderated nickflood
-        # noctcp noextmsg nokick noknock nonick nonotice official-join op
-        # operonly opmoderated owner permanent private redirect regonly
-        # regmoderated secret sslonly stripcolor topiclock voice
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
         cmodes = {
@@ -42,17 +35,14 @@ class HybridProtocol(TS6Protocol):
             # hybrid-specific modes:
             'blockcolor': 'c', 'inviteonly': 'i', 'noctcp': 'C',
             'regmoderated': 'M', 'operonly': 'O', 'regonly': 'R',
-            'sslonly': 'S', 'banexception': 'e', 'paranoia': 'p',
+            'sslonly': 'S', 'banexception': 'e', 'noknock': 'p',
             'registered': 'r', 'invex': 'I',
             # Now, map all the ABCD type modes:
             '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'cimnprstCMORS'
         }
 
-        self.irc.cmodes.update(cmodes)
+        self.irc.cmodes = cmodes
 
-        # Same thing with umodes:
-        # bot callerid cloak deaf_commonchan helpop hidechans hideoper invisible oper
-        # regdeaf servprotect showwhois snomask u_registered u_stripcolor wallops
         umodes = {
             'oper': 'o', 'invisible': 'i', 'wallops': 'w', 'chary_locops': 'l',
             'cloak_hybrid': 'x', 'hidechans': 'p', 'regdeaf': 'R', 'deaf': 'D',
@@ -66,7 +56,7 @@ class HybridProtocol(TS6Protocol):
             '*A': '', '*B': '', '*C': '', '*D': 'oiwlpRDgdx'
         }
 
-        self.irc.umodes.update(umodes)
+        self.irc.umodes = umodes
 
         # halfops is mandatory on Hybrid
         self.irc.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}
