@@ -305,6 +305,9 @@ class P10Protocol(Protocol):
         self._send(numeric, 'D %s :Killed (%s)' % (target, reason))
         self.removeClient(target)
 
+    def knock(self, numeric, target, text):
+        raise NotImplementedError('KNOCK is not supported on P10.')
+
     def message(self, numeric, target, text):
         """Sends a PRIVMSG from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
