@@ -590,6 +590,31 @@ class P10Protocol(Protocol):
 
         desc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
 
+        # Enumerate modes, from https://github.com/evilnet/nefarious2/blob/master/doc/modes.txt
+        cmodes = {'op': 'o', 'voice': 'v', 'private': 'p', 'secret': 's', 'moderated': 'm',
+                  'topiclock': 't', 'inviteonly': 'i', 'noextmsg': 'n', 'regonly': 'r',
+                  'delayjoin': 'D', 'registered': 'R', 'key': 'k', 'ban': 'b', 'banexception': 'e',
+                  'limit': 'l', 'redirect': 'L', 'oplevel_apass': 'A', 'oplevel_upass': 'U',
+                  'adminonly': 'a', 'operonly': 'O', 'regmoderated': 'M', 'nonotice': 'N',
+                  'permanent': 'z', 'hidequits': 'Q', 'noctcp': 'C', 'noamsg': 'T', 'blockcolor': 'c',
+                  'stripcolor': 'S', 'had_delayjoins': 'd',
+                  '*A': 'be', '*B': 'k', '*C': 'Ll', '*D': 'psmtinrDRAUaOMNzQCTcSd'}
+
+        if self.irc.serverdata.get('use_halfop'):
+            cmodes['halfop'] = 'h'
+            self.irc.prefixmodes['h'] = '%'
+
+        self.irc.cmodes = cmodes
+
+        self.irc.umodes = {'oper': 'o', 'locop': 'O', 'invisible': 'i', 'wallops': 'w',
+                           'snomask': 's', 'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
+                           'hidechans': 'n', 'deaf_commonchan': 'q', 'bot': 'B', 'deaf': 'D',
+                           'hideoper': 'H', 'hideidle': 'I', 'regdeaf': 'R', 'showwhois': 'W',
+                           'admin': 'a', 'override': 'X', 'u_noforward': 'L', 'ssl': 'z',
+                           'registered': 'r', 'cloak_sethost': 'h', 'cloak_fakehost': 'f',
+                           'cloak_hashedhost': 'C', 'cloak_hashedip': 'c',
+                           '*A': '', '*B': '', '*C': 'fCcrh', '*D': 'oOiwskgxnqBDHIRWaXLz'}
+
         self.irc.send('SERVER %s 1 %s %s J10 %s]]] +s6 :%s' % (name, ts, ts, sid, desc))
         self._send(sid, "EB")
         self.irc.connected.set()
