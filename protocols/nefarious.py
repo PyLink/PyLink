@@ -850,6 +850,12 @@ class P10Protocol(Protocol):
             # no IRCds can ever connect behind us...
             self._send(self.irc.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime))
 
+    def handle_pass(self, source, command, args):
+        """Handles authentication with our uplink."""
+        # <- PASS :testpass
+        if args[0] != self.irc.serverdata['recvpass']:
+            raise ProtocolError("Error: RECVPASS from uplink does not match configuration!")
+
     def handle_pong(self, source, command, args):
         """Handles incoming PONGs."""
         # <- AB Z AB :Ay
