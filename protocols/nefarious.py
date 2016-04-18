@@ -938,7 +938,7 @@ class P10Protocol(Protocol):
         # <- ABAAA M GL -w
         # <- ABAAA M #test +v ABAAB 1460747615
         # <- ABAAA OM #test +h ABAAA
-        target = args[0]
+        target = self._getUid(args[0])
         if utils.isChannel(target):
             target = utils.toLower(self.irc, target)
 
