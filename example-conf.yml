@@ -207,6 +207,56 @@ servers:
         # same IRCd version.
         #mixed_link: true
 
+    nefarious:
+        ip: 1.2.3.4
+        port: 45454
+        recvpass: "recv"
+        sendpass: "send"
+        hostname: "pylink.midnight.vpn"
+
+        # For P10, the SID and SID range options are just numbers. Make sure nothing
+        # else is using the range you're reserving for PyLink.
+        sid: 50
+        sidrange: "100-150"
+        channels: ["#lounge"]
+        protocol: nefarious
+        autoconnect: 5
+        maxnicklen: 15
+        netname: "Nefarious test server"
+        pingfreq: 30
+
+        # Halfop is optional in Nefarious. This should match your IRCd configuration.
+        use_halfop: false
+
+        # Determines whether account-based cloaks should be used (someone.users.yournet.org
+        # format). This should match your IRCd configuration:
+        # ENABLE this if HOST_HIDING_STYLE is set to either 1 or 3.
+        use_account_cloaks: true
+
+        # The cloak suffix to be used for account-based cloaks. This **MUST** match your
+        # IRCd configuration if use_account_cloaks is enabled.
+        cloak_suffix: "users.yournet.org"
+
+        # Determines whether account-based cloaks should be used for opers
+        # (someone.opers.yournet.org format). If use_account_cloaks is disabled,
+        # this will have no effect. This should match your IRCd configuration:
+        use_oper_account_cloaks: true
+
+        # The cloak suffix to be used for IRCop account-based cloaks. This **MUST** match your
+        # IRCd configuration if use_oper_account_cloaks is enabled.
+        oper_cloak_suffix: "staff.yournet.org"
+
+        # Determines whether UnrealIRCd-style hashed-host cloaks will be used.
+        # This should match your IRCd configuration:
+        # ENABLE this if HOST_HIDING_STYLE is set to either 2 or 3.
+        use_hashed_cloaks: true
+
+        # Determines whether extended accounts should be used for this network.
+        # This **MUST** match the EXTENDED_ACCOUNTS setting in your IRCd configuration.
+        # Disable this if you are using X3, and leave it on for any other service package
+        # (atheme, etc.)
+        use_extended_accounts: true
+
 # Plugins to load (omit the .py extension)
 plugins:
     # Commands plugin: Provides core commands such as logging in, shutting down
