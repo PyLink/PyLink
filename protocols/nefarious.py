@@ -561,6 +561,9 @@ class P10Protocol(Protocol):
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
+    def updateClient(self, target, field, text):
+        raise NotImplementedError
+
     ### HANDLERS
 
     def connect(self):
