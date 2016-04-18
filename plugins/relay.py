@@ -289,7 +289,9 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
 
             rsid = getRemoteSid(remoteirc, irc)
             try:
-                showRealIP = irc.conf['relay']['show_ips']
+                showRealIP = irc.conf['relay']['show_ips'] and not \
+                             irc.serverdata.get('relay_no_ips') and not \
+                             remoteirc.serverdata.get('relay_no_ips')
             except KeyError:
                 showRealIP = False
             if showRealIP:

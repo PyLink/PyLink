@@ -118,6 +118,11 @@ servers:
         # Separator character (used by relay)
         separator: "/"
 
+        # If enabled, this opts this network out of relay IP sharing. i.e. this network
+        # will not have its users' IPs sent across the relay, and it will not see any
+        # IPs of other networks' users.
+        #relay_no_ips: true
+
         # Sets the max nick length for the network. It is important this is
         # set correctly, or PyLink might introduce a nick that is too long and
         # cause netsplits!
@@ -332,7 +337,8 @@ relay:
     # Determines whether real IPs should be sent across the relay. You should
     # generally have a consensus with your linked networks whether this should
     # be turned on. You will see other networks' user IP addresses, and they
-    # will see yours.
+    # will see yours. Individual networks can also opt out of IP sharing
+    # both ways by defining "relay_no_ips: true" in their server block.
     show_ips: false
 
     # Whether subservers should be spawned for each relay network (requires
