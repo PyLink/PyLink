@@ -234,6 +234,30 @@ class P10Protocol(Protocol):
                                         realhost=realhost))
         return u
 
+    def away(self, source, text):
+        """Sends an AWAY message from a PyLink client. <text> can be an empty string
+        to unset AWAY status."""
+        if not self.irc.isInternalClient(source):
+            raise LookupError('No such PyLink client exists.')
+
+        if text:
+            self._send(source, 'A :%s' % text)
+        else:
+            self._send(source, 'A')
+        self.irc.users[source].away = text
+
+    def invite(self, numeric, target, channel):
+        """Sends INVITEs from a PyLink client."""
+        # Note: we have to send a nick as the target, not a UID.
+        # <- ABAAA I PyLink-devel #services 1460948992
+
+        if not self.irc.isInternalClient(numeric):
+            raise LookupError('No such PyLink client exists.')
+
+        nick = self.irc.users[target].nick
+
+        self._send(numeric, 'I %s %s %s' % (nick, channel, self.irc.channels[channel].ts))
+
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # <- ABAAB J #test3 1460744371
@@ -993,5 +1017,28 @@ class P10Protocol(Protocol):
 
         return {'channel': channel, 'setter': args[1], 'text': topic,
                 'oldtopic': oldtopic}
+
+    def handle_invite(self, source, command, args):
+        """Handles incoming INVITEs."""
+        # From P10 docs:
+        # 1 <target nick>
+        # 2 <channel>
+        # - note that the target is a nickname, not a numeric.
+        # <- ABAAA I PyLink-devel #services 1460948992
+        target = self._getUid(args[0])
+        channel = utils.toLower(self.irc, args[1])
+
+        return {'target': target, 'channel': channel}
+
+    def handle_away(self, numeric, command, args):
+        """Handles incoming AWAY messages."""
+        # <- ABAAA A :blah
+        # <- ABAAA A
+        try:
+            self.irc.users[numeric].away = text = args[0]
+        except IndexError:  # User is unsetting away status
+            self.irc.users[numeric].away = text = ''
+
+        return {'text': text}
 
 Class = P10Protocol
