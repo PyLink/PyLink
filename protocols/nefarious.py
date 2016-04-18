@@ -83,7 +83,7 @@ class P10Protocol(Protocol):
         # SID generator for P10.
         self.sidgen = P10SIDGenerator(irc)
 
-        self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE'}
+        self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE', 'CLEARMODE': 'MODE'}
 
     def _send(self, source, text):
         self.irc.send("%s %s" % (source, text))
@@ -1054,5 +1054,39 @@ class P10Protocol(Protocol):
         """Handles incoming WHOIS requests."""
         # <- ABAAA W Ay :PyLink-devel
         return {'target': self._getUid(args[-1])}
+
+    def handle_clearmode(self, numeric, command, args):
+        """Handles CLEARMODE, which is used to clear a channel's modes."""
+        # <- ABAAA CM #test ovpsmikbl
+        channel = utils.toLower(self.irc, args[0])
+        modes = args[1]
+
+        # Enumerate a list of our existing modes, including prefix modes.
+        existing = list(self.irc.channels[channel].modes)
+        for pmode, userlist in self.irc.channels[channel].prefixmodes.items():
+            # Expand the prefix modes lists to individual ('o', 'UID') mode pairs.
+            modechar = self.irc.cmodes.get(pmode)
+            existing += [(modechar, user) for user in userlist]
+
+        # Back up the channel state.
+        oldobj = self.irc.channels[channel].deepcopy()
+
+        changedmodes = []
+
+        # Iterate over all the modes we have for this channel.
+        for modepair in existing:
+            modechar, data = modepair
+
+            # Check if each mode matches any that we're unsetting.
+            if modechar in modes:
+                if modechar in (self.irc.cmodes['*A']+self.irc.cmodes['*B']+''.join(self.irc.prefixmodes.keys())):
+                    # Mode is a list mode, prefix mode, or one that always takes a parameter when unsetting.
+                    changedmodes.append(('-%s' % modechar, data))
+                else:
+                    # Mode does not take an argument when unsetting.
+                    changedmodes.append(('-%s' % modechar, None))
+
+        utils.applyModes(self.irc, channel, changedmodes)
+        return {'target': channel, 'modes': changedmodes, 'oldchan': oldobj}
 
 Class = P10Protocol
