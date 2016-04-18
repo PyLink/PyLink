@@ -1257,5 +1257,9 @@ class P10Protocol(Protocol):
         self.checkCloakChange(target)
         # We don't need to send any hooks here, checkCloakChange does that for us.
 
+    def handle_version(self, numeric, command, args):
+        # <- ABAAA V :Ay
+        """Handles requests for the PyLink server version."""
+        return {}  # See coreplugin.py for how this hook is used
 
 Class = P10Protocol
