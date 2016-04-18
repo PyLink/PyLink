@@ -762,8 +762,8 @@ class P10Protocol(Protocol):
 
         else:
             # <- ABAAA N GL_ 1460753763
-            oldnick = self.irc.users[numeric].nick
-            newnick = self.irc.users[numeric].nick = args[0]
+            oldnick = self.irc.users[source].nick
+            newnick = self.irc.users[source].nick = args[0]
             return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
 
     def handle_ping(self, source, command, args):
