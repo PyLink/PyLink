@@ -1091,9 +1091,13 @@ class P10Protocol(Protocol):
         """Handles incoming KILLs."""
         # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
         killed = args[0]
-        if killed in self.irc.users:
+
+        # Back up the target user data before removing it, so we can send it via a hook.
+        data = self.irc.users.get(killed)
+
+        if data:
             self.removeClient(killed)
-        return {'target': killed, 'text': args[1], 'userdata': self.irc.users.get(killed)}
+        return {'target': killed, 'text': args[1], 'userdata': data}
 
     def handle_squit(self, numeric, command, args):
         """Handles incoming SQUITs."""
