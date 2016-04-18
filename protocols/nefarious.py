@@ -350,6 +350,12 @@ class P10Protocol(Protocol):
         self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
         self.irc.users[numeric].nick = newnick
 
+    def numeric(self, source, numeric, target, text):
+        """Sends raw numerics from a server to a remote client. This is used for WHOIS
+        replies."""
+        # <- AB 311 AyAAA GL ~gl nefarious.midnight.vpn * :realname
+        self._send(source, '%s %s %s' % (numeric, target, text))
+
     def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
@@ -1040,5 +1046,10 @@ class P10Protocol(Protocol):
             self.irc.users[numeric].away = text = ''
 
         return {'text': text}
+
+    def handle_whois(self, numeric, command, args):
+        """Handles incoming WHOIS requests."""
+        # <- ABAAA W Ay :PyLink-devel
+        return {'target': self._getUid(args[-1])}
 
 Class = P10Protocol
