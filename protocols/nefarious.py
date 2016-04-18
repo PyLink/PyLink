@@ -738,7 +738,7 @@ class P10Protocol(Protocol):
                       'host=%s realname=%s realhost=%s ip=%s', self.irc.name, nick, ts, uid,
                       ident, host, realname, realhost, ip)
 
-            self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+            uobj = self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
             self.irc.servers[source].users.add(uid)
 
             # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L708
@@ -750,13 +750,17 @@ class P10Protocol(Protocol):
                 parsedmodes = utils.parseModes(self.irc, uid, modes)
                 utils.applyModes(self.irc, uid, parsedmodes)
 
+                for modepair in parsedmodes:
+                    if modepair[0][-1] == 'r':
+                        # Parse account registrations, sent as usermode "+r accountname:TS"
+                        accountname = modepair[1].split(':', 1)[0]
+                        self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+
             # Call the OPERED UP hook if +o is being added to the mode list.
             if ('+o', None) in parsedmodes:
                 self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
-            # Set the accountname if present
-            #if accountname != "*":
-            #    self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+            self.checkCloakChange(uid)
 
             return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -765,6 +769,64 @@ class P10Protocol(Protocol):
             oldnick = self.irc.users[source].nick
             newnick = self.irc.users[source].nick = args[0]
             return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
+
+    def checkCloakChange(self, uid):
+        """Checks for cloak changes on the given UID."""
+        uobj = self.irc.users[uid]
+
+        modes = dict(uobj.modes)
+        log.debug('(%s) checkCloakChange: modes of %s are %s', self.irc.name, uid, modes)
+
+        if 'x' not in modes:  # +x isn't set, so cloaking is disabled.
+            newhost = uobj.realhost
+        else:
+            if 'h' in modes:
+                # +h represents the hidden (/sethost) host of the user. It overrides
+                # everything else.
+                newhost = modes['h']
+            elif 'f' in modes:
+                # +f represents another way of setting vHosts, via a command called FAKE.
+                # Atheme uses this for vHosts, afaik.
+                newhost = modes['f']
+            elif uobj.services_account and self.irc.serverdata.get('use_account_cloaks'):
+                # The user is registered. However, if account cloaks are enabled, we have to figure
+                # out their new cloaked host. There can be oper cloaks and user cloaks, each with
+                # a different suffix. Account cloaks take the format of <accountname>.<suffix>.
+                # e.g. someone logged in as "person1" might get cloak "person1.users.somenet.org"
+                #      someone opered and logged in as "person2" might get cloak "person.opers.somenet.org"
+                # This is a lot of extra configuration on the services' side, but there's nothing else
+                # we can do about it.
+                if self.irc.serverdata.get('use_oper_account_cloaks') and 'o' in modes:
+                    try:
+                        # These errors should be fatal.
+                        suffix = self.irc.serverdata['oper_cloak_suffix']
+                    except KeyError:
+                        raise ProtocolError("(%s) use_oper_account_cloaks was enabled, but "
+                                            "oper_cloak_suffix was not defined!" % self.irc.name)
+                else:
+                    try:
+                        suffix = self.irc.serverdata['cloak_suffix']
+                    except KeyError:
+                        raise ProtocolError("(%s) use_account_cloaks was enabled, but "
+                                            "cloak_suffix was not defined!" % self.irc.name)
+
+                accountname = uobj.services_account
+                newhost = "%s.%s" % (accountname, suffix)
+
+            elif 'C' in modes and self.irc.serverdata.get('use_account_cloaks'):
+                # +C propagates hashed IP cloaks, similar to UnrealIRCd. (thank god we don't
+                # need to generate these ourselves)
+                newhost = modes['C']
+            else:
+                # No cloaking mechanism matched, fall back to the real host.
+                newhost = uobj.realhost
+
+        # Propagate a hostname update to plugins, but only if the changed host is different.
+        if newhost != uobj.host:
+             self.irc.callHooks([uid, 'CHGHOST', {'target': uid, 'newhost': newhost}])
+        uobj.host = newhost
+
+        return newhost
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING requests."""
@@ -953,6 +1015,10 @@ class P10Protocol(Protocol):
         if ('+o', None) in changedmodes and target in self.irc.users:
             self.irc.callHooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
+        if target in self.irc.users:
+            # Target was a user. Check for any cloak changes.
+            self.checkCloakChange(target)
+
         return {'target': target, 'modes': changedmodes}
     # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
     handle_opmode = handle_mode
@@ -1116,5 +1182,42 @@ class P10Protocol(Protocol):
 
         utils.applyModes(self.irc, channel, changedmodes)
         return {'target': channel, 'modes': changedmodes, 'oldchan': oldobj}
+
+    def handle_account(self, numeric, command, args):
+        """Handles services account changes."""
+        # ACCOUNT has two possible syntaxes in P10, one with extended accounts
+        # and one without.
+
+        target = args[0]
+
+        if self.irc.serverdata.get('use_extended_accounts'):
+            # Registration: <- AA AC ABAAA R GL 1459019072
+            # Logout: <- AA AC ABAAA U
+
+            # 1 <target user numeric>
+            # 2 <subcommand>
+            # 3+ [<subcommand parameters>]
+
+            # Any other subcommands listed at https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L354
+            # shouldn't apply to us.
+
+            if args[1] in ('R', 'M'):
+                accountname = args[2]
+            elif args[1] == 'U':
+                accountname = ''  # logout
+
+        else:
+            # ircu or nefarious with F:EXTENDED_ACCOUNTS = FALSE
+            # 1 <target user numeric>
+            # 2 <account name>
+            # 3 [<account timestamp>]
+            accountname = args[1]
+
+        # Call this manually because we need the UID to be the sender.
+        self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+
+        # Check for any cloak changes now.
+        self.checkCloakChange(target)
+
 
 Class = P10Protocol
