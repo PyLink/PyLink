@@ -175,7 +175,8 @@ class P10Protocol(Protocol):
             'XR': 'XREPLY',
             'SN': 'SVSNICK',
             'SJ': 'SVSJOIN',
-            'SH': 'SETHOST'
+            'SH': 'SETHOST',
+            'FA': 'FAKE'
         }
         # If the token isn't in the list, return it raw.
         return tokens.get(token, token)
@@ -562,7 +563,23 @@ class P10Protocol(Protocol):
         self.irc.channels[target].topicset = True
 
     def updateClient(self, target, field, text):
-        raise NotImplementedError
+        """Updates the ident or host of any connected client."""
+        # This uses the FAKE command, which isn't documented anywhere
+        # but uses the target UID and host as two arguments.
+
+        if field == 'HOST':
+            self._send(self.irc.sid, 'FA %s %s' % (target, text))
+            # Save the host change as a user mode (this is what P10 does),
+            # so further host checks work.
+            utils.applyModes(self.irc, target, [('+f', text)])
+
+            # P10 cloaks aren't as simple as just replacing the displayed host with the one we're
+            # sending. Check for cloak changes properly.
+            self.checkCloakChange(target)
+
+            # We don't need to send any hooks here, checkCloakChange does that for us.
+        else:
+            raise NotImplementedError
 
     ### HANDLERS
 
@@ -1224,6 +1241,17 @@ class P10Protocol(Protocol):
 
         # Check for any cloak changes now.
         self.checkCloakChange(target)
+
+    def handle_fake(self, numeric, command, args):
+        """Handles incoming FAKE hostmask changes."""
+        target = args[0]
+        text = args[1]
+
+        # Assume a usermode +f change, and then update the cloak checking.
+        utils.applyModes(self.irc, target, [('+f', text)])
+
+        self.checkCloakChange(target)
+        # We don't need to send any hooks here, checkCloakChange does that for us.
 
 
 Class = P10Protocol
