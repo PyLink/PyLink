@@ -894,6 +894,11 @@ class P10Protocol(Protocol):
         # 1 <channel>
         # 2 <timestamp>
         # 3+ [<modes> [<mode extra parameters>]] [<users>] [<bans>]
+
+        if len(args) < 3:
+            # No useful data was sent, ignore.
+            return
+
         channel = utils.toLower(self.irc, args[0])
         userlist = args[-1].split()
         their_ts = int(args[1])
