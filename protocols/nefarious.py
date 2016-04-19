@@ -723,7 +723,15 @@ class P10Protocol(Protocol):
             # Thanks to Jobe @ evilnet for the code on what to do here. :) -GL
             ip = args[-3]
 
-            if '_' in ip:  # IPv6
+            if len(ip) == 6:  # IPv4
+                # Pad the characters with two \x00's (represented in P10 B64 as AA)
+                ip = 'AA' + ip
+                # Decode it via Base64, dropping the initial padding characters.
+                ip = base64.b64decode(ip, altchars='[]')[2:]
+                # Convert the IP to a string.
+                ip = socket.inet_ntoa(ip)
+
+            elif len(ip) <= 24 or '_' in ip:  # IPv6
                 s = ''
                 # P10-encoded IPv6 addresses are formed with chunks, where each 16-bit
                 # portion of the address (each part between :'s) is encoded as 3 B64 chars.
@@ -740,14 +748,6 @@ class P10Protocol(Protocol):
                         s += ':'
 
                 ip = s.rstrip(':')
-
-            else:  # IPv4
-                # Pad the characters with two \x00's (represented in P10 B64 as AA)
-                ip = 'AA' + ip
-                # Decode it via Base64, dropping the initial padding characters.
-                ip = base64.b64decode(ip, altchars='[]')[2:]
-                # Convert the IP to a string.
-                ip = socket.inet_ntoa(ip)
 
             uid = args[-2]
             realname = args[-1]
