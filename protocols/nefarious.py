@@ -927,8 +927,6 @@ class P10Protocol(Protocol):
             # Remove this argument from the args list.
             args = args[:-1]
 
-        userlist = args[-1].split(',')
-
         # Then, we can make the modestring just encompass all the text until the end of the string.
         # If no modes are given, this will simply be empty.
         modestring = args[2:-1]
@@ -947,31 +945,35 @@ class P10Protocol(Protocol):
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
 
         prefixes = ''
-        for userpair in userlist:
-            # This is given in the form UID1,UID2:prefixes. However, when one userpair is given
-            # with a certain prefix, it implicitly applies to all other following UIDs, until
-            # another userpair is given with a prefix. For example: UID1,UID3:o,UID4,UID5 would
-            # assume that UID1 has no prefixes, but UID3-5 all have op when joining.
-            try:
-                user, prefixes = userpair.split(':')
-            except ValueError:
-                user = userpair
-            log.debug('(%s) handle_burst: got mode prefixes %r for user %r', self.irc.name, prefixes, user)
 
-            # Don't crash when we get an invalid UID.
-            if user not in self.irc.users:
-                log.warning('(%s) handle_burst: tried to introduce user %s not in our user list, ignoring...',
-                            self.irc.name, user)
-                continue
+        userlist = args[-1].split(',')
+        if args[-1] != args[1]:  # Make sure the userlist is the right argument (not the TS).
+            for userpair in userlist:
+                # This is given in the form UID1,UID2:prefixes. However, when one userpair is given
+                # with a certain prefix, it implicitly applies to all other following UIDs, until
+                # another userpair is given with a prefix. For example: UID1,UID3:o,UID4,UID5 would
+                # assume that UID1 has no prefixes, but UID3-5 all have op when joining.
+                try:
+                    user, prefixes = userpair.split(':')
+                except ValueError:
+                    user = userpair
+                log.debug('(%s) handle_burst: got mode prefixes %r for user %r', self.irc.name, prefixes, user)
 
-            namelist.append(user)
+                # Don't crash when we get an invalid UID.
+                if user not in self.irc.users:
+                    log.warning('(%s) handle_burst: tried to introduce user %s not in our user list, ignoring...',
+                                self.irc.name, user)
+                    continue
 
-            self.irc.users[user].channels.add(channel)
+                namelist.append(user)
 
-            if their_ts <= our_ts:
-                utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in prefixes])
+                self.irc.users[user].channels.add(channel)
 
-            self.irc.channels[channel].users.add(user)
+                if their_ts <= our_ts:
+                    utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in prefixes])
+
+                self.irc.channels[channel].users.add(user)
+
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
     def handle_join(self, source, command, args):
