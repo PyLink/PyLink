@@ -2,6 +2,7 @@
 nefarious.py: Nefarious IRCu protocol module for PyLink.
 """
 
+import re
 import sys
 import os
 import base64
