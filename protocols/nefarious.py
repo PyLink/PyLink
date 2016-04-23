@@ -2,7 +2,6 @@
 nefarious.py: Nefarious IRCu protocol module for PyLink.
 """
 
-import re
 import sys
 import os
 import base64
@@ -88,6 +87,61 @@ class P10Protocol(Protocol):
 
     def _send(self, source, text):
         self.irc.send("%s %s" % (source, text))
+
+    @staticmethod
+    def decode_p10_ip(ip):
+        """Decodes a P10 IP."""
+        # Many thanks to Jobe @ evilnet for the code on what to do here. :) -GL
+
+        if len(ip) == 6:  # IPv4
+            # Pad the characters with two \x00's (represented in P10 B64 as AA)
+            ip = 'AA' + ip
+
+            # Decode it via Base64, dropping the initial padding characters.
+            ip = base64.b64decode(ip, altchars='[]')[2:]
+
+            # Convert the IP to a string.
+            return socket.inet_ntoa(ip)
+
+        elif len(ip) <= 24 or '_' in ip:  # IPv6
+            s = ''
+            # P10-encoded IPv6 addresses are formed with chunks, where each 16-bit
+            # portion of the address (each part between :'s) is encoded as 3 B64 chars.
+            # A single :: is translated into an underscore (_).
+            # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L723
+            # Example: 1:2::3 -> AABAAC_AAD
+
+            # Treat the part before and after the _ as two separate pieces (head and tail).
+            head = ip
+            tail = ''
+            byteshead = b''
+            bytestail = b''
+
+            if '_' in ip:
+                head, tail = ip.split('_')
+
+            # Each B64-encoded section is 3 characters long. Split them up and
+            # iterate.
+            for section in range(0, len(head), 3):
+                byteshead += base64.b64decode('A' + head[section:section+3], '[]')[1:]
+            for section in range(0, len(tail), 3):
+                bytestail += base64.b64decode('A' + tail[section:section+3], '[]')[1:]
+
+            ipbytes = byteshead
+
+            # Figure out how many 0's the center _ actually represents.
+            # Subtract 16 (the amount of chunks in a v6 address) by
+            # the length of the head and tail sections.
+            pad = 16 - len(byteshead) - len(bytestail)
+            ipbytes += (b'\x00' * pad)  # Pad with zeros.
+            ipbytes += bytestail
+
+            ip = socket.inet_ntop(socket.AF_INET6, ipbytes)
+            if ip.startswith(':'):
+                # HACK: prevent ::1 from being treated as end-of-line
+                # when sending to other IRCds.
+                ip = '0' + ip
+            return ip
 
     @staticmethod
     def _getCommand(token):
@@ -716,39 +770,9 @@ class P10Protocol(Protocol):
 
             nick = args[0]
             ts, ident, host = args[2:5]
-
-            # XXX: Is realhost ever sent?
             realhost = host
-
-            # Thanks to Jobe @ evilnet for the code on what to do here. :) -GL
             ip = args[-3]
-
-            if len(ip) == 6:  # IPv4
-                # Pad the characters with two \x00's (represented in P10 B64 as AA)
-                ip = 'AA' + ip
-                # Decode it via Base64, dropping the initial padding characters.
-                ip = base64.b64decode(ip, altchars='[]')[2:]
-                # Convert the IP to a string.
-                ip = socket.inet_ntoa(ip)
-
-            elif len(ip) <= 24 or '_' in ip:  # IPv6
-                s = ''
-                # P10-encoded IPv6 addresses are formed with chunks, where each 16-bit
-                # portion of the address (each part between :'s) is encoded as 3 B64 chars.
-                # A single :: is translated into an underscore (_).
-                # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L723
-                # Example: 1:2::3 -> AABAAC_AAD
-                for b64chunk in re.findall('([A-Z]{3}|_)', ip):
-                    if b64chunk == '_':
-                        s += ':'
-                    else:
-                        ipchunk = base64.b64decode('A' + b64chunk, '[]')[1:]
-                        for char in ipchunk:
-                            s += str(char)
-                        s += ':'
-
-                ip = s.rstrip(':')
-
+            ip = self.decode_p10_ip(ip)
             uid = args[-2]
             realname = args[-1]
 
