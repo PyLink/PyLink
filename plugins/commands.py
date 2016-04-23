@@ -187,7 +187,7 @@ def loglevel(irc, source, args):
             irc.reply('Error: Unknown log level "%s".' % level)
             return
         else:
-            log.setLevel(loglevel)
+            world.stdout_handler.setLevel(loglevel)
             irc.reply("Done.")
     except IndexError:
-        irc.reply(log.getEffectiveLevel())
+        irc.reply(world.stdout_handler.level)
