@@ -5,6 +5,7 @@ nefarious.py: Nefarious IRCu protocol module for PyLink.
 import sys
 import os
 import base64
+import struct
 from ipaddress import ip_address
 
 # Import hacks to access utils and classes...
@@ -20,28 +21,10 @@ def p10b64encode(num, length=2):
     Encodes a given numeric using P10 Base64 numeric nicks, as documented at
     https://github.com/evilnet/nefarious2/blob/a29b63144/doc/p10.txt#L69-L92
     """
-    c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]'
-    s = ''
-    # To accomplish this encoding, we divide the given value into a series of places. Much like
-    # a number can be divided into hundreds, tens, and digits (e.g. 128 is 1, 2, and 8), the
-    # places here add up to the value given. In the case of P10 Base64, each place can represent
-    # 0 to 63. divmod() is used to get the quotient and remainder of a division operation. When
-    # used on the input number and the length of our allowed characters list, the output becomes
-    # the values of (the next highest base, the current base).
-    places = divmod(num, len(c))
-    print('places:', places)
-    while places[0] >= len(c):
-        # If the base one higher than ours is greater than the largest value each base can
-        # represent, repeat the divmod process on that value,also keeping track of the
-        # remaining values we've calculated already.
-        places = divmod(places[0], len(c)) + places[1:]
-        print('places:', places)
-
-    # Expand the place values we've got to the characters list now.
-    chars = [c[place] for place in places]
-    s = ''.join(chars)
-    # Pad up to the required string length using the first character in our list (A).
-    return s.rjust(length, c[0])
+    # Pack the given number as an unsigned int.
+    sidbytes = struct.pack('>I', num)[1:]
+    sid = base64.b64encode(sidbytes, b'[]')[-2:]
+    return sid.decode()  # Return a string, not bytes.
 
 class P10SIDGenerator():
     def __init__(self, irc):
