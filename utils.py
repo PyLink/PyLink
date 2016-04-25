@@ -119,9 +119,7 @@ def parseModes(irc, target, args):
 
     This method is deprecated. Use irc.parseModes() instead.
     """
-    # TODO: migrate plugins and core to use the new methods before enabling this.
-    # Otherwise these warnings become super floody!
-    #log.warning("(%s) utils.parseModes is deprecated. Use irc.parseModes() instead!", irc.name)
+    log.warning("(%s) utils.parseModes is deprecated. Use irc.parseModes() instead!", irc.name)
     return irc.parseModes(target, args)
 
 def applyModes(irc, target, changedmodes):
@@ -131,9 +129,7 @@ def applyModes(irc, target, changedmodes):
 
     This method is deprecated. Use irc.applyModes() instead.
     """
-    # TODO: migrate plugins and core to use the new methods before enabling this.
-    # Otherwise these warnings become super floody!
-    #log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
+    log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
     return irc.applyModes(target, changedmodes)
 
 def joinModes(modes):
