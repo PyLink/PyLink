@@ -111,7 +111,7 @@ class HybridProtocol(TS6Protocol):
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
-        utils.applyModes(self.irc, uid, modes)
+        self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
         self._send(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                 "* :{realname}".format(ts=ts, host=host,
@@ -182,9 +182,9 @@ class HybridProtocol(TS6Protocol):
 
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, host, ip)
 
-        parsedmodes = utils.parseModes(self.irc, uid, [modes])
+        parsedmodes = self.irc.parseModes(uid, [modes])
         log.debug('(%s) handle_uid: Applying modes %s for %s', self.irc.name, parsedmodes, uid)
-        utils.applyModes(self.irc, uid, parsedmodes)
+        self.irc.applyModes(uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
 
         # Call the OPERED UP hook if +o is being added to the mode list.
@@ -221,7 +221,7 @@ class HybridProtocol(TS6Protocol):
         target = args[0]
         ts = args[1]
         modes = args[2:]
-        parsedmodes = utils.parseModes(self.irc, target, modes)
+        parsedmodes = self.irc.parseModes(target, modes)
 
         for modepair in parsedmodes:
             if modepair[0] == '+d':
@@ -259,7 +259,7 @@ class HybridProtocol(TS6Protocol):
                 parsedmodes.remove(modepair)
 
         if parsedmodes:
-            utils.applyModes(self.irc, target, parsedmodes)
+            self.irc.applyModes(target, parsedmodes)
 
         return {'target': target, 'modes': parsedmodes}
 

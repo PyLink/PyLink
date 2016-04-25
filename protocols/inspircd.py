@@ -59,7 +59,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
-        utils.applyModes(self.irc, uid, modes)
+        self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
 
         self._send(server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
@@ -132,7 +132,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
         if ts <= orig_ts:
             # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            utils.applyModes(self.irc, channel, changedmodes)
+            self.irc.applyModes(channel, changedmodes)
         namelist = ' '.join(namelist)
         self._send(server, "FJOIN {channel} {ts} {modes} :{users}".format(
                 ts=ts, users=namelist, channel=channel,
@@ -177,7 +177,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
             self._operUp(target)
-        utils.applyModes(self.irc, target, modes)
+        self.irc.applyModes(target, modes)
         joinedmodes = utils.joinModes(modes)
         if utils.isChannel(target):
             ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
@@ -491,8 +491,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.updateTS(channel, their_ts)
 
         modestring = args[2:-1] or args[2]
-        parsedmodes = utils.parseModes(self.irc, channel, modestring)
-        utils.applyModes(self.irc, channel, parsedmodes)
+        parsedmodes = self.irc.parseModes(channel, modestring)
+        self.irc.applyModes(channel, parsedmodes)
         namelist = []
         for user in userlist:
             modeprefix, user = user.split(',', 1)
@@ -506,7 +506,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
             if their_ts <= our_ts:
-                utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in modeprefix])
+                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in modeprefix])
             self.irc.channels[channel].users.add(user)
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
@@ -516,9 +516,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
         realname = args[-1]
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
-        parsedmodes = utils.parseModes(self.irc, uid, [args[8], args[9]])
+        parsedmodes = self.irc.parseModes(uid, [args[8], args[9]])
         log.debug('Applying modes %s for %s', parsedmodes, uid)
-        utils.applyModes(self.irc, uid, parsedmodes)
+        self.irc.applyModes(uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -555,8 +555,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         channel = utils.toLower(self.irc, args[0])
         oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
-        changedmodes = utils.parseModes(self.irc, channel, modes)
-        utils.applyModes(self.irc, channel, changedmodes)
+        changedmodes = self.irc.parseModes(channel, modes)
+        self.irc.applyModes(channel, changedmodes)
         ts = int(args[1])
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
                 'oldchan': oldobj}
@@ -568,8 +568,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
         target = args[0]
         modestrings = args[1:]
-        changedmodes = utils.parseModes(self.irc, target, modestrings)
-        utils.applyModes(self.irc, target, changedmodes)
+        changedmodes = self.irc.parseModes(target, modestrings)
+        self.irc.applyModes(target, changedmodes)
         return {'target': target, 'modes': changedmodes}
 
     def handle_idle(self, numeric, command, args):
@@ -636,7 +636,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :70MAAAAAB OPERTYPE Network_Owner
         omode = [('+o', None)]
         self.irc.users[numeric].opertype = opertype = args[0].replace("_", " ")
-        utils.applyModes(self.irc, numeric, omode)
+        self.irc.applyModes(numeric, omode)
         # OPERTYPE is essentially umode +o and metadata in one command;
         # we'll call that too.
         self.irc.callHooks([numeric, 'CLIENT_OPERED', {'text': opertype}])

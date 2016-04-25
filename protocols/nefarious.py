@@ -270,7 +270,7 @@ class P10Protocol(Protocol):
                                           opertype=opertype)
 
         # Fill in modes and add it to our users index
-        utils.applyModes(self.irc, uid, modes)
+        self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
 
         # Encode IPs when sending
@@ -377,7 +377,7 @@ class P10Protocol(Protocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        utils.applyModes(self.irc, target, modes)
+        self.irc.applyModes(target, modes)
         modes = list(modes)
 
         # According to the P10 specification:
@@ -533,7 +533,7 @@ class P10Protocol(Protocol):
 
         if ts <= orig_ts:
            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            utils.applyModes(self.irc, channel, changedmodes)
+            self.irc.applyModes(channel, changedmodes)
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
@@ -623,7 +623,7 @@ class P10Protocol(Protocol):
             self._send(self.irc.sid, 'FA %s %s' % (target, text))
             # Save the host change as a user mode (this is what P10 does),
             # so further host checks work.
-            utils.applyModes(self.irc, target, [('+f', text)])
+            self.irc.applyModes(target, [('+f', text)])
 
             # P10 cloaks aren't as simple as just replacing the displayed host with the one we're
             # sending. Check for cloak changes properly.
@@ -786,8 +786,8 @@ class P10Protocol(Protocol):
             # parameters attached.
             if args[5].startswith('+'):
                 modes = args[5:-3]
-                parsedmodes = utils.parseModes(self.irc, uid, modes)
-                utils.applyModes(self.irc, uid, parsedmodes)
+                parsedmodes = self.irc.parseModes(uid, modes)
+                self.irc.applyModes(uid, parsedmodes)
 
                 for modepair in parsedmodes:
                     if modepair[0][-1] == 'r':
@@ -952,7 +952,7 @@ class P10Protocol(Protocol):
         # If no modes are given, this will simply be empty.
         modestring = args[2:-1]
         if modestring:
-            parsedmodes = utils.parseModes(self.irc, channel, modestring)
+            parsedmodes = self.irc.parseModes(channel, modestring)
         else:
             parsedmodes = []
 
@@ -960,7 +960,7 @@ class P10Protocol(Protocol):
         parsedmodes.extend(bans)
 
         if parsedmodes:
-            utils.applyModes(self.irc, channel, parsedmodes)
+            self.irc.applyModes(channel, parsedmodes)
 
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
@@ -991,7 +991,7 @@ class P10Protocol(Protocol):
                 self.irc.users[user].channels.add(channel)
 
                 if their_ts <= our_ts:
-                    utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in prefixes])
+                    self.irc.applyModes(channel, [('+%s' % mode, user) for mode in prefixes])
 
                 self.irc.channels[channel].users.add(user)
 
@@ -1060,8 +1060,8 @@ class P10Protocol(Protocol):
             target = utils.toLower(self.irc, target)
 
         modestrings = args[1:]
-        changedmodes = utils.parseModes(self.irc, target, modestrings)
-        utils.applyModes(self.irc, target, changedmodes)
+        changedmodes = self.irc.parseModes(target, modestrings)
+        self.irc.applyModes(target, changedmodes)
 
         # Call the CLIENT_OPERED hook if +o is being set.
         if ('+o', None) in changedmodes and target in self.irc.users:
@@ -1236,7 +1236,7 @@ class P10Protocol(Protocol):
                     # Mode does not take an argument when unsetting.
                     changedmodes.append(('-%s' % modechar, None))
 
-        utils.applyModes(self.irc, channel, changedmodes)
+        self.irc.applyModes(channel, changedmodes)
         return {'target': channel, 'modes': changedmodes, 'oldchan': oldobj}
 
     def handle_account(self, numeric, command, args):
@@ -1281,7 +1281,7 @@ class P10Protocol(Protocol):
         text = args[1]
 
         # Assume a usermode +f change, and then update the cloak checking.
-        utils.applyModes(self.irc, target, [('+f', text)])
+        self.irc.applyModes(target, [('+f', text)])
 
         self.checkCloakChange(target)
         # We don't need to send any hooks here, checkCloakChange does that for us.
