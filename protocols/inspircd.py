@@ -15,7 +15,7 @@ import utils
 from log import log
 from classes import *
 
-from ts6_common import TS6BaseProtocol
+from ts6_common import *
 
 class InspIRCdProtocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -48,7 +48,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise ValueError('Server %r is not a PyLink server!' % server)
         # Create an UIDGenerator instance for every SID, so that each gets
         # distinct values.
-        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
+        uid = self.uidgen.setdefault(server, TS6UIDGenerator(server)).next_uid()
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
@@ -390,7 +390,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     # name it anything you like. The former is config default,
                     # but I personally prefer the latter.
                     name = 'owner'
-                
+
                 if name == 'c_registered':
                     # Be consistent with other protocols
                     name = 'registered'

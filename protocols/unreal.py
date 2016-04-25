@@ -16,7 +16,7 @@ sys.path += [curdir, os.path.dirname(curdir)]
 import utils
 from log import log
 from classes import *
-from ts6_common import TS6BaseProtocol
+from ts6_common import *
 
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -72,7 +72,7 @@ class UnrealProtocol(TS6BaseProtocol):
             raise ValueError('Server %r is not a PyLink server!' % server)
         # Unreal 4.0 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
         # do, but that doesn't matter to us...
-        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
+        uid = self.uidgen.setdefault(server, TS6UIDGenerator(server)).next_uid()
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host

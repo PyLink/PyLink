@@ -43,9 +43,6 @@ class IncrementalUIDGenerator():
     """
 
     def __init__(self, sid):
-        # TS6 UIDs are 6 characters in length (9 including the SID).
-        # They wrap from ABCDEFGHIJKLMNOPQRSTUVWXYZ -> 0123456789 -> wrap around:
-        # (e.g. AAAAAA, AAAAAB ..., AAAAA8, AAAAA9, AAAABA)
         if not (hasattr(self, 'allowedchars') and hasattr(self, 'length')):
              raise RuntimeError("Allowed characters list not defined. Subclass "
                                 "%s by defining self.allowedchars and self.length "
@@ -79,99 +76,6 @@ class IncrementalUIDGenerator():
         uid = self.sid + ''.join(self.uidchars)
         self.increment()
         return uid
-
-class TS6UIDGenerator(IncrementalUIDGenerator):
-     """Implements an incremental TS6 UID Generator."""
-
-     def __init__(self, sid):
-         # Define the options for IncrementalUIDGenerator, and then
-         # initialize its functions.
-         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456879'
-         self.length = 6
-         super().__init__(sid)
-
-class P10UIDGenerator(IncrementalUIDGenerator):
-     """Implements an incremental P10 UID Generator."""
-
-     def __init__(self, sid):
-         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]'
-         self.length = 3
-         super().__init__(sid)
-
-class TS6SIDGenerator():
-    """
-    TS6 SID Generator. <query> is a 3 character string with any combination of
-    uppercase letters, digits, and #'s. it must contain at least one #,
-    which are used by the generator as a wildcard. On every next_sid() call,
-    the first available wildcard character (from the right) will be
-    incremented to generate the next SID.
-
-    When there are no more available SIDs left (SIDs are not reused, only
-    incremented), RuntimeError is raised.
-
-    Example queries:
-        "1#A" would give: 10A, 11A, 12A ... 19A, 1AA, 1BA ... 1ZA (36 total results)
-        "#BQ" would give: 0BQ, 1BQ, 2BQ ... 9BQ (10 total results)
-        "6##" would give: 600, 601, 602, ... 60Y, 60Z, 610, 611, ... 6ZZ (1296 total results)
-    """
-
-    def __init__(self, irc):
-        self.irc = irc
-        try:
-            self.query = query = list(irc.serverdata["sidrange"])
-        except KeyError:
-            raise RuntimeError('(%s) "sidrange" is missing from your server configuration block!' % irc.name)
-
-        self.iters = self.query.copy()
-        self.output = self.query.copy()
-        self.allowedchars = {}
-        qlen = len(query)
-
-        assert qlen == 3, 'Incorrect length for a SID (must be 3, got %s)' % qlen
-        assert '#' in query, "Must be at least one wildcard (#) in query"
-
-        for idx, char in enumerate(query):
-            # Iterate over each character in the query string we got, along
-            # with its index in the string.
-            assert char in (string.digits+string.ascii_uppercase+"#"), \
-                "Invalid character %r found." % char
-            if char == '#':
-                if idx == 0:  # The first char be only digits
-                    self.allowedchars[idx] = string.digits
-                else:
-                    self.allowedchars[idx] = string.digits+string.ascii_uppercase
-                self.iters[idx] = iter(self.allowedchars[idx])
-                self.output[idx] = self.allowedchars[idx][0]
-                next(self.iters[idx])
-
-
-    def increment(self, pos=2):
-        """
-        Increments the SID generator to the next available SID.
-        """
-        if pos < 0:
-            # Oh no, we've wrapped back to the start!
-            raise RuntimeError('No more available SIDs!')
-        it = self.iters[pos]
-        try:
-            self.output[pos] = next(it)
-        except TypeError:  # This position is not an iterator, but a string.
-            self.increment(pos-1)
-        except StopIteration:
-            self.output[pos] = self.allowedchars[pos][0]
-            self.iters[pos] = iter(self.allowedchars[pos])
-            next(self.iters[pos])
-            self.increment(pos-1)
-
-    def next_sid(self):
-        """
-        Returns the next unused TS6 SID for the server.
-        """
-        while ''.join(self.output) in self.irc.servers:
-            # Increment until the SID we have doesn't already exist.
-            self.increment()
-        sid = ''.join(self.output)
-        return sid
 
 def add_cmd(func, name=None):
     """Binds an IRC command function to the given command name."""

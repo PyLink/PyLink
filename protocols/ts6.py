@@ -14,7 +14,7 @@ import utils
 from log import log
 
 from classes import *
-from ts6_common import TS6BaseProtocol
+from ts6_common import *
 
 class TS6Protocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -40,7 +40,7 @@ class TS6Protocol(TS6BaseProtocol):
             raise ValueError('Server %r is not a PyLink server!' % server)
         # Create an UIDGenerator instance for every SID, so that each gets
         # distinct values.
-        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
+        uid = self.uidgen.setdefault(server, TS6UIDGenerator(server)).next_uid()
         # EUID:
         # parameters: nickname, hopcount, nickTS, umodes, username,
         # visible hostname, IP address, UID, real hostname, account name, gecos

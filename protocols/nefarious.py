@@ -16,6 +16,14 @@ import utils
 from log import log
 from classes import *
 
+class P10UIDGenerator(utils.IncrementalUIDGenerator):
+     """Implements an incremental P10 UID Generator."""
+
+     def __init__(self, sid):
+         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]'
+         self.length = 3
+         super().__init__(sid)
+
 def p10b64encode(num, length=2):
     """
     Encodes a given numeric using P10 Base64 numeric nicks, as documented at
@@ -242,7 +250,7 @@ class P10Protocol(Protocol):
 
         # Create an UIDGenerator instance for every SID, so that each gets
         # distinct values.
-        uid = self.uidgen.setdefault(server, utils.P10UIDGenerator(server)).next_uid()
+        uid = self.uidgen.setdefault(server, P10UIDGenerator(server)).next_uid()
 
         # Fill in all the values we need
         ts = ts or int(time.time())
