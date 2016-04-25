@@ -70,9 +70,11 @@ class UnrealProtocol(TS6BaseProtocol):
         server = server or self.irc.sid
         if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
+
         # Unreal 4.0 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
         # do, but that doesn't matter to us...
-        uid = self.uidgen.setdefault(server, TS6UIDGenerator(server)).next_uid()
+        uid = self.uidgen[server].next_uid()
+
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host

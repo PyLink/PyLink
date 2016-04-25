@@ -44,19 +44,22 @@ class InspIRCdProtocol(TS6BaseProtocol):
         Note: No nick collision / valid nickname checks are done here; it is
         up to plugins to make sure they don't introduce anything invalid."""
         server = server or self.irc.sid
+
         if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
-        # Create an UIDGenerator instance for every SID, so that each gets
-        # distinct values.
-        uid = self.uidgen.setdefault(server, TS6UIDGenerator(server)).next_uid()
+
+        uid = self.uidgen[server].next_uid()
+
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
+
         utils.applyModes(self.irc, uid, modes)
         self.irc.servers[server].users.add(uid)
+
         self._send(server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                         " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                                  nick=nick, ident=ident, uid=uid,

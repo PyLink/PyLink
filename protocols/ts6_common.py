@@ -13,6 +13,7 @@ sys.path += [curdir, os.path.dirname(curdir)]
 import utils
 from log import log
 from classes import *
+import structures
 
 class TS6SIDGenerator():
     """
@@ -107,8 +108,8 @@ class TS6BaseProtocol(Protocol):
     def __init__(self, irc):
         super().__init__(irc)
 
-        # Dictionary of UID generators (one for each server) that the protocol module will fill in.
-        self.uidgen = {}
+        # Dictionary of UID generators (one for each server).
+        self.uidgen = structures.KeyedDefaultdict(TS6UIDGenerator)
 
         # SID generator for TS6.
         self.sidgen = TS6SIDGenerator(irc)

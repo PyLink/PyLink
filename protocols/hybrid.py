@@ -92,18 +92,16 @@ class HybridProtocol(TS6Protocol):
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
-        """Spawns a client with nick <nick> on the given IRC connection.
+        """Spawns a client with the given options.
         Note: No nick collision / valid nickname checks are done here; it is
         up to plugins to make sure they don't introduce anything invalid."""
+
         server = server or self.irc.sid
         if not self.irc.isInternalServer(server):
-            raise ValueError('Server %r is not a PyLink internal PseudoServer!' % server)
-        # Create an UIDGenerator instance for every SID, so that each gets
-        # distinct values.
-        uid = self.uidgen.setdefault(server, TS6UIDGenerator(server)).next_uid()
-        # EUID:
-        # parameters: nickname, hopcount, nickTS, umodes, username,
-        # visible hostname, IP address, UID, real hostname, account name, gecos
+            raise ValueError('Server %r is not a PyLink server!' % server)
+
+        uid = self.uidgen[server].next_uid()
+
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host

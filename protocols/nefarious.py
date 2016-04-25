@@ -68,8 +68,8 @@ class P10Protocol(Protocol):
     def __init__(self, irc):
         super().__init__(irc)
 
-        # Dictionary of UID generators (one for each server) that the protocol module will fill in.
-        self.uidgen = {}
+        # Dictionary of UID generators (one for each server).
+        self.uidgen = structures.KeyedDefaultdict(P10UIDGenerator)
 
         # SID generator for P10.
         self.sidgen = P10SIDGenerator(irc)
