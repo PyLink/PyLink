@@ -92,9 +92,12 @@ class HybridProtocol(TS6Protocol):
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
-        """Spawns a client with the given options.
+        """
+        Spawns a new client with the given options.
+
         Note: No nick collision / valid nickname checks are done here; it is
-        up to plugins to make sure they don't introduce anything invalid."""
+        up to plugins to make sure they don't introduce anything invalid.
+        """
 
         server = server or self.irc.sid
         if not self.irc.isInternalServer(server):

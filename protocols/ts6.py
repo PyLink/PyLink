@@ -31,10 +31,12 @@ class TS6Protocol(TS6BaseProtocol):
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
-        """Spawns a client with nick <nick> on the given IRC connection.
+        """
+        Spawns a new client with the given options.
 
         Note: No nick collision / valid nickname checks are done here; it is
-        up to plugins to make sure they don't introduce anything invalid."""
+        up to plugins to make sure they don't introduce anything invalid.
+        """
         server = server or self.irc.sid
 
         if not self.irc.isInternalServer(server):

@@ -232,6 +232,12 @@ class P10Protocol(Protocol):
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
+        """
+        Spawns a new client with the given options.
+
+        Note: No nick collision / valid nickname checks are done here; it is
+        up to plugins to make sure they don't introduce anything invalid.
+        """
         # {7N} *** NICK
         # 1 <nickname>
         # 2 <hops>
