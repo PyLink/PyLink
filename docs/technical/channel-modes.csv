@@ -29,7 +29,7 @@ noctcp,+C (m_noctcp),+C,+C,+C,+C
 noextmsg,+n,+n,+n,+n,+n
 noinvite,,,,,
 nokick,+Q (m_nokicks),,+E,+Q,
-noknock,+K (m_knock),,,+K,
+noknock,+K (m_knock),+p,,+K,+p
 nonick,+N (m_nonicks),,+d,+N,
 nonotice,+T (m_nonotice),+T,+T,+T,
 official-join,+Y (m_ojoin),,,,
@@ -37,7 +37,6 @@ op,+o,+o,+o,+o,+o
 operonly,+O (m_operchans),+O (extensions/chm_operonly),+O (extensions/chm_operonly),+O,+O
 opmoderated,+U (extras/m_opmoderated),+z,+z,,
 owner,+q (m_customprefix/m_chanprotect),,+y (when enabled),+q,
-paranoia,,,,,+p
 permanent,+P (m_permchannels),+P,+P,+P,
 private,+p,+p,+p,+p,
 quiet,,+q,+q,,
