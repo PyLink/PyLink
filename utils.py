@@ -116,164 +116,25 @@ def isHostmask(text):
 def parseModes(irc, target, args):
     """Parses a modestring list into a list of (mode, argument) tuples.
     ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
+
+    This method is deprecated. Use irc.parseModes() instead.
     """
-    # http://www.irc.org/tech_docs/005.html
-    # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
-    # B = Mode that changes a setting and always has a parameter.
-    # C = Mode that changes a setting and only has a parameter when set.
-    # D = Mode that changes a setting and never has a parameter.
-    assert args, 'No valid modes were supplied!'
-    usermodes = not isChannel(target)
-    prefix = ''
-    modestring = args[0]
-    args = args[1:]
-    if usermodes:
-        log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
-
-        if target not in irc.users:
-            log.warning('(%s) Possible desync! Mode target %s is not in the users index.', irc.name, target)
-            return []  # Return an empty mode list
-
-        supported_modes = irc.umodes
-        oldmodes = irc.users[target].modes
-    else:
-        log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
-
-        if target not in irc.channels:
-            log.warning('(%s) Possible desync! Mode target %s is not in the channels index.', irc.name, target)
-            return []
-
-        supported_modes = irc.cmodes
-        oldmodes = irc.channels[target].modes
-    res = []
-    for mode in modestring:
-        if mode in '+-':
-            prefix = mode
-        else:
-            if not prefix:
-                prefix = '+'
-            arg = None
-            log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
-            try:
-                if mode in (supported_modes['*A'] + supported_modes['*B']):
-                    # Must have parameter.
-                    log.debug('Mode %s: This mode must have parameter.', mode)
-                    arg = args.pop(0)
-                    if prefix == '-' and mode in supported_modes['*B'] and arg == '*':
-                        # Charybdis allows unsetting +k without actually
-                        # knowing the key by faking the argument when unsetting
-                        # as a single "*".
-                        # We'd need to know the real argument of +k for us to
-                        # be able to unset the mode.
-                        oldargs = [m[1] for m in oldmodes if m[0] == mode]
-                        if oldargs:
-                            # Set the arg to the old one on the channel.
-                            arg = oldargs[0]
-                            log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
-                elif mode in irc.prefixmodes and not usermodes:
-                    # We're setting a prefix mode on someone (e.g. +o user1)
-                    log.debug('Mode %s: This mode is a prefix mode.', mode)
-                    arg = args.pop(0)
-                    # Convert nicks to UIDs implicitly; most IRCds will want
-                    # this already.
-                    arg = irc.nickToUid(arg) or arg
-                    if arg not in irc.users:  # Target doesn't exist, skip it.
-                        log.debug('(%s) Skipping setting mode "%s %s"; the '
-                                  'target doesn\'t seem to exist!', irc.name,
-                                  mode, arg)
-                        continue
-                elif prefix == '+' and mode in supported_modes['*C']:
-                    # Only has parameter when setting.
-                    log.debug('Mode %s: Only has parameter when setting.', mode)
-                    arg = args.pop(0)
-            except IndexError:
-                log.warning('(%s/%s) Error while parsing mode %r: mode requires an '
-                            'argument but none was found. (modestring: %r)',
-                            irc.name, target, mode, modestring)
-                continue  # Skip this mode; don't error out completely.
-            res.append((prefix + mode, arg))
-    return res
+    # TODO: migrate plugins and core to use the new methods before enabling this.
+    # Otherwise these warnings become super floody!
+    #log.warning("(%s) utils.parseModes is deprecated. Use irc.parseModes() instead!", irc.name)
+    return irc.parseModes(target, args)
 
 def applyModes(irc, target, changedmodes):
     """Takes a list of parsed IRC modes, and applies them on the given target.
 
-    The target can be either a channel or a user; this is handled automatically."""
-    usermodes = not isChannel(target)
-    log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
+    The target can be either a channel or a user; this is handled automatically.
 
-    try:
-        if usermodes:
-            old_modelist = irc.users[target].modes
-            supported_modes = irc.umodes
-        else:
-            old_modelist = irc.channels[target].modes
-            supported_modes = irc.cmodes
-    except KeyError:
-        log.warning('(%s) Possible desync? Mode target %s is unknown.', irc.name, target)
-        return
-
-    modelist = set(old_modelist)
-    log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
-    for mode in changedmodes:
-        # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
-        try:
-            real_mode = (mode[0][1], mode[1])
-        except IndexError:
-            real_mode = mode
-
-        if not usermodes:
-            # We only handle +qaohv for now. Iterate over every supported mode:
-            # if the IRCd supports this mode and it is the one being set, add/remove
-            # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
-            # for ops).
-            for pmode, pmodelist in irc.channels[target].prefixmodes.items():
-                if pmode in irc.cmodes and real_mode[0] == irc.cmodes[pmode]:
-                    log.debug('(%s) Initial prefixmodes list: %s', irc.name, pmodelist)
-                    if mode[0][0] == '+':
-                        pmodelist.add(mode[1])
-                    else:
-                        pmodelist.discard(mode[1])
-
-                    log.debug('(%s) Final prefixmodes list: %s', irc.name, pmodelist)
-
-            if real_mode[0] in irc.prefixmodes:
-                # Don't add prefix modes to IrcChannel.modes; they belong in the
-                # prefixmodes mapping handled above.
-                log.debug('(%s) Not adding mode %s to IrcChannel.modes because '
-                          'it\'s a prefix mode.', irc.name, str(mode))
-                continue
-
-        if mode[0][0] == '+':
-            # We're adding a mode
-            existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
-            if existing and real_mode[1] and real_mode[0] not in irc.cmodes['*A']:
-                # The mode we're setting takes a parameter, but is not a list mode (like +beI).
-                # Therefore, only one version of it can exist at a time, and we must remove
-                # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
-                # for example, someone sets mode "+l 30" on a channel already set "+l 25".
-                log.debug('(%s) Old modes for mode %r exist on %s, removing them: %s',
-                          irc.name, real_mode, target, str(existing))
-                [modelist.discard(oldmode) for oldmode in existing]
-            modelist.add(real_mode)
-            log.debug('(%s) Adding mode %r on %s', irc.name, real_mode, target)
-        else:
-            log.debug('(%s) Removing mode %r on %s', irc.name, real_mode, target)
-            # We're removing a mode
-            if real_mode[1] is None:
-                # We're removing a mode that only takes arguments when setting.
-                # Remove all mode entries that use the same letter as the one
-                # we're unsetting.
-                for oldmode in modelist.copy():
-                    if oldmode[0] == real_mode[0]:
-                        modelist.discard(oldmode)
-            else:
-                # Swap the - for a + and then remove it from the list.
-                modelist.discard(real_mode)
-    log.debug('(%s) Final modelist: %s', irc.name, modelist)
-    if usermodes:
-        irc.users[target].modes = modelist
-    else:
-        irc.channels[target].modes = modelist
+    This method is deprecated. Use irc.applyModes() instead.
+    """
+    # TODO: migrate plugins and core to use the new methods before enabling this.
+    # Otherwise these warnings become super floody!
+    #log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
+    return irc.applyModes(target, changedmodes)
 
 def joinModes(modes):
     """Takes a list of (mode, arg) tuples in parseModes() format, and
