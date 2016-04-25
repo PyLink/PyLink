@@ -19,6 +19,7 @@ from copy import deepcopy
 from log import *
 import world
 import utils
+import structures
 
 ### Exceptions
 
@@ -113,7 +114,7 @@ class Irc():
                         internal=True, desc=self.serverdata.get('serverdesc')
                         or self.botdata['serverdesc'])}
         self.users = {}
-        self.channels = utils.KeyedDefaultdict(IrcChannel)
+        self.channels = structures.KeyedDefaultdict(IrcChannel)
 
         # This sets the list of supported channel and user modes: the default
         # RFC1459 modes are implied. Named modes are used here to make
