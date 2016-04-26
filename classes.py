@@ -267,8 +267,8 @@ class Irc():
             except (socket.error, ProtocolError, ConnectionError) as e:
                 # self.run() or the protocol module it called raised an
                 # exception, meaning we've disconnected!
-                log.warning('(%s) Disconnected from IRC: %s: %s',
-                            self.name, type(e).__name__, str(e))
+                log.error('(%s) Disconnected from IRC: %s: %s',
+                          self.name, type(e).__name__, str(e))
 
             if not self.aborted.is_set():
                 # Only start a disconnection process if one doesn't already
@@ -336,10 +336,10 @@ class Irc():
 
             buf += data
             if not data:
-                log.warning('(%s) No data received, disconnecting!', self.name)
+                log.error('(%s) No data received, disconnecting!', self.name)
                 return
             elif (time.time() - self.lastping) > self.pingtimeout:
-                log.warning('(%s) Connection timed out.', self.name)
+                log.error('(%s) Connection timed out.', self.name)
                 return
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
