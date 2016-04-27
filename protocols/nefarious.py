@@ -66,7 +66,7 @@ class P10Protocol(Protocol):
         # SID generator for P10.
         self.sidgen = P10SIDGenerator(irc)
 
-        self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE', 'CLEARMODE': 'MODE'}
+        self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE', 'CLEARMODE': 'MODE', 'BURST': 'JOIN'}
 
     def _send(self, source, text):
         self.irc.send("%s %s" % (source, text))

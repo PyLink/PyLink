@@ -18,7 +18,7 @@ class HybridProtocol(TS6Protocol):
 
         self.casemapping = 'ascii'
         self.caps = {}
-        self.hook_map = {'EOB': 'ENDBURST', 'TBURST': 'TOPIC'}
+        self.hook_map = {'EOB': 'ENDBURST', 'TBURST': 'TOPIC', 'SJOIN': 'JOIN'}
 
     def connect(self):
         """Initializes a connection to a server."""
