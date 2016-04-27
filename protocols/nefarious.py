@@ -484,6 +484,7 @@ class P10Protocol(Protocol):
             return num
         users = sorted(users, key=access_sort)
 
+        last_prefixes = ''
         for userpair in users:
             # We take <users> as a list of (prefixmodes, uid) pairs.
             assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
@@ -494,11 +495,12 @@ class P10Protocol(Protocol):
             changedusers.append(user)
             log.debug('(%s) sjoin: adding %s:%s to namelist', self.irc.name, user, prefixes)
 
-
-            if prefixes:
+            if prefixes and prefixes != last_prefixes:
                 namelist.append('%s:%s' % (user, prefixes))
             else:
                 namelist.append(user)
+
+            last_prefixes = prefixes
             if prefixes:
                 for prefix in prefixes:
                     changedmodes.append(('+%s' % prefix, user))
