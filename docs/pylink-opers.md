@@ -24,6 +24,9 @@ To link to a channel already created on a different network:
 You can also link remote channels to take a different name on your network. (This is the third argument to the LINK command)
 - `/msg PyLink link othernet #lobby #othernet-lobby`
 
+Also, to list the available channels:
+- `/msg PyLink linked`
+
 ## Dealing with channel emergencies
 
 PyLink is not designed with the ability to forward KILLs, G:Lines, or any network bans. **The best thing to do in the case of emergencies is to delink the problem networks / channels!** Kills are actively blocked by the PyLink daemon (user is just respawned), while X:Lines are simply ignored, as there isn't any code to handle them yet.
