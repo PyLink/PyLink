@@ -513,24 +513,29 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_join(self, numeric, command, args):
         """Handles the UnrealIRCd JOIN command."""
         # <- :GL JOIN #pylink,#test
-        for channel in args[0].split(','):
-            c = self.irc.channels[channel]
-            if args[0] == '0':
-                # /join 0; part the user from all channels
-                oldchans = self.irc.users[numeric].channels.copy()
-                log.debug('(%s) Got /join 0 from %r, channel list is %r',
-                          self.irc.name, numeric, oldchans)
-                for ch in oldchans:
-                    self.irc.channels[ch].users.discard(numeric)
-                    self.irc.users[numeric].channels.discard(ch)
-                return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
+        if args[0] == '0':
+            # /join 0; part the user from all channels
+            oldchans = self.irc.users[numeric].channels.copy()
+            log.debug('(%s) Got /join 0 from %r, channel list is %r',
+                      self.irc.name, numeric, oldchans)
+            for ch in oldchans:
+                self.irc.channels[ch].users.discard(numeric)
+                self.irc.users[numeric].channels.discard(ch)
+            return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
 
-            self.irc.users[numeric].channels.add(channel)
-            self.irc.channels[channel].users.add(numeric)
-            # Call hooks manually, because one JOIN command in UnrealIRCd can
-            # have multiple channels...
-            self.irc.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
-                                                   c.modes, 'ts': c.ts}])
+        else:
+            for channel in args[0].split(','):
+                # Normalize channel case.
+                channel = utils.toLower(self.irc, channel)
+
+                c = self.irc.channels[channel]
+
+                self.irc.users[numeric].channels.add(channel)
+                self.irc.channels[channel].users.add(numeric)
+                # Call hooks manually, because one JOIN command in UnrealIRCd can
+                # have multiple channels...
+                self.irc.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
+                                                       c.modes, 'ts': c.ts}])
 
     def handle_sjoin(self, numeric, command, args):
         """Handles the UnrealIRCd SJOIN command."""
