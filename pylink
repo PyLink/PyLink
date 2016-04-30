@@ -47,9 +47,5 @@ if __name__ == '__main__':
         proto = utils.getProtocolModule(protoname)
         world.networkobjects[network] = irc = classes.Irc(network, proto, conf.conf)
 
-        # Call coreplugin's initialization method
-        log.debug('(%s) Calling main() function of coreplugin', irc.name)
-        coreplugin.main(irc)
-
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
