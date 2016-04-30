@@ -76,7 +76,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # InspIRCd doesn't distinguish between burst joins and regular joins,
         # so what we're actually doing here is sending FJOIN from the server,
         # on behalf of the clients that are joining.
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         server = self.irc.isInternalClient(client)
         if not server:
             log.error('(%s) Error trying to join %r to %r (no such client exists)', self.irc.name, client, channel)
@@ -100,7 +100,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             sjoin('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])
             sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
         """
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         server = server or self.irc.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
@@ -180,7 +180,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.irc.applyModes(target, modes)
         joinedmodes = self.irc.joinModes(modes)
         if utils.isChannel(target):
-            ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
+            ts = ts or self.irc.channels[self.irc.toLower(target)].ts
             self._send(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
         else:
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
@@ -482,7 +482,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
         # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
 
@@ -552,7 +552,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_fmode(self, numeric, command, args):
         """Handles the FMODE command, used for channel mode changes."""
         # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = self.irc.parseModes(channel, modes)
@@ -583,7 +583,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_ftopic(self, numeric, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""
         # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         ts = args[1]
         setter = args[2]
         topic = args[-1]
@@ -598,7 +598,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming INVITEs."""
         # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 0
         target = args[0]
-        channel = utils.toLower(self.irc, args[1])
+        channel = self.irc.toLower(args[1])
         # We don't actually need to process this; just send the hook so plugins can use it
         return {'target': target, 'channel': channel}
 
@@ -621,7 +621,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         targetmask = args[0]
         real_command = args[1]
         if targetmask == '*' and real_command == 'KNOCK':
-            channel = utils.toLower(self.irc, args[2])
+            channel = self.irc.toLower(args[2])
             text = args[3]
             return {'parse_as': real_command, 'channel': channel,
                     'text': text}

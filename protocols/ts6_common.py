@@ -151,7 +151,7 @@ class TS6BaseProtocol(Protocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         if not reason:
             reason = 'No reason given'
 
@@ -174,7 +174,7 @@ class TS6BaseProtocol(Protocol):
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         if not self.irc.isInternalClient(client):
             log.error('(%s) Error trying to part %r from %r (no such client exists)', self.irc.name, client, channel)
             raise LookupError('No such PyLink client exists.')
@@ -319,7 +319,7 @@ class TS6BaseProtocol(Protocol):
         target = args[0]
         # We use lowercase channels internally, but uppercase UIDs.
         if utils.isChannel(target):
-            target = utils.toLower(self.irc, target)
+            target = self.irc.toLower(target)
         return {'target': target, 'text': args[1]}
 
     handle_notice = handle_privmsg
@@ -340,7 +340,7 @@ class TS6BaseProtocol(Protocol):
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
         # :70MAAAAAA KICK #test 70MAAAAAA :some reason
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         kicked = self._getUid(args[1])
         self.handle_part(kicked, 'KICK', [channel, args[2]])
         return {'channel': channel, 'target': kicked, 'text': args[2]}
@@ -408,7 +408,7 @@ class TS6BaseProtocol(Protocol):
         """Handles incoming TOPIC changes from clients. For topic bursts,
         TB (TS6/charybdis) and FTOPIC (InspIRCd) are used instead."""
         # <- :70MAAAAAA TOPIC #test :test
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         topic = args[1]
 
         oldtopic = self.irc.channels[channel].topic
@@ -420,7 +420,7 @@ class TS6BaseProtocol(Protocol):
 
     def handle_part(self, source, command, args):
         """Handles incoming PART commands."""
-        channels = utils.toLower(self.irc, args[0]).split(',')
+        channels = self.irc.toLower(args[0]).split(',')
         for channel in channels:
             # We should only get PART commands for channels that exist, right??
             self.irc.channels[channel].removeuser(source)

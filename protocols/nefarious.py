@@ -314,7 +314,7 @@ class P10Protocol(Protocol):
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # <- ABAAB J #test3 1460744371
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         ts = self.irc.channels[channel].ts
 
         if not self.irc.isInternalClient(client):
@@ -336,7 +336,7 @@ class P10Protocol(Protocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         if not reason:
             reason = 'No reason given'
 
@@ -386,7 +386,7 @@ class P10Protocol(Protocol):
         # modestring, this means we can send a max of 13 modes with arguments per line.
         if utils.isChannel(target):
             # Channel mode changes have a trailing TS. User mode changes do not.
-            cobj = self.irc.channels[utils.toLower(self.irc, target)]
+            cobj = self.irc.channels[self.irc.toLower(target)]
             ts = ts or cobj.ts
             send_ts = True
         else:
@@ -421,7 +421,7 @@ class P10Protocol(Protocol):
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
 
         if not self.irc.isInternalClient(client):
             raise LookupError('No such PyLink client exists.')
@@ -463,7 +463,7 @@ class P10Protocol(Protocol):
             sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
         """
         # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host ~ *!*@bad.host
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         server = server or self.irc.sid
 
         assert users, "sjoin: No users sent?"
@@ -918,7 +918,7 @@ class P10Protocol(Protocol):
             # No useful data was sent, ignore.
             return
 
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         userlist = args[-1].split()
         their_ts = int(args[1])
         our_ts = self.irc.channels[channel].ts
@@ -1016,7 +1016,7 @@ class P10Protocol(Protocol):
                 self.irc.users[source].channels.discard(channel)
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
-            channel = utils.toLower(self.irc, args[0])
+            channel = self.irc.toLower(args[0])
             if ts:  # Only update TS if one was sent.
                 self.updateTS(channel, ts)
 
@@ -1036,7 +1036,7 @@ class P10Protocol(Protocol):
 
         # We use lowercase channels internally, but uppercase UIDs.
         if utils.isChannel(target):
-            target = utils.toLower(self.irc, target)
+            target = self.irc.toLower(target)
         return {'target': target, 'text': args[1]}
 
     handle_notice = handle_privmsg
@@ -1055,7 +1055,7 @@ class P10Protocol(Protocol):
         # <- ABAAA OM #test +h ABAAA
         target = self._getUid(args[0])
         if utils.isChannel(target):
-            target = utils.toLower(self.irc, target)
+            target = self.irc.toLower(target)
 
         modestrings = args[1:]
         changedmodes = self.irc.parseModes(target, modestrings)
@@ -1078,7 +1078,7 @@ class P10Protocol(Protocol):
         # <- ABAAA L #test,#test2
         # <- ABAAA L #test :test
 
-        channels = utils.toLower(self.irc, args[0]).split(',')
+        channels = self.irc.toLower(args[0]).split(',')
         for channel in channels:
             # We should only get PART commands for channels that exist, right??
             self.irc.channels[channel].removeuser(source)
@@ -1102,7 +1102,7 @@ class P10Protocol(Protocol):
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
         # <- ABAAA K #TEST AyAAA :PyLink-devel
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         kicked = args[1]
 
         self.handle_part(kicked, 'KICK', [channel, args[2]])
@@ -1165,7 +1165,7 @@ class P10Protocol(Protocol):
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""
         # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         topic = args[-1]
 
         oldtopic = self.irc.channels[channel].topic
@@ -1183,7 +1183,7 @@ class P10Protocol(Protocol):
         # - note that the target is a nickname, not a numeric.
         # <- ABAAA I PyLink-devel #services 1460948992
         target = self._getUid(args[0])
-        channel = utils.toLower(self.irc, args[1])
+        channel = self.irc.toLower(args[1])
 
         return {'target': target, 'channel': channel}
 
@@ -1206,7 +1206,7 @@ class P10Protocol(Protocol):
     def handle_clearmode(self, numeric, command, args):
         """Handles CLEARMODE, which is used to clear a channel's modes."""
         # <- ABAAA CM #test ovpsmikbl
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         modes = args[1]
 
         # Enumerate a list of our existing modes, including prefix modes.

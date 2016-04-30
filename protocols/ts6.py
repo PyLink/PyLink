@@ -67,7 +67,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         # JOIN:
         # parameters: channelTS, channel, '+' (a plus sign)
         if not self.irc.isInternalClient(client):
@@ -97,7 +97,7 @@ class TS6Protocol(TS6BaseProtocol):
         # their status ('@+', '@', '+' or ''), for example:
         # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'. All users must be behind the source server
         # so it is not possible to use this message to force users to join a channel.
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         server = server or self.irc.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
@@ -154,7 +154,7 @@ class TS6Protocol(TS6BaseProtocol):
         modes = list(modes)
 
         if utils.isChannel(target):
-            ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
+            ts = ts or self.irc.channels[self.irc.toLower(target)].ts
             # TMODE:
             # parameters: channelTS, channel, cmode changes, opt. cmode parameters...
 
@@ -419,7 +419,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming SJOIN commands."""
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
-        channel = utils.toLower(self.irc, args[1])
+        channel = self.irc.toLower(args[1])
         userlist = args[-1].split()
         their_ts = int(args[0])
         our_ts = self.irc.channels[channel].ts
@@ -474,7 +474,7 @@ class TS6Protocol(TS6BaseProtocol):
                 self.irc.users[numeric].channels.discard(channel)
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
-            channel = utils.toLower(self.irc, args[1])
+            channel = self.irc.toLower(args[1])
             self.updateTS(channel, ts)
 
             self.irc.users[numeric].channels.add(channel)
@@ -560,7 +560,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming TMODE commands (channel mode change)."""
         # <- :42XAAAAAB TMODE 1437450768 #test -c+lkC 3 agte4
         # <- :0UYAAAAAD TMODE 0 #a +h 0UYAAAAAD
-        channel = utils.toLower(self.irc, args[1])
+        channel = self.irc.toLower(args[1])
         oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = self.irc.parseModes(channel, modes)

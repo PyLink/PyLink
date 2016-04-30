@@ -120,7 +120,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         if not self.irc.isInternalClient(client):
             raise LookupError('No such PyLink client exists.')
         self._send(client, "JOIN %s" % channel)
@@ -145,7 +145,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # The nicklist consists of users joining the channel, with status prefixes for
         # their status ('@+', '@', '+' or ''), for example:
         # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'.
-        channel = utils.toLower(self.irc, channel)
+        channel = self.irc.toLower(channel)
         server = server or self.irc.sid
         assert users, "sjoin: No users sent?"
         if not server:
@@ -219,7 +219,7 @@ class UnrealProtocol(TS6BaseProtocol):
         joinedmodes = self.irc.joinModes(modes)
         if utils.isChannel(target):
             # The MODE command is used for channel mode changes only
-            ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
+            ts = ts or self.irc.channels[self.irc.toLower(target)].ts
             self._send(numeric, 'MODE %s %s %s' % (target, joinedmodes, ts))
         else:
             # For user modes, the only way to set modes (for non-U:Lined servers)
@@ -510,7 +510,7 @@ class UnrealProtocol(TS6BaseProtocol):
         target = self._getUid(args[0])
         # We use lowercase channels internally, but uppercase UIDs.
         if utils.isChannel(target):
-            target = utils.toLower(self.irc, target)
+            target = self.irc.toLower(target)
         return {'target': target, 'text': args[1]}
     handle_notice = handle_privmsg
 
@@ -530,7 +530,7 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             for channel in args[0].split(','):
                 # Normalize channel case.
-                channel = utils.toLower(self.irc, channel)
+                channel = self.irc.toLower(channel)
 
                 c = self.irc.channels[channel]
 
@@ -547,7 +547,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # memberlist should be a list of UIDs with their channel status prefixes, as
         # in ":001AAAAAA @001AAAAAB +001AAAAAC".
         # Interestingly, no modes are ever sent in this command as far as I've seen.
-        channel = utils.toLower(self.irc, args[1])
+        channel = self.irc.toLower(args[1])
         userlist = args[-1].split()
 
         our_ts = self.irc.channels[channel].ts
@@ -638,7 +638,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Also, we need to get rid of that extra space following the +f argument. :|
         if utils.isChannel(args[0]):
-            channel = utils.toLower(self.irc, args[0])
+            channel = self.irc.toLower(args[0])
             oldobj = self.irc.channels[channel].deepcopy()
             modes = list(filter(None, args[1:]))  # normalize whitespace
             parsedmodes = self.irc.parseModes(channel, modes)
@@ -752,7 +752,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles the TOPIC command."""
         # <- GL TOPIC #services GL 1444699395 :weeee
         # <- TOPIC #services devel.relay 1452399682 :test
-        channel = utils.toLower(self.irc, args[0])
+        channel = self.irc.toLower(args[0])
         topic = args[-1]
         setter = args[1]
         ts = args[2]

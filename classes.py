@@ -499,6 +499,16 @@ class Irc():
         """Replies to the last caller in the right context (channel or PM)."""
         self.msg(self.called_by, text, notice=notice, source=source)
 
+    def toLower(self, text):
+        """Returns a lowercase representation of text based on the IRC object's
+        casemapping (rfc1459 or ascii)."""
+        if self.proto.casemapping == 'rfc1459':
+            text = text.replace('{', '[')
+            text = text.replace('}', ']')
+            text = text.replace('|', '\\')
+            text = text.replace('~', '^')
+        return text.lower()
+
     def parseModes(self, target, args):
         """Parses a modestring list into a list of (mode, argument) tuples.
         ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
@@ -792,9 +802,9 @@ class Irc():
     ### State checking functions
     def nickToUid(self, nick):
         """Looks up the UID of a user with the given nick, if one is present."""
-        nick = utils.toLower(self, nick)
+        nick = self.toLower(nick)
         for k, v in self.users.copy().items():
-            if utils.toLower(self, v.nick) == nick:
+            if self.toLower(v.nick) == nick:
                 return k
 
     def isInternalClient(self, numeric):

@@ -69,16 +69,6 @@ def add_hook(func, command):
     world.hooks[command].append(func)
     return func
 
-def toLower(irc, text):
-    """Returns a lowercase representation of text based on the IRC object's
-    casemapping (rfc1459 or ascii)."""
-    if irc.proto.casemapping == 'rfc1459':
-        text = text.replace('{', '[')
-        text = text.replace('}', ']')
-        text = text.replace('|', '\\')
-        text = text.replace('~', '^')
-    return text.lower()
-
 _nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
 def isNick(s, nicklen=None):
     """Returns whether the string given is a valid nick."""

@@ -116,7 +116,7 @@ def showchan(irc, source, args):
 
     Shows information about <channel>."""
     try:
-        channel = utils.toLower(irc, args[0])
+        channel = irc.toLower(args[0])
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1: channel.")
         return

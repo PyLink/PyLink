@@ -1225,7 +1225,7 @@ def create(irc, source, args):
 
     Creates the channel <channel> over the relay."""
     try:
-        channel = utils.toLower(irc, args[0])
+        channel = irc.toLower(args[0])
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1: channel.")
         return
@@ -1260,11 +1260,11 @@ def destroy(irc, source, args):
 
     Removes <channel> from the relay, delinking all networks linked to it. If <home network> is given and you are logged in as admin, this can also remove relay channels from other networks."""
     try:  # Two args were given: first one is network name, second is channel.
-        channel = utils.toLower(irc, args[1])
+        channel = irc.toLower(args[1])
         network = args[0]
     except IndexError:
         try:  # One argument was given; assume it's just the channel.
-            channel = utils.toLower(irc, args[0])
+            channel = irc.toLower(args[0])
             network = irc.name
         except IndexError:
             irc.reply("Error: Not enough arguments. Needs 1-2: channel, network (optional).")
@@ -1304,13 +1304,13 @@ def link(irc, source, args):
     Links channel <channel> on <remotenet> over the relay to <local channel>.
     If <local channel> is not specified, it defaults to the same name as <channel>."""
     try:
-        channel = utils.toLower(irc, args[1])
+        channel = irc.toLower(args[1])
         remotenet = args[0]
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
         return
     try:
-        localchan = utils.toLower(irc, args[2])
+        localchan = irc.toLower(args[2])
     except IndexError:
         localchan = channel
     for c in (channel, localchan):
@@ -1355,7 +1355,7 @@ def delink(irc, source, args):
     Delinks channel <local channel>. <network> must and can only be specified if you are on the host network for <local channel>, and allows you to pick which network to delink.
     To remove a relay entirely, use the 'destroy' command instead."""
     try:
-        channel = utils.toLower(irc, args[0])
+        channel = irc.toLower(args[0])
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1-2: channel, remote netname (optional).")
         return
@@ -1463,7 +1463,7 @@ def linkacl(irc, source, args):
     irc.checkAuthenticated(source)
     try:
         cmd = args[0].lower()
-        channel = utils.toLower(irc, args[1])
+        channel = irc.toLower(args[1])
     except IndexError:
         irc.reply(missingargs)
         return
@@ -1551,7 +1551,7 @@ def claim(irc, source, args):
     CLAIM is a way of enforcing network ownership for a channel, similarly to Janus. Unless the list is empty, only networks on the CLAIM list for a channel (plus the creating network) are allowed to override kicks, mode changes, and topic changes in it - attempts from other networks' opers to do this are simply blocked or reverted."""
     irc.checkAuthenticated(source)
     try:
-        channel = utils.toLower(irc, args[0])
+        channel = irc.toLower(args[0])
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1-2: channel, list of networks (optional).")
         return
