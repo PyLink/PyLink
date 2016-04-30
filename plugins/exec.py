@@ -30,7 +30,7 @@ def _exec(irc, source, args):
         return
 
     log.info('(%s) Executing %r for %s', irc.name, args,
-             utils.getHostmask(irc, source))
+             irc.getHostmask(source))
     exec(args, globals(), locals())
 
 utils.add_cmd(_exec, 'exec')
@@ -48,7 +48,7 @@ def _eval(irc, source, args):
         return
 
     log.info('(%s) Evaluating %r for %s', irc.name, args,
-             utils.getHostmask(irc, source))
+             irc.getHostmask(source))
     irc.reply(eval(args))
 utils.add_cmd(_eval, 'eval')
 
@@ -66,7 +66,7 @@ def raw(irc, source, args):
         return
 
     log.info('(%s) Sending raw text %r to IRC for %s', irc.name, args,
-             utils.getHostmask(irc, source))
+             irc.getHostmask(source))
     irc.send(args)
 
     irc.reply("Done.")
@@ -85,5 +85,5 @@ def inject(irc, source, args):
         return
 
     log.info('(%s) Injecting raw text %r into protocol module for %s', irc.name,
-             args, utils.getHostmask(irc, source))
+             args, irc.getHostmask(source))
     irc.reply(irc.runline(args))

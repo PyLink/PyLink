@@ -159,45 +159,6 @@ def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
         raise NotAuthenticatedError("You are not authenticated!")
     return True
 
-def isManipulatableClient(irc, uid):
-    """
-    Returns whether the given user is marked as an internal, manipulatable
-    client. Usually, automatically spawned services clients should have this
-    set True to prevent interactions with opers (like mode changes) from
-    causing desyncs.
-    """
-    return irc.isInternalClient(uid) and irc.users[uid].manipulatable
-
-def getHostmask(irc, user, realhost=False, ip=False):
-    """
-    Returns the hostmask of the given user, if present. If the realhost option
-    is given, return the real host of the user instead of the displayed host.
-    If the ip option is given, return the IP address of the user (this overrides
-    realhost)."""
-    userobj = irc.users.get(user)
-
-    try:
-        nick = userobj.nick
-    except AttributeError:
-        nick = '<unknown-nick>'
-
-    try:
-        ident = userobj.ident
-    except AttributeError:
-        ident = '<unknown-ident>'
-
-    try:
-        if ip:
-            host = userobj.ip
-        elif realhost:
-            host = userobj.realhost
-        else:
-            host = userobj.host
-    except AttributeError:
-        host = '<unknown-host>'
-
-    return '%s!%s@%s' % (nick, ident, host)
-
 def loadModuleFromFolder(name, folder):
     """
     Imports and returns a module, if existing, from a specific folder.

@@ -1244,7 +1244,7 @@ def create(irc, source, args):
         irc.reply('Error: Channel %r is already part of a relay.' % channel)
         return
 
-    creator = utils.getHostmask(irc, source)
+    creator = irc.getHostmask(source)
     # Create the relay database entry with the (network name, channel name)
     # pair - this is just a dict with various keys.
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(),
@@ -1291,7 +1291,7 @@ def destroy(irc, source, args):
 
         del db[entry]
         log.info('(%s) relay: Channel %s destroyed by %s.', irc.name,
-                 channel, utils.getHostmask(irc, source))
+                 channel, irc.getHostmask(source))
         irc.reply('Done.')
     else:
         irc.reply('Error: No such relay %r exists.' % channel)
@@ -1344,7 +1344,7 @@ def link(irc, source, args):
                 return
         entry['links'].add((irc.name, localchan))
         log.info('(%s) relay: Channel %s linked to %s%s by %s.', irc.name,
-                 localchan, remotenet, channel, utils.getHostmask(irc, source))
+                 localchan, remotenet, channel, irc.getHostmask(source))
         initializeChannel(irc, localchan)
         irc.reply('Done.')
 
@@ -1386,7 +1386,7 @@ def delink(irc, source, args):
             db[entry]['links'].remove((irc.name, channel))
         irc.reply('Done.')
         log.info('(%s) relay: Channel %s delinked from %s%s by %s.', irc.name,
-                 channel, entry[0], entry[1], utils.getHostmask(irc, source))
+                 channel, entry[0], entry[1], irc.getHostmask(source))
     else:
         irc.reply('Error: No such relay %r.' % channel)
 

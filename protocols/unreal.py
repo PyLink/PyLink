@@ -294,7 +294,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by GL|!gl@hidden-1C620195 (test)
         assert utils.isChannel(target), "Can only knock on channels!"
         sender = self.irc.getServer(numeric)
-        s = '[Knock] by %s (%s)' % (utils.getHostmask(self.irc, numeric), text)
+        s = '[Knock] by %s (%s)' % (self.irc.getHostmask(numeric), text)
         self._send(sender, 'NOTICE @%s :%s' % (target, s))
 
     ### HANDLERS

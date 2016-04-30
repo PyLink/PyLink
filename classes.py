@@ -463,9 +463,9 @@ class Irc():
         cmd_args = cmd_args[1:]
         if cmd not in world.commands:
             self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
-            log.info('(%s) Received unknown command %r from %s', self.name, cmd, utils.getHostmask(self, source))
+            log.info('(%s) Received unknown command %r from %s', self.name, cmd, self.getHostmask(source))
             return
-        log.info('(%s) Calling command %r for %s', self.name, cmd, utils.getHostmask(self, source))
+        log.info('(%s) Calling command %r for %s', self.name, cmd, self.getHostmask(source))
         for func in world.commands[cmd]:
             try:
                 func(self, source, cmd_args)
@@ -808,6 +808,45 @@ class Irc():
         for server in self.servers:
             if numeric in self.servers[server].users:
                 return server
+
+    def isManipulatableClient(self, uid):
+        """
+        Returns whether the given user is marked as an internal, manipulatable
+        client. Usually, automatically spawned services clients should have this
+        set True to prevent interactions with opers (like mode changes) from
+        causing desyncs.
+        """
+        return self.isInternalClient(uid) and self.users[uid].manipulatable
+
+    def getHostmask(self, user, realhost=False, ip=False):
+        """
+        Returns the hostmask of the given user, if present. If the realhost option
+        is given, return the real host of the user instead of the displayed host.
+        If the ip option is given, return the IP address of the user (this overrides
+        realhost)."""
+        userobj = self.users.get(user)
+
+        try:
+            nick = userobj.nick
+        except AttributeError:
+            nick = '<unknown-nick>'
+
+        try:
+            ident = userobj.ident
+        except AttributeError:
+            ident = '<unknown-ident>'
+
+        try:
+            if ip:
+                host = userobj.ip
+            elif realhost:
+                host = userobj.realhost
+            else:
+                host = userobj.host
+        except AttributeError:
+            host = '<unknown-host>'
+
+        return '%s!%s@%s' % (nick, ident, host)
 
 class IrcUser():
     """PyLink IRC user class."""

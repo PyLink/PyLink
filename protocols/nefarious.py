@@ -591,7 +591,7 @@ class P10Protocol(Protocol):
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        sendername = utils.getHostmask(self.irc, numeric)
+        sendername = self.irc.getHostmask(numeric)
 
         creationts = self.irc.channels[target].ts
 

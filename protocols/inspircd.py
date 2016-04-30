@@ -697,7 +697,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if self.irc.isInternalServer(target):
             # The target has to be one of our servers in order to work...
             uplink = self.irc.servers[target].uplink
-            reason = 'Requested by %s' % utils.getHostmask(self.irc, numeric)
+            reason = 'Requested by %s' % self.irc.getHostmask(numeric)
             self._send(uplink, 'SQUIT %s :%s' % (target, reason))
             return self.handle_squit(numeric, 'SQUIT', [target, reason])
         else:

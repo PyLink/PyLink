@@ -50,7 +50,7 @@ def checkban(irc, source, args):
 
         results = 0
         for uid, userobj in irc.users.copy().items():
-            targetmask = utils.getHostmask(irc, uid)
+            targetmask = irc.getHostmask(uid)
             if ircmatch.match(casemapping, banmask, targetmask):
                 if results < 50:  # XXX rather arbitrary limit
                     serverobj = irc.servers[irc.getServer(uid)]
@@ -70,7 +70,7 @@ def checkban(irc, source, args):
         # Target can be both a nick (of an online user) or a hostmask.
         uid = irc.nickToUid(targetmask)
         if uid:
-            targetmask = utils.getHostmask(irc, uid)
+            targetmask = irc.getHostmask(uid)
         elif not utils.isHostmask(targetmask):
             irc.reply("Error: Invalid nick or hostmask '%s'." % targetmask)
             return
@@ -92,7 +92,7 @@ def jupe(irc, source, args):
     try:
         servername = args[0]
         reason = ' '.join(args[1:]) or "No reason given"
-        desc = "Juped by %s: [%s]" % (utils.getHostmask(irc, source), reason)
+        desc = "Juped by %s: [%s]" % (irc.getHostmask(source), reason)
     except IndexError:
         irc.reply('Error: Not enough arguments. Needs 1-2: servername, reason (optional).')
         return

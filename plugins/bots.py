@@ -44,7 +44,7 @@ def quit(irc, source, args):
 
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
 
-    if not utils.isManipulatableClient(irc, u):
+    if not irc.isManipulatableClient(u):
         irc.reply("Error: Cannot force quit a protected PyLink services client.")
         return
 
@@ -79,7 +79,7 @@ def joinclient(irc, source, args):
         irc.reply("Error: No valid channels given.")
         return
 
-    if not utils.isManipulatableClient(irc, u):
+    if not irc.isManipulatableClient(u):
         irc.reply("Error: Cannot force join a protected PyLink services client.")
         return
 
@@ -121,7 +121,7 @@ def nick(irc, source, args):
         irc.reply('Error: Invalid nickname %r.' % newnick)
         return
 
-    elif not utils.isManipulatableClient(irc, u):
+    elif not irc.isManipulatableClient(u):
         irc.reply("Error: Cannot force nick changes for a protected PyLink services client.")
         return
 
@@ -163,7 +163,7 @@ def part(irc, source, args):
         irc.reply("Error: No valid channels given.")
         return
 
-    if not utils.isManipulatableClient(irc, u):
+    if not irc.isManipulatableClient(u):
         irc.reply("Error: Cannot force part a protected PyLink services client.")
         return
 

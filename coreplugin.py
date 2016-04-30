@@ -157,14 +157,14 @@ def handle_mode(irc, source, command, args):
     # If the sender is not a PyLink client, and the target IS a protected
     # client, revert any forced deoper attempts.
     if irc.isInternalClient(target) and not irc.isInternalClient(source):
-        if ('-o', None) in modes and (target == irc.pseudoclient.uid or not utils.isManipulatableClient(irc, target)):
+        if ('-o', None) in modes and (target == irc.pseudoclient.uid or not irc.isManipulatableClient(target)):
             irc.proto.mode(irc.sid, target, {('+o', None)})
 utils.add_hook(handle_mode, 'MODE')
 
 def handle_operup(irc, source, command, args):
     """Logs successful oper-ups on networks."""
     otype = args.get('text', 'IRC Operator')
-    log.debug("(%s) Successful oper-up (opertype %r) from %s", irc.name, otype, utils.getHostmask(irc, source))
+    log.debug("(%s) Successful oper-up (opertype %r) from %s", irc.name, otype, irc.getHostmask(source))
     irc.users[source].opertype = otype
 
 utils.add_hook(handle_operup, 'CLIENT_OPERED')
@@ -209,12 +209,12 @@ def identify(irc, source, args):
         irc.users[source].identified = realuser
         irc.msg(source, 'Successfully logged in as %s.' % realuser)
         log.info("(%s) Successful login to %r by %s",
-                 irc.name, username, utils.getHostmask(irc, source))
+                 irc.name, username, irc.getHostmask(source))
     else:
         irc.msg(source, 'Error: Incorrect credentials.')
         u = irc.users[source]
         log.warning("(%s) Failed login to %r from %s",
-                    irc.name, username, utils.getHostmask(irc, source))
+                    irc.name, username, irc.getHostmask(source))
 
 @utils.add_cmd
 def shutdown(irc, source, args):
@@ -242,7 +242,7 @@ def load(irc, source, args):
     if name in world.plugins:
         irc.reply("Error: %r is already loaded." % name)
         return
-    log.info('(%s) Loading plugin %r for %s', irc.name, name, utils.getHostmask(irc, source))
+    log.info('(%s) Loading plugin %r for %s', irc.name, name, irc.getHostmask(source))
     try:
         world.plugins[name] = pl = utils.loadModuleFromFolder(name, world.plugins_folder)
     except ImportError as e:
@@ -269,7 +269,7 @@ def unload(irc, source, args):
         irc.reply("Error: Not enough arguments. Needs 1: plugin name.")
         return
     if name in world.plugins:
-        log.info('(%s) Unloading plugin %r for %s', irc.name, name, utils.getHostmask(irc, source))
+        log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.getHostmask(source))
         pl = world.plugins[name]
         log.debug('sys.getrefcount of plugin %s is %s', pl, sys.getrefcount(pl))
         # Remove any command functions set by the plugin.
