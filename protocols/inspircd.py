@@ -189,7 +189,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # InspIRCd will show the raw kill message sent from our server as the quit message.
         # So, make the kill look actually like a kill instead of someone quitting with
         # an arbitrary message.
-        if target in self.irc.servers:
+        if numeric in self.irc.servers:
             sourcenick = self.irc.servers[numeric].name
         else:
             sourcenick = self.irc.users[numeric].nick
