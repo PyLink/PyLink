@@ -41,7 +41,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * Nefarious IRCu (2.0.0+) - module `nefarious` (*experimental*)
     - Note: FAKE hosts (`+f`), account cloaks (user and oper), and hashed IP cloaks are supported. Make sure you configure PyLink to match your IRCd settings.
     - Host changing for internal PyLink clients does not work. It should work for other users though.
-    - Usermode `+h ident@host` is not fully supported.
+    - Usermode `+h ident@host` is not supported at this time.
 
 ## Setup
 

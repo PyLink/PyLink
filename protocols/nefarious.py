@@ -807,11 +807,7 @@ class P10Protocol(Protocol):
         if 'x' not in modes:  # +x isn't set, so cloaking is disabled.
             newhost = uobj.realhost
         else:
-            if 'h' in modes:
-                # +h represents the hidden (/sethost) host of the user. It overrides
-                # everything else.
-                newhost = modes['h']
-            elif 'f' in modes:
+            if 'f' in modes:
                 # +f represents another way of setting vHosts, via a command called FAKE.
                 # Atheme uses this for vHosts, afaik.
                 newhost = modes['f']
