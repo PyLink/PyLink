@@ -55,7 +55,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
-        raw_modes = utils.joinModes(modes)
+        raw_modes = self.irc.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
@@ -85,7 +85,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
         self._send(server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
                 ts=self.irc.channels[channel].ts, uid=client, channel=channel,
-                modes=utils.joinModes(modes)))
+                modes=self.irc.joinModes(modes)))
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
@@ -136,7 +136,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         namelist = ' '.join(namelist)
         self._send(server, "FJOIN {channel} {ts} {modes} :{users}".format(
                 ts=ts, users=namelist, channel=channel,
-                modes=utils.joinModes(modes)))
+                modes=self.irc.joinModes(modes)))
         self.irc.channels[channel].users.update(uids)
 
     def _operUp(self, target, opertype=None):
@@ -178,7 +178,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # Servers need a special command to set umode +o on people.
             self._operUp(target)
         self.irc.applyModes(target, modes)
-        joinedmodes = utils.joinModes(modes)
+        joinedmodes = self.irc.joinModes(modes)
         if utils.isChannel(target):
             ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts
             self._send(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))

@@ -108,7 +108,7 @@ class HybridProtocol(TS6Protocol):
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
-        raw_modes = utils.joinModes(modes)
+        raw_modes = self.irc.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         self.irc.applyModes(uid, modes)

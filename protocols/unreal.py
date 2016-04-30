@@ -80,7 +80,7 @@ class UnrealProtocol(TS6BaseProtocol):
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
-        raw_modes = utils.joinModes(modes)
+        raw_modes = self.irc.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
         self.irc.applyModes(uid, modes)
@@ -216,7 +216,7 @@ class UnrealProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client/server exists.')
 
         self.irc.applyModes(target, modes)
-        joinedmodes = utils.joinModes(modes)
+        joinedmodes = self.irc.joinModes(modes)
         if utils.isChannel(target):
             # The MODE command is used for channel mode changes only
             ts = ts or self.irc.channels[utils.toLower(self.irc, target)].ts

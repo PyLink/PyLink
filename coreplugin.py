@@ -121,7 +121,7 @@ def handle_whois(irc, source, command, args):
     # Only show this to opers!
     if sourceisOper:
         f(server, 378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
-        f(server, 379, source, '%s :is using modes %s' % (nick, utils.joinModes(user.modes)))
+        f(server, 379, source, '%s :is using modes %s' % (nick, irc.joinModes(user.modes)))
 
     # 301: used to show away information if present
     away_text = user.away

@@ -262,7 +262,7 @@ class P10Protocol(Protocol):
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
-        raw_modes = utils.joinModes(modes)
+        raw_modes = self.irc.joinModes(modes)
 
         # Initialize an IrcUser instance
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
@@ -393,7 +393,7 @@ class P10Protocol(Protocol):
             send_ts = False
 
         while modes[:12]:
-            joinedmodes = utils.joinModes([m for m in modes[:12]])
+            joinedmodes = self.irc.joinModes([m for m in modes[:12]])
             modes = modes[12:]
             self._send(numeric, 'M %s %s%s' % (target, joinedmodes, ' %s' % ts if send_ts else ''))
 
@@ -526,7 +526,7 @@ class P10Protocol(Protocol):
         if modes:  # Only send modes if there are any.
             self._send(server, "B {channel} {ts} {modes} :{users}".format(
                        ts=ts, users=namelist, channel=channel,
-                       modes=utils.joinModes(modes)))
+                       modes=self.irc.joinModes(modes)))
         else:
             self._send(server, "B {channel} {ts} :{users}".format(
                        ts=ts, users=namelist, channel=channel))

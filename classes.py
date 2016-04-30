@@ -653,6 +653,134 @@ class Irc():
         else:
             self.channels[target].modes = modelist
 
+    @staticmethod
+    def _flip(mode):
+        """Flips a mode character."""
+        # Make it a list first, strings don't support item assignment
+        mode = list(mode)
+        if mode[0] == '-':  # Query is something like "-n"
+            mode[0] = '+'  # Change it to "+n"
+        elif mode[0] == '+':
+            mode[0] = '-'
+        else:  # No prefix given, assume +
+            mode.insert(0, '-')
+        return ''.join(mode)
+
+    def reverseModes(self, target, modes, oldobj=None):
+        """Reverses/Inverts the mode string or mode list given.
+
+        Optionally, an oldobj argument can be given to look at an earlier state of
+        a channel/user object, e.g. for checking the op status of a mode setter
+        before their modes are processed and added to the channel state.
+
+        This function allows both mode strings or mode lists. Example uses:
+            "+mi-lk test => "-mi+lk test"
+            "mi-k test => "-mi+k test"
+            [('+m', None), ('+r', None), ('+l', '3'), ('-o', 'person')
+             => {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
+            {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
+        """
+        origtype = type(modes)
+        # If the query is a string, we have to parse it first.
+        if origtype == str:
+            modes = self.parseModes(target, modes.split(" "))
+        # Get the current mode list first.
+        if utils.isChannel(target):
+            c = oldobj or self.channels[target]
+            oldmodes = c.modes.copy()
+            possible_modes = self.cmodes.copy()
+            # For channels, this also includes the list of prefix modes.
+            possible_modes['*A'] += ''.join(self.prefixmodes)
+            for name, userlist in c.prefixmodes.items():
+                try:
+                    oldmodes.update([(self.cmodes[name], u) for u in userlist])
+                except KeyError:
+                    continue
+        else:
+            oldmodes = self.users[target].modes
+            possible_modes = self.umodes
+        newmodes = []
+        log.debug('(%s) reverseModes: old/current mode list for %s is: %s', self.name,
+                   target, oldmodes)
+        for char, arg in modes:
+            # Mode types:
+            # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
+            # B = Mode that changes a setting and always has a parameter.
+            # C = Mode that changes a setting and only has a parameter when set.
+            # D = Mode that changes a setting and never has a parameter.
+            mchar = char[-1]
+            if mchar in possible_modes['*B'] + possible_modes['*C']:
+                # We need to find the current mode list, so we can reset arguments
+                # for modes that have arguments. For example, setting +l 30 on a channel
+                # that had +l 50 set should give "+l 30", not "-l".
+                oldarg = [m for m in oldmodes if m[0] == mchar]
+                if oldarg:  # Old mode argument for this mode existed, use that.
+                    oldarg = oldarg[0]
+                    mpair = ('+%s' % oldarg[0], oldarg[1])
+                else:  # Not found, flip the mode then.
+                    # Mode takes no arguments when unsetting.
+                    if mchar in possible_modes['*C'] and char[0] != '-':
+                        arg = None
+                    mpair = (self._flip(char), arg)
+            else:
+                mpair = (self._flip(char), arg)
+            if char[0] != '-' and (mchar, arg) in oldmodes:
+                # Mode is already set.
+                log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since we're "
+                          "setting a mode that's already set.", self.name, char, arg, mpair)
+                continue
+            elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
+                # We're unsetting a prefixmode that was never set - don't set it in response!
+                # Charybdis lacks verification for this server-side.
+                log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since it "
+                          "wasn't previously set.", self.name, char, arg, mpair)
+                continue
+            newmodes.append(mpair)
+
+        log.debug('(%s) reverseModes: new modes: %s', self.name, newmodes)
+        if origtype == str:
+            # If the original query is a string, send it back as a string.
+            return self.joinModes(newmodes)
+        else:
+            return set(newmodes)
+
+    @staticmethod
+    def joinModes(modes):
+        """Takes a list of (mode, arg) tuples in parseModes() format, and
+        joins them into a string.
+
+        See testJoinModes in tests/test_utils.py for some examples."""
+        prefix = '+'  # Assume we're adding modes unless told otherwise
+        modelist = ''
+        args = []
+        for modepair in modes:
+            mode, arg = modepair
+            assert len(mode) in (1, 2), "Incorrect length of a mode (received %r)" % mode
+            try:
+                # If the mode has a prefix, use that.
+                curr_prefix, mode = mode
+            except ValueError:
+                # If not, the current prefix stays the same; move on to the next
+                # modepair.
+                pass
+            else:
+                # If the prefix of this mode isn't the same as the last one, add
+                # the prefix to the modestring. This prevents '+nt-lk' from turning
+                # into '+n+t-l-k' or '+ntlk'.
+                if prefix != curr_prefix:
+                    modelist += curr_prefix
+                    prefix = curr_prefix
+            modelist += mode
+            if arg is not None:
+                args.append(arg)
+        if not modelist.startswith(('+', '-')):
+            # Our starting mode didn't have a prefix with it. Assume '+'.
+            modelist = '+' + modelist
+        if args:
+            # Add the args if there are any.
+            modelist += ' %s' % ' '.join(args)
+        return modelist
+
     ### State checking functions
     def nickToUid(self, nick):
         """Looks up the UID of a user with the given nick, if one is present."""

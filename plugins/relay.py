@@ -1022,7 +1022,7 @@ def handle_mode(irc, numeric, command, args):
             if checkClaim(irc, target, numeric, chanobj=oldchan):
                 relayModes(irc, remoteirc, numeric, target, modes)
             else:  # Mode change blocked by CLAIM.
-                reversed_modes = utils.reverseModes(irc, target, modes, oldobj=oldchan)
+                reversed_modes = irc.reverseModes(target, modes, oldobj=oldchan)
                 log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
                           irc.name, modes, reversed_modes)
                 irc.proto.mode(irc.pseudoclient.uid, target, reversed_modes)

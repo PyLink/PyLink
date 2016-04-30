@@ -50,7 +50,7 @@ class TS6Protocol(TS6BaseProtocol):
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
-        raw_modes = utils.joinModes(modes)
+        raw_modes = self.irc.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
@@ -135,7 +135,7 @@ class TS6Protocol(TS6BaseProtocol):
             namelist = ' '.join(namelist)
             self._send(server, "SJOIN {ts} {channel} {modes} :{users}".format(
                     ts=ts, users=namelist, channel=channel,
-                    modes=utils.joinModes(modes)))
+                    modes=self.irc.joinModes(modes)))
             self.irc.channels[channel].users.update(uids)
         if ts <= orig_ts:
            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
@@ -163,11 +163,11 @@ class TS6Protocol(TS6BaseProtocol):
             while modes[:9]:
                 # Seriously, though. If you send more than 10 mode parameters in
                 # a line, charybdis will silently REJECT the entire command!
-                joinedmodes = utils.joinModes(modes = [m for m in modes[:9] if m[0] not in self.irc.cmodes['*A']])
+                joinedmodes = self.irc.joinModes(modes = [m for m in modes[:9] if m[0] not in self.irc.cmodes['*A']])
                 modes = modes[9:]
                 self._send(numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
         else:
-            joinedmodes = utils.joinModes(modes)
+            joinedmodes = self.irc.joinModes(modes)
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
 
     def kill(self, numeric, target, reason):
