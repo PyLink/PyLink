@@ -44,16 +44,16 @@ class HybridProtocol(TS6Protocol):
         self.irc.cmodes = cmodes
 
         umodes = {
-            'oper': 'o', 'invisible': 'i', 'wallops': 'w', 'chary_locops': 'l',
-            'cloak_hybrid': 'x', 'hidechans': 'p', 'regdeaf': 'R', 'deaf': 'D',
-            'callerid': 'g', 'showadmin': 'a', 'softcallerid': 'G', 'hideops': 'H',
-            'webirc': 'W', 'client_connections': 'c', 'bad_client_connections': 'u',
-            'rejected_clients': 'j', 'skill_notices': 'k', 'fullauthblock': 'f',
-            'remote_client_connections': 'F', 'admin_requests': 'y', 'debug': 'd',
-            'nickchange_notices': 'n', 'hideidle': 'q', 'registered': 'r',
-            'smessages': 's', 'ssl': 'S', 'sjoins': 'e', 'botfloods': 'b',
+            'oper': 'o', 'invisible': 'i', 'wallops': 'w', 'locops': 'l',
+            'cloak': 'x', 'hidechans': 'p', 'regdeaf': 'R', 'deaf': 'D',
+            'callerid': 'g', 'admin': 'a', 'deaf_commonchan': 'G', 'hideoper': 'H',
+            'webirc': 'W', 'sno_clientconnections': 'c', 'sno_badclientconnections': 'u',
+            'sno_rejectedclients': 'j', 'sno_skill': 'k', 'sno_fullauthblock': 'f',
+            'sno_remoteclientconnections': 'F', 'sno_admin_requests': 'y', 'debug': 'd',
+            'sno_nickchange': 'n', 'hideidle': 'q', 'registered': 'r',
+            'snomask': 's', 'ssl': 'S', 'sno_server_connects': 'e', 'sno_botfloods': 'b',
             # Now, map all the ABCD type modes:
-            '*A': '', '*B': '', '*C': '', '*D': 'oiwlpRDgdx'
+            '*A': '', '*B': '', '*C': '', '*D': 'DFGHRSWabcdefgijklnopqrsuwxy'
         }
 
         self.irc.umodes = umodes
