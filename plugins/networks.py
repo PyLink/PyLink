@@ -6,7 +6,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import threading
 
-import coreplugin
 import utils
 import world
 from log import log
@@ -55,10 +54,6 @@ def connect(irc, source, args):
     else:  # Reconnect the network!
         network.connection_thread = threading.Thread(target=network.connect)
         network.connection_thread.start()
-
-        # Call coreplugin's initialization method
-        log.debug('(%s) Calling main() function of coreplugin', irc.name)
-        coreplugin.main(irc)
 
         # And the plugins we have too.
         for plugin in world.plugins.values():
