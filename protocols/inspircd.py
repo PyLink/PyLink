@@ -71,16 +71,15 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._operUp(uid, opertype)
         return u
 
+    @checkSender('c')
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # InspIRCd doesn't distinguish between burst joins and regular joins,
         # so what we're actually doing here is sending FJOIN from the server,
         # on behalf of the clients that are joining.
         channel = utils.toLower(self.irc, channel)
-        server = self.irc.isInternalClient(client)
-        if not server:
-            log.error('(%s) Error trying to join %r to %r (no such client exists)', self.irc.name, client, channel)
-            raise LookupError('No such PyLink client exists.')
+        server = self.irc.getServer(client)
+
         # Strip out list-modes, they shouldn't be ever sent in FJOIN.
         modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
         self._send(server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
@@ -89,6 +88,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
+    @checkSender('s')
     def sjoin(self, server, channel, users, ts=None):
         """Sends an SJOIN for a group of users to a channel.
 
@@ -104,8 +104,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
         server = server or self.irc.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
-        if not server:
-            raise LookupError('No such PyLink client exists.')
 
         orig_ts = self.irc.channels[channel].ts
         ts = ts or orig_ts
@@ -163,14 +161,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
         userobj.opertype = otype
         self._send(target, 'OPERTYPE %s' % otype.replace(" ", "_"))
 
+    @checkSender('cs')
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
         # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
         # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
-
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
 
         log.debug('(%s) inspircd._sendModes: received %r for mode list', self.irc.name, modes)
         if ('+o', None) in modes and not utils.isChannel(target):
@@ -185,12 +180,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         else:
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
 
+    @checkSender('cs')
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
         # InspIRCd will show the raw kill message sent from our server as the quit message.
         # So, make the kill look actually like a kill instead of someone quitting with
         # an arbitrary message.
@@ -207,22 +199,23 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if self.irc.isInternalClient(target):
             self.removeClient(target)
 
+    @checkSender('s')
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
-        if not self.irc.isInternalServer(numeric):
-            raise LookupError('No such PyLink server exists.')
         ts = int(time.time())
         servername = self.irc.servers[numeric].name
         self._send(numeric, 'FTOPIC %s %s %s :%s' % (target, ts, servername, text))
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
+    @checkSender('c')
     def invite(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
         self._send(numeric, 'INVITE %s %s' % (target, channel))
 
+    @checkSender('c')
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
@@ -284,7 +277,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                   "protocol module. WHOIS requests are handled "
                                   "locally by InspIRCd servers, so there is no "
                                   "need for PyLink to send numerics directly yet.")
-
+    @checkSender('c')
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
@@ -334,6 +327,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             endburstf()
         return sid
 
+    @checkSender('cs')
     def squit(self, source, target, text='No reason given'):
         """SQUITs a PyLink server."""
         # -> :9PY SQUIT 9PZ :blah, blah

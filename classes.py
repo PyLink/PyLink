@@ -907,6 +907,38 @@ class Protocol():
         target = self.irc.nickToUid(target) or target
         return target
 
+def checkSender(check):
+    """
+    Helper function for protocols which validates that the sender given is
+    an internal client or server.
+
+    Check is given as a string, where 's' refers to server,
+    'c' refers to client, and 'cs' refers to either server or client."""
+    # We have to actually wrap this twice, to past checkSender('string')
+    # arguments to the actual function that performs checks. Gross.
+    def checkSender_get_check(func):
+        def checkSender_wrapper(self, sender, *args, **kwargs):
+            # 1) Perform checks.
+            isclient = self.irc.isInternalClient(sender)
+            isserver = self.irc.isInternalServer(sender)
+            log.debug('checkServer: query is %s, target is %s', check, sender)
+            log.debug('checkServer: isclient: %s, isserver: %s', isclient, isserver)
+
+            if check == 'cs':
+                if not (isclient or isserver):
+                    raise LookupError('No such PyLink client/server exists.')
+            elif check == 'c':
+                if not isclient:
+                    raise LookupError('No such PyLink client exists.')
+            elif check == 's':
+                if not isserver:
+                    raise LookupError('No such PyLink server exists.')
+
+            # 2) Call and return the data of the original function.
+            return func(self, sender, *args, **kwargs)
+        return checkSender_wrapper
+    return checkSender_get_check
+
 ### FakeIRC classes, used for test cases
 
 class FakeIRC(Irc):
