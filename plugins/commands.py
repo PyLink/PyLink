@@ -18,7 +18,7 @@ def status(irc, source, args):
         irc.reply('You are identified as \x02%s\x02.' % identified)
     else:
         irc.reply('You are not identified as anyone.')
-    irc.reply('Operator access: \x02%s\x02' % bool(utils.isOper(irc, source)))
+    irc.reply('Operator access: \x02%s\x02' % bool(irc.isOper(source)))
 
 def listcommands(irc, source, args):
     """takes no arguments.
@@ -81,7 +81,7 @@ def showuser(irc, source, args):
     u = irc.nickToUid(target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
-    verbose = utils.isOper(irc, source) or u == source
+    verbose = irc.isOper(source) or u == source
     if u not in irc.users:
         irc.reply('Error: Unknown user %r.' % target)
         return
@@ -127,7 +127,7 @@ def showchan(irc, source, args):
     f = lambda s: irc.msg(source, s)
     c = irc.channels[channel]
     # Only show verbose info if caller is oper or is in the target channel.
-    verbose = source in c.users or utils.isOper(irc, source)
+    verbose = source in c.users or irc.isOper(source)
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
@@ -178,7 +178,7 @@ def loglevel(irc, source, args):
 
     Sets the log level to the given <level>. <level> must be either DEBUG, INFO, WARNING, ERROR, or CRITICAL.
     If no log level is given, shows the current one."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         level = args[0].upper()
         try:

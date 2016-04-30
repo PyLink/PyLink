@@ -21,7 +21,7 @@ def _exec(irc, source, args):
 
     Admin-only. Executes <code> in the current PyLink instance. This command performs backslash escaping of characters, so things like \\n and \\ will work.
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
 
     # Allow using \n in the code, while escaping backslashes correctly otherwise.
     args = bytes(' '.join(args), 'utf-8').decode("unicode_escape")
@@ -40,7 +40,7 @@ def _eval(irc, source, args):
 
     Admin-only. Evaluates the given Python expression and returns the result.
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
 
     args = ' '.join(args)
     if not args.strip():
@@ -58,7 +58,7 @@ def raw(irc, source, args):
 
     Admin-only. Sends raw text to the uplink IRC server.
     \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
 
     args = ' '.join(args)
     if not args.strip():
@@ -77,7 +77,7 @@ def inject(irc, source, args):
 
     Admin-only. Injects raw text into the running PyLink protocol module, replying with the hook data returned.
     \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
 
     args = ' '.join(args)
     if not args.strip():

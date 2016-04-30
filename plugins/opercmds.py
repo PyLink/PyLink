@@ -22,7 +22,7 @@ def checkban(irc, source, args):
     """<banmask (nick!user@host or user@host)> [<nick or hostmask to check>]
 
     Oper only. If a nick or hostmask is given, return whether the given banmask will match it. Otherwise, returns a list of connected users that would be affected by such a ban, up to 50 results."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
 
     if ircmatch is None:
         irc.reply("Error: missing ircmatch module (install it via 'pip install ircmatch').")
@@ -87,7 +87,7 @@ def jupe(irc, source, args):
     Oper-only, jupes the given server."""
 
     # Check that the caller is either opered or logged in as admin.
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
 
     try:
         servername = args[0]
@@ -114,7 +114,7 @@ def kick(irc, source, args):
     """<source> <channel> <user> [<reason>]
 
     Admin only. Kicks <user> from <channel> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         sourcenick = args[0]
         channel = args[1]
@@ -155,7 +155,7 @@ def kill(irc, source, args):
     """<source> <target> [<reason>]
 
     Admin only. Kills <target> via <source>, where <source> is either the nick of a PyLink client or the SID of a PyLink server."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         sourcenick = args[0]
         target = args[1]
@@ -194,7 +194,7 @@ def mode(irc, source, args):
     Oper-only, sets modes <modes> on the target channel."""
 
     # Check that the caller is either opered or logged in as admin.
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
 
     try:
         target, modes = args[0], args[1:]
@@ -232,7 +232,7 @@ def topic(irc, source, args):
     """<channel> <topic>
 
     Admin only. Updates the topic in a channel."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         channel = args[0]
         topic = ' '.join(args[1:])

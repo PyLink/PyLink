@@ -7,20 +7,12 @@ framework.
 
 import string
 import re
-import inspect
 import importlib
 import os
 
 from log import log
 import world
 import conf
-
-class NotAuthenticatedError(Exception):
-    """
-    Exception raised by checkAuthenticated() when a user fails authentication
-    requirements.
-    """
-    pass
 
 class IncrementalUIDGenerator():
     """
@@ -131,33 +123,6 @@ def applyModes(irc, target, changedmodes):
     """
     log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
     return irc.applyModes(target, changedmodes)
-
-def isOper(irc, uid, allowAuthed=True, allowOper=True):
-    """
-    Returns whether the given user has operator status on PyLink. This can be achieved
-    by either identifying to PyLink as admin (if allowAuthed is True),
-    or having user mode +o set (if allowOper is True). At least one of
-    allowAuthed or allowOper must be True for this to give any meaningful
-    results.
-    """
-    if uid in irc.users:
-        if allowOper and ("o", None) in irc.users[uid].modes:
-            return True
-        elif allowAuthed and irc.users[uid].identified:
-            return True
-    return False
-
-def checkAuthenticated(irc, uid, allowAuthed=True, allowOper=True):
-    """
-    Checks whether the given user has operator status on PyLink, raising
-    NotAuthenticatedError and logging the access denial if not.
-    """
-    lastfunc = inspect.stack()[1][3]
-    if not isOper(irc, uid, allowAuthed=allowAuthed, allowOper=allowOper):
-        log.warning('(%s) Access denied for %s calling %r', irc.name,
-                    getHostmask(irc, uid), lastfunc)
-        raise NotAuthenticatedError("You are not authenticated!")
-    return True
 
 def loadModuleFromFolder(name, folder):
     """

@@ -15,6 +15,7 @@ import threading
 import ssl
 import hashlib
 from copy import deepcopy
+import inspect
 
 from log import *
 import world
@@ -24,6 +25,13 @@ import structures
 ### Exceptions
 
 class ProtocolError(Exception):
+    pass
+
+class NotAuthenticatedError(Exception):
+    """
+    Exception raised by checkAuthenticated() when a user fails authentication
+    requirements.
+    """
     pass
 
 ### Internal classes (users, servers, channels)
@@ -469,7 +477,7 @@ class Irc():
         for func in world.commands[cmd]:
             try:
                 func(self, source, cmd_args)
-            except utils.NotAuthenticatedError:
+            except NotAuthenticatedError:
                 self.msg(self.called_by or source, 'Error: You are not authorized to perform this operation.')
             except Exception as e:
                 log.exception('Unhandled exception caught in command %r', cmd)
@@ -847,6 +855,33 @@ class Irc():
             host = '<unknown-host>'
 
         return '%s!%s@%s' % (nick, ident, host)
+
+    def isOper(self, uid, allowAuthed=True, allowOper=True):
+        """
+        Returns whether the given user has operator status on PyLink. This can be achieved
+        by either identifying to PyLink as admin (if allowAuthed is True),
+        or having user mode +o set (if allowOper is True). At least one of
+        allowAuthed or allowOper must be True for this to give any meaningful
+        results.
+        """
+        if uid in self.users:
+            if allowOper and ("o", None) in self.users[uid].modes:
+                return True
+            elif allowAuthed and self.users[uid].identified:
+                return True
+        return False
+
+    def checkAuthenticated(self, uid, allowAuthed=True, allowOper=True):
+        """
+        Checks whether the given user has operator status on PyLink, raising
+        NotAuthenticatedError and logging the access denial if not.
+        """
+        lastfunc = inspect.stack()[1][3]
+        if not self.isOper(uid, allowAuthed=allowAuthed, allowOper=allowOper):
+            log.warning('(%s) Access denied for %s calling %r', self.name,
+                        self.getHostmask(uid), lastfunc)
+            raise NotAuthenticatedError("You are not authenticated!")
+        return True
 
 class IrcUser():
     """PyLink IRC user class."""

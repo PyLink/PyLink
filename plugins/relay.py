@@ -1235,7 +1235,7 @@ def create(irc, source, args):
     if source not in irc.channels[channel].users:
         irc.reply('Error: You must be in %r to complete this operation.' % channel)
         return
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
 
     # Check to see whether the channel requested is already part of a different
     # relay.
@@ -1276,10 +1276,10 @@ def destroy(irc, source, args):
 
     if network == irc.name:
         # If we're destroying a channel on the current network, only oper is needed.
-        utils.checkAuthenticated(irc, source)
+        irc.checkAuthenticated(source)
     else:
         # Otherwise, we'll need to be logged in as admin.
-        utils.checkAuthenticated(irc, source, allowOper=False)
+        irc.checkAuthenticated(source, allowOper=False)
 
     entry = (network, channel)
 
@@ -1320,7 +1320,7 @@ def link(irc, source, args):
     if source not in irc.channels[localchan].users:
         irc.reply('Error: You must be in %r to complete this operation.' % localchan)
         return
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
     if remotenet not in world.networkobjects:
         irc.reply('Error: No network named %r exists.' % remotenet)
         return
@@ -1363,7 +1363,7 @@ def delink(irc, source, args):
         remotenet = args[1]
     except IndexError:
         remotenet = None
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
     if not utils.isChannel(channel):
         irc.reply('Error: Invalid channel %r.' % channel)
         return
@@ -1421,7 +1421,7 @@ def linked(irc, source, args):
             if ('s', None) in c.modes or ('p', None) in c.modes:
                 # Only show secret channels to opers, and tag them with
                 # [secret].
-                if utils.isOper(irc, source):
+                if irc.isOper(source):
                     s += '\x02[secret]\x02 '
                 else:
                     continue
@@ -1434,7 +1434,7 @@ def linked(irc, source, args):
 
         irc.msg(source, s)
 
-        if utils.isOper(irc, source):
+        if irc.isOper(source):
             s = ''
 
             # If the caller is an oper, we can show the hostmasks of people
@@ -1460,7 +1460,7 @@ def linkacl(irc, source, args):
     Allows blocking / unblocking certain networks from linking to a relay, based on a blacklist.
     LINKACL LIST returns a list of blocked networks for a channel, while the ALLOW and DENY subcommands allow manipulating this blacklist."""
     missingargs = "Error: Not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST), channel, remote network (for ALLOW/DENY)."
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
     try:
         cmd = args[0].lower()
         channel = utils.toLower(irc, args[1])
@@ -1530,7 +1530,7 @@ def showuser(irc, source, args):
             relay = getRelay((irc.name, ch))
             if relay:
                 relaychannels.append(''.join(relay))
-        if relaychannels and (utils.isOper(irc, source) or u == source):
+        if relaychannels and (irc.isOper(source) or u == source):
             irc.msg(source, "\x02Relay channels\x02: %s" % ' '.join(relaychannels))
 
 @utils.add_cmd
@@ -1538,7 +1538,7 @@ def save(irc, source, args):
     """takes no arguments.
 
     Saves the relay database to disk."""
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
     exportDB()
     irc.reply('Done.')
 
@@ -1549,7 +1549,7 @@ def claim(irc, source, args):
     Sets the CLAIM for a channel to a case-sensitive list of networks. If no list of networks is given, shows which networks have claim over the channel. A single hyphen (-) can also be given as a list of networks to remove claim from the channel entirely.
 
     CLAIM is a way of enforcing network ownership for a channel, similarly to Janus. Unless the list is empty, only networks on the CLAIM list for a channel (plus the creating network) are allowed to override kicks, mode changes, and topic changes in it - attempts from other networks' opers to do this are simply blocked or reverted."""
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
     try:
         channel = utils.toLower(irc, args[0])
     except IndexError:

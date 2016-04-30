@@ -221,7 +221,7 @@ def shutdown(irc, source, args):
     """takes no arguments.
 
     Exits PyLink by disconnecting all networks."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     u = irc.users[source]
 
     log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
@@ -233,7 +233,7 @@ def load(irc, source, args):
     """<plugin name>.
 
     Loads a plugin from the plugin folder."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         name = args[0]
     except IndexError:
@@ -262,7 +262,7 @@ def unload(irc, source, args):
     """<plugin name>.
 
     Unloads a currently loaded plugin."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         name = args[0]
     except IndexError:
@@ -386,7 +386,7 @@ def rehash(irc, source, args):
 
     Reloads the configuration file for PyLink, (dis)connecting added/removed networks.
     Plugins must be manually reloaded."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         _rehash()
     except Exception as e:  # Something went wrong, abort.

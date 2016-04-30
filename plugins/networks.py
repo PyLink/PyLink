@@ -16,7 +16,7 @@ def disconnect(irc, source, args):
 
     Disconnects the network <network>. When all networks are disconnected, PyLink will automatically exit.
     Note: This does not affect the autoreconnect settings of any network, so the network will likely just reconnect unless autoconnect is disabled (see the 'autoconnect' command)."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         netname = args[0]
         network = world.networkobjects[netname]
@@ -39,7 +39,7 @@ def connect(irc, source, args):
     """<network>
 
     Initiates a connection to the network <network>."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         netname = args[0]
         network = world.networkobjects[netname]
@@ -69,7 +69,7 @@ def autoconnect(irc, source, args):
 
     Sets the autoconnect time for <network> to <seconds>.
     You can disable autoconnect for a network by setting <seconds> to a negative value."""
-    utils.checkAuthenticated(irc, source)
+    irc.checkAuthenticated(source)
     try:
         netname = args[0]
         seconds = float(args[1])
@@ -91,7 +91,7 @@ def remote(irc, source, args):
     """<network> <command>
 
     Runs <command> on the remote network <network>. No replies are sent back due to protocol limitations."""
-    utils.checkAuthenticated(irc, source, allowOper=False)
+    irc.checkAuthenticated(source, allowOper=False)
 
     try:
         netname = args[0]
