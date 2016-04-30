@@ -16,7 +16,7 @@ sys.path += [curdir, os.path.dirname(curdir)]
 import utils
 from log import log
 from classes import *
-from ts6_common import TS6BaseProtocol
+from ts6_common import *
 
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -63,23 +63,27 @@ class UnrealProtocol(TS6BaseProtocol):
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
-        """Spawns a client with nick <nick> on the given IRC connection.
+        """
+        Spawns a new client with the given options.
 
         Note: No nick collision / valid nickname checks are done here; it is
-        up to plugins to make sure they don't introduce anything invalid."""
+        up to plugins to make sure they don't introduce anything invalid.
+        """
         server = server or self.irc.sid
         if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
+
         # Unreal 4.0 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
         # do, but that doesn't matter to us...
-        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
+        uid = self.uidgen[server].next_uid()
+
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
-        utils.applyModes(self.irc, uid, modes)
+        self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
 
         # UnrealIRCd requires encoding the IP by first packing it into a binary format,
@@ -176,7 +180,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.update(uids)
         if ts <= orig_ts:
            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            utils.applyModes(self.irc, channel, changedmodes)
+            self.irc.applyModes(channel, changedmodes)
 
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
@@ -211,7 +215,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        utils.applyModes(self.irc, target, modes)
+        self.irc.applyModes(target, modes)
         joinedmodes = utils.joinModes(modes)
         if utils.isChannel(target):
             # The MODE command is used for channel mode changes only
@@ -374,8 +378,8 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.servers[numeric].users.add(uid)
 
         # Handle user modes
-        parsedmodes = utils.parseModes(self.irc, uid, [modestring])
-        utils.applyModes(self.irc, uid, parsedmodes)
+        parsedmodes = self.irc.parseModes(uid, [modestring])
+        self.irc.applyModes(uid, parsedmodes)
 
         # The cloaked (+x) host is completely separate from the displayed host
         # and real host in that it is ONLY shown if the user is +x (cloak mode
@@ -575,7 +579,7 @@ class UnrealProtocol(TS6BaseProtocol):
             self.irc.users[user].channels.add(channel)
             # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
             if their_ts <= our_ts:
-                utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in finalprefix])
+                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in finalprefix])
             self.irc.channels[channel].users.add(user)
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
@@ -637,9 +641,9 @@ class UnrealProtocol(TS6BaseProtocol):
             channel = utils.toLower(self.irc, args[0])
             oldobj = self.irc.channels[channel].deepcopy()
             modes = list(filter(None, args[1:]))  # normalize whitespace
-            parsedmodes = utils.parseModes(self.irc, channel, modes)
+            parsedmodes = self.irc.parseModes(channel, modes)
             if parsedmodes:
-                utils.applyModes(self.irc, channel, parsedmodes)
+                self.irc.applyModes(channel, parsedmodes)
             if numeric in self.irc.servers and args[-1].isdigit():
                 # Sender is a server AND last arg is number. Perform TS updates.
                 their_ts = int(args[-1])
@@ -691,8 +695,8 @@ class UnrealProtocol(TS6BaseProtocol):
         target = self._getUid(args[0])
         modes = args[1:]
 
-        parsedmodes = utils.parseModes(self.irc, target, modes)
-        utils.applyModes(self.irc, target, parsedmodes)
+        parsedmodes = self.irc.parseModes(target, modes)
+        self.irc.applyModes(target, parsedmodes)
 
         # If +x/-x is being set, update cloaked host info.
         self.checkCloakChange(target, parsedmodes)
@@ -733,8 +737,8 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_umode2(self, numeric, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
         # <- :GL UMODE2 +W
-        parsedmodes = utils.parseModes(self.irc, numeric, args)
-        utils.applyModes(self.irc, numeric, parsedmodes)
+        parsedmodes = self.irc.parseModes(numeric, args)
+        self.irc.applyModes(numeric, parsedmodes)
 
         if ('+o', None) in parsedmodes:
             # If +o being set, call the CLIENT_OPERED internal hook.
@@ -785,7 +789,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
         # target.
-        utils.applyModes(self.irc, numeric, [('+x', None), ('+t', None)])
+        self.irc.applyModes(numeric, [('+x', None), ('+t', None)])
 
         return {'target': numeric, 'newhost': newhost}
 
@@ -810,7 +814,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
         # target.
-        utils.applyModes(self.irc, target, [('+x', None), ('+t', None)])
+        self.irc.applyModes(target, [('+x', None), ('+t', None)])
 
         return {'target': target, 'newhost': newhost}
 

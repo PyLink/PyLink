@@ -10,24 +10,10 @@ import re
 import inspect
 import importlib
 import os
-import collections
 
 from log import log
 import world
 import conf
-
-class KeyedDefaultdict(collections.defaultdict):
-    """
-    Subclass of defaultdict allowing the key to be passed to the default factory.
-    """
-    def __missing__(self, key):
-        if self.default_factory is None:
-            # If there is no default factory, just let defaultdict handle it
-            super().__missing__(self, key)
-        else:
-            value = self[key] = self.default_factory(key)
-            return value
-
 
 class NotAuthenticatedError(Exception):
     """
@@ -43,9 +29,6 @@ class IncrementalUIDGenerator():
     """
 
     def __init__(self, sid):
-        # TS6 UIDs are 6 characters in length (9 including the SID).
-        # They wrap from ABCDEFGHIJKLMNOPQRSTUVWXYZ -> 0123456789 -> wrap around:
-        # (e.g. AAAAAA, AAAAAB ..., AAAAA8, AAAAA9, AAAABA)
         if not (hasattr(self, 'allowedchars') and hasattr(self, 'length')):
              raise RuntimeError("Allowed characters list not defined. Subclass "
                                 "%s by defining self.allowedchars and self.length "
@@ -79,99 +62,6 @@ class IncrementalUIDGenerator():
         uid = self.sid + ''.join(self.uidchars)
         self.increment()
         return uid
-
-class TS6UIDGenerator(IncrementalUIDGenerator):
-     """Implements an incremental TS6 UID Generator."""
-
-     def __init__(self, sid):
-         # Define the options for IncrementalUIDGenerator, and then
-         # initialize its functions.
-         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456879'
-         self.length = 6
-         super().__init__(sid)
-
-class P10UIDGenerator(IncrementalUIDGenerator):
-     """Implements an incremental P10 UID Generator."""
-
-     def __init__(self, sid):
-         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]'
-         self.length = 3
-         super().__init__(sid)
-
-class TS6SIDGenerator():
-    """
-    TS6 SID Generator. <query> is a 3 character string with any combination of
-    uppercase letters, digits, and #'s. it must contain at least one #,
-    which are used by the generator as a wildcard. On every next_sid() call,
-    the first available wildcard character (from the right) will be
-    incremented to generate the next SID.
-
-    When there are no more available SIDs left (SIDs are not reused, only
-    incremented), RuntimeError is raised.
-
-    Example queries:
-        "1#A" would give: 10A, 11A, 12A ... 19A, 1AA, 1BA ... 1ZA (36 total results)
-        "#BQ" would give: 0BQ, 1BQ, 2BQ ... 9BQ (10 total results)
-        "6##" would give: 600, 601, 602, ... 60Y, 60Z, 610, 611, ... 6ZZ (1296 total results)
-    """
-
-    def __init__(self, irc):
-        self.irc = irc
-        try:
-            self.query = query = list(irc.serverdata["sidrange"])
-        except KeyError:
-            raise RuntimeError('(%s) "sidrange" is missing from your server configuration block!' % irc.name)
-
-        self.iters = self.query.copy()
-        self.output = self.query.copy()
-        self.allowedchars = {}
-        qlen = len(query)
-
-        assert qlen == 3, 'Incorrect length for a SID (must be 3, got %s)' % qlen
-        assert '#' in query, "Must be at least one wildcard (#) in query"
-
-        for idx, char in enumerate(query):
-            # Iterate over each character in the query string we got, along
-            # with its index in the string.
-            assert char in (string.digits+string.ascii_uppercase+"#"), \
-                "Invalid character %r found." % char
-            if char == '#':
-                if idx == 0:  # The first char be only digits
-                    self.allowedchars[idx] = string.digits
-                else:
-                    self.allowedchars[idx] = string.digits+string.ascii_uppercase
-                self.iters[idx] = iter(self.allowedchars[idx])
-                self.output[idx] = self.allowedchars[idx][0]
-                next(self.iters[idx])
-
-
-    def increment(self, pos=2):
-        """
-        Increments the SID generator to the next available SID.
-        """
-        if pos < 0:
-            # Oh no, we've wrapped back to the start!
-            raise RuntimeError('No more available SIDs!')
-        it = self.iters[pos]
-        try:
-            self.output[pos] = next(it)
-        except TypeError:  # This position is not an iterator, but a string.
-            self.increment(pos-1)
-        except StopIteration:
-            self.output[pos] = self.allowedchars[pos][0]
-            self.iters[pos] = iter(self.allowedchars[pos])
-            next(self.iters[pos])
-            self.increment(pos-1)
-
-    def next_sid(self):
-        """
-        Returns the next unused TS6 SID for the server.
-        """
-        while ''.join(self.output) in self.irc.servers:
-            # Increment until the SID we have doesn't already exist.
-            self.increment()
-        sid = ''.join(self.output)
-        return sid
 
 def add_cmd(func, name=None):
     """Binds an IRC command function to the given command name."""
@@ -226,164 +116,21 @@ def isHostmask(text):
 def parseModes(irc, target, args):
     """Parses a modestring list into a list of (mode, argument) tuples.
     ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
+
+    This method is deprecated. Use irc.parseModes() instead.
     """
-    # http://www.irc.org/tech_docs/005.html
-    # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
-    # B = Mode that changes a setting and always has a parameter.
-    # C = Mode that changes a setting and only has a parameter when set.
-    # D = Mode that changes a setting and never has a parameter.
-    assert args, 'No valid modes were supplied!'
-    usermodes = not isChannel(target)
-    prefix = ''
-    modestring = args[0]
-    args = args[1:]
-    if usermodes:
-        log.debug('(%s) Using irc.umodes for this query: %s', irc.name, irc.umodes)
-
-        if target not in irc.users:
-            log.warning('(%s) Possible desync! Mode target %s is not in the users index.', irc.name, target)
-            return []  # Return an empty mode list
-
-        supported_modes = irc.umodes
-        oldmodes = irc.users[target].modes
-    else:
-        log.debug('(%s) Using irc.cmodes for this query: %s', irc.name, irc.cmodes)
-
-        if target not in irc.channels:
-            log.warning('(%s) Possible desync! Mode target %s is not in the channels index.', irc.name, target)
-            return []
-
-        supported_modes = irc.cmodes
-        oldmodes = irc.channels[target].modes
-    res = []
-    for mode in modestring:
-        if mode in '+-':
-            prefix = mode
-        else:
-            if not prefix:
-                prefix = '+'
-            arg = None
-            log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
-            try:
-                if mode in (supported_modes['*A'] + supported_modes['*B']):
-                    # Must have parameter.
-                    log.debug('Mode %s: This mode must have parameter.', mode)
-                    arg = args.pop(0)
-                    if prefix == '-' and mode in supported_modes['*B'] and arg == '*':
-                        # Charybdis allows unsetting +k without actually
-                        # knowing the key by faking the argument when unsetting
-                        # as a single "*".
-                        # We'd need to know the real argument of +k for us to
-                        # be able to unset the mode.
-                        oldargs = [m[1] for m in oldmodes if m[0] == mode]
-                        if oldargs:
-                            # Set the arg to the old one on the channel.
-                            arg = oldargs[0]
-                            log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
-                elif mode in irc.prefixmodes and not usermodes:
-                    # We're setting a prefix mode on someone (e.g. +o user1)
-                    log.debug('Mode %s: This mode is a prefix mode.', mode)
-                    arg = args.pop(0)
-                    # Convert nicks to UIDs implicitly; most IRCds will want
-                    # this already.
-                    arg = irc.nickToUid(arg) or arg
-                    if arg not in irc.users:  # Target doesn't exist, skip it.
-                        log.debug('(%s) Skipping setting mode "%s %s"; the '
-                                  'target doesn\'t seem to exist!', irc.name,
-                                  mode, arg)
-                        continue
-                elif prefix == '+' and mode in supported_modes['*C']:
-                    # Only has parameter when setting.
-                    log.debug('Mode %s: Only has parameter when setting.', mode)
-                    arg = args.pop(0)
-            except IndexError:
-                log.warning('(%s/%s) Error while parsing mode %r: mode requires an '
-                            'argument but none was found. (modestring: %r)',
-                            irc.name, target, mode, modestring)
-                continue  # Skip this mode; don't error out completely.
-            res.append((prefix + mode, arg))
-    return res
+    log.warning("(%s) utils.parseModes is deprecated. Use irc.parseModes() instead!", irc.name)
+    return irc.parseModes(target, args)
 
 def applyModes(irc, target, changedmodes):
     """Takes a list of parsed IRC modes, and applies them on the given target.
 
-    The target can be either a channel or a user; this is handled automatically."""
-    usermodes = not isChannel(target)
-    log.debug('(%s) Using usermodes for this query? %s', irc.name, usermodes)
+    The target can be either a channel or a user; this is handled automatically.
 
-    try:
-        if usermodes:
-            old_modelist = irc.users[target].modes
-            supported_modes = irc.umodes
-        else:
-            old_modelist = irc.channels[target].modes
-            supported_modes = irc.cmodes
-    except KeyError:
-        log.warning('(%s) Possible desync? Mode target %s is unknown.', irc.name, target)
-        return
-
-    modelist = set(old_modelist)
-    log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', irc.name, changedmodes, target, modelist)
-    for mode in changedmodes:
-        # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
-        try:
-            real_mode = (mode[0][1], mode[1])
-        except IndexError:
-            real_mode = mode
-
-        if not usermodes:
-            # We only handle +qaohv for now. Iterate over every supported mode:
-            # if the IRCd supports this mode and it is the one being set, add/remove
-            # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
-            # for ops).
-            for pmode, pmodelist in irc.channels[target].prefixmodes.items():
-                if pmode in irc.cmodes and real_mode[0] == irc.cmodes[pmode]:
-                    log.debug('(%s) Initial prefixmodes list: %s', irc.name, pmodelist)
-                    if mode[0][0] == '+':
-                        pmodelist.add(mode[1])
-                    else:
-                        pmodelist.discard(mode[1])
-
-                    log.debug('(%s) Final prefixmodes list: %s', irc.name, pmodelist)
-
-            if real_mode[0] in irc.prefixmodes:
-                # Don't add prefix modes to IrcChannel.modes; they belong in the
-                # prefixmodes mapping handled above.
-                log.debug('(%s) Not adding mode %s to IrcChannel.modes because '
-                          'it\'s a prefix mode.', irc.name, str(mode))
-                continue
-
-        if mode[0][0] == '+':
-            # We're adding a mode
-            existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
-            if existing and real_mode[1] and real_mode[0] not in irc.cmodes['*A']:
-                # The mode we're setting takes a parameter, but is not a list mode (like +beI).
-                # Therefore, only one version of it can exist at a time, and we must remove
-                # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
-                # for example, someone sets mode "+l 30" on a channel already set "+l 25".
-                log.debug('(%s) Old modes for mode %r exist on %s, removing them: %s',
-                          irc.name, real_mode, target, str(existing))
-                [modelist.discard(oldmode) for oldmode in existing]
-            modelist.add(real_mode)
-            log.debug('(%s) Adding mode %r on %s', irc.name, real_mode, target)
-        else:
-            log.debug('(%s) Removing mode %r on %s', irc.name, real_mode, target)
-            # We're removing a mode
-            if real_mode[1] is None:
-                # We're removing a mode that only takes arguments when setting.
-                # Remove all mode entries that use the same letter as the one
-                # we're unsetting.
-                for oldmode in modelist.copy():
-                    if oldmode[0] == real_mode[0]:
-                        modelist.discard(oldmode)
-            else:
-                # Swap the - for a + and then remove it from the list.
-                modelist.discard(real_mode)
-    log.debug('(%s) Final modelist: %s', irc.name, modelist)
-    if usermodes:
-        irc.users[target].modes = modelist
-    else:
-        irc.channels[target].modes = modelist
+    This method is deprecated. Use irc.applyModes() instead.
+    """
+    log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
+    return irc.applyModes(target, changedmodes)
 
 def joinModes(modes):
     """Takes a list of (mode, arg) tuples in parseModes() format, and

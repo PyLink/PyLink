@@ -14,7 +14,7 @@ import utils
 from log import log
 
 from classes import *
-from ts6_common import TS6BaseProtocol
+from ts6_common import *
 
 class TS6Protocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -31,16 +31,19 @@ class TS6Protocol(TS6BaseProtocol):
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
-        """Spawns a client with nick <nick> on the given IRC connection.
+        """
+        Spawns a new client with the given options.
 
         Note: No nick collision / valid nickname checks are done here; it is
-        up to plugins to make sure they don't introduce anything invalid."""
+        up to plugins to make sure they don't introduce anything invalid.
+        """
         server = server or self.irc.sid
+
         if not self.irc.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
-        # Create an UIDGenerator instance for every SID, so that each gets
-        # distinct values.
-        uid = self.uidgen.setdefault(server, utils.TS6UIDGenerator(server)).next_uid()
+
+        uid = self.uidgen[server].next_uid()
+
         # EUID:
         # parameters: nickname, hopcount, nickTS, umodes, username,
         # visible hostname, IP address, UID, real hostname, account name, gecos
@@ -50,13 +53,16 @@ class TS6Protocol(TS6BaseProtocol):
         raw_modes = utils.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
-        utils.applyModes(self.irc, uid, modes)
+
+        self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
+
         self._send(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                 "{realhost} * :{realname}".format(ts=ts, host=host,
                 nick=nick, ident=ident, uid=uid,
                 modes=raw_modes, ip=ip, realname=realname,
                 realhost=realhost))
+
         return u
 
     def join(self, client, channel):
@@ -133,7 +139,7 @@ class TS6Protocol(TS6BaseProtocol):
             self.irc.channels[channel].users.update(uids)
         if ts <= orig_ts:
            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            utils.applyModes(self.irc, channel, changedmodes)
+            self.irc.applyModes(channel, changedmodes)
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
@@ -144,7 +150,7 @@ class TS6Protocol(TS6BaseProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        utils.applyModes(self.irc, target, modes)
+        self.irc.applyModes(target, modes)
         modes = list(modes)
 
         if utils.isChannel(target):
@@ -421,8 +427,8 @@ class TS6Protocol(TS6BaseProtocol):
         self.updateTS(channel, their_ts)
 
         modestring = args[2:-1] or args[2]
-        parsedmodes = utils.parseModes(self.irc, channel, modestring)
-        utils.applyModes(self.irc, channel, parsedmodes)
+        parsedmodes = self.irc.parseModes(channel, modestring)
+        self.irc.applyModes(channel, parsedmodes)
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
         for userpair in userlist:
@@ -449,7 +455,7 @@ class TS6Protocol(TS6BaseProtocol):
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
             if their_ts <= our_ts:
-                utils.applyModes(self.irc, channel, [('+%s' % mode, user) for mode in finalprefix])
+                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in finalprefix])
             self.irc.channels[channel].users.add(user)
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
@@ -496,9 +502,9 @@ class TS6Protocol(TS6BaseProtocol):
 
         self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
 
-        parsedmodes = utils.parseModes(self.irc, uid, [modes])
+        parsedmodes = self.irc.parseModes(uid, [modes])
         log.debug('Applying modes %s for %s', parsedmodes, uid)
-        utils.applyModes(self.irc, uid, parsedmodes)
+        self.irc.applyModes(uid, parsedmodes)
         self.irc.servers[numeric].users.add(uid)
 
         # Call the OPERED UP hook if +o is being added to the mode list.
@@ -557,8 +563,8 @@ class TS6Protocol(TS6BaseProtocol):
         channel = utils.toLower(self.irc, args[1])
         oldobj = self.irc.channels[channel].deepcopy()
         modes = args[2:]
-        changedmodes = utils.parseModes(self.irc, channel, modes)
-        utils.applyModes(self.irc, channel, changedmodes)
+        changedmodes = self.irc.parseModes(channel, modes)
+        self.irc.applyModes(channel, changedmodes)
         ts = int(args[0])
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
                 'oldchan': oldobj}
@@ -568,8 +574,8 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
         target = args[0]
         modestrings = args[1:]
-        changedmodes = utils.parseModes(self.irc, target, modestrings)
-        utils.applyModes(self.irc, target, changedmodes)
+        changedmodes = self.irc.parseModes(target, modestrings)
+        self.irc.applyModes(target, changedmodes)
         # Call the OPERED UP hook if +o is being set.
         if ('+o', None) in changedmodes:
             otype = 'Server Administrator' if ('a', None) in self.irc.users[target].modes else 'IRC Operator'
@@ -615,7 +621,7 @@ class TS6Protocol(TS6BaseProtocol):
         modes = []
         for ban in args[-1].split():
             modes.append(('+%s' % mode, ban))
-        utils.applyModes(self.irc, channel, modes)
+        self.irc.applyModes(channel, modes)
         return {'target': channel, 'modes': modes, 'ts': ts}
 
     def handle_whois(self, numeric, command, args):
