@@ -396,12 +396,3 @@ def rehash(irc, source, args):
     else:
         irc.reply("Done.")
 
-def main(irc=None):
-    # This is a global sanity check, to make sure the protocol module is doing
-    # its job.
-    if irc and not irc.connected.wait(2):
-        log.warning('(%s) IRC network %s (protocol %s) has not set '
-                    'irc.connected state after 2 seconds - this may be a bug '
-                    'in the protocol module, and will cause plugins like '
-                    'relay to not work correctly!', irc.name, irc.name,
-                    irc.protoname)
