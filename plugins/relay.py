@@ -49,15 +49,21 @@ def main(irc=None):
     # Load the relay links database.
     loadDB()
 
+    log.debug('relay.main: loading links database')
+
     # Schedule periodic exports of the links database.
     scheduleExport(starting=True)
 
+    log.debug('relay.main: scheduling export loop')
+
     if irc is not None:
-        # irc is defined when the plugin is reloaded. Otherweise,
-        # it means that we've just started the server.
-        # Iterate over all known networks and initialize them.
+        # irc is defined when the plugin is reloaded. Otherwise, it means that we've just started the
+        # server. Iterate over all connected networks and initialize their relay users.
         for ircobj in world.networkobjects.values():
-            initializeAll(ircobj)
+            if ircobj.connected.is_set():
+                initializeAll(ircobj)
+
+    log.debug('relay.main: finished initialization sequence')
 
 def die(sourceirc):
     """Deinitialize PyLink Relay by quitting all relay clients and saving the
