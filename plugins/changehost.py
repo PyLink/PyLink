@@ -38,8 +38,8 @@ def _changehost(irc, target, args):
         return
 
     # Match against both the user's IP and real host.
-    target_host = utils.getHostmask(irc, target, realhost=True)
-    target_ip = utils.getHostmask(irc, target, ip=True)
+    target_host = irc.getHostmask(target, realhost=True)
+    target_ip = irc.getHostmask(target, ip=True)
 
     for host_glob, host_template in changehost_hosts.items():
         if ircmatch.match(0, host_glob, target_host) or ircmatch.match(0, host_glob, target_ip):
