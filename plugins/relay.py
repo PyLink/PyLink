@@ -328,30 +328,41 @@ def spawnRelayUser(irc, remoteirc, user):
     return u
 
 def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
-    """Gets the UID of the relay client for the given IRC network/user pair,
+    """
+    Gets the UID of the relay client requested on the target network (remoteirc),
     spawning one if it doesn't exist and spawnIfMissing is True."""
 
+    # Wait until both the local and remote networks are working before trying to spawn anything.
     log.debug('(%s) getRemoteUser: waiting for irc.connected', irc.name)
     irc.connected.wait()
     log.debug('(%s) getRemoteUser: waiting for %s.connected', irc.name, remoteirc.name)
     remoteirc.connected.wait()
 
-    # If the user (stored here as {('netname', 'UID'):
-    # {'network1': 'UID1', 'network2': 'UID2'}}) exists, don't spawn it
-    # again!
     try:
+        # We're relaying a message from the main PyLink client. These don't have
+        # relay clones, so relay them through the other network's main client.
         if user == irc.pseudoclient.uid:
             return remoteirc.pseudoclient.uid
+
     except AttributeError:  # Network hasn't been initialized yet?
-        pass
+        return
+
     with spawnlocks[irc.name]:
+        # Be sort-of thread safe: lock the user spawns for the current net first.
         u = None
         try:
+            # Look up the existing user, stored here as dict entries in the format:
+            # {('ournet', 'UID'): {'remotenet1': 'UID1', 'remotenet2': 'UID2'}}
             u = relayusers[(irc.name, user)][remoteirc.name]
         except KeyError:
+            # User doesn't exist. Spawn a new one if requested.
             if spawnIfMissing:
                 u = spawnRelayUser(irc, remoteirc, user)
 
+        # This is a sanity check to make sure netsplits and other state resets
+        # don't break the relayer. If it turns out there was a client in our relayusers
+        # cache for the requested UID, but it doesn't match the request,
+        # assume it was a leftover from the last split and replace it with a new one.
         if u and ((u not in remoteirc.users) or remoteirc.users[u].remote != (irc.name, user)):
             spawnRelayUser(irc, remoteirc, user)
         return u
