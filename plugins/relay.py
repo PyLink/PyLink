@@ -241,6 +241,7 @@ def getRemoteSid(irc, remoteirc):
     if not spawnservers:
         return irc.sid
 
+    log.debug('(%s) Grabbing spawnlocks_servers[%s]', irc.name, irc.name)
     with spawnlocks_servers[irc.name]:
         try:
             sid = relayservers[irc.name][remoteirc.name]
@@ -347,6 +348,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     except AttributeError:  # Network hasn't been initialized yet?
         return
 
+    log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
     with spawnlocks[irc.name]:
         # Be sort-of thread safe: lock the user spawns for the current net first.
         u = None
@@ -813,6 +815,7 @@ utils.add_hook(handle_join, 'JOIN')
 def handle_quit(irc, numeric, command, args):
     # Lock the user spawning mechanism before proceeding, since we're going to be
     # deleting client from the relayusers cache.
+    log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
     with spawnlocks[irc.name]:
         for netname, user in relayusers[(irc.name, numeric)].copy().items():
             remoteirc = world.networkobjects[netname]
@@ -1221,6 +1224,7 @@ def handle_disconnect(irc, numeric, command, args):
     """Handles IRC network disconnections (internal hook)."""
     # Quit all of our users' representations on other nets, and remove
     # them from our relay clients index.
+    log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
     with spawnlocks[irc.name]:
         for k, v in relayusers.copy().items():
             if irc.name in v:
@@ -1230,6 +1234,7 @@ def handle_disconnect(irc, numeric, command, args):
 
     # SQUIT all relay pseudoservers spawned for us, and remove them
     # from our relay subservers index.
+    log.debug('(%s) Grabbing spawnlocks_servers[%s]', irc.name, irc.name)
     with spawnlocks_servers[irc.name]:
         for name, ircobj in world.networkobjects.copy().items():
             if name != irc.name:
