@@ -811,10 +811,15 @@ def handle_join(irc, numeric, command, args):
 utils.add_hook(handle_join, 'JOIN')
 
 def handle_quit(irc, numeric, command, args):
+    # Lock the user spawning mechanism before proceeding, since we're going to be
+    # deleting client from the relayusers cache.
     with spawnlocks[irc.name]:
         for netname, user in relayusers[(irc.name, numeric)].copy().items():
             remoteirc = world.networkobjects[netname]
-            remoteirc.proto.quit(user, args['text'])
+            try:  # Try to quit the client. If this fails because they're missing, bail.
+                remoteirc.proto.quit(user, args['text'])
+            except LookupError:
+                pass
         del relayusers[(irc.name, numeric)]
 
 utils.add_hook(handle_quit, 'QUIT')
