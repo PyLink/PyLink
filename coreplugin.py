@@ -182,7 +182,7 @@ utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
 def handle_version(irc, source, command, args):
     """Handles requests for the PyLink server version."""
     # 351 syntax is usually "<server version>. <server hostname> :<anything else you want to add>
-    fullversion = utils.fullVersion(irc)
+    fullversion = irc.version()
     irc.proto.numeric(irc.sid, 351, source, fullversion)
 utils.add_hook(handle_version, 'VERSION')
 

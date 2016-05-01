@@ -799,6 +799,14 @@ class Irc():
             modelist += ' %s' % ' '.join(args)
         return modelist
 
+    def version(self):
+        """
+        Returns a detailed version string including the PyLink daemon version,
+        the protocol module in use, and the server hostname.
+        """
+        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (world.version, self.serverdata['hostname'], self.protoname)
+        return fullversion
+
     ### State checking functions
     def nickToUid(self, nick):
         """Looks up the UID of a user with the given nick, if one is present."""

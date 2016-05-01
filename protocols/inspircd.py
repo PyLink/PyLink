@@ -358,7 +358,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         self._send(self.irc.sid, 'BURST %s' % ts)
         # InspIRCd sends VERSION data on link, instead of whenever requested by a client.
-        self._send(self.irc.sid, 'VERSION :%s' % utils.fullVersion(self.irc))
+        self._send(self.irc.sid, 'VERSION :%s' % self.irc.version())
         self._send(self.irc.sid, 'ENDBURST')
 
     def handle_capab(self, source, command, args):
