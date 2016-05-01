@@ -918,19 +918,20 @@ def handle_messages(irc, numeric, command, args):
             real_target = getRemoteChan(irc, remoteirc, target)
 
             # Don't relay anything back to the source net, or to disconnected networks
-            # and networks without a relay for this channel
+            # and networks without a relay for this channel.
             if irc.name == name or (not remoteirc.connected.is_set()) or (not real_target) \
                     or (not irc.connected.is_set()):
                 continue
 
             user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
-            real_target = prefix + real_target
-            log.debug('(%s) relay.handle_messages: sending message to %s from %s on behalf of %s',
-                      irc.name, real_target, user, numeric)
-            if notice:
-                remoteirc.proto.notice(user, real_target, text)
-            else:
-                remoteirc.proto.message(user, real_target, text)
+            if user:  # If the user doesn't exist, drop the message.
+                real_target = prefix + real_target
+                log.debug('(%s) relay.handle_messages: sending message to %s from %s on behalf of %s',
+                          irc.name, real_target, user, numeric)
+                if notice:
+                    remoteirc.proto.notice(user, real_target, text)
+                else:
+                    remoteirc.proto.message(user, real_target, text)
 
     else:
         # Get the real user that the PM was meant for
