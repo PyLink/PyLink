@@ -40,6 +40,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
 * Nefarious IRCu (2.0.0+) - module `nefarious` (*experimental*)
     - Note: FAKE hosts (`+f`), account cloaks (user and oper), and hashed IP cloaks are supported. Make sure you configure PyLink to match your IRCd settings.
+    - For optimal functionality (preventing desyncs from mode overrides in relay, etc.), a `UWorld{}` block / U-line should be added for PyLink.
     - Host changing for internal PyLink clients does not work. It should work for other users though.
     - Usermode `+h ident@host` is not supported at this time.
 
