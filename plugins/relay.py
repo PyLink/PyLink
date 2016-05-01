@@ -199,11 +199,34 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
                 modes += remoteirc.cmodes[pmode]
     return modes
 
+def spawnRelayServer(irc, remoteirc):
+    irc.connected.wait()
+    try:
+        # ENDBURST is delayed by 3 secs on supported IRCds to prevent
+        # triggering join-flood protection and the like.
+        sid = irc.proto.spawnServer('%s.relay' % remoteirc.name,
+                                    desc="PyLink Relay network - %s" %
+                                    (remoteirc.serverdata.get('netname')\
+                                    or remoteirc.name), endburst_delay=3)
+    except ValueError:  # Network not initialized yet, or a server name conflict.
+        log.exception('(%s) Failed to spawn server for %r:',
+                      irc.name, remoteirc.name)
+        # We will just bail here. Disconnect the bad network.
+        handle_disconnect(irc, None, 'PYLINK_DISCONNECT_RELAY_FORCED', {})
+        irc.disconnect()
+        raise
+
+    # Mark the server as a relay server
+    irc.servers[sid].remote = remoteirc.name
+
+    # Assign the newly spawned server as our relay server for the target net.
+    relayservers[irc.name][remoteirc.name] = sid
+
+    return sid
+
 def getRemoteSid(irc, remoteirc):
     """Gets the remote server SID representing remoteirc on irc, spawning
     it if it doesn't exist."""
-    # Don't spawn servers too early.
-    irc.connected.wait(2)
 
     try:
         spawnservers = irc.conf['relay']['spawn_servers']
@@ -211,32 +234,102 @@ def getRemoteSid(irc, remoteirc):
         spawnservers = True
     if not spawnservers:
         return irc.sid
+
     with spawnlocks_servers[irc.name]:
         try:
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
-            try:
-                # ENDBURST is delayed by 3 secs on supported IRCds to prevent
-                # triggering join-flood protection and the like.
-                sid = irc.proto.spawnServer('%s.relay' % remoteirc.name,
-                                            desc="PyLink Relay network - %s" %
-                                            (remoteirc.serverdata.get('netname')\
-                                            or remoteirc.name), endburst_delay=3)
-            except ValueError:  # Network not initialized yet, or a server name conflict.
-                log.exception('(%s) Failed to spawn server for %r:',
-                              irc.name, remoteirc.name)
-                # We will just bail here. Disconnect the bad network.
-                handle_disconnect(irc, None, 'PYLINK_DISCONNECT_RELAY_FORCED', {})
-                irc.disconnect()
-                raise
-            else:
-                irc.servers[sid].remote = remoteirc.name
-            relayservers[irc.name][remoteirc.name] = sid
+            log.debug('(%s) getRemoteSid: %s.relay doesn\'t have a known SID, spawning.', irc.name, remoteirc.name)
+            sid = spawnRelayServer(irc, remoteirc)
+
+        log.debug('(%s) getRemoteSid: got %s for %s.relay', irc.name, sid, remoteirc.name)
+        if sid not in irc.servers:
+            log.debug('(%s) getRemoteSid: SID %s for %s.relay doesn\'t exist, respawning', irc.name, sid, remoteirc.name)
+            # Our stored server doesn't exist anymore. This state is probably a holdover from a netsplit,
+            # so let's refresh it.
+            sid = spawnRelayServer(irc, remoteirc)
+        elif sid in irc.servers and irc.servers[sid].remote != remoteirc.name:
+            log.debug('(%s) getRemoteSid: %s.relay != %s.relay, respawning', irc.name, irc.servers[sid].remote, remoteirc.name)
+            sid = spawnRelayServer(irc, remoteirc)
+
+        log.debug('(%s) getRemoteSid: got %s for %s.relay (round 2)', irc.name, sid, remoteirc.name)
         return sid
+
+def spawnRelayUser(irc, remoteirc, user):
+    userobj = irc.users.get(user)
+    if userobj is None:
+        # The query wasn't actually a valid user, or the network hasn't
+        # been connected yet... Oh well!
+        return
+    nick = normalizeNick(remoteirc, irc.name, userobj.nick)
+    # Truncate idents at 10 characters, because TS6 won't like them otherwise!
+    ident = userobj.ident[:10]
+    # Normalize hostnames
+    host = normalizeHost(remoteirc, userobj.host)
+    realname = userobj.realname
+    modes = set(getSupportedUmodes(irc, remoteirc, userobj.modes))
+    opertype = ''
+    if ('o', None) in userobj.modes:
+        if hasattr(userobj, 'opertype'):
+            # InspIRCd's special OPERTYPE command; this is mandatory
+            # and setting of umode +/-o will fail unless this
+            # is used instead. This also sets an oper type for
+            # the user, which is used in WHOIS, etc.
+
+            # If an opertype exists for the user, add " (remote)"
+            # for the relayed clone, so that it shows in whois.
+            # Janus does this too. :)
+            log.debug('(%s) relay.getRemoteUser: setting OPERTYPE of client for %r to %s',
+                      irc.name, user, userobj.opertype)
+            opertype = userobj.opertype + ' (remote)'
+        else:
+            opertype = 'IRC Operator (remote)'
+        # Set hideoper on remote opers, to prevent inflating
+        # /lusers and various /stats
+        hideoper_mode = remoteirc.umodes.get('hideoper')
+        try:
+            use_hideoper = irc.conf['relay']['hideoper']
+        except KeyError:
+            use_hideoper = True
+        if hideoper_mode and use_hideoper:
+            modes.add((hideoper_mode, None))
+
+    rsid = getRemoteSid(remoteirc, irc)
+    try:
+        showRealIP = irc.conf['relay']['show_ips'] and not \
+                     irc.serverdata.get('relay_no_ips') and not \
+                     remoteirc.serverdata.get('relay_no_ips')
+    except KeyError:
+        showRealIP = False
+    if showRealIP:
+        ip = userobj.ip
+        realhost = userobj.realhost
+    else:
+        realhost = None
+        ip = '0.0.0.0'
+    u = remoteirc.proto.spawnClient(nick, ident=ident,
+                                        host=host, realname=realname,
+                                        modes=modes, ts=userobj.ts,
+                                        opertype=opertype, server=rsid,
+                                        ip=ip, realhost=realhost).uid
+    remoteirc.users[u].remote = (irc.name, user)
+    remoteirc.users[u].opertype = opertype
+    away = userobj.away
+    if away:
+        remoteirc.proto.away(u, away)
+
+    relayusers[(irc.name, user)][remoteirc.name] = u
+    return u
 
 def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     """Gets the UID of the relay client for the given IRC network/user pair,
     spawning one if it doesn't exist and spawnIfMissing is True."""
+
+    log.debug('(%s) getRemoteUser: waiting for irc.connected', irc.name)
+    irc.connected.wait()
+    log.debug('(%s) getRemoteUser: waiting for %s.connected', irc.name, remoteirc.name)
+    remoteirc.connected.wait()
+
     # If the user (stored here as {('netname', 'UID'):
     # {'network1': 'UID1', 'network2': 'UID2'}}) exists, don't spawn it
     # again!
@@ -246,71 +339,15 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     except AttributeError:  # Network hasn't been initialized yet?
         pass
     with spawnlocks[irc.name]:
+        u = None
         try:
             u = relayusers[(irc.name, user)][remoteirc.name]
         except KeyError:
-            userobj = irc.users.get(user)
-            if userobj is None or (not spawnIfMissing) or (not remoteirc.connected.is_set()):
-                # The query wasn't actually a valid user, or the network hasn't
-                # been connected yet... Oh well!
-                return
-            nick = normalizeNick(remoteirc, irc.name, userobj.nick)
-            # Truncate idents at 10 characters, because TS6 won't like them otherwise!
-            ident = userobj.ident[:10]
-            # Normalize hostnames
-            host = normalizeHost(remoteirc, userobj.host)
-            realname = userobj.realname
-            modes = set(getSupportedUmodes(irc, remoteirc, userobj.modes))
-            opertype = ''
-            if ('o', None) in userobj.modes:
-                if hasattr(userobj, 'opertype'):
-                    # InspIRCd's special OPERTYPE command; this is mandatory
-                    # and setting of umode +/-o will fail unless this
-                    # is used instead. This also sets an oper type for
-                    # the user, which is used in WHOIS, etc.
+            if spawnIfMissing:
+                u = spawnRelayUser(irc, remoteirc, user)
 
-                    # If an opertype exists for the user, add " (remote)"
-                    # for the relayed clone, so that it shows in whois.
-                    # Janus does this too. :)
-                    log.debug('(%s) relay.getRemoteUser: setting OPERTYPE of client for %r to %s',
-                              irc.name, user, userobj.opertype)
-                    opertype = userobj.opertype + ' (remote)'
-                else:
-                    opertype = 'IRC Operator (remote)'
-                # Set hideoper on remote opers, to prevent inflating
-                # /lusers and various /stats
-                hideoper_mode = remoteirc.umodes.get('hideoper')
-                try:
-                    use_hideoper = irc.conf['relay']['hideoper']
-                except KeyError:
-                    use_hideoper = True
-                if hideoper_mode and use_hideoper:
-                    modes.add((hideoper_mode, None))
-
-            rsid = getRemoteSid(remoteirc, irc)
-            try:
-                showRealIP = irc.conf['relay']['show_ips'] and not \
-                             irc.serverdata.get('relay_no_ips') and not \
-                             remoteirc.serverdata.get('relay_no_ips')
-            except KeyError:
-                showRealIP = False
-            if showRealIP:
-                ip = userobj.ip
-                realhost = userobj.realhost
-            else:
-                realhost = None
-                ip = '0.0.0.0'
-            u = remoteirc.proto.spawnClient(nick, ident=ident,
-                                                host=host, realname=realname,
-                                                modes=modes, ts=userobj.ts,
-                                                opertype=opertype, server=rsid,
-                                                ip=ip, realhost=realhost).uid
-            remoteirc.users[u].remote = (irc.name, user)
-            remoteirc.users[u].opertype = opertype
-            away = userobj.away
-            if away:
-                remoteirc.proto.away(u, away)
-        relayusers[(irc.name, user)][remoteirc.name] = u
+        if u and ((u not in remoteirc.users) or remoteirc.users[u].remote != (irc.name, user)):
+            spawnRelayUser(irc, remoteirc, user)
         return u
 
 def getOrigUser(irc, user, targetirc=None):
@@ -757,10 +794,12 @@ def handle_join(irc, numeric, command, args):
 utils.add_hook(handle_join, 'JOIN')
 
 def handle_quit(irc, numeric, command, args):
-    for netname, user in relayusers[(irc.name, numeric)].copy().items():
-        remoteirc = world.networkobjects[netname]
-        remoteirc.proto.quit(user, args['text'])
-    del relayusers[(irc.name, numeric)]
+    with spawnlocks[irc.name]:
+        for netname, user in relayusers[(irc.name, numeric)].copy().items():
+            remoteirc = world.networkobjects[netname]
+            remoteirc.proto.quit(user, args['text'])
+        del relayusers[(irc.name, numeric)]
+
 utils.add_hook(handle_quit, 'QUIT')
 
 def handle_squit(irc, numeric, command, args):
@@ -1164,16 +1203,13 @@ def handle_disconnect(irc, numeric, command, args):
             if irc.name in v:
                 del relayusers[k][irc.name]
             if k[0] == irc.name:
-                try:
-                    handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Relay network lost connection.'})
-                    del relayusers[k]
-                except KeyError:
-                    pass
+                handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Relay network lost connection.'})
+
     # SQUIT all relay pseudoservers spawned for us, and remove them
     # from our relay subservers index.
     with spawnlocks_servers[irc.name]:
         for name, ircobj in world.networkobjects.copy().items():
-            if name != irc.name and ircobj.connected.is_set():
+            if name != irc.name:
                 try:
                     rsid = relayservers[name][irc.name]
                 except KeyError:
@@ -1181,15 +1217,10 @@ def handle_disconnect(irc, numeric, command, args):
                 else:
                     ircobj.proto.squit(ircobj.sid, rsid, text='Relay network lost connection.')
 
-            try:
+            if irc.name in relayservers[name]:
                 del relayservers[name][irc.name]
-            except KeyError:
-                pass
 
-        try:
-            del relayservers[irc.name]
-        except KeyError:
-            pass
+        del relayservers[irc.name]
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
