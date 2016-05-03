@@ -464,7 +464,7 @@ def initializeChannel(irc, channel):
             # Only update the topic if it's different from what we already have,
             # and topic bursting is complete.
             if remoteirc.channels[remotechan].topicset and topic != irc.channels[channel].topic:
-                irc.proto.topicBurst(getRemoteSid(irc, remoteirc), channel, topic)
+                irc.proto.topicBurst(irc.sid, channel, topic)
 
         # Send our users and channel modes to the other nets
         log.debug('(%s) relay.initializeChannel: joining our (%s) users: %s', irc.name, remotenet, irc.channels[channel].users)
