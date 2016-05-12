@@ -97,9 +97,9 @@ A protocol module should also set the following variables in their protocol clas
     - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/unreal.py#L22) and [InspIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/inspircd.py#L24) modules.
 - `self.cmodes` / `self.umodes`: These are mappings of named IRC modes to mode letters, that should be either negotiated during link or preset in the `connect()` function of the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which should each be filled with a list of mode characters for that type of modes.
     - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
-        - A = Mode that adds or removes a nick or address to a list. Always has a parameter. 
-        - B = Mode that changes a setting and always has a parameter. 
-        - C = Mode that changes a setting and only has a parameter when set. 
+        - A = Mode that adds or removes a nick or address to a list. Always has a parameter.
+        - B = Mode that changes a setting and always has a parameter.
+        - C = Mode that changes a setting and only has a parameter when set.
         - D = Mode that changes a setting and never has a parameter.
     - Examples in the TS6 protocol module: https://github.com/GLolol/PyLink/blob/cb3187c/protocols/ts6.py#L259-L300
     - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/cb3187c/classes.py#L118-L152
@@ -147,3 +147,5 @@ Internally, modes are stored in channel and user objects as sets: `(userobj or c
 ```
 
 When a certain mode (e.g. owner) isn't supported on a network, the key still exists in `prefixmodes` but is simply unused.
+
+You can see a list of supported (named) channel modes [here](channel-modes.csv).
