@@ -18,12 +18,15 @@
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="hashlib.html">hashlib</a><br>
+<a href="inspect.html">inspect</a><br>
 <a href="logging.html">logging</a><br>
 <a href="os.html">os</a><br>
 </td><td width="25%" valign=top><a href="re.html">re</a><br>
 <a href="socket.html">socket</a><br>
 <a href="ssl.html">ssl</a><br>
-</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="string.html">string</a><br>
+</td><td width="25%" valign=top><a href="structures.html">structures</a><br>
+<a href="sys.html">sys</a><br>
 <a href="threading.html">threading</a><br>
 <a href="time.html">time</a><br>
 </td><td width="25%" valign=top><a href="utils.html">utils</a><br>
@@ -49,9 +52,7 @@
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><strong>Class</strong> = <a name="Class">class InspIRCdProtocol</a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
     
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Base&nbsp;Protocol&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="inspircd.html#InspIRCdProtocol">InspIRCdProtocol</a></dd>
 <dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
@@ -60,7 +61,7 @@
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
 
 <dl><dt><a name="InspIRCdProtocol-away"><strong>away</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
 to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
@@ -135,8 +136,7 @@ servers.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-mode"><strong>mode</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;mode&nbsp;changes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt><dd><tt>Sends&nbsp;raw&nbsp;numerics&nbsp;from&nbsp;a&nbsp;server&nbsp;to&nbsp;a&nbsp;remote&nbsp;client,&nbsp;used&nbsp;for&nbsp;WHOIS<br>
-replies.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt></dl>
 
 <dl><dt><a name="InspIRCdProtocol-ping"><strong>ping</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
 automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
@@ -151,7 +151,7 @@ Example&nbsp;uses:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoin">sjoin</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoin">sjoin</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
+<dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator', manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;new&nbsp;client&nbsp;with&nbsp;the&nbsp;given&nbsp;options.<br>
 &nbsp;<br>
 Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
 up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
@@ -248,9 +248,7 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="InspIRCdProtocol">class <strong>InspIRCdProtocol</strong></a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
     
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Base&nbsp;Protocol&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="inspircd.html#InspIRCdProtocol">InspIRCdProtocol</a></dd>
 <dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
@@ -259,7 +257,7 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
 
 <dl><dt><a name="InspIRCdProtocol-away"><strong>away</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
 to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
@@ -334,8 +332,7 @@ servers.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-mode"><strong>mode</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;mode&nbsp;changes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt><dd><tt>Sends&nbsp;raw&nbsp;numerics&nbsp;from&nbsp;a&nbsp;server&nbsp;to&nbsp;a&nbsp;remote&nbsp;client,&nbsp;used&nbsp;for&nbsp;WHOIS<br>
-replies.</tt></dd></dl>
+<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt></dl>
 
 <dl><dt><a name="InspIRCdProtocol-ping"><strong>ping</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
 automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
@@ -350,7 +347,7 @@ Example&nbsp;uses:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoin">sjoin</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('qo',&nbsp;100AAABBB'),&nbsp;('h',&nbsp;'100AAADDD')])<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#InspIRCdProtocol-sjoin">sjoin</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
+<dl><dt><a name="InspIRCdProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator', manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;new&nbsp;client&nbsp;with&nbsp;the&nbsp;given&nbsp;options.<br>
 &nbsp;<br>
 Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
 up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
@@ -448,13 +445,12 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f5f06e526a8&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7fb165343f28&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
 <strong>logdir</strong> = '/home/gl/pylink/log'<br>
 <strong>logformatter</strong> = &lt;logging.Formatter object&gt;<br>
-<strong>stdout_handler</strong> = &lt;logging.StreamHandler object&gt;<br>
 <strong>stdout_level</strong> = 'CRITICAL'</td></tr></table>
 </body></html>

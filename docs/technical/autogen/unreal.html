@@ -19,11 +19,14 @@
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="codecs.html">codecs</a><br>
 <a href="hashlib.html">hashlib</a><br>
+<a href="inspect.html">inspect</a><br>
 <a href="logging.html">logging</a><br>
 </td><td width="25%" valign=top><a href="os.html">os</a><br>
 <a href="re.html">re</a><br>
 <a href="socket.html">socket</a><br>
-</td><td width="25%" valign=top><a href="ssl.html">ssl</a><br>
+<a href="ssl.html">ssl</a><br>
+</td><td width="25%" valign=top><a href="string.html">string</a><br>
+<a href="structures.html">structures</a><br>
 <a href="sys.html">sys</a><br>
 <a href="threading.html">threading</a><br>
 </td><td width="25%" valign=top><a href="time.html">time</a><br>
@@ -50,9 +53,7 @@
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><strong>Class</strong> = <a name="Class">class UnrealProtocol</a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
     
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Base&nbsp;Protocol&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="unreal.html#UnrealProtocol">UnrealProtocol</a></dd>
 <dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
@@ -61,7 +62,7 @@
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="UnrealProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="UnrealProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
 
 <dl><dt><a name="UnrealProtocol-checkCloakChange"><strong>checkCloakChange</strong></a>(self, uid, parsedmodes)</dt><dd><tt>Checks&nbsp;whether&nbsp;+x/-x&nbsp;was&nbsp;set&nbsp;in&nbsp;the&nbsp;mode&nbsp;query,&nbsp;and&nbsp;changes&nbsp;the<br>
 hostname&nbsp;of&nbsp;the&nbsp;user&nbsp;given&nbsp;to&nbsp;or&nbsp;from&nbsp;their&nbsp;cloaked&nbsp;host&nbsp;if&nbsp;True.</tt></dd></dl>
@@ -80,7 +81,11 @@ hostname&nbsp;of&nbsp;the&nbsp;user&nbsp;given&nbsp;to&nbsp;or&nbsp;from&nbsp;th
 
 <dl><dt><a name="UnrealProtocol-handle_join"><strong>handle_join</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;UnrealIRCd&nbsp;JOIN&nbsp;command.</tt></dd></dl>
 
+<dl><dt><a name="UnrealProtocol-handle_kill"><strong>handle_kill</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
+
 <dl><dt><a name="UnrealProtocol-handle_mode"><strong>handle_mode</strong></a>(self, numeric, command, args)</dt></dl>
+
+<dl><dt><a name="UnrealProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;NICK&nbsp;changes,&nbsp;and&nbsp;legacy&nbsp;NICK&nbsp;introductions&nbsp;from&nbsp;pre-4.0&nbsp;servers.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_notice"><strong>handle_notice</strong></a> = <a href="#UnrealProtocol-handle_privmsg">handle_privmsg</a>(self, source, command, args)</dt></dl>
 
@@ -90,9 +95,9 @@ hostname&nbsp;of&nbsp;the&nbsp;user&nbsp;given&nbsp;to&nbsp;or&nbsp;from&nbsp;th
 
 <dl><dt><a name="UnrealProtocol-handle_pong"><strong>handle_pong</strong></a>(self, source, command, args)</dt></dl>
 
-<dl><dt><a name="UnrealProtocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+<dl><dt><a name="UnrealProtocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt></dl>
 
-<dl><dt><a name="UnrealProtocol-handle_protoctl"><strong>handle_protoctl</strong></a>(self, numeric, command, args)</dt></dl>
+<dl><dt><a name="UnrealProtocol-handle_protoctl"><strong>handle_protoctl</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;protocol&nbsp;negotiation.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_server"><strong>handle_server</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;SERVER&nbsp;command,&nbsp;which&nbsp;is&nbsp;used&nbsp;for&nbsp;both&nbsp;authentication&nbsp;and<br>
 introducing&nbsp;legacy&nbsp;(non-SID)&nbsp;servers.</tt></dd></dl>
@@ -149,7 +154,7 @@ Example&nbsp;uses:<br>
 Note&nbsp;that&nbsp;for&nbsp;UnrealIRCd,&nbsp;no&nbsp;mode&nbsp;data&nbsp;is&nbsp;sent&nbsp;in&nbsp;an&nbsp;SJOIN&nbsp;command,&nbsp;only<br>
 The&nbsp;channel&nbsp;name,&nbsp;TS,&nbsp;and&nbsp;user&nbsp;list.</tt></dd></dl>
 
-<dl><dt><a name="UnrealProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
+<dl><dt><a name="UnrealProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator', manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;new&nbsp;client&nbsp;with&nbsp;the&nbsp;given&nbsp;options.<br>
 &nbsp;<br>
 Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
 up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
@@ -178,10 +183,6 @@ Commands&nbsp;sent&nbsp;without&nbsp;an&nbsp;explicit&nbsp;sender&nbsp;prefix&nb
 the&nbsp;SID&nbsp;of&nbsp;the&nbsp;uplink&nbsp;server.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_kick"><strong>handle_kick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KICKs.</tt></dd></dl>
-
-<dl><dt><a name="UnrealProtocol-handle_kill"><strong>handle_kill</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
-
-<dl><dt><a name="UnrealProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;NICK&nbsp;changes.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_part"><strong>handle_part</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PART&nbsp;commands.</tt></dd></dl>
 
@@ -245,9 +246,7 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="UnrealProtocol">class <strong>UnrealProtocol</strong></a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
     
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Base&nbsp;Protocol&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="unreal.html#UnrealProtocol">UnrealProtocol</a></dd>
 <dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
@@ -256,7 +255,7 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="UnrealProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="UnrealProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
 
 <dl><dt><a name="UnrealProtocol-checkCloakChange"><strong>checkCloakChange</strong></a>(self, uid, parsedmodes)</dt><dd><tt>Checks&nbsp;whether&nbsp;+x/-x&nbsp;was&nbsp;set&nbsp;in&nbsp;the&nbsp;mode&nbsp;query,&nbsp;and&nbsp;changes&nbsp;the<br>
 hostname&nbsp;of&nbsp;the&nbsp;user&nbsp;given&nbsp;to&nbsp;or&nbsp;from&nbsp;their&nbsp;cloaked&nbsp;host&nbsp;if&nbsp;True.</tt></dd></dl>
@@ -275,7 +274,11 @@ hostname&nbsp;of&nbsp;the&nbsp;user&nbsp;given&nbsp;to&nbsp;or&nbsp;from&nbsp;th
 
 <dl><dt><a name="UnrealProtocol-handle_join"><strong>handle_join</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;UnrealIRCd&nbsp;JOIN&nbsp;command.</tt></dd></dl>
 
+<dl><dt><a name="UnrealProtocol-handle_kill"><strong>handle_kill</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
+
 <dl><dt><a name="UnrealProtocol-handle_mode"><strong>handle_mode</strong></a>(self, numeric, command, args)</dt></dl>
+
+<dl><dt><a name="UnrealProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;NICK&nbsp;changes,&nbsp;and&nbsp;legacy&nbsp;NICK&nbsp;introductions&nbsp;from&nbsp;pre-4.0&nbsp;servers.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_notice"><strong>handle_notice</strong></a> = <a href="#UnrealProtocol-handle_privmsg">handle_privmsg</a>(self, source, command, args)</dt></dl>
 
@@ -285,9 +288,9 @@ hostname&nbsp;of&nbsp;the&nbsp;user&nbsp;given&nbsp;to&nbsp;or&nbsp;from&nbsp;th
 
 <dl><dt><a name="UnrealProtocol-handle_pong"><strong>handle_pong</strong></a>(self, source, command, args)</dt></dl>
 
-<dl><dt><a name="UnrealProtocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+<dl><dt><a name="UnrealProtocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt></dl>
 
-<dl><dt><a name="UnrealProtocol-handle_protoctl"><strong>handle_protoctl</strong></a>(self, numeric, command, args)</dt></dl>
+<dl><dt><a name="UnrealProtocol-handle_protoctl"><strong>handle_protoctl</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;protocol&nbsp;negotiation.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_server"><strong>handle_server</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;SERVER&nbsp;command,&nbsp;which&nbsp;is&nbsp;used&nbsp;for&nbsp;both&nbsp;authentication&nbsp;and<br>
 introducing&nbsp;legacy&nbsp;(non-SID)&nbsp;servers.</tt></dd></dl>
@@ -344,7 +347,7 @@ Example&nbsp;uses:<br>
 Note&nbsp;that&nbsp;for&nbsp;UnrealIRCd,&nbsp;no&nbsp;mode&nbsp;data&nbsp;is&nbsp;sent&nbsp;in&nbsp;an&nbsp;SJOIN&nbsp;command,&nbsp;only<br>
 The&nbsp;channel&nbsp;name,&nbsp;TS,&nbsp;and&nbsp;user&nbsp;list.</tt></dd></dl>
 
-<dl><dt><a name="UnrealProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;client&nbsp;with&nbsp;nick&nbsp;&lt;nick&gt;&nbsp;on&nbsp;the&nbsp;given&nbsp;IRC&nbsp;connection.<br>
+<dl><dt><a name="UnrealProtocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator', manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;new&nbsp;client&nbsp;with&nbsp;the&nbsp;given&nbsp;options.<br>
 &nbsp;<br>
 Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
 up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
@@ -373,10 +376,6 @@ Commands&nbsp;sent&nbsp;without&nbsp;an&nbsp;explicit&nbsp;sender&nbsp;prefix&nb
 the&nbsp;SID&nbsp;of&nbsp;the&nbsp;uplink&nbsp;server.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_kick"><strong>handle_kick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KICKs.</tt></dd></dl>
-
-<dl><dt><a name="UnrealProtocol-handle_kill"><strong>handle_kill</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
-
-<dl><dt><a name="UnrealProtocol-handle_nick"><strong>handle_nick</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;NICK&nbsp;changes.</tt></dd></dl>
 
 <dl><dt><a name="UnrealProtocol-handle_part"><strong>handle_part</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PART&nbsp;commands.</tt></dd></dl>
 
@@ -441,13 +440,12 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f0f1f40fc80&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7fcbbf211620&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
 <strong>logdir</strong> = '/home/gl/pylink/log'<br>
 <strong>logformatter</strong> = &lt;logging.Formatter object&gt;<br>
-<strong>stdout_handler</strong> = &lt;logging.StreamHandler object&gt;<br>
 <strong>stdout_level</strong> = 'CRITICAL'</td></tr></table>
 </body></html>

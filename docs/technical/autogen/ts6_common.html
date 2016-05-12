@@ -18,12 +18,15 @@
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="hashlib.html">hashlib</a><br>
+<a href="inspect.html">inspect</a><br>
 <a href="logging.html">logging</a><br>
 <a href="os.html">os</a><br>
 </td><td width="25%" valign=top><a href="socket.html">socket</a><br>
 <a href="ssl.html">ssl</a><br>
-<a href="sys.html">sys</a><br>
-</td><td width="25%" valign=top><a href="threading.html">threading</a><br>
+<a href="string.html">string</a><br>
+<a href="structures.html">structures</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="threading.html">threading</a><br>
 <a href="time.html">time</a><br>
 <a href="utils.html">utils</a><br>
 </td><td width="25%" valign=top><a href="world.html">world</a><br>
@@ -35,10 +38,22 @@
     
 <tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="ts6_common.html#TS6SIDGenerator">TS6SIDGenerator</a>
+</font></dt></dl>
+</dd>
 <dt><font face="helvetica, arial"><a href="classes.html#Protocol">classes.Protocol</a>(<a href="builtins.html#object">builtins.object</a>)
 </font></dt><dd>
 <dl>
 <dt><font face="helvetica, arial"><a href="ts6_common.html#TS6BaseProtocol">TS6BaseProtocol</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>(<a href="builtins.html#object">builtins.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="ts6_common.html#TS6UIDGenerator">TS6UIDGenerator</a>
 </font></dt></dl>
 </dd>
 </dl>
@@ -48,9 +63,7 @@
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="TS6BaseProtocol">class <strong>TS6BaseProtocol</strong></a>(<a href="classes.html#Protocol">classes.Protocol</a>)</font></td></tr>
     
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Base&nbsp;<a href="classes.html#Protocol">Protocol</a>&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="ts6_common.html#TS6BaseProtocol">TS6BaseProtocol</a></dd>
 <dd><a href="classes.html#Protocol">classes.Protocol</a></dd>
@@ -58,6 +71,8 @@
 </dl>
 <hr>
 Methods defined here:<br>
+<dl><dt><a name="TS6BaseProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+
 <dl><dt><a name="TS6BaseProtocol-away"><strong>away</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
 to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
 
@@ -130,8 +145,6 @@ option&nbsp;will&nbsp;be&nbsp;ignored&nbsp;if&nbsp;given.</tt></dd></dl>
 
 <hr>
 Methods inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
-<dl><dt><a name="TS6BaseProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
-
 <dl><dt><a name="TS6BaseProtocol-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
 be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
 
@@ -148,6 +161,74 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <dl><dt><strong>__weakref__</strong></dt>
 <dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
 </dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TS6SIDGenerator">class <strong>TS6SIDGenerator</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>TS6&nbsp;SID&nbsp;Generator.&nbsp;&lt;query&gt;&nbsp;is&nbsp;a&nbsp;3&nbsp;character&nbsp;string&nbsp;with&nbsp;any&nbsp;combination&nbsp;of<br>
+uppercase&nbsp;letters,&nbsp;digits,&nbsp;and&nbsp;#'s.&nbsp;it&nbsp;must&nbsp;contain&nbsp;at&nbsp;least&nbsp;one&nbsp;#,<br>
+which&nbsp;are&nbsp;used&nbsp;by&nbsp;the&nbsp;generator&nbsp;as&nbsp;a&nbsp;wildcard.&nbsp;On&nbsp;every&nbsp;<a href="#TS6SIDGenerator-next_sid">next_sid</a>()&nbsp;call,<br>
+the&nbsp;first&nbsp;available&nbsp;wildcard&nbsp;character&nbsp;(from&nbsp;the&nbsp;right)&nbsp;will&nbsp;be<br>
+incremented&nbsp;to&nbsp;generate&nbsp;the&nbsp;next&nbsp;SID.<br>
+&nbsp;<br>
+When&nbsp;there&nbsp;are&nbsp;no&nbsp;more&nbsp;available&nbsp;SIDs&nbsp;left&nbsp;(SIDs&nbsp;are&nbsp;not&nbsp;reused,&nbsp;only<br>
+incremented),&nbsp;RuntimeError&nbsp;is&nbsp;raised.<br>
+&nbsp;<br>
+Example&nbsp;queries:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"1#A"&nbsp;would&nbsp;give:&nbsp;10A,&nbsp;11A,&nbsp;12A&nbsp;...&nbsp;19A,&nbsp;1AA,&nbsp;1BA&nbsp;...&nbsp;1ZA&nbsp;(36&nbsp;total&nbsp;results)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"#BQ"&nbsp;would&nbsp;give:&nbsp;0BQ,&nbsp;1BQ,&nbsp;2BQ&nbsp;...&nbsp;9BQ&nbsp;(10&nbsp;total&nbsp;results)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"6##"&nbsp;would&nbsp;give:&nbsp;600,&nbsp;601,&nbsp;602,&nbsp;...&nbsp;60Y,&nbsp;60Z,&nbsp;610,&nbsp;611,&nbsp;...&nbsp;6ZZ&nbsp;(1296&nbsp;total&nbsp;results)<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="TS6SIDGenerator-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+
+<dl><dt><a name="TS6SIDGenerator-increment"><strong>increment</strong></a>(self, pos=2)</dt><dd><tt>Increments&nbsp;the&nbsp;SID&nbsp;generator&nbsp;to&nbsp;the&nbsp;next&nbsp;available&nbsp;SID.</tt></dd></dl>
+
+<dl><dt><a name="TS6SIDGenerator-next_sid"><strong>next_sid</strong></a>(self)</dt><dd><tt>Returns&nbsp;the&nbsp;next&nbsp;unused&nbsp;TS6&nbsp;SID&nbsp;for&nbsp;the&nbsp;server.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="TS6UIDGenerator">class <strong>TS6UIDGenerator</strong></a>(<a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Implements&nbsp;an&nbsp;incremental&nbsp;TS6&nbsp;UID&nbsp;Generator.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="ts6_common.html#TS6UIDGenerator">TS6UIDGenerator</a></dd>
+<dd><a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="TS6UIDGenerator-__init__"><strong>__init__</strong></a>(self, sid)</dt></dl>
+
+<hr>
+Methods inherited from <a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>:<br>
+<dl><dt><a name="TS6UIDGenerator-increment"><strong>increment</strong></a>(self, pos=None)</dt><dd><tt>Increments&nbsp;the&nbsp;UID&nbsp;generator&nbsp;to&nbsp;the&nbsp;next&nbsp;available&nbsp;UID.</tt></dd></dl>
+
+<dl><dt><a name="TS6UIDGenerator-next_uid"><strong>next_uid</strong></a>(self)</dt><dd><tt>Returns&nbsp;the&nbsp;next&nbsp;unused&nbsp;UID&nbsp;for&nbsp;the&nbsp;server.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#55aa55">
@@ -155,13 +236,12 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f2667895488&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f683a0b9d90&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
 <strong>logdir</strong> = '/home/gl/pylink/log'<br>
 <strong>logformatter</strong> = &lt;logging.Formatter object&gt;<br>
-<strong>stdout_handler</strong> = &lt;logging.StreamHandler object&gt;<br>
 <strong>stdout_level</strong> = 'CRITICAL'</td></tr></table>
 </body></html>

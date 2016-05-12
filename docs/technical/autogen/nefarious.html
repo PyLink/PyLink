@@ -1,0 +1,471 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module nefarious</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>nefarious</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/gl/pylink/protocols/nefarious.py">/home/gl/pylink/protocols/nefarious.py</a></font></td></tr></table>
+    <p><tt>nefarious.py:&nbsp;Nefarious&nbsp;IRCu&nbsp;protocol&nbsp;module&nbsp;for&nbsp;PyLink.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="base64.html">base64</a><br>
+<a href="hashlib.html">hashlib</a><br>
+<a href="inspect.html">inspect</a><br>
+<a href="logging.html">logging</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="socket.html">socket</a><br>
+<a href="ssl.html">ssl</a><br>
+<a href="struct.html">struct</a><br>
+</td><td width="25%" valign=top><a href="structures.html">structures</a><br>
+<a href="sys.html">sys</a><br>
+<a href="threading.html">threading</a><br>
+<a href="time.html">time</a><br>
+</td><td width="25%" valign=top><a href="utils.html">utils</a><br>
+<a href="world.html">world</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="nefarious.html#P10SIDGenerator">P10SIDGenerator</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="classes.html#Protocol">classes.Protocol</a>(<a href="builtins.html#object">builtins.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="nefarious.html#P10Protocol">P10Protocol</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>(<a href="builtins.html#object">builtins.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="nefarious.html#P10UIDGenerator">P10UIDGenerator</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><strong>Class</strong> = <a name="Class">class P10Protocol</a>(<a href="classes.html#Protocol">classes.Protocol</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="nefarious.html#P10Protocol">P10Protocol</a></dd>
+<dd><a href="classes.html#Protocol">classes.Protocol</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="P10Protocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+
+<dl><dt><a name="P10Protocol-away"><strong>away</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
+to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-checkCloakChange"><strong>checkCloakChange</strong></a>(self, uid)</dt><dd><tt>Checks&nbsp;for&nbsp;cloak&nbsp;changes&nbsp;on&nbsp;the&nbsp;given&nbsp;UID.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Initializes&nbsp;a&nbsp;connection&nbsp;to&nbsp;a&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_account"><strong>handle_account</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;services&nbsp;account&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_away"><strong>handle_away</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;AWAY&nbsp;messages.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_burst"><strong>handle_burst</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;BURST&nbsp;command,&nbsp;used&nbsp;for&nbsp;bursting&nbsp;channels&nbsp;on&nbsp;link.<br>
+&nbsp;<br>
+This&nbsp;is&nbsp;equivalent&nbsp;to&nbsp;SJOIN&nbsp;on&nbsp;most&nbsp;IRCds.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_clearmode"><strong>handle_clearmode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;CLEARMODE,&nbsp;which&nbsp;is&nbsp;used&nbsp;to&nbsp;clear&nbsp;a&nbsp;channel's&nbsp;modes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_create"><strong>handle_create</strong></a> = <a href="#P10Protocol-handle_join">handle_join</a>(self, source, command, args)</dt></dl>
+
+<dl><dt><a name="P10Protocol-handle_end_of_burst"><strong>handle_end_of_burst</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;end&nbsp;of&nbsp;burst&nbsp;from&nbsp;our&nbsp;uplink.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_events"><strong>handle_events</strong></a>(self, data)</dt><dd><tt>Event&nbsp;handler&nbsp;for&nbsp;the&nbsp;P10&nbsp;protocol.<br>
+&nbsp;<br>
+This&nbsp;passes&nbsp;most&nbsp;commands&nbsp;to&nbsp;the&nbsp;various&nbsp;handle_ABCD()&nbsp;functions&nbsp;defined&nbsp;elsewhere&nbsp;in&nbsp;the<br>
+protocol&nbsp;modules,&nbsp;coersing&nbsp;various&nbsp;sender&nbsp;prefixes&nbsp;from&nbsp;nicks&nbsp;and&nbsp;server&nbsp;names&nbsp;to&nbsp;P10<br>
+"numeric&nbsp;nicks",&nbsp;whenever&nbsp;possible.<br>
+&nbsp;<br>
+Commands&nbsp;sent&nbsp;without&nbsp;an&nbsp;explicit&nbsp;sender&nbsp;prefix&nbsp;are&nbsp;treated&nbsp;as&nbsp;originating&nbsp;from&nbsp;the&nbsp;uplink<br>
+server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_fake"><strong>handle_fake</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;FAKE&nbsp;hostmask&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_invite"><strong>handle_invite</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;INVITEs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_join"><strong>handle_join</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;JOINs&nbsp;and&nbsp;channel&nbsp;creations.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_kick"><strong>handle_kick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KICKs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_kill"><strong>handle_kill</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_mode"><strong>handle_mode</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;mode&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_nick"><strong>handle_nick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;NICK&nbsp;command,&nbsp;used&nbsp;for&nbsp;user&nbsp;introductions&nbsp;and&nbsp;nick&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_notice"><strong>handle_notice</strong></a> = <a href="#P10Protocol-handle_privmsg">handle_privmsg</a>(self, source, command, args)</dt></dl>
+
+<dl><dt><a name="P10Protocol-handle_opmode"><strong>handle_opmode</strong></a> = <a href="#P10Protocol-handle_mode">handle_mode</a>(self, source, command, args)</dt></dl>
+
+<dl><dt><a name="P10Protocol-handle_part"><strong>handle_part</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;user&nbsp;parts.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_pass"><strong>handle_pass</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;authentication&nbsp;with&nbsp;our&nbsp;uplink.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_ping"><strong>handle_ping</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PING&nbsp;requests.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_pong"><strong>handle_pong</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PONGs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_quit"><strong>handle_quit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;QUITs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_server"><strong>handle_server</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;server&nbsp;introductions.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_squit"><strong>handle_squit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SQUITs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_topic"><strong>handle_topic</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;TOPIC&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_version"><strong>handle_version</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;requests&nbsp;for&nbsp;the&nbsp;PyLink&nbsp;server&nbsp;version.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_whois"><strong>handle_whois</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;WHOIS&nbsp;requests.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-invite"><strong>invite</strong></a>(self, numeric, target, channel)</dt><dd><tt>Sends&nbsp;INVITEs&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-join"><strong>join</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;a&nbsp;PyLink&nbsp;client&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-kick"><strong>kick</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;kicks&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-kill"><strong>kill</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-knock"><strong>knock</strong></a>(self, numeric, target, text)</dt></dl>
+
+<dl><dt><a name="P10Protocol-message"><strong>message</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;PRIVMSG&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-mode"><strong>mode</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;mode&nbsp;changes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-nick"><strong>nick</strong></a>(self, numeric, newnick)</dt><dd><tt>Changes&nbsp;the&nbsp;nick&nbsp;of&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-notice"><strong>notice</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;NOTICE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt><dd><tt>Sends&nbsp;raw&nbsp;numerics&nbsp;from&nbsp;a&nbsp;server&nbsp;to&nbsp;a&nbsp;remote&nbsp;client.&nbsp;This&nbsp;is&nbsp;used&nbsp;for&nbsp;WHOIS<br>
+replies.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-part"><strong>part</strong></a>(self, client, channel, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;part&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-ping"><strong>ping</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
+automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-quit"><strong>quit</strong></a>(self, numeric, reason)</dt><dd><tt>Quits&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-sjoin"><strong>sjoin</strong></a>(self, server, channel, users, ts=None)</dt><dd><tt>Sends&nbsp;an&nbsp;SJOIN&nbsp;for&nbsp;a&nbsp;group&nbsp;of&nbsp;users&nbsp;to&nbsp;a&nbsp;channel.<br>
+&nbsp;<br>
+The&nbsp;sender&nbsp;should&nbsp;always&nbsp;be&nbsp;a&nbsp;Server&nbsp;ID&nbsp;(SID).&nbsp;TS&nbsp;is&nbsp;optional,&nbsp;and&nbsp;defaults<br>
+to&nbsp;the&nbsp;one&nbsp;we've&nbsp;stored&nbsp;in&nbsp;the&nbsp;channel&nbsp;state&nbsp;if&nbsp;not&nbsp;given.<br>
+&lt;users&gt;&nbsp;is&nbsp;a&nbsp;list&nbsp;of&nbsp;(prefix&nbsp;mode,&nbsp;UID)&nbsp;pairs:<br>
+&nbsp;<br>
+Example&nbsp;uses:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoin">sjoin</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('o',&nbsp;100AAABBB'),&nbsp;('v',&nbsp;'100AAADDD')])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Class-sjoin">sjoin</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator', manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;new&nbsp;client&nbsp;with&nbsp;the&nbsp;given&nbsp;options.<br>
+&nbsp;<br>
+Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
+up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None, endburst_delay=0)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;desc&nbsp;(server&nbsp;description)<br>
+defaults&nbsp;to&nbsp;the&nbsp;one&nbsp;in&nbsp;the&nbsp;config.&nbsp;uplink&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink<br>
+server,&nbsp;and&nbsp;sid&nbsp;(the&nbsp;server&nbsp;ID)&nbsp;is&nbsp;automatically&nbsp;generated&nbsp;if&nbsp;not<br>
+given.<br>
+&nbsp;<br>
+Note:&nbsp;TS6&nbsp;doesn't&nbsp;use&nbsp;a&nbsp;specific&nbsp;ENDBURST&nbsp;command,&nbsp;so&nbsp;the&nbsp;endburst_delay<br>
+option&nbsp;will&nbsp;be&nbsp;ignored&nbsp;if&nbsp;given.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-squit"><strong>squit</strong></a>(self, source, target, text='No reason given')</dt><dd><tt>SQUITs&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-topic"><strong>topic</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;TOPIC&nbsp;change&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-topicBurst"><strong>topicBurst</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;TOPIC&nbsp;change&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-updateClient"><strong>updateClient</strong></a>(self, target, field, text)</dt><dd><tt>Updates&nbsp;the&nbsp;ident&nbsp;or&nbsp;host&nbsp;of&nbsp;any&nbsp;connected&nbsp;client.</tt></dd></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="P10Protocol-decode_p10_ip"><strong>decode_p10_ip</strong></a>(ip)</dt><dd><tt>Decodes&nbsp;a&nbsp;P10&nbsp;IP.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
+<dl><dt><a name="P10Protocol-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
+be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-updateTS"><strong>updateTS</strong></a>(self, channel, their_ts)</dt><dd><tt>Compares&nbsp;the&nbsp;current&nbsp;TS&nbsp;of&nbsp;the&nbsp;channel&nbsp;given&nbsp;with&nbsp;the&nbsp;new&nbsp;TS,&nbsp;resetting<br>
+all&nbsp;modes&nbsp;we&nbsp;have&nbsp;if&nbsp;the&nbsp;one&nbsp;given&nbsp;is&nbsp;older.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="P10Protocol">class <strong>P10Protocol</strong></a>(<a href="classes.html#Protocol">classes.Protocol</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="nefarious.html#P10Protocol">P10Protocol</a></dd>
+<dd><a href="classes.html#Protocol">classes.Protocol</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="P10Protocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+
+<dl><dt><a name="P10Protocol-away"><strong>away</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
+to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-checkCloakChange"><strong>checkCloakChange</strong></a>(self, uid)</dt><dd><tt>Checks&nbsp;for&nbsp;cloak&nbsp;changes&nbsp;on&nbsp;the&nbsp;given&nbsp;UID.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Initializes&nbsp;a&nbsp;connection&nbsp;to&nbsp;a&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_account"><strong>handle_account</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;services&nbsp;account&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_away"><strong>handle_away</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;AWAY&nbsp;messages.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_burst"><strong>handle_burst</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;BURST&nbsp;command,&nbsp;used&nbsp;for&nbsp;bursting&nbsp;channels&nbsp;on&nbsp;link.<br>
+&nbsp;<br>
+This&nbsp;is&nbsp;equivalent&nbsp;to&nbsp;SJOIN&nbsp;on&nbsp;most&nbsp;IRCds.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_clearmode"><strong>handle_clearmode</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;CLEARMODE,&nbsp;which&nbsp;is&nbsp;used&nbsp;to&nbsp;clear&nbsp;a&nbsp;channel's&nbsp;modes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_create"><strong>handle_create</strong></a> = <a href="#P10Protocol-handle_join">handle_join</a>(self, source, command, args)</dt></dl>
+
+<dl><dt><a name="P10Protocol-handle_end_of_burst"><strong>handle_end_of_burst</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;end&nbsp;of&nbsp;burst&nbsp;from&nbsp;our&nbsp;uplink.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_events"><strong>handle_events</strong></a>(self, data)</dt><dd><tt>Event&nbsp;handler&nbsp;for&nbsp;the&nbsp;P10&nbsp;protocol.<br>
+&nbsp;<br>
+This&nbsp;passes&nbsp;most&nbsp;commands&nbsp;to&nbsp;the&nbsp;various&nbsp;handle_ABCD()&nbsp;functions&nbsp;defined&nbsp;elsewhere&nbsp;in&nbsp;the<br>
+protocol&nbsp;modules,&nbsp;coersing&nbsp;various&nbsp;sender&nbsp;prefixes&nbsp;from&nbsp;nicks&nbsp;and&nbsp;server&nbsp;names&nbsp;to&nbsp;P10<br>
+"numeric&nbsp;nicks",&nbsp;whenever&nbsp;possible.<br>
+&nbsp;<br>
+Commands&nbsp;sent&nbsp;without&nbsp;an&nbsp;explicit&nbsp;sender&nbsp;prefix&nbsp;are&nbsp;treated&nbsp;as&nbsp;originating&nbsp;from&nbsp;the&nbsp;uplink<br>
+server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_fake"><strong>handle_fake</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;FAKE&nbsp;hostmask&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_invite"><strong>handle_invite</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;INVITEs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_join"><strong>handle_join</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;JOINs&nbsp;and&nbsp;channel&nbsp;creations.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_kick"><strong>handle_kick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KICKs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_kill"><strong>handle_kill</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;KILLs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_mode"><strong>handle_mode</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;mode&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_nick"><strong>handle_nick</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;the&nbsp;NICK&nbsp;command,&nbsp;used&nbsp;for&nbsp;user&nbsp;introductions&nbsp;and&nbsp;nick&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_notice"><strong>handle_notice</strong></a> = <a href="#P10Protocol-handle_privmsg">handle_privmsg</a>(self, source, command, args)</dt></dl>
+
+<dl><dt><a name="P10Protocol-handle_opmode"><strong>handle_opmode</strong></a> = <a href="#P10Protocol-handle_mode">handle_mode</a>(self, source, command, args)</dt></dl>
+
+<dl><dt><a name="P10Protocol-handle_part"><strong>handle_part</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;user&nbsp;parts.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_pass"><strong>handle_pass</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;authentication&nbsp;with&nbsp;our&nbsp;uplink.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_ping"><strong>handle_ping</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PING&nbsp;requests.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_pong"><strong>handle_pong</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PONGs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_privmsg"><strong>handle_privmsg</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;PRIVMSG/NOTICE.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_quit"><strong>handle_quit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;QUITs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_server"><strong>handle_server</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;server&nbsp;introductions.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_squit"><strong>handle_squit</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;SQUITs.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_topic"><strong>handle_topic</strong></a>(self, source, command, args)</dt><dd><tt>Handles&nbsp;TOPIC&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_version"><strong>handle_version</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;requests&nbsp;for&nbsp;the&nbsp;PyLink&nbsp;server&nbsp;version.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-handle_whois"><strong>handle_whois</strong></a>(self, numeric, command, args)</dt><dd><tt>Handles&nbsp;incoming&nbsp;WHOIS&nbsp;requests.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-invite"><strong>invite</strong></a>(self, numeric, target, channel)</dt><dd><tt>Sends&nbsp;INVITEs&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-join"><strong>join</strong></a>(self, client, channel)</dt><dd><tt>Joins&nbsp;a&nbsp;PyLink&nbsp;client&nbsp;to&nbsp;a&nbsp;channel.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-kick"><strong>kick</strong></a>(self, numeric, channel, target, reason=None)</dt><dd><tt>Sends&nbsp;kicks&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-kill"><strong>kill</strong></a>(self, numeric, target, reason)</dt><dd><tt>Sends&nbsp;a&nbsp;kill&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-knock"><strong>knock</strong></a>(self, numeric, target, text)</dt></dl>
+
+<dl><dt><a name="P10Protocol-message"><strong>message</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;PRIVMSG&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-mode"><strong>mode</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;mode&nbsp;changes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-nick"><strong>nick</strong></a>(self, numeric, newnick)</dt><dd><tt>Changes&nbsp;the&nbsp;nick&nbsp;of&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-notice"><strong>notice</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;NOTICE&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt><dd><tt>Sends&nbsp;raw&nbsp;numerics&nbsp;from&nbsp;a&nbsp;server&nbsp;to&nbsp;a&nbsp;remote&nbsp;client.&nbsp;This&nbsp;is&nbsp;used&nbsp;for&nbsp;WHOIS<br>
+replies.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-part"><strong>part</strong></a>(self, client, channel, reason=None)</dt><dd><tt>Sends&nbsp;a&nbsp;part&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-ping"><strong>ping</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
+automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-quit"><strong>quit</strong></a>(self, numeric, reason)</dt><dd><tt>Quits&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-sjoin"><strong>sjoin</strong></a>(self, server, channel, users, ts=None)</dt><dd><tt>Sends&nbsp;an&nbsp;SJOIN&nbsp;for&nbsp;a&nbsp;group&nbsp;of&nbsp;users&nbsp;to&nbsp;a&nbsp;channel.<br>
+&nbsp;<br>
+The&nbsp;sender&nbsp;should&nbsp;always&nbsp;be&nbsp;a&nbsp;Server&nbsp;ID&nbsp;(SID).&nbsp;TS&nbsp;is&nbsp;optional,&nbsp;and&nbsp;defaults<br>
+to&nbsp;the&nbsp;one&nbsp;we've&nbsp;stored&nbsp;in&nbsp;the&nbsp;channel&nbsp;state&nbsp;if&nbsp;not&nbsp;given.<br>
+&lt;users&gt;&nbsp;is&nbsp;a&nbsp;list&nbsp;of&nbsp;(prefix&nbsp;mode,&nbsp;UID)&nbsp;pairs:<br>
+&nbsp;<br>
+Example&nbsp;uses:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#P10Protocol-sjoin">sjoin</a>('100',&nbsp;'#test',&nbsp;[('',&nbsp;'100AAABBC'),&nbsp;('o',&nbsp;100AAABBB'),&nbsp;('v',&nbsp;'100AAADDD')])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#P10Protocol-sjoin">sjoin</a>(self.<strong>irc</strong>.sid,&nbsp;'#test',&nbsp;[('o',&nbsp;self.<strong>irc</strong>.pseudoclient.uid)])</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-spawnClient"><strong>spawnClient</strong></a>(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator', manipulatable=False)</dt><dd><tt>Spawns&nbsp;a&nbsp;new&nbsp;client&nbsp;with&nbsp;the&nbsp;given&nbsp;options.<br>
+&nbsp;<br>
+Note:&nbsp;No&nbsp;nick&nbsp;collision&nbsp;/&nbsp;valid&nbsp;nickname&nbsp;checks&nbsp;are&nbsp;done&nbsp;here;&nbsp;it&nbsp;is<br>
+up&nbsp;to&nbsp;plugins&nbsp;to&nbsp;make&nbsp;sure&nbsp;they&nbsp;don't&nbsp;introduce&nbsp;anything&nbsp;invalid.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-spawnServer"><strong>spawnServer</strong></a>(self, name, sid=None, uplink=None, desc=None, endburst_delay=0)</dt><dd><tt>Spawns&nbsp;a&nbsp;server&nbsp;off&nbsp;a&nbsp;PyLink&nbsp;server.&nbsp;desc&nbsp;(server&nbsp;description)<br>
+defaults&nbsp;to&nbsp;the&nbsp;one&nbsp;in&nbsp;the&nbsp;config.&nbsp;uplink&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink<br>
+server,&nbsp;and&nbsp;sid&nbsp;(the&nbsp;server&nbsp;ID)&nbsp;is&nbsp;automatically&nbsp;generated&nbsp;if&nbsp;not<br>
+given.<br>
+&nbsp;<br>
+Note:&nbsp;TS6&nbsp;doesn't&nbsp;use&nbsp;a&nbsp;specific&nbsp;ENDBURST&nbsp;command,&nbsp;so&nbsp;the&nbsp;endburst_delay<br>
+option&nbsp;will&nbsp;be&nbsp;ignored&nbsp;if&nbsp;given.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-squit"><strong>squit</strong></a>(self, source, target, text='No reason given')</dt><dd><tt>SQUITs&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-topic"><strong>topic</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;TOPIC&nbsp;change&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-topicBurst"><strong>topicBurst</strong></a>(self, numeric, target, text)</dt><dd><tt>Sends&nbsp;a&nbsp;TOPIC&nbsp;change&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-updateClient"><strong>updateClient</strong></a>(self, target, field, text)</dt><dd><tt>Updates&nbsp;the&nbsp;ident&nbsp;or&nbsp;host&nbsp;of&nbsp;any&nbsp;connected&nbsp;client.</tt></dd></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="P10Protocol-decode_p10_ip"><strong>decode_p10_ip</strong></a>(ip)</dt><dd><tt>Decodes&nbsp;a&nbsp;P10&nbsp;IP.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
+<dl><dt><a name="P10Protocol-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
+be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-removeClient"><strong>removeClient</strong></a>(self, numeric)</dt><dd><tt>Internal&nbsp;function&nbsp;to&nbsp;remove&nbsp;a&nbsp;client&nbsp;from&nbsp;our&nbsp;internal&nbsp;state.</tt></dd></dl>
+
+<dl><dt><a name="P10Protocol-updateTS"><strong>updateTS</strong></a>(self, channel, their_ts)</dt><dd><tt>Compares&nbsp;the&nbsp;current&nbsp;TS&nbsp;of&nbsp;the&nbsp;channel&nbsp;given&nbsp;with&nbsp;the&nbsp;new&nbsp;TS,&nbsp;resetting<br>
+all&nbsp;modes&nbsp;we&nbsp;have&nbsp;if&nbsp;the&nbsp;one&nbsp;given&nbsp;is&nbsp;older.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="P10SIDGenerator">class <strong>P10SIDGenerator</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="P10SIDGenerator-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+
+<dl><dt><a name="P10SIDGenerator-next_sid"><strong>next_sid</strong></a>(self)</dt><dd><tt>Returns&nbsp;the&nbsp;next&nbsp;available&nbsp;SID.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="P10UIDGenerator">class <strong>P10UIDGenerator</strong></a>(<a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Implements&nbsp;an&nbsp;incremental&nbsp;P10&nbsp;UID&nbsp;Generator.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="nefarious.html#P10UIDGenerator">P10UIDGenerator</a></dd>
+<dd><a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="P10UIDGenerator-__init__"><strong>__init__</strong></a>(self, sid)</dt></dl>
+
+<hr>
+Methods inherited from <a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>:<br>
+<dl><dt><a name="P10UIDGenerator-increment"><strong>increment</strong></a>(self, pos=None)</dt><dd><tt>Increments&nbsp;the&nbsp;UID&nbsp;generator&nbsp;to&nbsp;the&nbsp;next&nbsp;available&nbsp;UID.</tt></dd></dl>
+
+<dl><dt><a name="P10UIDGenerator-next_uid"><strong>next_uid</strong></a>(self)</dt><dd><tt>Returns&nbsp;the&nbsp;next&nbsp;unused&nbsp;UID&nbsp;for&nbsp;the&nbsp;server.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="utils.html#IncrementalUIDGenerator">utils.IncrementalUIDGenerator</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-p10b64encode"><strong>p10b64encode</strong></a>(num, length=2)</dt><dd><tt>Encodes&nbsp;a&nbsp;given&nbsp;numeric&nbsp;using&nbsp;P10&nbsp;Base64&nbsp;numeric&nbsp;nicks,&nbsp;as&nbsp;documented&nbsp;at<br>
+https://github.com/evilnet/nefarious2/blob/a29b63144/doc/p10.txt#L69-L92</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f4243176488&gt;, {})}<br>
+<strong>confname</strong> = 'testconf'<br>
+<strong>curdir</strong> = '/home/gl/pylink'<br>
+<strong>files</strong> = None<br>
+<strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
+<strong>logdir</strong> = '/home/gl/pylink/log'<br>
+<strong>logformatter</strong> = &lt;logging.Formatter object&gt;<br>
+<strong>stdout_level</strong> = 'CRITICAL'</td></tr></table>
+</body></html>

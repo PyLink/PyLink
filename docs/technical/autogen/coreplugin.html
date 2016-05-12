@@ -17,10 +17,14 @@
 <font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="gc.html">gc</a><br>
-</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="classes.html">classes</a><br>
+<a href="conf.html">conf</a><br>
+</td><td width="25%" valign=top><a href="gc.html">gc</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="signal.html">signal</a><br>
+<a href="sys.html">sys</a><br>
 </td><td width="25%" valign=top><a href="utils.html">utils</a><br>
-</td><td width="25%" valign=top><a href="world.html">world</a><br>
+<a href="world.html">world</a><br>
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#eeaa77">
@@ -42,13 +46,18 @@ Logs&nbsp;in&nbsp;to&nbsp;PyLink&nbsp;using&nbsp;the&nbsp;configured&nbsp;admini
  <dl><dt><a name="-load"><strong>load</strong></a>(irc, source, args)</dt><dd><tt>&lt;plugin&nbsp;name&gt;.<br>
 &nbsp;<br>
 Loads&nbsp;a&nbsp;plugin&nbsp;from&nbsp;the&nbsp;plugin&nbsp;folder.</tt></dd></dl>
- <dl><dt><a name="-main"><strong>main</strong></a>(irc=None)</dt></dl>
+ <dl><dt><a name="-rehash"><strong>rehash</strong></a>(irc, source, args)</dt><dd><tt>takes&nbsp;no&nbsp;arguments.<br>
+&nbsp;<br>
+Reloads&nbsp;the&nbsp;configuration&nbsp;file&nbsp;for&nbsp;PyLink,&nbsp;(dis)connecting&nbsp;added/removed&nbsp;networks.<br>
+Plugins&nbsp;must&nbsp;be&nbsp;manually&nbsp;reloaded.</tt></dd></dl>
  <dl><dt><a name="-reload"><strong>reload</strong></a>(irc, source, args)</dt><dd><tt>&lt;plugin&nbsp;name&gt;.<br>
 &nbsp;<br>
 Loads&nbsp;a&nbsp;plugin&nbsp;from&nbsp;the&nbsp;plugin&nbsp;folder.</tt></dd></dl>
  <dl><dt><a name="-shutdown"><strong>shutdown</strong></a>(irc, source, args)</dt><dd><tt>takes&nbsp;no&nbsp;arguments.<br>
 &nbsp;<br>
 Exits&nbsp;PyLink&nbsp;by&nbsp;disconnecting&nbsp;all&nbsp;networks.</tt></dd></dl>
+ <dl><dt><a name="-sighup_handler"><strong>sighup_handler</strong></a>(_signo, _stack_frame)</dt><dd><tt>Handles&nbsp;SIGHUP&nbsp;by&nbsp;rehashing&nbsp;the&nbsp;PyLink&nbsp;daemon.</tt></dd></dl>
+ <dl><dt><a name="-sigterm_handler"><strong>sigterm_handler</strong></a>(_signo, _stack_frame)</dt><dd><tt>Handles&nbsp;SIGTERM&nbsp;gracefully&nbsp;by&nbsp;shutting&nbsp;down&nbsp;the&nbsp;PyLink&nbsp;daemon.</tt></dd></dl>
  <dl><dt><a name="-unload"><strong>unload</strong></a>(irc, source, args)</dt><dd><tt>&lt;plugin&nbsp;name&gt;.<br>
 &nbsp;<br>
 Unloads&nbsp;a&nbsp;currently&nbsp;loaded&nbsp;plugin.</tt></dd></dl>

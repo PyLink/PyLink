@@ -23,15 +23,17 @@ Here&nbsp;be&nbsp;dragons.</tt></p>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="hashlib.html">hashlib</a><br>
+<a href="inspect.html">inspect</a><br>
 <a href="logging.html">logging</a><br>
-<a href="os.html">os</a><br>
-</td><td width="25%" valign=top><a href="socket.html">socket</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="socket.html">socket</a><br>
 <a href="ssl.html">ssl</a><br>
+</td><td width="25%" valign=top><a href="structures.html">structures</a><br>
 <a href="sys.html">sys</a><br>
-</td><td width="25%" valign=top><a href="threading.html">threading</a><br>
-<a href="time.html">time</a><br>
+<a href="threading.html">threading</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
 <a href="utils.html">utils</a><br>
-</td><td width="25%" valign=top><a href="world.html">world</a><br>
+<a href="world.html">world</a><br>
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
@@ -43,7 +45,8 @@ Here&nbsp;be&nbsp;dragons.</tt></p>
 <dt><font face="helvetica, arial"><a href="builtins.html#Exception">builtins.Exception</a>(<a href="builtins.html#BaseException">builtins.BaseException</a>)
 </font></dt><dd>
 <dl>
-<dt><font face="helvetica, arial"><a href="classes.html#ProtocolError">ProtocolError</a>
+<dt><font face="helvetica, arial"><a href="classes.html#NotAuthenticatedError">NotAuthenticatedError</a>
+</font></dt><dt><font face="helvetica, arial"><a href="classes.html#ProtocolError">ProtocolError</a>
 </font></dt></dl>
 </dd>
 <dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
@@ -83,12 +86,11 @@ Here&nbsp;be&nbsp;dragons.</tt></p>
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="FakeIRC-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Runs&nbsp;the&nbsp;connect&nbsp;loop&nbsp;for&nbsp;the&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>.&nbsp;This&nbsp;is&nbsp;usually&nbsp;called&nbsp;by<br>
-__init__&nbsp;in&nbsp;a&nbsp;separate&nbsp;thread&nbsp;to&nbsp;allow&nbsp;multiple&nbsp;concurrent&nbsp;connections.</tt></dd></dl>
+<dl><dt><a name="FakeIRC-connect"><strong>connect</strong></a>(self)</dt></dl>
 
 <dl><dt><a name="FakeIRC-run"><strong>run</strong></a>(self, data)</dt><dd><tt>Queues&nbsp;a&nbsp;message&nbsp;to&nbsp;the&nbsp;fake&nbsp;IRC&nbsp;server.</tt></dd></dl>
 
-<dl><dt><a name="FakeIRC-send"><strong>send</strong></a>(self, data)</dt><dd><tt>Sends&nbsp;raw&nbsp;text&nbsp;to&nbsp;the&nbsp;uplink&nbsp;server.</tt></dd></dl>
+<dl><dt><a name="FakeIRC-send"><strong>send</strong></a>(self, data)</dt></dl>
 
 <dl><dt><a name="FakeIRC-takeCommands"><strong>takeCommands</strong></a>(self, msgs)</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;commands&nbsp;parsed&nbsp;from&nbsp;the&nbsp;output&nbsp;of&nbsp;<a href="#FakeIRC-takeMsgs">takeMsgs</a>().</tt></dd></dl>
 
@@ -104,14 +106,26 @@ Methods inherited from <a href="classes.html#Irc">Irc</a>:<br>
 (a&nbsp;string),&nbsp;the&nbsp;name&nbsp;of&nbsp;the&nbsp;protocol&nbsp;module&nbsp;to&nbsp;use&nbsp;for&nbsp;this&nbsp;connection,<br>
 and&nbsp;a&nbsp;configuration&nbsp;<a href="builtins.html#object">object</a>.</tt></dd></dl>
 
-<dl><dt><a name="FakeIRC-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
+<dl><dt><a name="FakeIRC-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="FakeIRC-applyModes"><strong>applyModes</strong></a>(self, target, changedmodes)</dt><dd><tt>Takes&nbsp;a&nbsp;list&nbsp;of&nbsp;parsed&nbsp;IRC&nbsp;modes,&nbsp;and&nbsp;applies&nbsp;them&nbsp;on&nbsp;the&nbsp;given&nbsp;target.<br>
+&nbsp;<br>
+The&nbsp;target&nbsp;can&nbsp;be&nbsp;either&nbsp;a&nbsp;channel&nbsp;or&nbsp;a&nbsp;user;&nbsp;this&nbsp;is&nbsp;handled&nbsp;automatically.</tt></dd></dl>
 
 <dl><dt><a name="FakeIRC-callCommand"><strong>callCommand</strong></a>(self, source, text)</dt><dd><tt>Calls&nbsp;a&nbsp;PyLink&nbsp;bot&nbsp;command.&nbsp;source&nbsp;is&nbsp;the&nbsp;caller's&nbsp;UID,&nbsp;and&nbsp;text&nbsp;is&nbsp;the<br>
 full,&nbsp;unparsed&nbsp;text&nbsp;of&nbsp;the&nbsp;message.</tt></dd></dl>
 
 <dl><dt><a name="FakeIRC-callHooks"><strong>callHooks</strong></a>(self, hook_args)</dt><dd><tt>Calls&nbsp;a&nbsp;hook&nbsp;function&nbsp;with&nbsp;the&nbsp;given&nbsp;hook&nbsp;args.</tt></dd></dl>
 
+<dl><dt><a name="FakeIRC-checkAuthenticated"><strong>checkAuthenticated</strong></a>(self, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink,&nbsp;raising<br>
+<a href="#NotAuthenticatedError">NotAuthenticatedError</a>&nbsp;and&nbsp;logging&nbsp;the&nbsp;access&nbsp;denial&nbsp;if&nbsp;not.</tt></dd></dl>
+
 <dl><dt><a name="FakeIRC-disconnect"><strong>disconnect</strong></a>(self)</dt><dd><tt>Handle&nbsp;disconnects&nbsp;from&nbsp;the&nbsp;remote&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-getHostmask"><strong>getHostmask</strong></a>(self, user, realhost=False, ip=False)</dt><dd><tt>Returns&nbsp;the&nbsp;hostmask&nbsp;of&nbsp;the&nbsp;given&nbsp;user,&nbsp;if&nbsp;present.&nbsp;If&nbsp;the&nbsp;realhost&nbsp;option<br>
+is&nbsp;given,&nbsp;return&nbsp;the&nbsp;real&nbsp;host&nbsp;of&nbsp;the&nbsp;user&nbsp;instead&nbsp;of&nbsp;the&nbsp;displayed&nbsp;host.<br>
+If&nbsp;the&nbsp;ip&nbsp;option&nbsp;is&nbsp;given,&nbsp;return&nbsp;the&nbsp;IP&nbsp;address&nbsp;of&nbsp;the&nbsp;user&nbsp;(this&nbsp;overrides<br>
+realhost).</tt></dd></dl>
 
 <dl><dt><a name="FakeIRC-getServer"><strong>getServer</strong></a>(self, numeric)</dt><dd><tt>Finds&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;a&nbsp;user&nbsp;is&nbsp;on.</tt></dd></dl>
 
@@ -123,6 +137,17 @@ returning&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;it's&nbsp;on&nbsp;
 
 <dl><dt><a name="FakeIRC-isInternalServer"><strong>isInternalServer</strong></a>(self, sid)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;SID&nbsp;is&nbsp;an&nbsp;internal&nbsp;PyLink&nbsp;server.</tt></dd></dl>
 
+<dl><dt><a name="FakeIRC-isManipulatableClient"><strong>isManipulatableClient</strong></a>(self, uid)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;is&nbsp;marked&nbsp;as&nbsp;an&nbsp;internal,&nbsp;manipulatable<br>
+client.&nbsp;Usually,&nbsp;automatically&nbsp;spawned&nbsp;services&nbsp;clients&nbsp;should&nbsp;have&nbsp;this<br>
+set&nbsp;True&nbsp;to&nbsp;prevent&nbsp;interactions&nbsp;with&nbsp;opers&nbsp;(like&nbsp;mode&nbsp;changes)&nbsp;from<br>
+causing&nbsp;desyncs.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-isOper"><strong>isOper</strong></a>(self, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink.&nbsp;This&nbsp;can&nbsp;be&nbsp;achieved<br>
+by&nbsp;either&nbsp;identifying&nbsp;to&nbsp;PyLink&nbsp;as&nbsp;admin&nbsp;(if&nbsp;allowAuthed&nbsp;is&nbsp;True),<br>
+or&nbsp;having&nbsp;user&nbsp;mode&nbsp;+o&nbsp;set&nbsp;(if&nbsp;allowOper&nbsp;is&nbsp;True).&nbsp;At&nbsp;least&nbsp;one&nbsp;of<br>
+allowAuthed&nbsp;or&nbsp;allowOper&nbsp;must&nbsp;be&nbsp;True&nbsp;for&nbsp;this&nbsp;to&nbsp;give&nbsp;any&nbsp;meaningful<br>
+results.</tt></dd></dl>
+
 <dl><dt><a name="FakeIRC-logSetup"><strong>logSetup</strong></a>(self)</dt><dd><tt>Initializes&nbsp;any&nbsp;channel&nbsp;loggers&nbsp;defined&nbsp;for&nbsp;the&nbsp;current&nbsp;network.</tt></dd></dl>
 
 <dl><dt><a name="FakeIRC-msg"><strong>msg</strong></a>(self, target, text, notice=False, source=None)</dt><dd><tt>Handy&nbsp;function&nbsp;to&nbsp;send&nbsp;messages/notices&nbsp;to&nbsp;clients.&nbsp;Source<br>
@@ -130,13 +155,42 @@ is&nbsp;optional,&nbsp;and&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink&
 
 <dl><dt><a name="FakeIRC-nickToUid"><strong>nickToUid</strong></a>(self, nick)</dt><dd><tt>Looks&nbsp;up&nbsp;the&nbsp;UID&nbsp;of&nbsp;a&nbsp;user&nbsp;with&nbsp;the&nbsp;given&nbsp;nick,&nbsp;if&nbsp;one&nbsp;is&nbsp;present.</tt></dd></dl>
 
+<dl><dt><a name="FakeIRC-parseModes"><strong>parseModes</strong></a>(self, target, args)</dt><dd><tt>Parses&nbsp;a&nbsp;modestring&nbsp;list&nbsp;into&nbsp;a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;argument)&nbsp;tuples.<br>
+['+mitl-o',&nbsp;'3',&nbsp;'person']&nbsp;=&gt;&nbsp;[('+m',&nbsp;None),&nbsp;('+i',&nbsp;None),&nbsp;('+t',&nbsp;None),&nbsp;('+l',&nbsp;'3'),&nbsp;('-o',&nbsp;'person')]</tt></dd></dl>
+
 <dl><dt><a name="FakeIRC-reply"><strong>reply</strong></a>(self, text, notice=False, source=None)</dt><dd><tt>Replies&nbsp;to&nbsp;the&nbsp;last&nbsp;caller&nbsp;in&nbsp;the&nbsp;right&nbsp;context&nbsp;(channel&nbsp;or&nbsp;PM).</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-reverseModes"><strong>reverseModes</strong></a>(self, target, modes, oldobj=None)</dt><dd><tt>Reverses/Inverts&nbsp;the&nbsp;mode&nbsp;string&nbsp;or&nbsp;mode&nbsp;list&nbsp;given.<br>
+&nbsp;<br>
+Optionally,&nbsp;an&nbsp;oldobj&nbsp;argument&nbsp;can&nbsp;be&nbsp;given&nbsp;to&nbsp;look&nbsp;at&nbsp;an&nbsp;earlier&nbsp;state&nbsp;of<br>
+a&nbsp;channel/user&nbsp;<a href="builtins.html#object">object</a>,&nbsp;e.g.&nbsp;for&nbsp;checking&nbsp;the&nbsp;op&nbsp;status&nbsp;of&nbsp;a&nbsp;mode&nbsp;setter<br>
+before&nbsp;their&nbsp;modes&nbsp;are&nbsp;processed&nbsp;and&nbsp;added&nbsp;to&nbsp;the&nbsp;channel&nbsp;state.<br>
+&nbsp;<br>
+This&nbsp;function&nbsp;allows&nbsp;both&nbsp;mode&nbsp;strings&nbsp;or&nbsp;mode&nbsp;lists.&nbsp;Example&nbsp;uses:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"+mi-lk&nbsp;test&nbsp;=&gt;&nbsp;"-mi+lk&nbsp;test"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"mi-k&nbsp;test&nbsp;=&gt;&nbsp;"-mi+k&nbsp;test"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[('+m',&nbsp;None),&nbsp;('+r',&nbsp;None),&nbsp;('+l',&nbsp;'3'),&nbsp;('-o',&nbsp;'person')<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt;&nbsp;{('-m',&nbsp;None),&nbsp;('-r',&nbsp;None),&nbsp;('-l',&nbsp;None),&nbsp;('+o',&nbsp;'person')})<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{('s',&nbsp;None),&nbsp;('+o',&nbsp;'whoever')&nbsp;=&gt;&nbsp;{('-s',&nbsp;None),&nbsp;('-o',&nbsp;'whoever')})</tt></dd></dl>
 
 <dl><dt><a name="FakeIRC-runline"><strong>runline</strong></a>(self, line)</dt><dd><tt>Sends&nbsp;a&nbsp;command&nbsp;to&nbsp;the&nbsp;protocol&nbsp;module.</tt></dd></dl>
 
 <dl><dt><a name="FakeIRC-schedulePing"><strong>schedulePing</strong></a>(self)</dt><dd><tt>Schedules&nbsp;periodic&nbsp;pings&nbsp;in&nbsp;a&nbsp;loop.</tt></dd></dl>
 
 <dl><dt><a name="FakeIRC-spawnMain"><strong>spawnMain</strong></a>(self)</dt><dd><tt>Spawns&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-toLower"><strong>toLower</strong></a>(self, text)</dt><dd><tt>Returns&nbsp;a&nbsp;lowercase&nbsp;representation&nbsp;of&nbsp;text&nbsp;based&nbsp;on&nbsp;the&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>'s<br>
+casemapping&nbsp;(rfc1459&nbsp;or&nbsp;ascii).</tt></dd></dl>
+
+<dl><dt><a name="FakeIRC-version"><strong>version</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;detailed&nbsp;version&nbsp;string&nbsp;including&nbsp;the&nbsp;PyLink&nbsp;daemon&nbsp;version,<br>
+the&nbsp;protocol&nbsp;module&nbsp;in&nbsp;use,&nbsp;and&nbsp;the&nbsp;server&nbsp;hostname.</tt></dd></dl>
+
+<hr>
+Static methods inherited from <a href="classes.html#Irc">Irc</a>:<br>
+<dl><dt><a name="FakeIRC-joinModes"><strong>joinModes</strong></a>(modes)</dt><dd><tt>Takes&nbsp;a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;arg)&nbsp;tuples&nbsp;in&nbsp;<a href="#FakeIRC-parseModes">parseModes</a>()&nbsp;format,&nbsp;and<br>
+joins&nbsp;them&nbsp;into&nbsp;a&nbsp;string.<br>
+&nbsp;<br>
+See&nbsp;testJoinModes&nbsp;in&nbsp;tests/test_utils.py&nbsp;for&nbsp;some&nbsp;examples.</tt></dd></dl>
 
 <hr>
 Data descriptors inherited from <a href="classes.html#Irc">Irc</a>:<br>
@@ -176,7 +230,7 @@ Data and other attributes defined here:<br>
 
 <hr>
 Methods inherited from <a href="classes.html#Protocol">Protocol</a>:<br>
-<dl><dt><a name="FakeProto-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="FakeProto-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
 
 <dl><dt><a name="FakeProto-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
 be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
@@ -208,17 +262,29 @@ Data descriptors inherited from <a href="classes.html#Protocol">Protocol</a>:<br
 (a&nbsp;string),&nbsp;the&nbsp;name&nbsp;of&nbsp;the&nbsp;protocol&nbsp;module&nbsp;to&nbsp;use&nbsp;for&nbsp;this&nbsp;connection,<br>
 and&nbsp;a&nbsp;configuration&nbsp;<a href="builtins.html#object">object</a>.</tt></dd></dl>
 
-<dl><dt><a name="Irc-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
+<dl><dt><a name="Irc-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Irc-applyModes"><strong>applyModes</strong></a>(self, target, changedmodes)</dt><dd><tt>Takes&nbsp;a&nbsp;list&nbsp;of&nbsp;parsed&nbsp;IRC&nbsp;modes,&nbsp;and&nbsp;applies&nbsp;them&nbsp;on&nbsp;the&nbsp;given&nbsp;target.<br>
+&nbsp;<br>
+The&nbsp;target&nbsp;can&nbsp;be&nbsp;either&nbsp;a&nbsp;channel&nbsp;or&nbsp;a&nbsp;user;&nbsp;this&nbsp;is&nbsp;handled&nbsp;automatically.</tt></dd></dl>
 
 <dl><dt><a name="Irc-callCommand"><strong>callCommand</strong></a>(self, source, text)</dt><dd><tt>Calls&nbsp;a&nbsp;PyLink&nbsp;bot&nbsp;command.&nbsp;source&nbsp;is&nbsp;the&nbsp;caller's&nbsp;UID,&nbsp;and&nbsp;text&nbsp;is&nbsp;the<br>
 full,&nbsp;unparsed&nbsp;text&nbsp;of&nbsp;the&nbsp;message.</tt></dd></dl>
 
 <dl><dt><a name="Irc-callHooks"><strong>callHooks</strong></a>(self, hook_args)</dt><dd><tt>Calls&nbsp;a&nbsp;hook&nbsp;function&nbsp;with&nbsp;the&nbsp;given&nbsp;hook&nbsp;args.</tt></dd></dl>
 
+<dl><dt><a name="Irc-checkAuthenticated"><strong>checkAuthenticated</strong></a>(self, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink,&nbsp;raising<br>
+<a href="#NotAuthenticatedError">NotAuthenticatedError</a>&nbsp;and&nbsp;logging&nbsp;the&nbsp;access&nbsp;denial&nbsp;if&nbsp;not.</tt></dd></dl>
+
 <dl><dt><a name="Irc-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Runs&nbsp;the&nbsp;connect&nbsp;loop&nbsp;for&nbsp;the&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>.&nbsp;This&nbsp;is&nbsp;usually&nbsp;called&nbsp;by<br>
 __init__&nbsp;in&nbsp;a&nbsp;separate&nbsp;thread&nbsp;to&nbsp;allow&nbsp;multiple&nbsp;concurrent&nbsp;connections.</tt></dd></dl>
 
 <dl><dt><a name="Irc-disconnect"><strong>disconnect</strong></a>(self)</dt><dd><tt>Handle&nbsp;disconnects&nbsp;from&nbsp;the&nbsp;remote&nbsp;server.</tt></dd></dl>
+
+<dl><dt><a name="Irc-getHostmask"><strong>getHostmask</strong></a>(self, user, realhost=False, ip=False)</dt><dd><tt>Returns&nbsp;the&nbsp;hostmask&nbsp;of&nbsp;the&nbsp;given&nbsp;user,&nbsp;if&nbsp;present.&nbsp;If&nbsp;the&nbsp;realhost&nbsp;option<br>
+is&nbsp;given,&nbsp;return&nbsp;the&nbsp;real&nbsp;host&nbsp;of&nbsp;the&nbsp;user&nbsp;instead&nbsp;of&nbsp;the&nbsp;displayed&nbsp;host.<br>
+If&nbsp;the&nbsp;ip&nbsp;option&nbsp;is&nbsp;given,&nbsp;return&nbsp;the&nbsp;IP&nbsp;address&nbsp;of&nbsp;the&nbsp;user&nbsp;(this&nbsp;overrides<br>
+realhost).</tt></dd></dl>
 
 <dl><dt><a name="Irc-getServer"><strong>getServer</strong></a>(self, numeric)</dt><dd><tt>Finds&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;a&nbsp;user&nbsp;is&nbsp;on.</tt></dd></dl>
 
@@ -230,6 +296,17 @@ returning&nbsp;the&nbsp;SID&nbsp;of&nbsp;the&nbsp;server&nbsp;it's&nbsp;on&nbsp;
 
 <dl><dt><a name="Irc-isInternalServer"><strong>isInternalServer</strong></a>(self, sid)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;SID&nbsp;is&nbsp;an&nbsp;internal&nbsp;PyLink&nbsp;server.</tt></dd></dl>
 
+<dl><dt><a name="Irc-isManipulatableClient"><strong>isManipulatableClient</strong></a>(self, uid)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;is&nbsp;marked&nbsp;as&nbsp;an&nbsp;internal,&nbsp;manipulatable<br>
+client.&nbsp;Usually,&nbsp;automatically&nbsp;spawned&nbsp;services&nbsp;clients&nbsp;should&nbsp;have&nbsp;this<br>
+set&nbsp;True&nbsp;to&nbsp;prevent&nbsp;interactions&nbsp;with&nbsp;opers&nbsp;(like&nbsp;mode&nbsp;changes)&nbsp;from<br>
+causing&nbsp;desyncs.</tt></dd></dl>
+
+<dl><dt><a name="Irc-isOper"><strong>isOper</strong></a>(self, uid, allowAuthed=True, allowOper=True)</dt><dd><tt>Returns&nbsp;whether&nbsp;the&nbsp;given&nbsp;user&nbsp;has&nbsp;operator&nbsp;status&nbsp;on&nbsp;PyLink.&nbsp;This&nbsp;can&nbsp;be&nbsp;achieved<br>
+by&nbsp;either&nbsp;identifying&nbsp;to&nbsp;PyLink&nbsp;as&nbsp;admin&nbsp;(if&nbsp;allowAuthed&nbsp;is&nbsp;True),<br>
+or&nbsp;having&nbsp;user&nbsp;mode&nbsp;+o&nbsp;set&nbsp;(if&nbsp;allowOper&nbsp;is&nbsp;True).&nbsp;At&nbsp;least&nbsp;one&nbsp;of<br>
+allowAuthed&nbsp;or&nbsp;allowOper&nbsp;must&nbsp;be&nbsp;True&nbsp;for&nbsp;this&nbsp;to&nbsp;give&nbsp;any&nbsp;meaningful<br>
+results.</tt></dd></dl>
+
 <dl><dt><a name="Irc-logSetup"><strong>logSetup</strong></a>(self)</dt><dd><tt>Initializes&nbsp;any&nbsp;channel&nbsp;loggers&nbsp;defined&nbsp;for&nbsp;the&nbsp;current&nbsp;network.</tt></dd></dl>
 
 <dl><dt><a name="Irc-msg"><strong>msg</strong></a>(self, target, text, notice=False, source=None)</dt><dd><tt>Handy&nbsp;function&nbsp;to&nbsp;send&nbsp;messages/notices&nbsp;to&nbsp;clients.&nbsp;Source<br>
@@ -237,7 +314,23 @@ is&nbsp;optional,&nbsp;and&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink&
 
 <dl><dt><a name="Irc-nickToUid"><strong>nickToUid</strong></a>(self, nick)</dt><dd><tt>Looks&nbsp;up&nbsp;the&nbsp;UID&nbsp;of&nbsp;a&nbsp;user&nbsp;with&nbsp;the&nbsp;given&nbsp;nick,&nbsp;if&nbsp;one&nbsp;is&nbsp;present.</tt></dd></dl>
 
+<dl><dt><a name="Irc-parseModes"><strong>parseModes</strong></a>(self, target, args)</dt><dd><tt>Parses&nbsp;a&nbsp;modestring&nbsp;list&nbsp;into&nbsp;a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;argument)&nbsp;tuples.<br>
+['+mitl-o',&nbsp;'3',&nbsp;'person']&nbsp;=&gt;&nbsp;[('+m',&nbsp;None),&nbsp;('+i',&nbsp;None),&nbsp;('+t',&nbsp;None),&nbsp;('+l',&nbsp;'3'),&nbsp;('-o',&nbsp;'person')]</tt></dd></dl>
+
 <dl><dt><a name="Irc-reply"><strong>reply</strong></a>(self, text, notice=False, source=None)</dt><dd><tt>Replies&nbsp;to&nbsp;the&nbsp;last&nbsp;caller&nbsp;in&nbsp;the&nbsp;right&nbsp;context&nbsp;(channel&nbsp;or&nbsp;PM).</tt></dd></dl>
+
+<dl><dt><a name="Irc-reverseModes"><strong>reverseModes</strong></a>(self, target, modes, oldobj=None)</dt><dd><tt>Reverses/Inverts&nbsp;the&nbsp;mode&nbsp;string&nbsp;or&nbsp;mode&nbsp;list&nbsp;given.<br>
+&nbsp;<br>
+Optionally,&nbsp;an&nbsp;oldobj&nbsp;argument&nbsp;can&nbsp;be&nbsp;given&nbsp;to&nbsp;look&nbsp;at&nbsp;an&nbsp;earlier&nbsp;state&nbsp;of<br>
+a&nbsp;channel/user&nbsp;<a href="builtins.html#object">object</a>,&nbsp;e.g.&nbsp;for&nbsp;checking&nbsp;the&nbsp;op&nbsp;status&nbsp;of&nbsp;a&nbsp;mode&nbsp;setter<br>
+before&nbsp;their&nbsp;modes&nbsp;are&nbsp;processed&nbsp;and&nbsp;added&nbsp;to&nbsp;the&nbsp;channel&nbsp;state.<br>
+&nbsp;<br>
+This&nbsp;function&nbsp;allows&nbsp;both&nbsp;mode&nbsp;strings&nbsp;or&nbsp;mode&nbsp;lists.&nbsp;Example&nbsp;uses:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"+mi-lk&nbsp;test&nbsp;=&gt;&nbsp;"-mi+lk&nbsp;test"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"mi-k&nbsp;test&nbsp;=&gt;&nbsp;"-mi+k&nbsp;test"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[('+m',&nbsp;None),&nbsp;('+r',&nbsp;None),&nbsp;('+l',&nbsp;'3'),&nbsp;('-o',&nbsp;'person')<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt;&nbsp;{('-m',&nbsp;None),&nbsp;('-r',&nbsp;None),&nbsp;('-l',&nbsp;None),&nbsp;('+o',&nbsp;'person')})<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{('s',&nbsp;None),&nbsp;('+o',&nbsp;'whoever')&nbsp;=&gt;&nbsp;{('-s',&nbsp;None),&nbsp;('-o',&nbsp;'whoever')})</tt></dd></dl>
 
 <dl><dt><a name="Irc-run"><strong>run</strong></a>(self)</dt><dd><tt>Main&nbsp;IRC&nbsp;loop&nbsp;which&nbsp;listens&nbsp;for&nbsp;messages.</tt></dd></dl>
 
@@ -248,6 +341,19 @@ is&nbsp;optional,&nbsp;and&nbsp;defaults&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink&
 <dl><dt><a name="Irc-send"><strong>send</strong></a>(self, data)</dt><dd><tt>Sends&nbsp;raw&nbsp;text&nbsp;to&nbsp;the&nbsp;uplink&nbsp;server.</tt></dd></dl>
 
 <dl><dt><a name="Irc-spawnMain"><strong>spawnMain</strong></a>(self)</dt><dd><tt>Spawns&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client.</tt></dd></dl>
+
+<dl><dt><a name="Irc-toLower"><strong>toLower</strong></a>(self, text)</dt><dd><tt>Returns&nbsp;a&nbsp;lowercase&nbsp;representation&nbsp;of&nbsp;text&nbsp;based&nbsp;on&nbsp;the&nbsp;IRC&nbsp;<a href="builtins.html#object">object</a>'s<br>
+casemapping&nbsp;(rfc1459&nbsp;or&nbsp;ascii).</tt></dd></dl>
+
+<dl><dt><a name="Irc-version"><strong>version</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;detailed&nbsp;version&nbsp;string&nbsp;including&nbsp;the&nbsp;PyLink&nbsp;daemon&nbsp;version,<br>
+the&nbsp;protocol&nbsp;module&nbsp;in&nbsp;use,&nbsp;and&nbsp;the&nbsp;server&nbsp;hostname.</tt></dd></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="Irc-joinModes"><strong>joinModes</strong></a>(modes)</dt><dd><tt>Takes&nbsp;a&nbsp;list&nbsp;of&nbsp;(mode,&nbsp;arg)&nbsp;tuples&nbsp;in&nbsp;<a href="#Irc-parseModes">parseModes</a>()&nbsp;format,&nbsp;and<br>
+joins&nbsp;them&nbsp;into&nbsp;a&nbsp;string.<br>
+&nbsp;<br>
+See&nbsp;testJoinModes&nbsp;in&nbsp;tests/test_utils.py&nbsp;for&nbsp;some&nbsp;examples.</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -267,9 +373,9 @@ Data descriptors defined here:<br>
 <td colspan=2><tt>PyLink&nbsp;IRC&nbsp;channel&nbsp;class.<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="IrcChannel-__init__"><strong>__init__</strong></a>(self, name=None)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="IrcChannel-__init__"><strong>__init__</strong></a>(self, name=None)</dt></dl>
 
-<dl><dt><a name="IrcChannel-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
+<dl><dt><a name="IrcChannel-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
 
 <dl><dt><a name="IrcChannel-deepcopy"><strong>deepcopy</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;deep&nbsp;copy&nbsp;of&nbsp;the&nbsp;channel&nbsp;<a href="builtins.html#object">object</a>.</tt></dd></dl>
 
@@ -320,9 +426,9 @@ name:&nbsp;The&nbsp;name&nbsp;of&nbsp;the&nbsp;server.<br>
 internal:&nbsp;Whether&nbsp;the&nbsp;server&nbsp;is&nbsp;an&nbsp;internal&nbsp;PyLink&nbsp;PseudoServer.<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="IrcServer-__init__"><strong>__init__</strong></a>(self, uplink, name, internal=False, desc='(None given)')</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="IrcServer-__init__"><strong>__init__</strong></a>(self, uplink, name, internal=False, desc='(None given)')</dt></dl>
 
-<dl><dt><a name="IrcServer-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
+<dl><dt><a name="IrcServer-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -342,9 +448,9 @@ Data descriptors defined here:<br>
 <td colspan=2><tt>PyLink&nbsp;IRC&nbsp;user&nbsp;class.<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="IrcUser-__init__"><strong>__init__</strong></a>(self, nick, ts, uid, ident='null', host='null', realname='PyLink dummy client', realhost='null', ip='0.0.0.0', manipulatable=False)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="IrcUser-__init__"><strong>__init__</strong></a>(self, nick, ts, uid, ident='null', host='null', realname='PyLink dummy client', realhost='null', ip='0.0.0.0', manipulatable=False, opertype='IRC Operator')</dt></dl>
 
-<dl><dt><a name="IrcUser-__repr__"><strong>__repr__</strong></a>(self)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
+<dl><dt><a name="IrcUser-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -358,13 +464,75 @@ Data descriptors defined here:<br>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ffc8d8">
 <td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="NotAuthenticatedError">class <strong>NotAuthenticatedError</strong></a>(<a href="builtins.html#Exception">builtins.Exception</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="builtins.html#Exception">Exception</a>&nbsp;raised&nbsp;by&nbsp;checkAuthenticated()&nbsp;when&nbsp;a&nbsp;user&nbsp;fails&nbsp;authentication<br>
+requirements.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="classes.html#NotAuthenticatedError">NotAuthenticatedError</a></dd>
+<dd><a href="builtins.html#Exception">builtins.Exception</a></dd>
+<dd><a href="builtins.html#BaseException">builtins.BaseException</a></dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="builtins.html#Exception">builtins.Exception</a>:<br>
+<dl><dt><a name="NotAuthenticatedError-__init__"><strong>__init__</strong></a>(self, /, *args, **kwargs)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+
+<dl><dt><a name="NotAuthenticatedError-__new__"><strong>__new__</strong></a>(*args, **kwargs)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>Create&nbsp;and&nbsp;return&nbsp;a&nbsp;new&nbsp;<a href="builtins.html#object">object</a>.&nbsp;&nbsp;See&nbsp;help(type)&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="builtins.html#BaseException">builtins.BaseException</a>:<br>
+<dl><dt><a name="NotAuthenticatedError-__delattr__"><strong>__delattr__</strong></a>(self, name, /)</dt><dd><tt>Implement&nbsp;delattr(self,&nbsp;name).</tt></dd></dl>
+
+<dl><dt><a name="NotAuthenticatedError-__getattribute__"><strong>__getattribute__</strong></a>(self, name, /)</dt><dd><tt>Return&nbsp;getattr(self,&nbsp;name).</tt></dd></dl>
+
+<dl><dt><a name="NotAuthenticatedError-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="NotAuthenticatedError-__repr__"><strong>__repr__</strong></a>(self, /)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
+
+<dl><dt><a name="NotAuthenticatedError-__setattr__"><strong>__setattr__</strong></a>(self, name, value, /)</dt><dd><tt>Implement&nbsp;setattr(self,&nbsp;name,&nbsp;value).</tt></dd></dl>
+
+<dl><dt><a name="NotAuthenticatedError-__setstate__"><strong>__setstate__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="NotAuthenticatedError-__str__"><strong>__str__</strong></a>(self, /)</dt><dd><tt>Return&nbsp;str(self).</tt></dd></dl>
+
+<dl><dt><a name="NotAuthenticatedError-with_traceback"><strong>with_traceback</strong></a>(...)</dt><dd><tt><a href="builtins.html#Exception">Exception</a>.<a href="#NotAuthenticatedError-with_traceback">with_traceback</a>(tb)&nbsp;--<br>
+set&nbsp;self.<strong>__traceback__</strong>&nbsp;to&nbsp;tb&nbsp;and&nbsp;return&nbsp;self.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="builtins.html#BaseException">builtins.BaseException</a>:<br>
+<dl><dt><strong>__cause__</strong></dt>
+<dd><tt>exception&nbsp;cause</tt></dd>
+</dl>
+<dl><dt><strong>__context__</strong></dt>
+<dd><tt>exception&nbsp;context</tt></dd>
+</dl>
+<dl><dt><strong>__dict__</strong></dt>
+</dl>
+<dl><dt><strong>__suppress_context__</strong></dt>
+</dl>
+<dl><dt><strong>__traceback__</strong></dt>
+</dl>
+<dl><dt><strong>args</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="Protocol">class <strong>Protocol</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
     
 <tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
 <td colspan=2><tt>Base&nbsp;<a href="#Protocol">Protocol</a>&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="Protocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="Protocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
 
 <dl><dt><a name="Protocol-parseArgs"><strong>parseArgs</strong></a>(self, args)</dt><dd><tt>Parses&nbsp;a&nbsp;string&nbsp;of&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1459.txt">RFC1459</a>-style&nbsp;arguments&nbsp;split&nbsp;into&nbsp;a&nbsp;list,&nbsp;where&nbsp;":"&nbsp;may<br>
 be&nbsp;used&nbsp;for&nbsp;multi-word&nbsp;arguments&nbsp;that&nbsp;last&nbsp;until&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;line.</tt></dd></dl>
@@ -388,9 +556,7 @@ Data descriptors defined here:<br>
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="ProtocolError">class <strong>ProtocolError</strong></a>(<a href="builtins.html#Exception">builtins.Exception</a>)</font></td></tr>
     
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Common&nbsp;base&nbsp;class&nbsp;for&nbsp;all&nbsp;non-exit&nbsp;exceptions.<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="classes.html#ProtocolError">ProtocolError</a></dd>
 <dd><a href="builtins.html#Exception">builtins.Exception</a></dd>
@@ -414,7 +580,7 @@ Methods inherited from <a href="builtins.html#BaseException">builtins.BaseExcept
 
 <dl><dt><a name="ProtocolError-__getattribute__"><strong>__getattribute__</strong></a>(self, name, /)</dt><dd><tt>Return&nbsp;getattr(self,&nbsp;name).</tt></dd></dl>
 
-<dl><dt><a name="ProtocolError-__reduce__"><strong>__reduce__</strong></a>(...)</dt><dd><tt>helper&nbsp;for&nbsp;pickle</tt></dd></dl>
+<dl><dt><a name="ProtocolError-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
 
 <dl><dt><a name="ProtocolError-__repr__"><strong>__repr__</strong></a>(self, /)</dt><dd><tt>Return&nbsp;repr(self).</tt></dd></dl>
 
@@ -450,13 +616,12 @@ Data descriptors inherited from <a href="builtins.html#BaseException">builtins.B
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f8f3fcbc9d8&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f36077522f0&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>
 <strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
 <strong>logdir</strong> = '/home/gl/pylink/log'<br>
 <strong>logformatter</strong> = &lt;logging.Formatter object&gt;<br>
-<strong>stdout_handler</strong> = &lt;logging.StreamHandler object&gt;<br>
 <strong>stdout_level</strong> = 'CRITICAL'</td></tr></table>
 </body></html>
