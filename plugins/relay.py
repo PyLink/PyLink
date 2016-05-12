@@ -674,7 +674,9 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
                       'noknock', 'nonick', 'nonotice', 'op', 'operonly',
                       'opmoderated', 'owner', 'private', 'regonly',
                       'regmoderated', 'secret', 'sslonly', 'adminonly',
-                      'stripcolor', 'topiclock', 'voice'}
+                      'stripcolor', 'topiclock', 'voice', 'flood',
+                      'flood_unreal', 'joinflood', 'freetarget',
+                      'c_noforwards', 'noinvite'}
 whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
                       'regdeaf', 'u_stripcolor', 'u_noctcp', 'wallops',
                       'hideidle'}
