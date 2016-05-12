@@ -299,7 +299,8 @@ class TS6Protocol(TS6BaseProtocol):
         # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides channel list)
         if self.irc.serverdata.get('use_elemental_modes'):
             elemental_cmodes = {'hiddenbans': 'u', 'nokick': 'E',
-                                'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd'}
+                                'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd',
+                                'blockcaps': 'G'}
             self.irc.cmodes.update(elemental_cmodes)
             self.irc.cmodes['*D'] += ''.join(elemental_cmodes.values())
 
