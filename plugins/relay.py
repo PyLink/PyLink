@@ -339,14 +339,10 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     log.debug('(%s) getRemoteUser: waiting for %s.connected', irc.name, remoteirc.name)
     remoteirc.connected.wait()
 
-    try:
-        # We're relaying a message from the main PyLink client. These don't have
-        # relay clones, so relay them through the other network's main client.
-        if user == irc.pseudoclient.uid:
-            return remoteirc.pseudoclient.uid
-
-    except AttributeError:  # Network hasn't been initialized yet?
-        return
+    # Don't spawn clones for registered service bots.
+    sbot = irc.isServiceBot(user)
+    if sbot:
+        return sbot.uids.get(remoteirc.name)
 
     log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
     with spawnlocks[irc.name]:
