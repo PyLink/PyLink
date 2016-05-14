@@ -20,53 +20,6 @@ def status(irc, source, args):
         irc.reply('You are not identified as anyone.')
     irc.reply('Operator access: \x02%s\x02' % bool(irc.isOper(source)))
 
-def listcommands(irc, source, args):
-    """takes no arguments.
-
-    Returns a list of available commands PyLink has to offer."""
-    cmds = list(world.commands.keys())
-    cmds.sort()
-    for idx, cmd in enumerate(cmds):
-        nfuncs = len(world.commands[cmd])
-        if nfuncs > 1:
-            cmds[idx] = '%s(x%s)' % (cmd, nfuncs)
-    irc.reply('Available commands include: %s' % ', '.join(cmds))
-    irc.reply('To see help on a specific command, type \x02help <command>\x02.')
-utils.add_cmd(listcommands, 'list')
-
-@utils.add_cmd
-def help(irc, source, args):
-    """<command>
-
-    Gives help for <command>, if it is available."""
-    try:
-        command = args[0].lower()
-    except IndexError:  # No argument given, just return 'list' output
-        listcommands(irc, source, args)
-        return
-    if command not in world.commands:
-        irc.msg(source, 'Error: Unknown command %r.' % command)
-        return
-    else:
-        funcs = world.commands[command]
-        if len(funcs) > 1:
-            irc.reply('The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
-                      % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
-        for func in funcs:
-            doc = func.__doc__
-            mod = func.__module__
-            if doc:
-                lines = doc.split('\n')
-                # Bold the first line, which usually just tells you what
-                # arguments the command takes.
-                lines[0] = '\x02%s %s\x02 (plugin: %r)' % (command, lines[0], mod)
-                for line in lines:
-                    irc.reply(line.strip())
-            else:
-                irc.msg(source, "Error: Command %r (from plugin %r) "
-                                       "doesn't offer any help." % (command, mod))
-                return
-
 _none = '\x1D(none)\x1D'
 @utils.add_cmd
 def showuser(irc, source, args):

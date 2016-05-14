@@ -256,7 +256,6 @@ class Irc():
                     # All our checks passed, get the protocol module to connect
                     # and run the listen loop.
                     self.proto.connect()
-                    self.spawnMain()
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self.schedulePing()
                     log.info('(%s) Server ready; listening for data.', self.name)
@@ -433,23 +432,6 @@ class Irc():
 
         log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
-    def spawnMain(self):
-        """Spawns the main PyLink client."""
-        nick = self.botdata.get('nick') or 'PyLink'
-        ident = self.botdata.get('ident') or 'pylink'
-        host = self.serverdata["hostname"]
-        log.info('(%s) Connected! Spawning main client %s.', self.name, nick)
-        olduserobj = self.pseudoclient
-        self.pseudoclient = self.proto.spawnClient(nick, ident, host,
-                                                   modes={("+o", None)},
-                                                   manipulatable=True,
-                                                   opertype="PyLink Service")
-        for chan in self.serverdata['channels']:
-            self.proto.join(self.pseudoclient.uid, chan)
-        # PyLink internal hook called when spawnMain is called and the
-        # contents of Irc().pseudoclient change.
-        self.callHooks([self.sid, 'PYLINK_SPAWNMAIN', {'olduser': olduserobj}])
-
     def __repr__(self):
         return "<classes.Irc object for %r>" % self.name
 
@@ -459,22 +441,7 @@ class Irc():
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
         """
-        cmd_args = text.strip().split(' ')
-        cmd = cmd_args[0].lower()
-        cmd_args = cmd_args[1:]
-        if cmd not in world.commands:
-            self.msg(self.called_by or source, 'Error: Unknown command %r.' % cmd)
-            log.info('(%s) Received unknown command %r from %s', self.name, cmd, self.getHostmask(source))
-            return
-        log.info('(%s) Calling command %r for %s', self.name, cmd, self.getHostmask(source))
-        for func in world.commands[cmd]:
-            try:
-                func(self, source, cmd_args)
-            except utils.NotAuthenticatedError:
-                self.msg(self.called_by or source, 'Error: You are not authorized to perform this operation.')
-            except Exception as e:
-                log.exception('Unhandled exception caught in command %r', cmd)
-                self.msg(self.called_by or source, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
+        world.services['pylink'].call_cmd(self, source, text)
 
     def msg(self, target, text, notice=False, source=None):
         """Handy function to send messages/notices to clients. Source
@@ -1129,7 +1096,6 @@ class FakeIRC(Irc):
         self.hookmsgs = []
         self.socket = None
         self.initVars()
-        self.spawnMain()
         self.connected = threading.Event()
         self.connected.set()
 

@@ -65,10 +65,7 @@ class IncrementalUIDGenerator():
 
 def add_cmd(func, name=None):
     """Binds an IRC command function to the given command name."""
-    if name is None:
-        name = func.__name__
-    name = name.lower()
-    world.commands[name].append(func)
+    world.services['pylink'].add_cmd(func, name=name)
     return func
 
 def add_hook(func, command):
