@@ -40,17 +40,17 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 def handle_kill(irc, source, command, args):
     """Handle KILLs to PyLink service bots, respawning them as needed."""
     target = args['target']
-    for name, sbot in world.services.items():
-        if target == sbot.uids.get(irc.name):
-            spawn_service(irc, source, command, {'name': name})
-            return
+    sbot = irc.isServiceBot(target)
+    if sbot:
+        spawn_service(irc, source, command, {'name': sbot.name})
+        return
 utils.add_hook(handle_kill, 'KILL')
 
 def handle_kick(irc, source, command, args):
     """Handle KICKs to the PyLink service bots, rejoining channels as needed."""
     kicked = args['target']
     channel = args['channel']
-    if kicked in [sbot.uids.get(irc.name) for sbot in world.services.values()]:
+    if irc.isServiceBot(kicked):
         irc.proto.join(kicked, channel)
 utils.add_hook(handle_kick, 'KICK')
 
@@ -59,10 +59,9 @@ def handle_commands(irc, source, command, args):
     target = args['target']
     text = args['text']
 
-    for sbot in world.services.values():
-        if target == sbot.uids.get(irc.name):
-            sbot.call_cmd(irc, source, text)
-            return
+    sbot = irc.isServiceBot(target)
+    if sbot:
+        sbot.call_cmd(irc, source, text)
 
 utils.add_hook(handle_commands, 'PRIVMSG')
 
