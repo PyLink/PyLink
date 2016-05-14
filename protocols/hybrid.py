@@ -19,11 +19,12 @@ class HybridProtocol(TS6Protocol):
         self.casemapping = 'ascii'
         self.caps = {}
         self.hook_map = {'EOB': 'ENDBURST', 'TBURST': 'TOPIC', 'SJOIN': 'JOIN'}
+        self.has_eob = False
 
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
-
+        self.has_eob = False
         f = self.irc.send
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
@@ -210,7 +211,10 @@ class HybridProtocol(TS6Protocol):
 
     def handle_eob(self, numeric, command, args):
         log.debug('(%s) end of burst received', self.irc.name)
-        return {}
+        if not self.has_eob:  # Only call ENDBURST hooks if we haven't already.
+            return {}
+
+        self.has_eob = True
 
     def handle_svsmode(self, numeric, command, args):
         """
