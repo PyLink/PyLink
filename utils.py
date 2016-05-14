@@ -286,3 +286,4 @@ def registerService(name, *args, **kwargs):
 
     world.services[name] = sbot = ServiceBot(name, *args, **kwargs)
     sbot.spawn()
+    return sbot
