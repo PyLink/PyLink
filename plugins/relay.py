@@ -969,9 +969,11 @@ def handle_kick(irc, source, command, args):
     text = args['text']
     kicker = source
     relay = getRelay((irc.name, channel))
-    # Don't allow kicks to the PyLink client to be relayed.
-    if relay is None or target == irc.pseudoclient.uid:
+
+    # Don't relay kicks to protected service bots.
+    if relay is None or irc.isServiceBot(target):
         return
+
     origuser = getOrigUser(irc, target)
     for name, remoteirc in world.networkobjects.copy().items():
         if irc.name == name or not remoteirc.connected.is_set():
