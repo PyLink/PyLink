@@ -38,21 +38,30 @@ def sigterm_handler(_signo, _stack_frame):
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 def handle_kill(irc, source, command, args):
-    """Handle KILLs to the main PyLink client, respawning it as needed."""
-    if args['target'] == irc.pseudoclient.uid:
+    """Handle KILLs to PyLink service bots, respawning them as needed."""
+    target = args['target']
+
+    if target == irc.pseudoclient.uid:
         irc.spawnMain()
+        return
+
+    for name, sbot in world.services.items():
+        if target == sbot.uids.get(irc.name):
+            spawn_service(irc, source, command, {'name': name})
+            return
 utils.add_hook(handle_kill, 'KILL')
 
 def handle_kick(irc, source, command, args):
-    """Handle KICKs to the main PyLink client, rejoining channels as needed."""
+    """Handle KICKs to the PyLink service bots, rejoining channels as needed."""
     kicked = args['target']
     channel = args['channel']
-    if kicked == irc.pseudoclient.uid:
-        irc.proto.join(irc.pseudoclient.uid, channel)
+    if kicked == irc.pseudoclient.uid or kicked in \
+            [sbot.uids.get(irc.name) for sbot in world.services.values()]:
+        irc.proto.join(kicked, channel)
 utils.add_hook(handle_kick, 'KICK')
 
 def handle_commands(irc, source, command, args):
-    """Handle commands sent to the PyLink client (PRIVMSG)."""
+    """Handle commands sent to the PyLink service bots (PRIVMSG)."""
     target = args['target']
     text = args['text']
 
@@ -194,7 +203,7 @@ def handle_version(irc, source, command, args):
     irc.proto.numeric(irc.sid, 351, source, fullversion)
 utils.add_hook(handle_version, 'VERSION')
 
-def handle_newservice(irc, source, command, args):
+def spawn_service(irc, source, command, args):
     """Handles new service bot introductions."""
 
     if not irc.connected.is_set():
@@ -219,7 +228,7 @@ def handle_newservice(irc, source, command, args):
     for chan in irc.serverdata['channels']:
         irc.proto.join(u, chan)
 
-utils.add_hook(handle_newservice, 'PYLINK_NEW_SERVICE')
+utils.add_hook(spawn_service, 'PYLINK_NEW_SERVICE')
 
 def handle_disconnect(irc, source, command, args):
     """Handles network disconnections."""
@@ -239,7 +248,7 @@ def handle_endburst(irc, source, command, args):
 
         # We just connected. Burst all our registered services.
         for name, sbot in world.services.items():
-            handle_newservice(irc, source, command, {'name': name})
+            spawn_service(irc, source, command, {'name': name})
 
 utils.add_hook(handle_endburst, 'ENDBURST')
 
