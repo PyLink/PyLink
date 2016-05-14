@@ -639,7 +639,7 @@ class Irc():
                               'it\'s a prefix mode.', self.name, str(mode))
                     continue
 
-            if mode[0][0] == '+':
+            if mode[0][0] != '-':
                 # We're adding a mode
                 existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
                 if existing and real_mode[1] and real_mode[0] not in self.cmodes['*A']:
@@ -663,7 +663,6 @@ class Irc():
                         if oldmode[0] == real_mode[0]:
                             modelist.discard(oldmode)
                 else:
-                    # Swap the - for a + and then remove it from the list.
                     modelist.discard(real_mode)
         log.debug('(%s) Final modelist: %s', self.name, modelist)
         if usermodes:
