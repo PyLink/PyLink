@@ -9,6 +9,7 @@ import string
 import re
 import importlib
 import os
+import collections
 
 from log import log
 import world
@@ -141,3 +142,64 @@ def getDatabaseName(dbname):
         dbname += '-%s' % conf.confname
     dbname += '.db'
     return dbname
+
+class ServiceBot():
+    def __init__(self, name, default_help=True, default_request=True, default_list=True):
+        self.name = name
+        # We make the command definitions a dict of lists of functions. Multiple
+        # plugins are actually allowed to bind to one function name; this just causes
+        # them to be called in the order that they are bound.
+        self.commands = collections.defaultdict(list)
+
+        # This tracks the UIDs of the service bot on different networks, as they are
+        # spawned.
+        self.uids = {}
+
+        if default_help:
+            self.add_cmd(self.help)
+
+        if default_request:
+            self.add_cmd(self.request)
+            self.add_cmd(self.remove)
+
+        if default_list:
+            self.add_cmd(self.listcommands, 'list')
+
+    def spawn(self, irc=None):
+        # Spawn the new service by calling the PYLINK_NEW_SERVICE hook,
+        # which is handled by coreplugin.
+        if irc is None:
+            for irc in world.networkobjects.values():
+                irc.callHooks([None, 'PYLINK_NEW_SERVICE', {'name': self.name}])
+        else:
+            raise NotImplementedError("Network specific plugins not supported yet.")
+
+
+    def add_cmd(self, func, name=None):
+        """Binds an IRC command function to the given command name."""
+        if name is None:
+            name = func.__name__
+        name = name.lower()
+
+        self.commands[name].append(func)
+        return func
+
+    def help(self, irc, source, args):
+        irc.reply("Help command stub called.")
+
+    def request(self, irc, source, args):
+        irc.reply("Request command stub called.")
+
+    def remove(self, irc, source, args):
+        irc.reply("Remove command stub called.")
+
+    def listcommands(self, irc, source, args):
+        irc.reply("List command stub called.")
+
+def registerService(name, *args, **kwargs):
+    name = name.lower()
+    if name in world.services:
+        raise ValueError("Service name %s is already bound!" % name)
+
+    world.services[name] = sbot = ServiceBot(name, *args, **kwargs)
+    sbot.spawn()

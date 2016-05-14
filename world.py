@@ -14,13 +14,14 @@ testing = True
 # Sets the default protocol module to use with tests.
 testing_ircd = 'inspircd'
 
-global commands, hooks
-# This should be a mapping of command names to functions
+
 commands = defaultdict(list)
 hooks = defaultdict(list)
 networkobjects = {}
 plugins = {}
 whois_handlers = []
+services = {}
+
 started = threading.Event()
 
 plugins_folder = os.path.join(os.getcwd(), 'plugins')

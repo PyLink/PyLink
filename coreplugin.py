@@ -186,6 +186,55 @@ def handle_version(irc, source, command, args):
     irc.proto.numeric(irc.sid, 351, source, fullversion)
 utils.add_hook(handle_version, 'VERSION')
 
+def handle_newservice(irc, source, command, args):
+    """Handles new service bot introductions."""
+
+    if not irc.connected.is_set():
+        return
+
+    name = args['name']
+    ident = irc.botdata.get('ident') or 'pylink'
+    host = irc.serverdata["hostname"]
+    modes = []
+    for mode in ('oper', 'hideoper', 'hidechans'):
+        mode = irc.cmodes.get(mode)
+        if mode:
+            modes.append((mode, None))
+
+    # Track the service's UIDs on each network.
+    service = world.services[name]
+    service.uids[irc.name] = u = irc.proto.spawnClient(name, name,
+        irc.serverdata['hostname'], modes=modes, opertype="PyLink Service")
+
+    # TODO: channels should be tracked in a central database, not hardcoded
+    # in conf.
+    for chan in irc.serverdata['channels']:
+        irc.proto.join(u.uid, chan)
+
+utils.add_hook(handle_newservice, 'PYLINK_NEW_SERVICE')
+
+def handle_disconnect(irc, source, command, args):
+    """Handles network disconnections."""
+    for name, sbot in world.services.items():
+        try:
+            del sbot.uids[irc.name]
+            log.debug("coreplugin: removing uids[%s] from service bot %s", irc.name, sbot.name)
+        except KeyError:
+            continue
+
+utils.add_hook(handle_disconnect, 'PYLINK_DISCONNECT')
+
+def handle_endburst(irc, source, command, args):
+    """Handles network bursts."""
+    if source == irc.uplink:
+        log.debug('(%s): spawning service bots now.')
+
+        # We just connected. Burst all our registered services.
+        for name, sbot in world.services.items():
+            handle_newservice(irc, source, command, {'name': name})
+
+utils.add_hook(handle_endburst, 'ENDBURST')
+
 # Essential, core commands go here so that the "commands" plugin with less-important,
 # but still generic functions can be reloaded.
 
