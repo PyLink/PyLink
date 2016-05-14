@@ -280,6 +280,7 @@ class ServiceBot():
         self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
 
 def registerService(name, *args, **kwargs):
+    """Registers a service bot."""
     name = name.lower()
     if name in world.services:
         raise ValueError("Service name %s is already bound!" % name)
@@ -287,3 +288,12 @@ def registerService(name, *args, **kwargs):
     world.services[name] = sbot = ServiceBot(name, *args, **kwargs)
     sbot.spawn()
     return sbot
+
+def unregisterService(name):
+    """Unregisters an existing service bot."""
+    assert name in world.services, "Unknown service %s" % name
+    sbot = world.services[name]
+    for ircnet, uid in sbot.uids.items():
+        world.networkobjects[ircnet].proto.quit(uid, "Service unloaded.")
+
+    del world.services[name]
