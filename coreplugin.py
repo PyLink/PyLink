@@ -256,7 +256,7 @@ utils.add_hook(handle_endburst, 'ENDBURST')
 # Register the main PyLink service. All command definitions MUST go after this!
 mynick = conf.conf['bot'].get("nick", "PyLink")
 myident = conf.conf['bot'].get("ident", "pylink")
-utils.registerService('pylink', nick=mynick, ident=myident)
+utils.registerService('pylink', nick=mynick, ident=myident, manipulatable=True)
 
 # Essential, core commands go here so that the "commands" plugin with less-important,
 # but still generic functions can be reloaded.
