@@ -15,6 +15,13 @@ from log import log
 import world
 import conf
 
+class NotAuthenticatedError(Exception):
+    """
+    Exception raised by checkAuthenticated() when a user fails authentication
+    requirements.
+    """
+    pass
+
 class IncrementalUIDGenerator():
     """
     Incremental UID Generator module, adapted from InspIRCd source:

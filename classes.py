@@ -27,13 +27,6 @@ import structures
 class ProtocolError(Exception):
     pass
 
-class NotAuthenticatedError(Exception):
-    """
-    Exception raised by checkAuthenticated() when a user fails authentication
-    requirements.
-    """
-    pass
-
 ### Internal classes (users, servers, channels)
 
 class Irc():
@@ -898,7 +891,7 @@ class Irc():
         if not self.isOper(uid, allowAuthed=allowAuthed, allowOper=allowOper):
             log.warning('(%s) Access denied for %s calling %r', self.name,
                         self.getHostmask(uid), lastfunc)
-            raise NotAuthenticatedError("You are not authenticated!")
+            raise utils.NotAuthenticatedError("You are not authenticated!")
         return True
 
 class IrcUser():
