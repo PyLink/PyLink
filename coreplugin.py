@@ -210,8 +210,11 @@ def spawn_service(irc, source, command, args):
         return
 
     name = args['name']
-    ident = irc.botdata.get('ident') or 'pylink'
+    # TODO: make this configurable?
     host = irc.serverdata["hostname"]
+
+    # Prefer spawning service clients with umode +io, plus hideoper and
+    # hidechans if supported.
     modes = []
     for mode in ('oper', 'hideoper', 'hidechans', 'invisible'):
         mode = irc.umodes.get(mode)
@@ -219,9 +222,10 @@ def spawn_service(irc, source, command, args):
             modes.append((mode, None))
 
     # Track the service's UIDs on each network.
-    service = world.services[name]
-    service.uids[irc.name] = u = irc.proto.spawnClient(name, name,
-        irc.serverdata['hostname'], modes=modes, opertype="PyLink Service").uid
+    sbot = world.services[name]
+    sbot.uids[irc.name] = u = irc.proto.spawnClient(sbot.nick, sbot.ident,
+        host, modes=modes, opertype="PyLink Service",
+        manipulatable=sbot.manipulatable).uid
 
     # TODO: channels should be tracked in a central database, not hardcoded
     # in conf.

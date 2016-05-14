@@ -151,8 +151,17 @@ def getDatabaseName(dbname):
     return dbname
 
 class ServiceBot():
-    def __init__(self, name, default_help=True, default_request=True, default_list=True):
+    def __init__(self, name, default_help=True, default_request=True, default_list=True,
+                 nick=None, ident=None, manipulatable=False):
+        # Service name
         self.name = name
+
+        # Nick/ident to take. Defaults to the same as the service name if not given.
+        self.nick = nick or name
+        self.ident = ident or name
+
+        # Tracks whether the bot should be manipulatable by the 'bots' plugin and other commands.
+        self.manipulatable = manipulatable
 
         # We make the command definitions a dict of lists of functions. Multiple
         # plugins are actually allowed to bind to one function name; this just causes
