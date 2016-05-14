@@ -53,9 +53,17 @@ utils.add_hook(handle_kick, 'KICK')
 
 def handle_commands(irc, source, command, args):
     """Handle commands sent to the PyLink client (PRIVMSG)."""
-    if args['target'] == irc.pseudoclient.uid and not irc.isInternalClient(source):
+    target = args['target']
+    text = args['text']
+
+    if target == irc.pseudoclient.uid and not irc.isInternalClient(source):
         irc.called_by = source
-        irc.callCommand(source, args['text'])
+        irc.callCommand(source, text)
+    else:
+        for sbot in world.services.values():
+            if target == sbot.uids.get(irc.name):
+                sbot.call_cmd(irc, source, text)
+                return
 
 utils.add_hook(handle_commands, 'PRIVMSG')
 
@@ -204,12 +212,12 @@ def handle_newservice(irc, source, command, args):
     # Track the service's UIDs on each network.
     service = world.services[name]
     service.uids[irc.name] = u = irc.proto.spawnClient(name, name,
-        irc.serverdata['hostname'], modes=modes, opertype="PyLink Service")
+        irc.serverdata['hostname'], modes=modes, opertype="PyLink Service").uid
 
     # TODO: channels should be tracked in a central database, not hardcoded
     # in conf.
     for chan in irc.serverdata['channels']:
-        irc.proto.join(u.uid, chan)
+        irc.proto.join(u, chan)
 
 utils.add_hook(handle_newservice, 'PYLINK_NEW_SERVICE')
 
@@ -227,7 +235,7 @@ utils.add_hook(handle_disconnect, 'PYLINK_DISCONNECT')
 def handle_endburst(irc, source, command, args):
     """Handles network bursts."""
     if source == irc.uplink:
-        log.debug('(%s): spawning service bots now.')
+        log.debug('(%s): spawning service bots now.', irc.name)
 
         # We just connected. Burst all our registered services.
         for name, sbot in world.services.items():

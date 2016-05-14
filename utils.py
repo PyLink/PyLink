@@ -153,6 +153,7 @@ def getDatabaseName(dbname):
 class ServiceBot():
     def __init__(self, name, default_help=True, default_request=True, default_list=True):
         self.name = name
+
         # We make the command definitions a dict of lists of functions. Multiple
         # plugins are actually allowed to bind to one function name; this just causes
         # them to be called in the order that they are bound.
@@ -181,6 +182,39 @@ class ServiceBot():
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
+    def reply(self, irc, text, notice=True):
+        """Replies to a message using the right service UID."""
+        servuid = self.uids.get(irc.name)
+        if not servuid:
+            log.warning("(%s) Possible desync? UID for service %s doesn't exist!", irc.name, self.name)
+            return
+
+        irc.reply(text, notice=notice, source=servuid)
+
+    def call_cmd(self, irc, source, text):
+        """
+        Calls a PyLink bot command. source is the caller's UID, and text is the
+        full, unparsed text of the message.
+        """
+        irc.called_by = source
+
+        cmd_args = text.strip().split(' ')
+        cmd = cmd_args[0].lower()
+        cmd_args = cmd_args[1:]
+        if cmd not in self.commands:
+            self.reply(irc, 'Error: Unknown command %r.' % cmd)
+            log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.getHostmask(source))
+            return
+
+        log.info('(%s/%s) Calling command %r for %s', irc.name, self.name, cmd, irc.getHostmask(source))
+        for func in self.commands[cmd]:
+            try:
+                func(irc, source, cmd_args)
+            except NotAuthenticatedError:
+                self.reply(irc, 'Error: You are not authorized to perform this operation.')
+            except Exception as e:
+                log.exception('Unhandled exception caught in command %r', cmd)
+                self.reply(irc, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
     def add_cmd(self, func, name=None):
         """Binds an IRC command function to the given command name."""
@@ -192,16 +226,16 @@ class ServiceBot():
         return func
 
     def help(self, irc, source, args):
-        irc.reply("Help command stub called.")
+        self.reply(irc, "Help command stub called.")
 
     def request(self, irc, source, args):
-        irc.reply("Request command stub called.")
+        self.reply(irc, "Request command stub called.")
 
     def remove(self, irc, source, args):
-        irc.reply("Remove command stub called.")
+        self.reply(irc, "Remove command stub called.")
 
     def listcommands(self, irc, source, args):
-        irc.reply("List command stub called.")
+        self.reply(irc, "List command stub called.")
 
 def registerService(name, *args, **kwargs):
     name = name.lower()
