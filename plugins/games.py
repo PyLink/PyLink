@@ -29,7 +29,7 @@ def dice(irc, source, args):
         num, sides = map(int, args[0].split('d', 1))
     except ValueError:
         # Invalid syntax. Show the command help.
-        gameclient.help('dice')
+        gameclient.help(irc, source, ['dice'])
         return
 
     assert 1 < sides <= 100, "Invalid side count (must be 2-100)."
