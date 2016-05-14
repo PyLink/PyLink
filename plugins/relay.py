@@ -611,6 +611,8 @@ def relayJoins(irc, channel, users, ts, burst=True):
             assert user in irc.users, "(%s) relay.relayJoins: How is this possible? %r isn't in our user database." % (irc.name, user)
             u = getRemoteUser(irc, remoteirc, user)
 
+            if not u:
+                continue
 
             if u not in remoteirc.channels[remotechan].users:
                 # Note: only join users if they aren't already joined. This prevents op floods
@@ -1092,7 +1094,7 @@ def handle_mode(irc, numeric, command, args):
                 reversed_modes = irc.reverseModes(target, modes, oldobj=oldchan)
                 log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
                           irc.name, modes, reversed_modes)
-                irc.proto.mode(irc.pseudoclient.uid, target, reversed_modes)
+                irc.proto.mode(irc.sid, target, reversed_modes)
                 break
 
         else:
