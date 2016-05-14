@@ -204,7 +204,7 @@ def handle_newservice(irc, source, command, args):
     ident = irc.botdata.get('ident') or 'pylink'
     host = irc.serverdata["hostname"]
     modes = []
-    for mode in ('oper', 'hideoper', 'hidechans'):
+    for mode in ('oper', 'hideoper', 'hidechans', 'invisible'):
         mode = irc.umodes.get(mode)
         if mode:
             modes.append((mode, None))
