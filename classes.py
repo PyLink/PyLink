@@ -470,7 +470,7 @@ class Irc():
         for func in world.commands[cmd]:
             try:
                 func(self, source, cmd_args)
-            except NotAuthenticatedError:
+            except utils.NotAuthenticatedError:
                 self.msg(self.called_by or source, 'Error: You are not authorized to perform this operation.')
             except Exception as e:
                 log.exception('Unhandled exception caught in command %r', cmd)
