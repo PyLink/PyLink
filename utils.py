@@ -226,7 +226,36 @@ class ServiceBot():
         return func
 
     def help(self, irc, source, args):
-        self.reply(irc, "Help command stub called.")
+        """<command>
+
+        Gives help for <command>, if it is available."""
+        try:
+            command = args[0].lower()
+        except IndexError:  # No argument given, just return 'list' output
+            self.listcommands(irc, source, args)
+            return
+        if command not in self.commands:
+            self.reply(irc, 'Error: Unknown command %r.' % command)
+            return
+        else:
+            funcs = self.commands[command]
+            if len(funcs) > 1:
+                self.reply(irc, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
+                           % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
+            for func in funcs:
+                doc = func.__doc__
+                mod = func.__module__
+                if doc:
+                    lines = doc.split('\n')
+                    # Bold the first line, which usually just tells you what
+                    # arguments the command takes.
+                    lines[0] = '\x02%s %s\x02' % (command, lines[0])
+                    for line in lines:
+                        # Then, just output the rest of the docstring to IRC.
+                        self.reply(irc, line.strip())
+                else:
+                    self.reply(irc, "Error: Command %r doesn't offer any help." % command)
+                    return
 
     def request(self, irc, source, args):
         self.reply(irc, "Request command stub called.")
@@ -235,7 +264,14 @@ class ServiceBot():
         self.reply(irc, "Remove command stub called.")
 
     def listcommands(self, irc, source, args):
-        self.reply(irc, "List command stub called.")
+        """takes no arguments.
+
+        Returns a list of available commands this service has to offer."""
+
+        cmds = list(self.commands.keys())
+        cmds.sort()
+        self.reply(irc, 'Available commands include: %s' % ', '.join(cmds))
+        self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
 
 def registerService(name, *args, **kwargs):
     name = name.lower()
