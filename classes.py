@@ -804,6 +804,18 @@ class Irc():
         """
         return self.isInternalClient(uid) and self.users[uid].manipulatable
 
+    def isServiceBot(self, uid):
+        """
+        Checks whether the given UID is a registered service bot. If True,
+        returns the cooresponding ServiceBot object.
+        """
+        if not uid:
+            return False
+        for sbot in world.services.values():
+            if uid == sbot.uids.get(self.name):
+                return sbot
+        return False
+
     def getHostmask(self, user, realhost=False, ip=False):
         """
         Returns the hostmask of the given user, if present. If the realhost option
