@@ -14,22 +14,7 @@ def handle_fantasy(irc, source, command, args):
         # Break if the IRC network isn't ready.
         return
 
-    try:  # First, try to fetch the config-defined prefix.
-        prefixes = [irc.botdata["prefix"]]
-    except KeyError:  # Config option is missing.
-        prefixes = []
-
-    if irc.botdata.get("respondtonick"):
-        # If responding to nick is enabled, add variations of the current nick
-        # to the prefix list: "<nick>," and "<nick>:"
-        nick = irc.pseudoclient.nick
-        prefixes += [nick+',', nick+':']
-
-    if not prefixes:
-        # We finished with an empty prefixes list, meaning fantasy is misconfigured!
-        log.warning("(%s) Fantasy prefix was not set in configuration - "
-                    "fantasy commands will not work!", irc.name)
-        return
+    respondtonick = irc.botdata.get("respondtonick")
 
     channel = args['target']
     orig_text = args['text']
@@ -44,9 +29,30 @@ def handle_fantasy(irc, source, command, args):
         #      message loops).
         for botname, sbot in world.services.items():
             log.debug('(%s) fantasy: checking bot %s', irc.name, botname)
-            if sbot.uids.get(irc.name) in irc.channels[channel].users:
+            servuid = sbot.uids.get(irc.name)
+            if servuid in irc.channels[channel].users:
+
+                # Try to look up a prefix specific for this bot in
+                # bot: prefixes: <botname>, falling back to the default prefix if not
+                # specified.
+                prefixes = [irc.botdata.get('prefixes', {}).get(botname) or
+                            irc.botdata.get('prefix')]
+
+                # If responding to nick is enabled, add variations of the current nick
+                # to the prefix list: "<nick>," and "<nick>:"
+                nick = irc.users[servuid].nick
+
+                if respondtonick:
+                    prefixes += [nick+',', nick+':']
+
+                if not any(prefixes):
+                    # We finished with an empty prefixes list, meaning fantasy is misconfigured!
+                    log.warning("(%s) Fantasy prefix for bot %s was not set in configuration - "
+                                "fantasy commands will not work!", irc.name, botname)
+                    continue
+
                 for prefix in prefixes:  # Cycle through the prefixes list we finished with.
-                     if orig_text.startswith(prefix):
+                     if prefix and orig_text.startswith(prefix):
 
                         # Cut off the length of the prefix from the text.
                         text = orig_text[len(prefix):]

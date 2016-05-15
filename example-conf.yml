@@ -13,13 +13,18 @@ bot:
     # Server description (shown in /links, /whois, etc.)
     serverdesc: PyLink Server
 
-    # Sets the fantasy command prefix for calling commands inside channels
-    # (requires fantasy plugin).
-    prefix: "."
+    # Options below this require the fantasy plugin to be loaded.
+
+    # Sets the default fantasy command prefix for calling commands inside channels
+    prefix: "&"
 
     # Determines whether the bot will reply to commands prefixed with its nick
     # (case sensitive and requires the fantasy plugin).
     respondtonick: true
+
+    # Custom fantasy command prefixes for other service bots if they are loaded.
+    prefixes:
+        games: "@"
 
 login:
     # PyLink administrative login - Change this, or the service will not start!
