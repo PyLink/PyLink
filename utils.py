@@ -188,21 +188,25 @@ class ServiceBot():
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
-    def reply(self, irc, text, notice=True):
+    def reply(self, irc, text):
         """Replies to a message using the right service UID."""
         servuid = self.uids.get(irc.name)
         if not servuid:
             log.warning("(%s) Possible desync? UID for service %s doesn't exist!", irc.name, self.name)
             return
 
-        irc.reply(text, notice=notice, source=servuid)
+        irc.reply(text, notice=self.use_notice, source=servuid)
 
-    def call_cmd(self, irc, source, text):
+    def call_cmd(self, irc, source, text, called_by=None, notice=True):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
         """
-        irc.called_by = source
+        irc.called_by = called_by or source
+
+        # Store this globally so other commands don't have to worry about whether
+        # we're preferring notices.
+        self.use_notice = notice
 
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()
