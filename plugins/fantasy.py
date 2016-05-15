@@ -4,6 +4,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import utils
+import world
 from log import log
 
 def handle_fantasy(irc, source, command, args):
@@ -31,30 +32,27 @@ def handle_fantasy(irc, source, command, args):
         return
 
     channel = args['target']
-    text = args['text']
-    for prefix in prefixes:  # Cycle through the prefixes list we finished with.
+    orig_text = args['text']
+
+    if utils.isChannel(channel) and not irc.isInternalClient(source):
         # The following conditions must be met for an incoming message for
         # fantasy to trigger:
         #   1) The message target is a channel.
-        #   2) The message starts with one of our fantasy prefixes.
-        #   3) The main PyLink client is in the channel where the command was
-        #      called.
+        #   2) A PyLink service client exists in the channel.
+        #   3) The message starts with one of our fantasy prefixes.
         #   4) The sender is NOT a PyLink client (this prevents infinite
         #      message loops).
-        if utils.isChannel(channel) and text.startswith(prefix) and \
-                irc.pseudoclient.uid in irc.channels[channel].users and not \
-                irc.isInternalClient(source):
+        for botname, sbot in world.services.items():
+            log.debug('(%s) fantasy: checking bot %s', irc.name, botname)
+            if sbot.uids.get(irc.name) in irc.channels[channel].users:
+                for prefix in prefixes:  # Cycle through the prefixes list we finished with.
+                     if orig_text.startswith(prefix):
 
-            # Cut off the length of the prefix from the text.
-            text = text[len(prefix):]
+                        # Cut off the length of the prefix from the text.
+                        text = orig_text[len(prefix):]
 
-            # Set the "place last command was called in" variable to the
-            # channel in question, so that replies from fantasy-supporting
-            # plugins get forwarded to it.
-            irc.called_by = channel
-
-            # Finally, call the bot command and break.
-            irc.callCommand(source, text)
-            break
+                        # Finally, call the bot command and loop to the next bot.
+                        sbot.call_cmd(irc, source, text, called_by=channel, notice=False)
+                        continue
 
 utils.add_hook(handle_fantasy, 'PRIVMSG')
