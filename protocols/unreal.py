@@ -313,7 +313,7 @@ class UnrealProtocol(TS6BaseProtocol):
                                 'bot': 'B', 'cloak': 'x', 'ssl': 'z',
                                 'filter': 'G', 'hideoper': 'H', 'hideidle': 'I',
                                 'regdeaf': 'R', 'servprotect': 'S',
-                                'u_noctcp': 'T', 'showwhois': 'W',
+                                'noctcp': 'T', 'showwhois': 'W',
                                 '*A': '', '*B': '', '*C': '', '*D': 'dipqrstwBxzGHIRSTW'})
 
         f = self.irc.send

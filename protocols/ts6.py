@@ -263,7 +263,7 @@ class TS6Protocol(TS6BaseProtocol):
                          # charybdis-specific modes:
                         'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
                         'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
-                        'c_noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
+                        'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
                         'g', 'opmoderated': 'z', 'noctcp': 'C',
                          # charybdis-specific modes provided by EXTENSIONS
                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
@@ -284,9 +284,9 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.cmodes = chary_cmodes
 
         # Define supported user modes
-        chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'u_admin': 'a',
+        chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'admin': 'a',
                         'invisible': 'i', 'oper': 'o', 'wallops': 'w',
-                        'snomask': 's', 'u_noforward': 'Q', 'regdeaf': 'R',
+                        'snomask': 's', 'noforward': 'Q', 'regdeaf': 'R',
                         'callerid': 'g', 'operwall': 'z', 'locops': 'l',
                         'cloak': 'x',
                         # Now, map all the ABCD type modes:
@@ -304,7 +304,7 @@ class TS6Protocol(TS6BaseProtocol):
             self.irc.cmodes.update(elemental_cmodes)
             self.irc.cmodes['*D'] += ''.join(elemental_cmodes.values())
 
-            elemental_umodes = {'u_noctcp': 'C', 'deaf': 'D', 'bot': 'B', 'u_noinvite': 'V',
+            elemental_umodes = {'noctcp': 'C', 'deaf': 'D', 'bot': 'B', 'noinvite': 'V',
                                 'hidechans': 'I'}
             self.irc.umodes.update(elemental_umodes)
             self.irc.umodes['*D'] += ''.join(elemental_umodes.values())

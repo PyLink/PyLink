@@ -387,6 +387,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
             for modepair in args[-1].split():
                 name, char = modepair.split('=')
 
+                # Strip c_ prefixes to be consistent with other protocols.
+                name = name.lstrip('c_')
+
                 if name == 'reginvite':  # Reginvite? That's a dumb name.
                     name = 'regonly'
 
@@ -395,10 +398,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     # name it anything you like. The former is config default,
                     # but I personally prefer the latter.
                     name = 'owner'
-
-                if name == 'c_registered':
-                    # Be consistent with other protocols
-                    name = 'registered'
 
                 # We don't care about mode prefixes; just the mode char.
                 self.irc.cmodes[name] = char[-1]
@@ -413,6 +412,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # Ditto above.
             for modepair in args[-1].split():
                 name, char = modepair.split('=')
+                # Strip u_ prefixes to be consistent with other protocols.
+                name = name.lstrip('u_')
                 self.irc.umodes[name] = char
 
         elif args[0] == 'CAPABILITIES':

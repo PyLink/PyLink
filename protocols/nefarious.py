@@ -684,7 +684,7 @@ class P10Protocol(Protocol):
                            'snomask': 's', 'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
                            'hidechans': 'n', 'deaf_commonchan': 'q', 'bot': 'B', 'deaf': 'D',
                            'hideoper': 'H', 'hideidle': 'I', 'regdeaf': 'R', 'showwhois': 'W',
-                           'admin': 'a', 'override': 'X', 'u_noforward': 'L', 'ssl': 'z',
+                           'admin': 'a', 'override': 'X', 'noforward': 'L', 'ssl': 'z',
                            'registered': 'r', 'cloak_sethost': 'h', 'cloak_fakehost': 'f',
                            'cloak_hashedhost': 'C', 'cloak_hashedip': 'c',
                            '*A': '', '*B': '', '*C': 'fCcrh', '*D': 'oOiwskgxnqBDHIRWaXLz'}

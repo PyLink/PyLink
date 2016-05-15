@@ -674,9 +674,9 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
                       'regmoderated', 'secret', 'sslonly', 'adminonly',
                       'stripcolor', 'topiclock', 'voice', 'flood',
                       'flood_unreal', 'joinflood', 'freetarget',
-                      'c_noforwards', 'noinvite'}
+                      'noforwards', 'noinvite'}
 whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
-                      'regdeaf', 'u_stripcolor', 'u_noctcp', 'wallops',
+                      'regdeaf', 'stripcolor', 'noctcp', 'wallops',
                       'hideidle'}
 def relayModes(irc, remoteirc, sender, channel, modes=None):
     """
