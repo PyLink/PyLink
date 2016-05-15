@@ -11,7 +11,7 @@ import utils
 from log import log
 import world
 
-gameclient = utils.registerService("Games")
+gameclient = utils.registerService("Games", manipulatable=True)
 reply = gameclient.reply  # TODO find a better syntax for ServiceBot.reply()
 
 # commands
