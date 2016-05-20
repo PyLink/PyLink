@@ -4,9 +4,9 @@ PyLink plugins are modules that extend its functionality by giving it something 
 
 This guide, along with the sample plugin [`plugin_example.py`](plugin_example.py), aim to show the basics of writing plugins for PyLink.
 
-### Receiving data from IRC
+## Receiving data from IRC
 
-Plugins have three main ways of communicating with IRC: hooks, WHOIS handlers, and commands sent in PM to the main PyLink client. A simple plugin can use one, or any mixture of these.
+Plugins have two ways of communicating with IRC: hooks, and commands sent in PM to the main PyLink client. A simple plugin can use one, or any mixture of these.
 
 ### Hooks
 
@@ -26,40 +26,34 @@ Each hook-bound function takes 4 arguments: `irc, source, command, args`.
 
 Hook functions do not return anything, and can raise exceptions to be caught by the core.
 
-### PyLink commands
+### Bot commands
 
-For plugins that interact with IRC users, there is also the option of binding to PM commands.
+For plugins that interact with regular users, you can simply write commands for the PyLink bot.
 
-Commands are bound to using the `utils.add_cmd()` function: `utils.add_cmd(testcommand, "hello")`. Here, `testcommand` is the name of your function, and `hello` is the (optional) name of the command to bind to; if it is not specified, it'll use the same name as the function.
+Plugins can add commands by including something like `utils.add_cmd(testcommand, "hello")`. Here, `testcommand` is the name of your function, and `hello` is the (optional) name of the command. If no command name is specified, it will use the same name as the function.
 Now, your command function will be called whenever someone PMs the PyLink client with the command (e.g. `/msg PyLink hello`, case-insensitive).
 
 Each command function takes 3 arguments: `irc, source, args`.
 - **irc**: The IRC object where the command was called.
 - **source**: The numeric of the sender. This will usually be a UID (for users) or a SID (for server).
-- **args**: A `list` of space-separated command args (excluding the command name) that the command was called with. For example, `/msg PyLink hello world 1234` would give an `args` list of `['world', '1234']`
+- **args**: A `list` of space-separated command arguments (excluding the command name) that the command was called with. For example, `/msg PyLink hello world 1234` would give an `args` list of `['world', '1234']`
+
+(Unfortunately, this means that for now, any fancy argument parsing has to be done manually.)
 
 Command handlers do not return anything and can raise exceptions, which are caught by the core and automatically return an error message.
-
-### WHOIS handlers
-
-The third option, `WHOIS` handlers, are a lot more limited compared to the other options. They are solely used for `WHOIS` replies, **and only work on IRCds where WHOIS commands are sent to remote servers!** This includes Charybdis and UnrealIRCd, but **not** InspIRCd, which handles all `WHOIS` requests locally (the only thing sent between servers is an IDLE time query).
-
-WHOIS replies are special in that any plugins wishing to add lines to a WHOIS reply must do so after the regular WHOIS lines (handled by the core), but before a special "End of WHOIS" line. This means that the regular hooks mechanism, which are only called after core handling, doesn't work here.
-
-An example of a plugin WHOIS handler is in the [relay plugin](../../plugins/relay.py) (search for `relayWhoisHandler`. WHOIS handler functions are added to the `world.whois_handlers` list using a simple `append()`. They should return either nothing or a list of two-length tuples: the first item being the WHOIS numeric, and the second the raw whois text.
 
 ### Sending data to IRC
 
 Plugins receive data from the underlying protocol module, and communicate back using outgoing [command functions](pmodule-spec.md) implemented by the protocol module. They should *never* send raw data directly back to IRC, because that wouldn't be portable across different IRCds.
 
-These functions are usually called in this fashion: `irc.proto.abcdClient(arg1, arg2)`. For example, the command `irc.proto.join('10XAAAAAB', '#bots')` would join a PyLink client with UID `10XAAAAAB` to channel `#bots`.
+These functions are usually called in this fashion: `irc.proto.command(arg1, arg2, ...)`. For example, the command `irc.proto.join('10XAAAAAB', '#bots')` would join a PyLink client with UID `10XAAAAAB` to channel `#bots`.
 
 For sending messages (e.g. replies to commands), simpler forms of:
 
 - `irc.reply(text, notice=False, source=None)`
 - and `irc.msg(targetUID, text, notice=False, source=None)`
 
-are also used.
+are preferred.
 
 `irc.reply()` is a special form of `irc.msg` in that it automatically finds the target to reply to. If the command was called in a channel using fantasy, it will send the reply in that channel. Otherwise, the reply will be sent in a PM to the caller.
 
