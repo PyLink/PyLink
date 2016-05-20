@@ -140,18 +140,9 @@ def handle_whois(irc, source, command, args):
     # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
 
-    for func in world.whois_handlers:
-    # Iterate over custom plugin WHOIS handlers. They return a tuple
-    # or list with two arguments: the numeric, and the text to send.
-        try:
-            res = func(irc, target)
-            if res:
-                num, text = res
-                f(server, num, source, text)
-        except Exception as e:
-            # Again, we wouldn't want this to crash our service, in case
-            # something goes wrong!
-            log.exception('(%s) Error caught in WHOIS handler: %s', irc.name, e)
+    # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook.
+    irc.callHooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
+
     # 318: End of WHOIS.
     f(server, 318, source, "%s :End of /WHOIS list" % nick)
 utils.add_hook(handle_whois, 'WHOIS')

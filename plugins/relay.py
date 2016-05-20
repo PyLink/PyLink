@@ -777,21 +777,35 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
             rsid = getRemoteSid(remoteirc, irc)
             remoteirc.proto.mode(rsid, remotechan, supported_modes)
 
-def relayWhoisHandler(irc, target):
+### EVENT HANDLERS
+
+def handle_relay_whois(irc, source, command, args):
     """
     WHOIS handler for the relay plugin.
     """
-    user = irc.users[target]
-    orig = getOrigUser(irc, target)
-    if orig:
-        network, remoteuid = orig
-        remotenick = world.networkobjects[network].users[remoteuid].nick
-        return [320, "%s :is a remote user connected via PyLink Relay. Home "
-                     "network: %s; Home nick: %s" % (user.nick, network,
-                                                     remotenick)]
-world.whois_handlers.append(relayWhoisHandler)
+    target = args['target']
+    server = args['server']
+    targetuser = irc.users[target]
 
-### GENERIC EVENT HOOK HANDLERS
+    def wreply(num, text):
+        """Convenience wrapper to return WHOIS replies."""
+        # WHOIS replies are by convention prefixed with the target user's nick.
+        text = '%s %s' % (targetuser.nick, text)
+        irc.proto.numeric(server, num, source, text)
+
+
+    # Get the real user for the WHOIS target.
+    origuser = getOrigUser(irc, target)
+    if origuser:
+        homenet, uid = origuser
+        realirc = world.networkobjects[homenet]
+        realuser = realirc.users[uid]
+        netname = realirc.serverdata.get('netname', homenet)
+
+        wreply(320, ":is a remote user connected via PyLink Relay. Home network: %s; "
+                    "Home nick: %s" % (netname, realuser.nick))
+
+utils.add_hook(handle_relay_whois, 'PYLINK_CUSTOM_WHOIS')
 
 def handle_operup(irc, numeric, command, args):
     newtype = args['text'] + '_(remote)'

@@ -46,20 +46,7 @@ The third option, `WHOIS` handlers, are a lot more limited compared to the other
 
 WHOIS replies are special in that any plugins wishing to add lines to a WHOIS reply must do so after the regular WHOIS lines (handled by the core), but before a special "End of WHOIS" line. This means that the regular hooks mechanism, which are only called after core handling, doesn't work here.
 
-An example of a plugin WHOIS handler is in the relay plugin. WHOIS handler functions are added to the `world.whois_handlers` list using a simple `append()`. They should return either nothing or a two-length list: the first item being the WHOIS numeric, and the second the raw whois text.
-
-```
-def relayWhoisHandler(irc, target):
-    user = irc.users[target]
-    orig = getLocalUser(irc, target)
-    if orig:
-        network, remoteuid = orig
-        remotenick = world.networkobjects[network].users[remoteuid].nick
-        return [320, "%s :is a remote user connected via PyLink Relay. Home "
-                     "network: %s; Home nick: %s" % (user.nick, network,
-                                                     remotenick)]
-world.whois_handlers.append(relayWhoisHandler)
-```
+An example of a plugin WHOIS handler is in the [relay plugin](../../plugins/relay.py) (search for `relayWhoisHandler`. WHOIS handler functions are added to the `world.whois_handlers` list using a simple `append()`. They should return either nothing or a list of two-length tuples: the first item being the WHOIS numeric, and the second the raw whois text.
 
 ### Sending data to IRC
 
