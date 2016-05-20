@@ -349,3 +349,15 @@ relay:
     # Whether subservers should be spawned for each relay network (requires
     # reloading the plugin to change). Defaults to true.
     spawn_servers: true
+
+    # Determines whether NickServ login info should be shown in the /whois output for
+    # relay users. This works on most IRCds EXCEPT InspIRCd.
+    # Valid options include "all" (show this to everyone), "opers" (show only to
+    # opers), and "none" (disabled). Defaults to none if not specified.
+    whois_show_accounts: all
+
+    # Determines whether the origin server should be shown in the /whois output for
+    # relay users. This works on most IRCds EXCEPT InspIRCd.
+    # Valid options include "all" (show this to everyone), "opers" (show only to
+    # opers), and "none" (disabled). Defaults to none if not specified.
+    whois_show_server: opers
