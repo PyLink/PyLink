@@ -6,6 +6,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import random
+import urllib.request
+import urllib.error
+from xml.etree import ElementTree
 
 import utils
 from log import log
@@ -75,6 +78,53 @@ def eightball(irc, source, args):
 gameclient.add_cmd(eightball)
 gameclient.add_cmd(eightball, '8ball')
 gameclient.add_cmd(eightball, '8b')
+
+def fml(irc, source, args):
+    """[<id>]
+
+    Displays an entry from fmylife.com. If <id>
+    is not given, fetch a random entry from the API."""
+    try:
+        query = args[0]
+    except IndexError:
+        # Get a random FML from the API.
+        query = 'random'
+
+    # TODO: configurable language?
+    url = ('http://api.betacie.com/view/%s/nocomment'
+          '?key=4be9c43fc03fe&language=en' % query)
+    try:
+        data = urllib.request.urlopen(url).read()
+    except urllib.error as e:
+        reply(irc, 'Error: %s' % e)
+        return
+
+    tree = ElementTree.fromstring(data.decode('utf-8'))
+    tree = tree.find('items/item')
+
+    try:
+        category = tree.find('category').text
+        text = tree.find('text').text
+        fmlid = tree.attrib['id']
+        url = tree.find('short_url').text
+    except AttributeError as e:
+        log.debug("games.FML: Error fetching FML %s from URL %s: %s",
+                  query, url, e)
+        reply(irc, "Error: That FML does not exist or there was an error "
+                   "fetching data from the API.")
+        return
+
+    if not fmlid:
+        reply(irc, "Error: That FML does not exist.")
+        return
+
+    # TODO: customizable formatting
+    votes = "\x02[Agreed: %s / Deserved: %s]\x02" % \
+            (tree.find('agree').text, tree.find('deserved').text)
+    s = '\x02#%s [%s]\x02: %s - %s \x02<\x0311%s\x03>\x02' % \
+        (fmlid, category, text, votes, url)
+    reply(irc, s)
+gameclient.add_cmd(fml)
 
 # loading
 def main(irc=None):
