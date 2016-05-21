@@ -209,7 +209,7 @@ def spawn_service(irc, source, command, args):
     # Prefer spawning service clients with umode +io, plus hideoper and
     # hidechans if supported.
     modes = []
-    for mode in ('oper', 'hideoper', 'hidechans', 'invisible'):
+    for mode in ('oper', 'hideoper', 'hidechans', 'invisible', 'bot'):
         mode = irc.umodes.get(mode)
         if mode:
             modes.append((mode, None))
