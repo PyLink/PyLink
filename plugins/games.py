@@ -46,6 +46,36 @@ def dice(irc, source, args):
 gameclient.add_cmd(dice, 'd')
 gameclient.add_cmd(dice)
 
+eightball_responses = ["It is certain.",
+             "It is decidedly so.",
+             "Without a doubt.",
+             "Yes, definitely.",
+             "You may rely on it.",
+             "As I see it, yes.",
+             "Most likely.",
+             "Outlook good.",
+             "Yes.",
+             "Signs point to yes.",
+             "Reply hazy, try again.",
+             "Ask again later.",
+             "Better not tell you now.",
+             "Cannot predict now.",
+             "Concentrate and ask again.",
+             "Don't count on it.",
+             "My reply is no.",
+             "My sources say no.",
+             "Outlook not so good.",
+             "Very doubtful."]
+def eightball(irc, source, args):
+    """[<question>]
+
+    Asks the Magic 8-ball a question.
+    """
+    reply(irc, random.choice(eightball_responses))
+gameclient.add_cmd(eightball)
+gameclient.add_cmd(eightball, '8ball')
+gameclient.add_cmd(eightball, '8b')
+
 # loading
 def main(irc=None):
     """Main function, called during plugin loading at start."""
