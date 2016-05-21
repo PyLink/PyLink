@@ -85,27 +85,30 @@ def handle_whois(irc, source, command, args):
     # 311: sends nick!user@host information
     f(server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
 
-    # 319: RPL_WHOISCHANNELS, shows public channel list of target
-    public_chans = []
-    for chan in user.channels:
-        c = irc.channels[chan]
-        # Here, we'll want to hide secret/private channels from non-opers
-        # who are not in them.
+    # 319: RPL_WHOISCHANNELS; Show public channels of the target, respecting
+    # hidechans umodes for non-oper callers.
+    isHideChans = (irc.umodes.get('hidechans'), None) in user.modes
+    if (not isHideChans) or (isHideChans and sourceisOper):
+        public_chans = []
+        for chan in user.channels:
+            c = irc.channels[chan]
+            # Here, we'll want to hide secret/private channels from non-opers
+            # who are not in them.
 
-        if ((irc.cmodes.get('secret'), None) in c.modes or \
-            (irc.cmodes.get('private'), None) in c.modes) \
-            and not (sourceisOper or source in c.users):
-                continue
+            if ((irc.cmodes.get('secret'), None) in c.modes or \
+                (irc.cmodes.get('private'), None) in c.modes) \
+                and not (sourceisOper or source in c.users):
+                    continue
 
-        # Show prefix modes like a regular IRCd does.
-        for prefixmode in c.getPrefixModes(target):
-            modechar = irc.cmodes[prefixmode]
-            chan = irc.prefixmodes[modechar] + chan
+            # Show prefix modes like a regular IRCd does.
+            for prefixmode in c.getPrefixModes(target):
+                modechar = irc.cmodes[prefixmode]
+                chan = irc.prefixmodes[modechar] + chan
 
-        public_chans.append(chan)
+            public_chans.append(chan)
 
-    if public_chans:  # Only send the line if the person is in any visible channels...
-        f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
+        if public_chans:  # Only send the line if the person is in any visible channels...
+            f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
 
     # 312: sends the server the target is on, and its server description.
     f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
@@ -145,6 +148,10 @@ def handle_whois(irc, source, command, args):
     # idle time, so we simply return 0.
     # <- 317 GL GL 15 1437632859 :seconds idle, signon time
     f(server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
+
+    if (irc.umodes.get('bot'), None) in user.modes:
+        # Show botmode info in WHOIS.
+        f(server, 335, source, "%s :is a bot" % nick)
 
     # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook.
     irc.callHooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
