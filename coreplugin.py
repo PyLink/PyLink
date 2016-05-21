@@ -111,17 +111,23 @@ def handle_whois(irc, source, command, args):
     f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
       irc.servers[server].desc))
 
-    # 313: sends a string denoting the target's operator privilege,
-    # only if they have umode +o.
+    # 313: sends a string denoting the target's operator privilege if applicable.
     if ('o', None) in user.modes:
-        # Let's be gramatically correct. (If the opertype starts with a vowel,
-        # write "an Operator" instead of "a Operator")
-        n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
+        # Check hideoper status. Require that either:
+        # 1) +H is not set
+        # 2) +H is set, but the caller is oper
+        # 3) +H is set, but whois_use_hideoper is disabled in config
+        isHideOper = (irc.umodes.get('hideoper'), None) in user.modes
+        if (not isHideOper) or (isHideOper and sourceisOper) or \
+                (isHideOper and not irc.botdata.get('whois_use_hideoper', True)):
+            # Let's be gramatically correct. (If the opertype starts with a vowel,
+            # write "an Operator" instead of "a Operator")
+            n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
 
-        # I want to normalize the syntax: PERSON is an OPERTYPE on NETWORKNAME.
-        # This is the only syntax InspIRCd supports, but for others it doesn't
-        # really matter since we're handling the WHOIS requests by ourselves.
-        f(server, 313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
+            # I want to normalize the syntax: PERSON is an OPERTYPE on NETWORKNAME.
+            # This is the only syntax InspIRCd supports, but for others it doesn't
+            # really matter since we're handling the WHOIS requests by ourselves.
+            f(server, 313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
 
     # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
     # Only show this to opers!

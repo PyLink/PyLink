@@ -26,6 +26,10 @@ bot:
     prefixes:
         games: "@"
 
+    # Determines whether hideoper modes should be respected in WHOIS responses.
+    # Defaults to true if not specified.
+    whois_use_hideoper: true
+
 login:
     # PyLink administrative login - Change this, or the service will not start!
     user: admin
