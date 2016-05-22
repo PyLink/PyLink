@@ -1,4 +1,4 @@
-# plugin_example.py: An example PyLink plugin.
+# example.py: An example PyLink plugin.
 
 # These two lines add PyLink's root directory to the PATH, so that importing things like
 # 'utils' and 'log' work.
@@ -23,11 +23,15 @@ import random
 def hook_privmsg(irc, source, command, args):
     channel = args['target']
     text = args['text']
+
     # irc.pseudoclient stores the IrcUser object of the main PyLink client.
     # (i.e. the user defined in the bot: section of the config)
     if utils.isChannel(channel) and irc.pseudoclient.nick in text:
         irc.msg(channel, 'hi there!')
+        # log.debug, log.info, log.warning, log.error, log.exception (within except: clauses)
+        # and log.critical are supported here.
         log.info('%s said my name on channel %s (PRIVMSG hook caught)' % (source, channel))
+
 utils.add_hook(hook_privmsg, 'PRIVMSG')
 
 
@@ -41,7 +45,11 @@ def randint(irc, source, args):
     # The docstring here is used as command help by the 'help' command, and formatted using the
     # same line breaks as the raw string. You shouldn't make this text or any one line too long,
     # to prevent flooding users or getting long lines cut off.
-    """[<min>] [<max>]
+
+    # The same applies to message replies in general: plugins sending long strings of text should
+    # be wary that long messages can get cut off. Automatic word-wrap may be added in the future:
+    # https://github.com/GLolol/PyLink/issues/153
+    """[<min> <max>]
     Returns a random number between <min> and <max>. <min> and <max> default
     to 1 and 10 respectively, if both aren't given."""
     try:
@@ -58,6 +66,4 @@ def randint(irc, source, args):
 
 # You can also bind a command function multiple times, and/or to different command names via a
 # second argument.
-# Note: no checking is done at the moment to prevent multiple plugins from binding to the same
-# command name. The older command just gets replaced by the new one!
 utils.add_cmd(randint, "random")

@@ -2,7 +2,7 @@
 
 PyLink plugins are modules that extend its functionality by giving it something to do. Without any plugins loaded, PyLink can only sit on a server and do absolutely nothing.
 
-This guide, along with the sample plugin [`plugin_example.py`](plugin_example.py), aim to show the basics of writing plugins for PyLink.
+This guide, along with the sample plugins [`plugins/example.py`](../../plugins/example.py), and [`plugins/service.py`](../../plugins/demo_service.py) aim to show the basics of writing plugins for PyLink.
 
 ## Receiving data from IRC
 
@@ -28,7 +28,7 @@ Hook functions do not return anything, and can raise exceptions to be caught by 
 
 ### Bot commands
 
-For plugins that interact with regular users, you can simply write commands for the PyLink bot.
+For plugins that interact with regular users, you can also write commands for the PyLink bot, or [create service bots with their own command set](services-api.md). This section only details the former:
 
 Plugins can add commands by including something like `utils.add_cmd(testcommand, "hello")`. Here, `testcommand` is the name of your function, and `hello` is the (optional) name of the command. If no command name is specified, it will use the same name as the function.
 Now, your command function will be called whenever someone PMs the PyLink client with the command (e.g. `/msg PyLink hello`, case-insensitive).
@@ -42,7 +42,7 @@ Each command function takes 3 arguments: `irc, source, args`.
 
 Command handlers do not return anything and can raise exceptions, which are caught by the core and automatically return an error message.
 
-### Sending data to IRC
+## Sending data to IRC
 
 Plugins receive data from the underlying protocol module, and communicate back using outgoing [command functions](pmodule-spec.md) implemented by the protocol module. They should *never* send raw data directly back to IRC, because that wouldn't be portable across different IRCds.
 
