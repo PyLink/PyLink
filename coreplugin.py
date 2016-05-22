@@ -347,18 +347,21 @@ def unload(irc, source, args):
         log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.getHostmask(source))
         pl = world.plugins[name]
         log.debug('sys.getrefcount of plugin %s is %s', pl, sys.getrefcount(pl))
-        # Remove any command functions set by the plugin.
-        for cmdname, cmdfuncs in world.commands.copy().items():
+
+        # Remove any command functions defined by the plugin.
+        for cmdname, cmdfuncs in world.services['pylink'].commands.copy().items():
             log.debug('cmdname=%s, cmdfuncs=%s', cmdname, cmdfuncs)
+
             for cmdfunc in cmdfuncs:
                 log.debug('__module__ of cmdfunc %s is %s', cmdfunc, cmdfunc.__module__)
                 if cmdfunc.__module__ == name:
-                    log.debug('Removing %s from world.commands[%s]', cmdfunc, cmdname)
-                    world.commands[cmdname].remove(cmdfunc)
+                    log.debug("Removing %s from world.services['pylink'].commands[%s]", cmdfunc, cmdname)
+                    world.services['pylink'].commands[cmdname].remove(cmdfunc)
+
                     # If the cmdfunc list is empty, remove it.
                     if not cmdfuncs:
-                        log.debug("Removing world.commands[%s] (it's empty now)", cmdname)
-                        del world.commands[cmdname]
+                        log.debug("Removing world.services['pylink'].commands[%s] (it's empty now)", cmdname)
+                        del world.services['pylink'].commands[cmdname]
 
         # Remove any command hooks set by the plugin.
         for hookname, hookfuncs in world.hooks.copy().items():
