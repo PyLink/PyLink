@@ -126,12 +126,5 @@ def fml(irc, source, args):
     reply(irc, s)
 gameclient.add_cmd(fml)
 
-# loading
-def main(irc=None):
-    """Main function, called during plugin loading at start."""
-
-    # seed the random
-    random.seed()
-
 def die(irc):
     utils.unregisterService('games')
