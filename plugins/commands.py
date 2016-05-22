@@ -41,7 +41,7 @@ def showuser(irc, source, args):
 
     f = lambda s: irc.msg(source, s)
     userobj = irc.users[u]
-    f('Information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
+    f('Showing information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
       userobj.host, userobj.realname))
 
     sid = irc.getServer(u)

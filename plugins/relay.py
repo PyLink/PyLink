@@ -1618,6 +1618,7 @@ def showuser(irc, source, args):
         return
     u = irc.nickToUid(target)
     if u:
+        irc.msg(source, "Showing relay information on user \x02%s\x02:" % irc.users[u].nick)
         try:
             userpair = getOrigUser(irc, u) or (irc.name, u)
             remoteusers = relayusers[userpair].items()
