@@ -19,7 +19,7 @@ The command `:42XAAAAAB PRIVMSG #dev :test` would result in the following raw ho
 
 - `['42XAAAAAB', 'PRIVMSG', {'target': '#dev', 'text': 'test', 'ts': 1451174041}]`
 
-On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would return the raw hook data of this (with the nick converted into UID automatically by the UnrealIRCd protocol module):
+On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would return the raw hook data of this (with the nick converted into UID automatically by the protocol module):
 
 - `['001ZJZW01', 'CHGHOST', {'ts': 1451174512, 'target': '001ZJZW01', 'newhost': 'blah'}]`
 
@@ -30,11 +30,11 @@ Some hooks, like MODE, are more complex and can include the entire state of a ch
  'MODE',
  {'modes': [('+o', '38QAAAAAA')],
   'oldchan': IrcChannel({'modes': set(),
-                        'prefixmodes': {'admins': set(),
-                                        'halfops': set(),
-                                        'ops': set(),
-                                        'owners': set(),
-                                        'voices': set()},
+                        'prefixmodes': {'admin': set(),
+                                        'halfop': set(),
+                                        'op': set(),
+                                        'owner': set(),
+                                        'voice': set()},
                         'topic': '',
                         'topicset': False,
                         'ts': 1451169448,
@@ -50,31 +50,10 @@ These following hooks, sent with their correct data keys, are required for PyLin
 - **ENDBURST**: `{}`
     - The hook data here is empty.
     - This payload should be sent whenever a server finishes its burst, with the SID of the bursted server as the sender.
-    - Plugins like Relay need this to know that the uplink has finished bursting all its users!
+    - The service bot API and plugins like relay use this to make sure networks are properly connected. Should ENDBURST not be sent or emulated, they will likely fail to spawn users entirely.
 
 - **PYLINK_DISCONNECT**: `{}`
     - This is sent to plugins by IRC object instances whenever their network has disconnected. The sender here is always **None**.
-
-- **PYLINK_SPAWNMAIN**: `{'olduser': olduserobj}`
-    - This is sent whenever `Irc.spawnMain()` is called to (re)spawn the main PyLink client, for example to rejoin it from a KILL. It basically tells plugins that the UID of the main PyLink client has changed, while giving them the original data too for whatever reason. `olduserobj` represents a `classes.IrcUser` instance.
-    - Example payload:
-```
-{'olduser': IrcUser({'away': '',
-                     'channels': {'#chat'},
-                     'host': 'pylink.local',
-                     'ident': 'pylink',
-                     'identified': False,
-                     'ip': '0.0.0.0',
-                     'manipulatable': True,
-                     'modes': {('o', None)},
-                     'nick': 'PyLink-devel',
-                     'realhost': 'pylink.local',
-                     'realname': 'PyLink development server',
-                     'ts': 1452393682,
-                     'uid': '7PYAAAAAE'}),
- 'ts': 1452393899)}
-```
-
 
 ## IRC command hooks
 
@@ -168,6 +147,15 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
 - **CLIENT_OPERED**: `{'text': 'IRC_Operator'}`
     - This hook is sent whenever an oper-up is successful: when a user with umode `+o` is bursted, when umode `+o` is set, etc.
     - The `text` field denotes the oper type (not the SWHOIS), which is used for WHOIS replies on different IRCds.
+
+- **PYLINK_NEW_SERVICE**: `{'name': "servicename"}`
+    - This hook is sent when a new service is introduced. It replaces the old `PYLINK_SPAWNMAIN` hook.
+    - The sender here is always **None**.
+
+- **PYLINK_CUSTOM_WHOIS**: `{'target': UID1, 'server': SID1}`
+    - This hook is called by `coreplugin` during its WHOIS handling process, to allow plugins to provide custom WHOIS information. The `target` field represents the target UID, while the `server` field represents the SID that should be replying to the WHOIS request. The source of the payload is the user using `/whois`.
+    - Plugins wishing to implement this should use the standard WHOIS numerics, using `irc.proto.numeric()` to reply to the source from the given server.
+    - This hook replaces the pre-0.8 fashion of defining custom WHOIS handlers, which was non-standard and poorly documented.
 
 ## Commands handled WITHOUT hooks
 At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
