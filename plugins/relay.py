@@ -1487,9 +1487,9 @@ def delink(irc, source, args):
 
 @utils.add_cmd
 def linked(irc, source, args):
-    """takes no arguments.
+    """[<network>]
 
-    Returns a list of channels shared across the relay."""
+    Returns a list of channels shared across the relay. If <network> is given, filters output to channels linked to the given network."""
 
     # Only show remote networks that are marked as connected.
     remote_networks = [netname for netname, ircobj in world.networkobjects.copy().items()
@@ -1503,8 +1503,21 @@ def linked(irc, source, args):
     s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(remote_networks))
     irc.msg(source, s)
 
+    net = ''
+    try:
+        net = args[0]
+    except:
+        pass
+    else:
+        irc.msg(source, "Showing channels linked to %s:" % net)
+
     # Sort the list of shared channels when displaying
     for k, v in sorted(db.items()):
+
+        # Skip if we're filtering by network and the network given isn't relayed
+        # to the channel.
+        if net and not (net == k[0] or net in [link[0] for link in v['links']]):
+            continue
 
         # Bold each network/channel name pair
         s = '\x02%s%s\x02 ' % k
