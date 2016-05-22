@@ -14,12 +14,11 @@ testing = True
 # Sets the default protocol module to use with tests.
 testing_ircd = 'inspircd'
 
-
-commands = defaultdict(list)
+# Statekeeping for our hooks list, IRC objects, loaded plugins, and initialized
+# service bots.
 hooks = defaultdict(list)
 networkobjects = {}
 plugins = {}
-whois_handlers = []
 services = {}
 
 started = threading.Event()

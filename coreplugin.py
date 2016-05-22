@@ -372,11 +372,6 @@ def unload(irc, source, args):
                     if not hookfuncs:
                         del world.hooks[hookname]
 
-        # Remove whois handlers too.
-        for f in world.whois_handlers:
-            if f.__module__ == name:
-                world.whois_handlers.remove(f)
-
         # Call the die() function in the plugin, if present.
         if hasattr(pl, 'die'):
             try:
