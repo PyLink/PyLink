@@ -1169,7 +1169,7 @@ def handle_topic(irc, numeric, command, args):
                 rsid = getRemoteSid(remoteirc, irc)
                 remoteirc.proto.topicBurst(rsid, remotechan, topic)
     elif oldtopic:  # Topic change blocked by claim.
-        irc.proto.topic(irc.pseudoclient.uid, channel, oldtopic)
+        irc.proto.topicBurst(irc.sid, channel, oldtopic)
 
 utils.add_hook(handle_topic, 'TOPIC')
 
