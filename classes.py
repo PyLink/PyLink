@@ -47,7 +47,7 @@ class Irc():
         self.bot_clients = {}
         self.protoname = proto.__name__
         self.proto = proto.Class(self)
-        self.pingfreq = self.serverdata.get('pingfreq') or 30
+        self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
 
         self.connected = threading.Event()
