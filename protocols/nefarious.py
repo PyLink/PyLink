@@ -822,8 +822,9 @@ class P10Protocol(Protocol):
             return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
 
     def checkCloakChange(self, uid):
-        """Checks for cloak changes on the given UID."""
+        """Checks for cloak changes (ident and host) on the given UID."""
         uobj = self.irc.users[uid]
+        ident = uobj.ident
 
         modes = dict(uobj.modes)
         log.debug('(%s) checkCloakChange: modes of %s are %s', self.irc.name, uid, modes)
@@ -831,7 +832,12 @@ class P10Protocol(Protocol):
         if 'x' not in modes:  # +x isn't set, so cloaking is disabled.
             newhost = uobj.realhost
         else:
-            if 'f' in modes:
+            if 'h' in modes:
+                # +h is used by SETHOST/spoofhost blocks, or by /sethost when freeform is enabled.
+                # It takes the form umode +h ident@some.host, though only the host is
+                # actually settable in /sethost.
+                ident, newhost = modes['h'].split('@')
+            elif 'f' in modes:
                 # +f represents another way of setting vHosts, via a command called FAKE.
                 # Atheme uses this for vHosts, afaik.
                 newhost = modes['f']
@@ -871,7 +877,10 @@ class P10Protocol(Protocol):
         # Propagate a hostname update to plugins, but only if the changed host is different.
         if newhost != uobj.host:
              self.irc.callHooks([uid, 'CHGHOST', {'target': uid, 'newhost': newhost}])
+        if ident != uobj.ident:
+             self.irc.callHooks([uid, 'CHGIDENT', {'target': uid, 'newident': ident}])
         uobj.host = newhost
+        uobj.ident = ident
 
         return newhost
 
