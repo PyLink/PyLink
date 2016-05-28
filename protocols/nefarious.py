@@ -623,7 +623,14 @@ class P10Protocol(Protocol):
 
         if field == 'HOST':
             self._send(self.irc.sid, 'FA %s %s' % (target, text))
-            # Save the host change as a user mode (this is what P10 does),
+
+            # If this is an internal client, propagate a umode +x change to the target.
+            # External clients will have to turn umode +x on themselves, as I don't believe
+            # we can force modes on remote users.
+            if self.irc.isInternalClient(target):
+                self.mode(self.irc.sid, target, [('+x', None)])
+
+            # Save the host change as a user mode (this is what P10 does on bursts),
             # so further host checks work.
             self.irc.applyModes(target, [('+f', text)])
 
