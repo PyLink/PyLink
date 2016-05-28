@@ -32,9 +32,11 @@
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-handle_commands"><strong>handle_commands</strong></a>(irc, source, command, args)</dt><dd><tt>Handle&nbsp;commands&nbsp;sent&nbsp;to&nbsp;the&nbsp;PyLink&nbsp;client&nbsp;(PRIVMSG).</tt></dd></dl>
- <dl><dt><a name="-handle_kick"><strong>handle_kick</strong></a>(irc, source, command, args)</dt><dd><tt>Handle&nbsp;KICKs&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client,&nbsp;rejoining&nbsp;channels&nbsp;as&nbsp;needed.</tt></dd></dl>
- <dl><dt><a name="-handle_kill"><strong>handle_kill</strong></a>(irc, source, command, args)</dt><dd><tt>Handle&nbsp;KILLs&nbsp;to&nbsp;the&nbsp;main&nbsp;PyLink&nbsp;client,&nbsp;respawning&nbsp;it&nbsp;as&nbsp;needed.</tt></dd></dl>
+<td width="100%"><dl><dt><a name="-handle_commands"><strong>handle_commands</strong></a>(irc, source, command, args)</dt><dd><tt>Handle&nbsp;commands&nbsp;sent&nbsp;to&nbsp;the&nbsp;PyLink&nbsp;service&nbsp;bots&nbsp;(PRIVMSG).</tt></dd></dl>
+ <dl><dt><a name="-handle_disconnect"><strong>handle_disconnect</strong></a>(irc, source, command, args)</dt><dd><tt>Handles&nbsp;network&nbsp;disconnections.</tt></dd></dl>
+ <dl><dt><a name="-handle_endburst"><strong>handle_endburst</strong></a>(irc, source, command, args)</dt><dd><tt>Handles&nbsp;network&nbsp;bursts.</tt></dd></dl>
+ <dl><dt><a name="-handle_kick"><strong>handle_kick</strong></a>(irc, source, command, args)</dt><dd><tt>Handle&nbsp;KICKs&nbsp;to&nbsp;the&nbsp;PyLink&nbsp;service&nbsp;bots,&nbsp;rejoining&nbsp;channels&nbsp;as&nbsp;needed.</tt></dd></dl>
+ <dl><dt><a name="-handle_kill"><strong>handle_kill</strong></a>(irc, source, command, args)</dt><dd><tt>Handle&nbsp;KILLs&nbsp;to&nbsp;PyLink&nbsp;service&nbsp;bots,&nbsp;respawning&nbsp;them&nbsp;as&nbsp;needed.</tt></dd></dl>
  <dl><dt><a name="-handle_mode"><strong>handle_mode</strong></a>(irc, source, command, args)</dt><dd><tt>Protect&nbsp;against&nbsp;forced&nbsp;deoper&nbsp;attempts.</tt></dd></dl>
  <dl><dt><a name="-handle_operup"><strong>handle_operup</strong></a>(irc, source, command, args)</dt><dd><tt>Logs&nbsp;successful&nbsp;oper-ups&nbsp;on&nbsp;networks.</tt></dd></dl>
  <dl><dt><a name="-handle_services_login"><strong>handle_services_login</strong></a>(irc, source, command, args)</dt><dd><tt>Sets&nbsp;services&nbsp;login&nbsp;status&nbsp;for&nbsp;users.</tt></dd></dl>
@@ -58,6 +60,7 @@ Loads&nbsp;a&nbsp;plugin&nbsp;from&nbsp;the&nbsp;plugin&nbsp;folder.</tt></dd></
 Exits&nbsp;PyLink&nbsp;by&nbsp;disconnecting&nbsp;all&nbsp;networks.</tt></dd></dl>
  <dl><dt><a name="-sighup_handler"><strong>sighup_handler</strong></a>(_signo, _stack_frame)</dt><dd><tt>Handles&nbsp;SIGHUP&nbsp;by&nbsp;rehashing&nbsp;the&nbsp;PyLink&nbsp;daemon.</tt></dd></dl>
  <dl><dt><a name="-sigterm_handler"><strong>sigterm_handler</strong></a>(_signo, _stack_frame)</dt><dd><tt>Handles&nbsp;SIGTERM&nbsp;gracefully&nbsp;by&nbsp;shutting&nbsp;down&nbsp;the&nbsp;PyLink&nbsp;daemon.</tt></dd></dl>
+ <dl><dt><a name="-spawn_service"><strong>spawn_service</strong></a>(irc, source, command, args)</dt><dd><tt>Handles&nbsp;new&nbsp;service&nbsp;bot&nbsp;introductions.</tt></dd></dl>
  <dl><dt><a name="-unload"><strong>unload</strong></a>(irc, source, args)</dt><dd><tt>&lt;plugin&nbsp;name&gt;.<br>
 &nbsp;<br>
 Unloads&nbsp;a&nbsp;currently&nbsp;loaded&nbsp;plugin.</tt></dd></dl>
@@ -68,5 +71,7 @@ Unloads&nbsp;a&nbsp;currently&nbsp;loaded&nbsp;plugin.</tt></dd></dl>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>log</strong> = &lt;logging.RootLogger object&gt;</td></tr></table>
+<td width="100%"><strong>log</strong> = &lt;logging.RootLogger object&gt;<br>
+<strong>myident</strong> = 'pylink'<br>
+<strong>mynick</strong> = 'PyLink'</td></tr></table>
 </body></html>

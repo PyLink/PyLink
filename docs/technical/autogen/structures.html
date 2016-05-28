@@ -20,7 +20,8 @@ This&nbsp;module&nbsp;contains&nbsp;custom&nbsp;data&nbsp;structures&nbsp;that&n
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="collections.html">collections</a><br>
-</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+</td><td width="25%" valign=top><a href="json.html">json</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -28,6 +29,12 @@ This&nbsp;module&nbsp;contains&nbsp;custom&nbsp;data&nbsp;structures&nbsp;that&n
     
 <tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="structures.html#DataStore">DataStore</a>
+</font></dt></dl>
+</dd>
 <dt><font face="helvetica, arial"><a href="collections.html#defaultdict">collections.defaultdict</a>(<a href="builtins.html#dict">builtins.dict</a>)
 </font></dt><dd>
 <dl>
@@ -36,6 +43,46 @@ This&nbsp;module&nbsp;contains&nbsp;custom&nbsp;data&nbsp;structures&nbsp;that&n
 </dd>
 </dl>
  <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DataStore">class <strong>DataStore</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DataStore-__contains__"><strong>__contains__</strong></a>(self, key)</dt><dd><tt>#&nbsp;single&nbsp;keys</tt></dd></dl>
+
+<dl><dt><a name="DataStore-__init__"><strong>__init__</strong></a>(self, name, filename, db_format='json', save_frequency={'seconds': 30})</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+
+<dl><dt><a name="DataStore-create_or_load"><strong>create_or_load</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="DataStore-delete"><strong>delete</strong></a>(self, key)</dt></dl>
+
+<dl><dt><a name="DataStore-delete_keys"><strong>delete_keys</strong></a>(self, prefix)</dt><dd><tt>Delete&nbsp;all&nbsp;keys&nbsp;with&nbsp;the&nbsp;given&nbsp;prefix.</tt></dd></dl>
+
+<dl><dt><a name="DataStore-get"><strong>get</strong></a>(self, key, default=None)</dt></dl>
+
+<dl><dt><a name="DataStore-list_keys"><strong>list_keys</strong></a>(self, prefix=None)</dt><dd><tt>Return&nbsp;all&nbsp;key&nbsp;names.&nbsp;If&nbsp;prefix&nbsp;given,&nbsp;return&nbsp;only&nbsp;keys&nbsp;that&nbsp;start&nbsp;with&nbsp;it.</tt></dd></dl>
+
+<dl><dt><a name="DataStore-put"><strong>put</strong></a>(self, key, value)</dt></dl>
+
+<dl><dt><a name="DataStore-save"><strong>save</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="DataStore-save_callback"><strong>save_callback</strong></a>(self, starting=False)</dt><dd><tt>Start&nbsp;the&nbsp;DB&nbsp;save&nbsp;loop.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>initial_version</strong> = 1</dl>
+
+</td></tr></table> <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ffc8d8">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -52,7 +99,10 @@ This&nbsp;module&nbsp;contains&nbsp;custom&nbsp;data&nbsp;structures&nbsp;that&n
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="KeyedDefaultdict-__missing__"><strong>__missing__</strong></a>(self, key)</dt></dl>
+<dl><dt><a name="KeyedDefaultdict-__missing__"><strong>__missing__</strong></a>(self, key)</dt><dd><tt><a href="#KeyedDefaultdict-__missing__">__missing__</a>(key)&nbsp;#&nbsp;Called&nbsp;by&nbsp;__getitem__&nbsp;for&nbsp;missing&nbsp;key;&nbsp;pseudo-code:<br>
+if&nbsp;self.<strong>default_factory</strong>&nbsp;is&nbsp;None:&nbsp;raise&nbsp;KeyError((key,))<br>
+self[key]&nbsp;=&nbsp;value&nbsp;=&nbsp;self.<a href="#KeyedDefaultdict-default_factory">default_factory</a>()<br>
+return&nbsp;value</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -105,7 +155,7 @@ Methods inherited from <a href="builtins.html#dict">builtins.dict</a>:<br>
 
 <dl><dt><a name="KeyedDefaultdict-__ne__"><strong>__ne__</strong></a>(self, value, /)</dt><dd><tt>Return&nbsp;self!=value.</tt></dd></dl>
 
-<dl><dt><a name="KeyedDefaultdict-__new__"><strong>__new__</strong></a>(*args, **kwargs)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>Create&nbsp;and&nbsp;return&nbsp;a&nbsp;new&nbsp;object.&nbsp;&nbsp;See&nbsp;help(type)&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
+<dl><dt><a name="KeyedDefaultdict-__new__"><strong>__new__</strong></a>(*args, **kwargs)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>Create&nbsp;and&nbsp;return&nbsp;a&nbsp;new&nbsp;<a href="builtins.html#object">object</a>.&nbsp;&nbsp;See&nbsp;help(type)&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
 
 <dl><dt><a name="KeyedDefaultdict-__setitem__"><strong>__setitem__</strong></a>(self, key, value, /)</dt><dd><tt>Set&nbsp;self[key]&nbsp;to&nbsp;value.</tt></dd></dl>
 
@@ -117,9 +167,9 @@ Methods inherited from <a href="builtins.html#dict">builtins.dict</a>:<br>
 
 <dl><dt><a name="KeyedDefaultdict-get"><strong>get</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-get">get</a>(k[,d])&nbsp;-&gt;&nbsp;D[k]&nbsp;if&nbsp;k&nbsp;in&nbsp;D,&nbsp;else&nbsp;d.&nbsp;&nbsp;d&nbsp;defaults&nbsp;to&nbsp;None.</tt></dd></dl>
 
-<dl><dt><a name="KeyedDefaultdict-items"><strong>items</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-items">items</a>()&nbsp;-&gt;&nbsp;a&nbsp;set-like&nbsp;object&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;items</tt></dd></dl>
+<dl><dt><a name="KeyedDefaultdict-items"><strong>items</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-items">items</a>()&nbsp;-&gt;&nbsp;a&nbsp;set-like&nbsp;<a href="builtins.html#object">object</a>&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;items</tt></dd></dl>
 
-<dl><dt><a name="KeyedDefaultdict-keys"><strong>keys</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-keys">keys</a>()&nbsp;-&gt;&nbsp;a&nbsp;set-like&nbsp;object&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;keys</tt></dd></dl>
+<dl><dt><a name="KeyedDefaultdict-keys"><strong>keys</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-keys">keys</a>()&nbsp;-&gt;&nbsp;a&nbsp;set-like&nbsp;<a href="builtins.html#object">object</a>&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;keys</tt></dd></dl>
 
 <dl><dt><a name="KeyedDefaultdict-pop"><strong>pop</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-pop">pop</a>(k[,d])&nbsp;-&gt;&nbsp;v,&nbsp;remove&nbsp;specified&nbsp;key&nbsp;and&nbsp;return&nbsp;the&nbsp;corresponding&nbsp;value.<br>
 If&nbsp;key&nbsp;is&nbsp;not&nbsp;found,&nbsp;d&nbsp;is&nbsp;returned&nbsp;if&nbsp;given,&nbsp;otherwise&nbsp;KeyError&nbsp;is&nbsp;raised</tt></dd></dl>
@@ -134,7 +184,7 @@ If&nbsp;E&nbsp;is&nbsp;present&nbsp;and&nbsp;has&nbsp;a&nbsp;.<a href="#KeyedDef
 If&nbsp;E&nbsp;is&nbsp;present&nbsp;and&nbsp;lacks&nbsp;a&nbsp;.<a href="#KeyedDefaultdict-keys">keys</a>()&nbsp;method,&nbsp;then&nbsp;does:&nbsp;&nbsp;for&nbsp;k,&nbsp;v&nbsp;in&nbsp;E:&nbsp;D[k]&nbsp;=&nbsp;v<br>
 In&nbsp;either&nbsp;case,&nbsp;this&nbsp;is&nbsp;followed&nbsp;by:&nbsp;for&nbsp;k&nbsp;in&nbsp;F:&nbsp;&nbsp;D[k]&nbsp;=&nbsp;F[k]</tt></dd></dl>
 
-<dl><dt><a name="KeyedDefaultdict-values"><strong>values</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-values">values</a>()&nbsp;-&gt;&nbsp;an&nbsp;object&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;values</tt></dd></dl>
+<dl><dt><a name="KeyedDefaultdict-values"><strong>values</strong></a>(...)</dt><dd><tt>D.<a href="#KeyedDefaultdict-values">values</a>()&nbsp;-&gt;&nbsp;an&nbsp;<a href="builtins.html#object">object</a>&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;values</tt></dd></dl>
 
 <hr>
 Data and other attributes inherited from <a href="builtins.html#dict">builtins.dict</a>:<br>

@@ -52,7 +52,9 @@
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><strong>Class</strong> = <a name="Class">class InspIRCdProtocol</a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
     
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Base&nbsp;Protocol&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="inspircd.html#InspIRCdProtocol">InspIRCdProtocol</a></dd>
 <dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
@@ -61,7 +63,7 @@
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-away"><strong>away</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
 to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
@@ -136,7 +138,8 @@ servers.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-mode"><strong>mode</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;mode&nbsp;changes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt></dl>
+<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt><dd><tt>Sends&nbsp;raw&nbsp;numerics&nbsp;from&nbsp;a&nbsp;server&nbsp;to&nbsp;a&nbsp;remote&nbsp;client,&nbsp;used&nbsp;for&nbsp;WHOIS<br>
+replies.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-ping"><strong>ping</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
 automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
@@ -248,7 +251,9 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="InspIRCdProtocol">class <strong>InspIRCdProtocol</strong></a>(<a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a>)</font></td></tr>
     
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Base&nbsp;Protocol&nbsp;module&nbsp;class&nbsp;for&nbsp;PyLink.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
 <td width="100%"><dl><dt>Method resolution order:</dt>
 <dd><a href="inspircd.html#InspIRCdProtocol">InspIRCdProtocol</a></dd>
 <dd><a href="ts6_common.html#TS6BaseProtocol">ts6_common.TS6BaseProtocol</a></dd>
@@ -257,7 +262,7 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt></dl>
+<dl><dt><a name="InspIRCdProtocol-__init__"><strong>__init__</strong></a>(self, irc)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-away"><strong>away</strong></a>(self, source, text)</dt><dd><tt>Sends&nbsp;an&nbsp;AWAY&nbsp;message&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client.&nbsp;&lt;text&gt;&nbsp;can&nbsp;be&nbsp;an&nbsp;empty&nbsp;string<br>
 to&nbsp;unset&nbsp;AWAY&nbsp;status.</tt></dd></dl>
@@ -332,7 +337,8 @@ servers.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-mode"><strong>mode</strong></a>(self, numeric, target, modes, ts=None)</dt><dd><tt>Sends&nbsp;mode&nbsp;changes&nbsp;from&nbsp;a&nbsp;PyLink&nbsp;client/server.</tt></dd></dl>
 
-<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt></dl>
+<dl><dt><a name="InspIRCdProtocol-numeric"><strong>numeric</strong></a>(self, source, numeric, target, text)</dt><dd><tt>Sends&nbsp;raw&nbsp;numerics&nbsp;from&nbsp;a&nbsp;server&nbsp;to&nbsp;a&nbsp;remote&nbsp;client,&nbsp;used&nbsp;for&nbsp;WHOIS<br>
+replies.</tt></dd></dl>
 
 <dl><dt><a name="InspIRCdProtocol-ping"><strong>ping</strong></a>(self, source=None, target=None)</dt><dd><tt>Sends&nbsp;a&nbsp;PING&nbsp;to&nbsp;a&nbsp;target&nbsp;server.&nbsp;Periodic&nbsp;PINGs&nbsp;are&nbsp;sent&nbsp;to&nbsp;our&nbsp;uplink<br>
 automatically&nbsp;by&nbsp;the&nbsp;Irc()&nbsp;internals;&nbsp;plugins&nbsp;shouldn't&nbsp;have&nbsp;to&nbsp;use&nbsp;this.</tt></dd></dl>
@@ -445,7 +451,7 @@ Data descriptors inherited from <a href="classes.html#Protocol">classes.Protocol
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7fb165343f28&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7ff146c496a8&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>

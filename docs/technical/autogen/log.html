@@ -57,7 +57,8 @@ access&nbsp;the&nbsp;global&nbsp;logger&nbsp;object&nbsp;by&nbsp;importing&nbsp;
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="PyLinkChannelLogger-__init__"><strong>__init__</strong></a>(self, irc, channel, level=None)</dt></dl>
+<dl><dt><a name="PyLinkChannelLogger-__init__"><strong>__init__</strong></a>(self, irc, channel, level=None)</dt><dd><tt>Initializes&nbsp;the&nbsp;instance&nbsp;-&nbsp;basically&nbsp;setting&nbsp;the&nbsp;formatter&nbsp;to&nbsp;None<br>
+and&nbsp;the&nbsp;filter&nbsp;list&nbsp;to&nbsp;empty.</tt></dd></dl>
 
 <dl><dt><a name="PyLinkChannelLogger-emit"><strong>emit</strong></a>(self, record)</dt><dd><tt>Logs&nbsp;a&nbsp;record&nbsp;to&nbsp;the&nbsp;configured&nbsp;channels&nbsp;for&nbsp;the&nbsp;network&nbsp;given.</tt></dd></dl>
 
@@ -125,7 +126,7 @@ The&nbsp;default&nbsp;is&nbsp;to&nbsp;allow&nbsp;the&nbsp;record&nbsp;to&nbsp;be
 this&nbsp;and&nbsp;the&nbsp;record&nbsp;is&nbsp;then&nbsp;dropped.&nbsp;Returns&nbsp;a&nbsp;zero&nbsp;value&nbsp;if&nbsp;a&nbsp;record<br>
 is&nbsp;to&nbsp;be&nbsp;dropped,&nbsp;else&nbsp;non-zero.<br>
 &nbsp;<br>
-..&nbsp;versionchanged:&nbsp;3.2<br>
+..&nbsp;versionchanged::&nbsp;3.2<br>
 &nbsp;<br>
 &nbsp;&nbsp;&nbsp;Allow&nbsp;filters&nbsp;to&nbsp;be&nbsp;just&nbsp;callables.</tt></dd></dl>
 
@@ -154,7 +155,7 @@ Data descriptors inherited from <a href="logging.html#Filterer">logging.Filterer
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f81857da950&gt;, {})}<br>
+<td width="100%"><strong>conf</strong> = {'bot': {'nick': 'PyLink', 'realname': 'PyLink Service Client', 'serverdesc': 'PyLink unit tests', 'user': 'pylink'}, 'logging': {'stdout': 'CRITICAL'}, 'servers': defaultdict(&lt;function &lt;lambda&gt; at 0x7f496c510e18&gt;, {})}<br>
 <strong>confname</strong> = 'testconf'<br>
 <strong>curdir</strong> = '/home/gl/pylink'<br>
 <strong>files</strong> = None<br>
