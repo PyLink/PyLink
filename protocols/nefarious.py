@@ -621,29 +621,35 @@ class P10Protocol(Protocol):
 
     def updateClient(self, target, field, text):
         """Updates the ident or host of any connected client."""
-        # This uses the FAKE command, which isn't documented anywhere
-        # but uses the target UID and host as two arguments.
+        uobj = self.irc.users[target]
 
-        if field == 'HOST':
+        if self.irc.isInternalClient(target):
+            # Use SETHOST (umode +h) for internal clients.
+            if field == 'HOST':
+                # Set umode +x, and +h with the given vHost as argument.
+                # Note: setter of the mode should be the target itself.
+                self.mode(target, target, [('+x', None), ('+h', '%s@%s' % (uobj.ident, text))])
+            elif field == 'IDENT':
+                # HACK: because we can't seem to update the ident only without updating the host,
+                # unset +h first before setting the new ident@host.
+                self.mode(target, target, [('-h', None)])
+                self.mode(target, target, [('+x', None), ('+h', '%s@%s' % (text, uobj.host))])
+            else:
+                raise NotImplementedError
+        elif field == 'HOST':
+            # Use FAKE (FA) for external clients.
             self._send(self.irc.sid, 'FA %s %s' % (target, text))
-
-            # If this is an internal client, propagate a umode +x change to the target.
-            # External clients will have to turn umode +x on themselves, as I don't believe
-            # we can force modes on remote users.
-            if self.irc.isInternalClient(target):
-                self.mode(self.irc.sid, target, [('+x', None)])
 
             # Save the host change as a user mode (this is what P10 does on bursts),
             # so further host checks work.
             self.irc.applyModes(target, [('+f', text)])
-
-            # P10 cloaks aren't as simple as just replacing the displayed host with the one we're
-            # sending. Check for cloak changes properly.
-            self.checkCloakChange(target)
-
-            # We don't need to send any hooks here, checkCloakChange does that for us.
         else:
             raise NotImplementedError
+
+        # P10 cloaks aren't as simple as just replacing the displayed host with the one we're
+        # sending. Check for cloak changes properly.
+        # Note: we don't need to send any hooks here, checkCloakChange does that for us.
+        self.checkCloakChange(target)
 
     ### HANDLERS
 
