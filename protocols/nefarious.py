@@ -390,6 +390,9 @@ class P10Protocol(Protocol):
             ts = ts or cobj.ts
             send_ts = True
         else:
+            assert target in self.irc.users, "Unknown mode target %s" % target
+            # P10 uses nicks in user MODE targets, NOT UIDs. ~GL
+            target = self.irc.users[target].nick
             send_ts = False
 
         while modes[:12]:
