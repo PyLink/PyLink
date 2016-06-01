@@ -288,9 +288,9 @@ class TS6Protocol(TS6BaseProtocol):
                         'invisible': 'i', 'oper': 'o', 'wallops': 'w',
                         'snomask': 's', 'noforward': 'Q', 'regdeaf': 'R',
                         'callerid': 'g', 'operwall': 'z', 'locops': 'l',
-                        'cloak': 'x',
+                        'cloak': 'x', 'override': 'p',
                         # Now, map all the ABCD type modes:
-                        '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlx'}
+                        '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'}
         self.irc.umodes = chary_umodes
 
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
