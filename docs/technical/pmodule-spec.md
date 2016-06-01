@@ -148,4 +148,4 @@ Internally, modes are stored in channel and user objects as sets: `(userobj or c
 
 When a certain mode (e.g. owner) isn't supported on a network, the key still exists in `prefixmodes` but is simply unused.
 
-You can see a list of supported (named) channel modes [here](channel-modes.csv).
+You can see a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
