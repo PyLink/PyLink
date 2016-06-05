@@ -35,53 +35,14 @@ login:
     user: admin
     password: changeme
 
-logging:
-    # This configuration block defines targets that PyLink should log commands,
-    # errors, etc., to.
-
-    # This sets the level for STDOUT logging, which is always enabled. Valid
-    # settings include DEBUG, INFO, WARNING, ERROR, and CRITICAL: see
-    # https://docs.python.org/3/library/logging.html#logging-levels for details.
-    stdout: INFO
-
-    channels:
-        # Log to channels on the specified networks.
-        # Note: DEBUG logging is not supported here: any log level settings
-        # below INFO be automatically raised to INFO.
-        # Log messages are forwarded over relay, so you will get duplicate
-        # messages if you add log blocks for more than one channel in one
-        # relay.
-        loglevel: INFO
-
-        inspnet:
-            "#services":
-                loglevel: INFO
-            "#pylink-notifications":
-                loglevel: WARNING
-
-        ts6net:
-            "#services":
-                loglevel: INFO
-
-    files:
-        # Logs to file targets. These will be placed in the log/ folder in the
-        # PyLink directory, with a filename based on the current instance name
-        # and the target name defined: instancename-targetname.log
-        # Changing settings in this block will require a restart to take effect.
-
-        # When running with ./pylink, this will create log/pylink-errors.log
-        # When running with ./pylink someconf.yml, this will create log/someconf-errors.log
-        "errors":
-            loglevel: ERROR
-
-        # Ditto above. When running with ./pylink, it will use log/pylink-commands.log
-        # When running with ./pylink someconf.yml, this will create log/someconf-commands.log
-        "commands":
-            loglevel: INFO
-
 servers:
     # Please note: these are only EXAMPLE link blocks. You should edit them and
     # remove ones that you don't need in your config.
+    
+    # Short name for the network. This is used for relay's nick suffixes, the
+    # network plugin's (dis)connect commands, and elsewhere internally.
+    # You should change this to some abbreviation representing your network
+    # name; usually something 3-5 characters should be good.
     inspnet:
         # Server IP, port, and passwords
         ip: 127.0.0.1
@@ -304,6 +265,50 @@ plugins:
     # to a template string, as they connect. This requires the changehost: block
     # to be configured correctly below.
     #- changehost
+
+logging:
+    # This configuration block defines targets that PyLink should log commands,
+    # errors, etc., to.
+
+    # This sets the level for STDOUT logging, which is always enabled. Valid
+    # settings include DEBUG, INFO, WARNING, ERROR, and CRITICAL: see
+    # https://docs.python.org/3/library/logging.html#logging-levels for details.
+    stdout: INFO
+
+    channels:
+        # Log to channels on the specified networks.
+        # Note: DEBUG logging is not supported here: any log level settings
+        # below INFO be automatically raised to INFO.
+        # Log messages are forwarded over relay, so you will get duplicate
+        # messages if you add log blocks for more than one channel in one
+        # relay.
+        loglevel: INFO
+
+        inspnet:
+            "#services":
+                loglevel: INFO
+            "#pylink-notifications":
+                loglevel: WARNING
+
+        ts6net:
+            "#services":
+                loglevel: INFO
+
+    files:
+        # Logs to file targets. These will be placed in the log/ folder in the
+        # PyLink directory, with a filename based on the current instance name
+        # and the target name defined: instancename-targetname.log
+        # Changing settings in this block will require a restart to take effect.
+
+        # When running with ./pylink, this will create log/pylink-errors.log
+        # When running with ./pylink someconf.yml, this will create log/someconf-errors.log
+        "errors":
+            loglevel: ERROR
+
+        # Ditto above. When running with ./pylink, it will use log/pylink-commands.log
+        # When running with ./pylink someconf.yml, this will create log/someconf-commands.log
+        "commands":
+            loglevel: INFO
 
 changehost:
     # This block configures the Changehost plugin. You don't need this if you
