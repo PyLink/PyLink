@@ -80,6 +80,8 @@ logging:
             loglevel: INFO
 
 servers:
+    # Please note: these are only EXAMPLE link blocks. You should edit them and
+    # remove ones that you don't need in your config.
     inspnet:
         # Server IP, port, and passwords
         ip: 127.0.0.1
