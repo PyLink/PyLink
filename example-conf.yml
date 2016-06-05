@@ -56,7 +56,7 @@ logging:
         inspnet:
             "#services":
                 loglevel: INFO
-            "#pylink-notifications"
+            "#pylink-notifications":
                 loglevel: WARNING
 
         ts6net:
