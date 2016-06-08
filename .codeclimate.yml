@@ -1,0 +1,13 @@
+# This file is used for the configuration of https://codeclimate.com/github/GLolol/PyLink/
+# You needn't change this if you're running your own copy of PyLink.
+
+engines:
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - python
+  pep8:
+    enabled: true
+  fixme:
+    enabled: true
