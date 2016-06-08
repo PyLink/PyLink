@@ -3,4 +3,4 @@
 
 engines:
   radon:
-    enabled: false
+    enabled: true
