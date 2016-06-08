@@ -1,6 +1,7 @@
 # Ignore config files except the example ones
 *.yml
 !example-*.yml
+!.*.yml
 
 env/
 build/
