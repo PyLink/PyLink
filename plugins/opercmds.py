@@ -210,7 +210,7 @@ def mode(irc, source, args):
         irc.reply("Error: No valid modes were given.")
         return
 
-    parsedmodes = utils.parseModes(irc, target, modes)
+    parsedmodes = irc.parseModes(target, modes)
 
     if not parsedmodes:
         # Modes were given but they failed to parse into anything meaningful.
