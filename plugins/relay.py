@@ -1430,7 +1430,7 @@ def link(irc, source, args):
         return
     else:
         if irc.name in entry['blocked_nets']:
-            irc.reply('Error: Access denied (network is banned from linking to this channel).')
+            irc.reply('Error: Access denied (target channel is not open to links).')
             return
         for link in entry['links']:
             if link[0] == irc.name:
