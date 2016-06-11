@@ -44,7 +44,8 @@ servers:
     # You should change this to some abbreviation representing your network
     # name; usually something 3-5 characters should be good.
     inspnet:
-        # Server IP, port, and passwords
+        # Server IP, port, and passwords. The ip: field also supports resolving
+        # hostnames, but this is not well tested and thus not recommended.
         ip: 127.0.0.1
         port: 7000
         recvpass: "abcd"
@@ -121,7 +122,9 @@ servers:
     ts6net:
         ip: ::1
 
-        # Determines whether IPv6 should be used for this connection.
+        # Determines whether IPv6 should be used for this connection. Should the ip:
+        # above be a hostname instead of an IP, this will affect whether A records
+        # (IPv4) or AAAA records (IPv6) will be used in resolving it.
         ipv6: yes
 
         port: 7000

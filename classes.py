@@ -184,6 +184,11 @@ class Irc():
                 # intentional.
                 self.socket.settimeout(self.pingfreq)
 
+                # Resolve hostnames if it's not an IP address already.
+                old_ip = ip
+                ip = socket.getaddrinfo(ip, port, stype)[0][-1][0]
+                log.debug('(%s) Resolving address %s to %s', self.name, old_ip, ip)
+
                 # Enable SSL if set to do so. This requires a valid keyfile and
                 # certfile to be present.
                 self.ssl = self.serverdata.get('ssl')
