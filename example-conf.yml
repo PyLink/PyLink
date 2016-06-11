@@ -7,7 +7,7 @@
 bot:
     # Sets nick, user/ident, and real name.
     nick: pylink
-    user: pylink
+    ident: pylink
     realname: PyLink Service Client
 
     # Server description (shown in /links, /whois, etc.)
