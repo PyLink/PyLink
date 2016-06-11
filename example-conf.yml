@@ -38,7 +38,7 @@ login:
 servers:
     # Please note: these are only EXAMPLE link blocks. You should edit them and
     # remove ones that you don't need in your config.
-    
+
     # Short name for the network. This is used for relay's nick suffixes, the
     # network plugin's (dis)connect commands, and elsewhere internally.
     # You should change this to some abbreviation representing your network
@@ -183,6 +183,13 @@ servers:
         # We encourage you to upgrade so that all your servers are running the
         # same IRCd version.
         #mixed_link: true
+
+        # You can also define network-specific nicks and idents for various service
+        # bots, using the configuration options "servicename_nick" and "servicename_ident".
+        #pylink_nick: MagicServ
+        #pylink_ident: magicserv
+        #games_nick: MagicGames
+        #games_ident: magicgames
 
     nefarious:
         ip: 1.2.3.4
@@ -372,3 +379,7 @@ relay:
     # Valid options include "all" (show this to everyone), "opers" (show only to
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_server: opers
+
+games:
+    # Sets the nick of the Games service, if you're using it.
+    nick: Games

@@ -202,7 +202,21 @@ def spawn_service(irc, source, command, args):
     if not irc.connected.is_set():
         return
 
+    # Service name
     name = args['name']
+
+    # Get the ServiceBot object.
+    sbot = world.services[name]
+
+    # Look up the nick or ident in the following order:
+    # 1) Network specific nick/ident settings for this service (servers::irc.name::servicename_nick)
+    # 2) Global settings for this service (servicename::nick)
+    # 3) The preferred nick/ident combination defined by the plugin (sbot.nick / sbot.ident)
+    # 4) The literal service name.
+    # settings, and then falling back to the literal service name.
+    nick = irc.serverdata.get("%s_nick" % name) or irc.conf.get(name, {}).get('nick') or sbot.nick or name
+    ident = irc.serverdata.get("%s_ident" % name) or irc.conf.get(name, {}).get('ident') or sbot.ident or name
+
     # TODO: make this configurable?
     host = irc.serverdata["hostname"]
 
@@ -215,10 +229,8 @@ def spawn_service(irc, source, command, args):
             modes.append((mode, None))
 
     # Track the service's UIDs on each network.
-    sbot = world.services[name]
-    userobj = irc.proto.spawnClient(sbot.nick, sbot.ident,
-        host, modes=modes, opertype="PyLink Service",
-        manipulatable=sbot.manipulatable)
+    userobj = irc.proto.spawnClient(nick, ident, host, modes=modes, opertype="PyLink Service",
+                                    manipulatable=sbot.manipulatable)
 
     sbot.uids[irc.name] = u = userobj.uid
 
