@@ -58,3 +58,10 @@ are preferred.
 `irc.reply()` is a special form of `irc.msg` in that it automatically finds the target to reply to. If the command was called in a channel using fantasy, it will send the reply in that channel. Otherwise, the reply will be sent in a PM to the caller.
 
 The sender UID for both can be set using the `source` argument, and defaults to the main PyLink client.
+
+## Special triggers for plugin (un)loading
+
+The following functions can also be defined in the body of a plugin to hook onto plugin loading / unloading.
+
+`main(irc=None)`: Called on plugin load. `irc` is only defined when the plugin is being reloaded from a network: otherwise, it means that PyLink has just been started.
+`die(irc=None)`: Called on plugin unload or daemon shutdown. `irc` is only defined when the shutdown or unload was called from an IRC network.
