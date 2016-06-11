@@ -12,7 +12,7 @@ How is this relevant? Firstly, it means that you **cannot ban users from entire 
 
 However, this *does* mean that you can effectively give access to remote users via services, by specifying masks such as `*/net1@someident@someperson.opers.somenet.org`. Just don't make masks too wide, or you risk getting channel takeovers.
 
-## Basic linking commands
+## Relay commands
 The concept of relay channels in PyLink is greatly inspired from the original Janus implementation, though with a few differences in command syntax.
 
 To create a channel:
@@ -26,6 +26,33 @@ You can also link remote channels to take a different name on your network. (Thi
 
 Also, to list the available channels:
 - `/msg PyLink linked`
+
+### Claiming channels
+
+PyLink offers channel claims similarly to Janus, except that it is on by default when you create a channel on any network. Unless the claimed network list of a channel is EMPTY, oper override (MODE, KICK, TOPIC) will only be allowed from networks on that list.
+
+To set a claim (note: for these commands, you must be on the network which created the channel in question!):
+- `/msg PyLink claim #channel yournet,net2,net3` (the last parameter is a comma-separated list of networks, case-sensitive)
+
+To list claims on a channel:
+- `/msg PyLink claim #channel`
+
+To remove claims from a channel
+- `/msg PyLink claim #channel -`
+
+### Access control for links (LINKACL)
+LINKACL allows you to block certain networks from linking to your relay channels, based on a blacklist. By default, this blacklist is empty.
+
+To list blocked networks for a channel:
+- `/msg PyLink linkacl #channel list`
+
+To add a network to the blacklist:
+- `/msg PyLink linkacl #channel allow badnet`
+
+To remove a network from the blacklist:
+- `/msg PyLink linkacl #channel deny goodnet`
+
+Whitelists with LINKACL are not supported at this time.
 
 ## Dealing with channel emergencies
 
