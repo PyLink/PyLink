@@ -154,8 +154,8 @@ class ServiceBot():
         self.name = name
 
         # Nick/ident to take. Defaults to the same as the service name if not given.
-        self.nick = nick or name
-        self.ident = ident or name
+        self.nick = nick
+        self.ident = ident
 
         # Tracks whether the bot should be manipulatable by the 'bots' plugin and other commands.
         self.manipulatable = manipulatable
