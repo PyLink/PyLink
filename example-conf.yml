@@ -254,6 +254,9 @@ plugins:
     # PyLink is running.
     - networks
 
+    # Ctcp plugin: handles basic CTCP replies (VERSION, etc).
+    - ctcp
+
     # Oper commands plugin: Provides a subset of network management commands.
     # (KILL, JUPE, etc.)
     # Note: these commands will be made available to anyone who's opered on your
