@@ -277,10 +277,7 @@ class Irc():
                 log.error('(%s) Disconnected from IRC: %s: %s',
                           self.name, type(e).__name__, str(e))
 
-            if not self.aborted.is_set():
-                # Only start a disconnection process if one doesn't already
-                # exist.
-                self.disconnect()
+            self.disconnect()
 
             # Internal hook signifying that a network has disconnected.
             self.callHooks([None, 'PYLINK_DISCONNECT', {}])
@@ -299,21 +296,15 @@ class Irc():
     def disconnect(self):
         """Handle disconnects from the remote server."""
 
-        log.debug('(%s) _disconnect: Clearing self.connected state.', self.name)
+        log.debug('(%s) disconnect: Clearing self.connected state.', self.name)
         self.connected.clear()
-
-        log.debug('(%s) _disconnect: Setting self.aborted to True.', self.name)
-        self.aborted.set()
-
-        log.debug('(%s) disconnect: Clearing state via initVars().', self.name)
-        self.initVars()
 
         log.debug('(%s) Removing channel logging handlers due to disconnect.', self.name)
         while self.loghandlers:
             log.removeHandler(self.loghandlers.pop())
 
         try:
-            log.debug('(%s) _disconnect: Shutting down socket.', self.name)
+            log.debug('(%s) disconnect: Shutting down socket.', self.name)
             self.socket.shutdown(socket.SHUT_RDWR)
         except:  # Socket timed out during creation; ignore
             pass
@@ -323,6 +314,12 @@ class Irc():
         if self.pingTimer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
             self.pingTimer.cancel()
+
+        log.debug('(%s) disconnect: Setting self.aborted to True.', self.name)
+        self.aborted.set()
+
+        log.debug('(%s) disconnect: Clearing state via initVars().', self.name)
+        self.initVars()
 
     def run(self):
         """Main IRC loop which listens for messages."""
