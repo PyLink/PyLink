@@ -21,6 +21,7 @@ spawnlocks_servers = defaultdict(threading.RLock)
 
 exportdb_timer = None
 
+db = {}
 dbname = utils.getDatabaseName('pylinkrelay')
 
 ### INTERNAL FUNCTIONS
