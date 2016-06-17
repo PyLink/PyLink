@@ -34,7 +34,7 @@ class IncrementalUIDGenerator():
                                 "%s by defining self.allowedchars and self.length "
                                 "and then calling super().__init__()." % self.__class__.__name__)
         self.uidchars = [self.allowedchars[0]]*self.length
-        self.sid = sid
+        self.sid = str(sid)
 
     def increment(self, pos=None):
         """
