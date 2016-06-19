@@ -119,7 +119,6 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
         # they match the UID of the originating server. Otherwise, you'll
         # get nasty protocol violation SQUITs!
         nick = '_' + nick
-    tagnicks = True
 
     suffix = separator + netname
     nick = nick[:maxnicklen]
