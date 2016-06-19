@@ -1405,25 +1405,36 @@ def link(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
         return
+
     try:
         localchan = irc.toLower(args[2])
     except IndexError:
         localchan = channel
+
     for c in (channel, localchan):
         if not utils.isChannel(c):
             irc.reply('Error: Invalid channel %r.' % c)
             return
+
+    if remotenet == irc.name:
+        irc.reply('Error: Cannot link two channels on the same network.')
+        return
+
     if source not in irc.channels[localchan].users:
         irc.reply('Error: You must be in %r to complete this operation.' % localchan)
         return
+
     irc.checkAuthenticated(source)
+
     if remotenet not in world.networkobjects:
         irc.reply('Error: No network named %r exists.' % remotenet)
         return
     localentry = getRelay((irc.name, localchan))
+
     if localentry:
         irc.reply('Error: Channel %r is already part of a relay.' % localchan)
         return
+
     try:
         entry = db[(remotenet, channel)]
     except KeyError:
