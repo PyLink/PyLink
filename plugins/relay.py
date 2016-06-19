@@ -1395,7 +1395,8 @@ def destroy(irc, source, args):
                  channel, irc.getHostmask(source))
         irc.reply('Done.')
     else:
-        irc.reply('Error: No such relay %r exists.' % channel)
+        irc.reply("Error: No such channel %r exists. If you're trying to delink a channel from "
+                  "another network, use the DESTROY command." % channel)
         return
 
 @utils.add_cmd
