@@ -103,11 +103,17 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
     orig_nick = nick
     protoname = irc.protoname
     maxnicklen = irc.maxnicklen
-    if '/' not in separator or not protoname.startswith(('insp', 'unreal')):
-        # Charybdis doesn't allow / in usernames, and will SQUIT with
-        # a protocol violation if it sees one.
+
+    # Charybdis, IRCu, etc. don't allow / in nicks, and will SQUIT with a protocol
+    # violation if it sees one. Or it might just ignore the client introduction and
+    # cause bad desyncs.
+    protocol_allows_slashes = protoname.startswith(('insp', 'unreal')) or \
+        irc.serverdata.get('relay_force_slashes')
+
+    if '/' not in separator or not protocol_allows_slashes:
         separator = separator.replace('/', '|')
         nick = nick.replace('/', '|')
+
     if nick.startswith(tuple(string.digits)):
         # On TS6 IRCds, nicks that start with 0-9 are only allowed if
         # they match the UID of the originating server. Otherwise, you'll
