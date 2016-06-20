@@ -482,7 +482,7 @@ class UnrealProtocol(TS6BaseProtocol):
                   'nokick': 'Q', 'private': 'p', 'stripcolor': 'S', 'key': 'k',
                   'op': 'o', 'voice': 'v', 'regonly': 'R', 'noinvite': 'V',
                   'banexception': 'e', 'nonick': 'N', 'issecure': 'Z', 'topiclock': 't',
-                  'nonotice': 'T', 'delayjoin': 'D'}
+                  'nonotice': 'T', 'delayjoin': 'D', 'inviteonly': 'i'}
 
         # Make a list of all our capability names.
         self.caps += [arg.split('=')[0] for arg in args]

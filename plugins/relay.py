@@ -103,17 +103,22 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
     orig_nick = nick
     protoname = irc.protoname
     maxnicklen = irc.maxnicklen
-    if '/' not in separator or not protoname.startswith(('insp', 'unreal')):
-        # Charybdis doesn't allow / in usernames, and will SQUIT with
-        # a protocol violation if it sees one.
+
+    # Charybdis, IRCu, etc. don't allow / in nicks, and will SQUIT with a protocol
+    # violation if it sees one. Or it might just ignore the client introduction and
+    # cause bad desyncs.
+    protocol_allows_slashes = protoname.startswith(('insp', 'unreal')) or \
+        irc.serverdata.get('relay_force_slashes')
+
+    if '/' not in separator or not protocol_allows_slashes:
         separator = separator.replace('/', '|')
         nick = nick.replace('/', '|')
+
     if nick.startswith(tuple(string.digits)):
         # On TS6 IRCds, nicks that start with 0-9 are only allowed if
         # they match the UID of the originating server. Otherwise, you'll
         # get nasty protocol violation SQUITs!
         nick = '_' + nick
-    tagnicks = True
 
     suffix = separator + netname
     nick = nick[:maxnicklen]
@@ -1390,7 +1395,8 @@ def destroy(irc, source, args):
                  channel, irc.getHostmask(source))
         irc.reply('Done.')
     else:
-        irc.reply('Error: No such relay %r exists.' % channel)
+        irc.reply("Error: No such channel %r exists. If you're trying to delink a channel from "
+                  "another network, use the DESTROY command." % channel)
         return
 
 @utils.add_cmd
@@ -1405,25 +1411,36 @@ def link(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 2-3: remote netname, channel, local channel name (optional).")
         return
+
     try:
         localchan = irc.toLower(args[2])
     except IndexError:
         localchan = channel
+
     for c in (channel, localchan):
         if not utils.isChannel(c):
             irc.reply('Error: Invalid channel %r.' % c)
             return
+
+    if remotenet == irc.name:
+        irc.reply('Error: Cannot link two channels on the same network.')
+        return
+
     if source not in irc.channels[localchan].users:
         irc.reply('Error: You must be in %r to complete this operation.' % localchan)
         return
+
     irc.checkAuthenticated(source)
+
     if remotenet not in world.networkobjects:
         irc.reply('Error: No network named %r exists.' % remotenet)
         return
     localentry = getRelay((irc.name, localchan))
+
     if localentry:
         irc.reply('Error: Channel %r is already part of a relay.' % localchan)
         return
+
     try:
         entry = db[(remotenet, channel)]
     except KeyError:

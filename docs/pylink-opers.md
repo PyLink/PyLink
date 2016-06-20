@@ -27,6 +27,12 @@ You can also link remote channels to take a different name on your network. (Thi
 Also, to list the available channels:
 - `/msg PyLink linked`
 
+To remove a relay channel that you've created:
+- `/msg PyLink destroy #channelname`
+
+To delink a channel linked to another network:
+- `/msg PyLink delink #channelname`
+
 ### Claiming channels
 
 PyLink offers channel claims similarly to Janus, except that it is on by default when you create a channel on any network. Unless the claimed network list of a channel is EMPTY, oper override (MODE, KICK, TOPIC) will only be allowed from networks on that list.
