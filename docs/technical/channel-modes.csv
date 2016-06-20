@@ -45,7 +45,7 @@ oplevel_upass,,,,,,U
 opmoderated,U (extras/m_opmoderated),z,z,,,
 owner,q (m_customprefix/m_chanprotect),,y (when enabled),q,,
 permanent,P (m_permchannels),P,P,P,,z
-private,p,p,p,p,,p
+private,p,,,p,,p
 quiet,,q,q,,,
 redirect,L (m_redirect),f,f,L,,L
 registered,r (m_services_account),,,r,r,R
