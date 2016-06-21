@@ -1,17 +1,12 @@
 # relay.py: PyLink Relay plugin
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import pickle
 import time
 import threading
 import string
 from collections import defaultdict
 
-import utils
-from log import log
-import world
+from pylinkirc import utils, world
+from pylinkirc.log import log
 
 ### GLOBAL (statekeeping) VARIABLES
 relayusers = defaultdict(dict)

@@ -1,14 +1,8 @@
 """Networks plugin - allows you to manipulate connections to various configured networks."""
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import threading
 
-import utils
-import world
-from log import log
+from pylinkirc import utils, world
+from pylinkirc.log import log
 
 @utils.add_cmd
 def disconnect(irc, source, args):

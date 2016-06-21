@@ -45,7 +45,7 @@ setup(
     install_requires=['pyyaml'],
 
     # Folders (packages of code)
-    packages=find_packages(exclude=['log', 'docs', 'tests']),
+    packages=['pylinkirc', 'pylinkirc.protocols', 'pylinkirc.plugins'],
 
     # Single modules. TODO: consider organizing this into a pylink/ folder
     py_modules=["classes", "conf", "coreplugin", "log", "structures", "utils", "world"],
@@ -54,6 +54,8 @@ setup(
     package_data={
         '': ['example-conf.yml'],
     },
+
+    package_dir = {'pylinkirc': '.'},
 
     # Executable scripts
     scripts=["pylink"],

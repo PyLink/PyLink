@@ -2,16 +2,11 @@
 exec.py: Provides commands for executing raw code and debugging PyLink.
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import utils
-from log import log
+from pylinkirc import utils, world
+from pylinkirc.log import log
 
 # These imports are not strictly necessary, but make the following modules
 # easier to access through eval and exec.
-import world
 import threading
 import re
 import time

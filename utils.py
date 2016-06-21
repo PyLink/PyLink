@@ -11,9 +11,8 @@ import importlib
 import os
 import collections
 
-from log import log
-import world
-import conf
+from .log import log
+from . import world, conf
 
 class NotAuthenticatedError(Exception):
     """

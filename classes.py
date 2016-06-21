@@ -17,10 +17,8 @@ import hashlib
 from copy import deepcopy
 import inspect
 
-from log import *
-import world
-import utils
-import structures
+from . import world, utils, structures
+from .log import *
 
 ### Exceptions
 

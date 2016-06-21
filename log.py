@@ -9,9 +9,9 @@ access the global logger object by importing "log" from this module
 import logging
 import sys
 import os
-import world
 
-from conf import conf, confname
+from . import world
+from .conf import conf, confname
 
 stdout_level = conf['logging'].get('stdout') or 'INFO'
 

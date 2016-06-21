@@ -1,21 +1,14 @@
 """
 Changehost plugin - automatically changes the hostname of matching users.
 """
-
-# Import hacks to access utils and log.
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pylinkirc import utils, world
+from pylinkirc.log import log
 
 import string
 
 # ircmatch library from https://github.com/mammon-ircd/ircmatch
 # (pip install ircmatch)
 import ircmatch
-
-import utils
-import world
-from log import log
 
 # Characters allowed in a hostname.
 allowed_chars = string.ascii_letters + '-./:' + string.digits

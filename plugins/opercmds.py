@@ -2,11 +2,6 @@
 opercmds.py: Provides a subset of network management commands.
 """
 
-import sys
-import os
-# Add the base PyLink folder to path, so we can import utils and log.
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # ircmatch library from https://github.com/mammon-ircd/ircmatch
 # (pip install ircmatch)
 try:
@@ -14,8 +9,8 @@ try:
 except ImportError:
     ircmatch = None
 
-import utils
-from log import log
+from pylinkirc import utils
+from pylinkirc.log import log
 
 @utils.add_cmd
 def checkban(irc, source, args):

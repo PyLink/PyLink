@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
 
 import os
-import sys
-
-# Change directory to the folder containing PyLink's source
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # This must be done before conf imports, so we get the real conf instead of testing one.
-import world
+from pylinkirc import world
 world.testing = False
 
-import conf
-from log import log
-import classes
-import utils
-import coreplugin
+from pylinkirc import conf, classes, utils, coreplugin
+from pylinkirc.log import log
 
 if __name__ == '__main__':
     log.info('PyLink %s starting...', world.version)

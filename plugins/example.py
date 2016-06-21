@@ -1,12 +1,6 @@
 # example.py: An example PyLink plugin.
-
-# These two lines add PyLink's root directory to the PATH, so that importing things like
-# 'utils' and 'log' work.
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import utils
-from log import log
+from pylinkirc import utils
+from pylinkirc.log import log
 
 import random
 

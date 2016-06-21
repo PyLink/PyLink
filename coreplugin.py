@@ -7,11 +7,8 @@ import sys
 import signal
 import os
 
-import utils
-import conf
-import classes
-from log import log
-import world
+from . import utils, conf, classes, world
+from .log import log
 
 def _shutdown(irc=None):
     """Shuts down the Pylink daemon."""

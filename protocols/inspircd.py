@@ -8,14 +8,10 @@ import os
 import re
 import threading
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-import utils
-from log import log
-from classes import *
-
-from ts6_common import *
+from pylinkirc import utils
+from pylinkirc.classes import *
+from pylinkirc.log import log
+from pylinkirc.protocols.ts6_common import *
 
 class InspIRCdProtocol(TS6BaseProtocol):
     def __init__(self, irc):

@@ -1,11 +1,6 @@
 # fantasy.py: Adds FANTASY command support, to allow calling commands in channels
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import utils
-import world
-from log import log
+from pylinkirc import utils, world
+from pylinkirc.log import log
 
 def handle_fantasy(irc, source, command, args):
     """Fantasy command handler."""

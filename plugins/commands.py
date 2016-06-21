@@ -1,12 +1,8 @@
 # commands.py: base PyLink commands
-import sys
-import os
 from time import ctime
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import utils
-from log import log
-import world
+from pylinkirc import utils
+from pylinkirc.log import log
 
 @utils.add_cmd
 def status(irc, source, args):

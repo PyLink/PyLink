@@ -17,7 +17,7 @@ import yaml
 import sys
 from collections import defaultdict
 
-import world
+from . import world
 
 global testconf
 testconf = {'bot':

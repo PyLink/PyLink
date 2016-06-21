@@ -2,13 +2,8 @@
 bots.py: Spawn virtual users/bots on a PyLink server and make them interact
 with things.
 """
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import utils
-from log import log
+from pylinkirc import utils
+from pylinkirc.log import log
 
 @utils.add_cmd
 def spawnclient(irc, source, args):

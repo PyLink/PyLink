@@ -6,14 +6,9 @@ import sys
 import os
 import string
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-
-import utils
-from log import log
-from classes import *
-import structures
+from pylinkirc import utils, structures
+from pylinkirc.classes import *
+from pylinkirc.log import log
 
 class TS6SIDGenerator():
     """

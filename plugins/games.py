@@ -1,18 +1,13 @@
 """
 games.py: Create a bot that provides game functionality (dice, 8ball, etc).
 """
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import random
 import urllib.request
 import urllib.error
 from xml.etree import ElementTree
 
-import utils
-from log import log
-import world
+from pylinkirc import utils
+from pylinkirc.log import log
 
 gameclient = utils.registerService("Games", manipulatable=True)
 reply = gameclient.reply  # TODO find a better syntax for ServiceBot.reply()

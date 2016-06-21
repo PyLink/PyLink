@@ -1,10 +1,6 @@
 # ctcp.py: Handles basic CTCP requests.
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import utils
-from log import log
+from pylinkirc import utils
+from pylinkirc.log import log
 
 def handle_ctcpversion(irc, source, args):
     """

@@ -8,13 +8,9 @@ import base64
 import struct
 from ipaddress import ip_address
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-
-import utils
-from log import log
-from classes import *
+from pylinkirc import utils
+from pylinkirc.classes import *
+from pylinkirc.log import log
 
 class P10UIDGenerator(utils.IncrementalUIDGenerator):
      """Implements an incremental P10 UID Generator."""
