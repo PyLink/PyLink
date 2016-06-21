@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
 import os
-
+import sys
 # This must be done before conf imports, so we get the real conf instead of testing one.
-from pylinkirc import world
+try:
+    from pylinkirc import world
+except ImportError:
+    sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
+                     "running PyLink from source, please install PyLink first using 'python3 "
+                     "setup.py install [--user]'\n")
+    sys.exit(1)
 world.testing = False
 
 from pylinkirc import conf, classes, utils, coreplugin
