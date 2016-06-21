@@ -27,7 +27,7 @@ if __name__ == '__main__':
     conf.loadConf(args.config)
 
     from pylinkirc.log import log
-    from pylinkirc import classes, utils, coreplugin, world
+    from pylinkirc import classes, utils, coremods, world
     log.info('PyLink %s starting...', world.version)
 
     # Write a PID file unless specifically told not to.

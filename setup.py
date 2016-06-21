@@ -45,10 +45,10 @@ setup(
     install_requires=['pyyaml'],
 
     # Folders (packages of code)
-    packages=['pylinkirc', 'pylinkirc.protocols', 'pylinkirc.plugins'],
+    packages=['pylinkirc', 'pylinkirc.protocols', 'pylinkirc.plugins', 'pylinkirc.coremods'],
 
     # Single modules. TODO: consider organizing this into a pylink/ folder
-    py_modules=["classes", "conf", "coreplugin", "log", "structures", "utils", "world"],
+    py_modules=["classes", "conf", "log", "structures", "utils", "world"],
 
     # Data files
     package_data={
