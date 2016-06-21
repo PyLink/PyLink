@@ -2,20 +2,28 @@
 
 import os
 import sys
-# This must be done before conf imports, so we get the real conf instead of testing one.
 try:
-    from pylinkirc import world
+    from pylinkirc import conf
 except ImportError:
-    sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
+    sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.conf).\n\nIf you are "
                      "running PyLink from source, please install PyLink first using 'python3 "
                      "setup.py install [--user]'\n")
     sys.exit(1)
-world.testing = False
-
-from pylinkirc import conf, classes, utils, coreplugin
-from pylinkirc.log import log
 
 if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Starts an instance of PyLink IRC Services.')
+    parser.add_argument('config', help='specifies the path to the config file (defaults to pylink.yml)', nargs='?', default='pylink.yml')
+    parser.add_argument("-v", "--version", help="displays the program version and exits", action='store_true')
+    parser.add_argument("-n", "--no-pid", help="skips generating PID files", action='store_true')
+    args = parser.parse_args()
+
+    # Load the config
+    conf.loadConf(args.config)
+
+    from pylinkirc.log import log
+    from pylinkirc import classes, utils, coreplugin, world
     log.info('PyLink %s starting...', world.version)
 
     # Write a PID file.
