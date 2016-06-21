@@ -1,16 +1,8 @@
 """
 conf.py - PyLink configuration core.
 
-This module is used to access the complete configuration for the current
-PyLink instance. It will load the config on first import, taking the
-configuration file name from the first command-line argument, but defaulting
-to 'config.yml' if this isn't given.
-
-If world.testing is set to True, it will return a preset testing configuration
-instead.
-
-This module also provides simple checks for validating and loading YAML-format
-configurations from arbitrary files.
+This module is used to access the configuration of the current PyLink instance.
+It provides simple checks for validating and loading YAML-format configurations from arbitrary files.
 """
 
 import yaml

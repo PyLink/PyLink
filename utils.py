@@ -138,7 +138,7 @@ def getDatabaseName(dbname):
     current PyLink instance.
 
     This returns '<dbname>.db' if the running config name is PyLink's default
-    (config.yml), and '<dbname>-<config name>.db' for anything else. For example,
+    (pylink.yml), and '<dbname>-<config name>.db' for anything else. For example,
     if this is called from an instance running as './pylink testing.yml', it
     would return '<dbname>-testing.db'."""
     if conf.confname != 'pylink':
