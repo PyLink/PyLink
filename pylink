@@ -3,9 +3,9 @@
 import os
 import sys
 try:
-    from pylinkirc import conf
+    from pylinkirc import world, conf
 except ImportError:
-    sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.conf).\n\nIf you are "
+    sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
                      "running PyLink from source, please install PyLink first using 'python3 "
                      "setup.py install [--user]'\n")
     sys.exit(1)
@@ -19,6 +19,10 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--no-pid", help="skips generating PID files", action='store_true')
     args = parser.parse_args()
 
+    if args.version:  # Display version and exit
+        print(world.version)
+        sys.exit()
+
     # Load the config
     conf.loadConf(args.config)
 
@@ -26,9 +30,10 @@ if __name__ == '__main__':
     from pylinkirc import classes, utils, coreplugin, world
     log.info('PyLink %s starting...', world.version)
 
-    # Write a PID file.
-    with open('%s.pid' % conf.confname, 'w') as f:
-        f.write(str(os.getpid()))
+    # Write a PID file unless specifically told not to.
+    if not args.no_pid:
+        with open('%s.pid' % conf.confname, 'w') as f:
+            f.write(str(os.getpid()))
 
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
