@@ -13,3 +13,6 @@ __pycache__/
 *.db
 *.pid
 *.pem
+.eggs
+*.egg-info/
+dist/
