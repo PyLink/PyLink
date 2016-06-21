@@ -31,16 +31,17 @@ def validateConf(conf):
 
     return conf
 
-def loadConf(fname, errors_fatal=True):
+def loadConf(filename, errors_fatal=True):
     """Loads a PyLink configuration file from the filename given."""
-    global confname, conf
-    confname = fname.split('.', 1)[0]
-    with open(fname, 'r') as f:
+    global confname, conf, fname
+    fname = filename
+    confname = filename.split('.', 1)[0]
+    with open(filename, 'r') as f:
         try:
             conf = yaml.load(f)
             conf = validateConf(conf)
         except Exception as e:
-            print('ERROR: Failed to load config from %r: %s: %s' % (fname, type(e).__name__, e))
+            print('ERROR: Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e))
             if errors_fatal:
                 sys.exit(4)
             raise
