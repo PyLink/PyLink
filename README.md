@@ -46,8 +46,10 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 
 ## Setup
 
-1) Rename `example-conf.yml` to `config.yml` and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
+1) Install PyLink by using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
 
-2) Run `./pylink` from the command line.
+2) Rename `example-conf.yml` to `config.yml` and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
 
-3) Profit???
+3) Run `pylink` from the command line.
+
+4) Profit???
