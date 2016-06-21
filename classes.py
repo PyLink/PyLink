@@ -53,6 +53,8 @@ class Irc():
         self.connected = threading.Event()
         self.aborted = threading.Event()
 
+        self.pingTimer = None
+
         self.initVars()
 
         if world.testing:
@@ -63,7 +65,6 @@ class Irc():
                                                       name="Listener for %s" %
                                                       self.name)
             self.connection_thread.start()
-        self.pingTimer = None
 
     def logSetup(self):
         """
