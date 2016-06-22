@@ -1132,7 +1132,8 @@ def handle_mode(irc, numeric, command, args):
                 reversed_modes = irc.reverseModes(target, modes, oldobj=oldchan)
                 log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
                           irc.name, modes, reversed_modes)
-                irc.proto.mode(irc.sid, target, reversed_modes)
+                if reversed_modes:
+                    irc.proto.mode(irc.sid, target, reversed_modes)
                 break
 
         else:
