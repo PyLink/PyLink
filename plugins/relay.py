@@ -629,10 +629,8 @@ def relayJoins(irc, channel, users, ts, burst=True):
             # SJOIN will be used if either the amount of users to join is > 1, or there are modes
             # to be set on the joining user.
             if burst or len(queued_users) > 1 or queued_users[0][0]:
-                # Send the SJOIN from the relay subserver on the target network.
-                rsid = getRemoteSid(remoteirc, irc)
                 modes = getSupportedCmodes(irc, remoteirc, channel, irc.channels[channel].modes)
-                remoteirc.proto.sjoin(rsid, remotechan, queued_users, ts=ts)
+                remoteirc.proto.sjoin(getRemoteSid(remoteirc, irc), remotechan, queued_users, ts=ts, modes=modes)
             else:
                 # A regular JOIN only needs the user and the channel. TS, source SID, etc., can all be omitted.
                 remoteirc.proto.join(queued_users[0][1], remotechan)
