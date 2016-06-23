@@ -627,7 +627,11 @@ class TS6Protocol(TS6BaseProtocol):
         Note: The core of WHOIS handling is done by coreplugin.py
         (IRCd-independent), and not here."""
         # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
-        return {'target': args[0]}
+        # First argument is the server that should reply to the WHOIS request
+        # or the server hosting the UID given. We can safely assume that any
+        # WHOIS commands received are for US, since we can't host any servers
+        # behind us to route it to.
+        return {'target': self.irc.nickToUid(args[-1])}
 
     def handle_472(self, numeric, command, args):
         """Handles the incoming 472 numeric.

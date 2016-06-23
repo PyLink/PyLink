@@ -1,7 +1,7 @@
 """Networks plugin - allows you to manipulate connections to various configured networks."""
 import threading
 
-from pylinkirc import utils, world
+from pylinkirc import utils, world, conf, classes
 from pylinkirc.log import log
 
 @utils.add_cmd
@@ -45,15 +45,9 @@ def connect(irc, source, args):
         return
     if network.connection_thread.is_alive():
         irc.reply('Error: Network "%s" seems to be already connected.' % netname)
-    else:  # Reconnect the network!
-        network.connection_thread = threading.Thread(target=network.connect)
-        network.connection_thread.start()
-
-        # And the plugins we have too.
-        for plugin in world.plugins.values():
-            if hasattr(plugin, 'main'):
-                log.debug('(%s) Calling main() function of plugin %r', irc.name, plugin)
-                plugin.main(irc)
+    else:  # Recreate the IRC object.
+        proto = utils.getProtocolModule(network.serverdata.get("protocol"))
+        world.networkobjects[netname] = classes.Irc(netname, proto, conf.conf)
 
         irc.reply("Done.")
 
