@@ -4,6 +4,9 @@ import os
 import sys
 try:
     from pylinkirc import world, conf
+    # This must be set to False to disable test mode and enable threaded connections.
+    # Otherwise you'll only be able to connect to one net at a time! Which is boring.
+    world.testing = False
 except ImportError:
     sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
                      "running PyLink from source, please install PyLink first using 'python3 "
