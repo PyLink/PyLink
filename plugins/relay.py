@@ -631,8 +631,8 @@ def relayJoins(irc, channel, users, ts, burst=True):
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 # Send the SJOIN from the relay subserver on the target network.
                 rsid = getRemoteSid(remoteirc, irc)
+                modes = getSupportedCmodes(irc, remoteirc, channel, irc.channels[channel].modes)
                 remoteirc.proto.sjoin(rsid, remotechan, queued_users, ts=ts)
-                relayModes(irc, remoteirc, getRemoteSid(irc, remoteirc), channel, irc.channels[channel].modes)
             else:
                 # A regular JOIN only needs the user and the channel. TS, source SID, etc., can all be omitted.
                 remoteirc.proto.join(queued_users[0][1], remotechan)
@@ -679,22 +679,15 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
 whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
                       'regdeaf', 'stripcolor', 'noctcp', 'wallops',
                       'hideidle'}
-def relayModes(irc, remoteirc, sender, channel, modes=None):
+def getSupportedCmodes(irc, remoteirc, channel, modes):
     """
-    Relays a mode change on a channel to its relay links.
+    Filters a channel mode change to the modes supported by the target IRCd.
     """
     remotechan = getRemoteChan(irc, remoteirc, channel)
-    log.debug('(%s) relay.relayModes: remotechan for %s on %s is %s', irc.name, channel, irc.name, remotechan)
+    if not remotechan:  # Not a relay channel
+        return []
 
-    if remotechan is None:
-        return
-
-    if modes is None:
-        modes = irc.channels[channel].modes
-        log.debug('(%s) relay.relayModes: channel data for %s%s: %s', irc.name, remoteirc.name, remotechan, remoteirc.channels[remotechan])
     supported_modes = []
-    log.debug('(%s) relay.relayModes: initial modelist for %s is %s', irc.name, channel, modes)
-
     for modepair in modes:
         try:
             prefix, modechar = modepair[0]
@@ -714,7 +707,7 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     break
 
                 if name not in whitelisted_cmodes:
-                    log.debug("(%s) relay.relayModes: skipping mode (%r, %r) because "
+                    log.debug("(%s) relay.getSupportedCmodes: skipping mode (%r, %r) because "
                               "it isn't a whitelisted (safe) mode for relay.",
                               irc.name, modechar, arg)
                     break
@@ -722,7 +715,7 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                 if modechar in irc.prefixmodes:
                     # This is a prefix mode (e.g. +o). We must coerse the argument
                     # so that the target exists on the remote relay network.
-                    log.debug("(%s) relay.relayModes: coersing argument of (%r, %r) "
+                    log.debug("(%s) relay.getSupportedCmodes: coersing argument of (%r, %r) "
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
 
@@ -731,18 +724,17 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
                     arg = getOrigUser(irc, arg, targetirc=remoteirc) or \
                         getRemoteUser(irc, remoteirc, arg, spawnIfMissing=False)
 
-                    log.debug("(%s) relay.relayModes: argument found as (%r, %r) "
+                    log.debug("(%s) relay.getSupportedCmodes: argument found as (%r, %r) "
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
                     oplist = remoteirc.channels[remotechan].prefixmodes[name]
 
-                    log.debug("(%s) relay.relayModes: list of %ss on %r is: %s",
+                    log.debug("(%s) relay.getSupportedCmodes: list of %ss on %r is: %s",
                               irc.name, name, remotechan, oplist)
 
                     if prefix == '+' and arg in oplist:
-
                         # Don't set prefix modes that are already set.
-                        log.debug("(%s) relay.relayModes: skipping setting %s on %s/%s because it appears to be already set.",
+                        log.debug("(%s) relay.getSupportedCmodes: skipping setting %s on %s/%s because it appears to be already set.",
                                   irc.name, name, arg, remoteirc.name)
                         break
 
@@ -751,32 +743,22 @@ def relayModes(irc, remoteirc, sender, channel, modes=None):
             if supported_char:
                 final_modepair = (prefix+supported_char, arg)
                 if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
-
                     # Don't add bans that don't match n!u@h syntax!
-                    log.debug("(%s) relay.relayModes: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
+                    log.debug("(%s) relay.getSupportedCmodes: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
                               irc.name, modechar, arg)
                     break
 
                 # Don't set modes that are already set, to prevent floods on TS6
                 # where the same mode can be set infinite times.
                 if prefix == '+' and final_modepair in remoteirc.channels[remotechan].modes:
-                    log.debug("(%s) relay.relayModes: skipping setting mode (%r, %r) on %s%s because it appears to be already set.",
+                    log.debug("(%s) relay.getSupportedCmodes: skipping setting mode (%r, %r) on %s%s because it appears to be already set.",
                               irc.name, supported_char, arg, remoteirc.name, remotechan)
                     break
 
                 supported_modes.append(final_modepair)
 
-    log.debug('(%s) relay.relayModes: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
-
-    # Don't send anything if there are no supported modes left after filtering.
-    if supported_modes:
-        # Check if the sender is a user; remember servers are allowed to set modes too.
-        u = getRemoteUser(irc, remoteirc, sender, spawnIfMissing=False)
-        if u:
-            remoteirc.proto.mode(u, remotechan, supported_modes)
-        else:
-            rsid = getRemoteSid(remoteirc, irc)
-            remoteirc.proto.mode(rsid, remotechan, supported_modes)
+    log.debug('(%s) relay.getSupportedCmodes: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
+    return supported_modes
 
 ### EVENT HANDLERS
 
@@ -1119,10 +1101,21 @@ def handle_mode(irc, numeric, command, args):
             continue
 
         if utils.isChannel(target):
+            # Use the old state of the channel to check for CLAIM access.
             oldchan = args.get('oldchan')
 
             if checkClaim(irc, target, numeric, chanobj=oldchan):
-                relayModes(irc, remoteirc, numeric, target, modes)
+                remotechan = getRemoteChan(irc, remoteirc, target)
+                supported_modes = getSupportedCmodes(irc, remoteirc, target, modes)
+                if supported_modes:
+                    # Check if the sender is a user with a relay client; otherwise relay the mode
+                    # from the corresponding server.
+                    u = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
+                    if u:
+                        remoteirc.proto.mode(u, remotechan, supported_modes)
+                    else:
+                        rsid = getRemoteSid(remoteirc, irc)
+                        remoteirc.proto.mode(rsid, remotechan, supported_modes)
             else:  # Mode change blocked by CLAIM.
                 reversed_modes = irc.reverseModes(target, modes, oldobj=oldchan)
                 log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
