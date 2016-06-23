@@ -436,15 +436,15 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
         channel = self.irc.toLower(args[1])
         userlist = args[-1].split()
-        their_ts = int(args[0])
-        our_ts = self.irc.channels[channel].ts
-
-        self.updateTS(channel, their_ts)
 
         modestring = args[2:-1] or args[2]
         parsedmodes = self.irc.parseModes(channel, modestring)
         self.irc.applyModes(channel, parsedmodes)
         namelist = []
+
+        # Keep track of other modes that are added due to prefix modes being joined too.
+        changedmodes = set(parsedmodes)
+
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
         for userpair in userlist:
             # charybdis sends this in the form "@+UID1, +UID2, UID3, @UID4"
@@ -469,9 +469,16 @@ class TS6Protocol(TS6BaseProtocol):
                         finalprefix += char
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
-            if their_ts <= our_ts:
-                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in finalprefix])
+
+            # Only save mode changes if the remote has lower TS than us.
+            changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
             self.irc.channels[channel].users.add(user)
+
+        # Statekeeping with timestamps
+        their_ts = int(args[0])
+        our_ts = self.irc.channels[channel].ts
+        self.updateTS(channel, their_ts, changedmodes, outbound=False)
+
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
     def handle_join(self, numeric, command, args):

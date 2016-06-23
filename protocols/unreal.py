@@ -556,12 +556,12 @@ class UnrealProtocol(TS6BaseProtocol):
         channel = self.irc.toLower(args[1])
         userlist = args[-1].split()
 
-        our_ts = self.irc.channels[channel].ts
-        their_ts = int(args[0])
-        self.updateTS(channel, their_ts)
-
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
+
+        # Keep track of other modes that are added due to prefix modes being joined too.
+        changedmodes = set(self.irc.channels[channel].modes)
+
         for userpair in userlist:
             if userpair.startswith("&\"'"):  # TODO: handle ban bursts too
                 # &, ", and ' entries are used for bursting bans:
@@ -583,10 +583,16 @@ class UnrealProtocol(TS6BaseProtocol):
                         finalprefix += char
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
+
             # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
-            if their_ts <= our_ts:
-                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in finalprefix])
+            changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
+
             self.irc.channels[channel].users.add(user)
+
+        our_ts = self.irc.channels[channel].ts
+        their_ts = int(args[0])
+        self.updateTS(channel, their_ts, changedmodes, outbound=False)
+
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
     def handle_nick(self, numeric, command, args):

@@ -938,10 +938,6 @@ class P10Protocol(Protocol):
 
         channel = self.irc.toLower(args[0])
         userlist = args[-1].split()
-        their_ts = int(args[1])
-        our_ts = self.irc.channels[channel].ts
-
-        self.updateTS(channel, their_ts)
 
         bans = []
         if args[-1].startswith('%'):
@@ -971,6 +967,9 @@ class P10Protocol(Protocol):
             parsedmodes = self.irc.parseModes(channel, modestring)
         else:
             parsedmodes = []
+
+        # Keep track of other modes that are added due to prefix modes being joined too.
+        changedmodes = set(parsedmodes)
 
         # Add the ban list to the list of modes to process.
         parsedmodes.extend(bans)
@@ -1006,10 +1005,15 @@ class P10Protocol(Protocol):
 
                 self.irc.users[user].channels.add(channel)
 
-                if their_ts <= our_ts:
-                    self.irc.applyModes(channel, [('+%s' % mode, user) for mode in prefixes])
+                # Only save mode changes if the remote has lower TS than us.
+                changedmodes |= {('+%s' % mode, user) for mode in prefixes}
 
                 self.irc.channels[channel].users.add(user)
+
+        # Statekeeping with timestamps
+        their_ts = int(args[1])
+        our_ts = self.irc.channels[channel].ts
+        self.updateTS(channel, their_ts, changedmodes, outbound=False)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 

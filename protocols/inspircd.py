@@ -498,14 +498,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
 
-        their_ts = int(args[1])
-        our_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, their_ts)
-
         modestring = args[2:-1] or args[2]
         parsedmodes = self.irc.parseModes(channel, modestring)
         self.irc.applyModes(channel, parsedmodes)
         namelist = []
+
+        # Keep track of other modes that are added due to prefix modes being joined too.
+        changedmodes = set(parsedmodes)
+
         for user in userlist:
             modeprefix, user = user.split(',', 1)
 
@@ -517,9 +517,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
-            if their_ts <= our_ts:
-                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in modeprefix])
+
+            # Only save mode changes if the remote has lower TS than us.
+            changedmodes |= {('+%s' % mode, user) for mode in modeprefix}
+
             self.irc.channels[channel].users.add(user)
+
+        # Statekeeping with timestamps
+        their_ts = int(args[1])
+        our_ts = self.irc.channels[channel].ts
+        self.updateTS(channel, their_ts, changedmodes, outbound=False)
+
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
     def handle_uid(self, numeric, command, args):
