@@ -1067,23 +1067,36 @@ class Protocol():
         log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
         self.irc.servers[sid].users.discard(numeric)
 
-    def updateTS(self, channel, their_ts):
+    def updateTS(self, channel, their_ts, modes=[]):
         """
-        Compares the current TS of the channel given with the new TS, resetting
-        all modes we have if the one given is older.
+        Merges modes of a channel given the remote TS and a list of modes.
+
+        This returns True when our modes apply (our TS <= theirs)
         """
 
         our_ts = self.irc.channels[channel].ts
 
         if their_ts < our_ts:
-            # Channel timestamp was reset on burst
+            # Their TS is older than ours. Clear all modes.
             log.debug('(%s) Setting channel TS of %s to %s from %s',
                       self.irc.name, channel, their_ts, our_ts)
             self.irc.channels[channel].ts = their_ts
-            # When TS is reset, clear all modes we currently have
+
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
                 p.clear()
+
+            return False
+
+        elif their_ts == our_ts:
+            # Their TS is equal to ours. Merge modes.
+            self.irc.applyModes(channel, modes)
+            return True
+        elif their_ts > our_ts:
+            # Their TS is younger than ours. Replace their modes with ours.
+            self.irc.channels[channel].modes.clear()
+            self.irc.applyModes(channel, modes)
+            return True
 
     def _getSid(self, sname):
         """Returns the SID of a server with the given name, if present."""

@@ -450,7 +450,7 @@ class P10Protocol(Protocol):
         else:
             raise LookupError("No such PyLink client exists.")
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a Server ID (SID). TS is optional, and defaults
@@ -470,14 +470,11 @@ class P10Protocol(Protocol):
         if not server:
             raise LookupError('No such PyLink client exists.')
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
-        self.updateTS(channel, ts)
-
         # Only send non-list modes in BURST. TODO: burst bans and banexempts too
-        modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
+        modes = modes or self.irc.channels[channel].modes
+        modes = [m for m in modes if m[0] not in self.irc.cmodes['*A']]
 
-        changedmodes = []
+        changedmodes = modes
         changedusers = []
         namelist = []
 
@@ -532,9 +529,9 @@ class P10Protocol(Protocol):
 
         self.irc.channels[channel].users.update(changedusers)
 
-        if ts <= orig_ts:
-           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
+        self.updateTS(channel, ts, changedmodes)
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
@@ -1032,9 +1029,11 @@ class P10Protocol(Protocol):
             oldchans = self.irc.users[numeric].channels.copy()
             log.debug('(%s) Got /join 0 from %r, channel list is %r',
                       self.irc.name, numeric, oldchans)
+
             for channel in oldchans:
                 self.irc.channels[channel].users.discard(source)
                 self.irc.users[source].channels.discard(channel)
+
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
             channel = self.irc.toLower(args[0])

@@ -85,7 +85,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a Server ID (SID). TS is optional, and defaults
@@ -100,20 +100,27 @@ class InspIRCdProtocol(TS6BaseProtocol):
         server = server or self.irc.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
+
         if not server:
             raise LookupError('No such PyLink client exists.')
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
-        self.updateTS(channel, ts)
-
-        log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, self.irc.name, ts,
-                  time.strftime("%c", time.localtime(ts)))
         # Strip out list-modes, they shouldn't ever be sent in FJOIN (protocol rules).
-        modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
+        modes = modes or self.irc.channels[channel].modes
+
+        banmodes = []
+        regularmodes = []
+        for mode in modes:
+            modechar = mode[0][-1]
+            # Don't reset bans that have already been set
+            if modechar in self.irc.cmodes['*A'] and (modechar, mode[1]) not in self.irc.channels[channel].modes:
+                banmodes.append(mode)
+            else:
+                regularmodes.append(mode)
+
         uids = []
-        changedmodes = []
+        changedmodes = set(modes)
         namelist = []
+
         # We take <users> as a list of (prefixmodes, uid) pairs.
         for userpair in users:
             assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
@@ -121,19 +128,27 @@ class InspIRCdProtocol(TS6BaseProtocol):
             namelist.append(','.join(userpair))
             uids.append(user)
             for m in prefixes:
-                changedmodes.append(('+%s' % m, user))
+                changedmodes.add(('+%s' % m, user))
             try:
                 self.irc.users[user].channels.add(channel)
             except KeyError:  # Not initialized yet?
                 log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
-        if ts <= orig_ts:
-            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+
         namelist = ' '.join(namelist)
         self._send(server, "FJOIN {channel} {ts} {modes} :{users}".format(
                 ts=ts, users=namelist, channel=channel,
                 modes=self.irc.joinModes(modes)))
         self.irc.channels[channel].users.update(uids)
+
+        if banmodes:
+            # Burst ban modes if there are any.
+            # <- :1ML FMODE #test 1461201525 +bb *!*@bad.user *!*@rly.bad.user
+            self._send(server, "FMODE {channel} {ts} {modes} ".format(
+                ts=ts, channel=channel, modes=self.irc.joinModes(banmodes)))
+
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
+        self.updateTS(channel, ts, changedmodes)
 
     def _operUp(self, target, opertype=None):
         """Opers a client up (internal function specific to InspIRCd).

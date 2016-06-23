@@ -123,7 +123,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a server (SID). TS is optional, and defaults
@@ -147,36 +147,46 @@ class UnrealProtocol(TS6BaseProtocol):
         if not server:
             raise LookupError('No such PyLink server exists.')
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
-        self.updateTS(channel, ts)
-
-        changedmodes = []
+        changedmodes = set(modes or self.irc.channels[channel].modes)
         uids = []
         namelist = []
+
         for userpair in users:
             assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
             prefixes, user = userpair
+
             # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
             # and +a is ~ instead of &.
             # &, ", and ' are used for bursting bans.
             sjoin_prefixes = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+'}
             prefixchars = ''.join([sjoin_prefixes.get(prefix, '') for prefix in prefixes])
+
             if prefixchars:
-                changedmodes + [('+%s' % prefix, user) for prefix in prefixes]
+                changedmodes |= {('+%s' % prefix, user) for prefix in prefixes}
+
             namelist.append(prefixchars+user)
             uids.append(user)
+
             try:
                 self.irc.users[user].channels.add(channel)
             except KeyError:  # Not initialized yet?
                 log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
+
         namelist = ' '.join(namelist)
+
         self._send(server, "SJOIN {ts} {channel} :{users}".format(
                    ts=ts, users=namelist, channel=channel))
+
+        # Burst modes separately. No really, this is what I see UnrealIRCd do! It sends
+        # JOINs on burst and then MODE!
+        if modes:
+            self.mode(server, channel, modes, ts=ts)
+
         self.irc.channels[channel].users.update(uids)
-        if ts <= orig_ts:
-           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
+        self.updateTS(channel, ts, changedmodes)
 
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink

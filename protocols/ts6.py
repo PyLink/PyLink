@@ -73,7 +73,7 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a Server ID (SID). TS is optional, and defaults
@@ -100,14 +100,23 @@ class TS6Protocol(TS6BaseProtocol):
         if not server:
             raise LookupError('No such PyLink client exists.')
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
-        self.updateTS(channel, ts)
+        modes = set(modes or self.irc.channels[channel].modes)
 
-        log.debug("(%s) sending SJOIN to %s with ts %s (that's %r)", self.irc.name, channel, ts,
-                  time.strftime("%c", time.localtime(ts)))
-        modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
-        changedmodes = []
+        # Get all the ban modes in a separate list. These are bursted using a separate BMASK
+        # command.
+        banmodes = {k: set() for k in self.irc.cmodes['*A']}
+        regularmodes = []
+        log.debug('(%s) Unfiltered SJOIN modes: %s', self.irc.name, modes)
+        for mode in modes:
+            modechar = mode[0][-1]
+            if modechar in self.irc.cmodes['*A']:
+                # Mode character is one of 'beIq'
+                banmodes[modechar].add(mode[1])
+            else:
+                regularmodes.append(mode)
+        log.debug('(%s) Filtered SJOIN modes to be regular modes: %s, banmodes: %s', self.irc.name, regularmodes, banmodes)
+
+        changedmodes = modes
         while users[:10]:
             uids = []
             namelist = []
@@ -120,7 +129,7 @@ class TS6Protocol(TS6BaseProtocol):
                     pr = self.irc.prefixmodes.get(prefix)
                     if pr:
                         prefixchars += pr
-                        changedmodes.append(('+%s' % prefix, user))
+                        changedmodes.add(('+%s' % prefix, user))
                 namelist.append(prefixchars+user)
                 uids.append(user)
                 try:
@@ -131,11 +140,20 @@ class TS6Protocol(TS6BaseProtocol):
             namelist = ' '.join(namelist)
             self._send(server, "SJOIN {ts} {channel} {modes} :{users}".format(
                     ts=ts, users=namelist, channel=channel,
-                    modes=self.irc.joinModes(modes)))
+                    modes=self.irc.joinModes(regularmodes)))
             self.irc.channels[channel].users.update(uids)
-        if ts <= orig_ts:
-           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+
+        # Now, burst bans.
+        # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
+        for bmode, bans in banmodes.items():
+            if bans:
+                log.debug('(%s) sjoin: bursting mode %s with bans %s', self.irc.name, bmode, bans)
+                self._send(server, "BMASK {ts} {channel} {bmode} :{bans}".format(ts=ts,
+                           channel=channel, bmode=bmode, bans=' '.join(bans)))
+
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
+        self.updateTS(channel, ts, changedmodes)
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
