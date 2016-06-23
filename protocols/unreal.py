@@ -652,10 +652,21 @@ class UnrealProtocol(TS6BaseProtocol):
         if utils.isChannel(args[0]):
             channel = self.irc.toLower(args[0])
             oldobj = self.irc.channels[channel].deepcopy()
+
             modes = list(filter(None, args[1:]))  # normalize whitespace
             parsedmodes = self.irc.parseModes(channel, modes)
+
             if parsedmodes:
+                if parsedmodes[0][0] == '+&':
+                    # UnrealIRCd uses a & virtual mode to denote mode bounces, meaning that an attempt to set modes
+                    # by us was rejected for some reason (usually due to timestamps). Warn about this and drop the
+                    # mode change to prevent mode floods.
+                    log.warning("(%s) Received mode bounce %s in channel %s! Our TS: %s",
+                                self.irc.name, modes, channel, self.irc.channels[channel].ts)
+                    return
+
                 self.irc.applyModes(channel, parsedmodes)
+
             if numeric in self.irc.servers and args[-1].isdigit():
                 # Sender is a server AND last arg is number. Perform TS updates.
                 their_ts = int(args[-1])
