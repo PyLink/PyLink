@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
+"""
+PyLink IRC Services launcher.
+"""
 
 import os
 import sys
 try:
     from pylinkirc import world, conf
-    # This must be set to False to disable test mode and enable threaded connections.
-    # Otherwise you'll only be able to connect to one net at a time! Which is boring.
-    world.testing = False
 except ImportError:
     sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
                      "running PyLink from source, please install PyLink first using 'python3 "
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     conf.loadConf(args.config)
 
     from pylinkirc.log import log
-    from pylinkirc import classes, utils, coremods, world
+    from pylinkirc import classes, utils, coremods
     log.info('PyLink %s starting...', world.version)
 
     # Write a PID file unless specifically told not to.

@@ -7,12 +7,9 @@ import threading
 import subprocess
 import os
 
-# Global variable to indicate whether we're being ran directly, or imported
-# for a testcase. This defaults to True.
-testing = True
-
-# Sets the default protocol module to use with tests.
-testing_ircd = 'inspircd'
+# This indicates whether we're running in tests modes. What it actually does
+# though is control whether IRC connections should be threaded or not.
+testing = False
 
 # Statekeeping for our hooks list, IRC objects, loaded plugins, and initialized
 # service bots.
