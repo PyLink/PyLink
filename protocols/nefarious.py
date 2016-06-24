@@ -470,9 +470,28 @@ class P10Protocol(Protocol):
         if not server:
             raise LookupError('No such PyLink client exists.')
 
-        # Only send non-list modes in BURST. TODO: burst bans and banexempts too
+        # Only send non-list modes in the modes argument BURST. Bans and exempts are formatted differently:
+        # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host *!*@bad.host
+        # <- AB B #test2 1460743539 +l 10 ABAAA:vo :%*!*@bad.host
+        # <- AB B #test 1460747615 ABAAA:o :% ~ *!*@test.host
         modes = modes or self.irc.channels[channel].modes
-        modes = [m for m in modes if m[0] not in self.irc.cmodes['*A']]
+
+        bans = []
+        exempts = []
+        regularmodes = []
+        for mode in modes:
+            modechar = mode[0][-1]
+            # Store bans and exempts in separate lists for processing, but don't reset bans that have already been set.
+            if modechar in self.irc.cmodes['*A']:
+                if (modechar, mode[1]) not in self.irc.channels[channel].modes:
+                    if modechar == 'b':
+                        bans.append(mode[1])
+                    elif modechar == 'e':
+                        exempts.append(mode[1])
+            else:
+                regularmodes.append(mode)
+
+        log.debug('(%s) sjoin: bans: %s, exempts: %s, other modes: %s', self.irc.name, bans, exempts, regularmodes)
 
         changedmodes = modes
         changedusers = []
@@ -519,13 +538,25 @@ class P10Protocol(Protocol):
 
         namelist = ','.join(namelist)
         log.debug('(%s) sjoin: got %r for namelist', self.irc.name, namelist)
+
+        # Format bans as the last argument if there are any.
+        banstring = ''
+        if bans or exempts:
+            banstring += ' :%'  # Ban string starts with a % if there is anything
+            if bans:
+                banstring += ' '.join(bans)  # Join all bans, separated by a space
+            if exempts:
+                # Exempts are separated from the ban list by a single argument "~".
+                banstring += ' ~ '
+                banstring += ' '.join(exempts)
+
         if modes:  # Only send modes if there are any.
-            self._send(server, "B {channel} {ts} {modes} :{users}".format(
+            self._send(server, "B {channel} {ts} {modes} {users}{banstring}".format(
                        ts=ts, users=namelist, channel=channel,
-                       modes=self.irc.joinModes(modes)))
+                       modes=self.irc.joinModes(regularmodes), banstring=banstring))
         else:
-            self._send(server, "B {channel} {ts} :{users}".format(
-                       ts=ts, users=namelist, channel=channel))
+            self._send(server, "B {channel} {ts} {users}{banstring}".format(
+                       ts=ts, users=namelist, channel=channel, banstring=banstring))
 
         self.irc.channels[channel].users.update(changedusers)
 
@@ -942,11 +973,11 @@ class P10Protocol(Protocol):
         bans = []
         if args[-1].startswith('%'):
             # Ban lists start with a %. However, if one argument is "~",
-            # Parse everything after it as an exempt (+e).
+            # parse everything after it as an ban exempt (+e).
             exempts = False
             for host in args[-1][1:].split(' '):
                 if not host:
-                    # Space between % and ~ ignore.
+                    # Space between % and ~; ignore.
                     continue
                 elif host == '~':
                     exempts = True
@@ -968,12 +999,11 @@ class P10Protocol(Protocol):
         else:
             parsedmodes = []
 
-        # Keep track of other modes that are added due to prefix modes being joined too.
+        # This list is used to keep track of prefix modes being added to the mode list.
         changedmodes = set(parsedmodes)
 
-        # Add the ban list to the list of modes to process.
+        # Also add the the ban list to the list of modes to process internally.
         parsedmodes.extend(bans)
-
         if parsedmodes:
             self.irc.applyModes(channel, parsedmodes)
 
@@ -983,12 +1013,13 @@ class P10Protocol(Protocol):
         prefixes = ''
 
         userlist = args[-1].split(',')
-        if args[-1] != args[1]:  # Make sure the userlist is the right argument (not the TS).
+        if args[-1] != args[1]:  # Make sure the user list is the right argument (not the TS).
             for userpair in userlist:
                 # This is given in the form UID1,UID2:prefixes. However, when one userpair is given
                 # with a certain prefix, it implicitly applies to all other following UIDs, until
-                # another userpair is given with a prefix. For example: UID1,UID3:o,UID4,UID5 would
-                # assume that UID1 has no prefixes, but UID3-5 all have op when joining.
+                # another userpair is given with a list of prefix modes. For example,
+                # "UID1,UID3:o,UID4,UID5" would assume that UID1 has no prefixes, but that UIDs 3-5
+                # all have op.
                 try:
                     user, prefixes = userpair.split(':')
                 except ValueError:
