@@ -1069,15 +1069,15 @@ class Protocol():
         """
 
         def _clear():
-            log.debug('(%s) Setting channel TS of %s to %s from %s',
-                      self.irc.name, channel, their_ts, our_ts)
-            self.irc.channels[channel].ts = their_ts
-
+            log.debug("(%s) Clearing modes from channel %s due to TS change", self.irc.name,
+                      channel)
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
                 p.clear()
 
         def _apply():
+            log.debug("(%s) Applying modes on channel %s (TS ok)", self.irc.name,
+                      channel)
             self.irc.applyModes(channel, modes)
 
         our_ts = self.irc.channels[channel].ts
@@ -1088,6 +1088,12 @@ class Protocol():
             # the one setting modes, just drop them.
             log.debug("(%s/%s) remote TS of %s is lower than ours %s; outbound mode: %s; setting modes %s",
                       self.irc.name, channel, their_ts, our_ts, outbound, modes)
+
+            # Update the channel TS to theirs regardless of whether the mode setting passes.
+            log.debug('(%s) Setting channel TS of %s to %s from %s',
+                      self.irc.name, channel, their_ts, our_ts)
+            self.irc.channels[channel].ts = their_ts
+
             if not outbound:
                 _clear()
                 _apply()
