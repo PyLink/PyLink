@@ -34,7 +34,7 @@ These IRCds are frequently tested and well supported. If any issues occur, pleas
 
 ### Extended support
 
-Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not be always be fixed in a timely fashion.
+Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
 * Elemental-IRCd (6.6.x / git master) - module `ts6`
 * InspIRCd 2.2 (git master) - module `inspircd`
