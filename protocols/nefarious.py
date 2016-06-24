@@ -1044,7 +1044,7 @@ class P10Protocol(Protocol):
         # Statekeeping with timestamps
         their_ts = int(args[1])
         our_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, their_ts, changedmodes, outbound=False)
+        self.updateTS(channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 

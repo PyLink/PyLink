@@ -1063,7 +1063,7 @@ class Protocol():
         log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
         self.irc.servers[sid].users.discard(numeric)
 
-    def updateTS(self, channel, their_ts, modes=[], outbound=True):
+    def updateTS(self, channel, their_ts, modes=[]):
         """
         Merges modes of a channel given the remote TS and a list of modes.
         """
@@ -1083,10 +1083,11 @@ class Protocol():
         our_ts = self.irc.channels[channel].ts
 
         if their_ts < our_ts:
-            # Their TS is older than ours. If we're receiving a mode change, we should
-            # clear our stored modes for the channel and apply theirs. Otherwise, if we're
-            # the one setting modes, just drop them.
-            log.debug("(%s/%s) remote TS of %s is lower than ours %s; outbound mode: %s; setting modes %s",
+            # Their TS is older than ours. We should clear our stored modes for the channel and
+            # apply the ones in the queue to be set. This is regardless of whether we're sending
+            # outgoing modes or receiving some - both are handled the same with a "received" TS,
+            # and comparing it with the one we have.
+            log.debug("(%s/%s) received TS of %s is lower than ours %s; outbound mode: %s; setting modes %s",
                       self.irc.name, channel, their_ts, our_ts, outbound, modes)
 
             # Update the channel TS to theirs regardless of whether the mode setting passes.
@@ -1094,9 +1095,8 @@ class Protocol():
                       self.irc.name, channel, their_ts, our_ts)
             self.irc.channels[channel].ts = their_ts
 
-            if not outbound:
-                _clear()
-                _apply()
+            _clear()
+            _apply()
 
         elif their_ts == our_ts:
             log.debug("(%s/%s) remote TS of %s is equal to ours %s; outbound mode: %s; setting modes %s",
@@ -1107,12 +1107,10 @@ class Protocol():
         elif their_ts > our_ts:
             log.debug("(%s/%s) remote TS of %s is higher than ours %s; outbound mode: %s; setting modes %s",
                       self.irc.name, channel, their_ts, our_ts, outbound, modes)
-            # Their TS is younger than ours. If we're setting modes, clear the state
-            # and replace the modes for the channel with ours. Otherwise, just ignore the
-            # remote's changes.
-            if outbound:
-                _clear()
-                _apply()
+            # Their TS is younger than ours. Clear the state and replace the modes for the channel
+            # with the ones being set.
+            _clear()
+            _apply()
 
     def _getSid(self, sname):
         """Returns the SID of a server with the given name, if present."""

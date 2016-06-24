@@ -591,7 +591,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         our_ts = self.irc.channels[channel].ts
         their_ts = int(args[0])
-        self.updateTS(channel, their_ts, changedmodes, outbound=False)
+        self.updateTS(channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
