@@ -111,9 +111,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
         regularmodes = []
         for mode in modes:
             modechar = mode[0][-1]
-            # Don't reset bans that have already been set
-            if modechar in self.irc.cmodes['*A'] and (modechar, mode[1]) not in self.irc.channels[channel].modes:
-                banmodes.append(mode)
+            if modechar in self.irc.cmodes['*A']:
+                # Track bans separately (they are sent as a normal FMODE instead of in FJOIN.
+                # However, don't reset bans that have already been set.
+                if (modechar, mode[1]) not in self.irc.channels[channel].modes:
+                    banmodes.append(mode)
             else:
                 regularmodes.append(mode)
 
