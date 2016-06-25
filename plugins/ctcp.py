@@ -19,12 +19,8 @@ def handle_ctcpping(irc, source, args):
     Handles CTCP ping requests.
     """
     # CTCP PING 23152511
-    try:
-        pingarg = args[0]
-    except IndexError:
-        # Malformed ping request; ignore it.
-        return
-    irc.msg(source, '\x01PING %s\x01' % args[0], notice=True)
+    pingarg = ' '.join(args).strip('\x01')
+    irc.msg(source, '\x01PING %s\x01' % pingarg, notice=True)
 utils.add_cmd(handle_ctcpping, '\x01ping')
 
 def handle_ctcpeaster(irc, source, args):
