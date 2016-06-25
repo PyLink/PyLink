@@ -1061,9 +1061,9 @@ class P10Protocol(Protocol):
 
         if args[0] == '0' and command == 'JOIN':
             # /join 0; part the user from all channels
-            oldchans = self.irc.users[numeric].channels.copy()
+            oldchans = self.irc.users[source].channels.copy()
             log.debug('(%s) Got /join 0 from %r, channel list is %r',
-                      self.irc.name, numeric, oldchans)
+                      self.irc.name, source, oldchans)
 
             for channel in oldchans:
                 self.irc.channels[channel].users.discard(source)
