@@ -11,6 +11,34 @@ from collections import defaultdict
 
 from . import world
 
+conf = {'bot':
+                {
+                    'nick': 'PyLink',
+                    'user': 'pylink',
+                    'realname': 'PyLink Service Client',
+                    'serverdesc': 'Unconfigured PyLink'
+                },
+        'logging':
+                {
+                    'stdout': 'INFO'
+                },
+        'servers':
+                # Wildcard defaultdict! This means that
+                # any network name you try will work and return
+                # this basic template:
+                defaultdict(lambda: {'ip': '0.0.0.0',
+                                     'port': 7000,
+                                     'recvpass': "unconfigured",
+                                     'sendpass': "unconfigured",
+                                     'protocol': "null",
+                                     'hostname': "pylink.unconfigured",
+                                     'sid': "000",
+                                     'maxnicklen': 20,
+                                     'sidrange': '0##'
+                                    })
+        }
+confname = 'unconfigured'
+
 def validateConf(conf):
     """Validates a parsed configuration dict."""
     assert type(conf) == dict, "Invalid configuration given: should be type dict, not %s." % type(conf).__name__
