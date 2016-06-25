@@ -96,7 +96,7 @@ The following hooks represent regular IRC commands sent between servers.
 - **QUIT**: `{'text': 'Quit: Bye everyone!'}`
     - `text` corresponds to the quit reason.
 
-- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server'}`
+- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X'}`
     - `target` is the SID of the server being split, while `name` is the server's name.
     - `users` is a list of all UIDs affected by the netsplit.
 

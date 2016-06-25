@@ -1212,10 +1212,12 @@ class P10Protocol(Protocol):
             self.removeClient(user)
 
         sname = self.irc.servers[split_server].name
+        uplink = self.irc.servers[split_server].uplink
         del self.irc.servers[split_server]
         log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
 
-        return {'target': split_server, 'users': affected_users, 'name': sname}
+        return {'target': split_server, 'users': affected_users, 'name': sname,
+                'uplink': uplink}
 
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""

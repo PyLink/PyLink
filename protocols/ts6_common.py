@@ -383,6 +383,9 @@ class TS6BaseProtocol(Protocol):
         if split_server not in self.irc.servers:
             log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
             return
+
+        uplink = self.irc.servers[split_server].uplink
+
         # Prevent RuntimeError: dictionary changed size during iteration
         old_servers = self.irc.servers.copy()
         for sid, data in old_servers.items():
@@ -390,14 +393,18 @@ class TS6BaseProtocol(Protocol):
                 log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
                 args = self.handle_squit(sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
                 affected_users += args['users']
+
         for user in self.irc.servers[split_server].users.copy():
             affected_users.append(user)
             log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
             self.removeClient(user)
+
         sname = self.irc.servers[split_server].name
         del self.irc.servers[split_server]
+
         log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
-        return {'target': split_server, 'users': affected_users, 'name': sname}
+        return {'target': split_server, 'users': affected_users, 'name': sname,
+                'uplink': uplink}
 
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients. For topic bursts,
