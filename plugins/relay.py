@@ -834,24 +834,47 @@ def handle_quit(irc, numeric, command, args):
 utils.add_hook(handle_quit, 'QUIT')
 
 def handle_squit(irc, numeric, command, args):
+    """
+    Handles SQUITs over relay.
+    """
     users = args['users']
     target = args['target']
+
     # Someone /SQUIT one of our relay subservers. Bad! Rejoin them!
     if target in relayservers[irc.name].values():
         sname = args['name']
         remotenet = sname.split('.', 1)[0]
         del relayservers[irc.name][remotenet]
+
         for userpair in relayusers:
             if userpair[0] == remotenet and irc.name in relayusers[userpair]:
                 del relayusers[userpair][irc.name]
+
         remoteirc = world.networkobjects[remotenet]
         initializeAll(remoteirc)
+
     else:
         # Some other netsplit happened on the network, we'll have to fake
         # some *.net *.split quits for that.
         for user in users:
             log.debug('(%s) relay.handle_squit: sending handle_quit on %s', irc.name, user)
-            handle_quit(irc, user, command, {'text': '*.net *.split'})
+
+            try:  # Allow netsplit hiding to be toggled
+                show_splits = irc.conf['relay']['show_netsplits']
+            except KeyError:
+                show_splits = False
+
+            text = '*.net *.split'
+            if show_splits:
+                uplink = args['uplink']
+                try:
+                    text = '%s %s' % (irc.servers[uplink].name, args['name'])
+                except (KeyError, AttributeError):
+                    log.warning("(%s) relay.handle_squit: Failed to get server name for %s",
+                                irc.name, uplink)
+
+            handle_quit(irc, user, command, {'text': text})
+
 utils.add_hook(handle_squit, 'SQUIT')
 
 def handle_nick(irc, numeric, command, args):

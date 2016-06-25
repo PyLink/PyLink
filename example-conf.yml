@@ -382,6 +382,10 @@ relay:
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_server: opers
 
+    # Determines whether netsplits should be hidden as *.net *.split over the relay.
+    # Defaults to False.
+    show_netsplits: false
+
 games:
     # Sets the nick of the Games service, if you're using it.
     nick: Games
