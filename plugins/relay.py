@@ -235,13 +235,6 @@ def getRemoteSid(irc, remoteirc):
     """Gets the remote server SID representing remoteirc on irc, spawning
     it if it doesn't exist."""
 
-    try:
-        spawnservers = irc.conf['relay']['spawn_servers']
-    except KeyError:
-        spawnservers = True
-    if not spawnservers:
-        return irc.sid
-
     log.debug('(%s) Grabbing spawnlocks_servers[%s]', irc.name, irc.name)
     with spawnlocks_servers[irc.name]:
         try:
@@ -1253,7 +1246,7 @@ def handle_disconnect(irc, numeric, command, args):
             if irc.name in v:
                 del relayusers[k][irc.name]
             if k[0] == irc.name:
-                handle_quit(irc, k[1], 'PYLINK_DISCONNECT', {'text': 'Relay network lost connection.'})
+                del relayusers[k]
 
     # SQUIT all relay pseudoservers spawned for us, and remove them
     # from our relay subservers index.

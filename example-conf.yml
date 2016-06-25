@@ -370,10 +370,6 @@ relay:
     # both ways by defining "relay_no_ips: true" in their server block.
     show_ips: false
 
-    # Whether subservers should be spawned for each relay network (requires
-    # reloading the plugin to change). Defaults to true.
-    spawn_servers: true
-
     # Determines whether NickServ login info should be shown in the /whois output for
     # relay users. This works on most IRCds EXCEPT InspIRCd.
     # Valid options include "all" (show this to everyone), "opers" (show only to

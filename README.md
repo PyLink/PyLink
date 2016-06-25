@@ -42,7 +42,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
 * Nefarious IRCu (2.0.0+) - module `nefarious`
     - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (HOST_HIDING_STYLE settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
-    - For optimal functionality (mode overrides in relay, etc.), a `UWorld{}` block / U-line should be added for every server that PyLink spawns. To make this easier, you may want to turn relay's spawn_servers off, so that all relay users originate from one virtual server.
+    - For optimal functionality (mode overrides in relay, etc.), a `UWorld{}` block / U-line should be added for every server that PyLink spawns.
 
 ## Setup
 
