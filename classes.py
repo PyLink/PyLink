@@ -1076,9 +1076,10 @@ class Protocol():
                 p.clear()
 
         def _apply():
-            log.debug("(%s) Applying modes on channel %s (TS ok)", self.irc.name,
-                      channel)
-            self.irc.applyModes(channel, modes)
+            if modes:
+                log.debug("(%s) Applying modes on channel %s (TS ok)", self.irc.name,
+                          channel)
+                self.irc.applyModes(channel, modes)
 
         our_ts = self.irc.channels[channel].ts
 
