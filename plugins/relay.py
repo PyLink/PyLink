@@ -898,38 +898,17 @@ def handle_messages(irc, numeric, command, args):
         # but whatever).
         return
 
-    elif numeric in irc.servers:
-        # Sender is a server? This shouldn't be allowed, except for some truly
-        # special cases... We'll route these through the main PyLink client,
-        # tagging the message with the sender name.
-        text = '[from %s] %s' % (irc.servers[numeric].name, text)
-        numeric = irc.pseudoclient.uid
-
-    elif numeric not in irc.users:
-        # Sender didn't pass the check above, AND isn't a user.
-        log.debug('(%s) relay.handle_messages: Unknown message sender %s.', irc.name, numeric)
-        return
-
     relay = getRelay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
 
-    # HACK: Don't break on sending to @#channel or similar.
+    # HACK: Don't break on sending to @#channel or similar. TODO: This should really
+    # be handled more neatly in core.
     try:
         prefix, target = target.split('#', 1)
     except ValueError:
         prefix = ''
     else:
         target = '#' + target
-
-    log.debug('(%s) relay.handle_messages: prefix is %r, target is %r', irc.name, prefix, target)
-    if utils.isChannel(target) and relay and numeric not in irc.channels[target].users:
-        # The sender must be in the target channel to send messages over the relay;
-        # it's the only way we can make sure they have a spawned client on ALL
-        # of the linked networks. This affects -n channels too; see
-        # https://github.com/GLolol/PyLink/issues/91 for an explanation of why.
-        irc.msg(numeric, 'Error: You must be in %r in order to send '
-                  'messages over the relay.' % target, notice=True)
-        return
 
     if utils.isChannel(target):
         for name, remoteirc in world.networkobjects.copy().items():
@@ -942,14 +921,31 @@ def handle_messages(irc, numeric, command, args):
                 continue
 
             user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
-            if user:  # If the user doesn't exist, drop the message.
-                real_target = prefix + real_target
-                log.debug('(%s) relay.handle_messages: sending message to %s from %s on behalf of %s',
-                          irc.name, real_target, user, numeric)
-                if notice:
-                    remoteirc.proto.notice(user, real_target, text)
+
+            if not user:
+                # No relay clone exists for the sender; route the message through our
+                # main client.
+                if numeric in irc.servers:
+                    displayedname = irc.servers[numeric].name
                 else:
-                    remoteirc.proto.message(user, real_target, text)
+                    displayedname = irc.users[numeric].nick
+
+                real_text = '[from %s/%s] %s' % (displayedname, irc.name, text)
+                try:
+                    user = remoteirc.pseudoclient.uid
+                except AttributeError:
+                    # Remote main client hasn't spawned yet. Drop the message.
+                    continue
+            else:
+                real_text = text
+
+            real_target = prefix + real_target
+            log.debug('(%s) relay.handle_messages: sending message to %s from %s on behalf of %s',
+                      irc.name, real_target, user, numeric)
+            if notice:
+                remoteirc.proto.notice(user, real_target, real_text)
+            else:
+                remoteirc.proto.message(user, real_target, real_text)
 
     else:
         # Get the real user that the PM was meant for
