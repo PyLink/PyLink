@@ -50,7 +50,9 @@ def spawn_service(irc, source, command, args):
 
     # TODO: channels should be tracked in a central database, not hardcoded
     # in conf.
-    for chan in irc.serverdata['channels']:
+    channels = set(irc.serverdata.get('channels', [])) | sbot.extra_channels
+
+    for chan in channels:
         irc.proto.join(u, chan)
 
 utils.add_hook(spawn_service, 'PYLINK_NEW_SERVICE')

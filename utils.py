@@ -148,7 +148,7 @@ def getDatabaseName(dbname):
 
 class ServiceBot():
     def __init__(self, name, default_help=True, default_request=False, default_list=True,
-                 nick=None, ident=None, manipulatable=False):
+                 nick=None, ident=None, manipulatable=False, extra_channels=set()):
         # Service name
         self.name = name
 
@@ -167,6 +167,10 @@ class ServiceBot():
         # This tracks the UIDs of the service bot on different networks, as they are
         # spawned.
         self.uids = {}
+
+        # Track what channels other than those defined in the config
+        # that the bot should join by default.
+        self.extra_channels = extra_channels
 
         if default_help:
             self.add_cmd(self.help)
