@@ -106,6 +106,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         # Strip out list-modes, they shouldn't ever be sent in FJOIN (protocol rules).
         modes = modes or self.irc.channels[channel].modes
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
 
         banmodes = []
         regularmodes = []
@@ -148,8 +150,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(server, "FMODE {channel} {ts} {modes} ".format(
                 ts=ts, channel=channel, modes=self.irc.joinModes(banmodes)))
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
         self.updateTS(channel, ts, changedmodes)
 
     def _operUp(self, target, opertype=None):

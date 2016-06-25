@@ -101,6 +101,8 @@ class TS6Protocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client exists.')
 
         modes = set(modes or self.irc.channels[channel].modes)
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
 
         # Get all the ban modes in a separate list. These are bursted using a separate BMASK
         # command.
@@ -151,8 +153,6 @@ class TS6Protocol(TS6BaseProtocol):
                 self._send(server, "BMASK {ts} {channel} {bmode} :{bans}".format(ts=ts,
                            channel=channel, bmode=bmode, bans=' '.join(bans)))
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
         self.updateTS(channel, ts, changedmodes)
 
     def mode(self, numeric, target, modes, ts=None):

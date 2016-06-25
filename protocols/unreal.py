@@ -148,6 +148,8 @@ class UnrealProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink server exists.')
 
         changedmodes = set(modes or self.irc.channels[channel].modes)
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
         uids = []
         namelist = []
 
@@ -184,8 +186,6 @@ class UnrealProtocol(TS6BaseProtocol):
 
         self.irc.channels[channel].users.update(uids)
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
         self.updateTS(channel, ts, changedmodes)
 
     def ping(self, source=None, target=None):

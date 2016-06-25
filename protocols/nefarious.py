@@ -475,6 +475,8 @@ class P10Protocol(Protocol):
         # <- AB B #test2 1460743539 +l 10 ABAAA:vo :%*!*@bad.host
         # <- AB B #test 1460747615 ABAAA:o :% ~ *!*@test.host
         modes = modes or self.irc.channels[channel].modes
+        orig_ts = self.irc.channels[channel].ts
+        ts = ts or orig_ts
 
         bans = []
         exempts = []
@@ -560,8 +562,6 @@ class P10Protocol(Protocol):
 
         self.irc.channels[channel].users.update(changedusers)
 
-        orig_ts = self.irc.channels[channel].ts
-        ts = ts or orig_ts
         self.updateTS(channel, ts, changedmodes)
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
