@@ -50,7 +50,7 @@ def spawn_service(irc, source, command, args):
 
     # TODO: channels should be tracked in a central database, not hardcoded
     # in conf.
-    channels = set(irc.serverdata.get('channels', [])) | sbot.extra_channels
+    channels = set(irc.serverdata.get('channels', [])) | sbot.extra_channels.get(irc.name, set())
 
     for chan in channels:
         irc.proto.join(u, chan)

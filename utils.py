@@ -148,7 +148,7 @@ def getDatabaseName(dbname):
 
 class ServiceBot():
     def __init__(self, name, default_help=True, default_request=False, default_list=True,
-                 nick=None, ident=None, manipulatable=False, extra_channels=set()):
+                 nick=None, ident=None, manipulatable=False, extra_channels=collections.defaultdict(set)):
         # Service name
         self.name = name
 
