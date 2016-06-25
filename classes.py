@@ -1088,7 +1088,7 @@ class Protocol():
 
         our_ts = self.irc.channels[channel].ts
         assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
-        assert type(their_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(their_ts)
+        assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
         if their_ts < our_ts:
             # Their TS is older than ours. We should clear our stored modes for the channel and
