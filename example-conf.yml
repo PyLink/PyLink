@@ -71,7 +71,8 @@ servers:
         # There must be at least one # in the entry.
         sidrange: "8##"
 
-        # Autojoin channels
+        # Autojoin channels. Leave this as an empty list or remove the key if
+        # you don't want to have service bots join any channels by default.
         channels: ["#pylink"]
 
         # Sets the protocol module to use - see the protocols/ folder for a list
@@ -134,9 +135,6 @@ servers:
         sid: "8PY"
         netname: "some TS6 network"
         sidrange: "8P#"
-
-        # Leave this as an empty list if you don't want to join any channels.
-        channels: []
 
         protocol: "ts6"
         autoconnect: 5
@@ -290,11 +288,16 @@ logging:
 
     channels:
         # Log to channels on the specified networks.
-        # Note: DEBUG logging is not supported here: any log level settings
-        # below INFO be automatically raised to INFO.
-        # Log messages are forwarded over relay, so you will get duplicate
+        # Make sure that the main PyLink client is configured to join your
+        # log channel in the channels: blocks for the networks it will be
+        # logging on. It will not automatically join log channels.
+
+        # Note: Log messages are forwarded over relay, so you will get duplicate
         # messages if you add log blocks for more than one channel in one
         # relay.
+
+        # Note 2: DEBUG logging is not supported here: any log level settings
+        # below INFO be automatically raised to INFO.
         loglevel: INFO
 
         inspnet:
