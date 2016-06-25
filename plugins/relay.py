@@ -334,11 +334,9 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
     Gets the UID of the relay client requested on the target network (remoteirc),
     spawning one if it doesn't exist and spawnIfMissing is True."""
 
-    # Wait until both the local and remote networks are working before trying to spawn anything.
+    # Wait until the network is working before trying to spawn anything.
     log.debug('(%s) getRemoteUser: waiting for irc.connected', irc.name)
     irc.connected.wait()
-    log.debug('(%s) getRemoteUser: waiting for %s.connected', irc.name, remoteirc.name)
-    remoteirc.connected.wait()
 
     # Don't spawn clones for registered service bots.
     sbot = irc.isServiceBot(user)
