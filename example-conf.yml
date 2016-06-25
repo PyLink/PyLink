@@ -364,7 +364,7 @@ relay:
     hideoper: true
 
     # Determines whether real IPs should be sent across the relay. You should
-    # generally have a consensus with your linked networks whether this should
+    # generally have a consensus with your linked networks on whether this should
     # be turned on. You will see other networks' user IP addresses, and they
     # will see yours. Individual networks can also opt out of IP sharing
     # both ways by defining "relay_no_ips: true" in their server block.
