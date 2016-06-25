@@ -480,6 +480,11 @@ class Irc():
         # B = Mode that changes a setting and always has a parameter.
         # C = Mode that changes a setting and only has a parameter when set.
         # D = Mode that changes a setting and never has a parameter.
+
+        if type(args) == str:
+            # If the modestring was given as a string, split it into a list.
+            args = args.split()
+
         assert args, 'No valid modes were supplied!'
         usermodes = not utils.isChannel(target)
         prefix = ''
