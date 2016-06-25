@@ -23,9 +23,6 @@ def validateConf(conf):
                         'sid', 'sidrange', 'protocol', 'maxnicklen'):
             assert serverblock.get(section), "Missing %r in server block for %r." % (section, netname)
 
-        assert type(serverblock.get('channels')) == list, "'channels' option in " \
-            "server block for %s must be a list, not %s." % (netname, type(serverblock['channels']).__name__)
-
     assert type(conf['login'].get('password')) == type(conf['login'].get('user')) == str and \
         conf['login']['password'] != "changeme", "You have not set the login details correctly!"
 
