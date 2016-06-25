@@ -1087,8 +1087,8 @@ class Protocol():
             # apply the ones in the queue to be set. This is regardless of whether we're sending
             # outgoing modes or receiving some - both are handled the same with a "received" TS,
             # and comparing it with the one we have.
-            log.debug("(%s/%s) received TS of %s is lower than ours %s; outbound mode: %s; setting modes %s",
-                      self.irc.name, channel, their_ts, our_ts, outbound, modes)
+            log.debug("(%s/%s) received TS of %s is lower than ours %s; setting modes %s",
+                      self.irc.name, channel, their_ts, our_ts, modes)
 
             # Update the channel TS to theirs regardless of whether the mode setting passes.
             log.debug('(%s) Setting channel TS of %s to %s from %s',
@@ -1099,14 +1099,14 @@ class Protocol():
             _apply()
 
         elif their_ts == our_ts:
-            log.debug("(%s/%s) remote TS of %s is equal to ours %s; outbound mode: %s; setting modes %s",
-                      self.irc.name, channel, their_ts, our_ts, outbound, modes)
+            log.debug("(%s/%s) remote TS of %s is equal to ours %s; setting modes %s",
+                      self.irc.name, channel, their_ts, our_ts, modes)
             # Their TS is equal to ours. Merge modes.
             _apply()
 
         elif their_ts > our_ts:
-            log.debug("(%s/%s) remote TS of %s is higher than ours %s; outbound mode: %s; setting modes %s",
-                      self.irc.name, channel, their_ts, our_ts, outbound, modes)
+            log.debug("(%s/%s) remote TS of %s is higher than ours %s; setting modes %s",
+                      self.irc.name, channel, their_ts, our_ts, modes)
             # Their TS is younger than ours. Clear the state and replace the modes for the channel
             # with the ones being set.
             _clear()
