@@ -77,6 +77,34 @@ def handle_endburst(irc, source, command, args):
 
 utils.add_hook(handle_endburst, 'ENDBURST')
 
+def handle_kill(irc, source, command, args):
+    """Handle KILLs to PyLink service bots, respawning them as needed."""
+    target = args['target']
+    sbot = irc.isServiceBot(target)
+    if sbot:
+        spawn_service(irc, source, command, {'name': sbot.name})
+        return
+utils.add_hook(handle_kill, 'KILL')
+
+def handle_kick(irc, source, command, args):
+    """Handle KICKs to the PyLink service bots, rejoining channels as needed."""
+    kicked = args['target']
+    channel = args['channel']
+    if irc.isServiceBot(kicked):
+        irc.proto.join(kicked, channel)
+utils.add_hook(handle_kick, 'KICK')
+
+def handle_commands(irc, source, command, args):
+    """Handle commands sent to the PyLink service bots (PRIVMSG)."""
+    target = args['target']
+    text = args['text']
+
+    sbot = irc.isServiceBot(target)
+    if sbot:
+        sbot.call_cmd(irc, source, text)
+
+utils.add_hook(handle_commands, 'PRIVMSG')
+
 # Register the main PyLink service. All command definitions MUST go after this!
 mynick = conf.conf['bot'].get("nick", "PyLink")
 myident = conf.conf['bot'].get("ident", "pylink")

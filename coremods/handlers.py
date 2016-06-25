@@ -1,37 +1,9 @@
 """
-handlers.py - Implements IRC command handlers (PRIVMSG, KILL, KICK, WHOIS, etc.)
+handlers.py - Implements miscellaneous IRC command handlers (WHOIS, services login, etc.)
 """
 
 from pylinkirc import utils
 from pylinkirc.log import log
-
-def handle_kill(irc, source, command, args):
-    """Handle KILLs to PyLink service bots, respawning them as needed."""
-    target = args['target']
-    sbot = irc.isServiceBot(target)
-    if sbot:
-        spawn_service(irc, source, command, {'name': sbot.name})
-        return
-utils.add_hook(handle_kill, 'KILL')
-
-def handle_kick(irc, source, command, args):
-    """Handle KICKs to the PyLink service bots, rejoining channels as needed."""
-    kicked = args['target']
-    channel = args['channel']
-    if irc.isServiceBot(kicked):
-        irc.proto.join(kicked, channel)
-utils.add_hook(handle_kick, 'KICK')
-
-def handle_commands(irc, source, command, args):
-    """Handle commands sent to the PyLink service bots (PRIVMSG)."""
-    target = args['target']
-    text = args['text']
-
-    sbot = irc.isServiceBot(target)
-    if sbot:
-        sbot.call_cmd(irc, source, text)
-
-utils.add_hook(handle_commands, 'PRIVMSG')
 
 def handle_whois(irc, source, command, args):
     """Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd)."""
