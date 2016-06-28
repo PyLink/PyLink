@@ -467,7 +467,7 @@ def removeChannel(irc, channel):
     if irc is None:
         return
 
-    if channel not in map(str.lower, irc.serverdata['channels']):
+    if channel not in map(str.lower, irc.serverdata.get('channels', [])):
         world.services['pylink'].extra_channels[irc.name].discard(channel)
         irc.proto.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
 
@@ -479,7 +479,7 @@ def removeChannel(irc, channel):
             # Don't ever part the main client from any of its autojoin channels.
             else:
                 if user == irc.pseudoclient.uid and channel in \
-                        irc.serverdata['channels']:
+                        irc.serverdata.get('channels', []):
                     continue
                 irc.proto.part(user, channel, 'Channel delinked.')
                 # Don't ever quit it either...
