@@ -120,6 +120,13 @@ servers:
         # This setting defaults to sha256.
         #ssl_fingerprint_type: sha256
 
+        # The following option is specific to InspIRCd networks:
+
+        # Force PyLink to handle WHOIS requests locally for all its clients
+        # (experimental). This is required if you want custom WHOIS handlers
+        # implemented by plugins like relay to work. Defaults to false.
+        #use_experimental_whois: false
+
     ts6net:
         ip: ::1
 
@@ -374,13 +381,15 @@ relay:
     show_ips: false
 
     # Determines whether NickServ login info should be shown in the /whois output for
-    # relay users. This works on most IRCds EXCEPT InspIRCd.
+    # relay users. For InspIRCd networks, this requires "use_experimental_whois" to be
+    # set.
     # Valid options include "all" (show this to everyone), "opers" (show only to
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_accounts: all
 
     # Determines whether the origin server should be shown in the /whois output for
-    # relay users. This works on most IRCds EXCEPT InspIRCd.
+    # relay users. For InspIRCd networks, this requires "use_experimental_whois" to be
+    # set.
     # Valid options include "all" (show this to everyone), "opers" (show only to
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_server: opers

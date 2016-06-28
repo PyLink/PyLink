@@ -607,7 +607,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
         sourceuser = numeric
         targetuser = args[0]
-        self._send(targetuser, 'IDLE %s %s 0' % (sourceuser, self.irc.users[targetuser].ts))
+
+        if self.irc.serverdata.get("use_experimental_whois"):
+            # EXPERIMENTAL HACK: make PyLink handle all WHOIS requests if configured to do so.
+            # This works by silently ignoring the idle time request, and sending our WHOIS data as
+            # raw numerics instead.
+            return {'target': args[0], 'parse_as': 'WHOIS'}
+        else:
+            self._send(targetuser, 'IDLE %s %s 0' % (sourceuser, self.irc.users[targetuser].ts))
 
     def handle_ftopic(self, numeric, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""
