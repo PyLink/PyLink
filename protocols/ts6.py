@@ -179,11 +179,11 @@ class TS6Protocol(TS6BaseProtocol):
 
             # On output, at most ten cmode parameters should be sent; if there are more,
             # multiple TMODE messages should be sent.
-            while modes[:9]:
+            while modes[:10]:
                 # Seriously, though. If you send more than 10 mode parameters in
                 # a line, charybdis will silently REJECT the entire command!
-                joinedmodes = self.irc.joinModes(modes = [m for m in modes[:9] if m[0] not in self.irc.cmodes['*A']])
-                modes = modes[9:]
+                joinedmodes = self.irc.joinModes(modes = [m for m in modes[:10] if m[0] not in self.irc.cmodes['*A']])
+                modes = modes[10:]
                 self._send(numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
         else:
             joinedmodes = self.irc.joinModes(modes)
