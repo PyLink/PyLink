@@ -119,11 +119,11 @@ class TS6Protocol(TS6BaseProtocol):
         log.debug('(%s) Filtered SJOIN modes to be regular modes: %s, banmodes: %s', self.irc.name, regularmodes, banmodes)
 
         changedmodes = modes
-        while users[:10]:
+        while users[:12]:
             uids = []
             namelist = []
             # We take <users> as a list of (prefixmodes, uid) pairs.
-            for userpair in users[:10]:
+            for userpair in users[:12]:
                 assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
                 prefixes, user = userpair
                 prefixchars = ''
@@ -138,7 +138,7 @@ class TS6Protocol(TS6BaseProtocol):
                     self.irc.users[user].channels.add(channel)
                 except KeyError:  # Not initialized yet?
                     log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
-            users = users[10:]
+            users = users[12:]
             namelist = ' '.join(namelist)
             self._send(server, "SJOIN {ts} {channel} {modes} :{users}".format(
                     ts=ts, users=namelist, channel=channel,
