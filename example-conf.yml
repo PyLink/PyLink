@@ -99,7 +99,7 @@ servers:
 
         # Sets the max nick length for the network. It is important this is
         # set correctly, or PyLink might introduce a nick that is too long and
-        # cause netsplits!
+        # cause netsplits! This defaults to 30 if not set.
         maxnicklen: 30
 
         # Toggles SSL for this network. Defaults to false if not specified, and
@@ -145,8 +145,6 @@ servers:
 
         protocol: "ts6"
         autoconnect: 5
-        pingfreq: 30
-        maxnicklen: 30
 
         # Note: /'s in nicks are automatically converted to |'s for TS6
         # networks, since they don't allow "/" in nicks.
@@ -180,8 +178,6 @@ servers:
         channels: []
         protocol: "unreal"
         autoconnect: 5
-        pingfreq: 30
-        maxnicklen: 30
 
         # This option enables SUPER HACKY UNREAL 3.2 COMPAT mode, which allows
         # PyLink to link to mixed Unreal 3.2/4.0 networks, using a 4.0 server
@@ -213,10 +209,9 @@ servers:
         channels: ["#lounge"]
         protocol: nefarious
         autoconnect: 5
-        maxnicklen: 15
         netname: "Nefarious test server"
-        pingfreq: 30
 
+        # The following options are specific to Nefarious servers.
         # Halfop is optional in Nefarious. This should match your IRCd configuration.
         use_halfop: false
 
