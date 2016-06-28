@@ -148,10 +148,15 @@ class TS6Protocol(TS6BaseProtocol):
         # Now, burst bans.
         # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
         for bmode, bans in banmodes.items():
+            # Max 15-3 = 12 bans per line to prevent cut off. (TS6 allows a max of 15 parameters per
+            # line)
             if bans:
-                log.debug('(%s) sjoin: bursting mode %s with bans %s', self.irc.name, bmode, bans)
-                self._send(server, "BMASK {ts} {channel} {bmode} :{bans}".format(ts=ts,
-                           channel=channel, bmode=bmode, bans=' '.join(bans)))
+                log.debug('(%s) sjoin: bursting mode %s with bans %s, ts:%s', self.irc.name, bmode, bans, ts)
+                bans = list(bans)  # Convert into list for splicing
+                while bans[:12]:
+                    self._send(server, "BMASK {ts} {channel} {bmode} :{bans}".format(ts=ts,
+                               channel=channel, bmode=bmode, bans=' '.join(bans[:12])))
+                    bans = bans[12:]
 
         self.updateTS(channel, ts, changedmodes)
 
