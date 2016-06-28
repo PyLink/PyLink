@@ -197,9 +197,13 @@ class Irc():
                     keyfile = self.serverdata.get('ssl_keyfile')
                     if certfile and keyfile:
                         try:
-                            self.socket = ssl.wrap_socket(self.socket,
-                                                          certfile=certfile,
-                                                          keyfile=keyfile)
+                            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                            # Disable SSLv2 and SSLv3 - these are insecure
+                            context.options |= ssl.OP_NO_SSLv2
+                            context.options |= ssl.OP_NO_SSLv3
+                            context.load_cert_chain(certfile, keyfile)
+                            self.socket = context.wrap_socket(self.socket)
+
                         except OSError:
                              log.exception('(%s) Caught OSError trying to '
                                            'initialize the SSL connection; '
