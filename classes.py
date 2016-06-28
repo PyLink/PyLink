@@ -146,9 +146,8 @@ class Irc():
 
         # This max nick length starts off as the config value, but may be
         # overwritten later by the protocol module if such information is
-        # received. Note that only some IRCds (InspIRCd) give us nick length
-        # during link, so it is still required that the config value be set!
-        self.maxnicklen = self.serverdata['maxnicklen']
+        # received. It defaults to 30.
+        self.maxnicklen = self.serverdata.get('maxnicklen', 30)
 
         # Defines a list of supported prefix modes.
         self.prefixmodes = {'o': '@', 'v': '+'}

@@ -48,7 +48,7 @@ def validateConf(conf):
 
     for netname, serverblock in conf['servers'].items():
         for section in ('ip', 'port', 'recvpass', 'sendpass', 'hostname',
-                        'sid', 'sidrange', 'protocol', 'maxnicklen'):
+                        'sid', 'sidrange', 'protocol'):
             assert serverblock.get(section), "Missing %r in server block for %r." % (section, netname)
 
     assert type(conf['login'].get('password')) == type(conf['login'].get('user')) == str and \
