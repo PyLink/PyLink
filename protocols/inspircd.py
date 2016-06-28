@@ -293,10 +293,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(source, 'PING %s %s' % (source, target))
 
     def numeric(self, source, numeric, target, text):
-        raise NotImplementedError("Numeric sending is not yet implemented by this "
-                                  "protocol module. WHOIS requests are handled "
-                                  "locally by InspIRCd servers, so there is no "
-                                  "need for PyLink to send numerics directly yet.")
+        """Sends raw numerics from a server to a remote client."""
+        # InspIRCd 2.0 syntax (undocumented):
+        # Essentially what this does is push the raw numeric text after the first ":" towards the
+        # given user.
+        # <- :70M PUSH 0ALAAAAAA ::midnight.vpn 422 PyLink-devel :Message of the day file is missing.
+
+        # Note: InspIRCd 2.2 uses a new NUM command in this format:
+        # :<sid> NUM <numeric source sid> <target uuid> <3 digit number> <params>
+        # Take this into consideration if we ever target InspIRCd 2.2, even though m_spanningtree
+        # does provide backwards compatibility for commands like this. -GLolol
+        self._send(self.irc.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
 
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
