@@ -104,9 +104,10 @@ class Irc():
         self.pseudoclient = None
         self.lastping = time.time()
 
-        # Internal variable to set the place the last command was called (in PM
+        # Internal variable to set the place and caller of the last command (in PM
         # or in a channel), used by fantasy command support.
         self.called_by = None
+        self.called_in = None
 
         # Intialize the server, channel, and user indexes to be populated by
         # our protocol module. For the server index, we can add ourselves right
@@ -460,9 +461,21 @@ class Irc():
             cmd = 'PYLINK_SELF_PRIVMSG'
         self.callHooks([source, cmd, {'target': target, 'text': text}])
 
-    def reply(self, text, notice=False, source=None):
+    def reply(self, text, notice=False, source=None, private=False, force_privmsg_in_private=False):
         """Replies to the last caller in the right context (channel or PM)."""
-        self.msg(self.called_by, text, notice=notice, source=source)
+
+        # Private reply is enabled, or the caller was originally a PM
+        if private or self.called_in in self.users:
+            if not force_privmsg_in_private:
+                # For private replies, the default is to override the notice=True/False argument,
+                # and send replies as notices regardless. This is standard behaviour for most
+                # IRC services, but can be disabled if force_privmsg_in_private is given.
+                notice = True
+            target = self.called_by
+        else:
+            target = self.called_in
+
+        self.msg(self.called_in, text, notice=notice, source=source)
 
     def toLower(self, text):
         """Returns a lowercase representation of text based on the IRC object's

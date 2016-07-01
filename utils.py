@@ -147,6 +147,10 @@ def getDatabaseName(dbname):
     return dbname
 
 class ServiceBot():
+    """
+    PyLink IRC Service class.
+    """
+
     def __init__(self, name, default_help=True, default_request=False, default_list=True,
                  nick=None, ident=None, manipulatable=False, extra_channels=collections.defaultdict(set),
                  desc=None):
@@ -190,6 +194,9 @@ class ServiceBot():
             self.add_cmd(self.listcommands, 'list')
 
     def spawn(self, irc=None):
+        """
+        Spawns instances of this service on all connected networks.
+        """
         # Spawn the new service by calling the PYLINK_NEW_SERVICE hook,
         # which is handled by coreplugin.
         if irc is None:
@@ -198,25 +205,22 @@ class ServiceBot():
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
-    def reply(self, irc, text):
-        """Replies to a message using the right service UID."""
+    def reply(self, irc, text, notice=False, private=False):
+        """Replies to a message as the service in question."""
         servuid = self.uids.get(irc.name)
         if not servuid:
             log.warning("(%s) Possible desync? UID for service %s doesn't exist!", irc.name, self.name)
             return
 
-        irc.reply(text, notice=self.use_notice, source=servuid)
+        irc.reply(text, notice=notice, source=servuid, private=private)
 
-    def call_cmd(self, irc, source, text, called_by=None, notice=True):
+    def call_cmd(self, irc, source, text, called_in=None):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
         """
-        irc.called_by = called_by or source
-
-        # Store this globally so other commands don't have to worry about whether
-        # we're preferring notices.
-        self.use_notice = notice
+        irc.called_in = called_in or source
+        irc.called_by = source
 
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()

@@ -96,9 +96,9 @@ def remote(irc, source, args):
         irc.reply('No text entered!')
         return
 
-    # Force remoteirc.called_by to something private in order to prevent
+    # Force remoteirc.called_in to something private in order to prevent
     # accidental information leakage from replies.
-    remoteirc.called_by = remoteirc.pseudoclient.uid
+    remoteirc.called_in = remoteirc.called_by = remoteirc.pseudoclient.uid
 
     # Set PyLink's identification to admin.
     remoteirc.pseudoclient.identified = "<PyLink networks.remote override>"
