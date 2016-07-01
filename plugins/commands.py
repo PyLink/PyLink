@@ -35,7 +35,8 @@ def showuser(irc, source, args):
         irc.reply('Error: Unknown user %r.' % target)
         return
 
-    f = lambda s: irc.msg(source, s)
+    f = lambda s: irc.reply(s, private=True)
+
     userobj = irc.users[u]
     f('Showing information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
       userobj.host, userobj.realname))
@@ -73,14 +74,15 @@ def showchan(irc, source, args):
         irc.reply('Error: Unknown channel %r.' % channel)
         return
 
-    f = lambda s: irc.msg(source, s)
+    f = lambda s: irc.reply(s, private=True)
+
     c = irc.channels[channel]
     # Only show verbose info if caller is oper or is in the target channel.
     verbose = source in c.users or irc.isOper(source)
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
-        irc.msg(source, 'Error: Unknown channel %r.' % channel)
+        irc.reply('Error: Unknown channel %r.' % channel, private=True)
         return
 
     nicks = [irc.users[u].nick for u in c.users]

@@ -1518,7 +1518,8 @@ def linked(irc, source, args):
     remote_networks.sort()
 
     s = 'Connected networks: \x02%s\x02 %s' % (irc.name, ' '.join(remote_networks))
-    irc.msg(source, s)
+    # Always reply in private to prevent floods.
+    irc.reply(s, private=True)
 
     net = ''
     try:
@@ -1526,7 +1527,7 @@ def linked(irc, source, args):
     except:
         pass
     else:
-        irc.msg(source, "Showing channels linked to %s:" % net)
+        irc.reply("Showing channels linked to %s:" % net, private=True)
 
     # Sort the list of shared channels when displaying
     for k, v in sorted(db.items()):
@@ -1557,7 +1558,7 @@ def linked(irc, source, args):
         else:  # Unless it's empty; then, well... just say no relays yet.
             s += '(no relays yet)'
 
-        irc.msg(source, s)
+        irc.reply(s, private=True)
 
         if irc.isOper(source):
             s = ''
@@ -1576,7 +1577,7 @@ def linked(irc, source, args):
                 s += ' on %s' % time.ctime(ts)
 
             if s:  # Indent to make the list look nicer
-                irc.msg(source, '    Channel created%s.' % s)
+                irc.reply('    Channel created%s.' % s, private=True)
 linked = utils.add_cmd(linked, featured=True)
 
 @utils.add_cmd
@@ -1636,7 +1637,7 @@ def showuser(irc, source, args):
         return
     u = irc.nickToUid(target)
     if u:
-        irc.msg(source, "Showing relay information on user \x02%s\x02:" % irc.users[u].nick)
+        irc.reply("Showing relay information on user \x02%s\x02:" % irc.users[u].nick, private=True)
         try:
             userpair = getOrigUser(irc, u) or (irc.name, u)
             remoteusers = relayusers[userpair].items()
@@ -1651,14 +1652,14 @@ def showuser(irc, source, args):
                     remotenet, remoteuser = r
                     remoteirc = world.networkobjects[remotenet]
                     nicks.append('%s:\x02%s\x02' % (remotenet, remoteirc.users[remoteuser].nick))
-                irc.msg(source, "\x02Relay nicks\x02: %s" % ', '.join(nicks))
+                irc.reply("\x02Relay nicks\x02: %s" % ', '.join(nicks), private=True)
         relaychannels = []
         for ch in irc.users[u].channels:
             relay = getRelay((irc.name, ch))
             if relay:
                 relaychannels.append(''.join(relay))
         if relaychannels and (irc.isOper(source) or u == source):
-            irc.msg(source, "\x02Relay channels\x02: %s" % ' '.join(relaychannels))
+            irc.reply("\x02Relay channels\x02: %s" % ' '.join(relaychannels), private=True)
 
 @utils.add_cmd
 def save(irc, source, args):
