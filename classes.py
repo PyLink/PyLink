@@ -465,7 +465,7 @@ class Irc():
         """Replies to the last caller in the right context (channel or PM)."""
 
         # Private reply is enabled, or the caller was originally a PM
-        if private or self.called_in in self.users:
+        if private or (self.called_in in self.users):
             if not force_privmsg_in_private:
                 # For private replies, the default is to override the notice=True/False argument,
                 # and send replies as notices regardless. This is standard behaviour for most
@@ -475,7 +475,7 @@ class Irc():
         else:
             target = self.called_in
 
-        self.msg(self.called_in, text, notice=notice, source=source)
+        self.msg(target, text, notice=notice, source=source)
 
     def toLower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
