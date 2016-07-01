@@ -317,7 +317,7 @@ class ServiceBot():
         if self.featured_cmds:
             self.reply(irc, " ")
             self.reply(irc, 'Featured commands include:')
-            for cmd in self.featured_cmds:
+            for cmd in sorted(self.featured_cmds):
                 if self.commands.get(cmd):
                     # Only show featured commands that are both defined and loaded.
                     # TODO: perhaps plugin unload should remove unused featured command
