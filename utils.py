@@ -251,22 +251,7 @@ class ServiceBot():
         self.commands[name].append(func)
         return func
 
-    def help(self, irc, source, args):
-        """<command>
-
-        Gives help for <command>, if it is available."""
-        try:
-            command = args[0].lower()
-        except IndexError:
-            # No argument given: show service description (if present), 'list' output, and a list
-            # of featured commands.
-            if self.desc:
-                self.reply(irc, self.desc)
-                self.reply(irc, " ")
-
-            self.listcommands(irc, source, args)
-            return
-
+    def _show_command_help(self, irc, command):
         if command not in self.commands:
             self.reply(irc, 'Error: Unknown command %r.' % command)
             return
@@ -290,6 +275,24 @@ class ServiceBot():
                     self.reply(irc, "Error: Command %r doesn't offer any help." % command)
                     return
 
+    def help(self, irc, source, args):
+        """<command>
+
+        Gives help for <command>, if it is available."""
+        try:
+            command = args[0].lower()
+        except IndexError:
+            # No argument given: show service description (if present), 'list' output, and a list
+            # of featured commands.
+            if self.desc:
+                self.reply(irc, self.desc)
+                self.reply(irc, " ")  # Extra newline to unclutter the output text
+
+            self.listcommands(irc, source, args)
+            return
+        else:
+            self._show_command_help(irc, command)
+
     def request(self, irc, source, args):
         self.reply(irc, "Request command stub called.")
 
@@ -310,15 +313,17 @@ class ServiceBot():
         else:
             self.reply(irc, 'This client doesn\'t provide any public commands.')
 
+        # If there are featured commands, list them by showing the help for each.
         if self.featured_cmds:
             self.reply(irc, " ")
             self.reply(irc, 'Featured commands include:')
             for cmd in self.featured_cmds:
                 if self.commands.get(cmd):
+                    # Only show featured commands that are both defined and loaded.
+                    # TODO: perhaps plugin unload should remove unused featured command
+                    # definitions automatically?
                     self.reply(irc, " ")
-                    # TODO: break help() and list() into separate helper functions to lessen
-                    # code complexity
-                    self.help(irc, source, [cmd])
+                    self._show_command_help(irc, cmd)
 
 def registerService(name, *args, **kwargs):
     """Registers a service bot."""
