@@ -255,15 +255,24 @@ class ServiceBot():
         self.commands[name].append(func)
         return func
 
-    def _show_command_help(self, irc, command):
+    def _show_command_help(self, irc, command, private=False):
+        """
+        Shows help for the given command.
+        """
+        def _reply(text):
+            """
+            reply() wrapper to handle the private argument.
+            """
+            self.reply(irc, text, private=private)
+
         if command not in self.commands:
-            self.reply(irc, 'Error: Unknown command %r.' % command)
+            _reply('Error: Unknown command %r.' % command)
             return
         else:
             funcs = self.commands[command]
             if len(funcs) > 1:
-                self.reply(irc, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
-                           % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
+                _reply('The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
+                       % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
             for func in funcs:
                 doc = func.__doc__
                 mod = func.__module__
@@ -274,9 +283,9 @@ class ServiceBot():
                     lines[0] = '\x02%s %s\x02' % (command, lines[0])
                     for line in lines:
                         # Then, just output the rest of the docstring to IRC.
-                        self.reply(irc, line.strip())
+                        _reply(line.strip())
                 else:
-                    self.reply(irc, "Error: Command %r doesn't offer any help." % command)
+                    _reply("Error: Command %r doesn't offer any help." % command)
                     return
 
     def help(self, irc, source, args):
@@ -315,19 +324,20 @@ class ServiceBot():
             self.reply(irc, 'Available commands include: %s' % ', '.join(cmds))
             self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
         else:
-            self.reply(irc, 'This client doesn\'t provide any public commands.')
+            self.reply(irc, 'This service doesn\'t provide any public commands.')
 
         # If there are featured commands, list them by showing the help for each.
+        # These definitions are sent in private to prevent flooding in channels.
         if self.featured_cmds:
-            self.reply(irc, " ")
-            self.reply(irc, 'Featured commands include:')
+            self.reply(irc, " ", private=True)
+            self.reply(irc, 'Featured commands include:', private=True)
             for cmd in sorted(self.featured_cmds):
                 if self.commands.get(cmd):
                     # Only show featured commands that are both defined and loaded.
                     # TODO: perhaps plugin unload should remove unused featured command
                     # definitions automatically?
-                    self.reply(irc, " ")
-                    self._show_command_help(irc, cmd)
+                    self.reply(irc, " ", private=True)
+                    self._show_command_help(irc, cmd, private=True)
 
 def registerService(name, *args, **kwargs):
     """Registers a service bot."""
