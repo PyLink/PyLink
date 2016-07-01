@@ -341,6 +341,7 @@ class ServiceBot():
                     # TODO: perhaps plugin unload should remove unused featured command
                     # definitions automatically?
                     self._show_command_help(irc, cmd, private=True, shortform=True)
+            self.reply(irc, 'End of command listing.', private=True)
 
 def registerService(name, *args, **kwargs):
     """Registers a service bot."""
