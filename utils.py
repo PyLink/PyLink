@@ -255,7 +255,7 @@ class ServiceBot():
         self.commands[name].append(func)
         return func
 
-    def _show_command_help(self, irc, command, private=False):
+    def _show_command_help(self, irc, command, private=False, shortform=False):
         """
         Shows help for the given command.
         """
@@ -281,9 +281,13 @@ class ServiceBot():
                     # Bold the first line, which usually just tells you what
                     # arguments the command takes.
                     lines[0] = '\x02%s %s\x02' % (command, lines[0])
-                    for line in lines:
-                        # Then, just output the rest of the docstring to IRC.
-                        _reply(line.strip())
+
+                    if shortform:  # Short form is just the command name + args.
+                        _reply(lines[0].strip())
+                    else:
+                        for line in lines:
+                            # Otherwise, just output the rest of the docstring to IRC.
+                            _reply(line.strip())
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)
                     return
@@ -336,8 +340,7 @@ class ServiceBot():
                     # Only show featured commands that are both defined and loaded.
                     # TODO: perhaps plugin unload should remove unused featured command
                     # definitions automatically?
-                    self.reply(irc, " ", private=True)
-                    self._show_command_help(irc, cmd, private=True)
+                    self._show_command_help(irc, cmd, private=True, shortform=True)
 
 def registerService(name, *args, **kwargs):
     """Registers a service bot."""
