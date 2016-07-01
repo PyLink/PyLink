@@ -749,6 +749,10 @@ class Irc():
         prefix = '+'  # Assume we're adding modes unless told otherwise
         modelist = ''
         args = []
+
+        # Sort modes alphabetically like a conventional IRCd.
+        modes = sorted(modes)
+
         for modepair in modes:
             mode, arg = modepair
             assert len(mode) in (1, 2), "Incorrect length of a mode (received %r)" % mode
