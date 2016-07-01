@@ -148,7 +148,8 @@ def getDatabaseName(dbname):
 
 class ServiceBot():
     def __init__(self, name, default_help=True, default_request=False, default_list=True,
-                 nick=None, ident=None, manipulatable=False, extra_channels=collections.defaultdict(set)):
+                 nick=None, ident=None, manipulatable=False, extra_channels=collections.defaultdict(set),
+                 desc=None):
         # Service name
         self.name = name
 
@@ -171,6 +172,12 @@ class ServiceBot():
         # Track what channels other than those defined in the config
         # that the bot should join by default.
         self.extra_channels = extra_channels
+
+        # Service description, used in the default help command if one is given.
+        self.desc = desc
+
+        # List of command names to "feature"
+        self.featured_cmds = set()
 
         if default_help:
             self.add_cmd(self.help)
@@ -231,11 +238,15 @@ class ServiceBot():
                 log.exception('Unhandled exception caught in command %r', cmd)
                 self.reply(irc, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
-    def add_cmd(self, func, name=None):
+    def add_cmd(self, func, name=None, featured=False):
         """Binds an IRC command function to the given command name."""
         if name is None:
             name = func.__name__
         name = name.lower()
+
+        # Mark as a featured command if requested to do so.
+        if featured:
+            self.featured_cmds.add(name)
 
         self.commands[name].append(func)
         return func
@@ -246,9 +257,16 @@ class ServiceBot():
         Gives help for <command>, if it is available."""
         try:
             command = args[0].lower()
-        except IndexError:  # No argument given, just return 'list' output
+        except IndexError:
+            # No argument given: show service description (if present), 'list' output, and a list
+            # of featured commands.
+            if self.desc:
+                self.reply(irc, self.desc)
+                self.reply(irc, " ")
+
             self.listcommands(irc, source, args)
             return
+
         if command not in self.commands:
             self.reply(irc, 'Error: Unknown command %r.' % command)
             return
@@ -283,10 +301,24 @@ class ServiceBot():
 
         Returns a list of available commands this service has to offer."""
 
-        cmds = list(self.commands.keys())
-        cmds.sort()
-        self.reply(irc, 'Available commands include: %s' % ', '.join(cmds))
-        self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
+        # Don't show CTCP handlers in the public command list.
+        cmds = sorted([cmd for cmd in self.commands.keys() if '\x01' not in cmd])
+
+        if cmds:
+            self.reply(irc, 'Available commands include: %s' % ', '.join(cmds))
+            self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
+        else:
+            self.reply(irc, 'This client doesn\'t provide any public commands.')
+
+        if self.featured_cmds:
+            self.reply(irc, " ")
+            self.reply(irc, 'Featured commands include:')
+            for cmd in self.featured_cmds:
+                if self.commands.get(cmd):
+                    self.reply(irc, " ")
+                    # TODO: break help() and list() into separate helper functions to lessen
+                    # code complexity
+                    self.help(irc, source, [cmd])
 
 def registerService(name, *args, **kwargs):
     """Registers a service bot."""
