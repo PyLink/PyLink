@@ -110,4 +110,9 @@ utils.add_hook(handle_commands, 'PRIVMSG')
 # Register the main PyLink service. All command definitions MUST go after this!
 mynick = conf.conf['bot'].get("nick", "PyLink")
 myident = conf.conf['bot'].get("ident", "pylink")
-utils.registerService('pylink', nick=mynick, ident=myident, manipulatable=True)
+
+# TODO: be more specific, and possibly allow plugins to modify this to mention
+# their features?
+mydesc = "\x02%s\x02 provides extended network services for IRC." % mynick
+
+utils.registerService('pylink', nick=mynick, ident=myident, desc=mydesc, manipulatable=True)
