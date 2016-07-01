@@ -1320,11 +1320,10 @@ utils.add_hook(handle_save, "SAVE")
 
 ### PUBLIC COMMANDS
 
-@utils.add_cmd
 def create(irc, source, args):
     """<channel>
 
-    Creates the channel <channel> over the relay."""
+    Opens up the given channel over PyLink Relay."""
     try:
         channel = irc.toLower(args[0])
     except IndexError:
@@ -1354,12 +1353,12 @@ def create(irc, source, args):
     log.info('(%s) relay: Channel %s created by %s.', irc.name, channel, creator)
     initializeChannel(irc, channel)
     irc.reply('Done.')
+create = utils.add_cmd(create, featured=True)
 
-@utils.add_cmd
 def destroy(irc, source, args):
     """[<home network>] <channel>
 
-    Removes <channel> from the relay, delinking all networks linked to it. If <home network> is given and you are logged in as admin, this can also remove relay channels from other networks."""
+    Removes the given channel from the PyLink Relay, delinking all networks linked to it. If the home network is given and you are logged in as admin, this can also remove relay channels from other networks."""
     try:  # Two args were given: first one is network name, second is channel.
         channel = irc.toLower(args[1])
         network = args[0]
@@ -1398,13 +1397,13 @@ def destroy(irc, source, args):
         irc.reply("Error: No such channel %r exists. If you're trying to delink a channel from "
                   "another network, use the DESTROY command." % channel)
         return
+destroy = utils.add_cmd(destroy, featured=True)
 
-@utils.add_cmd
 def link(irc, source, args):
     """<remotenet> <channel> <local channel>
 
-    Links channel <channel> on <remotenet> over the relay to <local channel>.
-    If <local channel> is not specified, it defaults to the same name as <channel>."""
+    Links the specified channel on \x02remotenet\x02 over PyLink Relay as \x02local channel\x02.
+    If \x02local channel\x02 is not specified, it defaults to the same name as \x02channel\x02."""
     try:
         channel = irc.toLower(args[1])
         remotenet = args[0]
@@ -1460,13 +1459,13 @@ def link(irc, source, args):
                  localchan, remotenet, channel, irc.getHostmask(source))
         initializeChannel(irc, localchan)
         irc.reply('Done.')
+link = utils.add_cmd(link, featured=True)
 
-@utils.add_cmd
 def delink(irc, source, args):
     """<local channel> [<network>]
 
-    Delinks channel <local channel>. <network> must and can only be specified if you are on the host network for <local channel>, and allows you to pick which network to delink.
-    To remove a relay entirely, use the 'destroy' command instead."""
+    Delinks the given channel from PyLink Relay. \x02network\x02 must and can only be specified if you are on the host network for the channel given, and allows you to pick which network to delink.
+    To remove a relay channel entirely, use the 'destroy' command instead."""
     try:
         channel = irc.toLower(args[0])
     except IndexError:
@@ -1502,12 +1501,12 @@ def delink(irc, source, args):
                  channel, entry[0], entry[1], irc.getHostmask(source))
     else:
         irc.reply('Error: No such relay %r.' % channel)
+delink = utils.add_cmd(delink, featured=True)
 
-@utils.add_cmd
 def linked(irc, source, args):
     """[<network>]
 
-    Returns a list of channels shared across the relay. If <network> is given, filters output to channels linked to the given network."""
+    Returns a list of channels shared across PyLink Relay. If \x02network\x02 is given, filters output to channels linked to the given network."""
 
     # Only show remote networks that are marked as connected.
     remote_networks = [netname for netname, ircobj in world.networkobjects.copy().items()
@@ -1578,12 +1577,13 @@ def linked(irc, source, args):
 
             if s:  # Indent to make the list look nicer
                 irc.msg(source, '    Channel created%s.' % s)
+linked = utils.add_cmd(linked, featured=True)
 
 @utils.add_cmd
 def linkacl(irc, source, args):
     """ALLOW|DENY|LIST <channel> <remotenet>
 
-    Allows blocking / unblocking certain networks from linking to a relay, based on a blacklist.
+    Allows blocking / unblocking certain networks from linking to a relayed channel, based on a blacklist.
     LINKACL LIST returns a list of blocked networks for a channel, while the ALLOW and DENY subcommands allow manipulating this blacklist."""
     missingargs = "Error: Not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST), channel, remote network (for ALLOW/DENY)."
     irc.checkAuthenticated(source)
@@ -1627,7 +1627,7 @@ def linkacl(irc, source, args):
 def showuser(irc, source, args):
     """<user>
 
-    Shows relay data about user <user>. This supplements the 'showuser' command in the 'commands' plugin, which provides more general information."""
+    Shows relay data about the given user. This supplements the 'showuser' command in the 'commands' plugin, which provides more general information."""
     try:
         target = args[0]
     except IndexError:
