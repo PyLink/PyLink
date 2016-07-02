@@ -1337,7 +1337,11 @@ def handle_disconnect(irc, numeric, command, args):
             if irc.name in relayservers[name]:
                 del relayservers[name][irc.name]
 
-        del relayservers[irc.name]
+        try:
+            del relayservers[irc.name]
+        except KeyError:  # Already removed; ignore.
+            pass
+
         spawnlocks_servers[irc.name].release()
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
