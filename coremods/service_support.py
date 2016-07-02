@@ -29,10 +29,15 @@ def spawn_service(irc, source, command, args):
     # TODO: make this configurable?
     host = irc.serverdata["hostname"]
 
-    # Prefer spawning service clients with umode +io, plus hideoper and
-    # hidechans if supported.
+    # Spawning service clients with these umodes where supported. servprotect usage is a
+    # configuration option.
+    preferred_modes = ['oper', 'hideoper', 'hidechans', 'invisible', 'bot']
     modes = []
-    for mode in ('oper', 'hideoper', 'hidechans', 'invisible', 'bot'):
+
+    if conf.conf['bot'].get('protect_services'):
+        preferred_modes.append('servprotect')
+
+    for mode in preferred_modes:
         mode = irc.umodes.get(mode)
         if mode:
             modes.append((mode, None))

@@ -30,6 +30,12 @@ bot:
     # Defaults to true if not specified.
     whois_use_hideoper: true
 
+    # Determines whether PyLink service clients should protect themselves from
+    # kicks, kills, etc. using IRCd-side servprotect modes. For this to work
+    # properly, this requires that PyLink be U-Lined (on most IRCds). Defaults to
+    # False.
+    protect_services: false
+
 login:
     # PyLink administrative login - Change this, or the service will not start!
     user: admin
