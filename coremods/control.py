@@ -64,8 +64,8 @@ def _rehash():
             # TODO: update file loggers here too.
 
     for network, sdata in new_conf['servers'].items():
-        # New server was added. Connect them if not already connected.
-        if network not in world.networkobjects:
+        # Connect any new networks or disconnected networks if they aren't already.
+        if (network not in world.networkobjects) or (not world.networkobjects[network].connection_thread.is_alive()):
             proto = utils.getProtocolModule(sdata['protocol'])
             world.networkobjects[network] = classes.Irc(network, proto, new_conf)
 
