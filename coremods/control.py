@@ -7,6 +7,13 @@ import os
 from pylinkirc import world, utils, conf, classes
 from pylinkirc.log import log
 
+def remove_network(ircobj):
+    """Removes a network object from the pool."""
+    # Disable autoconnect first by setting the delay negative.
+    ircobj.serverdata['autoconnect'] = -1
+    ircobj.disconnect()
+    del world.networkobjects[ircobj.name]
+
 def _shutdown(irc=None):
     """Shuts down the Pylink daemon."""
     for name, plugin in world.plugins.items():
@@ -19,10 +26,8 @@ def _shutdown(irc=None):
                 log.exception('coreplugin: Error occurred in die() of plugin %s, skipping...', name)
 
     for ircobj in world.networkobjects.values():
-        # Disconnect all our networks. Disable auto-connect first by setting
-        # the time to negative.
-        ircobj.serverdata['autoconnect'] = -1
-        ircobj.disconnect()
+        # Disconnect all our networks.
+        remove_network(ircobj)
 
 def sigterm_handler(_signo, _stack_frame):
     """Handles SIGTERM gracefully by shutting down the PyLink daemon."""
@@ -43,10 +48,7 @@ def _rehash():
         log.debug('rehash: checking if %r is in new conf still.', network)
         if network not in new_conf['servers']:
             log.debug('rehash: removing connection to %r (removed from config).', network)
-            # Disable autoconnect first.
-            ircobj.serverdata['autoconnect'] = -1
-            ircobj.disconnect()
-            del world.networkobjects[network]
+            remove_network(ircobj)
         else:
             ircobj.conf = new_conf
             ircobj.serverdata = new_conf['servers'][network]

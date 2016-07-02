@@ -3,6 +3,7 @@ import threading
 
 from pylinkirc import utils, world, conf, classes
 from pylinkirc.log import log
+from pylinkirc.coremods import control
 
 @utils.add_cmd
 def disconnect(irc, source, args):
@@ -22,14 +23,7 @@ def disconnect(irc, source, args):
         return
     irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
 
-    # Cancel autoconnect.
-    network.serverdata["autoconnect"] = -1
-
-    # Abort the connection.
-    network.disconnect()
-
-    # Remove the dead network object.
-    del world.networkobjects[netname]
+    control.remove_network(network)
 
 @utils.add_cmd
 def autoconnect(irc, source, args):
