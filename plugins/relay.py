@@ -111,10 +111,11 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
         separator = separator.replace('/', fallback_separator)
         nick = nick.replace('/', fallback_separator)
 
-    if nick.startswith(tuple(string.digits)):
+    if nick.startswith(tuple(string.digits+'-')):
         # On TS6 IRCds, nicks that start with 0-9 are only allowed if
         # they match the UID of the originating server. Otherwise, you'll
         # get nasty protocol violation SQUITs!
+        # Nicks starting with - are likewise not valid.
         nick = '_' + nick
 
     suffix = separator + netname
