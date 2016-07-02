@@ -20,13 +20,16 @@ def disconnect(irc, source, args):
     except KeyError:  # Unknown network.
         irc.reply('Error: No such network "%s" (case sensitive).' % netname)
         return
-    irc.reply("Done.")
+    irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
 
-    # Abort the connection! Simple as that.
+    # Cancel autoconnect.
+    network.serverdata["autoconnect"] = -1
+
+    # Abort the connection.
     network.disconnect()
 
-    if network.serverdata["autoconnect"] < 1:  # Remove networks if autoconnect is disabled.
-        del world.networkobjects[netname]
+    # Remove the dead network object.
+    del world.networkobjects[netname]
 
 @utils.add_cmd
 def connect(irc, source, args):
