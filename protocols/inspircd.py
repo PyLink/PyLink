@@ -544,10 +544,16 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
         realname = args[-1]
-        self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+        self.irc.users[uid] = userobj = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+
         parsedmodes = self.irc.parseModes(uid, [args[8], args[9]])
-        log.debug('Applying modes %s for %s', parsedmodes, uid)
         self.irc.applyModes(uid, parsedmodes)
+
+        if (self.irc.umodes.get('servprotect'), None) in userobj.modes:
+            # Services are usually given a "Network Service" WHOIS, so
+            # set that as the opertype.
+            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'Network Service'}])
+
         self.irc.servers[numeric].users.add(uid)
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -662,7 +668,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             return {'parse_as': real_command, 'channel': channel,
                     'text': text}
 
-    def handle_opertype(self, numeric, command, args):
+    def handle_opertype(self, target, command, args):
         """Handles incoming OPERTYPE, which is used to denote an oper up.
 
         This calls the internal hook CLIENT_OPERED, sets the internal
@@ -670,13 +676,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # This is used by InspIRCd to denote an oper up; there is no MODE
         # command sent for it.
         # <- :70MAAAAAB OPERTYPE Network_Owner
+        # Replace escaped _ in opertypes with spaces for InspIRCd 2.0.
+        opertype = args[0].replace("_", " ")
+
+        # Set umode +o on the target.
         omode = [('+o', None)]
-        self.irc.users[numeric].opertype = opertype = args[0].replace("_", " ")
-        self.irc.applyModes(numeric, omode)
-        # OPERTYPE is essentially umode +o and metadata in one command;
-        # we'll call that too.
-        self.irc.callHooks([numeric, 'CLIENT_OPERED', {'text': opertype}])
-        return {'target': numeric, 'modes': omode}
+        self.irc.applyModes(target, omode)
+
+        # Call the CLIENT_OPERED hook that protocols use. The MODE hook
+        # payload is returned below.
+        self.irc.callHooks([target, 'CLIENT_OPERED', {'text': opertype}])
+        return {'target': target, 'modes': omode}
 
     def handle_fident(self, numeric, command, args):
         """Handles FIDENT, used for denoting ident changes."""
