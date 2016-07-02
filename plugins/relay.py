@@ -236,7 +236,7 @@ def getRemoteSid(irc, remoteirc):
     it if it doesn't exist."""
 
     log.debug('(%s) Grabbing spawnlocks_servers[%s]', irc.name, irc.name)
-    with spawnlocks_servers[irc.name]:
+    if spawnlocks_servers[irc.name].acquire(5):
         try:
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
@@ -254,6 +254,7 @@ def getRemoteSid(irc, remoteirc):
             sid = spawnRelayServer(irc, remoteirc)
 
         log.debug('(%s) getRemoteSid: got %s for %s.relay (round 2)', irc.name, sid, remoteirc.name)
+        spawnlocks_servers[irc.name].release()
         return sid
 
 def spawnRelayUser(irc, remoteirc, user):
@@ -343,7 +344,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
         return sbot.uids.get(remoteirc.name)
 
     log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
-    with spawnlocks[irc.name]:
+    if spawnlocks[irc.name].acquire(5):
         # Be sort-of thread safe: lock the user spawns for the current net first.
         u = None
         try:
@@ -360,7 +361,10 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
         # cache for the requested UID, but it doesn't match the request,
         # assume it was a leftover from the last split and replace it with a new one.
         if u and ((u not in remoteirc.users) or remoteirc.users[u].remote != (irc.name, user)):
-            spawnRelayUser(irc, remoteirc, user)
+            u = spawnRelayUser(irc, remoteirc, user)
+
+        spawnlocks[irc.name].release()
+
         return u
 
 def getOrigUser(irc, user, targetirc=None):
@@ -831,7 +835,7 @@ def handle_quit(irc, numeric, command, args):
     # Lock the user spawning mechanism before proceeding, since we're going to be
     # deleting client from the relayusers cache.
     log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
-    with spawnlocks[irc.name]:
+    if spawnlocks[irc.name].acquire(5):
         for netname, user in relayusers[(irc.name, numeric)].copy().items():
             remoteirc = world.networkobjects[netname]
             try:  # Try to quit the client. If this fails because they're missing, bail.
@@ -839,6 +843,7 @@ def handle_quit(irc, numeric, command, args):
             except LookupError:
                 pass
         del relayusers[(irc.name, numeric)]
+        spawnlocks[irc.name].release()
 
 utils.add_hook(handle_quit, 'QUIT')
 
@@ -1295,17 +1300,18 @@ def handle_disconnect(irc, numeric, command, args):
     # Quit all of our users' representations on other nets, and remove
     # them from our relay clients index.
     log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
-    with spawnlocks[irc.name]:
+    if spawnlocks[irc.name].acquire(5):
         for k, v in relayusers.copy().items():
             if irc.name in v:
                 del relayusers[k][irc.name]
             if k[0] == irc.name:
                 del relayusers[k]
+        spawnlocks[irc.name].release()
 
     # SQUIT all relay pseudoservers spawned for us, and remove them
     # from our relay subservers index.
     log.debug('(%s) Grabbing spawnlocks_servers[%s]', irc.name, irc.name)
-    with spawnlocks_servers[irc.name]:
+    if spawnlocks_servers[irc.name].acquire(5):
         for name, ircobj in world.networkobjects.copy().items():
             if name != irc.name:
                 try:
@@ -1319,6 +1325,7 @@ def handle_disconnect(irc, numeric, command, args):
                 del relayservers[name][irc.name]
 
         del relayservers[irc.name]
+        spawnlocks_servers[irc.name].release()
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
