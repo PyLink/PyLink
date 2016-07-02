@@ -90,6 +90,8 @@ def die(sourceirc):
         log.debug("Relay: cancelling exportDB timer thread %s due to die()", threading.get_ident())
         exportdb_timer.cancel()
 
+allowed_chars = string.digits + string.ascii_letters + '/^|\\-_[]`'
+fallback_separator = '|'
 def normalizeNick(irc, netname, nick, separator=None, uid=''):
     """Creates a normalized nickname for the given nick suitable for
     introduction to a remote network (as a relay client)."""
@@ -106,8 +108,8 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
         irc.serverdata.get('relay_force_slashes')
 
     if '/' not in separator or not protocol_allows_slashes:
-        separator = separator.replace('/', '|')
-        nick = nick.replace('/', '|')
+        separator = separator.replace('/', fallback_separator)
+        nick = nick.replace('/', fallback_separator)
 
     if nick.startswith(tuple(string.digits)):
         # On TS6 IRCds, nicks that start with 0-9 are only allowed if
@@ -125,6 +127,12 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
     nick = nick[:allowedlength]
     nick += suffix
 
+    # Loop over every character in the nick, making sure that it only contains valid
+    # characters.
+    for char in nick:
+        if char not in allowed_chars:
+            nick = nick.replace(char, fallback_separator)
+
     # The nick we want exists? Darn, create another one then.
     # Increase the separator length by 1 if the user was already tagged,
     # but couldn't be created due to a nick conflict.
@@ -140,6 +148,7 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
         new_sep = separator + separator[-1]
         log.debug('(%s) relay.normalizeNick: nick %r is in use; using %r as new_sep.', irc.name, nick, new_sep)
         nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
+
     finalLength = len(nick)
     assert finalLength <= maxnicklen, "Normalized nick %r went over max " \
         "nick length (got: %s, allowed: %s!)" % (nick, finalLength, maxnicklen)
