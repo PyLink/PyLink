@@ -585,9 +585,9 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_tb(self, numeric, command, args):
         """Handles incoming topic burst (TB) commands."""
-        # <- :42X TB 1434510754 #channel GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
-        channel = args[1].lower()
-        ts = args[0]
+        # <- :42X TB #chat 1467427448 GL!~gl@127.0.0.1 :test
+        channel = args[0].lower()
+        ts = args[1]
         setter = args[2]
         topic = args[-1]
         self.irc.channels[channel].topic = topic
