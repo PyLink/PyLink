@@ -25,24 +25,27 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 ### Primary support
 
-These IRCds are frequently tested and well supported. If any issues occur, please file a bug on the issue tracker.
+These IRCds (in alphabetical order) are frequently tested and well supported. If any issues occur, please file a bug on the issue tracker.
 
-* charybdis (3.5.x / git master) - module `ts6`
-* InspIRCd 2.0.x - module `inspircd`
-* UnrealIRCd 4.x - module `unreal`
+* [charybdis](http://charybdis.io/) (3.5+ / git master) - module `ts6`
+* [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
+* [UnrealIRCd](https://www.unrealircd.org/) 4.x - module `unreal`
     - Note: Support for mixed UnrealIRCd 3.2/4.0 networks is experimental, and requires you to enable a `mixed_link` option in the configuration. This may in turn void your support.
 
 ### Extended support
 
 Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
-* Elemental-IRCd (6.6.x / git master) - module `ts6`
+* [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
 * InspIRCd 2.2 (git master) - module `inspircd`
-* IRCd-Hybrid (8.2.x / svn trunk) - module `hybrid`
+* [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
-* Nefarious IRCu (2.0.0+) - module `nefarious`
+* [juno-ircd](https://github.com/cooper/yiria) (10.x / yiria) - module `ts6` (with elemental-ircd modes)
+* [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `nefarious`
     - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (HOST_HIDING_STYLE settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
     - For optimal functionality (mode overrides in relay, etc.), a `UWorld{}` block / U-line should be added for every server that PyLink spawns.
+
+Other TS6 and P10 variations may work, but are not officially supported.
 
 ## Setup
 
