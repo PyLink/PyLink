@@ -80,7 +80,7 @@ def handle_whois(irc, source, command, args):
 
     # 301: used to show away information if present
     away_text = user.away
-    log.debug('(%s) coreplugin/handle_whois: away_text for %s is %r', irc.name, target, away_text)
+    log.debug('(%s) coremods.handlers.handle_whois: away_text for %s is %r', irc.name, target, away_text)
     if away_text:
         f(server, 301, source, '%s :%s' % (nick, away_text))
 

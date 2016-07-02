@@ -62,7 +62,7 @@ def handle_disconnect(irc, source, command, args):
     for name, sbot in world.services.items():
         try:
             del sbot.uids[irc.name]
-            log.debug("coreplugin: removing uids[%s] from service bot %s", irc.name, sbot.name)
+            log.debug("coremods.service_support: removing uids[%s] from service bot %s", irc.name, sbot.name)
         except KeyError:
             continue
 

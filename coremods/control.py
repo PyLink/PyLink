@@ -19,11 +19,11 @@ def _shutdown(irc=None):
     for name, plugin in world.plugins.items():
         # Before closing connections, tell all plugins to shutdown cleanly first.
         if hasattr(plugin, 'die'):
-            log.debug('coreplugin: Running die() on plugin %s due to shutdown.', name)
+            log.debug('coremods.control: Running die() on plugin %s due to shutdown.', name)
             try:
                 plugin.die(irc)
             except:  # But don't allow it to crash the server.
-                log.exception('coreplugin: Error occurred in die() of plugin %s, skipping...', name)
+                log.exception('coremods.control: Error occurred in die() of plugin %s, skipping...', name)
 
     for ircobj in world.networkobjects.values():
         # Disconnect all our networks.
