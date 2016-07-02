@@ -823,7 +823,10 @@ def handle_relay_whois(irc, source, command, args):
 utils.add_hook(handle_relay_whois, 'PYLINK_CUSTOM_WHOIS')
 
 def handle_operup(irc, numeric, command, args):
-    newtype = args['text'] + '_(remote)'
+    """
+    Handles setting oper types on relay clients during oper up.
+    """
+    newtype = args['text'] + ' (remote)'
     for netname, user in relayusers[(irc.name, numeric)].items():
         log.debug('(%s) relay.handle_opertype: setting OPERTYPE of %s/%s to %s',
                   irc.name, user, netname, newtype)
