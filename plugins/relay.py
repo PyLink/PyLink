@@ -313,11 +313,17 @@ def spawnRelayUser(irc, remoteirc, user):
                                         modes=modes, ts=userobj.ts,
                                         opertype=opertype, server=rsid,
                                         ip=ip, realhost=realhost).uid
-    remoteirc.users[u].remote = (irc.name, user)
-    remoteirc.users[u].opertype = opertype
-    away = userobj.away
-    if away:
-        remoteirc.proto.away(u, away)
+    try:
+        remoteirc.users[u].remote = (irc.name, user)
+        remoteirc.users[u].opertype = opertype
+        away = userobj.away
+        if away:
+            remoteirc.proto.away(u, away)
+    except KeyError:
+        # User got killed somehow while we were setting options on it.
+        # This is probably being done by the uplink, due to something like an
+        # invalid nick, etc.
+        raise
 
     relayusers[(irc.name, user)][remoteirc.name] = u
     return u
@@ -953,16 +959,30 @@ def handle_messages(irc, numeric, command, args):
                 except AttributeError:
                     # Remote main client hasn't spawned yet. Drop the message.
                     continue
+                else:
+                    if remoteirc.pseudoclient.uid not in remoteirc.users:
+                        # Remote UID is ghosted, drop message.
+                        continue
+
             else:
                 real_text = text
 
             real_target = prefix + real_target
             log.debug('(%s) relay.handle_messages: sending message to %s from %s on behalf of %s',
                       irc.name, real_target, user, numeric)
-            if notice:
-                remoteirc.proto.notice(user, real_target, real_text)
-            else:
-                remoteirc.proto.message(user, real_target, real_text)
+
+            try:
+                if notice:
+                    remoteirc.proto.notice(user, real_target, real_text)
+                else:
+                    remoteirc.proto.message(user, real_target, real_text)
+            except LookupError:
+                # Our relay clone disappeared while we were trying to send the message.
+                # This is normally due to a nick conflict with the IRCd.
+                log.warning("(%s) relay: Relay client %s on %s was killed while "
+                            "trying to send a message through it!", irc.name,
+                            remoteirc.name, user)
+                continue
 
     else:
         # Get the real user that the PM was meant for
@@ -983,10 +1003,18 @@ def handle_messages(irc, numeric, command, args):
         remoteirc = world.networkobjects[homenet]
         user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
 
-        if notice:
-            remoteirc.proto.notice(user, real_target, text)
-        else:
-            remoteirc.proto.message(user, real_target, text)
+        try:
+            if notice:
+                remoteirc.proto.notice(user, real_target, text)
+            else:
+                remoteirc.proto.message(user, real_target, text)
+        except LookupError:
+            # Our relay clone disappeared while we were trying to send the message.
+            # This is normally due to a nick conflict with the IRCd.
+            log.warning("(%s) relay: Relay client %s on %s was killed while "
+                        "trying to send a message through it!", irc.name,
+                        remoteirc.name, user)
+            return
 
 for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
     utils.add_hook(handle_messages, cmd)
