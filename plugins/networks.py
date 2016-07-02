@@ -32,29 +32,6 @@ def disconnect(irc, source, args):
     del world.networkobjects[netname]
 
 @utils.add_cmd
-def connect(irc, source, args):
-    """<network>
-
-    Initiates a connection to the network <network>."""
-    irc.checkAuthenticated(source, allowOper=False)
-    try:
-        netname = args[0]
-        network = world.networkobjects[netname]
-    except IndexError:  # No argument given.
-        irc.reply('Error: Not enough arguments (needs 1: network name (case sensitive)).')
-        return
-    except KeyError:  # Unknown network.
-        irc.reply('Error: No such network "%s" (case sensitive).' % netname)
-        return
-    if network.connection_thread.is_alive():
-        irc.reply('Error: Network "%s" seems to be already connected.' % netname)
-    else:  # Recreate the IRC object.
-        proto = utils.getProtocolModule(network.serverdata.get("protocol"))
-        world.networkobjects[netname] = classes.Irc(netname, proto, conf.conf)
-
-        irc.reply("Done.")
-
-@utils.add_cmd
 def autoconnect(irc, source, args):
     """<network> <seconds>
 
