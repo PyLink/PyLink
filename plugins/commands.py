@@ -1,7 +1,7 @@
 # commands.py: base PyLink commands
 from time import ctime
 
-from pylinkirc import utils
+from pylinkirc import utils, __version__, world
 from pylinkirc.log import log
 
 @utils.add_cmd
@@ -112,7 +112,7 @@ def version(irc, source, args):
     """takes no arguments.
 
     Returns the version of the currently running PyLink instance."""
-    irc.reply("PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
+    irc.reply("PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % __version__)
     irc.reply("The source of this program is available at \x02%s\x02." % world.source)
 
 @utils.add_cmd

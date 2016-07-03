@@ -6,7 +6,7 @@ PyLink IRC Services launcher.
 import os
 import sys
 try:
-    from pylinkirc import world, conf
+    from pylinkirc import world, conf, __version__
 except ImportError:
     sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
                      "running PyLink from source, please install PyLink first using 'python3 "
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.version:  # Display version and exit
-        print(world.version)
+        print('PyLink ' + __version__)
         sys.exit()
 
     # Load the config
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     from pylinkirc.log import log
     from pylinkirc import classes, utils, coremods
-    log.info('PyLink %s starting...', world.version)
+    log.info('PyLink %s starting...', __version__)
 
     # Write a PID file unless specifically told not to.
     if not args.no_pid:

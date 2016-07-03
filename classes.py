@@ -17,7 +17,7 @@ import hashlib
 from copy import deepcopy
 import inspect
 
-from . import world, utils, structures
+from . import world, utils, structures, __version__
 from .log import *
 
 ### Exceptions
@@ -786,7 +786,7 @@ class Irc():
         Returns a detailed version string including the PyLink daemon version,
         the protocol module in use, and the server hostname.
         """
-        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (world.version, self.serverdata['hostname'], self.protoname)
+        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (__version__, self.serverdata['hostname'], self.protoname)
         return fullversion
 
     ### State checking functions
