@@ -1604,8 +1604,11 @@ def linked(irc, source, args):
                 else:
                     continue
 
-        if v['links']:  # Join up and output all the linked channel names.
-            s += ' '.join([''.join(link) for link in sorted(v['links'])])
+        if v['links']:
+            # Sort, join up and output all the linked channel names. Silently drop
+            # entries for disconnected networks.
+            s += ' '.join([''.join(link) for link in sorted(v['links']) if link[0] in world.networkobjects
+                           and world.networkobjects[link[0]].connected.is_set()])
 
         else:  # Unless it's empty; then, well... just say no relays yet.
             s += '(no relays yet)'
