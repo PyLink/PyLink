@@ -45,7 +45,7 @@ if __name__ == '__main__':
     # dynamically depending on which were configured.
     for plugin in to_load:
         try:
-            world.plugins[plugin] = pl = utils.loadModuleFromFolder(plugin, world.plugins_folder)
+            world.plugins[plugin] = pl = utils.loadPlugin(plugin)
         except (OSError, ImportError) as e:
             log.exception('Failed to load plugin %r: %s: %s', plugin, type(e).__name__, str(e))
         else:

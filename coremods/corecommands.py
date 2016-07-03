@@ -68,7 +68,7 @@ def load(irc, source, args):
         return
     log.info('(%s) Loading plugin %r for %s', irc.name, name, irc.getHostmask(source))
     try:
-        world.plugins[name] = pl = utils.loadModuleFromFolder(name, world.plugins_folder)
+        world.plugins[name] = pl = utils.loadPlugin(name)
     except ImportError as e:
         if str(e) == ('No module named %r' % name):
             log.exception('Failed to load plugin %r: The plugin could not be found.', name)

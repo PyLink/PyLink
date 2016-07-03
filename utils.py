@@ -13,6 +13,8 @@ import collections
 
 from .log import log
 from . import world, conf
+# This is just so protocols and plugins are importable.
+from pylinkirc import protocols, plugins
 
 class NotAuthenticatedError(Exception):
     """
@@ -126,11 +128,17 @@ def loadModuleFromFolder(name, folder):
     m = importlib.machinery.SourceFileLoader(name, fullpath).load_module()
     return m
 
-def getProtocolModule(protoname):
+def loadPlugin(name):
+    """
+    Imports and returns the requested plugin.
+    """
+    return importlib.import_module('pylinkirc.plugins.' + name)
+
+def getProtocolModule(name):
     """
     Imports and returns the protocol module requested.
     """
-    return loadModuleFromFolder(protoname, world.protocols_folder)
+    return importlib.import_module('pylinkirc.protocols.' + name)
 
 def getDatabaseName(dbname):
     """
