@@ -43,7 +43,7 @@ class Irc():
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.bot_clients = {}
-        self.protoname = proto.__name__
+        self.protoname = proto.__name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = proto.Class(self)
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
