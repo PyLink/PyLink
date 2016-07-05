@@ -495,7 +495,7 @@ class P10Protocol(Protocol):
 
         log.debug('(%s) sjoin: bans: %s, exempts: %s, other modes: %s', self.irc.name, bans, exempts, regularmodes)
 
-        changedmodes = modes
+        changedmodes = set(modes)
         changedusers = []
         namelist = []
 
@@ -534,7 +534,7 @@ class P10Protocol(Protocol):
             last_prefixes = prefixes
             if prefixes:
                 for prefix in prefixes:
-                    changedmodes.append(('+%s' % prefix, user))
+                    changedmodes.add(('+%s' % prefix, user))
 
             self.irc.users[user].channels.add(channel)
 
