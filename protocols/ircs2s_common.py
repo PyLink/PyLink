@@ -1,0 +1,82 @@
+"""
+ircs2s_common.py: Common base protocol class with functions shared by TS6 and P10-based protocols.
+"""
+
+from pylinkirc.classes import Protocol
+from pylinkirc.log import log
+
+class IRCS2SProtocol(Protocol):
+
+    def handle_kill(self, source, command, args):
+        """Handles incoming KILLs."""
+        killed = args[0]
+        # Depending on whether the IRCd sends explicit QUIT messages for
+        # killed clients, the user may or may not have automatically been
+        # removed from our user list.
+        # If not, we have to assume that KILL = QUIT and remove them
+        # ourselves.
+        data = self.irc.users.get(killed)
+        if data:
+            self.removeClient(killed)
+
+        # TS6-style kills look something like this:
+        # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
+        # What we actually want is to format a pretty kill message, in the form
+        # "Killed (killername (reason))".
+
+        if source in self.irc.users:
+            # Killer was a user (they're SO fired)
+            killer = self.irc.users[source].nick
+        elif source in self.irc.servers:
+            # Killer was a server (impossible, the machine is always right)
+            killer = self.irc.servers[source].name
+        else:
+            # Killer was... neither? We must have aliens or something. Fallback
+            # to the given "UID".
+            killer = source
+
+        # Get the reason, which is enclosed in brackets.
+        reason = ' '.join(args[1].split(" ")[1:])
+
+        killmsg = "Killed (%s %s)" % (killer, reason)
+
+        return {'target': killed, 'text': killmsg, 'userdata': data}
+
+
+    def handle_squit(self, numeric, command, args):
+        """Handles incoming SQUITs."""
+        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
+
+        split_server = self._getSid(args[0])
+
+        affected_users = []
+        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
+
+        if split_server not in self.irc.servers:
+            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
+            return
+
+        # Prevent RuntimeError: dictionary changed size during iteration
+        old_servers = self.irc.servers.copy()
+        # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
+        # remove them and all their users too.
+        for sid, data in old_servers.items():
+            if data.uplink == split_server:
+                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
+                # Recursively run SQUIT on any other hubs this server may have been connected to.
+                args = self.handle_squit(sid, 'SQUIT', [sid, "0",
+                                         "PyLink: Automatically splitting leaf servers of %s" % sid])
+                affected_users += args['users']
+
+        for user in self.irc.servers[split_server].users.copy():
+            affected_users.append(user)
+            log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
+            self.removeClient(user)
+
+        sname = self.irc.servers[split_server].name
+        uplink = self.irc.servers[split_server].uplink
+        del self.irc.servers[split_server]
+        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
+
+        return {'target': split_server, 'users': affected_users, 'name': sname,
+                'uplink': uplink}

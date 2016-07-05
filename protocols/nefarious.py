@@ -2,15 +2,14 @@
 nefarious.py: Nefarious IRCu protocol module for PyLink.
 """
 
-import sys
-import os
 import base64
 import struct
 from ipaddress import ip_address
 
-from pylinkirc import utils
+from pylinkirc import utils, structures
 from pylinkirc.classes import *
 from pylinkirc.log import log
+from pylinkirc.protocols.ircs2s_common import *
 
 class P10UIDGenerator(utils.IncrementalUIDGenerator):
      """Implements an incremental P10 UID Generator."""
@@ -59,7 +58,7 @@ class P10SIDGenerator():
         self.currentnum += 1
         return sid
 
-class P10Protocol(Protocol):
+class P10Protocol(IRCS2SProtocol):
 
     def __init__(self, irc):
         super().__init__(irc)
@@ -504,8 +503,8 @@ class P10Protocol(Protocol):
         # XXX: there HAS to be a better way of doing this
         def access_sort(key):
             prefixes, user = key
-            # This is some hocus pocus. Add the prefixes given for each userpair,
-            # giving each one a set value. This ensures that 'ohv' > 'oh' > 'ov' > 'o' > 'hv' > 'h' > 'v' > ''
+            # Add the prefixes given for each userpair, giving each one a set value. This ensures
+            # that 'ohv' > 'oh' > 'ov' > 'o' > 'hv' > 'h' > 'v' > ''
             accesses = {'o': 100, 'h': 10, 'v': 1}
 
             num = 0
@@ -1180,44 +1179,6 @@ class P10Protocol(Protocol):
         if data:
             self.removeClient(killed)
         return {'target': killed, 'text': args[1], 'userdata': data}
-
-    def handle_squit(self, numeric, command, args):
-        """Handles incoming SQUITs."""
-        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
-
-        split_server = self._getSid(args[0])
-
-        affected_users = []
-        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
-
-        if split_server not in self.irc.servers:
-            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
-            return
-
-        # Prevent RuntimeError: dictionary changed size during iteration
-        old_servers = self.irc.servers.copy()
-        # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
-        # remove them and all their users too.
-        for sid, data in old_servers.items():
-            if data.uplink == split_server:
-                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
-                # Recursively run SQUIT on any other hubs this server may have been connected to.
-                args = self.handle_squit(sid, 'SQUIT', [sid, "0",
-                                         "PyLink: Automatically splitting leaf servers of %s" % sid])
-                affected_users += args['users']
-
-        for user in self.irc.servers[split_server].users.copy():
-            affected_users.append(user)
-            log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
-            self.removeClient(user)
-
-        sname = self.irc.servers[split_server].name
-        uplink = self.irc.servers[split_server].uplink
-        del self.irc.servers[split_server]
-        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
-
-        return {'target': split_server, 'users': affected_users, 'name': sname,
-                'uplink': uplink}
 
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""
