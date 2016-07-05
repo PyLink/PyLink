@@ -644,10 +644,13 @@ class Irc():
                 else:
                     modelist.discard(real_mode)
         log.debug('(%s) Final modelist: %s', self.name, modelist)
-        if usermodes:
-            self.users[target].modes = modelist
-        else:
-            self.channels[target].modes = modelist
+        try:
+            if usermodes:
+                self.users[target].modes = modelist
+            else:
+                self.channels[target].modes = modelist
+        except KeyError:
+            log.warning("(%s) Invalid MODE target %s (usermodes=%s)", self.name, target, usermodes)
 
     @staticmethod
     def _flip(mode):
