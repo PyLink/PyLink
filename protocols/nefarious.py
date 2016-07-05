@@ -75,6 +75,22 @@ class P10Protocol(IRCS2SProtocol):
         self.irc.send("%s %s" % (source, text))
 
     @staticmethod
+    def access_sort(key):
+        """
+        Sorts (prefixmode, UID) keys based on the prefix modes given.
+        """
+        prefixes, user = key
+        # Add the prefixes given for each userpair, giving each one a set value. This ensures
+        # that 'ohv' > 'oh' > 'ov' > 'o' > 'hv' > 'h' > 'v' > ''
+        accesses = {'o': 100, 'h': 10, 'v': 1}
+
+        num = 0
+        for prefix in prefixes:
+            num += accesses.get(prefix, 0)
+
+        return num
+
+    @staticmethod
     def decode_p10_ip(ip):
         """Decodes a P10 IP."""
         # Many thanks to Jobe @ evilnet for the code on what to do here. :) -GL
@@ -500,19 +516,7 @@ class P10Protocol(IRCS2SProtocol):
 
         # This is annoying because we have to sort our users by access before sending...
         # Joins should look like: A0AAB,A0AAC,ABAAA:v,ABAAB:o,ABAAD,ACAAA:ov
-        # XXX: there HAS to be a better way of doing this
-        def access_sort(key):
-            prefixes, user = key
-            # Add the prefixes given for each userpair, giving each one a set value. This ensures
-            # that 'ohv' > 'oh' > 'ov' > 'o' > 'hv' > 'h' > 'v' > ''
-            accesses = {'o': 100, 'h': 10, 'v': 1}
-
-            num = 0
-            for prefix in prefixes:
-                num += accesses.get(prefix, 0)
-
-            return num
-        users = sorted(users, key=access_sort)
+        users = sorted(users, key=self.access_sort)
 
         last_prefixes = ''
         for userpair in users:
