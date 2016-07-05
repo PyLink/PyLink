@@ -196,6 +196,7 @@ class TS6Protocol(TS6BaseProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
+        # From TS6 docs:
         # KILL:
         # parameters: target user, path
 
@@ -204,7 +205,21 @@ class TS6Protocol(TS6BaseProtocol):
         # it is recommended not to add anything to the path.
 
         assert target in self.irc.users, "Unknown target %r for kill()!" % target
-        self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
+
+        if numeric in self.irc.users:
+            # Killer was an user. Follow examples of setting the path to be "killer.host!killer.nick".
+            userobj = self.irc.users[numeric]
+            killpath = '%s!%s' % (userobj.host, userobj.nick)
+        elif numeric in self.irc.servers:
+            # Sender was a server; killpath is just its name.
+            killpath = self.irc.servers[numeric].name
+        else:
+            # Invalid sender?! This shouldn't happen, but make the killpath our server name anyways.
+            log.warning('(%s) Invalid sender %s for kill(); using our server name instead.',
+                        self.irc.name, numeric)
+            killpath = self.irc.servers[self.irc.sid].name
+
+        self._send(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
         self.removeClient(target)
 
     def topicBurst(self, numeric, target, text):
