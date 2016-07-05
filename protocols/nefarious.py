@@ -1168,18 +1168,6 @@ class P10Protocol(IRCS2SProtocol):
         self.removeClient(numeric)
         return {'text': args[0]}
 
-    def handle_kill(self, numeric, command, args):
-        """Handles incoming KILLs."""
-        # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
-        killed = args[0]
-
-        # Back up the target user data before removing it, so we can send it via a hook.
-        data = self.irc.users.get(killed)
-
-        if data:
-            self.removeClient(killed)
-        return {'target': killed, 'text': args[1], 'userdata': data}
-
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""
         # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
