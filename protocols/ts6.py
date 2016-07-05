@@ -189,39 +189,6 @@ class TS6Protocol(TS6BaseProtocol):
             joinedmodes = self.irc.joinModes(modes)
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
 
-    def kill(self, numeric, target, reason):
-        """Sends a kill from a PyLink client/server."""
-
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
-        # From TS6 docs:
-        # KILL:
-        # parameters: target user, path
-
-        # The format of the path parameter is some sort of description of the source of
-        # the kill followed by a space and a parenthesized reason. To avoid overflow,
-        # it is recommended not to add anything to the path.
-
-        assert target in self.irc.users, "Unknown target %r for kill()!" % target
-
-        if numeric in self.irc.users:
-            # Killer was an user. Follow examples of setting the path to be "killer.host!killer.nick".
-            userobj = self.irc.users[numeric]
-            killpath = '%s!%s' % (userobj.host, userobj.nick)
-        elif numeric in self.irc.servers:
-            # Sender was a server; killpath is just its name.
-            killpath = self.irc.servers[numeric].name
-        else:
-            # Invalid sender?! This shouldn't happen, but make the killpath our server name anyways.
-            log.warning('(%s) Invalid sender %s for kill(); using our server name instead.',
-                        self.irc.name, numeric)
-            killpath = self.irc.servers[self.irc.sid].name
-
-        self._send(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
-        self.removeClient(target)
-
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         if not self.irc.isInternalServer(numeric):
