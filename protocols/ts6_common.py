@@ -330,6 +330,13 @@ class TS6BaseProtocol(IRCS2SProtocol):
             command = args[0]
             args = args[1:]
 
+        if command == 'ENCAP':
+            # Special case for encapsulated commands (ENCAP), in forms like this:
+            # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+            command = args[1]
+            args = args[2:]
+            log.debug("(%s) Rewriting incoming ENCAP to command %s (args: %s)", self.irc.name, command, args)
+
         try:
             func = getattr(self, 'handle_'+command.lower())
         except AttributeError:  # unhandled command

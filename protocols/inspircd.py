@@ -644,29 +644,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # We don't actually need to process this; just send the hook so plugins can use it
         return {'target': target, 'channel': channel}
 
-    def handle_encap(self, numeric, command, args):
-        """Handles incoming encapsulated commands (ENCAP). Hook arguments
-        returned by this should have a parse_as field, that sets the correct
-        hook name for the message.
-
-        For InspIRCd, the only ENCAP command we handle right now is KNOCK."""
-        # <- :70MAAAAAA ENCAP * KNOCK #blah :agsdfas
-        # From charybdis TS6 docs: https://github.com/grawity/irc-docs/blob/03ba884a54f1cef2193cd62b6a86803d89c1ac41/server/ts6.txt
-
-        # ENCAP
-        # source: any
-        # parameters: target server mask, subcommand, opt. parameters...
-
-        # Sends a command to matching servers. Propagation is independent of
-        # understanding the subcommand.
-
-        targetmask = args[0]
-        real_command = args[1]
-        if targetmask == '*' and real_command == 'KNOCK':
-            channel = self.irc.toLower(args[2])
-            text = args[3]
-            return {'parse_as': real_command, 'channel': channel,
-                    'text': text}
+    def handle_knock(self, numeric, command, args):
+        """Handles channel KNOCKs."""
+        # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
+        channel = self.irc.toLower(args[0])
+        text = args[1]
+        return {'channel': channel, 'text': text}
 
     def handle_opertype(self, target, command, args):
         """Handles incoming OPERTYPE, which is used to denote an oper up.

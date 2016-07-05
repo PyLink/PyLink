@@ -666,23 +666,18 @@ class TS6Protocol(TS6BaseProtocol):
                         'your IRCd configuration.', self.irc.name, setter, badmode,
                         charlist[badmode])
 
-    def handle_encap(self, numeric, command, args):
+    def handle_su(self, numeric, command, args):
         """
-        Handles the ENCAP command - encapsulated TS6 commands with a variety of
-        subcommands used for different purposes.
+        Handles SU, which is used for setting login information
         """
-        commandname = args[1]
+        # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+        # <- :00A ENCAP * SU 42XAAAAAC
+        try:
+            account = args[1]  # Account name is being set
+        except IndexError:
+            account = ''  # No account name means a logout
 
-        if commandname == 'SU':
-            # Handles SU, which is used for setting login information
-            # <- :00A ENCAP * SU 42XAAAAAC :GLolol
-            # <- :00A ENCAP * SU 42XAAAAAC
-            try:
-                account = args[3]  # Account name is being set
-            except IndexError:
-                account = ''  # No account name means a logout
-
-            uid = args[2]
-            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+        uid = args[0]
+        self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
 Class = TS6Protocol
