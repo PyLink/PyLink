@@ -363,7 +363,29 @@ class TS6BaseProtocol(Protocol):
         data = self.irc.users.get(killed)
         if data:
             self.removeClient(killed)
-        return {'target': killed, 'text': args[1], 'userdata': data}
+
+        # TS6-style kills look something like this:
+        # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
+        # What we actually want is to format a pretty kill message, in the form
+        # "Killed (killername (reason))".
+
+        if source in self.irc.users:
+            # Killer was a user (they're SO fired)
+            killer = self.irc.users[source].nick
+        elif source in self.irc.servers:
+            # Killer was a server (impossible, the machine is always right)
+            killer = self.irc.servers[source].name
+        else:
+            # Killer was... neither? We must have aliens or something. Fallback
+            # to the given "UID".
+            killer = source
+
+        # Get the reason, which is enclosed in brackets.
+        reason = ' '.join(args[1].split(" ")[1:])
+
+        killmsg = "Killed (%s %s)" % (killer, reason)
+
+        return {'target': killed, 'text': killmsg, 'userdata': data}
 
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
