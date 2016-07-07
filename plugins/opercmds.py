@@ -179,6 +179,10 @@ def kill(irc, source, args):
         return
 
     irc.proto.kill(sender, targetu, reason)
+
+    # Format the kill reason properly in hooks.
+    reason = "Killed (%s (%s))" % (irc.getFriendlyName(sender), reason)
+
     irc.callHooks([sender, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
                                         'userdata': userdata, 'parse_as': 'KILL'}])
 
