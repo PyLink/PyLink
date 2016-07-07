@@ -24,13 +24,10 @@ class IRCS2SProtocol(Protocol):
         # What we actually want is to format a pretty kill message, in the form
         # "Killed (killername (reason))".
 
-        if source in self.irc.users:
-            # Killer was a user (they're SO fired)
-            killer = self.irc.users[source].nick
-        elif source in self.irc.servers:
-            # Killer was a server (impossible, the machine is always right)
-            killer = self.irc.servers[source].name
-        else:
+        try:
+            # Get the nick or server name of the caller.
+            killer = self.irc.getFriendlyName(source)
+        except KeyError:
             # Killer was... neither? We must have aliens or something. Fallback
             # to the given "UID".
             killer = source

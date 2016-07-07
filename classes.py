@@ -871,6 +871,16 @@ class Irc():
 
         return '%s!%s@%s' % (nick, ident, host)
 
+    def getFriendlyName(self, entityid):
+        """
+        Returns the friendly name of a SID or UID (server name for SIDs, nick for UID)."""
+        if entityid in self.servers:
+            return self.servers[entityid].name
+        elif entityid in self.users:
+            return self.users[entityid].nick
+        else:
+            raise KeyError("Unknown UID/SID %s" % entityid)
+
     def isOper(self, uid, allowAuthed=True, allowOper=True):
         """
         Returns whether the given user has operator status on PyLink. This can be achieved
