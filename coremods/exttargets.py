@@ -16,7 +16,8 @@ def bind(func):
 def account(irc, host, uid):
     """
     $account exttarget handler. The following forms are supported, with groups separated by a
-    literal colon. All account and network name matching is currently case sensitive:
+    literal colon. Account matching is case insensitive, while network name matching IS case
+    sensitive.
 
     $account -> Returns True (a match) if the target is registered.
     $account:accountname -> Returns True if the target's account name matches the one given, and the
@@ -40,10 +41,10 @@ def account(irc, host, uid):
                           homenet, realuid)
             return False
 
-    slogin = userobj.services_account
+    slogin = irc.toLower(userobj.services_account)
 
     # Split the given exttarget host into parts, so we know how many to look for.
-    groups = host.split(':')
+    groups = list(map(irc.toLower, host.split(':')))
     log.debug('(%s) exttargets.account: groups to match: %s', irc.name, groups)
 
     if len(groups) == 1:
