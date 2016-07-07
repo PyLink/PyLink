@@ -54,4 +54,6 @@ def account(irc, host, uid):
         return slogin == groups[1] and homenet == irc.name
     else:
         # Third or fourth scenario. If there are more than 3 groups, the rest are ignored.
-        return (groups[1] in ('*', slogin)) and (homenet == groups[2])
+        # In other words: Return True if the user is logged in, the query matches either '*' or the
+        # user's login, abd the user is connected on the network requested.
+        return slogin and (groups[1] in ('*', slogin)) and (homenet == groups[2])
