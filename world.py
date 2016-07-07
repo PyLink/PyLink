@@ -16,6 +16,9 @@ networkobjects = {}
 plugins = {}
 services = {}
 
+# Registered extarget handlers. This maps exttarget names (strings) to handling functions.
+exttarget_handlers = {}
+
 started = threading.Event()
 
 source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!

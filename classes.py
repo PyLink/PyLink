@@ -920,8 +920,28 @@ class Irc():
         # Get the corresponding casemapping value used by ircmatch.
         casemapping = getattr(ircmatch, self.proto.casemapping)
 
+        # Try to convert target into a UID. If this fails, it's probably a hostname.
+        target = self.nickToUid(target) or target
+
         # Prepare a list of hosts to check against.
         if target in self.users:
+            if glob.startswith('$'):
+                # Exttargets start with $. Skip regular ban matching and find the matching ban handler.
+                glob = glob.lstrip('$')
+                exttargetname = glob.split(':', 1)[0]
+                handler = world.exttarget_handlers.get(exttargetname)
+
+                if handler:
+                    # Handler exists. Return what it finds.
+                    result = handler(self, glob, target)
+                    log.debug('(%s) Got %s from exttarget %s in matchHost() glob $%s for target %s',
+                              self.name, result, exttargetname, glob, target)
+                    return result
+                else:
+                    log.debug('(%s) Unknown exttarget %s in matchHost() glob $%s', self.name,
+                              exttargetname, glob)
+                    return False
+
             hosts = {self.getHostmask(target)}
 
             if ip:
