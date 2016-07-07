@@ -170,7 +170,7 @@ def kill(irc, source, args):
         # somewhat user friendly in the error message
         irc.reply("Error: No such PyLink client '%s'. The first argument to "
                   "KILL should be the name of a PyLink client (e.g. '%s'; see "
-                  "'help kick' for details." % (sourcenick,
+                  "'help kill' for details." % (sourcenick,
                   irc.pseudoclient.nick))
         return
     elif targetu not in irc.users:
