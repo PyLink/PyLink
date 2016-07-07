@@ -58,3 +58,23 @@ def account(irc, host, uid):
         # In other words: Return True if the user is logged in, the query matches either '*' or the
         # user's login, and the user is connected on the network requested.
         return slogin and (groups[1] in ('*', slogin)) and (homenet == groups[2])
+
+@bind
+def ircop(irc, host, uid):
+    """
+    $ircop exttarget handler. The following forms are supported, with groups separated by a
+    literal colon. Oper types are matched case insensitively.
+
+    $ircop -> Returns True (a match) if the target is opered.
+    $ircop:*admin* -> Returns True if the target's is opered and their opertype matches the glob
+    given.
+    """
+    groups = host.split(':')
+    log.debug('(%s) exttargets.ircop: groups to match: %s', irc.name, groups)
+
+    if len(groups) == 1:
+        # 1st scenario.
+        return irc.isOper(uid, allowAuthed=False)
+    else:
+        # 2nd scenario. Use matchHost (ircmatch) to match the opertype glob to the opertype.
+        return irc.matchHost(groups[1], irc.users[uid].opertype)
