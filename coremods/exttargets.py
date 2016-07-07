@@ -78,3 +78,24 @@ def ircop(irc, host, uid):
     else:
         # 2nd scenario. Use matchHost (ircmatch) to match the opertype glob to the opertype.
         return irc.matchHost(groups[1], irc.users[uid].opertype)
+
+@bind
+def server(irc, host, uid):
+    """
+    $server exttarget handler. The following forms are supported, with groups separated by a
+    literal colon. Server names are matched case insensitively, but SIDs ARE case sensitive.
+
+    $server:server.name -> Returns True (a match) if the target is connected on the given server.
+    $server:server.glob -> Returns True (a match) if the target is connected on a server matching the glob.
+    $server:1XY -> Returns True if the target's is connected on the server with the given SID.
+    """
+    groups = host.split(':')
+    log.debug('(%s) exttargets.server: groups to match: %s', irc.name, groups)
+
+    if len(groups) >= 2:
+        sid = irc.getServer(uid)
+        query = groups[1]
+        # Return True if the SID matches the query or the server's name glob matches it.
+        return sid == query or irc.matchHost(query, irc.getFriendlyName(sid))
+    # $server alone is invalid. Don't match anything.
+    return False
