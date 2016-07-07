@@ -99,3 +99,28 @@ def server(irc, host, uid):
         return sid == query or irc.matchHost(query, irc.getFriendlyName(sid))
     # $server alone is invalid. Don't match anything.
     return False
+
+@bind
+def channel(irc, host, uid):
+    """
+    $channel exttarget handler. The following forms are supported, with groups separated by a
+    literal colon. Channel names are matched case insensitively.
+
+    $channel:#channel -> Returns True if the target is in the given channel.
+    $channel:#channel:op -> Returns True if the target is in the given channel, and is opped.
+    Any other supported prefix (owner, admin, op, halfop, voice) can be given, but only one at a
+    time.
+    """
+    groups = host.split(':')
+    log.debug('(%s) exttargets.channel: groups to match: %s', irc.name, groups)
+    try:
+        channel = groups[1]
+    except IndexError:  # No channel given, abort.
+        return False
+
+    if len(groups) == 2:
+        # Just #channel was given as query
+        return uid in irc.channels[channel].users
+    elif len(groups) >= 3:
+        # For things like #channel:op, check if the query is in the user's prefix modes.
+        return groups[2].lower() in irc.channels[channel].getPrefixModes(uid)
