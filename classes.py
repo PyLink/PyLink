@@ -925,9 +925,12 @@ class Irc():
 
         # Prepare a list of hosts to check against.
         if target in self.users:
-            if glob.startswith('$'):
+            if glob.startswith(('$', '!$')):
+                # !$exttarget inverts the given match.
+                invert = glob.startswith('!$')
+
                 # Exttargets start with $. Skip regular ban matching and find the matching ban handler.
-                glob = glob.lstrip('$')
+                glob = glob.lstrip('$!')
                 exttargetname = glob.split(':', 1)[0]
                 handler = world.exttarget_handlers.get(exttargetname)
 
@@ -936,6 +939,8 @@ class Irc():
                     result = handler(self, glob, target)
                     log.debug('(%s) Got %s from exttarget %s in matchHost() glob $%s for target %s',
                               self.name, result, exttargetname, glob, target)
+                    if invert:  # Anti-exttarget was specified.
+                        result = not result
                     return result
                 else:
                     log.debug('(%s) Unknown exttarget %s in matchHost() glob $%s', self.name,
