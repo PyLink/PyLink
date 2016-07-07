@@ -124,3 +124,23 @@ def channel(irc, host, uid):
     elif len(groups) >= 3:
         # For things like #channel:op, check if the query is in the user's prefix modes.
         return groups[2].lower() in irc.channels[channel].getPrefixModes(uid)
+
+@bind
+def pylinkacc(irc, host, uid):
+    """
+    $pylinkacc (PyLink account) exttarget handler. The following forms are supported, with groups
+    separated by a literal colon. Account matching is case insensitive.
+
+    $pylinkacc -> Returns True if the target is logged in to PyLink.
+    $pylinkacc:accountname -> Returns True if the target's PyLink login matches the one given.
+    """
+    login = irc.toLower(irc.users[uid].identified)
+    groups = list(map(irc.toLower, host.split(':')))
+    log.debug('(%s) exttargets.pylinkacc: groups to match: %s', irc.name, groups)
+
+    if len(groups) == 1:
+        # First scenario. Return True if user is logged in.
+        return bool(login)
+    elif len(groups) == 2:
+        # Second scenario. Return True if the user's login matches the one given.
+        return login == groups[1]
