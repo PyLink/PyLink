@@ -9,7 +9,7 @@ def checkban(irc, source, args):
     """<banmask (nick!user@host or user@host)> [<nick or hostmask to check>]
 
     Oper only. If a nick or hostmask is given, return whether the given banmask will match it. Otherwise, returns a list of connected users that would be affected by such a ban, up to 50 results."""
-    irc.checkAuthenticated(source, allowOper=False)
+    irc.checkAuthenticated(source)
 
     try:
         banmask = args[0]
