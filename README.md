@@ -18,8 +18,8 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 * Python 3.4+
 * PyYAML (`pip install pyyaml`)
+* [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip install ircmatch`)
 * *For the servprotect plugin*: [expiringdict](https://github.com/mailgun/expiringdict) (note: unfortunately, installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
-* *For the changehost and opercmds plugins*: [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip install ircmatch`)
 
 ## Supported IRCds
 

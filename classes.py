@@ -11,11 +11,12 @@ import threading
 from random import randint
 import time
 import socket
-import threading
 import ssl
 import hashlib
 from copy import deepcopy
 import inspect
+
+import ircmatch
 
 from . import world, utils, structures, __version__
 from .log import *
@@ -907,6 +908,36 @@ class Irc():
                         self.getHostmask(uid), lastfunc)
             raise utils.NotAuthenticatedError("You are not authenticated!")
         return True
+
+    def matchHost(self, glob, target, ip=True, realhost=True):
+        """
+        Checks whether the given host, or given UID's hostmask matches the given nick!user@host
+        glob.
+
+        If the target given is a UID, and the ip or realhost options are True, this will also match
+        against the target's IP address and real host, respectively.
+        """
+        # Get the corresponding casemapping value used by ircmatch.
+        casemapping = getattr(ircmatch, self.proto.casemapping)
+
+        # Prepare a list of hosts to check against.
+        if target in self.users:
+            hosts = {self.getHostmask(target)}
+
+            if ip:
+                hosts.add(self.getHostmask(target, ip=True))
+
+            if realhost:
+                hosts.add(self.getHostmask(target, ip=True))
+        else:  # We were given a host, use that.
+            hosts = [target]
+
+        # Iterate over the hosts to match using ircmatch.
+        for host in hosts:
+            if ircmatch.match(casemapping, glob, host):
+                return True
+
+        return False
 
 class IrcUser():
     """PyLink IRC user class."""
