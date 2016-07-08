@@ -6,7 +6,7 @@ import collections
 import threading
 import json
 
-from pylinkirc import utils, conf
+from pylinkirc import utils, conf, world
 from pylinkirc.log import log
 
 mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by giving prefix modes "
@@ -59,11 +59,29 @@ def scheduleExport(starting=False):
 def main(irc=None):
     """Main function, called during plugin loading at start."""
 
-    # Load the relay links database.
+    # Load the automode database.
     loadDB()
 
     # Schedule periodic exports of the automode database.
     scheduleExport(starting=True)
+
+    # Queue joins to all channels where Automode has entries.
+    for entry in db:
+        netname, channel = entry.split('#', 1)
+        channel = '#' + channel
+        log.debug('automode: auto-joining %s on %s', channel, netname)
+        modebot.extra_channels[netname].add(channel)
+
+        # This explicitly forces a join to connected networks (on plugin load, etc.).
+        mb_uid = modebot.uids.get(netname)
+        if netname in world.networkobjects and mb_uid in world.networkobjects[netname].users:
+            remoteirc = world.networkobjects[netname]
+            remoteirc.proto.join(mb_uid, channel)
+
+            # Call a join hook manually so other plugins like relay can understand it.
+            remoteirc.callHooks([mb_uid, 'PYLINK_AUTOMODE_JOIN', {'channel': channel, 'users': [mb_uid],
+                                                                  'modes': remoteirc.channels[channel].modes,
+                                                                  'parse_as': 'JOIN'}])
 
 def die(sourceirc):
     """Saves the Automode database and quit."""
