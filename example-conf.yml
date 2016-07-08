@@ -403,3 +403,7 @@ relay:
 games:
     # Sets the nick of the Games service, if you're using it.
     nick: Games
+
+automode:
+    # Sets the nick of the Automode service, if you're using it.
+    nick: ModeBot
