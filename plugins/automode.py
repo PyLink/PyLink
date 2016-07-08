@@ -205,7 +205,7 @@ def match(irc, channel, uid):
                       irc.name, modes, outgoing_modes, irc.protoname)
 
             # If the Automode bot is missing, send the mode through the PyLink server.
-            if not modebot_uid:
+            if modebot_uid not in irc.users:
                 modebot_uid = irc.sid
 
             irc.proto.mode(modebot_uid, channel, outgoing_modes)
