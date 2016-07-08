@@ -59,6 +59,7 @@ def spawn_service(irc, source, command, args):
 
     for chan in channels:
         irc.proto.join(u, chan)
+        irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
 
 utils.add_hook(spawn_service, 'PYLINK_NEW_SERVICE')
 
@@ -99,6 +100,7 @@ def handle_kick(irc, source, command, args):
     channel = args['channel']
     if irc.isServiceBot(kicked):
         irc.proto.join(kicked, channel)
+        irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': channel, 'users': [kicked]}])
 utils.add_hook(handle_kick, 'KICK')
 
 def handle_commands(irc, source, command, args):
