@@ -13,7 +13,7 @@ mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by
           "to users matching hostmasks or exttargets.")
 
 # Register ourselves as a service.
-modebot = utils.registerService("Automode", desc=mydesc)
+modebot = utils.registerService("automode", desc=mydesc)
 reply = modebot.reply
 
 # Databasing variables.
@@ -69,11 +69,13 @@ def die(sourceirc):
     """Saves the Automode database and quit."""
     exportDB()
 
-    # Kill the scheduling forexports.
+    # Kill the scheduling for exports.
     global exportdb_timer
     if exportdb_timer:
         log.debug("Automode: cancelling exportDB timer thread %s due to die()", threading.get_ident())
         exportdb_timer.cancel()
+
+    utils.unregisterService('automode')
 
 def setacc(irc, source, args):
     """<channel> <mask> <mode list OR literal ->
