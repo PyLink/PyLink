@@ -67,9 +67,6 @@ setup(
     # Folders (packages of code)
     packages=['pylinkirc', 'pylinkirc.protocols', 'pylinkirc.plugins', 'pylinkirc.coremods'],
 
-    # Single modules. TODO: consider organizing this into a pylink/ folder
-    py_modules=["classes", "conf", "log", "structures", "utils", "world"],
-
     # Data files
     package_data={
         '': ['example-conf.yml'],
