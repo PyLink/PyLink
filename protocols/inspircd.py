@@ -740,7 +740,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """
         uid = args[0]
 
-        if args[1] == 'accountname':
+        if args[1] == 'accountname' and uid in self.irc.users:
             # <- :00A METADATA 1MLAAAJET accountname :
             # <- :00A METADATA 1MLAAAJET accountname :tester
             # Sets the services login name of the client.
