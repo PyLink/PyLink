@@ -85,7 +85,7 @@ def setacc(irc, source, args):
     SET #channel $oper:Network?Administrator qo
     SET #staffchan $channel:#mainchan:op o
     """
-    irc.checkAuthenticated(source)
+    irc.checkAuthenticated(source, allowOper=False)
     try:
         channel, mask, modes = args
     except ValueError:
@@ -117,7 +117,7 @@ def delacc(irc, source, args):
 
     Removes the Automode entry for the given mask on the given channel, if one exists.
     """
-    irc.checkAuthenticated(source)
+    irc.checkAuthenticated(source, allowOper=False)
 
     try:
         channel, mask = args
