@@ -222,6 +222,7 @@ def handle_join(irc, source, command, args):
     for uid in args['users']:
         match(irc, channel, uid)
 utils.add_hook(handle_join, 'JOIN')
+utils.add_hook(handle_join, 'PYLINK_RELAY_JOIN')  # Handle the relay verison of join
 
 def handle_services_login(irc, source, command, args):
     """
