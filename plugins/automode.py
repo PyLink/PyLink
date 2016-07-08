@@ -232,3 +232,4 @@ def handle_services_login(irc, source, command, args):
         match(irc, channel, source)
 
 utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
+utils.add_hook(handle_services_login, 'PYLINK_RELAY_SERVICES_LOGIN')

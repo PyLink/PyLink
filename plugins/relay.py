@@ -1313,6 +1313,15 @@ def handle_endburst(irc, numeric, command, args):
         initializeAll(irc)
 utils.add_hook(handle_endburst, "ENDBURST")
 
+def handle_services_login(irc, numeric, command, args):
+    """
+    Relays services account changes as a hook, for integration with plugins like Automode.
+    """
+    for netname, user in relayusers[(irc.name, numeric)].items():
+        remoteirc = world.networkobjects[netname]
+        remoteirc.callHooks([user, 'PYLINK_RELAY_SERVICES_LOGIN', args])
+utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
+
 def handle_disconnect(irc, numeric, command, args):
     """Handles IRC network disconnections (internal hook)."""
     # Quit all of our users' representations on other nets, and remove
