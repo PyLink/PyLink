@@ -364,6 +364,7 @@ def registerService(name, *args, **kwargs):
 def unregisterService(name):
     """Unregisters an existing service bot."""
     assert name in world.services, "Unknown service %s" % name
+    name = name.lower()
     sbot = world.services[name]
     for ircnet, uid in sbot.uids.items():
         world.networkobjects[ircnet].proto.quit(uid, "Service unloaded.")
