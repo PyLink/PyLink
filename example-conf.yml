@@ -36,6 +36,11 @@ bot:
     # False.
     protect_services: false
 
+    # Determines how long plugins should wait (in seconds) before flushing their
+    # databases to disk. Defaults to 300 seconds. Changes here require a reload
+    # of all database-enabled plugins to take effect.
+    save_delay: 300
+
 login:
     # PyLink administrative login - Change this, or the service will not start!
     user: admin

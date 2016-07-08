@@ -6,7 +6,7 @@ import collections
 import threading
 import json
 
-from pylinkirc import utils
+from pylinkirc import utils, conf
 from pylinkirc.log import log
 
 mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by giving prefix modes "
@@ -20,6 +20,8 @@ reply = modebot.reply
 dbname = utils.getDatabaseName('automode')
 db = collections.defaultdict(dict)
 exportdb_timer = None
+
+save_delay = conf.conf['bot'].get('save_delay', 300)
 
 def loadDB():
     """Loads the Automode database, silently creating a new one if this fails."""
@@ -50,8 +52,7 @@ def scheduleExport(starting=False):
         # thing after start (i.e. DB has just been loaded).
         exportDB()
 
-    # TODO: possibly make delay between exports configurable
-    exportdb_timer = threading.Timer(30, scheduleExport)
+    exportdb_timer = threading.Timer(save_delay, scheduleExport)
     exportdb_timer.name = 'Automode exportDB Loop'
     exportdb_timer.start()
 

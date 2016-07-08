@@ -5,7 +5,7 @@ import threading
 import string
 from collections import defaultdict
 
-from pylinkirc import utils, world
+from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
 ### GLOBAL (statekeeping) VARIABLES
@@ -15,7 +15,7 @@ spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
 
 exportdb_timer = None
-
+save_delay = conf.conf['bot'].get('save_delay', 300)
 db = {}
 dbname = utils.getDatabaseName('pylinkrelay')
 
@@ -193,8 +193,7 @@ def scheduleExport(starting=False):
         # thing after start (i.e. DB has just been loaded).
         exportDB()
 
-    # TODO: possibly make delay between exports configurable
-    exportdb_timer = threading.Timer(30, scheduleExport)
+    exportdb_timer = threading.Timer(save_delay, scheduleExport)
     exportdb_timer.name = 'PyLink Relay exportDB Loop'
     exportdb_timer.start()
 
