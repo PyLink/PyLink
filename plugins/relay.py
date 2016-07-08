@@ -403,9 +403,9 @@ def getOrigUser(irc, user, targetirc=None):
             # Otherwise, use getRemoteUser to find our UID.
             res = getRemoteUser(sourceobj, targetirc, remoteuser[1],
                                 spawnIfMissing=False)
-            log.debug('(%s) relay.getOrigUser: targetirc found, getting %r as '
-                      'remoteuser for %r (looking up %s/%s).', irc.name, res,
-                      remoteuser[1], user, irc.name)
+            log.debug('(%s) relay.getOrigUser: targetirc found as %s, getting %r as '
+                      'remoteuser for %r (looking up %s/%s).', irc.name, targetirc.name,
+                      res, remoteuser[1], user, irc.name)
             return res
         else:
             return remoteuser
@@ -739,6 +739,10 @@ def getSupportedCmodes(irc, remoteirc, channel, modes):
                     # (original user).
                     arg = getOrigUser(irc, arg, targetirc=remoteirc) or \
                         getRemoteUser(irc, remoteirc, arg, spawnIfMissing=False)
+
+                    if arg is None:
+                        # Relay client for target user doesn't exist yet. Drop the mode.
+                        break
 
                     log.debug("(%s) relay.getSupportedCmodes: argument found as (%r, %r) "
                               "for network %r.",
