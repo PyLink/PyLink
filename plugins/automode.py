@@ -169,7 +169,7 @@ def listacc(irc, source, args):
         for entrynum, entry in enumerate(dbentry.items(), start=1):
             mask, modes = entry
             reply(irc, "[%s] \x02%s\x02 has modes +\x02%s\x02" % (entrynum, mask, modes), private=True)
-        reply(irc, "End of Automode entries list.")
+        reply(irc, "End of Automode entries list.", private=True)
 modebot.add_cmd(listacc, featured=True)
 modebot.add_cmd(listacc, 'listaccess')
 
@@ -181,3 +181,35 @@ def save(irc, source, args):
     exportDB()
     reply(irc, 'Done.')
 modebot.add_cmd(save)
+
+def handle_join(irc, source, command, args):
+    """
+    Automode JOIN listener. This sets modes accordingly if the person joining matches a mask in the
+    ACL.
+    """
+    channel = irc.toLower(args['channel'])
+    dbentry = db.get(irc.name+channel)
+    modebot_uid = modebot.uids.get(irc.name)
+
+    if dbentry:
+        # Database entry exists for the channel given. Iterate over all the masks we have and the
+        # joining UIDs:
+        for mask, modes in dbentry.items():
+            for uid in args['users']:
+                if irc.matchHost(mask, uid):
+                    # User matched a mask. Filter the mode list given to only those that are valid
+                    # prefix mode characters.
+                    outgoing_modes = [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
+                    log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
+                              irc.name, modes, outgoing_modes, irc.protoname)
+
+                    # If the Automode bot is missing, send the mode through the PyLink server.
+                    if not modebot_uid:
+                        modebot_uid = irc.sid
+
+                    irc.proto.mode(modebot_uid, channel, outgoing_modes)
+
+                    # Create a hook payload to support plugins like relay.
+                    irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
+                                  {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
+utils.add_hook(handle_join, 'JOIN')
