@@ -4,6 +4,7 @@ corecommands.py - Implements core PyLink commands.
 
 import gc
 import sys
+import importlib
 
 from . import control
 from pylinkirc import utils, world
@@ -76,6 +77,7 @@ def load(irc, source, args):
             log.exception('Failed to load plugin %r: ImportError.', name)
         raise
     else:
+        importlib.reload(pl)
         if hasattr(pl, 'main'):
             log.debug('Calling main() function of plugin %r', pl)
             pl.main(irc)
