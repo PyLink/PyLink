@@ -8,14 +8,10 @@ import os
 import re
 import threading
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-import utils
-from log import log
-from classes import *
-
-from ts6_common import *
+from pylinkirc import utils
+from pylinkirc.classes import *
+from pylinkirc.log import log
+from pylinkirc.protocols.ts6_common import *
 
 class InspIRCdProtocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -89,7 +85,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a Server ID (SID). TS is optional, and defaults
@@ -104,20 +100,31 @@ class InspIRCdProtocol(TS6BaseProtocol):
         server = server or self.irc.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
+
         if not server:
             raise LookupError('No such PyLink client exists.')
 
+        # Strip out list-modes, they shouldn't ever be sent in FJOIN (protocol rules).
+        modes = modes or self.irc.channels[channel].modes
         orig_ts = self.irc.channels[channel].ts
         ts = ts or orig_ts
-        self.updateTS(channel, ts)
 
-        log.debug("sending SJOIN to %s%s with ts %s (that's %r)", channel, self.irc.name, ts,
-                  time.strftime("%c", time.localtime(ts)))
-        # Strip out list-modes, they shouldn't ever be sent in FJOIN (protocol rules).
-        modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
+        banmodes = []
+        regularmodes = []
+        for mode in modes:
+            modechar = mode[0][-1]
+            if modechar in self.irc.cmodes['*A']:
+                # Track bans separately (they are sent as a normal FMODE instead of in FJOIN.
+                # However, don't reset bans that have already been set.
+                if (modechar, mode[1]) not in self.irc.channels[channel].modes:
+                    banmodes.append(mode)
+            else:
+                regularmodes.append(mode)
+
         uids = []
-        changedmodes = []
+        changedmodes = set(modes)
         namelist = []
+
         # We take <users> as a list of (prefixmodes, uid) pairs.
         for userpair in users:
             assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
@@ -125,19 +132,25 @@ class InspIRCdProtocol(TS6BaseProtocol):
             namelist.append(','.join(userpair))
             uids.append(user)
             for m in prefixes:
-                changedmodes.append(('+%s' % m, user))
+                changedmodes.add(('+%s' % m, user))
             try:
                 self.irc.users[user].channels.add(channel)
             except KeyError:  # Not initialized yet?
                 log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
-        if ts <= orig_ts:
-            # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+
         namelist = ' '.join(namelist)
         self._send(server, "FJOIN {channel} {ts} {modes} :{users}".format(
                 ts=ts, users=namelist, channel=channel,
                 modes=self.irc.joinModes(modes)))
         self.irc.channels[channel].users.update(uids)
+
+        if banmodes:
+            # Burst ban modes if there are any.
+            # <- :1ML FMODE #test 1461201525 +bb *!*@bad.user *!*@rly.bad.user
+            self._send(server, "FMODE {channel} {ts} {modes} ".format(
+                ts=ts, channel=channel, modes=self.irc.joinModes(banmodes)))
+
+        self.updateTS(channel, ts, changedmodes)
 
     def _operUp(self, target, opertype=None):
         """Opers a client up (internal function specific to InspIRCd).
@@ -280,10 +293,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(source, 'PING %s %s' % (source, target))
 
     def numeric(self, source, numeric, target, text):
-        raise NotImplementedError("Numeric sending is not yet implemented by this "
-                                  "protocol module. WHOIS requests are handled "
-                                  "locally by InspIRCd servers, so there is no "
-                                  "need for PyLink to send numerics directly yet.")
+        """Sends raw numerics from a server to a remote client."""
+        # InspIRCd 2.0 syntax (undocumented):
+        # Essentially what this does is push the raw numeric text after the first ":" towards the
+        # given user.
+        # <- :70M PUSH 0ALAAAAAA ::midnight.vpn 422 PyLink-devel :Message of the day file is missing.
+
+        # Note: InspIRCd 2.2 uses a new NUM command in this format:
+        # :<sid> NUM <numeric source sid> <target uuid> <3 digit number> <params>
+        # Take this into consideration if we ever target InspIRCd 2.2, even though m_spanningtree
+        # does provide backwards compatibility for commands like this. -GLolol
+        self._send(self.irc.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
 
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
@@ -487,14 +507,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
 
-        their_ts = int(args[1])
-        our_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, their_ts)
-
         modestring = args[2:-1] or args[2]
         parsedmodes = self.irc.parseModes(channel, modestring)
         self.irc.applyModes(channel, parsedmodes)
         namelist = []
+
+        # Keep track of other modes that are added due to prefix modes being joined too.
+        changedmodes = set(parsedmodes)
+
         for user in userlist:
             modeprefix, user = user.split(',', 1)
 
@@ -506,9 +526,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
-            if their_ts <= our_ts:
-                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in modeprefix])
+
+            # Only save mode changes if the remote has lower TS than us.
+            changedmodes |= {('+%s' % mode, user) for mode in modeprefix}
+
             self.irc.channels[channel].users.add(user)
+
+        # Statekeeping with timestamps
+        their_ts = int(args[1])
+        our_ts = self.irc.channels[channel].ts
+        self.updateTS(channel, their_ts, changedmodes)
+
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
     def handle_uid(self, numeric, command, args):
@@ -516,10 +544,16 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
         realname = args[-1]
-        self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+        self.irc.users[uid] = userobj = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+
         parsedmodes = self.irc.parseModes(uid, [args[8], args[9]])
-        log.debug('Applying modes %s for %s', parsedmodes, uid)
         self.irc.applyModes(uid, parsedmodes)
+
+        if (self.irc.umodes.get('servprotect'), None) in userobj.modes:
+            # Services are usually given a "Network Service" WHOIS, so
+            # set that as the opertype.
+            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'Network Service'}])
+
         self.irc.servers[numeric].users.add(uid)
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -579,7 +613,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
         sourceuser = numeric
         targetuser = args[0]
-        self._send(targetuser, 'IDLE %s %s 0' % (sourceuser, self.irc.users[targetuser].ts))
+
+        if self.irc.serverdata.get("use_experimental_whois"):
+            # EXPERIMENTAL HACK: make PyLink handle all WHOIS requests if configured to do so.
+            # This works by silently ignoring the idle time request, and sending our WHOIS data as
+            # raw numerics instead.
+            return {'target': args[0], 'parse_as': 'WHOIS'}
+        else:
+            self._send(targetuser, 'IDLE %s %s 0' % (sourceuser, self.irc.users[targetuser].ts))
 
     def handle_ftopic(self, numeric, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""
@@ -603,31 +644,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # We don't actually need to process this; just send the hook so plugins can use it
         return {'target': target, 'channel': channel}
 
-    def handle_encap(self, numeric, command, args):
-        """Handles incoming encapsulated commands (ENCAP). Hook arguments
-        returned by this should have a parse_as field, that sets the correct
-        hook name for the message.
+    def handle_knock(self, numeric, command, args):
+        """Handles channel KNOCKs."""
+        # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
+        channel = self.irc.toLower(args[0])
+        text = args[1]
+        return {'channel': channel, 'text': text}
 
-        For InspIRCd, the only ENCAP command we handle right now is KNOCK."""
-        # <- :70MAAAAAA ENCAP * KNOCK #blah :agsdfas
-        # From charybdis TS6 docs: https://github.com/grawity/irc-docs/blob/03ba884a54f1cef2193cd62b6a86803d89c1ac41/server/ts6.txt
-
-        # ENCAP
-        # source: any
-        # parameters: target server mask, subcommand, opt. parameters...
-
-        # Sends a command to matching servers. Propagation is independent of
-        # understanding the subcommand.
-
-        targetmask = args[0]
-        real_command = args[1]
-        if targetmask == '*' and real_command == 'KNOCK':
-            channel = self.irc.toLower(args[2])
-            text = args[3]
-            return {'parse_as': real_command, 'channel': channel,
-                    'text': text}
-
-    def handle_opertype(self, numeric, command, args):
+    def handle_opertype(self, target, command, args):
         """Handles incoming OPERTYPE, which is used to denote an oper up.
 
         This calls the internal hook CLIENT_OPERED, sets the internal
@@ -635,13 +659,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # This is used by InspIRCd to denote an oper up; there is no MODE
         # command sent for it.
         # <- :70MAAAAAB OPERTYPE Network_Owner
+        # Replace escaped _ in opertypes with spaces for InspIRCd 2.0.
+        opertype = args[0].replace("_", " ")
+
+        # Set umode +o on the target.
         omode = [('+o', None)]
-        self.irc.users[numeric].opertype = opertype = args[0].replace("_", " ")
-        self.irc.applyModes(numeric, omode)
-        # OPERTYPE is essentially umode +o and metadata in one command;
-        # we'll call that too.
-        self.irc.callHooks([numeric, 'CLIENT_OPERED', {'text': opertype}])
-        return {'target': numeric, 'modes': omode}
+        self.irc.applyModes(target, omode)
+
+        # Call the CLIENT_OPERED hook that protocols use. The MODE hook
+        # payload is returned below.
+        self.irc.callHooks([target, 'CLIENT_OPERED', {'text': opertype}])
+        return {'target': target, 'modes': omode}
 
     def handle_fident(self, numeric, command, args):
         """Handles FIDENT, used for denoting ident changes."""
@@ -712,7 +740,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """
         uid = args[0]
 
-        if args[1] == 'accountname':
+        if args[1] == 'accountname' and uid in self.irc.users:
             # <- :00A METADATA 1MLAAAJET accountname :
             # <- :00A METADATA 1MLAAAJET accountname :tester
             # Sets the services login name of the client.
@@ -724,5 +752,18 @@ class InspIRCdProtocol(TS6BaseProtocol):
         Stub VERSION handler (does nothing) to override the one in ts6_common.
         """
         pass
+
+    def handle_kill(self, source, command, args):
+        """Handles incoming KILLs."""
+        killed = args[0]
+        # Depending on whether the IRCd sends explicit QUIT messages for
+        # killed clients, the user may or may not have automatically been
+        # removed from our user list.
+        # If not, we have to assume that KILL = QUIT and remove them
+        # ourselves.
+        data = self.irc.users.get(killed)
+        if data:
+            self.removeClient(killed)
+        return {'target': killed, 'text': args[1], 'userdata': data}
 
 Class = InspIRCdProtocol

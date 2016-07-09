@@ -1,27 +1,42 @@
 #!/usr/bin/env python3
+"""
+PyLink IRC Services launcher.
+"""
 
 import os
 import sys
-
-# Change directory to the folder containing PyLink's source
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-# This must be done before conf imports, so we get the real conf instead of testing one.
-import world
-world.testing = False
-
-import conf
-from log import log
-import classes
-import utils
-import coreplugin
+try:
+    from pylinkirc import world, conf, __version__
+except ImportError:
+    sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
+                     "running PyLink from source, please install PyLink first using 'python3 "
+                     "setup.py install [--user]'\n")
+    sys.exit(1)
 
 if __name__ == '__main__':
-    log.info('PyLink %s starting...', world.version)
+    import argparse
 
-    # Write a PID file.
-    with open('%s.pid' % conf.confname, 'w') as f:
-        f.write(str(os.getpid()))
+    parser = argparse.ArgumentParser(description='Starts an instance of PyLink IRC Services.')
+    parser.add_argument('config', help='specifies the path to the config file (defaults to pylink.yml)', nargs='?', default='pylink.yml')
+    parser.add_argument("-v", "--version", help="displays the program version and exits", action='store_true')
+    parser.add_argument("-n", "--no-pid", help="skips generating PID files", action='store_true')
+    args = parser.parse_args()
+
+    if args.version:  # Display version and exit
+        print('PyLink ' + __version__)
+        sys.exit()
+
+    # Load the config
+    conf.loadConf(args.config)
+
+    from pylinkirc.log import log
+    from pylinkirc import classes, utils, coremods
+    log.info('PyLink %s starting...', __version__)
+
+    # Write a PID file unless specifically told not to.
+    if not args.no_pid:
+        with open('%s.pid' % conf.confname, 'w') as f:
+            f.write(str(os.getpid()))
 
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
@@ -30,7 +45,7 @@ if __name__ == '__main__':
     # dynamically depending on which were configured.
     for plugin in to_load:
         try:
-            world.plugins[plugin] = pl = utils.loadModuleFromFolder(plugin, world.plugins_folder)
+            world.plugins[plugin] = pl = utils.loadPlugin(plugin)
         except (OSError, ImportError) as e:
             log.exception('Failed to load plugin %r: %s: %s', plugin, type(e).__name__, str(e))
         else:

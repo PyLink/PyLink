@@ -1,21 +1,14 @@
 """
 Changehost plugin - automatically changes the hostname of matching users.
 """
-
-# Import hacks to access utils and log.
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pylinkirc import utils, world
+from pylinkirc.log import log
 
 import string
 
 # ircmatch library from https://github.com/mammon-ircd/ircmatch
 # (pip install ircmatch)
 import ircmatch
-
-import utils
-import world
-from log import log
 
 # Characters allowed in a hostname.
 allowed_chars = string.ascii_letters + '-./:' + string.digits
@@ -37,12 +30,8 @@ def _changehost(irc, target, args):
                     "Changehost will not function correctly!", irc.name)
         return
 
-    # Match against both the user's IP and real host.
-    target_host = irc.getHostmask(target, realhost=True)
-    target_ip = irc.getHostmask(target, ip=True)
-
     for host_glob, host_template in changehost_hosts.items():
-        if ircmatch.match(0, host_glob, target_host) or ircmatch.match(0, host_glob, target_ip):
+        if irc.matchHost(host_glob, target):
             # This uses template strings for simple substitution:
             # https://docs.python.org/3/library/string.html#template-strings
             template = string.Template(host_template)

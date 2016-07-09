@@ -11,16 +11,15 @@ import threading
 from random import randint
 import time
 import socket
-import threading
 import ssl
 import hashlib
 from copy import deepcopy
 import inspect
 
-from log import *
-import world
-import utils
-import structures
+import ircmatch
+
+from . import world, utils, structures, __version__
+from .log import *
 
 ### Exceptions
 
@@ -45,7 +44,7 @@ class Irc():
         self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.bot_clients = {}
-        self.protoname = proto.__name__
+        self.protoname = proto.__name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = proto.Class(self)
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
@@ -106,9 +105,10 @@ class Irc():
         self.pseudoclient = None
         self.lastping = time.time()
 
-        # Internal variable to set the place the last command was called (in PM
+        # Internal variable to set the place and caller of the last command (in PM
         # or in a channel), used by fantasy command support.
         self.called_by = None
+        self.called_in = None
 
         # Intialize the server, channel, and user indexes to be populated by
         # our protocol module. For the server index, we can add ourselves right
@@ -148,9 +148,8 @@ class Irc():
 
         # This max nick length starts off as the config value, but may be
         # overwritten later by the protocol module if such information is
-        # received. Note that only some IRCds (InspIRCd) give us nick length
-        # during link, so it is still required that the config value be set!
-        self.maxnicklen = self.serverdata['maxnicklen']
+        # received. It defaults to 30.
+        self.maxnicklen = self.serverdata.get('maxnicklen', 30)
 
         # Defines a list of supported prefix modes.
         self.prefixmodes = {'o': '@', 'v': '+'}
@@ -463,9 +462,21 @@ class Irc():
             cmd = 'PYLINK_SELF_PRIVMSG'
         self.callHooks([source, cmd, {'target': target, 'text': text}])
 
-    def reply(self, text, notice=False, source=None):
+    def reply(self, text, notice=False, source=None, private=False, force_privmsg_in_private=False):
         """Replies to the last caller in the right context (channel or PM)."""
-        self.msg(self.called_by, text, notice=notice, source=source)
+
+        # Private reply is enabled, or the caller was originally a PM
+        if private or (self.called_in in self.users):
+            if not force_privmsg_in_private:
+                # For private replies, the default is to override the notice=True/False argument,
+                # and send replies as notices regardless. This is standard behaviour for most
+                # IRC services, but can be disabled if force_privmsg_in_private is given.
+                notice = True
+            target = self.called_by
+        else:
+            target = self.called_in
+
+        self.msg(target, text, notice=notice, source=source)
 
     def toLower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
@@ -486,6 +497,11 @@ class Irc():
         # B = Mode that changes a setting and always has a parameter.
         # C = Mode that changes a setting and only has a parameter when set.
         # D = Mode that changes a setting and never has a parameter.
+
+        if type(args) == str:
+            # If the modestring was given as a string, split it into a list.
+            args = args.split()
+
         assert args, 'No valid modes were supplied!'
         usermodes = not utils.isChannel(target)
         prefix = ''
@@ -502,10 +518,6 @@ class Irc():
             oldmodes = self.users[target].modes
         else:
             log.debug('(%s) Using self.cmodes for this query: %s', self.name, self.cmodes)
-
-            if target not in self.channels:
-                log.warning('(%s) Possible desync! Mode target %s is not in the channels index.', self.name, target)
-                return []
 
             supported_modes = self.cmodes
             oldmodes = self.channels[target].modes
@@ -633,10 +645,13 @@ class Irc():
                 else:
                     modelist.discard(real_mode)
         log.debug('(%s) Final modelist: %s', self.name, modelist)
-        if usermodes:
-            self.users[target].modes = modelist
-        else:
-            self.channels[target].modes = modelist
+        try:
+            if usermodes:
+                self.users[target].modes = modelist
+            else:
+                self.channels[target].modes = modelist
+        except KeyError:
+            log.warning("(%s) Invalid MODE target %s (usermodes=%s)", self.name, target, usermodes)
 
     @staticmethod
     def _flip(mode):
@@ -738,6 +753,10 @@ class Irc():
         prefix = '+'  # Assume we're adding modes unless told otherwise
         modelist = ''
         args = []
+
+        # Sort modes alphabetically like a conventional IRCd.
+        modes = sorted(modes)
+
         for modepair in modes:
             mode, arg = modepair
             assert len(mode) in (1, 2), "Incorrect length of a mode (received %r)" % mode
@@ -771,7 +790,7 @@ class Irc():
         Returns a detailed version string including the PyLink daemon version,
         the protocol module in use, and the server hostname.
         """
-        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (world.version, self.serverdata['hostname'], self.protoname)
+        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (__version__, self.serverdata['hostname'], self.protoname)
         return fullversion
 
     ### State checking functions
@@ -853,6 +872,16 @@ class Irc():
 
         return '%s!%s@%s' % (nick, ident, host)
 
+    def getFriendlyName(self, entityid):
+        """
+        Returns the friendly name of a SID or UID (server name for SIDs, nick for UID)."""
+        if entityid in self.servers:
+            return self.servers[entityid].name
+        elif entityid in self.users:
+            return self.users[entityid].nick
+        else:
+            raise KeyError("Unknown UID/SID %s" % entityid)
+
     def isOper(self, uid, allowAuthed=True, allowOper=True):
         """
         Returns whether the given user has operator status on PyLink. This can be achieved
@@ -879,6 +908,61 @@ class Irc():
                         self.getHostmask(uid), lastfunc)
             raise utils.NotAuthenticatedError("You are not authenticated!")
         return True
+
+    def matchHost(self, glob, target, ip=True, realhost=True):
+        """
+        Checks whether the given host, or given UID's hostmask matches the given nick!user@host
+        glob.
+
+        If the target given is a UID, and the ip or realhost options are True, this will also match
+        against the target's IP address and real host, respectively.
+        """
+        # Get the corresponding casemapping value used by ircmatch.
+        casemapping = getattr(ircmatch, self.proto.casemapping)
+
+        # Try to convert target into a UID. If this fails, it's probably a hostname.
+        target = self.nickToUid(target) or target
+
+        # Prepare a list of hosts to check against.
+        if target in self.users:
+            if glob.startswith(('$', '!$')):
+                # !$exttarget inverts the given match.
+                invert = glob.startswith('!$')
+
+                # Exttargets start with $. Skip regular ban matching and find the matching ban handler.
+                glob = glob.lstrip('$!')
+                exttargetname = glob.split(':', 1)[0]
+                handler = world.exttarget_handlers.get(exttargetname)
+
+                if handler:
+                    # Handler exists. Return what it finds.
+                    result = handler(self, glob, target)
+                    log.debug('(%s) Got %s from exttarget %s in matchHost() glob $%s for target %s',
+                              self.name, result, exttargetname, glob, target)
+                    if invert:  # Anti-exttarget was specified.
+                        result = not result
+                    return result
+                else:
+                    log.debug('(%s) Unknown exttarget %s in matchHost() glob $%s', self.name,
+                              exttargetname, glob)
+                    return False
+
+            hosts = {self.getHostmask(target)}
+
+            if ip:
+                hosts.add(self.getHostmask(target, ip=True))
+
+            if realhost:
+                hosts.add(self.getHostmask(target, ip=True))
+        else:  # We were given a host, use that.
+            hosts = [target]
+
+        # Iterate over the hosts to match using ircmatch.
+        for host in hosts:
+            if ircmatch.match(casemapping, glob, host):
+                return True
+
+        return False
 
 class IrcUser():
     """PyLink IRC user class."""
@@ -1073,23 +1157,57 @@ class Protocol():
         log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
         self.irc.servers[sid].users.discard(numeric)
 
-    def updateTS(self, channel, their_ts):
+    def updateTS(self, channel, their_ts, modes=[]):
         """
-        Compares the current TS of the channel given with the new TS, resetting
-        all modes we have if the one given is older.
+        Merges modes of a channel given the remote TS and a list of modes.
         """
 
-        our_ts = self.irc.channels[channel].ts
-
-        if their_ts < our_ts:
-            # Channel timestamp was reset on burst
-            log.debug('(%s) Setting channel TS of %s to %s from %s',
-                      self.irc.name, channel, their_ts, our_ts)
-            self.irc.channels[channel].ts = their_ts
-            # When TS is reset, clear all modes we currently have
+        def _clear():
+            log.debug("(%s) Clearing modes from channel %s due to TS change", self.irc.name,
+                      channel)
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
                 p.clear()
+
+        def _apply():
+            if modes:
+                log.debug("(%s) Applying modes on channel %s (TS ok)", self.irc.name,
+                          channel)
+                self.irc.applyModes(channel, modes)
+
+        our_ts = self.irc.channels[channel].ts
+        assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
+        assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
+
+        if their_ts < our_ts:
+            # Their TS is older than ours. We should clear our stored modes for the channel and
+            # apply the ones in the queue to be set. This is regardless of whether we're sending
+            # outgoing modes or receiving some - both are handled the same with a "received" TS,
+            # and comparing it with the one we have.
+            log.debug("(%s/%s) received TS of %s is lower than ours %s; setting modes %s",
+                      self.irc.name, channel, their_ts, our_ts, modes)
+
+            # Update the channel TS to theirs regardless of whether the mode setting passes.
+            log.debug('(%s) Setting channel TS of %s to %s from %s',
+                      self.irc.name, channel, their_ts, our_ts)
+            self.irc.channels[channel].ts = their_ts
+
+            _clear()
+            _apply()
+
+        elif their_ts == our_ts:
+            log.debug("(%s/%s) remote TS of %s is equal to ours %s; setting modes %s",
+                      self.irc.name, channel, their_ts, our_ts, modes)
+            # Their TS is equal to ours. Merge modes.
+            _apply()
+
+        elif their_ts > our_ts:
+            log.debug("(%s/%s) remote TS of %s is higher than ours %s; setting modes %s",
+                      self.irc.name, channel, their_ts, our_ts, modes)
+            # Their TS is younger than ours. Clear the state and replace the modes for the channel
+            # with the ones being set.
+            _clear()
+            _apply()
 
     def _getSid(self, sname):
         """Returns the SID of a server with the given name, if present."""

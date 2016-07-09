@@ -3,6 +3,9 @@
 !example-*.yml
 !.*.yml
 
+# Ignore automatically generated version for normal commits. This is bumped manually when needed.
+__init__.py
+
 env/
 build/
 __pycache__/
@@ -13,3 +16,6 @@ __pycache__/
 *.db
 *.pid
 *.pem
+.eggs
+*.egg-info/
+dist/

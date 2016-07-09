@@ -9,16 +9,13 @@ access the global logger object by importing "log" from this module
 import logging
 import sys
 import os
-import world
 
-from conf import conf, confname
+from . import world
+from .conf import conf, confname
 
 stdout_level = conf['logging'].get('stdout') or 'INFO'
 
-# Set the logging directory to $CURDIR/log, creating it if it doesn't
-# already exist
-curdir = os.path.dirname(os.path.realpath(__file__))
-logdir = os.path.join(curdir, 'log')
+logdir = os.path.join(os.getcwd(), 'log')
 os.makedirs(logdir, exist_ok=True)
 
 _format = '%(asctime)s [%(levelname)s] %(message)s'

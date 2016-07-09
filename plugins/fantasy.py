@@ -1,11 +1,6 @@
 # fantasy.py: Adds FANTASY command support, to allow calling commands in channels
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import utils
-import world
-from log import log
+from pylinkirc import utils, world
+from pylinkirc.log import log
 
 def handle_fantasy(irc, source, command, args):
     """Fantasy command handler."""
@@ -58,7 +53,7 @@ def handle_fantasy(irc, source, command, args):
                         text = orig_text[len(prefix):]
 
                         # Finally, call the bot command and loop to the next bot.
-                        sbot.call_cmd(irc, source, text, called_by=channel, notice=False)
+                        sbot.call_cmd(irc, source, text, called_in=channel)
                         continue
 
 utils.add_hook(handle_fantasy, 'PRIVMSG')

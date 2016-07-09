@@ -1,12 +1,8 @@
 # commands.py: base PyLink commands
-import sys
-import os
 from time import ctime
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import utils
-from log import log
-import world
+from pylinkirc import utils, __version__, world
+from pylinkirc.log import log
 
 @utils.add_cmd
 def status(irc, source, args):
@@ -39,7 +35,8 @@ def showuser(irc, source, args):
         irc.reply('Error: Unknown user %r.' % target)
         return
 
-    f = lambda s: irc.msg(source, s)
+    f = lambda s: irc.reply(s, private=True)
+
     userobj = irc.users[u]
     f('Showing information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
       userobj.host, userobj.realname))
@@ -77,14 +74,15 @@ def showchan(irc, source, args):
         irc.reply('Error: Unknown channel %r.' % channel)
         return
 
-    f = lambda s: irc.msg(source, s)
+    f = lambda s: irc.reply(s, private=True)
+
     c = irc.channels[channel]
     # Only show verbose info if caller is oper or is in the target channel.
     verbose = source in c.users or irc.isOper(source)
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
-        irc.msg(source, 'Error: Unknown channel %r.' % channel)
+        irc.reply('Error: Unknown channel %r.' % channel, private=True)
         return
 
     nicks = [irc.users[u].nick for u in c.users]
@@ -114,7 +112,7 @@ def version(irc, source, args):
     """takes no arguments.
 
     Returns the version of the currently running PyLink instance."""
-    irc.reply("PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % world.version)
+    irc.reply("PyLink version \x02%s\x02, released under the Mozilla Public License version 2.0." % __version__)
     irc.reply("The source of this program is available at \x02%s\x02." % world.source)
 
 @utils.add_cmd

@@ -1,12 +1,8 @@
 # servprotect.py: Protects against KILL and nick collision floods
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from expiringdict import ExpiringDict
 
-import utils
-from log import log
+from pylinkirc import utils
+from pylinkirc.log import log
 
 # TODO: make length and time configurable
 savecache = ExpiringDict(max_len=5, max_age_seconds=10)

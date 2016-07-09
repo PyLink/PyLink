@@ -1,4 +1,4 @@
-# This is a sample configuration file for PyLink. You'll likely want to rename it to config.yml
+# This is a sample configuration file for PyLink. You'll likely want to rename it to pylink.yml
 # and begin your configuration there.
 
 # Note: lines starting with a "#" are comments and will be ignored.
@@ -6,7 +6,7 @@
 
 bot:
     # Sets nick, user/ident, and real name.
-    nick: pylink
+    nick: PyLink
     ident: pylink
     realname: PyLink Service Client
 
@@ -29,6 +29,17 @@ bot:
     # Determines whether hideoper modes should be respected in WHOIS responses.
     # Defaults to true if not specified.
     whois_use_hideoper: true
+
+    # Determines whether PyLink service clients should protect themselves from
+    # kicks, kills, etc. using IRCd-side servprotect modes. For this to work
+    # properly, this requires that PyLink be U-Lined (on most IRCds). Defaults to
+    # False.
+    protect_services: false
+
+    # Determines how long plugins should wait (in seconds) before flushing their
+    # databases to disk. Defaults to 300 seconds. Changes here require a reload
+    # of all database-enabled plugins to take effect.
+    save_delay: 300
 
 login:
     # PyLink administrative login - Change this, or the service will not start!
@@ -71,7 +82,8 @@ servers:
         # There must be at least one # in the entry.
         sidrange: "8##"
 
-        # Autojoin channels
+        # Autojoin channels. Leave this as an empty list or remove the key if
+        # you don't want to have service bots join any channels by default.
         channels: ["#pylink"]
 
         # Sets the protocol module to use - see the protocols/ folder for a list
@@ -88,7 +100,8 @@ servers:
         # not set.
         pingfreq: 90
 
-        # Separator character (used by relay)
+        # Separator character (used by relay). Making this include anything other
+        # than letters, numbers, or /|_`-[]^ will void your support.
         separator: "/"
 
         # If enabled, this opts this network out of relay IP sharing. i.e. this network
@@ -98,7 +111,7 @@ servers:
 
         # Sets the max nick length for the network. It is important this is
         # set correctly, or PyLink might introduce a nick that is too long and
-        # cause netsplits!
+        # cause netsplits! This defaults to 30 if not set.
         maxnicklen: 30
 
         # Toggles SSL for this network. Defaults to false if not specified, and
@@ -119,6 +132,13 @@ servers:
         # This setting defaults to sha256.
         #ssl_fingerprint_type: sha256
 
+        # The following option is specific to InspIRCd networks:
+
+        # Force PyLink to handle WHOIS requests locally for all its clients
+        # (experimental). This is required if you want custom WHOIS handlers
+        # implemented by plugins like relay to work. Defaults to false.
+        #use_experimental_whois: false
+
     ts6net:
         ip: ::1
 
@@ -135,13 +155,8 @@ servers:
         netname: "some TS6 network"
         sidrange: "8P#"
 
-        # Leave this as an empty list if you don't want to join any channels.
-        channels: []
-
         protocol: "ts6"
         autoconnect: 5
-        pingfreq: 30
-        maxnicklen: 30
 
         # Note: /'s in nicks are automatically converted to |'s for TS6
         # networks, since they don't allow "/" in nicks.
@@ -175,8 +190,6 @@ servers:
         channels: []
         protocol: "unreal"
         autoconnect: 5
-        pingfreq: 30
-        maxnicklen: 30
 
         # This option enables SUPER HACKY UNREAL 3.2 COMPAT mode, which allows
         # PyLink to link to mixed Unreal 3.2/4.0 networks, using a 4.0 server
@@ -208,10 +221,9 @@ servers:
         channels: ["#lounge"]
         protocol: nefarious
         autoconnect: 5
-        maxnicklen: 15
         netname: "Nefarious test server"
-        pingfreq: 30
 
+        # The following options are specific to Nefarious servers.
         # Halfop is optional in Nefarious. This should match your IRCd configuration.
         use_halfop: false
 
@@ -254,6 +266,9 @@ plugins:
     # PyLink is running.
     - networks
 
+    # Ctcp plugin: handles basic CTCP replies (VERSION, etc).
+    - ctcp
+
     # Oper commands plugin: Provides a subset of network management commands.
     # (KILL, JUPE, etc.)
     # Note: these commands will be made available to anyone who's opered on your
@@ -287,11 +302,16 @@ logging:
 
     channels:
         # Log to channels on the specified networks.
-        # Note: DEBUG logging is not supported here: any log level settings
-        # below INFO be automatically raised to INFO.
-        # Log messages are forwarded over relay, so you will get duplicate
+        # Make sure that the main PyLink client is configured to join your
+        # log channel in the channels: blocks for the networks it will be
+        # logging on. It will not automatically join log channels.
+
+        # Note: Log messages are forwarded over relay, so you will get duplicate
         # messages if you add log blocks for more than one channel in one
         # relay.
+
+        # Note 2: DEBUG logging is not supported here: any log level settings
+        # below INFO be automatically raised to INFO.
         loglevel: INFO
 
         inspnet:
@@ -361,28 +381,34 @@ relay:
     hideoper: true
 
     # Determines whether real IPs should be sent across the relay. You should
-    # generally have a consensus with your linked networks whether this should
+    # generally have a consensus with your linked networks on whether this should
     # be turned on. You will see other networks' user IP addresses, and they
     # will see yours. Individual networks can also opt out of IP sharing
     # both ways by defining "relay_no_ips: true" in their server block.
     show_ips: false
 
-    # Whether subservers should be spawned for each relay network (requires
-    # reloading the plugin to change). Defaults to true.
-    spawn_servers: true
-
     # Determines whether NickServ login info should be shown in the /whois output for
-    # relay users. This works on most IRCds EXCEPT InspIRCd.
+    # relay users. For InspIRCd networks, this requires "use_experimental_whois" to be
+    # set.
     # Valid options include "all" (show this to everyone), "opers" (show only to
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_accounts: all
 
     # Determines whether the origin server should be shown in the /whois output for
-    # relay users. This works on most IRCds EXCEPT InspIRCd.
+    # relay users. For InspIRCd networks, this requires "use_experimental_whois" to be
+    # set.
     # Valid options include "all" (show this to everyone), "opers" (show only to
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_server: opers
 
+    # Determines whether netsplits should be hidden as *.net *.split over the relay.
+    # Defaults to False.
+    show_netsplits: false
+
 games:
     # Sets the nick of the Games service, if you're using it.
     nick: Games
+
+automode:
+    # Sets the nick of the Automode service, if you're using it.
+    nick: ModeBot

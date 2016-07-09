@@ -11,9 +11,10 @@ import importlib
 import os
 import collections
 
-from log import log
-import world
-import conf
+from .log import log
+from . import world, conf
+# This is just so protocols and plugins are importable.
+from pylinkirc import protocols, plugins
 
 class NotAuthenticatedError(Exception):
     """
@@ -34,7 +35,7 @@ class IncrementalUIDGenerator():
                                 "%s by defining self.allowedchars and self.length "
                                 "and then calling super().__init__()." % self.__class__.__name__)
         self.uidchars = [self.allowedchars[0]]*self.length
-        self.sid = sid
+        self.sid = str(sid)
 
     def increment(self, pos=None):
         """
@@ -63,9 +64,9 @@ class IncrementalUIDGenerator():
         self.increment()
         return uid
 
-def add_cmd(func, name=None):
+def add_cmd(func, name=None, **kwargs):
     """Binds an IRC command function to the given command name."""
-    world.services['pylink'].add_cmd(func, name=name)
+    world.services['pylink'].add_cmd(func, name=name, **kwargs)
     return func
 
 def add_hook(func, command):
@@ -127,11 +128,17 @@ def loadModuleFromFolder(name, folder):
     m = importlib.machinery.SourceFileLoader(name, fullpath).load_module()
     return m
 
-def getProtocolModule(protoname):
+def loadPlugin(name):
+    """
+    Imports and returns the requested plugin.
+    """
+    return importlib.import_module('pylinkirc.plugins.' + name)
+
+def getProtocolModule(name):
     """
     Imports and returns the protocol module requested.
     """
-    return loadModuleFromFolder(protoname, world.protocols_folder)
+    return importlib.import_module('pylinkirc.protocols.' + name)
 
 def getDatabaseName(dbname):
     """
@@ -139,7 +146,7 @@ def getDatabaseName(dbname):
     current PyLink instance.
 
     This returns '<dbname>.db' if the running config name is PyLink's default
-    (config.yml), and '<dbname>-<config name>.db' for anything else. For example,
+    (pylink.yml), and '<dbname>-<config name>.db' for anything else. For example,
     if this is called from an instance running as './pylink testing.yml', it
     would return '<dbname>-testing.db'."""
     if conf.confname != 'pylink':
@@ -148,8 +155,13 @@ def getDatabaseName(dbname):
     return dbname
 
 class ServiceBot():
+    """
+    PyLink IRC Service class.
+    """
+
     def __init__(self, name, default_help=True, default_request=False, default_list=True,
-                 nick=None, ident=None, manipulatable=False):
+                 nick=None, ident=None, manipulatable=False, extra_channels=None,
+                 desc=None):
         # Service name
         self.name = name
 
@@ -169,6 +181,16 @@ class ServiceBot():
         # spawned.
         self.uids = {}
 
+        # Track what channels other than those defined in the config
+        # that the bot should join by default.
+        self.extra_channels = extra_channels or collections.defaultdict(set)
+
+        # Service description, used in the default help command if one is given.
+        self.desc = desc
+
+        # List of command names to "feature"
+        self.featured_cmds = set()
+
         if default_help:
             self.add_cmd(self.help)
 
@@ -180,6 +202,9 @@ class ServiceBot():
             self.add_cmd(self.listcommands, 'list')
 
     def spawn(self, irc=None):
+        """
+        Spawns instances of this service on all connected networks.
+        """
         # Spawn the new service by calling the PYLINK_NEW_SERVICE hook,
         # which is handled by coreplugin.
         if irc is None:
@@ -188,31 +213,30 @@ class ServiceBot():
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
-    def reply(self, irc, text):
-        """Replies to a message using the right service UID."""
+    def reply(self, irc, text, notice=False, private=False):
+        """Replies to a message as the service in question."""
         servuid = self.uids.get(irc.name)
         if not servuid:
             log.warning("(%s) Possible desync? UID for service %s doesn't exist!", irc.name, self.name)
             return
 
-        irc.reply(text, notice=self.use_notice, source=servuid)
+        irc.reply(text, notice=notice, source=servuid, private=private)
 
-    def call_cmd(self, irc, source, text, called_by=None, notice=True):
+    def call_cmd(self, irc, source, text, called_in=None):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
         """
-        irc.called_by = called_by or source
-
-        # Store this globally so other commands don't have to worry about whether
-        # we're preferring notices.
-        self.use_notice = notice
+        irc.called_in = called_in or source
+        irc.called_by = source
 
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         if cmd not in self.commands:
-            self.reply(irc, 'Error: Unknown command %r.' % cmd)
+            if not cmd.startswith('\x01'):
+                # Ignore invalid command errors from CTCPs.
+                self.reply(irc, 'Error: Unknown command %r.' % cmd)
             log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.getHostmask(source))
             return
 
@@ -226,32 +250,37 @@ class ServiceBot():
                 log.exception('Unhandled exception caught in command %r', cmd)
                 self.reply(irc, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
-    def add_cmd(self, func, name=None):
+    def add_cmd(self, func, name=None, featured=False):
         """Binds an IRC command function to the given command name."""
         if name is None:
             name = func.__name__
         name = name.lower()
 
+        # Mark as a featured command if requested to do so.
+        if featured:
+            self.featured_cmds.add(name)
+
         self.commands[name].append(func)
         return func
 
-    def help(self, irc, source, args):
-        """<command>
+    def _show_command_help(self, irc, command, private=False, shortform=False):
+        """
+        Shows help for the given command.
+        """
+        def _reply(text):
+            """
+            reply() wrapper to handle the private argument.
+            """
+            self.reply(irc, text, private=private)
 
-        Gives help for <command>, if it is available."""
-        try:
-            command = args[0].lower()
-        except IndexError:  # No argument given, just return 'list' output
-            self.listcommands(irc, source, args)
-            return
         if command not in self.commands:
-            self.reply(irc, 'Error: Unknown command %r.' % command)
+            _reply('Error: Unknown command %r.' % command)
             return
         else:
             funcs = self.commands[command]
             if len(funcs) > 1:
-                self.reply(irc, 'The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
-                           % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
+                _reply('The following \x02%s\x02 plugins bind to the \x02%s\x02 command: %s'
+                       % (len(funcs), command, ', '.join([func.__module__ for func in funcs])))
             for func in funcs:
                 doc = func.__doc__
                 mod = func.__module__
@@ -260,12 +289,34 @@ class ServiceBot():
                     # Bold the first line, which usually just tells you what
                     # arguments the command takes.
                     lines[0] = '\x02%s %s\x02' % (command, lines[0])
-                    for line in lines:
-                        # Then, just output the rest of the docstring to IRC.
-                        self.reply(irc, line.strip())
+
+                    if shortform:  # Short form is just the command name + args.
+                        _reply(lines[0].strip())
+                    else:
+                        for line in lines:
+                            # Otherwise, just output the rest of the docstring to IRC.
+                            _reply(line.strip())
                 else:
-                    self.reply(irc, "Error: Command %r doesn't offer any help." % command)
+                    _reply("Error: Command %r doesn't offer any help." % command)
                     return
+
+    def help(self, irc, source, args):
+        """<command>
+
+        Gives help for <command>, if it is available."""
+        try:
+            command = args[0].lower()
+        except IndexError:
+            # No argument given: show service description (if present), 'list' output, and a list
+            # of featured commands.
+            if self.desc:
+                self.reply(irc, self.desc)
+                self.reply(irc, " ")  # Extra newline to unclutter the output text
+
+            self.listcommands(irc, source, args)
+            return
+        else:
+            self._show_command_help(irc, command)
 
     def request(self, irc, source, args):
         self.reply(irc, "Request command stub called.")
@@ -278,10 +329,27 @@ class ServiceBot():
 
         Returns a list of available commands this service has to offer."""
 
-        cmds = list(self.commands.keys())
-        cmds.sort()
-        self.reply(irc, 'Available commands include: %s' % ', '.join(cmds))
-        self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
+        # Don't show CTCP handlers in the public command list.
+        cmds = sorted([cmd for cmd in self.commands.keys() if '\x01' not in cmd])
+
+        if cmds:
+            self.reply(irc, 'Available commands include: %s' % ', '.join(cmds))
+            self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
+        else:
+            self.reply(irc, 'This service doesn\'t provide any public commands.')
+
+        # If there are featured commands, list them by showing the help for each.
+        # These definitions are sent in private to prevent flooding in channels.
+        if self.featured_cmds:
+            self.reply(irc, " ", private=True)
+            self.reply(irc, 'Featured commands include:', private=True)
+            for cmd in sorted(self.featured_cmds):
+                if self.commands.get(cmd):
+                    # Only show featured commands that are both defined and loaded.
+                    # TODO: perhaps plugin unload should remove unused featured command
+                    # definitions automatically?
+                    self._show_command_help(irc, cmd, private=True, shortform=True)
+            self.reply(irc, 'End of command listing.', private=True)
 
 def registerService(name, *args, **kwargs):
     """Registers a service bot."""
@@ -296,6 +364,7 @@ def registerService(name, *args, **kwargs):
 def unregisterService(name):
     """Unregisters an existing service bot."""
     assert name in world.services, "Unknown service %s" % name
+    name = name.lower()
     sbot = world.services[name]
     for ircnet, uid in sbot.uids.items():
         world.networkobjects[ircnet].proto.quit(uid, "Service unloaded.")

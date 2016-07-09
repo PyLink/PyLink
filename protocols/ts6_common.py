@@ -2,18 +2,12 @@
 ts6_common.py: Common base protocol class with functions shared by the UnrealIRCd, InspIRCd, and TS6 protocol modules.
 """
 
-import sys
-import os
 import string
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-
-import utils
-from log import log
-from classes import *
-import structures
+from pylinkirc import utils, structures
+from pylinkirc.classes import *
+from pylinkirc.log import log
+from pylinkirc.protocols.ircs2s_common import *
 
 class TS6SIDGenerator():
     """
@@ -103,7 +97,7 @@ class TS6UIDGenerator(utils.IncrementalUIDGenerator):
          self.length = 6
          super().__init__(sid)
 
-class TS6BaseProtocol(Protocol):
+class TS6BaseProtocol(IRCS2SProtocol):
 
     def __init__(self, irc):
         super().__init__(irc)
@@ -164,6 +158,39 @@ class TS6BaseProtocol(Protocol):
         # is that the target gets removed from the channel userlist, and calling
         # handle_part() does that just fine.
         self.handle_part(target, 'KICK', [channel])
+
+    def kill(self, numeric, target, reason):
+        """Sends a kill from a PyLink client/server."""
+
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        # From TS6 docs:
+        # KILL:
+        # parameters: target user, path
+
+        # The format of the path parameter is some sort of description of the source of
+        # the kill followed by a space and a parenthesized reason. To avoid overflow,
+        # it is recommended not to add anything to the path.
+
+        assert target in self.irc.users, "Unknown target %r for kill()!" % target
+
+        if numeric in self.irc.users:
+            # Killer was an user. Follow examples of setting the path to be "killer.host!killer.nick".
+            userobj = self.irc.users[numeric]
+            killpath = '%s!%s' % (userobj.host, userobj.nick)
+        elif numeric in self.irc.servers:
+            # Sender was a server; killpath is just its name.
+            killpath = self.irc.servers[numeric].name
+        else:
+            # Invalid sender?! This shouldn't happen, but make the killpath our server name anyways.
+            log.warning('(%s) Invalid sender %s for kill(); using our server name instead.',
+                        self.irc.name, numeric)
+            killpath = self.irc.servers[self.irc.sid].name
+
+        self._send(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
+        self.removeClient(target)
 
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
@@ -303,6 +330,13 @@ class TS6BaseProtocol(Protocol):
             command = args[0]
             args = args[1:]
 
+        if command == 'ENCAP':
+            # Special case for encapsulated commands (ENCAP), in forms like this:
+            # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+            command = args[1]
+            args = args[2:]
+            log.debug("(%s) Rewriting incoming ENCAP to command %s (args: %s)", self.irc.name, command, args)
+
         try:
             func = getattr(self, 'handle_'+command.lower())
         except AttributeError:  # unhandled command
@@ -323,19 +357,6 @@ class TS6BaseProtocol(Protocol):
         return {'target': target, 'text': args[1]}
 
     handle_notice = handle_privmsg
-
-    def handle_kill(self, source, command, args):
-        """Handles incoming KILLs."""
-        killed = args[0]
-        # Depending on whether the IRCd sends explicit QUIT messages for
-        # killed clients, the user may or may not have automatically been
-        # removed from our user list.
-        # If not, we have to assume that KILL = QUIT and remove them
-        # ourselves.
-        data = self.irc.users.get(killed)
-        if data:
-            self.removeClient(killed)
-        return {'target': killed, 'text': args[1], 'userdata': data}
 
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
@@ -377,32 +398,6 @@ class TS6BaseProtocol(Protocol):
         oldnick = self.irc.users[user].nick
         self.irc.users[user].nick = user
         return {'target': user, 'ts': int(args[1]), 'oldnick': oldnick}
-
-    def handle_squit(self, numeric, command, args):
-        """Handles incoming SQUITs (netsplits)."""
-        # :70M SQUIT 1ML :Server quit by GL!gl@0::1
-        log.debug('handle_squit args: %s', args)
-        split_server = args[0]
-        affected_users = []
-        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
-        if split_server not in self.irc.servers:
-            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
-            return
-        # Prevent RuntimeError: dictionary changed size during iteration
-        old_servers = self.irc.servers.copy()
-        for sid, data in old_servers.items():
-            if data.uplink == split_server:
-                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
-                args = self.handle_squit(sid, 'SQUIT', [sid, "PyLink: Automatically splitting leaf servers of %s" % sid])
-                affected_users += args['users']
-        for user in self.irc.servers[split_server].users.copy():
-            affected_users.append(user)
-            log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
-            self.removeClient(user)
-        sname = self.irc.servers[split_server].name
-        del self.irc.servers[split_server]
-        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
-        return {'target': split_server, 'users': affected_users, 'name': sname}
 
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients. For topic bursts,

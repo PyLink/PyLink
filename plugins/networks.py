@@ -1,16 +1,9 @@
 """Networks plugin - allows you to manipulate connections to various configured networks."""
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import threading
 
-import utils
-import world
-from log import log
-import conf
-import classes
+from pylinkirc import utils, world, conf, classes
+from pylinkirc.log import log
+from pylinkirc.coremods import control
 
 @utils.add_cmd
 def disconnect(irc, source, args):
@@ -28,36 +21,9 @@ def disconnect(irc, source, args):
     except KeyError:  # Unknown network.
         irc.reply('Error: No such network "%s" (case sensitive).' % netname)
         return
-    irc.reply("Done.")
+    irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
 
-    # Abort the connection! Simple as that.
-    network.disconnect()
-
-    if network.serverdata["autoconnect"] < 1:  # Remove networks if autoconnect is disabled.
-        del world.networkobjects[netname]
-
-@utils.add_cmd
-def connect(irc, source, args):
-    """<network>
-
-    Initiates a connection to the network <network>."""
-    irc.checkAuthenticated(source, allowOper=False)
-    try:
-        netname = args[0]
-        network = world.networkobjects[netname]
-    except IndexError:  # No argument given.
-        irc.reply('Error: Not enough arguments (needs 1: network name (case sensitive)).')
-        return
-    except KeyError:  # Unknown network.
-        irc.reply('Error: No such network "%s" (case sensitive).' % netname)
-        return
-    if network.connection_thread.is_alive():
-        irc.reply('Error: Network "%s" seems to be already connected.' % netname)
-    else:  # Recreate the IRC object.
-        proto = utils.getProtocolModule(network.serverdata.get("protocol"))
-        world.networkobjects[netname] = classes.Irc(netname, proto, conf.conf)
-
-        irc.reply("Done.")
+    control.remove_network(network)
 
 @utils.add_cmd
 def autoconnect(irc, source, args):
@@ -104,9 +70,9 @@ def remote(irc, source, args):
         irc.reply('No text entered!')
         return
 
-    # Force remoteirc.called_by to something private in order to prevent
+    # Force remoteirc.called_in to something private in order to prevent
     # accidental information leakage from replies.
-    remoteirc.called_by = remoteirc.pseudoclient.uid
+    remoteirc.called_in = remoteirc.called_by = remoteirc.pseudoclient.uid
 
     # Set PyLink's identification to admin.
     remoteirc.pseudoclient.identified = "<PyLink networks.remote override>"

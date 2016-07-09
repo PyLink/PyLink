@@ -7,14 +7,10 @@ import sys
 import os
 import re
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-import utils
-from log import log
-
-from classes import *
-from ts6_common import *
+from pylinkirc import utils
+from pylinkirc.classes import *
+from pylinkirc.log import log
+from pylinkirc.protocols.ts6_common import *
 
 class TS6Protocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -77,7 +73,7 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a Server ID (SID). TS is optional, and defaults
@@ -104,19 +100,30 @@ class TS6Protocol(TS6BaseProtocol):
         if not server:
             raise LookupError('No such PyLink client exists.')
 
+        modes = set(modes or self.irc.channels[channel].modes)
         orig_ts = self.irc.channels[channel].ts
         ts = ts or orig_ts
-        self.updateTS(channel, ts)
 
-        log.debug("(%s) sending SJOIN to %s with ts %s (that's %r)", self.irc.name, channel, ts,
-                  time.strftime("%c", time.localtime(ts)))
-        modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
-        changedmodes = []
-        while users[:10]:
+        # Get all the ban modes in a separate list. These are bursted using a separate BMASK
+        # command.
+        banmodes = {k: set() for k in self.irc.cmodes['*A']}
+        regularmodes = []
+        log.debug('(%s) Unfiltered SJOIN modes: %s', self.irc.name, modes)
+        for mode in modes:
+            modechar = mode[0][-1]
+            if modechar in self.irc.cmodes['*A']:
+                # Mode character is one of 'beIq'
+                banmodes[modechar].add(mode[1])
+            else:
+                regularmodes.append(mode)
+        log.debug('(%s) Filtered SJOIN modes to be regular modes: %s, banmodes: %s', self.irc.name, regularmodes, banmodes)
+
+        changedmodes = modes
+        while users[:12]:
             uids = []
             namelist = []
             # We take <users> as a list of (prefixmodes, uid) pairs.
-            for userpair in users[:10]:
+            for userpair in users[:12]:
                 assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
                 prefixes, user = userpair
                 prefixchars = ''
@@ -124,22 +131,34 @@ class TS6Protocol(TS6BaseProtocol):
                     pr = self.irc.prefixmodes.get(prefix)
                     if pr:
                         prefixchars += pr
-                        changedmodes.append(('+%s' % prefix, user))
+                        changedmodes.add(('+%s' % prefix, user))
                 namelist.append(prefixchars+user)
                 uids.append(user)
                 try:
                     self.irc.users[user].channels.add(channel)
                 except KeyError:  # Not initialized yet?
                     log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
-            users = users[10:]
+            users = users[12:]
             namelist = ' '.join(namelist)
             self._send(server, "SJOIN {ts} {channel} {modes} :{users}".format(
                     ts=ts, users=namelist, channel=channel,
-                    modes=self.irc.joinModes(modes)))
+                    modes=self.irc.joinModes(regularmodes)))
             self.irc.channels[channel].users.update(uids)
-        if ts <= orig_ts:
-           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+
+        # Now, burst bans.
+        # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
+        for bmode, bans in banmodes.items():
+            # Max 15-3 = 12 bans per line to prevent cut off. (TS6 allows a max of 15 parameters per
+            # line)
+            if bans:
+                log.debug('(%s) sjoin: bursting mode %s with bans %s, ts:%s', self.irc.name, bmode, bans, ts)
+                bans = list(bans)  # Convert into list for splicing
+                while bans[:12]:
+                    self._send(server, "BMASK {ts} {channel} {bmode} :{bans}".format(ts=ts,
+                               channel=channel, bmode=bmode, bans=' '.join(bans[:12])))
+                    bans = bans[12:]
+
+        self.updateTS(channel, ts, changedmodes)
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
@@ -160,33 +179,15 @@ class TS6Protocol(TS6BaseProtocol):
 
             # On output, at most ten cmode parameters should be sent; if there are more,
             # multiple TMODE messages should be sent.
-            while modes[:9]:
+            while modes[:10]:
                 # Seriously, though. If you send more than 10 mode parameters in
                 # a line, charybdis will silently REJECT the entire command!
-                joinedmodes = self.irc.joinModes(modes = [m for m in modes[:9] if m[0] not in self.irc.cmodes['*A']])
-                modes = modes[9:]
+                joinedmodes = self.irc.joinModes(modes = [m for m in modes[:10] if m[0] not in self.irc.cmodes['*A']])
+                modes = modes[10:]
                 self._send(numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
         else:
             joinedmodes = self.irc.joinModes(modes)
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
-
-    def kill(self, numeric, target, reason):
-        """Sends a kill from a PyLink client/server."""
-
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
-        # KILL:
-        # parameters: target user, path
-
-        # The format of the path parameter is some sort of description of the source of
-        # the kill followed by a space and a parenthesized reason. To avoid overflow,
-        # it is recommended not to add anything to the path.
-
-        assert target in self.irc.users, "Unknown target %r for kill()!" % target
-        self._send(numeric, 'KILL %s :Killed (%s)' % (target, reason))
-        self.removeClient(target)
 
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
@@ -422,15 +423,15 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
         channel = self.irc.toLower(args[1])
         userlist = args[-1].split()
-        their_ts = int(args[0])
-        our_ts = self.irc.channels[channel].ts
-
-        self.updateTS(channel, their_ts)
 
         modestring = args[2:-1] or args[2]
         parsedmodes = self.irc.parseModes(channel, modestring)
         self.irc.applyModes(channel, parsedmodes)
         namelist = []
+
+        # Keep track of other modes that are added due to prefix modes being joined too.
+        changedmodes = set(parsedmodes)
+
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
         for userpair in userlist:
             # charybdis sends this in the form "@+UID1, +UID2, UID3, @UID4"
@@ -455,9 +456,16 @@ class TS6Protocol(TS6BaseProtocol):
                         finalprefix += char
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
-            if their_ts <= our_ts:
-                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in finalprefix])
+
+            # Only save mode changes if the remote has lower TS than us.
+            changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
             self.irc.channels[channel].users.add(user)
+
+        # Statekeeping with timestamps
+        their_ts = int(args[0])
+        our_ts = self.irc.channels[channel].ts
+        self.updateTS(channel, their_ts, changedmodes)
+
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
     def handle_join(self, numeric, command, args):
@@ -658,23 +666,18 @@ class TS6Protocol(TS6BaseProtocol):
                         'your IRCd configuration.', self.irc.name, setter, badmode,
                         charlist[badmode])
 
-    def handle_encap(self, numeric, command, args):
+    def handle_su(self, numeric, command, args):
         """
-        Handles the ENCAP command - encapsulated TS6 commands with a variety of
-        subcommands used for different purposes.
+        Handles SU, which is used for setting login information
         """
-        commandname = args[1]
+        # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+        # <- :00A ENCAP * SU 42XAAAAAC
+        try:
+            account = args[1]  # Account name is being set
+        except IndexError:
+            account = ''  # No account name means a logout
 
-        if commandname == 'SU':
-            # Handles SU, which is used for setting login information
-            # <- :00A ENCAP * SU 42XAAAAAC :GLolol
-            # <- :00A ENCAP * SU 42XAAAAAC
-            try:
-                account = args[3]  # Account name is being set
-            except IndexError:
-                account = ''  # No account name means a logout
-
-            uid = args[2]
-            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+        uid = args[0]
+        self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
 Class = TS6Protocol

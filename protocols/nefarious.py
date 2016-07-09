@@ -2,19 +2,14 @@
 nefarious.py: Nefarious IRCu protocol module for PyLink.
 """
 
-import sys
-import os
 import base64
 import struct
 from ipaddress import ip_address
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-
-import utils
-from log import log
-from classes import *
+from pylinkirc import utils, structures
+from pylinkirc.classes import *
+from pylinkirc.log import log
+from pylinkirc.protocols.ircs2s_common import *
 
 class P10UIDGenerator(utils.IncrementalUIDGenerator):
      """Implements an incremental P10 UID Generator."""
@@ -63,7 +58,7 @@ class P10SIDGenerator():
         self.currentnum += 1
         return sid
 
-class P10Protocol(Protocol):
+class P10Protocol(IRCS2SProtocol):
 
     def __init__(self, irc):
         super().__init__(irc)
@@ -78,6 +73,22 @@ class P10Protocol(Protocol):
 
     def _send(self, source, text):
         self.irc.send("%s %s" % (source, text))
+
+    @staticmethod
+    def access_sort(key):
+        """
+        Sorts (prefixmode, UID) keys based on the prefix modes given.
+        """
+        prefixes, user = key
+        # Add the prefixes given for each userpair, giving each one a set value. This ensures
+        # that 'ohv' > 'oh' > 'ov' > 'o' > 'hv' > 'h' > 'v' > ''
+        accesses = {'o': 100, 'h': 10, 'v': 1}
+
+        num = 0
+        for prefix in prefixes:
+            num += accesses.get(prefix, 0)
+
+        return num
 
     @staticmethod
     def decode_p10_ip(ip):
@@ -454,7 +465,7 @@ class P10Protocol(Protocol):
         else:
             raise LookupError("No such PyLink client exists.")
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a Server ID (SID). TS is optional, and defaults
@@ -474,32 +485,38 @@ class P10Protocol(Protocol):
         if not server:
             raise LookupError('No such PyLink client exists.')
 
+        # Only send non-list modes in the modes argument BURST. Bans and exempts are formatted differently:
+        # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host *!*@bad.host
+        # <- AB B #test2 1460743539 +l 10 ABAAA:vo :%*!*@bad.host
+        # <- AB B #test 1460747615 ABAAA:o :% ~ *!*@test.host
+        modes = modes or self.irc.channels[channel].modes
         orig_ts = self.irc.channels[channel].ts
         ts = ts or orig_ts
-        self.updateTS(channel, ts)
 
-        # Only send non-list modes in BURST. TODO: burst bans and banexempts too
-        modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
+        bans = []
+        exempts = []
+        regularmodes = []
+        for mode in modes:
+            modechar = mode[0][-1]
+            # Store bans and exempts in separate lists for processing, but don't reset bans that have already been set.
+            if modechar in self.irc.cmodes['*A']:
+                if (modechar, mode[1]) not in self.irc.channels[channel].modes:
+                    if modechar == 'b':
+                        bans.append(mode[1])
+                    elif modechar == 'e':
+                        exempts.append(mode[1])
+            else:
+                regularmodes.append(mode)
 
-        changedmodes = []
+        log.debug('(%s) sjoin: bans: %s, exempts: %s, other modes: %s', self.irc.name, bans, exempts, regularmodes)
+
+        changedmodes = set(modes)
         changedusers = []
         namelist = []
 
         # This is annoying because we have to sort our users by access before sending...
         # Joins should look like: A0AAB,A0AAC,ABAAA:v,ABAAB:o,ABAAD,ACAAA:ov
-        # XXX: there HAS to be a better way of doing this
-        def access_sort(key):
-            prefixes, user = key
-            # This is some hocus pocus. Add the prefixes given for each userpair,
-            # giving each one a set value. This ensures that 'ohv' > 'oh' > 'ov' > 'o' > 'hv' > 'h' > 'v' > ''
-            accesses = {'o': 100, 'h': 10, 'v': 1}
-
-            num = 0
-            for prefix in prefixes:
-                num += accesses.get(prefix, 0)
-
-            return num
-        users = sorted(users, key=access_sort)
+        users = sorted(users, key=self.access_sort)
 
         last_prefixes = ''
         for userpair in users:
@@ -520,25 +537,35 @@ class P10Protocol(Protocol):
             last_prefixes = prefixes
             if prefixes:
                 for prefix in prefixes:
-                    changedmodes.append(('+%s' % prefix, user))
+                    changedmodes.add(('+%s' % prefix, user))
 
             self.irc.users[user].channels.add(channel)
 
         namelist = ','.join(namelist)
         log.debug('(%s) sjoin: got %r for namelist', self.irc.name, namelist)
+
+        # Format bans as the last argument if there are any.
+        banstring = ''
+        if bans or exempts:
+            banstring += ' :%'  # Ban string starts with a % if there is anything
+            if bans:
+                banstring += ' '.join(bans)  # Join all bans, separated by a space
+            if exempts:
+                # Exempts are separated from the ban list by a single argument "~".
+                banstring += ' ~ '
+                banstring += ' '.join(exempts)
+
         if modes:  # Only send modes if there are any.
-            self._send(server, "B {channel} {ts} {modes} :{users}".format(
+            self._send(server, "B {channel} {ts} {modes} {users}{banstring}".format(
                        ts=ts, users=namelist, channel=channel,
-                       modes=self.irc.joinModes(modes)))
+                       modes=self.irc.joinModes(regularmodes), banstring=banstring))
         else:
-            self._send(server, "B {channel} {ts} :{users}".format(
-                       ts=ts, users=namelist, channel=channel))
+            self._send(server, "B {channel} {ts} {users}{banstring}".format(
+                       ts=ts, users=namelist, channel=channel, banstring=banstring))
 
         self.irc.channels[channel].users.update(changedusers)
 
-        if ts <= orig_ts:
-           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+        self.updateTS(channel, ts, changedmodes)
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
@@ -945,19 +972,15 @@ class P10Protocol(Protocol):
 
         channel = self.irc.toLower(args[0])
         userlist = args[-1].split()
-        their_ts = int(args[1])
-        our_ts = self.irc.channels[channel].ts
-
-        self.updateTS(channel, their_ts)
 
         bans = []
         if args[-1].startswith('%'):
             # Ban lists start with a %. However, if one argument is "~",
-            # Parse everything after it as an exempt (+e).
+            # parse everything after it as an ban exempt (+e).
             exempts = False
             for host in args[-1][1:].split(' '):
                 if not host:
-                    # Space between % and ~ ignore.
+                    # Space between % and ~; ignore.
                     continue
                 elif host == '~':
                     exempts = True
@@ -979,9 +1002,11 @@ class P10Protocol(Protocol):
         else:
             parsedmodes = []
 
-        # Add the ban list to the list of modes to process.
-        parsedmodes.extend(bans)
+        # This list is used to keep track of prefix modes being added to the mode list.
+        changedmodes = set(parsedmodes)
 
+        # Also add the the ban list to the list of modes to process internally.
+        parsedmodes.extend(bans)
         if parsedmodes:
             self.irc.applyModes(channel, parsedmodes)
 
@@ -991,12 +1016,13 @@ class P10Protocol(Protocol):
         prefixes = ''
 
         userlist = args[-1].split(',')
-        if args[-1] != args[1]:  # Make sure the userlist is the right argument (not the TS).
+        if args[-1] != args[1]:  # Make sure the user list is the right argument (not the TS).
             for userpair in userlist:
                 # This is given in the form UID1,UID2:prefixes. However, when one userpair is given
                 # with a certain prefix, it implicitly applies to all other following UIDs, until
-                # another userpair is given with a prefix. For example: UID1,UID3:o,UID4,UID5 would
-                # assume that UID1 has no prefixes, but UID3-5 all have op when joining.
+                # another userpair is given with a list of prefix modes. For example,
+                # "UID1,UID3:o,UID4,UID5" would assume that UID1 has no prefixes, but that UIDs 3-5
+                # all have op.
                 try:
                     user, prefixes = userpair.split(':')
                 except ValueError:
@@ -1013,10 +1039,15 @@ class P10Protocol(Protocol):
 
                 self.irc.users[user].channels.add(channel)
 
-                if their_ts <= our_ts:
-                    self.irc.applyModes(channel, [('+%s' % mode, user) for mode in prefixes])
+                # Only save mode changes if the remote has lower TS than us.
+                changedmodes |= {('+%s' % mode, user) for mode in prefixes}
 
                 self.irc.channels[channel].users.add(user)
+
+        # Statekeeping with timestamps
+        their_ts = int(args[1])
+        our_ts = self.irc.channels[channel].ts
+        self.updateTS(channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
@@ -1040,6 +1071,7 @@ class P10Protocol(Protocol):
             for channel in oldchans:
                 self.irc.channels[channel].users.discard(source)
                 self.irc.users[source].channels.discard(channel)
+
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
             channel = self.irc.toLower(args[0])
@@ -1139,54 +1171,6 @@ class P10Protocol(Protocol):
         # <- ABAAB Q :Killed (GL_ (bangbang))
         self.removeClient(numeric)
         return {'text': args[0]}
-
-    def handle_kill(self, numeric, command, args):
-        """Handles incoming KILLs."""
-        # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
-        killed = args[0]
-
-        # Back up the target user data before removing it, so we can send it via a hook.
-        data = self.irc.users.get(killed)
-
-        if data:
-            self.removeClient(killed)
-        return {'target': killed, 'text': args[1], 'userdata': data}
-
-    def handle_squit(self, numeric, command, args):
-        """Handles incoming SQUITs."""
-        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
-
-        split_server = self._getSid(args[0])
-
-        affected_users = []
-        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
-
-        if split_server not in self.irc.servers:
-            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
-            return
-
-        # Prevent RuntimeError: dictionary changed size during iteration
-        old_servers = self.irc.servers.copy()
-        # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
-        # remove them and all their users too.
-        for sid, data in old_servers.items():
-            if data.uplink == split_server:
-                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
-                # Recursively run SQUIT on any other hubs this server may have been connected to.
-                args = self.handle_squit(sid, 'SQUIT', [sid, "0",
-                                         "PyLink: Automatically splitting leaf servers of %s" % sid])
-                affected_users += args['users']
-
-        for user in self.irc.servers[split_server].users.copy():
-            affected_users.append(user)
-            log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
-            self.removeClient(user)
-
-        sname = self.irc.servers[split_server].name
-        del self.irc.servers[split_server]
-        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
-
-        return {'target': split_server, 'users': affected_users, 'name': sname}
 
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""

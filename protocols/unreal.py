@@ -9,14 +9,10 @@ import codecs
 import socket
 import re
 
-# Import hacks to access utils and classes...
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-
-import utils
-from log import log
-from classes import *
-from ts6_common import *
+from pylinkirc import utils
+from pylinkirc.classes import *
+from pylinkirc.log import log
+from pylinkirc.protocols.ts6_common import *
 
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
@@ -127,7 +123,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
-    def sjoin(self, server, channel, users, ts=None):
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 
         The sender should always be a server (SID). TS is optional, and defaults
@@ -151,36 +147,46 @@ class UnrealProtocol(TS6BaseProtocol):
         if not server:
             raise LookupError('No such PyLink server exists.')
 
+        changedmodes = set(modes or self.irc.channels[channel].modes)
         orig_ts = self.irc.channels[channel].ts
         ts = ts or orig_ts
-        self.updateTS(channel, ts)
-
-        changedmodes = []
         uids = []
         namelist = []
+
         for userpair in users:
             assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
             prefixes, user = userpair
+
             # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
             # and +a is ~ instead of &.
             # &, ", and ' are used for bursting bans.
             sjoin_prefixes = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+'}
             prefixchars = ''.join([sjoin_prefixes.get(prefix, '') for prefix in prefixes])
+
             if prefixchars:
-                changedmodes + [('+%s' % prefix, user) for prefix in prefixes]
+                changedmodes |= {('+%s' % prefix, user) for prefix in prefixes}
+
             namelist.append(prefixchars+user)
             uids.append(user)
+
             try:
                 self.irc.users[user].channels.add(channel)
             except KeyError:  # Not initialized yet?
                 log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
+
         namelist = ' '.join(namelist)
+
         self._send(server, "SJOIN {ts} {channel} :{users}".format(
                    ts=ts, users=namelist, channel=channel))
+
+        # Burst modes separately. No really, this is what I see UnrealIRCd do! It sends
+        # JOINs on burst and then MODE!
+        if modes:
+            self.mode(server, channel, modes, ts=ts)
+
         self.irc.channels[channel].users.update(uids)
-        if ts <= orig_ts:
-           # Only save our prefix modes in the channel state if our TS is lower than or equal to theirs.
-            self.irc.applyModes(channel, changedmodes)
+
+        self.updateTS(channel, ts, changedmodes)
 
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
@@ -189,20 +195,6 @@ class UnrealProtocol(TS6BaseProtocol):
         target = target or self.irc.uplink
         if not (target is None or source is None):
             self._send(source, 'PING %s %s' % (self.irc.servers[source].name, self.irc.servers[target].name))
-
-    def kill(self, numeric, target, reason):
-        """Sends a kill from a PyLink client/server."""
-        # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
-
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
-        assert target in self.irc.users, "Unknown target %r for kill()!" % target
-
-        # The killpath doesn't really matter here...
-        self._send(numeric, 'KILL %s :%s!PyLink (%s)' % (target, self.irc.serverdata['hostname'], reason))
-        self.removeClient(target)
 
     def mode(self, numeric, target, modes, ts=None):
         """
@@ -320,7 +312,7 @@ class UnrealProtocol(TS6BaseProtocol):
         host = self.irc.serverdata["hostname"]
 
         f('PASS :%s' % self.irc.serverdata["sendpass"])
-        # https://github.com/unrealircd/unrealself.ircd/blob/2f8cb55e/doc/technical/protoctl.txt
+        # https://github.com/unrealircd/unrealircd/blob/2f8cb55e/doc/technical/protoctl.txt
         # We support the following protocol features:
         # SJ3 - extended SJOIN
         # NOQUIT - QUIT messages aren't sent for all users in a netsplit
@@ -550,12 +542,12 @@ class UnrealProtocol(TS6BaseProtocol):
         channel = self.irc.toLower(args[1])
         userlist = args[-1].split()
 
-        our_ts = self.irc.channels[channel].ts
-        their_ts = int(args[0])
-        self.updateTS(channel, their_ts)
-
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
+
+        # Keep track of other modes that are added due to prefix modes being joined too.
+        changedmodes = set(self.irc.channels[channel].modes)
+
         for userpair in userlist:
             if userpair.startswith("&\"'"):  # TODO: handle ban bursts too
                 # &, ", and ' entries are used for bursting bans:
@@ -577,10 +569,16 @@ class UnrealProtocol(TS6BaseProtocol):
                         finalprefix += char
             namelist.append(user)
             self.irc.users[user].channels.add(channel)
+
             # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
-            if their_ts <= our_ts:
-                self.irc.applyModes(channel, [('+%s' % mode, user) for mode in finalprefix])
+            changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
+
             self.irc.channels[channel].users.add(user)
+
+        our_ts = self.irc.channels[channel].ts
+        their_ts = int(args[0])
+        self.updateTS(channel, their_ts, changedmodes)
+
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
     def handle_nick(self, numeric, command, args):
@@ -640,10 +638,21 @@ class UnrealProtocol(TS6BaseProtocol):
         if utils.isChannel(args[0]):
             channel = self.irc.toLower(args[0])
             oldobj = self.irc.channels[channel].deepcopy()
+
             modes = list(filter(None, args[1:]))  # normalize whitespace
             parsedmodes = self.irc.parseModes(channel, modes)
+
             if parsedmodes:
+                if parsedmodes[0][0] == '+&':
+                    # UnrealIRCd uses a & virtual mode to denote mode bounces, meaning that an attempt to set modes
+                    # by us was rejected for some reason (usually due to timestamps). Warn about this and drop the
+                    # mode change to prevent mode floods.
+                    log.warning("(%s) Received mode bounce %s in channel %s! Our TS: %s",
+                                self.irc.name, modes, channel, self.irc.channels[channel].ts)
+                    return
+
                 self.irc.applyModes(channel, parsedmodes)
+
             if numeric in self.irc.servers and args[-1].isdigit():
                 # Sender is a server AND last arg is number. Perform TS updates.
                 their_ts = int(args[-1])

@@ -3,13 +3,10 @@ import sys
 import os
 import re
 
-curdir = os.path.dirname(__file__)
-sys.path += [curdir, os.path.dirname(curdir)]
-import utils
-from log import log
-
-from classes import *
-from ts6 import *
+from pylinkirc import utils
+from pylinkirc.log import log
+from pylinkirc.classes import *
+from pylinkirc.protocols.ts6 import *
 
 class HybridProtocol(TS6Protocol):
     def __init__(self, irc):

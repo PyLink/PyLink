@@ -1,20 +1,17 @@
 """
 games.py: Create a bot that provides game functionality (dice, 8ball, etc).
 """
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import random
 import urllib.request
 import urllib.error
 from xml.etree import ElementTree
 
-import utils
-from log import log
-import world
+from pylinkirc import utils
+from pylinkirc.log import log
 
-gameclient = utils.registerService("Games", manipulatable=True)
+mydesc = "The \x02Games\x02 plugin provides simple games for IRC."
+
+gameclient = utils.registerService("Games", manipulatable=True, desc=mydesc)
 reply = gameclient.reply  # TODO find a better syntax for ServiceBot.reply()
 
 # commands
@@ -47,7 +44,7 @@ def dice(irc, source, args):
     reply(irc, s)
 
 gameclient.add_cmd(dice, 'd')
-gameclient.add_cmd(dice)
+gameclient.add_cmd(dice, featured=True)
 
 eightball_responses = ["It is certain.",
              "It is decidedly so.",
@@ -75,15 +72,14 @@ def eightball(irc, source, args):
     Asks the Magic 8-ball a question.
     """
     reply(irc, random.choice(eightball_responses))
-gameclient.add_cmd(eightball)
+gameclient.add_cmd(eightball, featured=True)
 gameclient.add_cmd(eightball, '8ball')
 gameclient.add_cmd(eightball, '8b')
 
 def fml(irc, source, args):
     """[<id>]
 
-    Displays an entry from fmylife.com. If <id>
-    is not given, fetch a random entry from the API."""
+    Displays an entry from fmylife.com. If <id> is not given, fetch a random entry from the API."""
     try:
         query = args[0]
     except IndexError:
@@ -124,7 +120,7 @@ def fml(irc, source, args):
     s = '\x02#%s [%s]\x02: %s - %s \x02<\x0311%s\x03>\x02' % \
         (fmlid, category, text, votes, url)
     reply(irc, s)
-gameclient.add_cmd(fml)
+gameclient.add_cmd(fml, featured=True)
 
 def die(irc):
     utils.unregisterService('games')
