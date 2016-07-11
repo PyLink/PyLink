@@ -505,6 +505,7 @@ class TS6Protocol(TS6BaseProtocol):
         log.debug('(%s) handle_euid got args: nick=%s ts=%s uid=%s ident=%s '
                   'host=%s realname=%s realhost=%s ip=%s', self.irc.name, nick, ts, uid,
                   ident, host, realname, realhost, ip)
+        assert ts != 0, "Bad TS 0 for user %s" % uid
 
         if ip == '0':  # IP was invalid; something used for services.
             ip = '0.0.0.0'
