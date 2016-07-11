@@ -233,6 +233,50 @@ def match(irc, channel, uid):
             irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
                           {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
 
+def syncacc(irc, source, args):
+    """
+    Syncs Automode access lists to the channel.
+    """
+    irc.checkAuthenticated(source, allowOper=False)
+    try:
+        channel = irc.toLower(args[0])
+    except IndexError:
+        reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
+        return
+
+    for user in irc.channels[channel].users:
+        match(irc, channel, user)
+
+    reply(irc, 'Done.')
+
+modebot.add_cmd(syncacc, featured=True)
+modebot.add_cmd(syncacc, 'sync')
+modebot.add_cmd(syncacc, 'syncaccess')
+
+def clearacc(irc, source, args):
+    """<channel>
+
+    Removes all Automode entries for the given channel.
+    """
+    irc.checkAuthenticated(source, allowOper=False)
+
+    try:
+        channel = irc.toLower(args[0])
+    except IndexError:
+        reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
+        return
+
+    if db.get(irc.name+channel):
+        log.debug("Automode: purging channel pair %s/%s", irc.name, channel)
+        del db[irc.name+channel]
+        reply(irc, "Done. Removed all Automode access entries for \x02%s\x02." %  channel)
+    else:
+        reply(irc, "Error: No Automode access entries exist for \x02%s\x02." % channel)
+
+modebot.add_cmd(clearacc, 'clearaccess')
+modebot.add_cmd(clearacc, 'clear')
+modebot.add_cmd(clearacc, featured=True)
+
 def handle_join(irc, source, command, args):
     """
     Automode JOIN listener. This sets modes accordingly if the person joining matches a mask in the
