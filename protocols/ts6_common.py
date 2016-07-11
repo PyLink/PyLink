@@ -407,7 +407,10 @@ class TS6BaseProtocol(IRCS2SProtocol):
         user = args[0]
         oldnick = self.irc.users[user].nick
         self.irc.users[user].nick = user
-        return {'target': user, 'ts': int(args[1]), 'oldnick': oldnick}
+
+        self.irc.users[user].ts = ts = int(args[1])
+
+        return {'target': user, 'ts': ts, 'oldnick': oldnick}
 
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients. For topic bursts,
