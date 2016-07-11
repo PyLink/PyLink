@@ -150,7 +150,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send(server, "FMODE {channel} {ts} {modes} ".format(
                 ts=ts, channel=channel, modes=self.irc.joinModes(banmodes)))
 
-        self.updateTS(channel, ts, changedmodes)
+        self.updateTS(server, channel, ts, changedmodes)
 
     def _operUp(self, target, opertype=None):
         """Opers a client up (internal function specific to InspIRCd).
@@ -535,7 +535,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # Statekeeping with timestamps
         their_ts = int(args[1])
         our_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, their_ts, changedmodes)
+        self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 

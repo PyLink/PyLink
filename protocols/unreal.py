@@ -186,7 +186,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         self.irc.channels[channel].users.update(uids)
 
-        self.updateTS(channel, ts, changedmodes)
+        self.updateTS(server, channel, ts, changedmodes)
 
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
@@ -577,7 +577,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         our_ts = self.irc.channels[channel].ts
         their_ts = int(args[0])
-        self.updateTS(channel, their_ts, changedmodes)
+        self.updateTS(numeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
 
@@ -657,7 +657,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 # Sender is a server AND last arg is number. Perform TS updates.
                 their_ts = int(args[-1])
                 if their_ts > 0:
-                    self.updateTS(channel, their_ts)
+                    self.updateTS(numeric, channel, their_ts)
             return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
         else:
             log.warning("(%s) received MODE for non-channel target: %r",

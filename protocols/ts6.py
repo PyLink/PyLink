@@ -158,7 +158,7 @@ class TS6Protocol(TS6BaseProtocol):
                                channel=channel, bmode=bmode, bans=' '.join(bans[:12])))
                     bans = bans[12:]
 
-        self.updateTS(channel, ts, changedmodes)
+        self.updateTS(server, channel, ts, changedmodes)
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
@@ -464,7 +464,7 @@ class TS6Protocol(TS6BaseProtocol):
         # Statekeeping with timestamps
         their_ts = int(args[0])
         our_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, their_ts, changedmodes)
+        self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
@@ -484,7 +484,7 @@ class TS6Protocol(TS6BaseProtocol):
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
             channel = self.irc.toLower(args[1])
-            self.updateTS(channel, ts)
+            self.updateTS(numeric, channel, ts)
 
             self.irc.users[numeric].channels.add(channel)
             self.irc.channels[channel].users.add(numeric)

@@ -569,7 +569,7 @@ class P10Protocol(IRCS2SProtocol):
 
         self.irc.channels[channel].users.update(changedusers)
 
-        self.updateTS(channel, ts, changedmodes)
+        self.updateTS(server, channel, ts, changedmodes)
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
@@ -1055,7 +1055,7 @@ class P10Protocol(IRCS2SProtocol):
         # Statekeeping with timestamps
         their_ts = int(args[1])
         our_ts = self.irc.channels[channel].ts
-        self.updateTS(channel, their_ts, changedmodes)
+        self.updateTS(source, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
 
@@ -1084,7 +1084,7 @@ class P10Protocol(IRCS2SProtocol):
         else:
             channel = self.irc.toLower(args[0])
             if ts:  # Only update TS if one was sent.
-                self.updateTS(channel, ts)
+                self.updateTS(source, channel, ts)
 
             self.irc.users[source].channels.add(channel)
             self.irc.channels[channel].users.add(source)
