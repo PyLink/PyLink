@@ -84,11 +84,6 @@ def handle_whois(irc, source, command, args):
     if away_text:
         f(server, 301, source, '%s :%s' % (nick, away_text))
 
-    # 317: shows idle and signon time. However, we don't track the user's real
-    # idle time, so we simply return 0.
-    # <- 317 GL GL 15 1437632859 :seconds idle, signon time
-    f(server, 317, source, "%s 0 %s :seconds idle, signon time" % (nick, user.ts))
-
     if (irc.umodes.get('bot'), None) in user.modes:
         # Show botmode info in WHOIS.
         f(server, 335, source, "%s :is a bot" % nick)
