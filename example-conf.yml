@@ -104,10 +104,6 @@ servers:
         # not set.
         pingfreq: 90
 
-        # Separator character (used by relay). Making this include anything other
-        # than letters, numbers, or /|_`-[]^ will void your support.
-        separator: "/"
-
         # If enabled, this opts this network out of relay IP sharing. i.e. this network
         # will not have its users' IPs sent across the relay, and it will not see any
         # IPs of other networks' users.
@@ -399,6 +395,16 @@ relay:
     # Determines whether netsplits should be hidden as *.net *.split over the relay.
     # Defaults to False.
     show_netsplits: false
+
+    # Sets the default Relay separator. Defaults to / if not specified. The "separator"
+    # option in server blocks override this if specified.
+    separator: "/"
+
+    # Determines whether all nicks will be tagged by default, instead of only when a
+    # nick collision happens. It is HIGHLY RECOMMENDED you enable this, unless you're
+    # absolutely sure NO ONE will be using the same nick on 2 or more networks in your
+    # relay. Leaving this off will make their lives very miserable. You have been warned!
+    tag_nicks: true
 
 games:
     # Sets the nick of the Games service, if you're using it.

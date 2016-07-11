@@ -92,10 +92,23 @@ def die(sourceirc):
 
 allowed_chars = string.digits + string.ascii_letters + '/^|\\-_[]`'
 fallback_separator = '|'
-def normalizeNick(irc, netname, nick, separator=None, uid=''):
-    """Creates a normalized nickname for the given nick suitable for
-    introduction to a remote network (as a relay client)."""
-    separator = separator or irc.serverdata.get('separator') or "/"
+def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
+    """
+    Creates a normalized nickname for the given nick suitable for introduction to a remote network
+    (as a relay client).
+
+    UID is optional for checking regular nick changes, to make sure that the sender doesn't get
+    marked as nick-colliding with itself.
+    """
+
+    # Get the nick/net separator
+    separator = irc.serverdata.get('separator') or \
+        conf.conf.get('relay', {}).get('separator') or "/"
+
+    # Figure out whether we tag nicks by default or not.
+    if times_tagged == 0 and conf.conf.get('relay', {}).get('tag_nicks'):
+        times_tagged = 1
+
     log.debug('(%s) relay.normalizeNick: using %r as separator.', irc.name, separator)
     orig_nick = nick
     protoname = irc.protoname
@@ -118,15 +131,21 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
         # Nicks starting with - are likewise not valid.
         nick = '_' + nick
 
-    suffix = separator + netname
-    nick = nick[:maxnicklen]
-    # Maximum allowed length of a nickname, minus the obligatory /network tag.
-    allowedlength = maxnicklen - len(suffix)
+    # Maximum allowed length that relay nicks may have, minus the /network tag if used.
+    allowedlength = maxnicklen
+
+    # Track how many times the given nick has been tagged. If this is 0, no tag is used.
+    # If this is 1, a /network tag is added. Otherwise, keep adding one character to the
+    # separator: GLolol -> GLolol/net1 -> GLolol//net1 -> ...
+    if times_tagged >= 1:
+        suffix = "%s%s%s" % (separator[0]*times_tagged, separator[1:], netname)
+        allowedlength -= len(suffix)
 
     # If a nick is too long, the real nick portion will be cut off, but the
     # /network suffix MUST remain the same.
     nick = nick[:allowedlength]
-    nick += suffix
+    if times_tagged >= 1:
+        nick += suffix
 
     # Loop over every character in the nick, making sure that it only contains valid
     # characters.
@@ -146,9 +165,10 @@ def normalizeNick(irc, netname, nick, separator=None, uid=''):
     # even though there would be no collision because the old and new nicks are from
     # the same client.
     while irc.nickToUid(nick) and irc.nickToUid(nick) != uid:
-        new_sep = separator + separator[-1]
-        log.debug('(%s) relay.normalizeNick: nick %r is in use; using %r as new_sep.', irc.name, nick, new_sep)
-        nick = normalizeNick(irc, netname, orig_nick, separator=new_sep)
+        times_tagged += 1
+        log.debug('(%s) relay.normalizeNick: nick %r is in use; incrementing times tagged to %s.',
+                  irc.name, nick, times_tagged)
+        nick = normalizeNick(irc, netname, orig_nick, times_tagged=times_tagged, uid=uid)
 
     finalLength = len(nick)
     assert finalLength <= maxnicklen, "Normalized nick %r went over max " \
