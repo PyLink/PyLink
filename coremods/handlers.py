@@ -2,7 +2,7 @@
 handlers.py - Implements miscellaneous IRC command handlers (WHOIS, services login, etc.)
 """
 
-from pylinkirc import utils
+from pylinkirc import utils, conf
 from pylinkirc.log import log
 
 def handle_whois(irc, source, command, args):
@@ -17,6 +17,7 @@ def handle_whois(irc, source, command, args):
     server = irc.getServer(target) or irc.sid
     nick = user.nick
     sourceisOper = ('o', None) in irc.users[source].modes
+    sourceisBot = (irc.umodes.get('bot'), None) in irc.users[source].modes
 
     # Get the full network name.
     netname = irc.serverdata.get('netname', irc.name)
@@ -88,8 +89,13 @@ def handle_whois(irc, source, command, args):
         # Show botmode info in WHOIS.
         f(server, 335, source, "%s :is a bot" % nick)
 
-    # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook.
-    irc.callHooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
+    # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
+    # caller is marked a bot and the whois_show_extensions_to_bots option is False
+    if (sourceisBot and conf.conf['bot'].get('whois_show_extensions_to_bots')) or (not sourceisBot):
+        irc.callHooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
+    else:
+        log.debug('(%s) coremods.handlers.handle_whois: skipping custom whois handlers because '
+                  'caller %s is marked as a bot', irc.name, source)
 
     # 318: End of WHOIS.
     f(server, 318, source, "%s :End of /WHOIS list" % nick)
