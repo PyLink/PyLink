@@ -227,9 +227,6 @@ def spawnRelayServer(irc, remoteirc):
     except ValueError:  # Network not initialized yet, or a server name conflict.
         log.exception('(%s) Failed to spawn server for %r:',
                       irc.name, remoteirc.name)
-        # We will just bail here. Disconnect the bad network.
-        handle_disconnect(irc, None, 'PYLINK_DISCONNECT_RELAY_FORCED', {})
-        irc.disconnect()
         raise
 
     # Mark the server as a relay server
