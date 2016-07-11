@@ -14,7 +14,7 @@ def handle_whois(irc, source, command, args):
                     'doesn\'t exist in irc.users!', irc.name, target, source)
         return
     f = irc.proto.numeric
-    server = irc.getServer(target) or irc.sid
+    server = irc.sid
     nick = user.nick
     sourceisOper = ('o', None) in irc.users[source].modes
     sourceisBot = (irc.umodes.get('bot'), None) in irc.users[source].modes
