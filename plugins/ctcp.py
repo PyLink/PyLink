@@ -38,6 +38,7 @@ def handle_ctcpeaster(irc, source, args):
                  "Maybe later.",
                  "Let me out of here, I'll give you cookies!",
                  "I'm actually a %snake...." % ('s' * random.randint(1, 8)),
+                 "The Py stands for Python, not actual pie. Sorry to disappoint :(",
                 ]
 
     irc.msg(source, '\x01EASTER %s\x01' % random.choice(responses), notice=True)
