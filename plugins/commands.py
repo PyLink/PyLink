@@ -45,8 +45,8 @@ def showuser(irc, source, args):
     serverobj = irc.servers[sid]
     ts = userobj.ts
 
-    # Show connected server & signon time
-    f('\x02Home server\x02: %s (%s); \x02Signon time:\x02 %s (%s)' % \
+    # Show connected server & nick TS
+    f('\x02Home server\x02: %s (%s); \x02Nick TS:\x02 %s (%s)' % \
       (serverobj.name, sid, ctime(float(ts)), ts))
 
     if verbose:  # Oper only data: user modes, channels on, account info, etc.
