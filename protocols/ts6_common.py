@@ -408,9 +408,11 @@ class TS6BaseProtocol(IRCS2SProtocol):
         oldnick = self.irc.users[user].nick
         self.irc.users[user].nick = user
 
-        self.irc.users[user].ts = ts = int(args[1])
+        # TS6 SAVE sets nick TS to 100. This is hardcoded in InspIRCd and
+        # charybdis.
+        self.irc.users[user].ts = 100
 
-        return {'target': user, 'ts': ts, 'oldnick': oldnick}
+        return {'target': user, 'ts': 100, 'oldnick': oldnick}
 
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients. For topic bursts,
