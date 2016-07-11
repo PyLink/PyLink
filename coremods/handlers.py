@@ -4,19 +4,20 @@ handlers.py - Implements miscellaneous IRC command handlers (WHOIS, services log
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
-
 def handle_whois(irc, source, command, args):
     """Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd)."""
     target = args['target']
     user = irc.users.get(target)
 
-    f = irc.proto.numeric
-    server = irc.sid
+    f = lambda num, source, text: irc.proto.numeric(irc.sid, num, source, text)
+
+    # Get the server that the target is on.
+    server = irc.getServer(target)
 
     if user is None:  # User doesn't exist
         # <- :42X 401 7PYAAAAAB GL- :No such nick/channel
         nick = target
-        f(server, 401, source, "%s :No such nick/channel" % nick)
+        f(401, source, "%s :No such nick/channel" % nick)
     else:
         nick = user.nick
         sourceisOper = ('o', None) in irc.users[source].modes
@@ -27,7 +28,7 @@ def handle_whois(irc, source, command, args):
 
         # https://www.alien.net.au/irc/irc2numerics.html
         # 311: sends nick!user@host information
-        f(server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
+        f(311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
 
         # 319: RPL_WHOISCHANNELS; Show public channels of the target, respecting
         # hidechans umodes for non-oper callers.
@@ -58,10 +59,10 @@ def handle_whois(irc, source, command, args):
                 public_chans.append(chan)
 
             if public_chans:  # Only send the line if the person is in any visible channels...
-                f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
+                f(319, source, '%s :%s' % (nick, ' '.join(public_chans)))
 
         # 312: sends the server the target is on, and its server description.
-        f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
+        f(312, source, "%s %s :%s" % (nick, irc.servers[server].name,
           irc.servers[server].desc))
 
         # 313: sends a string denoting the target's operator privilege if applicable.
@@ -80,23 +81,23 @@ def handle_whois(irc, source, command, args):
                 # I want to normalize the syntax: PERSON is an OPERTYPE on NETWORKNAME.
                 # This is the only syntax InspIRCd supports, but for others it doesn't
                 # really matter since we're handling the WHOIS requests by ourselves.
-                f(server, 313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
+                f(313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
 
         # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
         # Only show this to opers!
         if sourceisOper:
-            f(server, 378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
-            f(server, 379, source, '%s :is using modes %s' % (nick, irc.joinModes(user.modes)))
+            f(378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
+            f(379, source, '%s :is using modes %s' % (nick, irc.joinModes(user.modes)))
 
         # 301: used to show away information if present
         away_text = user.away
         log.debug('(%s) coremods.handlers.handle_whois: away_text for %s is %r', irc.name, target, away_text)
         if away_text:
-            f(server, 301, source, '%s :%s' % (nick, away_text))
+            f(301, source, '%s :%s' % (nick, away_text))
 
         if (irc.umodes.get('bot'), None) in user.modes:
             # Show botmode info in WHOIS.
-            f(server, 335, source, "%s :is a bot" % nick)
+            f(335, source, "%s :is a bot" % nick)
 
         # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
         # caller is marked a bot and the whois_show_extensions_to_bots option is False
@@ -107,7 +108,7 @@ def handle_whois(irc, source, command, args):
                       'caller %s is marked as a bot', irc.name, source)
 
     # 318: End of WHOIS.
-    f(server, 318, source, "%s :End of /WHOIS list" % nick)
+    f(318, source, "%s :End of /WHOIS list" % nick)
 utils.add_hook(handle_whois, 'WHOIS')
 
 def handle_mode(irc, source, command, args):
