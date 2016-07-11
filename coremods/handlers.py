@@ -9,99 +9,102 @@ def handle_whois(irc, source, command, args):
     """Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd)."""
     target = args['target']
     user = irc.users.get(target)
-    if user is None:
-        log.warning('(%s) Got a WHOIS request for %r from %r, but the target '
-                    'doesn\'t exist in irc.users!', irc.name, target, source)
-        return
+
     f = irc.proto.numeric
     server = irc.sid
-    nick = user.nick
-    sourceisOper = ('o', None) in irc.users[source].modes
-    sourceisBot = (irc.umodes.get('bot'), None) in irc.users[source].modes
 
-    # Get the full network name.
-    netname = irc.serverdata.get('netname', irc.name)
-
-    # https://www.alien.net.au/irc/irc2numerics.html
-    # 311: sends nick!user@host information
-    f(server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
-
-    # 319: RPL_WHOISCHANNELS; Show public channels of the target, respecting
-    # hidechans umodes for non-oper callers.
-    isHideChans = (irc.umodes.get('hidechans'), None) in user.modes
-    if (not isHideChans) or (isHideChans and sourceisOper):
-        public_chans = []
-        for chan in user.channels:
-            c = irc.channels[chan]
-            # Here, we'll want to hide secret/private channels from non-opers
-            # who are not in them.
-
-            if ((irc.cmodes.get('secret'), None) in c.modes or \
-                (irc.cmodes.get('private'), None) in c.modes) \
-                and not (sourceisOper or source in c.users):
-                    continue
-
-            # Show the highest prefix mode like a regular IRCd does, if there are any.
-            prefixes = c.getPrefixModes(target)
-            if prefixes:
-                highest = prefixes[-1]
-
-                # Fetch the prefix mode letter from the named mode.
-                modechar = irc.cmodes[highest]
-
-                # Fetch and prepend the prefix character (@, +, etc.), given the mode letter.
-                chan = irc.prefixmodes[modechar] + chan
-
-            public_chans.append(chan)
-
-        if public_chans:  # Only send the line if the person is in any visible channels...
-            f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
-
-    # 312: sends the server the target is on, and its server description.
-    f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
-      irc.servers[server].desc))
-
-    # 313: sends a string denoting the target's operator privilege if applicable.
-    if ('o', None) in user.modes:
-        # Check hideoper status. Require that either:
-        # 1) +H is not set
-        # 2) +H is set, but the caller is oper
-        # 3) +H is set, but whois_use_hideoper is disabled in config
-        isHideOper = (irc.umodes.get('hideoper'), None) in user.modes
-        if (not isHideOper) or (isHideOper and sourceisOper) or \
-                (isHideOper and not irc.botdata.get('whois_use_hideoper', True)):
-            # Let's be gramatically correct. (If the opertype starts with a vowel,
-            # write "an Operator" instead of "a Operator")
-            n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
-
-            # I want to normalize the syntax: PERSON is an OPERTYPE on NETWORKNAME.
-            # This is the only syntax InspIRCd supports, but for others it doesn't
-            # really matter since we're handling the WHOIS requests by ourselves.
-            f(server, 313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
-
-    # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
-    # Only show this to opers!
-    if sourceisOper:
-        f(server, 378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
-        f(server, 379, source, '%s :is using modes %s' % (nick, irc.joinModes(user.modes)))
-
-    # 301: used to show away information if present
-    away_text = user.away
-    log.debug('(%s) coremods.handlers.handle_whois: away_text for %s is %r', irc.name, target, away_text)
-    if away_text:
-        f(server, 301, source, '%s :%s' % (nick, away_text))
-
-    if (irc.umodes.get('bot'), None) in user.modes:
-        # Show botmode info in WHOIS.
-        f(server, 335, source, "%s :is a bot" % nick)
-
-    # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
-    # caller is marked a bot and the whois_show_extensions_to_bots option is False
-    if (sourceisBot and conf.conf['bot'].get('whois_show_extensions_to_bots')) or (not sourceisBot):
-        irc.callHooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
+    if user is None:  # User doesn't exist
+        # <- :42X 401 7PYAAAAAB GL- :No such nick/channel
+        nick = target
+        f(server, 401, source, "%s :No such nick/channel" % nick)
     else:
-        log.debug('(%s) coremods.handlers.handle_whois: skipping custom whois handlers because '
-                  'caller %s is marked as a bot', irc.name, source)
+        nick = user.nick
+        sourceisOper = ('o', None) in irc.users[source].modes
+        sourceisBot = (irc.umodes.get('bot'), None) in irc.users[source].modes
+
+        # Get the full network name.
+        netname = irc.serverdata.get('netname', irc.name)
+
+        # https://www.alien.net.au/irc/irc2numerics.html
+        # 311: sends nick!user@host information
+        f(server, 311, source, "%s %s %s * :%s" % (nick, user.ident, user.host, user.realname))
+
+        # 319: RPL_WHOISCHANNELS; Show public channels of the target, respecting
+        # hidechans umodes for non-oper callers.
+        isHideChans = (irc.umodes.get('hidechans'), None) in user.modes
+        if (not isHideChans) or (isHideChans and sourceisOper):
+            public_chans = []
+            for chan in user.channels:
+                c = irc.channels[chan]
+                # Here, we'll want to hide secret/private channels from non-opers
+                # who are not in them.
+
+                if ((irc.cmodes.get('secret'), None) in c.modes or \
+                    (irc.cmodes.get('private'), None) in c.modes) \
+                    and not (sourceisOper or source in c.users):
+                        continue
+
+                # Show the highest prefix mode like a regular IRCd does, if there are any.
+                prefixes = c.getPrefixModes(target)
+                if prefixes:
+                    highest = prefixes[-1]
+
+                    # Fetch the prefix mode letter from the named mode.
+                    modechar = irc.cmodes[highest]
+
+                    # Fetch and prepend the prefix character (@, +, etc.), given the mode letter.
+                    chan = irc.prefixmodes[modechar] + chan
+
+                public_chans.append(chan)
+
+            if public_chans:  # Only send the line if the person is in any visible channels...
+                f(server, 319, source, '%s :%s' % (nick, ' '.join(public_chans)))
+
+        # 312: sends the server the target is on, and its server description.
+        f(server, 312, source, "%s %s :%s" % (nick, irc.servers[server].name,
+          irc.servers[server].desc))
+
+        # 313: sends a string denoting the target's operator privilege if applicable.
+        if ('o', None) in user.modes:
+            # Check hideoper status. Require that either:
+            # 1) +H is not set
+            # 2) +H is set, but the caller is oper
+            # 3) +H is set, but whois_use_hideoper is disabled in config
+            isHideOper = (irc.umodes.get('hideoper'), None) in user.modes
+            if (not isHideOper) or (isHideOper and sourceisOper) or \
+                    (isHideOper and not irc.botdata.get('whois_use_hideoper', True)):
+                # Let's be gramatically correct. (If the opertype starts with a vowel,
+                # write "an Operator" instead of "a Operator")
+                n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
+
+                # I want to normalize the syntax: PERSON is an OPERTYPE on NETWORKNAME.
+                # This is the only syntax InspIRCd supports, but for others it doesn't
+                # really matter since we're handling the WHOIS requests by ourselves.
+                f(server, 313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
+
+        # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
+        # Only show this to opers!
+        if sourceisOper:
+            f(server, 378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
+            f(server, 379, source, '%s :is using modes %s' % (nick, irc.joinModes(user.modes)))
+
+        # 301: used to show away information if present
+        away_text = user.away
+        log.debug('(%s) coremods.handlers.handle_whois: away_text for %s is %r', irc.name, target, away_text)
+        if away_text:
+            f(server, 301, source, '%s :%s' % (nick, away_text))
+
+        if (irc.umodes.get('bot'), None) in user.modes:
+            # Show botmode info in WHOIS.
+            f(server, 335, source, "%s :is a bot" % nick)
+
+        # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
+        # caller is marked a bot and the whois_show_extensions_to_bots option is False
+        if (sourceisBot and conf.conf['bot'].get('whois_show_extensions_to_bots')) or (not sourceisBot):
+            irc.callHooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
+        else:
+            log.debug('(%s) coremods.handlers.handle_whois: skipping custom whois handlers because '
+                      'caller %s is marked as a bot', irc.name, source)
 
     # 318: End of WHOIS.
     f(server, 318, source, "%s :End of /WHOIS list" % nick)
