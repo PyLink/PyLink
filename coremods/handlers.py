@@ -41,9 +41,15 @@ def handle_whois(irc, source, command, args):
                 and not (sourceisOper or source in c.users):
                     continue
 
-            # Show prefix modes like a regular IRCd does.
-            for prefixmode in c.getPrefixModes(target):
-                modechar = irc.cmodes[prefixmode]
+            # Show the highest prefix mode like a regular IRCd does, if there are any.
+            prefixes = c.getPrefixModes(target)
+            if prefixes:
+                highest = prefixes[-1]
+
+                # Fetch the prefix mode letter from the named mode.
+                modechar = irc.cmodes[highest]
+
+                # Fetch and prepend the prefix character (@, +, etc.), given the mode letter.
                 chan = irc.prefixmodes[modechar] + chan
 
             public_chans.append(chan)
