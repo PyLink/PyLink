@@ -3,6 +3,7 @@ ts6_common.py: Common base protocol class with functions shared by the UnrealIRC
 """
 
 import string
+import time
 
 from pylinkirc import utils, structures
 from pylinkirc.classes import *
@@ -196,8 +197,13 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """Changes the nick of a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
+
         self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
+
         self.irc.users[numeric].nick = newnick
+
+        # Update the NICK TS.
+        self.irc.users[numeric].ts = int(time.time())
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
@@ -376,7 +382,11 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # <- :70MAAAAAA NICK GL-devel 1434744242
         oldnick = self.irc.users[numeric].nick
         newnick = self.irc.users[numeric].nick = args[0]
-        return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
+
+        # Update the nick TS.
+        self.irc.users[numeric].ts = ts = int(args[1])
+
+        return {'newnick': newnick, 'oldnick': oldnick, 'ts': ts}
 
     def handle_quit(self, numeric, command, args):
         """Handles incoming QUIT commands."""

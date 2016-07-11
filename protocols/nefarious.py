@@ -5,6 +5,7 @@ nefarious.py: Nefarious IRCu protocol module for PyLink.
 import base64
 import struct
 from ipaddress import ip_address
+import time
 
 from pylinkirc import utils, structures
 from pylinkirc.classes import *
@@ -417,8 +418,11 @@ class P10Protocol(IRCS2SProtocol):
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
+        self._send(numeric, 'N %s %s' % (newnick, int(time.time())))
         self.irc.users[numeric].nick = newnick
+
+        # Update the NICK TS.
+        self.irc.users[numeric].ts = int(time.time())
 
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client. This is used for WHOIS
@@ -852,7 +856,11 @@ class P10Protocol(IRCS2SProtocol):
             # <- ABAAA N GL_ 1460753763
             oldnick = self.irc.users[source].nick
             newnick = self.irc.users[source].nick = args[0]
-            return {'newnick': newnick, 'oldnick': oldnick, 'ts': int(args[1])}
+
+            self.irc.users[source].ts = ts = int(args[1])
+
+            # Update the nick TS.
+            return {'newnick': newnick, 'oldnick': oldnick, 'ts': ts}
 
     def checkCloakChange(self, uid):
         """Checks for cloak changes (ident and host) on the given UID."""
