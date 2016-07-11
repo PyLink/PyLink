@@ -648,11 +648,11 @@ class UnrealProtocol(TS6BaseProtocol):
 
             if parsedmodes:
                 if parsedmodes[0][0] == '+&':
-                    # UnrealIRCd uses a & virtual mode to denote mode bounces, meaning that an attempt to set modes
-                    # by us was rejected for some reason (usually due to timestamps). Warn about this and drop the
-                    # mode change to prevent mode floods.
-                    log.warning("(%s) Received mode bounce %s in channel %s! Our TS: %s",
-                                self.irc.name, modes, channel, self.irc.channels[channel].ts)
+                    # UnrealIRCd uses a & virtual mode to denote mode bounces, meaning that an
+                    # attempt to set modes by us was rejected for some reason (usually due to
+                    # timestamps). Drop the mode change to prevent mode floods.
+                    log.debug("(%s) Received mode bounce %s in channel %s! Our TS: %s",
+                              self.irc.name, modes, channel, self.irc.channels[channel].ts)
                     return
 
                 self.irc.applyModes(channel, parsedmodes)
