@@ -142,6 +142,7 @@ def delacc(irc, source, args):
 
     try:
         channel, mask = args
+        channel = irc.toLower(channel)
     except ValueError:
         reply(irc, "Error: Invalid arguments given. Needs 2: channel, mask")
         return
