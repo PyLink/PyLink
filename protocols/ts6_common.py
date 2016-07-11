@@ -458,4 +458,15 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
     def handle_version(self, numeric, command, args):
         """Handles requests for the PyLink server version."""
-        return {}  # See coreplugin.py for how this hook is used
+        return {}  # See coremods/handlers.py for how this hook is used
+
+    def handle_whois(self, numeric, command, args):
+        """Handles incoming WHOIS commands.."""
+        # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
+
+        # First argument is the server that should reply to the WHOIS request
+        # or the server hosting the UID given. We can safely assume that any
+        # WHOIS commands received are for us, since we don't host any real servers
+        # to route it to.
+
+        return {'target': self._getUid(args[-1])}

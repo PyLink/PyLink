@@ -773,18 +773,6 @@ class UnrealProtocol(TS6BaseProtocol):
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic,
                 'oldtopic': oldtopic}
 
-    def handle_whois(self, numeric, command, args):
-        """Handles WHOIS queries."""
-        # <- :GL WHOIS PyLink-devel :pylink-devel
-        # In this case, the first argument is actually the server that the
-        # WHOIS query is requested from - IRCds should pass these requests on
-        # to the server in question. Since we're a services server, we can just
-        # process it regardless.
-        # The second argument is the ACTUAL nick requested.
-
-        # The actual WHOIS handling is done protocol-independently by coreplugin.
-        return {'target': self._getUid(args[-1])}
-
     def handle_setident(self, numeric, command, args):
         """Handles SETIDENT, used for self ident changes."""
         # <- :70MAAAAAB SETIDENT test
