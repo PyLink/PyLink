@@ -381,15 +381,13 @@ relay:
     show_ips: false
 
     # Determines whether NickServ login info should be shown in the /whois output for
-    # relay users. For InspIRCd networks, this requires "use_experimental_whois" to be
-    # set.
+    # relay users.
     # Valid options include "all" (show this to everyone), "opers" (show only to
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_accounts: all
 
     # Determines whether the origin server should be shown in the /whois output for
-    # relay users. For InspIRCd networks, this requires "use_experimental_whois" to be
-    # set.
+    # relay users.
     # Valid options include "all" (show this to everyone), "opers" (show only to
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_server: opers
