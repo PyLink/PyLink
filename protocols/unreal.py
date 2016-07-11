@@ -421,20 +421,24 @@ class UnrealProtocol(TS6BaseProtocol):
                                         "by the remote server. Your version of UnrealIRCd "
                                         "is probably too old! (Got: %s, needed: %s)" %
                                         (sorted(self.caps), sorted(self.needed_caps)))
-            sdesc = args[-1].split(" ")
-            # Get our protocol version :)
+
+            sdesc = args[-1].split(" ", 1)
+            # Get our protocol version. I really don't know why the version and the server
+            # description aren't two arguments instead of one... -GLolol
             vline = sdesc[0].split('-', 1)
+            sdesc = " ".join(sdesc[1:])
+
             try:
                 protover = int(vline[0].strip('U'))
             except ValueError:
                 raise ProtocolError("Protocol version too old! (needs at least %s "
-                                    "(Unreal 4.0.0-rc1), got something invalid; "
+                                    "(Unreal 4.x), got something invalid; "
                                     "is VL being sent?)" % self.min_proto_ver)
-            sdesc = args[-1][1:]
+
             if protover < self.min_proto_ver:
                 raise ProtocolError("Protocol version too old! (needs at least %s "
-                                    "(Unreal 4.0.0-rc1), got %s)" % (self.min_proto_ver, protover))
-            self.irc.servers[numeric] = IrcServer(None, sname)
+                                    "(Unreal 4.x), got %s)" % (self.min_proto_ver, protover))
+            self.irc.servers[numeric] = IrcServer(None, sname, desc=sdesc)
 
             # Set irc.connected to True, meaning that protocol negotiation passed.
             log.debug('(%s) self.irc.connected set!', self.irc.name)
