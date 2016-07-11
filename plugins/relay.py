@@ -283,13 +283,13 @@ def getRemoteSid(irc, remoteirc):
         spawnlocks_servers[irc.name].release()
         return sid
 
-def spawnRelayUser(irc, remoteirc, user):
+def spawnRelayUser(irc, remoteirc, user, times_tagged=0):
     userobj = irc.users.get(user)
     if userobj is None:
         # The query wasn't actually a valid user, or the network hasn't
         # been connected yet... Oh well!
         return
-    nick = normalizeNick(remoteirc, irc.name, userobj.nick)
+    nick = normalizeNick(remoteirc, irc.name, userobj.nick, times_tagged=times_tagged)
     # Truncate idents at 10 characters, because TS6 won't like them otherwise!
     ident = userobj.ident[:10]
     # Normalize hostnames
@@ -353,7 +353,7 @@ def spawnRelayUser(irc, remoteirc, user):
     relayusers[(irc.name, user)][remoteirc.name] = u
     return u
 
-def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
+def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True, times_tagged=0):
     """
     Gets the UID of the relay client requested on the target network (remoteirc),
     spawning one if it doesn't exist and spawnIfMissing is True."""
@@ -378,14 +378,14 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True):
         except KeyError:
             # User doesn't exist. Spawn a new one if requested.
             if spawnIfMissing:
-                u = spawnRelayUser(irc, remoteirc, user)
+                u = spawnRelayUser(irc, remoteirc, user, times_tagged=times_tagged)
 
         # This is a sanity check to make sure netsplits and other state resets
         # don't break the relayer. If it turns out there was a client in our relayusers
         # cache for the requested UID, but it doesn't match the request,
         # assume it was a leftover from the last split and replace it with a new one.
         if u and ((u not in remoteirc.users) or remoteirc.users[u].remote != (irc.name, user)):
-            u = spawnRelayUser(irc, remoteirc, user)
+            u = spawnRelayUser(irc, remoteirc, user, times_tagged=times_tagged)
 
         spawnlocks[irc.name].release()
 
@@ -1271,7 +1271,7 @@ def handle_kill(irc, numeric, command, args):
             if localchan:
                 modes = getPrefixModes(remoteirc, irc, remotechan, realuser[1])
                 log.debug('(%s) relay.handle_kill: userpair: %s, %s', irc.name, modes, realuser)
-                client = getRemoteUser(remoteirc, irc, realuser[1])
+                client = getRemoteUser(remoteirc, irc, realuser[1], times_tagged=1)
                 irc.proto.sjoin(getRemoteSid(irc, remoteirc), localchan, [(modes, client)])
 
         if userdata and numeric in irc.users:
@@ -1378,23 +1378,28 @@ def handle_disconnect(irc, numeric, command, args):
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
+def nick_collide(irc, target):
+    """
+    Handles nick collisions on relay clients and attempts to fix nicks.
+    """
+    remotenet, remoteuser = getOrigUser(irc, target)
+    remoteirc = world.networkobjects[remotenet]
+
+    nick = remoteirc.users[remoteuser].nick
+
+    newnick = normalizeNick(irc, remotenet, nick)
+    log.info('(%s) relay.nick_collide: Fixing nick of relay client %r (%s) to %s',
+             irc.name, target, nick, newnick)
+    irc.proto.nick(target, newnick)
+
 def handle_save(irc, numeric, command, args):
     target = args['target']
-    realuser = getOrigUser(irc, target)
-    log.debug('(%s) relay.handle_save: %r got in a nick collision! Real user: %r',
-                  irc.name, target, realuser)
-    if isRelayClient(irc, target) and realuser:
+
+    if isRelayClient(irc, target):
         # Nick collision!
         # It's one of our relay clients; try to fix our nick to the next
         # available normalized nick.
-        remotenet, remoteuser = realuser
-        remoteirc = world.networkobjects[remotenet]
-        nick = remoteirc.users[remoteuser].nick
-
-        newnick = normalizeNick(irc, remotenet, nick)
-        log.info('(%s) relay.handle_save: SAVE received for relay client %r (%s), fixing nick to %s',
-                 irc.name, target, nick, newnick)
-        irc.proto.nick(target, newnick)
+        nick_collide(irc, target)
     else:
         # Somebody else on the network (not a PyLink client) had a nick collision;
         # relay this as a nick change appropriately.
