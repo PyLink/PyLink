@@ -608,19 +608,23 @@ class InspIRCdProtocol(TS6BaseProtocol):
         return {'target': target, 'modes': changedmodes}
 
     def handle_idle(self, numeric, command, args):
-        """Handles the IDLE command, sent between servers in remote WHOIS queries."""
+        """
+        Handles the IDLE command, sent between servers in remote WHOIS queries.
+        """
         # <- :70MAAAAAA IDLE 1MLAAAAIG
         # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
         sourceuser = numeric
         targetuser = args[0]
 
-        if self.irc.serverdata.get("use_experimental_whois"):
-            # EXPERIMENTAL HACK: make PyLink handle all WHOIS requests if configured to do so.
-            # This works by silently ignoring the idle time request, and sending our WHOIS data as
-            # raw numerics instead.
-            return {'target': args[0], 'parse_as': 'WHOIS'}
-        else:
-            self._send(targetuser, 'IDLE %s %s 0' % (sourceuser, self.irc.users[targetuser].ts))
+        # HACK: make PyLink handle the entire WHOIS request.
+        # This works by silently ignoring the idle time request, and sending our WHOIS data as
+        # raw numerics instead.
+        # The rationale behind this is that PyLink cannot accurately track signon and idle times for
+        # things like relay users, without forwarding WHOIS requests between servers in a way the
+        # hooks system is really not optimized to do. However, no IDLE response means that no WHOIS
+        # data is ever sent back to the calling user, so this workaround is probably the best
+        # solution (aside from faking values). -GLolol
+        return {'target': args[0], 'parse_as': 'WHOIS'}
 
     def handle_ftopic(self, numeric, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""

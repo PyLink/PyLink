@@ -132,13 +132,6 @@ servers:
         # This setting defaults to sha256.
         #ssl_fingerprint_type: sha256
 
-        # The following option is specific to InspIRCd networks:
-
-        # Force PyLink to handle WHOIS requests locally for all its clients
-        # (experimental). This is required if you want custom WHOIS handlers
-        # implemented by plugins like relay to work. Defaults to false.
-        #use_experimental_whois: false
-
     ts6net:
         ip: ::1
 
