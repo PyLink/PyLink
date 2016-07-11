@@ -1103,8 +1103,9 @@ class P10Protocol(IRCS2SProtocol):
         """Handles end of burst from our uplink."""
         # Send EOB acknowledgement; this is required by the P10 specification,
         # and needed if we want to be able to receive channel messages, etc.
-        self._send(self.irc.sid, 'EA')
-        return {}
+        if source == irc.uplink:
+            self._send(self.irc.sid, 'EA')
+            return {}
 
     def handle_mode(self, source, command, args):
         """Handles mode changes."""
