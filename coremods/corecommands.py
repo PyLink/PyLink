@@ -2,6 +2,9 @@
 corecommands.py - Implements core PyLink commands.
 """
 
+# Get the package name that plugins are stored under.
+plugin_root = __name__.split('.')[0] + '.plugins.'
+
 import gc
 import sys
 import importlib
@@ -94,6 +97,11 @@ def unload(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1: plugin name.")
         return
+
+    # Since we're using absolute imports in 0.9.x+, the module name differs from the actual plugin
+    # name.
+    modulename = plugin_root + name
+
     if name in world.plugins:
         log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.getHostmask(source))
         pl = world.plugins[name]
@@ -105,7 +113,7 @@ def unload(irc, source, args):
 
             for cmdfunc in cmdfuncs:
                 log.debug('__module__ of cmdfunc %s is %s', cmdfunc, cmdfunc.__module__)
-                if cmdfunc.__module__ == name:
+                if cmdfunc.__module__ == modulename:
                     log.debug("Removing %s from world.services['pylink'].commands[%s]", cmdfunc, cmdname)
                     world.services['pylink'].commands[cmdname].remove(cmdfunc)
 
@@ -117,7 +125,7 @@ def unload(irc, source, args):
         # Remove any command hooks set by the plugin.
         for hookname, hookfuncs in world.hooks.copy().items():
             for hookfunc in hookfuncs:
-                if hookfunc.__module__ == name:
+                if hookfunc.__module__ == modulename:
                     world.hooks[hookname].remove(hookfunc)
                     # If the hookfuncs list is empty, remove it.
                     if not hookfuncs:
