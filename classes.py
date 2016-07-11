@@ -1092,6 +1092,18 @@ class IrcChannel():
                 return True
         return False
 
+    @staticmethod
+    def sortPrefixes(key):
+        """
+        Implements a sorted()-compatible sorter for prefix modes, giving each one a
+        numeric value.
+        """
+        values = {'owner': 100, 'admin': 10, 'op': 5, 'halfop': 4, 'voice': 3}
+
+        # Default to highest value (1000) for unknown modes, should we choose to
+        # support them.
+        return values.get(key, 1000)
+
     def getPrefixModes(self, uid, prefixmodes=None):
         """Returns a list of all named prefix modes the given user has in the channel.
 
@@ -1110,7 +1122,7 @@ class IrcChannel():
             if uid in modelist:
                 result.append(mode)
 
-        return result
+        return sorted(result, key=self.sortPrefixes)
 
 class Protocol():
     """Base Protocol module class for PyLink."""
