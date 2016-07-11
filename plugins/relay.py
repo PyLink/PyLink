@@ -318,11 +318,9 @@ def spawnRelayUser(irc, remoteirc, user):
     else:
         realhost = None
         ip = '0.0.0.0'
-    u = remoteirc.proto.spawnClient(nick, ident=ident,
-                                        host=host, realname=realname,
-                                        modes=modes, ts=userobj.ts,
-                                        opertype=opertype, server=rsid,
-                                        ip=ip, realhost=realhost).uid
+
+    u = remoteirc.proto.spawnClient(nick, ident=ident, host=host, realname=realname, modes=modes,
+                                    opertype=opertype, server=rsid, ip=ip, realhost=realhost).uid
     try:
         remoteirc.users[u].remote = (irc.name, user)
         remoteirc.users[u].opertype = opertype
