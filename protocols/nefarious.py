@@ -1175,12 +1175,6 @@ class P10Protocol(IRCS2SProtocol):
         self.handle_part(kicked, 'KICK', [channel, args[2]])
         return {'channel': channel, 'target': kicked, 'text': args[2]}
 
-    def handle_quit(self, numeric, command, args):
-        """Handles incoming QUITs."""
-        # <- ABAAB Q :Killed (GL_ (bangbang))
-        self.removeClient(numeric)
-        return {'text': args[0]}
-
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""
         # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
@@ -1205,22 +1199,6 @@ class P10Protocol(IRCS2SProtocol):
         channel = self.irc.toLower(args[1])
 
         return {'target': target, 'channel': channel}
-
-    def handle_away(self, numeric, command, args):
-        """Handles incoming AWAY messages."""
-        # <- ABAAA A :blah
-        # <- ABAAA A
-        try:
-            self.irc.users[numeric].away = text = args[0]
-        except IndexError:  # User is unsetting away status
-            self.irc.users[numeric].away = text = ''
-
-        return {'text': text}
-
-    def handle_whois(self, numeric, command, args):
-        """Handles incoming WHOIS requests."""
-        # <- ABAAA W Ay :PyLink-devel
-        return {'target': self._getUid(args[-1])}
 
     def handle_clearmode(self, numeric, command, args):
         """Handles CLEARMODE, which is used to clear a channel's modes."""
@@ -1302,10 +1280,5 @@ class P10Protocol(IRCS2SProtocol):
 
         self.checkCloakChange(target)
         # We don't need to send any hooks here, checkCloakChange does that for us.
-
-    def handle_version(self, numeric, command, args):
-        # <- ABAAA V :Ay
-        """Handles requests for the PyLink server version."""
-        return {}  # See coreplugin.py for how this hook is used
 
 Class = P10Protocol

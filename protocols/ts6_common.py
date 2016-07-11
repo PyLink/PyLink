@@ -388,12 +388,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
         return {'newnick': newnick, 'oldnick': oldnick, 'ts': ts}
 
-    def handle_quit(self, numeric, command, args):
-        """Handles incoming QUIT commands."""
-        # <- :1SRAAGB4T QUIT :Quit: quit message goes here
-        self.removeClient(numeric)
-        return {'text': args[0]}
-
     def handle_save(self, numeric, command, args):
         """Handles incoming SAVE messages, used to handle nick collisions."""
         # In this below example, the client Derp_ already exists,
@@ -446,27 +440,3 @@ class TS6BaseProtocol(IRCS2SProtocol):
             if not (self.irc.channels[channel].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[channel].modes)):
                 del self.irc.channels[channel]
         return {'channels': channels, 'text': reason}
-
-    def handle_away(self, numeric, command, args):
-        """Handles incoming AWAY messages."""
-        # <- :6ELAAAAAB AWAY :Auto-away
-        try:
-            self.irc.users[numeric].away = text = args[0]
-        except IndexError:  # User is unsetting away status
-            self.irc.users[numeric].away = text = ''
-        return {'text': text}
-
-    def handle_version(self, numeric, command, args):
-        """Handles requests for the PyLink server version."""
-        return {}  # See coremods/handlers.py for how this hook is used
-
-    def handle_whois(self, numeric, command, args):
-        """Handles incoming WHOIS commands.."""
-        # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
-
-        # First argument is the server that should reply to the WHOIS request
-        # or the server hosting the UID given. We can safely assume that any
-        # WHOIS commands received are for us, since we don't host any real servers
-        # to route it to.
-
-        return {'target': self._getUid(args[-1])}

@@ -77,3 +77,43 @@ class IRCS2SProtocol(Protocol):
 
         return {'target': split_server, 'users': affected_users, 'name': sname,
                 'uplink': uplink}
+
+    def handle_away(self, numeric, command, args):
+        """Handles incoming AWAY messages."""
+        # TS6:
+        # <- :6ELAAAAAB AWAY :Auto-away
+        # P10:
+        # <- ABAAA A :blah
+        # <- ABAAA A
+        try:
+            self.irc.users[numeric].away = text = args[0]
+        except IndexError:  # User is unsetting away status
+            self.irc.users[numeric].away = text = ''
+        return {'text': text}
+
+    def handle_version(self, numeric, command, args):
+        """Handles requests for the PyLink server version."""
+        return {}  # See coremods/handlers.py for how this hook is used
+
+    def handle_whois(self, numeric, command, args):
+        """Handles incoming WHOIS commands.."""
+        # TS6:
+        # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
+        # P10:
+        # <- ABAAA W Ay :PyLink-devel
+
+        # First argument is the server that should reply to the WHOIS request
+        # or the server hosting the UID given. We can safely assume that any
+        # WHOIS commands received are for us, since we don't host any real servers
+        # to route it to.
+
+        return {'target': self._getUid(args[-1])}
+
+    def handle_quit(self, numeric, command, args):
+        """Handles incoming QUIT commands."""
+        # TS6:
+        # <- :1SRAAGB4T QUIT :Quit: quit message goes here
+        # P10:
+        # <- ABAAB Q :Killed (GL_ (bangbang))
+        self.removeClient(numeric)
+        return {'text': args[0]}
