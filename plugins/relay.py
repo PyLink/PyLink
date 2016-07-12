@@ -1408,6 +1408,17 @@ def handle_save(irc, numeric, command, args):
 
 utils.add_hook(handle_save, "SAVE")
 
+def handle_svsnick(irc, numeric, command, args):
+    """
+    Handles forced nick change attempts to relay clients, tagging their nick.
+    """
+    target = args['target']
+
+    if isRelayClient(irc, target):
+        nick_collide(irc, target)
+
+utils.add_hook(handle_svsnick, "SVSNICK")
+
 ### PUBLIC COMMANDS
 
 def create(irc, source, args):
