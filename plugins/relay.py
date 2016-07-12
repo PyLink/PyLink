@@ -1387,7 +1387,8 @@ def nick_collide(irc, target):
 
     nick = remoteirc.users[remoteuser].nick
 
-    newnick = normalizeNick(irc, remotenet, nick)
+    # Force a tagged nick by setting times_tagged to 1.
+    newnick = normalizeNick(irc, remotenet, nick, times_tagged=1)
     log.info('(%s) relay.nick_collide: Fixing nick of relay client %r (%s) to %s',
              irc.name, target, nick, newnick)
     irc.proto.nick(target, newnick)
