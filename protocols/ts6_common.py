@@ -440,3 +440,13 @@ class TS6BaseProtocol(IRCS2SProtocol):
             if not (self.irc.channels[channel].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[channel].modes)):
                 del self.irc.channels[channel]
         return {'channels': channels, 'text': reason}
+
+    def handle_svsnick(self, source, command, args):
+        """Handles SVSNICK (forced nickname change attempts)."""
+        # InspIRCd:
+        # <- :00A ENCAP 902 SVSNICK 902AAAAAB Guest53593 :1468299404
+        # This is rewritten to SVSNICK with args ['902AAAAAB', 'Guest53593', '1468299404']
+
+        # UnrealIRCd:
+        # <- :services.midnight.vpn SVSNICK GL Guest87795 1468303726
+        return {'target': self._getUid(args[0]), 'newnick': args[1]}

@@ -17,7 +17,7 @@ class TS6Protocol(TS6BaseProtocol):
         super().__init__(irc)
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
-                         'EUID': 'UID'}
+                         'EUID': 'UID', 'RSFNC': 'SVSNICK'}
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
@@ -657,7 +657,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_su(self, numeric, command, args):
         """
-        Handles SU, which is used for setting login information
+        Handles SU, which is used for setting login information.
         """
         # <- :00A ENCAP * SU 42XAAAAAC :GLolol
         # <- :00A ENCAP * SU 42XAAAAAC
@@ -668,5 +668,12 @@ class TS6Protocol(TS6BaseProtocol):
 
         uid = args[0]
         self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+
+    def handle_rsfnc(self, numeric, command, args):
+        """
+        Handles RSFNC, used for forced nick change attempts.
+        """
+        # <- :00A ENCAP somenet.relay RSFNC 801AAAAAB Guest75038 1468299643 :1468299675
+        return {'target': args[0], 'newnick': args[1]}
 
 Class = TS6Protocol

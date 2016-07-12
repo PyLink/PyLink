@@ -770,4 +770,5 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self.removeClient(killed)
         return {'target': killed, 'text': args[1], 'userdata': data}
 
+
 Class = InspIRCdProtocol
