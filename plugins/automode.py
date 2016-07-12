@@ -215,11 +215,12 @@ def match(irc, channel, uid):
     modebot_uid = modebot.uids.get(irc.name)
 
     # Check every mask defined in the channel ACL.
+    outgoing_modes = []
     for mask, modes in dbentry.items():
         if irc.matchHost(mask, uid):
             # User matched a mask. Filter the mode list given to only those that are valid
             # prefix mode characters.
-            outgoing_modes = [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
+            outgoing_modes += [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
             log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
                       irc.name, modes, outgoing_modes, irc.protoname)
 
@@ -227,11 +228,11 @@ def match(irc, channel, uid):
             if modebot_uid not in irc.users:
                 modebot_uid = irc.sid
 
-            irc.proto.mode(modebot_uid, channel, outgoing_modes)
+    irc.proto.mode(modebot_uid, channel, outgoing_modes)
 
-            # Create a hook payload to support plugins like relay.
-            irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
-                          {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
+    # Create a hook payload to support plugins like relay.
+    irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
+                  {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
 
 def syncacc(irc, source, args):
     """
