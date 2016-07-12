@@ -106,7 +106,7 @@ def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
         conf.conf.get('relay', {}).get('separator') or "/"
 
     # Figure out whether we tag nicks by default or not.
-    if times_tagged == 0 and conf.conf.get('relay', {}).get('tag_nicks'):
+    if times_tagged == 0 and conf.conf.get('relay', {}).get('tag_nicks', True):
         times_tagged = 1
 
     log.debug('(%s) relay.normalizeNick: using %r as separator.', irc.name, separator)
