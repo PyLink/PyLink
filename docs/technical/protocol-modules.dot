@@ -1,0 +1,27 @@
+/* Graph showing inheritance with the current PyLink protocol protocols:
+ * Update using: dot -Tpng protocol-modules.dot > protocol-modules.png
+ */
+
+digraph G {
+	ratio = 0.8; /* make the graph wider than tall */
+	subgraph cluster_helper {
+		label="Protocol module helpers";
+		style="filled";
+		node [style="filled",color="white"];
+		color="lightblue";
+
+		"ircs2s_common.py" -> "ts6_common.py";
+	}
+
+	subgraph cluster_pluggable {
+		label="Pluggable (full) protocol modules";
+		style="filled";
+		node [style="filled",color="white"];
+		color="khaki";
+
+		"ircs2s_common.py" -> "nefarious.py";
+		"ts6_common.py" -> "ts6.py" -> "hybrid.py";
+		"ts6_common.py" -> "inspircd.py";
+		"ts6_common.py" -> "unreal.py)";
+	}
+}
