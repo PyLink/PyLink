@@ -401,9 +401,11 @@ relay:
     separator: "/"
 
     # Determines whether all nicks will be tagged by default, instead of only when a
-    # nick collision happens. It is HIGHLY RECOMMENDED you enable this, unless you're
+    # nick collision happens. It is HIGHLY RECOMMENDED that you enable this, unless you're
     # absolutely sure NO ONE will be using the same nick on 2 or more networks in your
-    # relay. Leaving this off will make their lives very miserable. You have been warned!
+    # relay.
+    # This defaults to True if not specified. Disabling this option is currently
+    # experimental.
     tag_nicks: true
 
 games:
