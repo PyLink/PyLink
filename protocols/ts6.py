@@ -330,7 +330,9 @@ class TS6Protocol(TS6BaseProtocol):
         # TB: topic burst command; we send this in topicBurst
         # EUID: extended UID command, which includes real hostname + account data info,
         #       and allows sending CHGHOST without ENCAP.
-        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID')
+        # RSFNC: states that we support RSFNC (forced nick changed attempts). XXX: With atheme services,
+        #        does this actually do anything?
+        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC')
 
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
