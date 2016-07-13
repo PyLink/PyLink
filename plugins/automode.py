@@ -204,7 +204,7 @@ def save(irc, source, args):
     reply(irc, 'Done.')
 modebot.add_cmd(save)
 
-def match(irc, channel, uid):
+def match(irc, channel, uid=None):
     """
     Automode matcher engine.
     """
@@ -216,17 +216,22 @@ def match(irc, channel, uid):
 
     # Check every mask defined in the channel ACL.
     outgoing_modes = []
-    for mask, modes in dbentry.items():
-        if irc.matchHost(mask, uid):
-            # User matched a mask. Filter the mode list given to only those that are valid
-            # prefix mode characters.
-            outgoing_modes += [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
-            log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
-                      irc.name, modes, outgoing_modes, irc.protoname)
 
-            # If the Automode bot is missing, send the mode through the PyLink server.
-            if modebot_uid not in irc.users:
-                modebot_uid = irc.sid
+    # If a UID is given, match that. Otherwise, match all users in the given channel.
+    uids = [uid] if uid else irc.channels[channel].users
+
+    for mask, modes in dbentry.items():
+        for uid in uids:
+            if irc.matchHost(mask, uid):
+                # User matched a mask. Filter the mode list given to only those that are valid
+                # prefix mode characters.
+                outgoing_modes += [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
+                log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
+                          irc.name, modes, outgoing_modes, irc.protoname)
+
+                # If the Automode bot is missing, send the mode through the PyLink server.
+                if modebot_uid not in irc.users:
+                    modebot_uid = irc.sid
 
     irc.proto.mode(modebot_uid, channel, outgoing_modes)
 
@@ -245,8 +250,7 @@ def syncacc(irc, source, args):
         reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
         return
 
-    for user in irc.channels[channel].users:
-        match(irc, channel, user)
+    match(irc, channel)
 
     reply(irc, 'Done.')
 
@@ -284,10 +288,8 @@ def handle_join(irc, source, command, args):
     ACL.
     """
     channel = irc.toLower(args['channel'])
+    match(irc, channel, source)
 
-    # Iterate over all the joining UIDs:
-    for uid in args['users']:
-        match(irc, channel, uid)
 utils.add_hook(handle_join, 'JOIN')
 utils.add_hook(handle_join, 'PYLINK_RELAY_JOIN')  # Handle the relay version of join
 utils.add_hook(handle_join, 'PYLINK_SERVICE_JOIN')  # And the version for service bots
