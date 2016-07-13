@@ -486,7 +486,10 @@ class Irc():
             text = text.replace('}', ']')
             text = text.replace('|', '\\')
             text = text.replace('~', '^')
-        return text.lower()
+        # Encode the text as bytes first, and then lowercase it so that only ASCII characters are
+        # changed. Unicode in channel names, etc. is case sensitive because IRC is just that old of
+        # a protocol!!!
+        return text.encode().lower().decode()
 
     def parseModes(self, target, args):
         """Parses a modestring list into a list of (mode, argument) tuples.
