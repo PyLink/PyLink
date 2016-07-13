@@ -101,7 +101,6 @@ class Irc():
         self.pingtimeout = self.pingfreq * 3
 
         self.connected.clear()
-        self.aborted.clear()
         self.pseudoclient = None
         self.lastping = time.time()
 
@@ -167,6 +166,7 @@ class Irc():
         __init__ in a separate thread to allow multiple concurrent connections.
         """
         while True:
+            self.aborted.clear()
             self.initVars()
             ip = self.serverdata["ip"]
             port = self.serverdata["port"]
