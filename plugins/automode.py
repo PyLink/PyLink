@@ -229,9 +229,12 @@ def match(irc, channel, uids=None):
                 log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
                           irc.name, modes, outgoing_modes, irc.protoname)
 
-                # If the Automode bot is missing, send the mode through the PyLink server.
-                if modebot_uid not in irc.users:
-                    modebot_uid = irc.sid
+    # If the Automode bot is missing, send the mode through the PyLink server.
+    if modebot_uid not in irc.users:
+        modebot_uid = irc.sid
+
+    log.debug("(%s) automode: sending modes from modebot_uid %s",
+              irc.name, modebot_uid)
 
     irc.proto.mode(modebot_uid, channel, outgoing_modes)
 
