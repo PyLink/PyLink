@@ -1281,4 +1281,13 @@ class P10Protocol(IRCS2SProtocol):
         self.checkCloakChange(target)
         # We don't need to send any hooks here, checkCloakChange does that for us.
 
+    def handle_svsnick(self, source, command, args):
+        """Handles SVSNICK (forced nickname change attempts)."""
+        # From Nefarious docs at https://github.com/evilnet/nefarious2/blob/7bd3ac4/doc/p10.txt#L1057
+        # {7SN} *** SVSNICK (non undernet)
+
+        # 1 <target numeric>
+        # 2 <new nick>
+        return {'target': args[0], 'newnick': args[1]}
+
 Class = P10Protocol
