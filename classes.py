@@ -1131,6 +1131,9 @@ class Protocol():
         self.casemapping = 'rfc1459'
         self.hook_map = {}
 
+        # Lock for updateTS to make sure only one thread can change the channel TS at one time.
+        self.ts_lock = threading.Lock()
+
     def parseArgs(self, args):
         """Parses a string of RFC1459-style arguments split into a list, where ":" may
         be used for multi-word arguments that last until the end of a line.
@@ -1187,47 +1190,50 @@ class Protocol():
                           channel)
                 self.irc.applyModes(channel, modes)
 
-        our_ts = self.irc.channels[channel].ts
-        assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
-        assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
+        # Use a lock so only one thread can change a channel's TS at once: this prevents race
+        # conditions from desyncing the channel list.
+        with self.ts_lock:
+            our_ts = self.irc.channels[channel].ts
+            assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
+            assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
-        # Check if we're the mode sender based on the UID / SID given.
-        our_mode = self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender)
-        log.debug("(%s/%s) is the mode origin us? %s",
-                  self.irc.name, channel, our_mode)
+            # Check if we're the mode sender based on the UID / SID given.
+            our_mode = self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender)
+            log.debug("(%s/%s) is the mode origin us? %s",
+                      self.irc.name, channel, our_mode)
 
-        if their_ts < our_ts:
-            # Their TS is older than ours. We should clear our stored modes for the channel and
-            # apply the ones in the queue to be set. This is regardless of whether we're sending
-            # outgoing modes or receiving some - both are handled the same with a "received" TS,
-            # and comparing it with the one we have.
-            log.debug("(%s/%s) received TS of %s is lower than our %s; mode query %s",
-                      self.irc.name, channel, their_ts, our_ts, modes)
+            if their_ts < our_ts:
+                # Their TS is older than ours. We should clear our stored modes for the channel and
+                # apply the ones in the queue to be set. This is regardless of whether we're sending
+                # outgoing modes or receiving some - both are handled the same with a "received" TS,
+                # and comparing it with the one we have.
+                log.debug("(%s/%s) received TS of %s is lower than our %s; mode query %s",
+                          self.irc.name, channel, their_ts, our_ts, modes)
 
-            # Update the channel TS to theirs regardless of whether the mode setting passes.
-            log.debug('(%s) Setting channel TS of %s to %s from %s',
-                      self.irc.name, channel, their_ts, our_ts)
-            self.irc.channels[channel].ts = their_ts
+                # Update the channel TS to theirs regardless of whether the mode setting passes.
+                log.debug('(%s) Setting channel TS of %s to %s from %s',
+                          self.irc.name, channel, their_ts, our_ts)
+                self.irc.channels[channel].ts = their_ts
 
-            _clear()
-            if not our_mode:
+                _clear()
+                if not our_mode:
+                    _apply()
+
+            elif their_ts == our_ts:
+                log.debug("(%s/%s) remote TS of %s is equal to our %s; mode query %s",
+                          self.irc.name, channel, their_ts, our_ts, modes)
+                # Their TS is equal to ours. Merge modes.
                 _apply()
 
-        elif their_ts == our_ts:
-            log.debug("(%s/%s) remote TS of %s is equal to our %s; mode query %s",
-                      self.irc.name, channel, their_ts, our_ts, modes)
-            # Their TS is equal to ours. Merge modes.
-            _apply()
+            elif their_ts > our_ts:
+                log.debug("(%s/%s) remote TS of %s is higher than our %s; mode query %s",
+                          self.irc.name, channel, their_ts, our_ts, modes)
+                # Their TS is younger than ours. Clear the state and replace the modes for the channel
+                # with the ones being set, if we're the one setting modes.
+                _clear()
 
-        elif their_ts > our_ts:
-            log.debug("(%s/%s) remote TS of %s is higher than our %s; mode query %s",
-                      self.irc.name, channel, their_ts, our_ts, modes)
-            # Their TS is younger than ours. Clear the state and replace the modes for the channel
-            # with the ones being set, if we're the one setting modes.
-            _clear()
-
-            if our_mode:
-                _apply()
+                if our_mode:
+                    _apply()
 
     def _getSid(self, sname):
         """Returns the SID of a server with the given name, if present."""
