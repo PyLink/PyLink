@@ -204,7 +204,7 @@ def save(irc, source, args):
     reply(irc, 'Done.')
 modebot.add_cmd(save)
 
-def match(irc, channel, uid=None):
+def match(irc, channel, uids=None):
     """
     Automode matcher engine.
     """
@@ -217,8 +217,8 @@ def match(irc, channel, uid=None):
     # Check every mask defined in the channel ACL.
     outgoing_modes = []
 
-    # If a UID is given, match that. Otherwise, match all users in the given channel.
-    uids = [uid] if uid else irc.channels[channel].users
+    # If UIDs are given, match those. Otherwise, match all users in the given channel.
+    uids = uids or irc.channels[channel].users
 
     for mask, modes in dbentry.items():
         for uid in uids:
@@ -288,7 +288,7 @@ def handle_join(irc, source, command, args):
     ACL.
     """
     channel = irc.toLower(args['channel'])
-    match(irc, channel, source)
+    match(irc, channel, args['users'])
 
 utils.add_hook(handle_join, 'JOIN')
 utils.add_hook(handle_join, 'PYLINK_RELAY_JOIN')  # Handle the relay version of join
@@ -299,7 +299,7 @@ def handle_services_login(irc, source, command, args):
     Handles services login change, to trigger Automode matching."""
     for channel in irc.users[source].channels:
         # Look at all the users' channels for any possible changes.
-        match(irc, channel, source)
+        match(irc, channel, [source])
 
 utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
 utils.add_hook(handle_services_login, 'PYLINK_RELAY_SERVICES_LOGIN')
