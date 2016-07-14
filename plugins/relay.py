@@ -246,9 +246,10 @@ def spawnRelayServer(irc, remoteirc):
                                     (remoteirc.serverdata.get('netname')\
                                     or remoteirc.name), endburst_delay=3)
     except ValueError:  # Network not initialized yet, or a server name conflict.
-        log.exception('(%s) Failed to spawn server for %r:',
+        log.exception('(%s) Failed to spawn server for %r (possible jupe?):',
                       irc.name, remoteirc.name)
         # We will just bail here. Disconnect the bad network.
+
         control.remove_network(irc)
         return
 
