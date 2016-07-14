@@ -12,10 +12,6 @@ except Exception as e:
     print('ERROR: Failed to get version from "git describe --tags": %s: %s' % (type(e).__name__, e))
     from __init__ import __version__ as fallback_version
 
-    # Mark builds with unretrievable version (GitHub tarballs, etc.) as -dirty
-    if not fallback_version.endswith('-dirty'):
-        fallback_version += '-dirty'
-
     print('Using fallback version of %r.' % fallback_version)
     version = fallback_version
 
