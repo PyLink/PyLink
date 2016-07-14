@@ -28,17 +28,17 @@ def identify(irc, source, args):
     try:
         username, password = args[0], args[1]
     except IndexError:
-        irc.msg(source, 'Error: Not enough arguments.')
+        irc.reply('Error: Not enough arguments.')
         return
     # Usernames are case-insensitive, passwords are NOT.
     if username.lower() == irc.conf['login']['user'].lower() and password == irc.conf['login']['password']:
         realuser = irc.conf['login']['user']
         irc.users[source].identified = realuser
-        irc.msg(source, 'Successfully logged in as %s.' % realuser)
+        irc.reply('Successfully logged in as %s.' % realuser)
         log.info("(%s) Successful login to %r by %s",
                  irc.name, username, irc.getHostmask(source))
     else:
-        irc.msg(source, 'Error: Incorrect credentials.')
+        irc.reply('Error: Incorrect credentials.')
         u = irc.users[source]
         log.warning("(%s) Failed login to %r from %s",
                     irc.name, username, irc.getHostmask(source))
