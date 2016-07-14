@@ -10,8 +10,9 @@ try:
     version = subprocess.check_output(['git', 'describe', '--tags']).decode('utf-8').strip()
 except Exception as e:
     print('ERROR: Failed to get version from "git describe --tags": %s: %s' % (type(e).__name__, e))
-    from __init__ import __version__ as fallback_version
 
+    with open('VERSION') as f:
+        fallback_version = f.read().strip()
     print('Using fallback version of %r.' % fallback_version)
     version = fallback_version
 
