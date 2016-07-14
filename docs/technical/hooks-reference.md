@@ -130,6 +130,10 @@ The following hooks represent regular IRC commands sent between servers.
 - **SAVE**: `{'target': 'UID8', 'ts': 1234567892, 'oldnick': 'Abracadabra'}`
     - For protocols that use TS6-style nick saving. During nick collisions, instead of killing the losing client, servers that support SAVE will send such a command targeting the losing client, which forces that user's nick to their UID.
 
+- **SVSNICK**: `{'target': 'UID1', 'newnick': 'abcd'}`
+    - PyLink does not comply with SVSNICK requests, but instead forwards it to plugins that listen for it.
+    - Relay, for example, treats SVSNICK as a cue to force tag nicks.
+
 - **VERSION**: `{}`
     - This is used for protocols that send VERSION requests between servers when a client requests it (e.g. `/raw version pylink.local`).
     - `coreplugin` automatically handles this by responding with a 351 numeric, with the data being the output of `utils.fullVersion(irc)`.
