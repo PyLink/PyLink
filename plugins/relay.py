@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
+from pylinkirc.coremods import control
 
 ### GLOBAL (statekeeping) VARIABLES
 relayusers = defaultdict(dict)
@@ -248,9 +249,8 @@ def spawnRelayServer(irc, remoteirc):
         log.exception('(%s) Failed to spawn server for %r:',
                       irc.name, remoteirc.name)
         # We will just bail here. Disconnect the bad network.
-        handle_disconnect(irc, None, 'PYLINK_DISCONNECT_RELAY_FORCED', {})
-        irc.disconnect()
-        raise
+        control.remove_network(irc)
+        return
 
     # Mark the server as a relay server
     irc.servers[sid].remote = remoteirc.name
