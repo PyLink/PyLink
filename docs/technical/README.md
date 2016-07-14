@@ -18,8 +18,6 @@ PyLink is an a modular, plugin-based IRC services framework. It uses swappable p
 - [PyLink hooks reference](hooks-reference.md)
 - [Supported named channel modes](channel-modes.csv)
 - [Supported named user modes](user-modes.csv)
-- [API reference: utils.py](autogen/utils.html)
-- [API reference: classes.py](autogen/classes.html)
 
 ### Future topics (not yet available)
 - [Writing tests for PyLink modules](writing-tests.md)
