@@ -51,8 +51,7 @@ def validateConf(conf):
         assert conf.get(section), "Missing %r section in config." % section
 
     for netname, serverblock in conf['servers'].items():
-        for section in ('ip', 'port', 'recvpass', 'sendpass', 'hostname',
-                        'sid', 'sidrange', 'protocol'):
+        for section in ('ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol'):
             assert serverblock.get(section), "Missing %r in server block for %r." % (section, netname)
 
     assert type(conf['login'].get('password')) == type(conf['login'].get('user')) == str and \
