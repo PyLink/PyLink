@@ -1256,6 +1256,13 @@ class Protocol():
         target = self.irc.nickToUid(target) or target
         return target
 
+    def parsePrefixedArgs(self, args):
+        """Similar to parseArgs(), but stripping leading colons from the first argument
+        of a line (usually the sender field)."""
+        args = self.parseArgs(args)
+        args[0] = args[0].split(':', 1)[1]
+        return args
+
 ### FakeIRC classes, used for test cases
 
 class FakeIRC(Irc):

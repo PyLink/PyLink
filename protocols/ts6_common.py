@@ -113,13 +113,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""
         self.irc.send(':%s %s' % (source, msg))
 
-    def parseTS6Args(self, args):
-        """Similar to parseArgs(), but stripping leading colons from the first argument
-        of a line (usually the sender field)."""
-        args = self.parseArgs(args)
-        args[0] = args[0].split(':', 1)[1]
-        return args
-
     def _getOutgoingNick(self, uid):
         """
         Returns the outgoing nick for the given UID. In the base ts6_common implementation,
@@ -314,7 +307,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """
         data = data.split(" ")
         try:  # Message starts with a SID/UID prefix.
-            args = self.parseTS6Args(data)
+            args = self.parsePrefixedArgs(data)
             sender = args[0]
             command = args[1]
             args = args[2:]
@@ -328,7 +321,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
                 # Sender is a user.
                 numeric = self._getUid(sender)
 
-        # parseTS6Args() will raise IndexError if the TS6 sender prefix is missing.
+        # parsePrefixedArgs() will raise IndexError if the TS6 sender prefix is missing.
         except IndexError:
             # Raw command without an explicit sender; assume it's being sent by our uplink.
             args = self.parseArgs(data)
