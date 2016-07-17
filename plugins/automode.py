@@ -96,7 +96,7 @@ def die(sourceirc):
     utils.unregisterService('automode')
 
 def setacc(irc, source, args):
-    """<channel> <mask> <mode list OR literal ->
+    """<channel> <mask> <mode list>
 
     Assigns the given prefix mode characters to the given mask for the channel given. Extended targets are supported for masks - use this to your advantage!
 
