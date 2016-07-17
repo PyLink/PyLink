@@ -51,6 +51,7 @@ class ClientbotWrapperProtocol(Protocol):
         STUB: Pretends to spawn a new client with a subset of the given options.
         """
 
+        server = server or self.irc.sid
         uid = self.uidgen.next_uid()
 
         ts = ts or int(time.time())
@@ -58,7 +59,7 @@ class ClientbotWrapperProtocol(Protocol):
         log.debug('(%s) spawnClient stub called, saving nick %s as PUID %s', self.irc.name, nick, uid)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname)
         log.debug('(%s) self.irc.users: %s', self.irc.name, self.irc.users)
-        self.irc.servers[self.irc.sid].users.add(uid)
+        self.irc.servers[server].users.add(uid)
         return u
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
@@ -70,8 +71,18 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.servers[sid] = IrcServer(uplink, name)
         return sid
 
-    def join(self, *args):
-        return
+    def join(self, client, channel):
+        """STUB: Joins a user to a channel."""
+        channel = self.irc.toLower(channel)
+
+        self.irc.channels[channel].users.add(client)
+        self.irc.users[client].channels.add(channel)
+
+        if client == self.irc.pseudoclient.uid:
+            self.irc.send('JOIN %s' % channel)
+        else:
+            log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
+                      self.irc.getFriendlyName(client), channel)
 
     def ping(self, *args):
         return
@@ -80,29 +91,36 @@ class ClientbotWrapperProtocol(Protocol):
         """Event handler for the RFC1459 (clientbot) protocol.
         """
         data = data.split(" ")
-        args = self.parsePrefixedArgs(data)
-        sender = args[0]
+        try:
+            args = self.parsePrefixedArgs(data)
+            sender = args[0]
+            command = args[1]
+            args = args[1:]
 
-        # PyLink as a services framework expects UIDs and SIDs for everythiung. Since we connect
-        # as a bot here, there's no explicit user introduction, so we're going to generate
-        # pseudo-uids and pseudo-sids as we see prefixes.
-        log.debug('(%s) handle_events: sender is %s', self.irc.name, sender)
-        if '!' not in sender:
-            # Sender is a server name.
-            idsource = self._getSid(sender)
-            if idsource not in self.irc.servers:
-                idsource = self.spawnServer(sender)
+        except IndexError:
+            # Raw command without an explicit sender; assume it's being sent by our uplink.
+            args = self.parseArgs(data)
+            sender = self.irc.uplink
+            command = args[0]
+            args = args[1:]
         else:
-            # Sender is a nick!user@host prefix. Split it into its relevant parts.
-            nick, identhost = sender.split('!', 1)
-            idsource = self.irc.nickToUid(nick)
-            if not idsource:
-                ident, host = identhost.split('@', 1)
-                idsource = self.spawnClient(nick, ident, host).uid
-        log.debug('(%s) handle_events: idsource is %s', self.irc.name, idsource)
+            # PyLink as a services framework expects UIDs and SIDs for everythiung. Since we connect
+            # as a bot here, there's no explicit user introduction, so we're going to generate
+            # pseudo-uids and pseudo-sids as we see prefixes.
+            log.debug('(%s) handle_events: sender is %s', self.irc.name, sender)
+            if '!' not in sender:
+                # Sender is a server name.
+                idsource = self._getSid(sender)
+                if idsource not in self.irc.servers:
+                    idsource = self.spawnServer(sender)
+            else:
+                # Sender is a nick!user@host prefix. Split it into its relevant parts.
+                nick, ident, host = utils.splitHostmask(sender)
+                idsource = self.irc.nickToUid(nick)
+                if not idsource:
+                    idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink).uid
+            log.debug('(%s) handle_events: idsource is %s', self.irc.name, idsource)
 
-        command = args[1]
-        args = args[2:]
         try:
             func = getattr(self, 'handle_'+command.lower())
         except AttributeError:  # unhandled command
@@ -112,10 +130,20 @@ class ClientbotWrapperProtocol(Protocol):
             if parsed_args is not None:
                 return [idsource, command, parsed_args]
 
+    def handle_001(self, source, command, args):
+        """
+        Handles 001 / RPL_WELCOME.
+        """
+        # enumerate our uplink
+        self.irc.uplink = source
+
     def handle_005(self, source, command, args):
         """
         Handles 005 / RPL_ISUPPORT.
         """
-        return {'parse_as': 'ENDBURST'}
+        # TODO: capability negotiation happens here
+        if not self.irc.connected.is_set():
+            self.irc.connected.set()
+            return {'parse_as': 'ENDBURST'}
 
 Class = ClientbotWrapperProtocol
