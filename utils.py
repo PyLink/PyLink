@@ -172,6 +172,14 @@ def getDatabaseName(dbname):
     dbname += '.db'
     return dbname
 
+def splitHostmask(mask):
+    """
+    Returns a nick!user@host hostmask split into three fields: nick, user, and host.
+    """
+    nick, identhost = mask.split('!', 1)
+    ident, host = identhost.split('@', 1)
+    return [nick, ident, host]
+
 class ServiceBot():
     """
     PyLink IRC Service class.
