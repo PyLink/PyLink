@@ -64,6 +64,24 @@ class IncrementalUIDGenerator():
         self.increment()
         return uid
 
+class PUIDGenerator():
+    """
+    Pseudo UID Generator module, using a prefix and a simple counter.
+    """
+
+    def __init__(self, prefix):
+        self.prefix = prefix
+        self.counter = 0
+
+    def next_uid(self):
+        """
+        Generates the next PUID.
+        """
+        uid = '%s@%s' % (self.prefix, self.counter)
+        self.counter += 1
+        return uid
+    next_sid = next_uid
+
 def add_cmd(func, name=None, **kwargs):
     """Binds an IRC command function to the given command name."""
     world.services['pylink'].add_cmd(func, name=name, **kwargs)
