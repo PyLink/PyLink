@@ -243,7 +243,8 @@ def match(irc, channel, uids=None):
                   {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
 
 def syncacc(irc, source, args):
-    """
+    """<channel>
+
     Syncs Automode access lists to the channel.
     """
     irc.checkAuthenticated(source, allowOper=False)
@@ -299,7 +300,8 @@ utils.add_hook(handle_join, 'PYLINK_SERVICE_JOIN')  # And the version for servic
 
 def handle_services_login(irc, source, command, args):
     """
-    Handles services login change, to trigger Automode matching."""
+    Handles services login change, to trigger Automode matching.
+    """
     for channel in irc.users[source].channels:
         # Look at all the users' channels for any possible changes.
         match(irc, channel, [source])
