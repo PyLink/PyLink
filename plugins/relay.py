@@ -1650,9 +1650,10 @@ def linked(irc, source, args):
         if remoteirc and channel in remoteirc.channels:
             c = remoteirc.channels[channel]
             if ('s', None) in c.modes or ('p', None) in c.modes:
-                # Only show secret channels to opers, and tag them with
+                # Only show secret channels to opers or those in the channel, and tag them as
                 # [secret].
-                if irc.isOper(source):
+                localchan = getRemoteChan(remoteirc, irc, channel)
+                if irc.isOper(source) or (localchan and source in irc.channels[localchan].users):
                     s += '\x02[secret]\x02 '
                 else:
                     continue
