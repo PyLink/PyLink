@@ -8,7 +8,7 @@ InterJanus-style links between PyLink daemons are not supported yet; see https:/
 
 ### Does PyLink support Clientbot relay like Janus?
 
-Not yet; see https://github.com/GLolol/PyLink/issues/144.
+Not yet; see https://github.com/GLolol/PyLink/issues/144
 
 ### What are PyLink Relay's benefits over Janus?
 
@@ -23,4 +23,4 @@ In no particular order:
 PyLink does not support inbound connections - much like Atheme or Anope, it only connects outwards to IRCds. (If you don't understand what this means, it means you should turn autoconnect OFF for PyLink)
 
 ### I get errors like "ImportError: No module named 'yaml'" when I start PyLink
-- You are missing dependencies - re-read https://github.com/GLolol/PyLink#dependencies.
+- You are missing dependencies - re-read https://github.com/GLolol/PyLink#dependencies
