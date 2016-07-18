@@ -23,6 +23,7 @@ PyLink and any bundled software are licensed under the Mozilla Public License, v
 ## Dependencies
 
 * Python 3.4+
+* Setuptools (`pip install setuptools`)
 * PyYAML (`pip install pyyaml`)
 * [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip install ircmatch`)
 * *For the servprotect plugin*: [expiringdict](https://github.com/mailgun/expiringdict) (note: unfortunately, installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
@@ -55,7 +56,7 @@ Other TS6 and P10 variations may work, but are not officially supported.
 
 ## Setup
 
-1) Install PyLink by using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
+1) Install PyLink by using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install; note: `--user` is a *literal* string)
 
 2) Rename `example-conf.yml` to `pylink.yml` and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
 
