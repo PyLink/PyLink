@@ -68,7 +68,7 @@ internals](https://github.com/GLolol/PyLink/blob/0.4.0-dev/classes.py#L267-L272)
 
 - **`quit`**`(self, source, reason)` - Quits a PyLink client.
 
-- **`sjoin`**`(self, server, channel, users, ts=None)` - Sends an SJOIN for a group of users to a channel. The sender should always be a Server ID (SID). TS is
+- **`sjoin`**`(self, server, channel, users, ts=None, modes=set())` - Sends an SJOIN for a group of users to a channel. The sender should always be a Server ID (SID). TS is
 optional, and defaults to the one we've stored in the channel state if not given. `users` is a list of `(prefix mode, UID)` pairs. Example uses:
     - `sjoin('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])`
     - `sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])`
