@@ -109,6 +109,7 @@ class ClientbotWrapperProtocol(Protocol):
     def kick(self, source, channel, target, reason=''):
         """Sends channel kicks."""
         # TODO: handle kick failures and send rejoin hooks for the target
+        reason = self._formatText(source, reason)
         self.irc.send('KICK %s %s :%s' % (channel, self._expandPUID(target), reason))
         self.part(target, channel, reason=reason)
 
