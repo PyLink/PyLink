@@ -1,4 +1,5 @@
 import time
+import string
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
@@ -88,6 +89,7 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
+        # Only joins for the main PyLink client are actually forwarded. Others are ignored.
         if client == self.irc.pseudoclient.uid:
             self.irc.send('JOIN %s' % channel)
         else:
@@ -118,8 +120,21 @@ class ClientbotWrapperProtocol(Protocol):
         if self.irc.uplink:
             self.irc.send('PING %s' % self.irc.getFriendlyName(self.irc.uplink))
 
+    def part(self, source, channel, reason=''):
+        """STUB: Parts a user from a channel."""
+        self.irc.channels[channel].removeuser(source)
+        self.irc.users[source].channels.discard(channel)
+
+        # Only parts for the main PyLink client are actually forwarded. Others are ignored.
+        if source == self.irc.pseudoclient.uid:
+            self.irc.send('PART %s :%s' % (channel, reason))
+
+    def quit(self, source, reason):
+        """STUB: Quits a client."""
+        self.removeClient(source)
+
     def handle_events(self, data):
-        """Event handler for the RFC1459 (clientbot) protocol.
+        """Event handler for the RFC1459/2812 (clientbot) protocol.
         """
         data = data.split(" ")
         try:
@@ -177,6 +192,67 @@ class ClientbotWrapperProtocol(Protocol):
             self.irc.connected.set()
             return {'parse_as': 'ENDBURST'}
 
+    def handle_353(self, source, command, args):
+        """
+        Handles 353 / RPL_NAMREPLY.
+        """
+        # <- :charybdis.midnight.vpn 353 ice = #test :ice @GL
+
+        # Mark "@"-type channels as secret automatically, per RFC2812.
+        channel = self.irc.toLower(args[2])
+        if args[1] == '@':
+            self.irc.applyModes(channel, [('+s', None)])
+
+        names = set()
+        for name in args[-1].split():
+            # TODO: process prefix modes instead of just stripping them
+            name = name.lstrip(string.punctuation)
+
+            # Get the PUID for the given nick. If one doesn't exist, spawn
+            # a new virtual user. TODO: wait for WHO responses for each nick before
+            # spawning in order to get a real ident/host.
+            idsource = self.irc.nickToUid(name) or self.spawnClient(name, server=self.irc.uplink).uid
+
+            # Queue these virtual users to be joined if they're not already in the channel.
+            if idsource not in self.irc.channels[channel].users:
+                names.add(idsource)
+                self.irc.users[idsource].channels.add(channel)
+
+        # Statekeeping: make sure the channel's user list is updated!
+        self.irc.channels[channel].users |= names
+
+        log.debug('(%s) handle_353: adding users %s to %s', self.irc.name, names, channel)
+
+        return {'channel': channel, 'users': names, 'modes': self.irc.channels[channel].modes,
+                'parse_as': "JOIN"}
+
+    def handle_join(self, source, command, args):
+        """
+        Handles incoming JOINs.
+        """
+        # <- :GL|!~GL@127.0.0.1 JOIN #whatever
+        channel = self.irc.toLower(args[0])
+        self.join(source, channel)
+
+        return {'channel': channel, 'users': [source], 'modes': self.irc.channels[channel].modes}
+
+    def handle_part(self, source, command, args):
+        """
+        Handles incoming PARTs.
+        """
+        # <- :GL|!~GL@127.0.0.1 PART #whatever
+        channels = list(map(self.irc.toLower, args[0].split(',')))
+        try:
+            reason = args[1]
+        except IndexError:
+            reason = ''
+
+
+        for channel in channels:
+            self.part(source, channel, reason)
+
+        return {'channels': channels, 'text': reason}
+
     def handle_ping(self, source, command, args):
         """
         Handles incoming PING requests.
@@ -202,6 +278,11 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             target = self._getUid(target)
         return {'target': target, 'text': args[1]}
+
+    def handle_quit(self, source, command, args):
+        """Handles incoming QUITs."""
+        self.quit(source, args[0])
+        return {'text': args[0]}
 
     handle_notice = handle_privmsg
 
