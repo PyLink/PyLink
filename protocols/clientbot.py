@@ -28,6 +28,16 @@ class ClientbotWrapperProtocol(Protocol):
             return nick
         return uid
 
+    def _formatText(self, source, text):
+        """
+        Formats text with the given sender as a prefix.
+        """
+        if source == self.irc.pseudoclient.uid:
+            return text
+        else:
+            # TODO: configurable formatting
+            return '<%s> %s' % (self.irc.getFriendlyName(source), text)
+
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
@@ -96,21 +106,28 @@ class ClientbotWrapperProtocol(Protocol):
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
                       self.irc.getFriendlyName(client), channel)
 
+    def kick(self, source, channel, target, reason=''):
+        """Sends channel kicks."""
+        # TODO: handle kick failures and send rejoin hooks for the target
+        self.irc.send('KICK %s %s :%s' % (channel, self._expandPUID(target), reason))
+        self.part(target, channel, reason=reason)
+
     def message(self, source, target, text, notice=False):
         """Sends messages to the target."""
         command = 'NOTICE' if notice else 'PRIVMSG'
         target = self._expandPUID(target)
 
-        if source == self.irc.pseudoclient.uid:
-            # Message has source of main PyLink client: make it so.
-            self.irc.send('%s %s :%s' % (command, target, text))
-        else:
-            # Message was sent from somewhere else. Prefix it with
-            # the real sender. TODO: configurable formatting
-            self.irc.send('%s %s :<%s> %s' % (command, target, self.irc.getFriendlyName(source), text))
+        self.irc.send('%s %s :%s' % (command, target, self._formatText(source, text)))
+
+    def nick(self, source, newnick):
+        """STUB: Sends NICK changes."""
+        if source == irc.pseudoclient.uid:
+            self.irc.send('NICK :%s' % (channel, self._expandPUID(target), reason))
+        self.irc.users[source].nick = newnick
 
     def notice(self, source, target, text):
         """Sends notices to the target."""
+        # Wrap around message(), which does all the text formatting for us.
         self.message(source, target, text, notice=True)
 
     def ping(self, source=None, target=None):
@@ -133,9 +150,19 @@ class ClientbotWrapperProtocol(Protocol):
         """STUB: Quits a client."""
         self.removeClient(source)
 
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
+        """STUB: bursts joins from a server."""
+        puids = {u[-1] for u in users}
+        for user in puids:
+            self.irc.users[user].channels.add(channel)
+
+        self.irc.channels[channel].users |= puids
+
+    def squit(self, source, target, text):
+        self._squit(source, target, text)
+
     def handle_events(self, data):
-        """Event handler for the RFC1459/2812 (clientbot) protocol.
-        """
+        """Event handler for the RFC1459/2812 (clientbot) protocol."""
         data = data.split(" ")
         try:
             args = self.parsePrefixedArgs(data)
@@ -236,6 +263,28 @@ class ClientbotWrapperProtocol(Protocol):
 
         return {'channel': channel, 'users': [source], 'modes': self.irc.channels[channel].modes}
 
+    def handle_kick(self, source, command, args):
+        """
+        Handles incoming KICKs.
+        """
+        # <- :GL!~gl@127.0.0.1 KICK #whatever GL| :xd
+        channel = self.irc.toLower(args[0])
+        target = self.irc.nickToUid(args[1])
+
+        try:
+            reason = args[2]
+        except IndexError:
+            reason = ''
+
+        self.part(target, channel, reason)
+        return {'channel': channel, 'target': target, 'text': reason}
+
+    def handle_nick(self, source, command, args):
+        # <- :GL|!~GL@127.0.0.1 NICK :GL_
+        oldnick = self.irc.users[source].nick
+        self.nick(source, args[0])
+        return {'newnick': args[0], 'oldnick': oldnick}
+
     def handle_part(self, source, command, args):
         """
         Handles incoming PARTs.
@@ -246,7 +295,6 @@ class ClientbotWrapperProtocol(Protocol):
             reason = args[1]
         except IndexError:
             reason = ''
-
 
         for channel in channels:
             self.part(source, channel, reason)
