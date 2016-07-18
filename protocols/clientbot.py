@@ -222,6 +222,11 @@ class ClientbotWrapperProtocol(Protocol):
         # TODO: capability negotiation happens here
         if not self.irc.connected.is_set():
             self.irc.connected.set()
+
+            # Run autoperform commands.
+            for line in self.irc.serverdata.get("autoperform", []):
+                self.irc.send(line)
+
             return {'parse_as': 'ENDBURST'}
 
     def handle_353(self, source, command, args):
