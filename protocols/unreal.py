@@ -41,7 +41,7 @@ class UnrealProtocol(TS6BaseProtocol):
             log.warning('(%s) mixed_link is experimental and may cause problems. '
                         'You have been warned!', self.irc.name)
 
-    def _getOutgoingNick(self, uid):
+    def _expandPUID(self, uid):
         """
         Returns the outgoing nick for the given UID. For PUIDs (used to store UID-less
         3.2 users), this will change the PUID given to the actual user's nick,

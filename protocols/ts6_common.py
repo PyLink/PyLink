@@ -113,7 +113,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""
         self.irc.send(':%s %s' % (source, msg))
 
-    def _getOutgoingNick(self, uid):
+    def _expandPUID(self, uid):
         """
         Returns the outgoing nick for the given UID. In the base ts6_common implementation,
         this does nothing, but other modules subclassing this can override it.
@@ -128,7 +128,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """Sends raw numerics from a server to a remote client, used for WHOIS
         replies."""
         # Mangle the target for IRCds that require it.
-        target = self._getOutgoingNick(target)
+        target = self._expandPUID(target)
 
         self._send(source, '%s %s %s' % (numeric, target, text))
 
@@ -144,7 +144,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
             reason = 'No reason given'
 
         # Mangle kick targets for IRCds that require it.
-        target = self._getOutgoingNick(target)
+        target = self._expandPUID(target)
 
         self._send(numeric, 'KICK %s %s :%s' % (channel, target, reason))
 
@@ -224,7 +224,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client exists.')
 
         # Mangle message targets for IRCds that require it.
-        target = self._getOutgoingNick(target)
+        target = self._expandPUID(target)
 
         self._send(numeric, 'PRIVMSG %s :%s' % (target, text))
 
@@ -234,7 +234,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client exists.')
 
         # Mangle message targets for IRCds that require it.
-        target = self._getOutgoingNick(target)
+        target = self._expandPUID(target)
 
         self._send(numeric, 'NOTICE %s :%s' % (target, text))
 
