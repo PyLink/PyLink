@@ -162,6 +162,10 @@ class ClientbotWrapperProtocol(Protocol):
     def squit(self, source, target, text):
         self._squit(source, target, text)
 
+    def _stub(self, *args):
+        return
+    away = mode = topic = topicBurst = invite = knock = _stub
+
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
         data = data.split(" ")
