@@ -17,6 +17,16 @@ class ClientbotWrapperProtocol(Protocol):
         self.uidgen = utils.PUIDGenerator('PUID')
         self.sidgen = utils.PUIDGenerator('PSID')
 
+    def _expandPUID(self, uid):
+        """
+        Returns the real nick for the given PUID.
+        """
+        if uid in self.irc.users:
+            nick = self.irc.users[uid].nick
+            log.debug('(%s) Mangling target PUID %s to nick %s', self.irc.name, uid, nick)
+            return nick
+        return uid
+
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
@@ -84,7 +94,27 @@ class ClientbotWrapperProtocol(Protocol):
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
                       self.irc.getFriendlyName(client), channel)
 
+    def message(self, source, target, text, notice=False):
+        """Sends messages to the target."""
+        command = 'NOTICE' if notice else 'PRIVMSG'
+        target = self._expandPUID(target)
+
+        if source == self.irc.pseudoclient.uid:
+            # Message has source of main PyLink client: make it so.
+            self.irc.send('%s %s :%s' % (command, target, text))
+        else:
+            # Message was sent from somewhere else. Prefix it with
+            # the real sender. TODO: configurable formatting
+            self.irc.send('%s %s :<%s> %s' % (command, target, self.irc.getFriendlyName(source), text))
+
+    def notice(self, source, target, text):
+        """Sends notices to the target."""
+        self.message(source, target, text, notice=True)
+
     def ping(self, source=None, target=None):
+        """
+        Sends PING to the uplink.
+        """
         if self.irc.uplink:
             self.irc.send('PING %s' % self.irc.getFriendlyName(self.irc.uplink))
 
@@ -160,5 +190,19 @@ class ClientbotWrapperProtocol(Protocol):
         if source == self.irc.uplink:
             self.irc.lastping = time.time()
 
+    def handle_privmsg(self, source, command, args):
+        """Handles incoming PRIVMSG/NOTICE."""
+        # <- :sender PRIVMSG #dev :afasfsa
+        # <- :sender NOTICE somenick :afasfsa
+        target = args[0]
+
+        # We use lowercase channels internally.
+        if utils.isChannel(target):
+            target = self.irc.toLower(target)
+        else:
+            target = self._getUid(target)
+        return {'target': target, 'text': args[1]}
+
+    handle_notice = handle_privmsg
 
 Class = ClientbotWrapperProtocol
