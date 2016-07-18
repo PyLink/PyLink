@@ -84,8 +84,9 @@ class ClientbotWrapperProtocol(Protocol):
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
                       self.irc.getFriendlyName(client), channel)
 
-    def ping(self, *args):
-        return
+    def ping(self, source=None, target=None):
+        if self.irc.uplink:
+            self.irc.send('PING %s' % self.irc.getFriendlyName(self.irc.uplink))
 
     def handle_events(self, data):
         """Event handler for the RFC1459 (clientbot) protocol.
@@ -100,7 +101,7 @@ class ClientbotWrapperProtocol(Protocol):
         except IndexError:
             # Raw command without an explicit sender; assume it's being sent by our uplink.
             args = self.parseArgs(data)
-            sender = self.irc.uplink
+            idsource = sender = self.irc.uplink
             command = args[0]
             args = args[1:]
         else:
@@ -145,5 +146,19 @@ class ClientbotWrapperProtocol(Protocol):
         if not self.irc.connected.is_set():
             self.irc.connected.set()
             return {'parse_as': 'ENDBURST'}
+
+    def handle_ping(self, source, command, args):
+        """
+        Handles incoming PING requests.
+        """
+        self.irc.send('PONG :%s' % args[0])
+
+    def handle_pong(self, source, command, args):
+        """
+        Handles incoming PONG.
+        """
+        if source == self.irc.uplink:
+            self.irc.lastping = time.time()
+
 
 Class = ClientbotWrapperProtocol
