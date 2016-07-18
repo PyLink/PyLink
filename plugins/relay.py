@@ -118,7 +118,7 @@ def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
     # Charybdis, IRCu, etc. don't allow / in nicks, and will SQUIT with a protocol
     # violation if it sees one. Or it might just ignore the client introduction and
     # cause bad desyncs.
-    protocol_allows_slashes = protoname.startswith(('insp', 'unreal')) or \
+    protocol_allows_slashes = protoname.startswith(('insp', 'unreal', 'clientbot')) or \
         irc.serverdata.get('relay_force_slashes')
 
     if '/' not in separator or not protocol_allows_slashes:
