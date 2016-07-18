@@ -1284,8 +1284,8 @@ class Protocol():
             if data.uplink == split_server:
                 log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
                 # Recursively run SQUIT on any other hubs this server may have been connected to.
-                args = self.handle_squit(sid, 'SQUIT', [sid, "0",
-                                         "PyLink: Automatically splitting leaf servers of %s" % sid])
+                args = self._squit(sid, 'SQUIT', [sid, "0",
+                                   "PyLink: Automatically splitting leaf servers of %s" % sid])
                 affected_users += args['users']
 
         for user in self.irc.servers[split_server].users.copy():

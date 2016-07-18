@@ -42,7 +42,7 @@ class IRCS2SProtocol(Protocol):
 
     def handle_squit(self, numeric, command, args):
         """Handles incoming SQUITs."""
-        return _squit(numeric, command, args)
+        return self._squit(numeric, command, args)
 
     def handle_away(self, numeric, command, args):
         """Handles incoming AWAY messages."""
