@@ -32,7 +32,7 @@ class ClientbotWrapperProtocol(Protocol):
         """
         Formats text with the given sender as a prefix.
         """
-        if source == self.irc.pseudoclient.uid:
+        if self.irc.pseudoclient and source == self.irc.pseudoclient.uid:
             return text
         else:
             # TODO: configurable formatting
@@ -100,7 +100,7 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.users[client].channels.add(channel)
 
         # Only joins for the main PyLink client are actually forwarded. Others are ignored.
-        if client == self.irc.pseudoclient.uid:
+        if self.irc.pseudoclient and client == self.irc.pseudoclient.uid:
             self.irc.send('JOIN %s' % channel)
         else:
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
@@ -143,7 +143,7 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.users[source].channels.discard(channel)
 
         # Only parts for the main PyLink client are actually forwarded. Others are ignored.
-        if source == self.irc.pseudoclient.uid:
+        if self.irc.pseudoclient and source == self.irc.pseudoclient.uid:
             self.irc.send('PART %s :%s' % (channel, reason))
 
     def quit(self, source, reason):
