@@ -96,7 +96,7 @@ class ClientbotWrapperProtocol(Protocol):
             args = self.parsePrefixedArgs(data)
             sender = args[0]
             command = args[1]
-            args = args[1:]
+            args = args[2:]
 
         except IndexError:
             # Raw command without an explicit sender; assume it's being sent by our uplink.
