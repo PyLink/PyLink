@@ -1,6 +1,9 @@
 """Setup module for PyLink IRC Services."""
 
-from setuptools import setup, find_packages
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    raise ImportError("Please install Setuptools and try again.")
 from codecs import open
 import subprocess
 from os import path

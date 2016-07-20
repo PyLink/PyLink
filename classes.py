@@ -16,7 +16,10 @@ import hashlib
 from copy import deepcopy
 import inspect
 
-import ircmatch
+try:
+    import ircmatch
+except ImportError:
+    raise ImportError("Please install the ircmatch library and try again.")
 
 from . import world, utils, structures, __version__
 from .log import *
