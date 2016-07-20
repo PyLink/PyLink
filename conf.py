@@ -61,14 +61,16 @@ def loadConf(filename, errors_fatal=True):
     global confname, conf, fname
     fname = filename
     confname = filename.split('.', 1)[0]
-    with open(filename, 'r') as f:
-        try:
+    try:
+        with open(filename, 'r') as f:
             conf = yaml.load(f)
             conf = validateConf(conf)
-        except Exception as e:
-            print('ERROR: Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e))
-            if errors_fatal:
-                sys.exit(4)
-            raise
-        else:
-            return conf
+    except Exception as e:
+        print('ERROR: Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e), file=sys.stderr)
+        print('       Users upgrading from users < 0.9-alpha1 should note that the default configuration has been renamed to *pylink.yml*, not *config.yml*', file=sys.stderr)
+
+        if errors_fatal:
+            sys.exit(4)
+        raise
+    else:
+        return conf
