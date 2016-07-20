@@ -5,7 +5,11 @@ This module is used to access the configuration of the current PyLink instance.
 It provides simple checks for validating and loading YAML-format configurations from arbitrary files.
 """
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    raise ImportError("Please install PyYAML and try again.")
+
 import sys
 from collections import defaultdict
 
