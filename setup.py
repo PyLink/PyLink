@@ -62,7 +62,7 @@ setup(
     ],
 
     keywords='IRC services chat',
-    install_requires=['pyyaml'],
+    install_requires=['pyyaml', 'ircmatch'],
 
     # Folders (packages of code)
     packages=['pylinkirc', 'pylinkirc.protocols', 'pylinkirc.plugins', 'pylinkirc.coremods'],
