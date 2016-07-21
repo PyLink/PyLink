@@ -152,6 +152,8 @@ class ClientbotWrapperProtocol(Protocol):
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """STUB: bursts joins from a server."""
+        # This stub only updates the state internally with the users
+        # given. modes and TS are currently ignored.
         puids = {u[-1] for u in users}
         for user in puids:
             self.irc.users[user].channels.add(channel)
@@ -159,9 +161,13 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.channels[channel].users |= puids
 
     def squit(self, source, target, text):
+        """STUB: SQUITs a server."""
+        # What this actually does is just handle the SQUIT internally: i.e.
+        # Removing pseudoclients and pseudoservers.
         self._squit(source, target, text)
 
     def _stub(self, *args):
+        """Stub outgoing command function (does nothing)."""
         return
     away = mode = topic = topicBurst = invite = knock = _stub
 
