@@ -61,9 +61,8 @@ class ClientbotWrapperProtocol(Protocol):
         # services_support fires.
         f('NICK %s' % (self.irc.serverdata.get('pylink_nick') or conf.conf["bot"].get("nick", "PyLink")))
         ident = self.irc.serverdata.get('pylink_ident') or conf.conf["bot"].get("ident", "pylink")
-        f('USER %s %s 0.0.0.0 %s' % (ident, ident,
-                                     # TODO: per net realnames or hostnames aren't implemented yet.
-                                     conf.conf["bot"].get("realname", "PyLink Clientbot")))
+        f('USER %s 8 * %s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
+                              conf.conf["bot"].get("realname", "PyLink Clientbot")))
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
