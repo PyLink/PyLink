@@ -9,7 +9,7 @@ class ClientbotWrapperProtocol(Protocol):
     def __init__(self, irc):
         super().__init__(irc)
 
-        # FIXME: Grab this from 005 / RPL_ISUPPORT instead of hardcoding.
+        # This is just a fallback. Actual casemapping is fetched by handle_005()
         self.casemapping = 'ascii'
 
         self.caps = {}
@@ -190,7 +190,6 @@ class ClientbotWrapperProtocol(Protocol):
             # PyLink as a services framework expects UIDs and SIDs for everythiung. Since we connect
             # as a bot here, there's no explicit user introduction, so we're going to generate
             # pseudo-uids and pseudo-sids as we see prefixes.
-            log.debug('(%s) handle_events: sender is %s', self.irc.name, sender)
             if '!' not in sender:
                 # Sender is a server name.
                 idsource = self._getSid(sender)
@@ -202,7 +201,6 @@ class ClientbotWrapperProtocol(Protocol):
                 idsource = self.irc.nickToUid(nick)
                 if not idsource:
                     idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink).uid
-            log.debug('(%s) handle_events: idsource is %s', self.irc.name, idsource)
 
         try:
             func = getattr(self, 'handle_'+command.lower())
@@ -224,7 +222,26 @@ class ClientbotWrapperProtocol(Protocol):
         """
         Handles 005 / RPL_ISUPPORT.
         """
-        # TODO: capability negotiation happens here
+        self.caps.update(self.parseCapabilities(args[1:-1]))
+        log.debug('(%s) handle_005: self.caps is %s', self.irc.name, self.caps)
+
+        if 'CHANMODES' in self.caps:
+            self.irc.cmodes['*A'], self.irc.cmodes['*B'], self.irc.cmodes['*C'], self.irc.cmodes['*D'] = \
+                self.caps['CHANMODES'].split(',')
+        log.debug('(%s) handle_005: cmodes: %s', self.irc.name, self.irc.cmodes)
+
+        if 'USERMODES' in self.caps:
+            self.irc.umodes['*A'], self.irc.umodes['*B'], self.irc.umodes['*C'], self.irc.umodes['*D'] = \
+                self.caps['USERMODES'].split(',')
+        log.debug('(%s) handle_005: umodes: %s', self.irc.name, self.irc.umodes)
+
+        self.casemapping = self.caps.get('CASEMAPPING', self.casemapping)
+        log.debug('(%s) handle_005: casemapping set to %s', self.irc.name, self.casemapping)
+
+        if 'PREFIX' in self.caps:
+            self.irc.prefixmodes = self.parsePrefixes(self.caps['PREFIX'])
+            log.debug('(%s) handle_005: prefix modes set to %s', self.irc.name, self.irc.prefixmodes)
+
         if not self.irc.connected.is_set():
             self.irc.connected.set()
 
