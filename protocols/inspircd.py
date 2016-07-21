@@ -444,11 +444,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
 
             # First, turn the arguments into a dict
-            caps = dict([x.split('=') for x in args[-1].split()])
-
+            caps = self.parseCapabilities(args[-1])
+            log.debug("(%s) capabilities list: %s", self.irc.name, caps)
 
             # Check the protocol version
             protocol_version = int(caps['PROTOCOL'])
+
             if protocol_version < self.min_proto_ver:
                 raise ProtocolError("Remote protocol version is too old! "
                                     "At least %s (InspIRCd 2.0.x) is "
@@ -474,9 +475,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             # Separate the prefixes field (e.g. "(Yqaohv)!~&@%+") into a
             # dict mapping mode characters to mode prefixes.
-            prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', caps['PREFIX'])
-            self.irc.prefixmodes = dict(zip(prefixsearch.group(1),
-                                            prefixsearch.group(2)))
+            self.irc.prefixmodes = self.parsePrefixes(caps['PREFIX'])
             log.debug('(%s) self.irc.prefixmodes set to %r', self.irc.name,
                       self.irc.prefixmodes)
 

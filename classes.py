@@ -15,6 +15,7 @@ import ssl
 import hashlib
 from copy import deepcopy
 import inspect
+import re
 
 try:
     import ircmatch
@@ -1300,6 +1301,35 @@ class Protocol():
 
         return {'target': split_server, 'users': affected_users, 'name': sname,
                 'uplink': uplink}
+
+    def parseCapabilities(self, args):
+        """
+        Parses a string of capabilities in the 005 / RPL_ISUPPORT format.
+        """
+
+        if type(args) == str:
+            args = args.split(' ')
+
+        caps = {}
+        for cap in args:
+            try:
+                # Try to split it as a KEY=VALUE pair.
+                key, value = cap.split('=', 1)
+            except ValueError:
+                key = cap
+                value = ''
+            caps[key] = value
+
+        return caps
+
+    @staticmethod
+    def parsePrefixes(args):
+        """
+        Separates prefixes field like "(qaohv)~&@%+" into a dict mapping mode characters to mode
+        prefixes.
+        """
+        prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', args)
+        return dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
 
 ### FakeIRC classes, used for test cases
 
