@@ -121,7 +121,7 @@ class ClientbotWrapperProtocol(Protocol):
 
     def nick(self, source, newnick):
         """STUB: Sends NICK changes."""
-        if source == irc.pseudoclient.uid:
+        if source == self.irc.pseudoclient.uid:
             self.irc.send('NICK :%s' % (channel, self._expandPUID(target), reason))
         self.irc.users[source].nick = newnick
 
