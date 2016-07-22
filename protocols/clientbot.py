@@ -279,24 +279,36 @@ class ClientbotWrapperProtocol(Protocol):
             self.irc.applyModes(channel, [('+s', None)])
 
         names = set()
+        modes = set()
+        prefix_to_mode = {v:k for k, v in self.irc.prefixmodes.items()}
+        prefixes = ''.join(self.irc.prefixmodes.values())
+
         for name in args[-1].split():
-            # TODO: process prefix modes instead of just stripping them
-            name = name.lstrip(string.punctuation)
+            nick = name.lstrip(prefixes)
 
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user. TODO: wait for WHO responses for each nick before
             # spawning in order to get a real ident/host.
-            idsource = self.irc.nickToUid(name) or self.spawnClient(name, server=self.irc.uplink).uid
+            idsource = self.irc.nickToUid(nick) or self.spawnClient(nick, server=self.irc.uplink).uid
 
             # Queue these virtual users to be joined if they're not already in the channel.
             if idsource not in self.irc.channels[channel].users:
                 names.add(idsource)
                 self.irc.users[idsource].channels.add(channel)
 
+            # Process prefix modes
+            for char in name:
+                if char in self.irc.prefixmodes.values():
+                    modes.add(('+' + prefix_to_mode[char], idsource))
+                else:
+                    break
+
         # Statekeeping: make sure the channel's user list is updated!
         self.irc.channels[channel].users |= names
+        self.irc.applyModes(channel, modes)
 
         log.debug('(%s) handle_353: adding users %s to %s', self.irc.name, names, channel)
+        log.debug('(%s) handle_353: adding modes %s to %s', self.irc.name, modes, channel)
 
         return {'channel': channel, 'users': names, 'modes': self.irc.channels[channel].modes,
                 'parse_as': "JOIN"}
