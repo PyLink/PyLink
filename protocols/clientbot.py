@@ -176,6 +176,17 @@ class ClientbotWrapperProtocol(Protocol):
         return
     kill = away = mode = topic = topicBurst = knock = updateClient = numeric = _stub
 
+    def updateClient(self, target, field, text):
+        """Updates the known ident, host, or realname of a client."""
+        if field == 'IDENT':
+            self.irc.users[target].ident = text
+        elif field == 'HOST':
+            self.irc.users[target].host = text
+        elif field in ('REALNAME', 'GECOS'):
+            self.irc.users[target].realname = text
+        else:
+            raise NotImplementedError
+
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
         data = data.split(" ")
