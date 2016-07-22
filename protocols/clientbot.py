@@ -97,6 +97,11 @@ class ClientbotWrapperProtocol(Protocol):
 
     def away(self, source, text):
         """STUB: sets away messages for clients internally."""
+        log.debug('(%s) away: target is %s, internal client? %s', self.irc.name, source, self.irc.isInternalClient(source))
+        if not self.irc.isInternalClient(source):
+            log.debug('(%s) away: sending AWAY hook from %s with text %r', self.irc.name, source, text)
+            self.irc.callHooks([source, 'AWAY', {'text': text}])
+
         self.irc.users[source].away = text
 
     def invite(self, client, target, channel):
@@ -184,7 +189,7 @@ class ClientbotWrapperProtocol(Protocol):
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
         return
-    kill = away = mode = topic = topicBurst = knock = updateClient = numeric = _stub
+    kill = mode = topic = topicBurst = knock = updateClient = numeric = _stub
 
     def updateClient(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""
@@ -347,10 +352,15 @@ class ClientbotWrapperProtocol(Protocol):
         # G means away is set (we'll have to fake a message because it's not given)
         # * means IRCop.
         # The rest are prefix modes. Multiple can be given by the IRCd if multiple are set
+        log.debug('(%s) handle_352: status string on user %s: %s', self.irc.name, nick, status)
         if status[0] == 'G':
+            log.debug('(%s) handle_352: calling away() with argument', self.irc.name)
             self.away(uid, 'Away')
         elif status[0] == 'H':
+            log.debug('(%s) handle_352: calling away() without argument', self.irc.name)
             self.away(uid, '')  # Unmark away status
+        else:
+            log.warning('(%s) handle_352: got wrong string %s for away status', self.irc.name, status[0])
 
         if '*' in status:  # Track IRCop status
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
