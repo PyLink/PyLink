@@ -339,7 +339,25 @@ class ClientbotWrapperProtocol(Protocol):
         self.part(target, channel, reason)
         return {'channel': channel, 'target': target, 'text': reason}
 
+    def handle_mode(self, source, command, args):
+        """Handles MODE changes."""
+        # <- :GL!~gl@127.0.0.1 MODE #dev +v ice
+        # <- :ice MODE ice :+Zi
+        target = args[0]
+        if utils.isChannel(target):
+            target = self.irc.toLower(target)
+            oldobj = self.irc.channels[target].deepcopy()
+        else:
+            target = self.irc.nickToUid(target)
+            oldobj = None
+        modes = args[1:]
+        changedmodes = self.irc.parseModes(target, modes)
+        self.irc.applyModes(target, changedmodes)
+
+        return {'target': target, 'modes': changedmodes, 'oldchan': oldobj}
+
     def handle_nick(self, source, command, args):
+        """Handles NICK changes."""
         # <- :GL|!~GL@127.0.0.1 NICK :GL_
         oldnick = self.irc.users[source].nick
         self.nick(source, args[0])
