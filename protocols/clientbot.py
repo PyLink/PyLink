@@ -91,6 +91,10 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.servers[sid] = IrcServer(uplink, name)
         return sid
 
+    def invite(self, client, target, channel):
+        """Invites a user to a channel."""
+        self.irc.send('INVITE %s %s' % (self.irc.getFriendlyName(target), channel))
+
     def join(self, client, channel):
         """STUB: Joins a user to a channel."""
         channel = self.irc.toLower(channel)
@@ -170,7 +174,7 @@ class ClientbotWrapperProtocol(Protocol):
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
         return
-    away = mode = topic = topicBurst = invite = knock = updateClient = _stub
+    away = mode = topic = topicBurst = knock = updateClient = _stub
 
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
