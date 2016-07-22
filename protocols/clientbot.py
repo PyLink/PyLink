@@ -110,7 +110,8 @@ class ClientbotWrapperProtocol(Protocol):
         # TODO: handle kick failures and send rejoin hooks for the target
         reason = self._formatText(source, reason)
         self.irc.send('KICK %s %s :%s' % (channel, self._expandPUID(target), reason))
-        self.part(target, channel, reason=reason)
+
+        # Don't update our state here: wait for the IRCd to send an acknowledgement instead.
 
     def message(self, source, target, text, notice=False):
         """Sends messages to the target."""
