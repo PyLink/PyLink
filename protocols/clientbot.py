@@ -169,7 +169,7 @@ class ClientbotWrapperProtocol(Protocol):
         """STUB: SQUITs a server."""
         # What this actually does is just handle the SQUIT internally: i.e.
         # Removing pseudoclients and pseudoservers.
-        self._squit(source, target, text)
+        self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
 
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
