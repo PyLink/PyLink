@@ -18,6 +18,10 @@ class ClientbotWrapperProtocol(Protocol):
         self.uidgen = utils.PUIDGenerator('PUID')
         self.sidgen = utils.PUIDGenerator('PSID')
 
+        # Tracks the users sent in a list of /who replies, so that users can be bursted all at once
+        # when ENDOFWHO is received.
+        self.who_received = set()
+
     def _expandPUID(self, uid):
         """
         Returns the real nick for the given PUID.
@@ -91,6 +95,10 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.servers[sid] = IrcServer(uplink, name)
         return sid
 
+    def away(self, source, text):
+        """STUB: sets away messages for clients internally."""
+        self.irc.users[source].away = text
+
     def invite(self, client, target, channel):
         """Invites a user to a channel."""
         self.irc.send('INVITE %s %s' % (self.irc.getFriendlyName(target), channel))
@@ -105,6 +113,8 @@ class ClientbotWrapperProtocol(Protocol):
         # Only joins for the main PyLink client are actually forwarded. Others are ignored.
         if self.irc.pseudoclient and client == self.irc.pseudoclient.uid:
             self.irc.send('JOIN %s' % channel)
+            # Send a /who request right after
+            self.irc.send('WHO %s' % channel)
         else:
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
                       self.irc.getFriendlyName(client), channel)
@@ -310,7 +320,56 @@ class ClientbotWrapperProtocol(Protocol):
         log.debug('(%s) handle_353: adding users %s to %s', self.irc.name, names, channel)
         log.debug('(%s) handle_353: adding modes %s to %s', self.irc.name, modes, channel)
 
-        return {'channel': channel, 'users': names, 'modes': self.irc.channels[channel].modes,
+        # We send the hook for JOIN after /who data is received, to enumerate the ident, host, and
+        # real names of users.
+
+    def handle_352(self, source, command, args):
+        """
+        Handles 352 / RPL_WHOREPLY.
+        """
+        # parameter count:               0   1     2       3         4                      5   6  7
+        # <- :charybdis.midnight.vpn 352 ice #test ~pylink 127.0.0.1 charybdis.midnight.vpn ice H+ :0 PyLink
+        # <- :charybdis.midnight.vpn 352 ice #test ~gl 127.0.0.1 charybdis.midnight.vpn GL H*@ :0 realname
+        ident = args[2]
+        host = args[3]
+        nick = args[5]
+        status = args[6]
+        # Hopcount and realname field are together. We only care about the latter.
+        realname = args[-1].split(' ', 1)[-1]
+        uid = self.irc.nickToUid(nick)
+
+        self.updateClient(uid, 'IDENT', ident)
+        self.updateClient(uid, 'HOST', host)
+        self.updateClient(uid, 'GECOS', realname)
+
+        # The status given uses the following letters: <H|G>[*][@|+]
+        # H means here (not marked /away)
+        # G means away is set (we'll have to fake a message because it's not given)
+        # * means IRCop.
+        # The rest are prefix modes. Multiple can be given by the IRCd if multiple are set
+        if status[0] == 'G':
+            self.away(uid, 'Away')
+        elif status[0] == 'H':
+            self.away(uid, '')  # Unmark away status
+
+        if '*' in status:  # Track IRCop status
+            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+        #else:  # TODO: track de-opers as well
+
+        self.who_received.add(uid)
+
+    def handle_315(self, source, command, args):
+        """
+        Handles 315 / RPL_ENDOFWHO.
+        """
+        # <- :charybdis.midnight.vpn 315 ice #test :End of /WHO list.
+        # Join all the users in which the last batch of /who requests were received.
+        users = self.who_received.copy()
+        self.who_received.clear()
+
+        channel = self.irc.toLower(args[1])
+
+        return {'channel': channel, 'users': users, 'modes': self.irc.channels[channel].modes,
                 'parse_as': "JOIN"}
 
     def handle_join(self, source, command, args):
