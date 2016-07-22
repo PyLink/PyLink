@@ -174,7 +174,7 @@ class ClientbotWrapperProtocol(Protocol):
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
         return
-    away = mode = topic = topicBurst = knock = updateClient = _stub
+    kill = away = mode = topic = topicBurst = knock = updateClient = numeric = _stub
 
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
