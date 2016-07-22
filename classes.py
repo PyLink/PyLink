@@ -538,7 +538,19 @@ class Irc():
                 arg = None
                 log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
                 try:
-                    if mode in (supported_modes['*A'] + supported_modes['*B']):
+                    if mode in self.prefixmodes and not usermodes:
+                        # We're setting a prefix mode on someone (e.g. +o user1)
+                        log.debug('Mode %s: This mode is a prefix mode.', mode)
+                        arg = args.pop(0)
+                        # Convert nicks to UIDs implicitly; most IRCds will want
+                        # this already.
+                        arg = self.nickToUid(arg) or arg
+                        if arg not in self.users:  # Target doesn't exist, skip it.
+                            log.debug('(%s) Skipping setting mode "%s %s"; the '
+                                      'target doesn\'t seem to exist!', self.name,
+                                      mode, arg)
+                            continue
+                    elif mode in (supported_modes['*A'] + supported_modes['*B']):
                         # Must have parameter.
                         log.debug('Mode %s: This mode must have parameter.', mode)
                         arg = args.pop(0)
@@ -553,18 +565,6 @@ class Irc():
                                 # Set the arg to the old one on the channel.
                                 arg = oldargs[0]
                                 log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
-                    elif mode in self.prefixmodes and not usermodes:
-                        # We're setting a prefix mode on someone (e.g. +o user1)
-                        log.debug('Mode %s: This mode is a prefix mode.', mode)
-                        arg = args.pop(0)
-                        # Convert nicks to UIDs implicitly; most IRCds will want
-                        # this already.
-                        arg = self.nickToUid(arg) or arg
-                        if arg not in self.users:  # Target doesn't exist, skip it.
-                            log.debug('(%s) Skipping setting mode "%s %s"; the '
-                                      'target doesn\'t seem to exist!', self.name,
-                                      mode, arg)
-                            continue
                     elif prefix == '+' and mode in supported_modes['*C']:
                         # Only has parameter when setting.
                         log.debug('Mode %s: Only has parameter when setting.', mode)
