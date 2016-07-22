@@ -77,7 +77,7 @@ class ClientbotWrapperProtocol(Protocol):
         ts = ts or int(time.time())
         realname = realname or ''
         log.debug('(%s) spawnClient stub called, saving nick %s as PUID %s', self.irc.name, nick, uid)
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname)
+        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname, manipulatable=manipulatable)
         log.debug('(%s) self.irc.users: %s', self.irc.name, self.irc.users)
         self.irc.servers[server].users.add(uid)
         return u
