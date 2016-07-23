@@ -129,6 +129,7 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
                       self.irc.getFriendlyName(client), channel)
+            self.irc.callHooks([client, 'CLIENTBOT_JOIN', {'channel': channel}])
 
     def kick(self, source, channel, target, reason=''):
         """Sends channel kicks."""
@@ -154,14 +155,18 @@ class ClientbotWrapperProtocol(Protocol):
     def message(self, source, target, text, notice=False):
         """Sends messages to the target."""
         command = 'NOTICE' if notice else 'PRIVMSG'
-        target = self._expandPUID(target)
 
-        self.irc.send('%s %s :%s' % (command, target, self._formatText(source, text)))
+        if self.irc.pseudoclient and self.irc.pseudoclient.uid == source:
+            self.irc.send('%s %s :%s' % (command, self._expandPUID(target), text))
+        else:
+            self.irc.callHooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
 
     def nick(self, source, newnick):
         """STUB: Sends NICK changes."""
         if source == self.irc.pseudoclient.uid:
             self.irc.send('NICK :%s' % (channel, self._expandPUID(target), reason))
+        else:
+            self.irc.callHooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
         self.irc.users[source].nick = newnick
 
     def notice(self, source, target, text):
@@ -188,10 +193,13 @@ class ClientbotWrapperProtocol(Protocol):
         # Only parts for the main PyLink client are actually forwarded. Others are ignored.
         if self.irc.pseudoclient and source == self.irc.pseudoclient.uid:
             self.irc.send('PART %s :%s' % (channel, reason))
+        else:
+            self.irc.callHooks([source, 'CLIENTBOT_PART', {'channel': channel, 'text': reason}])
 
     def quit(self, source, reason):
         """STUB: Quits a client."""
         self.removeClient(source)
+        self.irc.callHooks([source, 'CLIENTBOT_QUIT', {'text': reason}])
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """STUB: bursts joins from a server."""
