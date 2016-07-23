@@ -176,6 +176,10 @@ class ClientbotWrapperProtocol(Protocol):
         if self.irc.uplink:
             self.irc.send('PING %s' % self.irc.getFriendlyName(self.irc.uplink))
 
+            # Poll WHO periodically to figure out any ident/host/away status changes.
+            for channel in self.irc.pseudoclient.channels:
+                self.irc.send('WHO %s' % channel)
+
     def part(self, source, channel, reason=''):
         """STUB: Parts a user from a channel."""
         self.irc.channels[channel].removeuser(source)
