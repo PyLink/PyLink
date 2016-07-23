@@ -1,5 +1,6 @@
 import time
 import string
+import threading
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
@@ -21,6 +22,11 @@ class ClientbotWrapperProtocol(Protocol):
         # Tracks the users sent in a list of /who replies, so that users can be bursted all at once
         # when ENDOFWHO is received.
         self.who_received = set()
+
+        # This stores channel->Timer object mappings for users that we're waiting for a kick
+        # acknowledgement for. The timer is set to send a NAMES request to the uplink to prevent
+        # things like failed KICK attempts from desyncing plugins like relay.
+        self.kick_queue = {}
 
     def _expandPUID(self, uid):
         """
@@ -131,6 +137,19 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.send('KICK %s %s :%s' % (channel, self._expandPUID(target), reason))
 
         # Don't update our state here: wait for the IRCd to send an acknowledgement instead.
+        # There is essentially a 3 second wait to do this, as we send NAMES with a delay
+        # to resync any users lost due to kicks being blocked, etc.
+        if (channel not in self.kick_queue) or (not self.kick_queue[channel][1].is_alive()):
+            # However, only do this if there isn't a NAMES request scheduled already.
+            t = threading.Timer(3, lambda: self.irc.send('NAMES %s' % channel))
+            log.debug('(%s) kick: setting NAMES timer for %s on %s', self.irc.name, target, channel)
+
+            # Store the channel, target UID, and timer object in the internal kick queue.
+            self.kick_queue[channel] = ({target}, t)
+            t.start()
+        else:
+            log.debug('(%s) kick: adding %s to kick queue for channel %s', self.irc.name, target, channel)
+            self.kick_queue[channel][0].add(target)
 
     def message(self, source, target, text, notice=False):
         """Sends messages to the target."""
@@ -306,8 +325,10 @@ class ClientbotWrapperProtocol(Protocol):
             # spawning in order to get a real ident/host.
             idsource = self.irc.nickToUid(nick) or self.spawnClient(nick, server=self.irc.uplink).uid
 
-            # Queue these virtual users to be joined if they're not already in the channel.
-            if idsource not in self.irc.channels[channel].users:
+            # Queue these virtual users to be joined if they're not already in the channel,
+            # or we're waiting for a kick acknowledgment for them.
+            if (idsource not in self.irc.channels[channel].users) or (idsource in \
+                    self.kick_queue.get(channel, ([],))[0]):
                 names.add(idsource)
                 self.irc.users[idsource].channels.add(channel)
 
@@ -325,8 +346,16 @@ class ClientbotWrapperProtocol(Protocol):
         log.debug('(%s) handle_353: adding users %s to %s', self.irc.name, names, channel)
         log.debug('(%s) handle_353: adding modes %s to %s', self.irc.name, modes, channel)
 
-        # We send the hook for JOIN after /who data is received, to enumerate the ident, host, and
-        # real names of users.
+        # Unless /WHO has already been received for the given channel, we generally send the hook
+        # for JOIN after /who data is received, to enumerate the ident, host, and real names of
+        # users.
+        if names and hasattr(self.irc.channels[channel], 'who_received'):
+            # /WHO *HAS* already been received. Send JOIN hooks here because we use this to keep
+            # track of any failed KICK attempts sent by the relay bot.
+            log.debug('(%s) handle_353: sending JOIN hook because /WHO was already received for %s',
+                      self.irc.name, channel)
+            return {'channel': channel, 'users': names, 'modes': self.irc.channels[channel].modes,
+                    'parse_as': "JOIN"}
 
     def handle_352(self, source, command, args):
         """
@@ -378,6 +407,7 @@ class ClientbotWrapperProtocol(Protocol):
         self.who_received.clear()
 
         channel = self.irc.toLower(args[1])
+        self.irc.channels[channel].who_received = True
 
         return {'channel': channel, 'users': users, 'modes': self.irc.channels[channel].modes,
                 'parse_as': "JOIN"}
@@ -404,6 +434,17 @@ class ClientbotWrapperProtocol(Protocol):
             reason = args[2]
         except IndexError:
             reason = ''
+
+        if channel in self.kick_queue:
+            # Remove this client from the kick queue if present there.
+            log.debug('(%s) kick: removing %s from kick queue for channel %s', self.irc.name, target, channel)
+            self.kick_queue[channel][0].discard(target)
+
+            if not self.kick_queue[channel][0]:
+                log.debug('(%s) kick: cancelling kick timer for channel %s (all kicks accounted for)', self.irc.name, channel)
+                # There aren't any kicks that failed to be acknowledged. We can remove the timer now
+                self.kick_queue[channel][1].cancel()
+                del self.kick_queue[channel]
 
         self.part(target, channel, reason)
         return {'channel': channel, 'target': target, 'text': reason}
