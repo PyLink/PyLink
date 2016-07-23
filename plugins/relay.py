@@ -363,7 +363,6 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True, times_tagged=0):
     spawning one if it doesn't exist and spawnIfMissing is True."""
 
     # Wait until the network is working before trying to spawn anything.
-    log.debug('(%s) getRemoteUser: waiting for irc.connected', irc.name)
     irc.connected.wait(5)
 
     # Don't spawn clones for registered service bots.
@@ -1070,6 +1069,15 @@ def handle_kick(irc, source, command, args):
     text = args['text']
     kicker = source
     relay = getRelay((irc.name, channel))
+
+    # Special case for clientbot: treat kicks to the PyLink service bot as channel clear.
+    if irc.protoname == 'clientbot' and irc.pseudoclient and target == irc.pseudoclient.uid:
+        for user in irc.channels[channel].users:
+            if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
+                irc.callHooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
+                               'text': 'Clientbot was kicked from channel.', 'parse_as': 'KICK'}])
+
+        return
 
     # Don't relay kicks to protected service bots.
     if relay is None or irc.isServiceBot(target):
