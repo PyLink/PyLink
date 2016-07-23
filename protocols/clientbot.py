@@ -152,6 +152,11 @@ class ClientbotWrapperProtocol(Protocol):
             log.debug('(%s) kick: adding %s to kick queue for channel %s', self.irc.name, target, channel)
             self.kick_queue[channel][0].add(target)
 
+        if not irc.isInternalClient(target):
+            # Send a clientbot_kick hook only if the target is an external client. Kicks between
+            # users on fully-linked relay networks would otherwise have no message attached to them.
+            self.irc.callHooks([source, 'CLIENTBOT_KICK', {'channel': channel, 'target': target, 'text': reason}])
+
     def message(self, source, target, text, notice=False):
         """Sends messages to the target."""
         command = 'NOTICE' if notice else 'PRIVMSG'
