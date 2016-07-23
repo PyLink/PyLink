@@ -133,6 +133,12 @@ class ClientbotWrapperProtocol(Protocol):
 
     def kick(self, source, channel, target, reason=''):
         """Sends channel kicks."""
+
+        if self.irc.isInternalClient(target):
+            # Target was one of our virtual clients. Just remove them from the state.
+            self.handle_part(target, 'KICK', [channel, reason])
+            return
+
         # TODO: handle kick failures and send rejoin hooks for the target
         reason = self._formatText(source, reason)
         self.irc.send('KICK %s %s :%s' % (channel, self._expandPUID(target), reason))
@@ -463,7 +469,7 @@ class ClientbotWrapperProtocol(Protocol):
                 self.kick_queue[channel][1].cancel()
                 del self.kick_queue[channel]
 
-        self.part(target, channel, reason)
+        self.handle_part(target, 'KICK', [channel, reason])
         return {'channel': channel, 'target': target, 'text': reason}
 
     def handle_mode(self, source, command, args):
@@ -502,7 +508,8 @@ class ClientbotWrapperProtocol(Protocol):
             reason = ''
 
         for channel in channels:
-            self.part(source, channel, reason)
+            self.irc.channels[channel].removeuser(source)
+        self.irc.users[source].channels -= set(channels)
 
         return {'channels': channels, 'text': reason}
 
