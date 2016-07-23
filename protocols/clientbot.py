@@ -69,7 +69,8 @@ class ClientbotWrapperProtocol(Protocol):
         # This is a really gross hack to get the defined NICK/IDENT/HOST/GECOS.
         # But this connection stuff is done before any of the spawnClient stuff in
         # services_support fires.
-        f('NICK %s' % (self.irc.serverdata.get('pylink_nick') or conf.conf["bot"].get("nick", "PyLink")))
+        self.conf_nick = self.irc.serverdata.get('pylink_nick') or conf.conf["bot"].get("nick", "PyLink")
+        f('NICK %s' % (self.conf_nick))
         ident = self.irc.serverdata.get('pylink_ident') or conf.conf["bot"].get("ident", "pylink")
         f('USER %s 8 * %s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
@@ -434,6 +435,16 @@ class ClientbotWrapperProtocol(Protocol):
 
         return {'channel': channel, 'users': users, 'modes': self.irc.channels[channel].modes,
                 'parse_as': "JOIN"}
+
+    def handle_433(self, source, command, args):
+        # <- :millennium.overdrivenetworks.com 433 * ice :Nickname is already in use.
+        # HACK: I don't like modifying the config entries raw, but this is difficult because
+        # irc.pseudoclient doesn't exist as an attribute until we get run the ENDBURST stuff
+        # in service_support (this is mapped to 005 here).
+        self.conf_nick += '_'
+        self.irc.serverdata['pylink_nick'] = self.conf_nick
+        self.irc.send('NICK %s' % self.conf_nick)
+    handle_432 = handle_437 = handle_433
 
     def handle_join(self, source, command, args):
         """
