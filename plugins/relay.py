@@ -1137,14 +1137,18 @@ def handle_kick(irc, source, command, args):
             # common channels with the target relay network.
             rsid = getRemoteSid(remoteirc, irc)
             log.debug('(%s) relay.handle_kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, rsid, kicker, irc.name)
-            try:
-                if kicker in irc.servers:
-                    kname = irc.servers[kicker].name
-                else:
-                    kname = irc.users.get(kicker).nick
-                text = "(%s/%s) %s" % (kname, irc.name, args['text'])
-            except AttributeError:
-                text = "(<unknown kicker>@%s) %s" % (irc.name, args['text'])
+            if irc.protoname == 'clientbot':
+                # Special case for clientbot: no kick prefixes are needed.
+                text = args['text']
+            else:
+                try:
+                    if kicker in irc.servers:
+                        kname = irc.servers[kicker].name
+                    else:
+                        kname = irc.users.get(kicker).nick
+                    text = "(%s/%s) %s" % (kname, irc.name, args['text'])
+                except AttributeError:
+                    text = "(<unknown kicker>@%s) %s" % (irc.name, args['text'])
             remoteirc.proto.kick(rsid, remotechan, real_target, text)
 
         # If the target isn't on any channels, quit them.

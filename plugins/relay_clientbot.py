@@ -5,7 +5,10 @@ from pylinkirc import utils, conf, world
 from pylinkirc.log import log
 
 default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_nick> $text',
-                 }
+                  'KICK': '\x02[$colored_netname]\x02 -$colored_nick$identhost has kicked $target_nick from $channel ($text)',
+                  'PART': '\x02[$colored_netname]\x02 -$colored_nick$identhost has left $channel ($text)',
+                  'JOIN': '\x02[$colored_netname]\x02 -$colored_nick$identhost has joined $channel',
+                  }
 
 def color_text(s):
     """
@@ -45,18 +48,29 @@ def cb_relay_core(irc, source, command, args):
                 return
 
             if source in irc.users:
-                identhost = irc.getHostmask(source).split('!')[-1]
+                try:
+                    identhost = irc.getHostmask(source).split('!')[-1]
+                except KeyError:  # User got removed due to quit
+                    identhost = '%s@%s' % (args['olduser'].ident, args['olduser'].host)
                 # This is specifically spaced so that ident@host is only shown for users that have
                 # one, and not servers.
                 identhost = ' (%s)' % identhost
             else:
                 identhost = ''
 
+            if args.get("target") in irc.users:
+                target_nick = irc.getFriendlyName(args['target'])
+            else:
+                target_nick = ''
             args.update({'netname': netname, 'nick': sourcename, 'identhost': identhost,
-                         'colored_nick': color_text(sourcename), 'colored_netname': color_text(netname)})
+                         'colored_nick': color_text(sourcename), 'colored_netname': color_text(netname),
+                         'target_nick': target_nick})
 
             text = text_template.substitute(args)
 
             irc.proto.message(irc.pseudoclient.uid, target, text)
 
 utils.add_hook(cb_relay_core, 'CLIENTBOT_MESSAGE')
+utils.add_hook(cb_relay_core, 'CLIENTBOT_KICK')
+utils.add_hook(cb_relay_core, 'CLIENTBOT_PART')
+utils.add_hook(cb_relay_core, 'CLIENTBOT_JOIN')
