@@ -74,7 +74,7 @@ class ClientbotWrapperProtocol(Protocol):
         f('USER %s 8 * %s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
 
-    def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
+    def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
         """
