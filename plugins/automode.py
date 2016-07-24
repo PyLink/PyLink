@@ -13,7 +13,7 @@ mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by
           "to users matching hostmasks or exttargets.")
 
 # Register ourselves as a service.
-modebot = world.services.get("automode", utils.registerService("automode", desc=mydesc))
+modebot = utils.registerService("automode", desc=mydesc)
 reply = modebot.reply
 
 # Databasing variables.
