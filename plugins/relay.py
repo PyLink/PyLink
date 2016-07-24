@@ -1057,6 +1057,12 @@ def handle_messages(irc, numeric, command, args):
                       irc.users[target].nick, notice=True)
             return
         remoteirc = world.networkobjects[homenet]
+
+        if remoteirc.protoname == 'clientbot':
+            irc.msg(numeric, 'Error: Private messages to networks '
+                    'linked via Clientbot are not yet supported.', notice=True)
+            return
+
         user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)
 
         try:
