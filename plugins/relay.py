@@ -840,7 +840,7 @@ def handle_relay_whois(irc, source, command, args):
             # Send account information if told to and the target is logged in.
             wreply(330, "%s :is logged in (on %s) as" % (realuser.services_account, netname))
 
-        if checkSendKey('whois_show_server'):
+        if checkSendKey('whois_show_server') and realirc.protoname != 'clientbot':
             wreply(320, ":is actually connected via the following server:")
             realserver = realirc.getServer(uid)
             realserver = realirc.servers[realserver]
