@@ -86,7 +86,6 @@ def showchan(irc, source, args):
         return
 
     nicks = [irc.users[u].nick for u in c.users]
-    pmodes = ('owner', 'admin', 'op', 'halfop', 'voice')
 
     f('Information on channel \x02%s\x02:' % channel)
     f('\x02Channel topic\x02: %s' % c.topic)
@@ -99,9 +98,10 @@ def showchan(irc, source, args):
         # Iterate over the user list, sorted by nick.
         for user, nick in sorted(zip(c.users, nicks),
                                  key=lambda userpair: userpair[1].lower()):
-            prefixmodes = [irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '')
-                           for pmode in pmodes if user in c.prefixmodes[pmode]]
-            nicklist.append(''.join(prefixmodes) + nick)
+            for pmode in c.getPrefixModes(user):
+                # Show prefix modes in order from highest to lowest.
+                nick = irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '') + nick
+            nicklist.append(nick)
 
         while nicklist[:20]:  # 20 nicks per line to prevent message cutoff.
             f('\x02User list\x02: %s' % ' '.join(nicklist[:20]))
