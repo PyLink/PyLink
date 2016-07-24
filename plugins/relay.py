@@ -1210,6 +1210,11 @@ for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
 def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
+
+    if irc.protoname == 'clientbot':
+        # We don't sync modes with clientbot networks... that's just too much of a PITA
+        return
+
     for name, remoteirc in world.networkobjects.copy().items():
         if irc.name == name or not remoteirc.connected.is_set():
             continue
