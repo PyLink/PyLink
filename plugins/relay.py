@@ -943,7 +943,18 @@ def handle_part(irc, numeric, command, args):
     text = args['text']
     # Don't allow the PyLink client PARTing to be relayed.
     if numeric == irc.pseudoclient.uid:
+        # For clientbot: treat forced parts to the bot as clearchan, and atetmpt to rejoin after.
+        if irc.protoname == 'clientbot':
+            for channel in channels:
+                for user in irc.channels[channel].users:
+                    if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
+                        irc.callHooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
+                                       'text': 'Clientbot force parted from channel.', 'parse_as': 'KICK'}])
+                irc.proto.join(irc.pseudoclient.uid, channel)
+
+            return
         return
+
     for channel in channels:
         for netname, user in relayusers[(irc.name, numeric)].copy().items():
             remoteirc = world.networkobjects[netname]
