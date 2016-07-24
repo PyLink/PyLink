@@ -210,8 +210,9 @@ class ClientbotWrapperProtocol(Protocol):
 
     def quit(self, source, reason):
         """STUB: Quits a client."""
+        userdata = self.irc.users[source]
         self.removeClient(source)
-        self.irc.callHooks([source, 'CLIENTBOT_QUIT', {'text': reason}])
+        self.irc.callHooks([source, 'CLIENTBOT_QUIT', {'text': reason, 'userdata': userdata}])
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """STUB: bursts joins from a server."""

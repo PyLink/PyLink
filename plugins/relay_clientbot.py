@@ -8,6 +8,10 @@ default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_nick> $text',
                   'KICK': '\x02[$colored_netname]\x02 -$colored_nick$identhost has kicked $target_nick from $channel ($text)',
                   'PART': '\x02[$colored_netname]\x02 -$colored_nick$identhost has left $channel ($text)',
                   'JOIN': '\x02[$colored_netname]\x02 -$colored_nick$identhost has joined $channel',
+                  'NICK': '\x02[$colored_netname]\x02 -$colored_nick$identhost is now known as $newnick',
+                  'QUIT': '\x02[$colored_netname]\x02 -$colored_nick$identhost has quit ($text)',
+                  'ACTION': '\x02[$colored_netname]\x02 * $colored_nick $text',
+                  'NOTICE': '\x02[$colored_netname]\x02 * Notice from $colored_nick: $text',
                   }
 
 def color_text(s):
@@ -29,7 +33,24 @@ def cb_relay_core(irc, source, command, args):
 
     relay = world.plugins.get('relay')
     if irc.pseudoclient and relay:
-        sourcename = irc.getFriendlyName(source)
+        try:
+            sourcename = irc.getFriendlyName(source)
+        except KeyError:  # User has left due to /quit
+            sourcename = args['userdata'].nick
+
+        # Special case for CTCPs.
+        if real_command == 'MESSAGE':
+            # CTCP action, format accordingly
+            if (not args.get('is_notice')) and args['text'].startswith('\x01ACTION ') and args['text'].endswith('\x01'):
+                args['text'] = args['text'][8:-1]
+
+                real_command = 'ACTION'
+
+            # Other CTCPs are ignored
+            elif args['text'].startswith('\x01'):
+                return
+            elif args.get('is_notice'):  # Different syntax for notices
+                real_command = 'NOTICE'
 
         # .get() chains are lovely. Try to fetch the format for the given command from the
         # relay:clientbot_format:$command key, falling back to one defined in default_styles
@@ -39,13 +60,24 @@ def cb_relay_core(irc, source, command, args):
         text_template = string.Template(text_template)
 
         if text_template:
-            origuser = relay.getOrigUser(irc, source) or ('undefined', 'undefined')
+            # Get the original client that the relay client source was meant for.
+            try:
+                origuser = relay.getOrigUser(irc, source) or args['userdata'].remote
+            except (AttributeError, KeyError):
+                return
             netname = origuser[0]
 
             # Figure out where the message is destined to.
             target = args.get('channel') or args.get('target')
             if target is None or not utils.isChannel(target):
-                return
+                # Quit and nick messages are not channel specific. Figure out all channels that the
+                # sender shares over the relay, and relay them that way.
+                userdata = args.get('userdata') or irc.users.get(source)
+                assert userdata, "Got a channel-less message from bad UID %s" % source
+                channels = [channel for channel in userdata.channels if relay.getRelay((irc.name, channel))]
+            else:
+                # Pluralize the channel so that we can iterate over it.
+                channels = [target]
 
             if source in irc.users:
                 try:
@@ -58,19 +90,25 @@ def cb_relay_core(irc, source, command, args):
             else:
                 identhost = ''
 
+            # Convert the target for kicks, etc. from a UID to a nick
             if args.get("target") in irc.users:
                 target_nick = irc.getFriendlyName(args['target'])
             else:
                 target_nick = ''
+
             args.update({'netname': netname, 'nick': sourcename, 'identhost': identhost,
                          'colored_nick': color_text(sourcename), 'colored_netname': color_text(netname),
                          'target_nick': target_nick})
 
             text = text_template.substitute(args)
 
-            irc.proto.message(irc.pseudoclient.uid, target, text)
+            for channel in channels:
+                irc.proto.message(irc.pseudoclient.uid, channel, text)
 
 utils.add_hook(cb_relay_core, 'CLIENTBOT_MESSAGE')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_KICK')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_PART')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_JOIN')
+utils.add_hook(cb_relay_core, 'CLIENTBOT_QUIT')
+utils.add_hook(cb_relay_core, 'CLIENTBOT_NICK')
+
