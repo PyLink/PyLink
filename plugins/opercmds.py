@@ -52,10 +52,10 @@ def checkban(irc, source, args):
 def jupe(irc, source, args):
     """<server> [<reason>]
 
-    Oper-only, jupes the given server."""
+    Admin only, jupes the given server."""
 
     # Check that the caller is either opered or logged in as admin.
-    irc.checkAuthenticated(source)
+    irc.checkAuthenticated(source, allowOper=False)
 
     try:
         servername = args[0]
