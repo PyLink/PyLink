@@ -38,16 +38,6 @@ class ClientbotWrapperProtocol(Protocol):
             return nick
         return uid
 
-    def _formatText(self, source, text):
-        """
-        Formats text with the given sender as a prefix.
-        """
-        if self.irc.pseudoclient and source == self.irc.pseudoclient.uid:
-            return text
-        else:
-            # TODO: configurable formatting
-            return '<%s> %s' % (self.irc.getFriendlyName(source), text)
-
     def connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
@@ -139,14 +129,19 @@ class ClientbotWrapperProtocol(Protocol):
     def kick(self, source, channel, target, reason=''):
         """Sends channel kicks."""
 
+        log.debug('(%s) kick: checking if target %s (nick: %s) is an internal client? %s',
+                  self.irc.name, target, self.irc.getFriendlyName(target),
+                  self.irc.isInternalClient(target))
         if self.irc.isInternalClient(target):
             # Target was one of our virtual clients. Just remove them from the state.
             self.handle_part(target, 'KICK', [channel, reason])
+
+            # Send a KICK hook for message formatting.
+            self.irc.callHooks([source, 'CLIENTBOT_KICK', {'channel': channel, 'target': target, 'text': reason}])
             return
 
-        # TODO: handle kick failures and send rejoin hooks for the target
-        reason = self._formatText(source, reason)
-        self.irc.send('KICK %s %s :%s' % (channel, self._expandPUID(target), reason))
+        self.irc.send('KICK %s %s :<%s> %s' % (channel, self._expandPUID(target),
+                      self.irc.getFriendlyName(source), reason))
 
         # Don't update our state here: wait for the IRCd to send an acknowledgement instead.
         # There is essentially a 3 second wait to do this, as we send NAMES with a delay
@@ -162,11 +157,6 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             log.debug('(%s) kick: adding %s to kick queue for channel %s', self.irc.name, target, channel)
             self.kick_queue[channel][0].add(target)
-
-        if not self.irc.isInternalClient(target):
-            # Send a clientbot_kick hook only if the target is an external client. Kicks between
-            # users on fully-linked relay networks would otherwise have no message attached to them.
-            self.irc.callHooks([source, 'CLIENTBOT_KICK', {'channel': channel, 'target': target, 'text': reason}])
 
     def message(self, source, target, text, notice=False):
         """Sends messages to the target."""

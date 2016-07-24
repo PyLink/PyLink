@@ -64,7 +64,10 @@ def cb_relay_core(irc, source, command, args):
             try:
                 origuser = relay.getOrigUser(irc, source) or args['userdata'].remote
             except (AttributeError, KeyError):
-                return
+                try:
+                    origuser = (irc.servers[source].remote, '')
+                except (AttributeError, KeyError):
+                    return
             netname = origuser[0]
             try:  # Try to get the full network name
                 netname = conf.conf['servers'][netname]['netname']
