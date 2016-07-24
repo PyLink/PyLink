@@ -170,7 +170,7 @@ class ClientbotWrapperProtocol(Protocol):
 
         if self.irc.pseudoclient and self.irc.pseudoclient.uid == source:
             self.irc.send('%s %s :%s' % (command, self._expandPUID(target), text))
-        else:
+        elif utils.isChannel(target):
             self.irc.callHooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
 
     def nick(self, source, newnick):
