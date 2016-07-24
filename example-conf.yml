@@ -283,6 +283,11 @@ plugins:
     # to a template string, as they connect. This requires the changehost: block
     # to be configured correctly below.
     #- changehost
+    
+    # Automode plugin: allows assigning channel access to specific hostmasks or
+    # exttargets. See https://github.com/GLolol/PyLink/blob/master/docs/automode.md
+    # for a usage guide.
+    #- automode
 
 logging:
     # This configuration block defines targets that PyLink should log commands,
