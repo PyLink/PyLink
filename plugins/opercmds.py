@@ -85,7 +85,7 @@ def kick(irc, source, args):
     irc.checkAuthenticated(source, allowOper=False)
     try:
         sourcenick = args[0]
-        channel = args[1]
+        channel = irc.toLower(args[1])
         target = args[2]
         reason = ' '.join(args[3:])
     except IndexError:
