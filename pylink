@@ -10,7 +10,8 @@ try:
 except ImportError:
     sys.stderr.write("ERROR: Failed to import PyLink main module (pylinkirc.world).\n\nIf you are "
                      "running PyLink from source, please install PyLink first using 'python3 "
-                     "setup.py install [--user]'\n")
+                     "setup.py install' (global install) or 'python3 setup.py install --user'"
+                     " (local install)\n")
     sys.exit(1)
 from pylinkirc import conf, __version__
 

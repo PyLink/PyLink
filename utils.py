@@ -185,7 +185,7 @@ class ServiceBot():
     PyLink IRC Service class.
     """
 
-    def __init__(self, name, default_help=True, default_request=False, default_list=True,
+    def __init__(self, name, default_help=True, default_list=True,
                  nick=None, ident=None, manipulatable=False, extra_channels=None,
                  desc=None):
         # Service name
@@ -219,10 +219,6 @@ class ServiceBot():
 
         if default_help:
             self.add_cmd(self.help)
-
-        if default_request:
-            self.add_cmd(self.request)
-            self.add_cmd(self.remove)
 
         if default_list:
             self.add_cmd(self.listcommands, 'list')
@@ -343,12 +339,6 @@ class ServiceBot():
             return
         else:
             self._show_command_help(irc, command)
-
-    def request(self, irc, source, args):
-        self.reply(irc, "Request command stub called.")
-
-    def remove(self, irc, source, args):
-        self.reply(irc, "Remove command stub called.")
 
     def listcommands(self, irc, source, args):
         """takes no arguments.
