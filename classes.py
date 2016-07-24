@@ -924,7 +924,10 @@ class Irc():
         against the target's IP address and real host, respectively.
         """
         # Get the corresponding casemapping value used by ircmatch.
-        casemapping = getattr(ircmatch, self.proto.casemapping)
+        if self.proto.casemapping == 'rfc1459':
+            casemapping = 0
+        else:
+            casemapping = 1
 
         # Try to convert target into a UID. If this fails, it's probably a hostname.
         target = self.nickToUid(target) or target
