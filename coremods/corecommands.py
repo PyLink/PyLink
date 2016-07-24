@@ -72,7 +72,7 @@ def load(irc, source, args):
         return
     log.info('(%s) Loading plugin %r for %s', irc.name, name, irc.getHostmask(source))
     try:
-        world.plugins[name] = pl = importlib.reload(utils.loadPlugin(name))
+        world.plugins[name] = pl = utils.loadPlugin(name)
     except ImportError as e:
         if str(e) == ('No module named %r' % name):
             log.exception('Failed to load plugin %r: The plugin could not be found.', name)
@@ -139,10 +139,11 @@ def unload(irc, source, args):
 
         # Delete it from memory (hopefully).
         del world.plugins[name]
-        if name in sys.modules:
-            del sys.modules[name]
-        if name in globals():
-            del globals()[name]
+        for n in (name, modulename):
+            if n in sys.modules:
+                del sys.modules[n]
+            if n in globals():
+                del globals()[n]
 
         # Garbage collect.
         gc.collect()
