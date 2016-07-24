@@ -8,3 +8,5 @@ This folder contains general documentation for PyLink IRC services.
 - [PyLink Relay Tutorial & Oper Guide](pylink-opers.md)
 - [Automode & Exttargets Guide](automode.md)
 - [Developer documentation](technical/)
+
+There is also a (WIP) Doxygen-powered API reference at https://pylink.github.io/
