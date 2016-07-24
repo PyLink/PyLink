@@ -10,6 +10,8 @@ from pylinkirc.log import log
 import threading
 import re
 import time
+import pylinkirc
+import importlib
 
 def _exec(irc, source, args):
     """<code>
