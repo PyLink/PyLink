@@ -66,6 +66,10 @@ def cb_relay_core(irc, source, command, args):
             except (AttributeError, KeyError):
                 return
             netname = origuser[0]
+            try:  # Try to get the full network name
+                netname = conf.conf['servers'][netname]['netname']
+            except KeyError:
+                pass
 
             # Figure out where the message is destined to.
             target = args.get('channel') or args.get('target')
