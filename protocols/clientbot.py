@@ -97,13 +97,13 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.servers[server].users.add(uid)
         return u
 
-    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0, internal=True):
         """
         STUB: Pretends to spawn a new server with a subset of the given options.
         """
         name = name.lower()
         sid = self.sidgen.next_sid()
-        self.irc.servers[sid] = IrcServer(uplink, name)
+        self.irc.servers[sid] = IrcServer(uplink, name, internal=internal)
         return sid
 
     def away(self, source, text):
@@ -273,7 +273,7 @@ class ClientbotWrapperProtocol(Protocol):
                 # Sender is a server name.
                 idsource = self._getSid(sender)
                 if idsource not in self.irc.servers:
-                    idsource = self.spawnServer(sender)
+                    idsource = self.spawnServer(sender, internal=False)
             else:
                 # Sender is a nick!user@host prefix. Split it into its relevant parts.
                 nick, ident, host = utils.splitHostmask(sender)
