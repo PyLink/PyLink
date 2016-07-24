@@ -68,24 +68,19 @@ def die(sourceirc):
 
     # For every connected network:
     for irc in world.networkobjects.values():
-        # 1) Find all the relay clients and quit them.
-        for user in irc.users.copy():
-            if isRelayClient(irc, user):
-                irc.proto.quit(user, "Relay plugin unloaded.")
-
-        # 2) SQUIT every relay subserver.
+        # 1) SQUIT every relay subserver.
         for server, sobj in irc.servers.copy().items():
             if hasattr(sobj, 'remote'):
                 irc.proto.squit(irc.sid, server, text="Relay plugin unloaded.")
 
-    # 3) Clear our internal servers and users caches.
+    # 2) Clear our internal servers and users caches.
     relayservers.clear()
     relayusers.clear()
 
-    # 4) Export the relay links database.
+    # 3) Export the relay links database.
     exportDB()
 
-    # 5) Kill the scheduling for any other exports.
+    # 4) Kill the scheduling for any other exports.
     global exportdb_timer
     if exportdb_timer:
         log.debug("Relay: cancelling exportDB timer thread %s due to die()", threading.get_ident())
