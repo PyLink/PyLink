@@ -62,6 +62,10 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.servers[sid] = self.irc.servers[old_sid]
         del self.irc.servers[old_sid]
 
+        # Clear states from last connect
+        self.who_received.clear()
+        self.kick_queue.clear()
+
         sendpass = self.irc.serverdata.get("sendpass")
         if sendpass:
             f('PASS %s' % sendpass)
