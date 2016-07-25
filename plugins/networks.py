@@ -1,5 +1,5 @@
 """Networks plugin - allows you to manipulate connections to various configured networks."""
-import threading
+import importlib
 
 from pylinkirc import utils, world, conf, classes
 from pylinkirc.log import log
@@ -83,3 +83,20 @@ def remote(irc, source, args):
         remoteirc.pseudoclient.identified = ''
 
     irc.reply("Done.")
+
+@utils.add_cmd
+def reloadproto(irc, source, args):
+    """<protocol module name>
+
+    Reloads the given protocol module without restart. You will have to manually disconnect and reconnect any network using the module for changes to apply."""
+    irc.checkAuthenticated(source)
+    try:
+        name = args[0]
+    except IndexError:
+        irc.reply('Error: Not enough arguments (needs 1: protocol module name)')
+        return
+
+    proto = utils.getProtocolModule(name)
+    importlib.reload(proto)
+
+    irc.reply("Done. You will have to manually disconnect and reconnect any network using the %r module for changes to apply." % name)
