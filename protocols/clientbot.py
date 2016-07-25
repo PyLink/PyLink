@@ -415,6 +415,7 @@ class ClientbotWrapperProtocol(Protocol):
             log.warning('(%s) handle_352: got wrong string %s for away status', self.irc.name, status[0])
 
         if '*' in status:  # Track IRCop status
+            self.irc.applyModes(uid, [('+o', None)])
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
         #else:  # TODO: track de-opers as well
 
