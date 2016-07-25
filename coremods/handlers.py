@@ -5,7 +5,7 @@ handlers.py - Implements miscellaneous IRC command handlers (WHOIS, services log
 from pylinkirc import utils, conf
 from pylinkirc.log import log
 def handle_whois(irc, source, command, args):
-    """Handle WHOIS queries, for IRCds that send them across servers (charybdis, UnrealIRCd; NOT InspIRCd)."""
+    """Handle WHOIS queries."""
     target = args['target']
     user = irc.users.get(target)
 
