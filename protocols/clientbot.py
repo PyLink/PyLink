@@ -66,7 +66,7 @@ class ClientbotWrapperProtocol(Protocol):
         self.conf_nick = self.irc.serverdata.get('pylink_nick') or conf.conf["bot"].get("nick", "PyLink")
         f('NICK %s' % (self.conf_nick))
         ident = self.irc.serverdata.get('pylink_ident') or conf.conf["bot"].get("ident", "pylink")
-        f('USER %s 8 * %s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
+        f('USER %s 8 * :%s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
 
     # Note: clientbot clients are initialized with umode +i by default
