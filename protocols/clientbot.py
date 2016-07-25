@@ -69,7 +69,8 @@ class ClientbotWrapperProtocol(Protocol):
         f('USER %s 8 * %s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
 
-    def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes=set(),
+    # Note: clientbot clients are initialized with umode +i by default
+    def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
         """
@@ -85,6 +86,9 @@ class ClientbotWrapperProtocol(Protocol):
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname, manipulatable=manipulatable)
         log.debug('(%s) self.irc.users: %s', self.irc.name, self.irc.users)
         self.irc.servers[server].users.add(uid)
+
+        self.irc.applyModes(uid, modes)
+
         return u
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0, internal=True):
