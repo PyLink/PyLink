@@ -1,5 +1,37 @@
-# PyLink 0.9-beta1
-Tagged as **0.9-beta1** by [GLolol](https://github.com/GLolol)
+# PyLink 0.9.0
+Tagged as **0.9.0** by [GLolol](https://github.com/GLolol)
+
+### *Important*, backwards incompatible changes for those upgrading from 0.8.x!
+- The configuration file is now **pylink.yml** by default, instead of **config.yml**.
+- PyLink now requires installing itself as a module, instead of simply running from source. Do this via `python3 setup.py install --user`.
+- The `use_experimental_whois` option for InspIRCd servers and the `spawn_servers` option in Relay have been removed, as they are now implied.
+
+----
+
+### Changes from 0.9-beta1
+
+##### Added / changed / removed features
+- PyLink is now slightly more descriptive if you try to start it with missing dependencies or a missing conf file.
+- The PyLink API reference is now at https://pylink.github.io/ instead of in `docs/technical`.
+- The `exec` and `eval` commands now have access to the `pylinkirc` and `importlib` imports by default.
+- `jupe` from the `opercmds` plugin now requires the admin login instead of just oper.
+- opercmds: `kick` now treat channels case insensitively.
+- Documentation update: there are now guides to Automode and PyLink's Services API.
+
+##### Bug fixes
+- Fixed the `reload` command (again).
+- Fixed compatibility with ircmatch 1.2: PyLink previously used features that were only available in the unreleased Git version.
+- The `identify` command now responds with NOTICE instead of PM, behaving like any other command. Thanks to @Techman- for pointing this out.
+- The `identify` command must be called in private again.
+- Relay now shows secret channels in `linked` to those inside the channel, regardless of whether they're opered.
+- `$channel:#channel:prefixmode` exttarget matching no longer raises errors if the target isn't in the specified channel.
+
+##### Internal improvements
+- Redone version handling so `__init__.py` isn't committed anymore.
+- `update.sh` now passes arguments to the `pylink` launcher.
+
+# [PyLink 0.9-beta1](https://github.com/GLolol/PyLink/releases/tag/0.9-beta1)
+Tagged as **0.9-beta1** by [GLolol](https://github.com/GLolol) on 2016-07-14T02:11:07Z
 
 ### *Important*, backwards incompatible changes for those upgrading from 0.8.x
  - The configuration file is now **pylink.yml** by default, instead of **config.yml**.
