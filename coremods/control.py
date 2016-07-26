@@ -29,12 +29,13 @@ def _shutdown(irc=None):
         # Disconnect all our networks.
         remove_network(ircobj)
 
-def sigterm_handler(_signo, _stack_frame):
-    """Handles SIGTERM gracefully by shutting down the PyLink daemon."""
-    log.info("Shutting down on SIGTERM.")
+def sigterm_handler(signo, stack_frame):
+    """Handles SIGTERM and SIGINT gracefully by shutting down the PyLink daemon."""
+    log.info("Shutting down on signal %s." % signo)
     _shutdown()
 
 signal.signal(signal.SIGTERM, sigterm_handler)
+signal.signal(signal.SIGINT, sigterm_handler)
 
 def _rehash():
     """Rehashes the PyLink daemon."""
