@@ -383,6 +383,12 @@ def unregisterService(name):
     name = name.lower()
     sbot = world.services[name]
     for ircnet, uid in sbot.uids.items():
-        world.networkobjects[ircnet].proto.quit(uid, "Service unloaded.")
+        ircobj = world.networkobjects[ircnet]
+        # Special case for the main PyLink client. If we're unregistering that,
+        # clear the irc.pseudoclient entry.
+        if name == 'pylink':
+            ircobj.pseudoclient = None
+
+        ircobj.proto.quit(uid, "Service unloaded.")
 
     del world.services[name]

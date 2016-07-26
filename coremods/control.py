@@ -25,6 +25,9 @@ def _shutdown(irc=None):
             except:  # But don't allow it to crash the server.
                 log.exception('coremods.control: Error occurred in die() of plugin %s, skipping...', name)
 
+    # Remove our main PyLink bot as well.
+    utils.unregisterService('pylink')
+
     for ircobj in world.networkobjects.copy().values():
         # Disconnect all our networks.
         remove_network(ircobj)
