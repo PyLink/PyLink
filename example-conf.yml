@@ -283,7 +283,7 @@ plugins:
     # to a template string, as they connect. This requires the changehost: block
     # to be configured correctly below.
     #- changehost
-    
+
     # Automode plugin: allows assigning channel access to specific hostmasks or
     # exttargets. See https://github.com/GLolol/PyLink/blob/master/docs/automode.md
     # for a usage guide.
@@ -412,6 +412,11 @@ relay:
     # This defaults to True if not specified. Disabling this option is currently
     # experimental.
     tag_nicks: true
+
+    # If tag_nicks is False, this specifies a list of NICK globs that network
+    # tags should be added for anyways (e.g. for network services).
+    forcetag_nicks:
+        - "*Serv"
 
 games:
     # Sets the nick of the Games service, if you're using it.

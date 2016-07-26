@@ -101,9 +101,18 @@ def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
     separator = irc.serverdata.get('separator') or \
         conf.conf.get('relay', {}).get('separator') or "/"
 
-    # Figure out whether we tag nicks by default or not.
-    if times_tagged == 0 and conf.conf.get('relay', {}).get('tag_nicks', True):
-        times_tagged = 1
+    # Figure out whether we tag nicks or not.
+    if times_tagged == 0:
+        if conf.conf.get('relay', {}).get('tag_nicks', True):
+            times_tagged = 1
+        else:
+            forcetag_nicks = conf.conf.get('relay', {}).get('forcetag_nicks', [])
+            log.debug('(%s) relay.normalizeNick: checking if globs %s match %s.', irc.name, forcetag_nicks, nick)
+            for glob in forcetag_nicks:
+                if irc.matchHost(glob, nick):
+                    # User matched a nick to force tag nicks for. Tag them.
+                    times_tagged = 1
+                    break
 
     log.debug('(%s) relay.normalizeNick: using %r as separator.', irc.name, separator)
     orig_nick = nick
