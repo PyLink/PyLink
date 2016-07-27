@@ -352,6 +352,13 @@ class P10Protocol(IRCS2SProtocol):
         if not reason:
             reason = 'No reason given'
 
+        cobj = self.irc.channels[channel]
+        # HACK: prevent kick bounces by sending our kick through the server if
+        # the sender isn't op.
+        if numeric not in self.irc.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
+            reason = '(%s) %s' % (self.irc.getFriendlyName(numeric), reason)
+            numeric = self.irc.getServer(numeric)
+
         self._send(numeric, 'K %s %s :%s' % (channel, target, reason))
 
         # We can pretend the target left by its own will; all we really care about
@@ -389,7 +396,6 @@ class P10Protocol(IRCS2SProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        self.irc.applyModes(target, modes)
         modes = list(modes)
 
         # According to the P10 specification:
@@ -401,11 +407,19 @@ class P10Protocol(IRCS2SProtocol):
             cobj = self.irc.channels[self.irc.toLower(target)]
             ts = ts or cobj.ts
             send_ts = True
+
+            # HACK: prevent mode bounces by sending our mode through the server if
+            # the sender isn't op.
+            if numeric not in self.irc.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
+                numeric = self.irc.getServer(numeric)
+
         else:
             assert target in self.irc.users, "Unknown mode target %s" % target
             # P10 uses nicks in user MODE targets, NOT UIDs. ~GL
             target = self.irc.users[target].nick
             send_ts = False
+
+        self.irc.applyModes(target, modes)
 
         while modes[:12]:
             joinedmodes = self.irc.joinModes([m for m in modes[:12]])
