@@ -1187,6 +1187,12 @@ class Protocol():
         Merges modes of a channel given the remote TS and a list of modes.
         """
 
+        # Okay, so the situation is that we have 6 possible TS/sender combinations:
+
+        #                       | our TS lower | TS equal | their TS lower
+        # mode origin is us     |   OVERWRITE  |   MERGE  |    IGNORE
+        # mode origin is uplink |    IGNORE    |   MERGE  |   OVERWRITE
+
         def _clear():
             log.debug("(%s) Clearing modes from channel %s due to TS change", self.irc.name,
                       channel)
@@ -1209,41 +1215,25 @@ class Protocol():
 
             # Check if we're the mode sender based on the UID / SID given.
             our_mode = self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender)
-            log.debug("(%s/%s) is the mode origin us? %s",
-                      self.irc.name, channel, our_mode)
 
-            if their_ts < our_ts:
-                # Their TS is older than ours. We should clear our stored modes for the channel and
-                # apply the ones in the queue to be set. This is regardless of whether we're sending
-                # outgoing modes or receiving some - both are handled the same with a "received" TS,
-                # and comparing it with the one we have.
-                log.debug("(%s/%s) received TS of %s is lower than our %s; mode query %s",
-                          self.irc.name, channel, their_ts, our_ts, modes)
+            log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.irc.name,
+                      channel, our_ts, their_ts, our_mode)
 
-                # Update the channel TS to theirs regardless of whether the mode setting passes.
-                log.debug('(%s) Setting channel TS of %s to %s from %s',
-                          self.irc.name, channel, their_ts, our_ts)
-                self.irc.channels[channel].ts = their_ts
-
-                _clear()
-                if not our_mode:
-                    _apply()
-
-            elif their_ts == our_ts:
+            if their_ts == our_ts:
                 log.debug("(%s/%s) remote TS of %s is equal to our %s; mode query %s",
                           self.irc.name, channel, their_ts, our_ts, modes)
                 # Their TS is equal to ours. Merge modes.
                 _apply()
 
-            elif their_ts > our_ts:
-                log.debug("(%s/%s) remote TS of %s is higher than our %s; mode query %s",
-                          self.irc.name, channel, their_ts, our_ts, modes)
-                # Their TS is younger than ours. Clear the state and replace the modes for the channel
-                # with the ones being set, if we're the one setting modes.
-                _clear()
+            elif ((their_ts < our_ts) and (not our_mode)) or ((our_ts < their_ts) and our_mode):
+                winning_ts = min(our_ts, their_ts)
+                log.debug('(%s) Resetting channel TS of %s from %s to %s',
+                          self.irc.name, channel, self.irc.channels[channel].ts, winning_ts)
+                self.irc.channels[channel].ts = winning_ts
 
-                if our_mode:
-                    _apply()
+                if not our_mode:  # Skip clearing if we're the one setting the mode.
+                    _clear()
+                _apply()
 
     def _getSid(self, sname):
         """Returns the SID of a server with the given name, if present."""
