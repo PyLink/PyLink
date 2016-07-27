@@ -718,34 +718,56 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_svs2mode(self, sender, command, args):
         """
-        Handles SVS2MODE, which sets services login information, and user modes on
-        the given target.
+        Handles SVS2MODE, which sets services login information on the given target.
         """
-        # Logging in:
+        # Logging in (with account info, atheme):
         # <- :NickServ SVS2MODE GL +rd GL
 
-        # Logging out:
+        # Logging in (without account info, anope):
+        # <- :NickServ SVS2MODE 001WCO6YK +r
+
+        # Logging out (atheme):
         # <- :NickServ SVS2MODE GL -r+d 0
 
         # Logging in to account from a different nick:
         # <- :NickServ SVS2MODE somenick +d GL
 
-        # Handle the mode part first, the same was as SVSMODE.
-        mode_hook = self.handle_svsmode(sender, command, args)
-        self.irc.callHooks([sender, 'SVSMODE', mode_hook])
+        # Logging in to account from a different nick (anope):
+        # <- :NickServ SVS2MODE 001SALZ01 +d GL
+        # <- :NickServ SVS2MODE 001SALZ01 +r
 
-        # Get the target and the account name being set. 0 for accountname
-        # indicates a logout.
         target = self._getUid(args[0])
-        try:
+        parsedmodes = self.irc.parseModes(target, args[1:])
+
+        if ('+r', None) in parsedmodes:
+            # Umode +r is being set (log in)
+            try:
+                # Try to get the account name (mode argument for +d)
+                account = args[2]
+            except IndexError:
+                # If one doesn't exist, make it the same as the nick, but only if the account name
+                # wasn't set already.
+                if not self.irc.users[target].services_account:
+                    account = self.irc.getFriendlyName(target)
+                else:
+                    return
+        elif ('-r', None) in parsedmodes:
+            # Umode -r being set.
+
+            if not self.irc.users[target].services_account:
+                # User already has no account; ignore.
+                return
+
+            account = ''
+        elif ('+d', None) in parsedmodes:
+            # Nick identification status wasn't changed, but services account was.
             account = args[2]
-            if account == '0':
+            if account == '0':  # 0 means logout
                 account = ''
-        except IndexError:
-            # No services account change, ignore
-            return
         else:
-            self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+            return
+
+        self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
     def handle_umode2(self, numeric, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
