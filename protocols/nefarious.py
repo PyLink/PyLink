@@ -413,10 +413,11 @@ class P10Protocol(IRCS2SProtocol):
             if numeric not in self.irc.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
                 numeric = self.irc.getServer(numeric)
 
+            real_target = target
         else:
             assert target in self.irc.users, "Unknown mode target %s" % target
             # P10 uses nicks in user MODE targets, NOT UIDs. ~GL
-            target = self.irc.users[target].nick
+            real_target = self.irc.users[target].nick
             send_ts = False
 
         self.irc.applyModes(target, modes)
@@ -424,7 +425,7 @@ class P10Protocol(IRCS2SProtocol):
         while modes[:12]:
             joinedmodes = self.irc.joinModes([m for m in modes[:12]])
             modes = modes[12:]
-            self._send(numeric, 'M %s %s%s' % (target, joinedmodes, ' %s' % ts if send_ts else ''))
+            self._send(numeric, 'M %s %s%s' % (real_target, joinedmodes, ' %s' % ts if send_ts else ''))
 
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
