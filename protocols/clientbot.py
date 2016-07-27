@@ -103,11 +103,13 @@ class ClientbotWrapperProtocol(Protocol):
     def away(self, source, text):
         """STUB: sets away messages for clients internally."""
         log.debug('(%s) away: target is %s, internal client? %s', self.irc.name, source, self.irc.isInternalClient(source))
-        if not self.irc.isInternalClient(source):
-            log.debug('(%s) away: sending AWAY hook from %s with text %r', self.irc.name, source, text)
-            self.irc.callHooks([source, 'AWAY', {'text': text}])
 
-        self.irc.users[source].away = text
+        if self.irc.users[source].away != text:
+            if not self.irc.isInternalClient(source):
+                log.debug('(%s) away: sending AWAY hook from %s with text %r', self.irc.name, source, text)
+                self.irc.callHooks([source, 'AWAY', {'text': text}])
+
+            self.irc.users[source].away = text
 
     def invite(self, client, target, channel):
         """Invites a user to a channel."""
