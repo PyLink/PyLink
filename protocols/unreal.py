@@ -375,9 +375,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # The cloaked (+x) host is completely separate from the displayed host
         # and real host in that it is ONLY shown if the user is +x (cloak mode
-        # enabled) but NOT +t (vHost set). We'll store this separately for now,
-        # but more handling is needed so that plugins can update the cloak host
-        # appropriately.
+        # enabled) but NOT +t (vHost set).
         self.irc.users[uid].cloaked_host = args[9]
 
         if ('+o', None) in parsedmodes:
