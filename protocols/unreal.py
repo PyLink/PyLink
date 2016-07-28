@@ -387,6 +387,9 @@ class UnrealProtocol(TS6BaseProtocol):
             self.irc.users[uid].host = realhost
 
         # Set the accountname if present
+        if ('+r', None) in parsedmodes and accountname == '0':
+            accountname = nick
+
         if accountname != "0":
             self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
