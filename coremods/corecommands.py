@@ -10,7 +10,7 @@ import sys
 import importlib
 
 from . import control
-from pylinkirc import utils, world
+from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
 # Essential, core commands go here so that the "commands" plugin with less-important,
@@ -31,8 +31,8 @@ def identify(irc, source, args):
         irc.reply('Error: Not enough arguments.')
         return
     # Usernames are case-insensitive, passwords are NOT.
-    if username.lower() == irc.conf['login']['user'].lower() and password == irc.conf['login']['password']:
-        realuser = irc.conf['login']['user']
+    if username.lower() == conf.conf['login']['user'].lower() and password == conf.conf['login']['password']:
+        realuser = conf.conf['login']['user']
         irc.users[source].identified = realuser
         irc.reply('Successfully logged in as %s.' % realuser)
         log.info("(%s) Successful login to %r by %s",

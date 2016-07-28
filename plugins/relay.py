@@ -324,7 +324,7 @@ def spawnRelayUser(irc, remoteirc, user, times_tagged=0):
         # /lusers and various /stats
         hideoper_mode = remoteirc.umodes.get('hideoper')
         try:
-            use_hideoper = irc.conf['relay']['hideoper']
+            use_hideoper = conf.conf['relay']['hideoper']
         except KeyError:
             use_hideoper = True
         if hideoper_mode and use_hideoper:
@@ -332,7 +332,7 @@ def spawnRelayUser(irc, remoteirc, user, times_tagged=0):
 
     rsid = getRemoteSid(remoteirc, irc)
     try:
-        showRealIP = irc.conf['relay']['show_ips'] and not \
+        showRealIP = conf.conf['relay']['show_ips'] and not \
                      irc.serverdata.get('relay_no_ips') and not \
                      remoteirc.serverdata.get('relay_no_ips')
     except KeyError:
@@ -822,7 +822,7 @@ def handle_relay_whois(irc, source, command, args):
         """
         Returns whether we should send the given info line in WHOIS. This validates the
         corresponding configuration option for being either "all" or "opers"."""
-        setting = irc.conf.get('relay', {}).get(infoline, '').lower()
+        setting = conf.conf.get('relay', {}).get(infoline, '').lower()
         if setting == 'all':
             return True
         elif setting == 'opers' and irc.isOper(source, allowAuthed=False):
@@ -917,7 +917,7 @@ def handle_squit(irc, numeric, command, args):
             log.debug('(%s) relay.handle_squit: sending handle_quit on %s', irc.name, user)
 
             try:  # Allow netsplit hiding to be toggled
-                show_splits = irc.conf['relay']['show_netsplits']
+                show_splits = conf.conf['relay']['show_netsplits']
             except KeyError:
                 show_splits = False
 

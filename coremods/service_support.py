@@ -23,8 +23,8 @@ def spawn_service(irc, source, command, args):
     # 3) The preferred nick/ident combination defined by the plugin (sbot.nick / sbot.ident)
     # 4) The literal service name.
     # settings, and then falling back to the literal service name.
-    nick = irc.serverdata.get("%s_nick" % name) or irc.conf.get(name, {}).get('nick') or sbot.nick or name
-    ident = irc.serverdata.get("%s_ident" % name) or irc.conf.get(name, {}).get('ident') or sbot.ident or name
+    nick = irc.serverdata.get("%s_nick" % name) or conf.conf.get(name, {}).get('nick') or sbot.nick or name
+    ident = irc.serverdata.get("%s_ident" % name) or conf.conf.get(name, {}).get('ident') or sbot.ident or name
 
     # TODO: make this configurable?
     host = irc.serverdata["hostname"]

@@ -1,7 +1,7 @@
 """
 Changehost plugin - automatically changes the hostname of matching users.
 """
-from pylinkirc import utils, world
+from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
 import string
@@ -14,7 +14,7 @@ import ircmatch
 allowed_chars = string.ascii_letters + '-./:' + string.digits
 
 def _changehost(irc, target, args):
-    changehost_conf = irc.conf.get("changehost")
+    changehost_conf = conf.conf.get("changehost")
 
     if not changehost_conf:
         log.warning("(%s) Missing 'changehost:' configuration block; "
