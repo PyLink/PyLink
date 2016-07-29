@@ -39,7 +39,6 @@ class IRCS2SProtocol(Protocol):
 
         return {'target': killed, 'text': killmsg, 'userdata': data}
 
-
     def handle_squit(self, numeric, command, args):
         """Handles incoming SQUITs."""
         return self._squit(numeric, command, args)

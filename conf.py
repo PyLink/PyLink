@@ -50,10 +50,6 @@ def validateConf(conf):
     for section in ('bot', 'servers', 'login', 'logging'):
         assert conf.get(section), "Missing %r section in config." % section
 
-    for netname, serverblock in conf['servers'].items():
-        for section in ('ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol'):
-            assert serverblock.get(section), "Missing %r in server block for %r." % (section, netname)
-
     assert type(conf['login'].get('password')) == type(conf['login'].get('user')) == str and \
         conf['login']['password'] != "changeme", "You have not set the login details correctly!"
 

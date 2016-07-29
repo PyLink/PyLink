@@ -172,6 +172,13 @@ class Irc():
         while True:
             self.aborted.clear()
             self.initVars()
+
+            try:
+                self.proto.validateServerConf()
+            except AssertionError as e:
+                log.exception("(%s) Configuration error: %s", self.name, e)
+                return
+
             ip = self.serverdata["ip"]
             port = self.serverdata["port"]
             checks_ok = True
@@ -1143,6 +1150,18 @@ class Protocol():
 
         # Lock for updateTS to make sure only one thread can change the channel TS at one time.
         self.ts_lock = threading.Lock()
+
+        # Lists required conf keys for the server block.
+        self.conf_keys = {'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass',
+                          'recvpass'}
+
+    def validateServerConf(self):
+        """Validates that the server block given contains the required keys."""
+        for k in self.conf_keys:
+            assert k in self.irc.serverdata, "Missing option %r in server block for network %s." % (k, self.irc.name)
+
+        port = self.irc.serverdata['port']
+        assert type(port) == int and 0 < port < 65535, "Invalid port %r for network %s" % (port, self.irc.name)
 
     def parseArgs(self, args):
         """Parses a string of RFC1459-style arguments split into a list, where ":" may
