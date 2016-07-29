@@ -1215,8 +1215,8 @@ def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
 
-    if irc.protoname == 'clientbot':
-        # We don't sync modes with clientbot networks... that's just too much of a PITA
+    if irc.protoname == 'clientbot' and utils.isChannel(target):
+        # We don't sync cmodes with clientbot networks yet.
         return
 
     for name, remoteirc in world.networkobjects.copy().items():
