@@ -954,7 +954,8 @@ def handle_part(irc, numeric, command, args):
                 for user in irc.channels[channel].users:
                     if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
                         irc.callHooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
-                                       'text': 'Clientbot force parted from channel.', 'parse_as': 'KICK'}])
+                                       'text': 'Clientbot was force parted (Reason: %s)' % text or 'None',
+                                       'parse_as': 'KICK'}])
                 irc.proto.join(irc.pseudoclient.uid, channel)
 
             return
@@ -1096,8 +1097,9 @@ def handle_kick(irc, source, command, args):
     if irc.protoname == 'clientbot' and irc.pseudoclient and target == irc.pseudoclient.uid:
         for user in irc.channels[channel].users:
             if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
+                reason = "Clientbot kicked by %s (Reason: %s)" % (irc.getFriendlyName(source), text)
                 irc.callHooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
-                               'text': 'Clientbot was kicked from channel.', 'parse_as': 'KICK'}])
+                               'text': reason, 'parse_as': 'KICK'}])
 
         return
 
