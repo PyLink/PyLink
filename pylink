@@ -58,11 +58,14 @@ if __name__ == '__main__':
     # Initialize all the networks one by one
     for network, sdata in conf.conf['servers'].items():
 
-        protoname = sdata['protocol']
-
-        # Fetch the correct protocol module
-        proto = utils.getProtocolModule(protoname)
-        world.networkobjects[network] = irc = classes.Irc(network, proto, conf.conf)
+        try:
+            protoname = sdata['protocol']
+        except (KeyError, TypeError):
+            log.error("(%s) Configuration error: No protocol module specified, aborting.", network)
+        else:
+            # Fetch the correct protocol module
+            proto = utils.getProtocolModule(protoname)
+            world.networkobjects[network] = irc = classes.Irc(network, proto, conf.conf)
 
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
