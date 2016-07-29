@@ -718,11 +718,8 @@ class P10Protocol(IRCS2SProtocol):
 
         name = self.irc.serverdata["hostname"]
 
-        # HACK: Encode our SID everywhere, and replace it in the IrcServer index.
-        old_sid = self.irc.sid
-        self.irc.sid = sid = p10b64encode(self.irc.serverdata["sid"])
-        self.irc.servers[sid] = self.irc.servers[old_sid]
-        del self.irc.servers[old_sid]
+        # Encode our SID using P10 Base64.
+        self.irc.sid = p10b64encode(self.irc.serverdata["sid"])
 
         desc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
 

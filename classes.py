@@ -116,9 +116,7 @@ class Irc():
         # Intialize the server, channel, and user indexes to be populated by
         # our protocol module. For the server index, we can add ourselves right
         # now.
-        self.servers = {self.sid: IrcServer(None, self.serverdata['hostname'],
-                        internal=True, desc=self.serverdata.get('serverdesc')
-                        or self.botdata['serverdesc'])}
+        self.servers = {}
         self.users = {}
         self.channels = structures.KeyedDefaultdict(IrcChannel)
 
@@ -277,6 +275,12 @@ class Irc():
                     # All our checks passed, get the protocol module to connect
                     # and run the listen loop.
                     self.proto.connect()
+
+                    log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
+                    self.servers[self.sid] = IrcServer(None, self.serverdata['hostname'],
+                            internal=True, desc=self.serverdata.get('serverdesc')
+                            or self.botdata['serverdesc'])
+
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self.schedulePing()
                     log.info('(%s) Server ready; listening for data.', self.name)

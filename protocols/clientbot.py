@@ -49,11 +49,8 @@ class ClientbotWrapperProtocol(Protocol):
         # TODO: fetch channel/user/prefix modes from RPL_ISUPPORT.
         #self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
 
-        # HACK: Replace the SID from the config options with our own.
-        old_sid = self.irc.sid
-        self.irc.sid = sid = self.sidgen.next_uid()
-        self.irc.servers[sid] = self.irc.servers[old_sid]
-        del self.irc.servers[old_sid]
+        # Enumerate our own server
+        self.irc.sid = self.sidgen.next_sid()
 
         # Clear states from last connect
         self.who_received.clear()
