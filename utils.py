@@ -73,11 +73,11 @@ class PUIDGenerator():
         self.prefix = prefix
         self.counter = 0
 
-    def next_uid(self):
+    def next_uid(self, prefix=''):
         """
         Generates the next PUID.
         """
-        uid = '%s@%s' % (self.prefix, self.counter)
+        uid = '%s@%s' % (prefix or self.prefix, self.counter)
         self.counter += 1
         return uid
     next_sid = next_uid

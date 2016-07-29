@@ -296,8 +296,8 @@ class UnrealProtocol(TS6BaseProtocol):
         ts = self.irc.start_ts
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
 
-        # Track usages of legacy nicks.
-        self.legacy_nickcount = 1
+        # Track usages of legacy (Unreal 3.2) nicks.
+        self.legacy_uidgen = utils.PUIDGenerator('U32user')
 
         self.irc.umodes.update({'deaf': 'd', 'invisible': 'i', 'hidechans': 'p',
                                 'protected': 'q', 'registered': 'r',
@@ -605,8 +605,7 @@ class UnrealProtocol(TS6BaseProtocol):
             servername = new_args[5].lower()  # Get the name of the users' server.
 
             # Fake a UID and put it where it belongs in the new-style UID command.
-            fake_uid = '%s@%s' % (args[0], self.legacy_nickcount)
-            self.legacy_nickcount += 1
+            fake_uid = self.legacy_uidgen.next_uid(prefix=args[0])
             new_args[5] = fake_uid
 
             # Insert a fake cloaked host (just make it equal the real host, I don't care)
