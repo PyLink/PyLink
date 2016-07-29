@@ -37,7 +37,7 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 * [charybdis](http://charybdis.io/) (3.5+ / git master) - module `ts6`
 * [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
 * [UnrealIRCd](https://www.unrealircd.org/) 4.x - module `unreal`
-    - Note: Support for mixed UnrealIRCd 3.2/4.0 networks is experimental, and requires you to enable a `mixed_link` option in the configuration. This may in turn void your support.
+    - Linking to UnrealIRCd 3.2 servers is only supported when using an UnrealIRCd 4.x server as a hub, with topology such as  `pylink<->unreal4<->unreal3.2`
 
 ### Extended support
 

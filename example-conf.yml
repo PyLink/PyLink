@@ -191,15 +191,6 @@ servers:
         protocol: "unreal"
         autoconnect: 5
 
-        # This option enables SUPER HACKY UNREAL 3.2 COMPAT mode, which allows
-        # PyLink to link to mixed Unreal 3.2/4.0 networks, using a 4.0 server
-        # as a direct uplink.
-        # THIS IS EXPERIMENTAL, NOT WELL TESTED, AND MAY SET YOUR HOUSE ON FIRE
-        # AND G-LINE EVERYONE ON YOUR NETWORK.
-        # We encourage you to upgrade so that all your servers are running the
-        # same IRCd version.
-        #mixed_link: true
-
         # You can also define network-specific nicks and idents for various service
         # bots, using the configuration options "servicename_nick" and "servicename_ident".
         #pylink_nick: MagicServ

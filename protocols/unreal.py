@@ -34,13 +34,6 @@ class UnrealProtocol(TS6BaseProtocol):
         # Some command aliases
         self.handle_svskill = self.handle_kill
 
-        # Toggle whether we're using super hack mode for Unreal 3.2 mixed links.
-        self.mixed_link = self.irc.serverdata.get('mixed_link')
-
-        if self.mixed_link:
-            log.warning('(%s) mixed_link is experimental and may cause problems. '
-                        'You have been warned!', self.irc.name)
-
     def _expandPUID(self, uid):
         """
         Returns the outgoing nick for the given UID. For PUIDs (used to store UID-less
@@ -588,12 +581,12 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_nick(self, numeric, command, args):
         """Handles NICK changes, and legacy NICK introductions from pre-4.0 servers."""
-        if self.mixed_link and len(args) > 2:
+        if len(args) > 2:
             # Handle legacy NICK introduction here.
             # I don't want to rewrite all the user introduction stuff, so I'll just reorder the arguments
             # so that handle_uid can handle this instead.
             # But since legacy nicks don't have any UIDs attached, we'll have to store the users
-            # internally by their nicks. In other words, we need to convert from this:
+            # internally using pseudo UIDs. In other words, we need to convert from this:
             #   <- NICK Global 3 1456843578 services novernet.com services.novernet.com 0 +ioS * :Global Noticer
             #   & nick hopcount timestamp username hostname server service-identifier-token :realname
             #   <- NICK GL32 2 1460221959 gl localhost unreal32.midnight.vpn 0 +iowx * fwAAAQ== :realname (with NICKIP enabled)
@@ -604,7 +597,9 @@ class UnrealProtocol(TS6BaseProtocol):
             new_args = args[:]  # Clone the old args list
             servername = new_args[5].lower()  # Get the name of the users' server.
 
-            # Fake a UID and put it where it belongs in the new-style UID command.
+            # Fake a UID and put it where it belongs in the new-style UID command. These take the
+            # NICK@COUNTER, where COUNTER is an int starting at 0 and incremented every time a new
+            # user joins.
             fake_uid = self.legacy_uidgen.next_uid(prefix=args[0])
             new_args[5] = fake_uid
 
@@ -617,13 +612,7 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             # Normal NICK change, just let ts6_common handle it.
             # :70MAAAAAA NICK GL-devel 1434744242
-            try:
-                return super().handle_nick(numeric, command, args)
-            except KeyError:
-                log.exception('(%s) Malformed NICK command received. If you are linking PyLink to a '
-                              'mixed UnrealIRCd 3.2/4.0 network, enable the mixed_link option in the '
-                              'server config and restart your PyLink daemon.', self.irc.name)
-                self.irc.disconnect()
+            return super().handle_nick(numeric, command, args)
 
     def handle_mode(self, numeric, command, args):
         # <- :unreal.midnight.vpn MODE #test +bb test!*@* *!*@bad.net
