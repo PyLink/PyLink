@@ -418,8 +418,12 @@ class ClientbotWrapperProtocol(Protocol):
 
         if '*' in status:  # Track IRCop status
             self.irc.applyModes(uid, [('+o', None)])
+            self.irc.callHooks([uid, 'MODE', {'target': uid, 'modes': {('+o', None)}}])
             self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-        #else:  # TODO: track de-opers as well
+        elif self.irc.isOper(uid, allowAuthed=False) and not self.irc.isInternalClient(uid):
+            # Track deopers
+            self.irc.applyModes(uid, [('-o', None)])
+            self.irc.callHooks([uid, 'MODE', {'target': uid, 'modes': {('-o', None)}}])
 
         self.who_received.add(uid)
 
