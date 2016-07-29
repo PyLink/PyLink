@@ -11,7 +11,7 @@ class ClientbotWrapperProtocol(Protocol):
         super().__init__(irc)
 
         # Remove conf key checks for those not needed for Clientbot.
-        self.conf_keys -= {'recvpass', 'sendpass'}
+        self.conf_keys -= {'recvpass', 'sendpass', 'sid', 'sidrange', 'hostname'}
 
         # This is just a fallback. Actual casemapping is fetched by handle_005()
         self.casemapping = 'ascii'

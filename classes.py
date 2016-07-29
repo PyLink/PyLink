@@ -44,8 +44,8 @@ class Irc():
         self.loghandlers = []
         self.name = netname
         self.conf = conf
+        self.sid = None
         self.serverdata = conf['servers'][netname]
-        self.sid = self.serverdata["sid"]
         self.botdata = conf['bot']
         self.bot_clients = {}
         self.protoname = proto.__name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
@@ -99,7 +99,6 @@ class Irc():
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
-        self.sid = self.serverdata["sid"]
         self.botdata = self.conf['bot']
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 3
@@ -272,13 +271,16 @@ class Irc():
                                      hashtype, fp)
 
                 if checks_ok:
-                    # All our checks passed, get the protocol module to connect
-                    # and run the listen loop.
+                    self.sid = self.serverdata.get("sid")
+                    # All our checks passed, get the protocol module to connect and run the listen
+                    # loop. This also updates any SID values should the protocol module do so.
                     self.proto.connect()
 
                     log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
-                    self.servers[self.sid] = IrcServer(None, self.serverdata['hostname'],
-                            internal=True, desc=self.serverdata.get('serverdesc')
+                    host = self.serverdata.get('hostname', world.fallback_hostname)
+
+                    self.servers[self.sid] = IrcServer(None, host, internal=True,
+                            desc=self.serverdata.get('serverdesc')
                             or self.botdata['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)

@@ -22,3 +22,6 @@ exttarget_handlers = {}
 started = threading.Event()
 
 source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
+
+# Fallback hostname used in various places internally when hostname isn't configured.
+fallback_hostname = 'pylink.int'
