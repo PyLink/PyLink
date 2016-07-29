@@ -174,8 +174,15 @@ servers:
     unrealnet:
         ip: 1.2.3.4
         port: 8067
+
+        # Received and sent passwords. For passwordless links using SSL fingerprints, simply set
+        # these two fields to "*" and enable SSL with a cert and key file.
         recvpass: "coffee"
         sendpass: "tea"
+        #ssl: true
+        #ssl_certfile: mycert.pem
+        #ssl_keyfile: mycert.pem
+
         hostname: "pylink.example.com"
         sid: "2PY"
         netname: "This should match your UnrealIRCd config"
