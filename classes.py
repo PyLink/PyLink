@@ -1242,20 +1242,26 @@ class Protocol():
             log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.irc.name,
                       channel, our_ts, their_ts, our_mode)
 
+            if our_mode:
+                # If the source is us, the TS being used by sjoin() should be considered our TS.
+                log.debug('(%s) Resetting channel TS of %s from %s to %s (outgoing)',
+                          self.irc.name, channel, self.irc.channels[channel].ts, their_ts)
+                self.irc.channels[channel].ts = our_ts = their_ts
+
             if their_ts == our_ts:
                 log.debug("(%s/%s) remote TS of %s is equal to our %s; mode query %s",
                           self.irc.name, channel, their_ts, our_ts, modes)
                 # Their TS is equal to ours. Merge modes.
                 _apply()
 
-            elif ((their_ts < our_ts) and (not our_mode)) or ((our_ts < their_ts) and our_mode):
-                winning_ts = min(our_ts, their_ts)
-                log.debug('(%s) Resetting channel TS of %s from %s to %s',
-                          self.irc.name, channel, self.irc.channels[channel].ts, winning_ts)
-                self.irc.channels[channel].ts = winning_ts
+            elif (their_ts < our_ts) and (not our_mode):
+                log.debug('(%s) Resetting channel TS of %s from %s to %s (incoming)',
+                          self.irc.name, channel, self.irc.channels[channel].ts, their_ts)
+                self.irc.channels[channel].ts = their_ts
 
-                if not our_mode:  # Skip clearing if we're the one setting the mode.
-                    _clear()
+                # Remote TS was lower and we're receiving modes. Clear the modelist an apply theirs.
+
+                _clear()
                 _apply()
 
     def _getSid(self, sname):
