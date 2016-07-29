@@ -1,5 +1,10 @@
 """Setup module for PyLink IRC Services."""
 
+import sys
+
+if sys.version_info < (3, 4):
+    raise RuntimeError("PyLink requires Python 3.4 or higher.")
+
 try:
     from setuptools import setup, find_packages
 except ImportError:
