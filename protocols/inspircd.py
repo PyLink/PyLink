@@ -24,7 +24,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # are called with the right hooks.
         self.hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
                     'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
-                    'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC'}
+                    'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC',
+                    'SAKICK': 'KICK'}
 
         self.min_proto_ver = 1202
         self.proto_ver = 1202
@@ -769,5 +770,28 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self.removeClient(killed)
         return {'target': killed, 'text': args[1], 'userdata': data}
 
+    def handle_sakick(self, source, command, args):
+        """Handles forced kicks (SAKICK)."""
+        # <- :1MLAAAAAD ENCAP 0AL SAKICK #test 0ALAAAAAB :test
+        # ENCAP -> SAKICK args: ['#test', '0ALAAAAAB', 'test']
+
+        target = args[1]
+        channel = self.irc.toLower(args[0])
+        try:
+            reason = args[2]
+        except IndexError:
+            # Kick reason is optional, strange...
+            reason = self.irc.getFriendlyName(source)
+
+        if not self.irc.isInternalClient(target):
+            log.warning("(%s) Got SAKICK for client that not one of ours: %s", self.irc.name, target)
+            return
+        else:
+            # Like RSQUIT, SAKICK requires that the receiving server acknowledge that a kick has
+            # happened. This comes from the server hosting the target client.
+            server = self.irc.getServer(target)
+
+        self.kick(server, channel, target, reason)
+        return {'channel': channel, 'target': target, 'text': reason}
 
 Class = InspIRCdProtocol
