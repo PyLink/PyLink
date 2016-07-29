@@ -114,10 +114,10 @@ servers:
         # cause netsplits! This defaults to 30 if not set.
         maxnicklen: 30
 
-        # Toggles SSL for this network. Defaults to false if not specified, and
-        # requires the ssl_certfile and ssl_keyfile options to work.
+        # Toggles SSL for this network. Defaults to False if not specified.
         #ssl: true
 
+        # Optional SSL cert/key to pass to the uplink server.
         #ssl_certfile: pylink-cert.pem
         #ssl_keyfile: pylink-key.pem
 

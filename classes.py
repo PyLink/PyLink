@@ -204,15 +204,15 @@ class Irc():
                     log.info('(%s) Attempting SSL for this connection...', self.name)
                     certfile = self.serverdata.get('ssl_certfile')
                     keyfile = self.serverdata.get('ssl_keyfile')
+
+                    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                    # Disable SSLv2 and SSLv3 - these are insecure
+                    context.options |= ssl.OP_NO_SSLv2
+                    context.options |= ssl.OP_NO_SSLv3
+
                     if certfile and keyfile:
                         try:
-                            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                            # Disable SSLv2 and SSLv3 - these are insecure
-                            context.options |= ssl.OP_NO_SSLv2
-                            context.options |= ssl.OP_NO_SSLv3
                             context.load_cert_chain(certfile, keyfile)
-                            self.socket = context.wrap_socket(self.socket)
-
                         except OSError:
                              log.exception('(%s) Caught OSError trying to '
                                            'initialize the SSL connection; '
@@ -220,10 +220,8 @@ class Irc():
                                            '"ssl_keyfile" set correctly?',
                                            self.name)
                              checks_ok = False
-                    else:  # SSL was misconfigured, abort.
-                        log.error('(%s) SSL certfile/keyfile was not set '
-                                  'correctly, aborting... ', self.name)
-                        checks_ok = False
+
+                    self.socket = context.wrap_socket(self.socket)
 
                 log.info("Connecting to network %r on %s:%s", self.name, ip, port)
                 self.socket.connect((ip, port))
