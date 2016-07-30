@@ -44,10 +44,10 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
-* InspIRCd 2.2 (git master) - module `inspircd`
+* [InspIRCd](http://www.inspircd.org/) 2.2 (git master) - module `inspircd`
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
-* [juno-ircd](https://github.com/cooper/yiria) (10.x / yiria) - module `ts6` (with elemental-ircd modes)
+* [juno-ircd](https://github.com/cooper/yiria) (11.x / janet) - module `ts6` (with elemental-ircd modes)
 * [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `nefarious`
     - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (HOST_HIDING_STYLE settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
     - For optimal functionality (mode overrides in relay, etc.), a `UWorld{}` block / U-line should be added for every server that PyLink spawns.
