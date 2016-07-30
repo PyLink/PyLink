@@ -33,7 +33,7 @@ def identify(irc, source, args):
     # Usernames are case-insensitive, passwords are NOT.
     if username.lower() == conf.conf['login']['user'].lower() and password == conf.conf['login']['password']:
         realuser = conf.conf['login']['user']
-        irc.users[source].identified = realuser
+        irc.users[source].account = realuser
         irc.reply('Successfully logged in as %s.' % realuser)
         log.info("(%s) Successful login to %r by %s",
                  irc.name, username, irc.getHostmask(source))

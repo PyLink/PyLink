@@ -9,7 +9,7 @@ def status(irc, source, args):
     """takes no arguments.
 
     Returns your current PyLink login status."""
-    identified = irc.users[source].identified
+    identified = irc.users[source].account
     if identified:
         irc.reply('You are identified as \x02%s\x02.' % identified)
     else:
@@ -57,7 +57,7 @@ def showuser(irc, source, args):
         channels = sorted(userobj.channels)
         f('\x02Channels\x02: %s' % (' '.join(channels) or _none))
         f('\x02PyLink identification\x02: %s; \x02Services account\x02: %s; \x02Away status\x02: %s' % \
-          ((userobj.identified or _none), (userobj.services_account or _none), userobj.away or _none))
+          ((userobj.account or _none), (userobj.services_account or _none), userobj.away or _none))
 
 
 @utils.add_cmd

@@ -134,7 +134,7 @@ def pylinkacc(irc, host, uid):
     $pylinkacc -> Returns True if the target is logged in to PyLink.
     $pylinkacc:accountname -> Returns True if the target's PyLink login matches the one given.
     """
-    login = irc.toLower(irc.users[uid].identified)
+    login = irc.toLower(irc.users[uid].account)
     groups = list(map(irc.toLower, host.split(':')))
     log.debug('(%s) exttargets.pylinkacc: groups to match: %s', irc.name, groups)
 

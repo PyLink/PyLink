@@ -911,7 +911,7 @@ class Irc():
         if uid in self.users:
             if allowOper and ("o", None) in self.users[uid].modes:
                 return True
-            elif allowAuthed and self.users[uid].identified:
+            elif allowAuthed and self.users[uid].account:
                 return True
         return False
 
@@ -1001,12 +1001,12 @@ class IrcUser():
         self.modes = set()  # Tracks user modes
 
         # Tracks PyLink identification status
-        self.identified = ''
+        self.account = ''
 
         # Tracks oper type (for display only)
         self.opertype = opertype
 
-        # Tracks services identification status
+        # Tracks external services identification status
         self.services_account = ''
 
         # Tracks channels the user is in

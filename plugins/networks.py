@@ -75,12 +75,12 @@ def remote(irc, source, args):
     remoteirc.called_in = remoteirc.called_by = remoteirc.pseudoclient.uid
 
     # Set PyLink's identification to admin.
-    remoteirc.pseudoclient.identified = "<PyLink networks.remote override>"
+    remoteirc.pseudoclient.account = "<PyLink networks.remote override>"
 
     try:  # Remotely call the command (use the PyLink client as a dummy user).
         remoteirc.callCommand(remoteirc.pseudoclient.uid, cmd_args)
     finally:  # Remove the identification override after we finish.
-        remoteirc.pseudoclient.identified = ''
+        remoteirc.pseudoclient.account = ''
 
     irc.reply("Done.")
 
