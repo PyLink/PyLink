@@ -1193,11 +1193,13 @@ class Protocol():
         # mode origin is uplink |    IGNORE    |   MERGE  |   OVERWRITE
 
         def _clear():
-            log.debug("(%s) Clearing modes from channel %s due to TS change", self.irc.name,
+            log.debug("(%s) Clearing local modes from channel %s due to TS change", self.irc.name,
                       channel)
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
-                p.clear()
+                for user in p.copy():
+                    if not self.irc.isInternalClient(user):
+                        p.discard(user)
 
         def _apply():
             if modes:
@@ -1218,24 +1220,18 @@ class Protocol():
             log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.irc.name,
                       channel, our_ts, their_ts, our_mode)
 
-            if our_mode:
-                # If the source is us, the TS being used by sjoin() should be considered our TS.
-                log.debug('(%s) Resetting channel TS of %s from %s to %s (outgoing)',
-                          self.irc.name, channel, self.irc.channels[channel].ts, their_ts)
-                self.irc.channels[channel].ts = our_ts = their_ts
-
             if their_ts == our_ts:
                 log.debug("(%s/%s) remote TS of %s is equal to our %s; mode query %s",
                           self.irc.name, channel, their_ts, our_ts, modes)
                 # Their TS is equal to ours. Merge modes.
                 _apply()
 
-            elif (their_ts < our_ts) and (not our_mode):
-                log.debug('(%s) Resetting channel TS of %s from %s to %s (incoming)',
-                          self.irc.name, channel, self.irc.channels[channel].ts, their_ts)
+            elif (their_ts < our_ts):
+                log.debug('(%s) Resetting channel TS of %s from %s to %s (remote has lower TS)',
+                          self.irc.name, channel, our_ts, their_ts)
                 self.irc.channels[channel].ts = their_ts
 
-                # Remote TS was lower and we're receiving modes. Clear the modelist an apply theirs.
+                # Remote TS was lower and we're receiving modes. Clear the modelist and apply theirs.
 
                 _clear()
                 _apply()
