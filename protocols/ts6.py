@@ -370,7 +370,7 @@ class TS6Protocol(TS6BaseProtocol):
         # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
         self.irc.caps = caps = args[0].split()
 
-        for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS'):
+        for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'):
             if required_cap not in caps:
                 raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
