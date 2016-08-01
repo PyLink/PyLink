@@ -751,7 +751,7 @@ class Irc():
             return set(newmodes)
 
     @staticmethod
-    def joinModes(modes):
+    def joinModes(modes, sort=False):
         """Takes a list of (mode, arg) tuples in parseModes() format, and
         joins them into a string.
 
@@ -761,7 +761,8 @@ class Irc():
         args = []
 
         # Sort modes alphabetically like a conventional IRCd.
-        modes = sorted(modes)
+        if sort:
+            modes = sorted(modes)
 
         for modepair in modes:
             mode, arg = modepair
