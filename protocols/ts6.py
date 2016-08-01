@@ -596,7 +596,7 @@ class TS6Protocol(TS6BaseProtocol):
     def handle_tb(self, numeric, command, args):
         """Handles incoming topic burst (TB) commands."""
         # <- :42X TB #chat 1467427448 GL!~gl@127.0.0.1 :test
-        channel = args[0].lower()
+        channel = self.irc.toLower(args[0])
         ts = args[1]
         setter = args[2]
         topic = args[-1]
@@ -608,7 +608,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming INVITEs."""
         # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 12345
         target = args[0]
-        channel = args[1].lower()
+        channel = self.irc.toLower(args[1])
         try:
             ts = args[3]
         except IndexError:
@@ -626,7 +626,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming BMASK commands (ban propagation on burst)."""
         # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
         # This is used for propagating bans, not TMODE!
-        channel = args[1].lower()
+        channel = self.irc.toLower(args[1])
         mode = args[2]
         ts = int(args[0])
         modes = []
