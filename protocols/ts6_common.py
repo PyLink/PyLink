@@ -357,9 +357,12 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # <- :70MAAAAAA PRIVMSG #dev :afasfsa
         # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
         target = args[0]
+
         # We use lowercase channels internally, but uppercase UIDs.
-        if utils.isChannel(target):
+        stripped_target = target.lstrip(''.join(self.irc.prefixmodes.values()))
+        if utils.isChannel(stripped_target):
             target = self.irc.toLower(target)
+
         return {'target': target, 'text': args[1]}
 
     handle_notice = handle_privmsg
