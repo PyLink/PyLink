@@ -51,7 +51,7 @@ def showuser(irc, source, args):
 
     if verbose:  # Oper only data: user modes, channels on, account info, etc.
 
-        f('\x02User modes\x02: %s' % irc.joinModes(userobj.modes))
+        f('\x02User modes\x02: %s' % irc.joinModes(userobj.modes, sort=True))
         f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
           (u, userobj.realhost, userobj.ip))
         channels = sorted(userobj.channels)
@@ -91,7 +91,7 @@ def showchan(irc, source, args):
     f('\x02Channel topic\x02: %s' % c.topic)
     f('\x02Channel creation time\x02: %s (%s)' % (ctime(c.ts), c.ts))
     # Show only modes that aren't list-style modes.
-    modes = irc.joinModes([m for m in c.modes if m[0] not in irc.cmodes['*A']])
+    modes = irc.joinModes([m for m in c.modes if m[0] not in irc.cmodes['*A']], sort=True)
     f('\x02Channel modes\x02: %s' % modes)
     if verbose:
         nicklist = []
