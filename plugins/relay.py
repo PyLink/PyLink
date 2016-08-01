@@ -253,8 +253,10 @@ def spawnRelayServer(irc, remoteirc):
         log.exception('(%s) Failed to spawn server for %r (possible jupe?):',
                       irc.name, remoteirc.name)
         # We will just bail here. Disconnect the bad network.
-
-        control.remove_network(irc)
+        try:
+            control.remove_network(irc)
+        except KeyError:
+            pass
         return
 
     # Mark the server as a relay server
