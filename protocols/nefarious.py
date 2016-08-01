@@ -1112,9 +1112,11 @@ class P10Protocol(IRCS2SProtocol):
         # <- ABAAA O AyAAA :notice text
         target = args[0]
 
-        # We use lowercase channels internally, but uppercase UIDs.
-        if utils.isChannel(target):
+        # We use lower case channels internally, but mixed case UIDs.
+        stripped_target = target.lstrip(''.join(self.irc.prefixmodes.values()))
+        if utils.isChannel(stripped_target):
             target = self.irc.toLower(target)
+
         return {'target': target, 'text': args[1]}
 
     handle_notice = handle_privmsg
