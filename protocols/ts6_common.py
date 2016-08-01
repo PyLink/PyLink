@@ -351,7 +351,13 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
         target = args[0]
 
+        # Coerse =#channel from Charybdis op moderated +z to @#channel.
+        if target.startswith('='):
+            target = '@' + target[1:]
+
         # We use lowercase channels internally, but uppercase UIDs.
+        # Strip the target of leading prefix modes (for targets like @#channel)
+        # before checking whether it's actually a channel.
         stripped_target = target.lstrip(''.join(self.irc.prefixmodes.values()))
         if utils.isChannel(stripped_target):
             target = self.irc.toLower(target)
