@@ -17,7 +17,7 @@ class TS6Protocol(TS6BaseProtocol):
         super().__init__(irc)
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
-                         'EUID': 'UID', 'RSFNC': 'SVSNICK'}
+                         'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC'}
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
@@ -317,10 +317,7 @@ class TS6Protocol(TS6BaseProtocol):
 
         # QS: SQUIT doesn't send recursive quits for each users; required
         # by charybdis (Source: https://github.com/grawity/irc-docs/blob/master/server/ts-capab.txt)
-
-        # ENCAP: message encapsulation for certain commands, only because
-        # charybdis requires it to link
-
+        # ENCAP: message encapsulation for certain commands
         # EX: Support for ban exemptions (+e)
         # IE: Support for invite exemptions (+e)
         # CHW: Allow sending messages to @#channel and the like.
@@ -332,7 +329,8 @@ class TS6Protocol(TS6BaseProtocol):
         #       and allows sending CHGHOST without ENCAP.
         # RSFNC: states that we support RSFNC (forced nick changed attempts). XXX: With atheme services,
         #        does this actually do anything?
-        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC')
+        # EOPMOD: supports ETB (extended TOPIC burst) and =#channel messages for opmoderated +z
+        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC EOPMOD')
 
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
@@ -599,6 +597,18 @@ class TS6Protocol(TS6BaseProtocol):
         channel = self.irc.toLower(args[0])
         ts = args[1]
         setter = args[2]
+        topic = args[-1]
+        self.irc.channels[channel].topic = topic
+        self.irc.channels[channel].topicset = True
+        return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
+
+    def handle_etb(self, numeric, command, args):
+        """Handles extended topic burst (ETB)."""
+        # <- :00AAAAAAC ETB 0 #test 1470021157 GL :test | abcd
+        # Same as TB, with extra TS and extensions arguments.
+        channel = self.irc.toLower(args[1])
+        ts = args[2]
+        setter = args[3]
         topic = args[-1]
         self.irc.channels[channel].topic = topic
         self.irc.channels[channel].topicset = True
