@@ -307,7 +307,7 @@ class ServiceBot():
                 doc = func.__doc__
                 mod = func.__module__
                 if doc:
-                    lines = doc.split('\n')
+                    lines = doc.splitlines()
                     # Bold the first line, which usually just tells you what
                     # arguments the command takes.
                     lines[0] = '\x02%s %s\x02' % (command, lines[0])
