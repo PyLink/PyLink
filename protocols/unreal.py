@@ -841,7 +841,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles incoming INVITEs."""
         # <- :GL INVITE PyLink-devel :#a
         target = self._getUid(args[0])
-        channel = args[1].lower()
+        channel = self.irc.toLower(args[1])
         # We don't actually need to process this; it's just something plugins/hooks can use
         return {'target': target, 'channel': channel}
 
