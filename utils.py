@@ -317,7 +317,7 @@ class ServiceBot():
                     else:
                         for line in lines:
                             # Otherwise, just output the rest of the docstring to IRC.
-                            _reply(line.strip())
+                            _reply(line.strip() or ' ')
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)
                     return
