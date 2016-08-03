@@ -86,8 +86,8 @@ servers:
         # There must be at least one # in the entry.
         sidrange: "8##"
 
-        # Autojoin channels. Leave this as an empty list or remove the key if
-        # you don't want to have service bots join any channels by default.
+        # Autojoin channels. Comment this line out if you don't want service bots
+        # tojoin any channels by default.
         channels: ["#pylink"]
 
         # Sets the protocol module to use - see the protocols/ folder for a list
