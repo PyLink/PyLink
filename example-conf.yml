@@ -76,7 +76,7 @@ servers:
         # characters long.
         # The first char must be a digit [0-9], and the remaining two chars may
         # be either uppercase letters [A-Z] or digits.
-        sid: "0AL"
+        sid: "0PY"
 
         # SID range - the range of SIDs PyLink is allowed to use to generate
         # server IDs. On TS6, this should be a combination of digits, letters,
@@ -86,8 +86,8 @@ servers:
         # There must be at least one # in the entry.
         sidrange: "8##"
 
-        # Autojoin channels. Leave this as an empty list or remove the key if
-        # you don't want to have service bots join any channels by default.
+        # Autojoin channels. Comment this line out if you don't want service bots
+        # tojoin any channels by default.
         channels: ["#pylink"]
 
         # Sets the protocol module to use - see the protocols/ folder for a list
