@@ -55,7 +55,11 @@ def _changehost(irc, target, args):
             # you're careful with what you're doing, and that is why this
             # hidden option exists. -GLolol
 
-            new_host = template.substitute(args)
+            try:
+                new_host = template.substitute(args)
+            except KeyError as e:
+                log.warning('(%s) Bad expansion %s in template %s' % (irc.name, e, host_template))
+                continue
 
             # Replace characters that are not allowed in hosts with "-".
             for char in new_host:
