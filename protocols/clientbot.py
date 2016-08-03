@@ -71,7 +71,7 @@ class ClientbotWrapperProtocol(Protocol):
 
     # Note: clientbot clients are initialized with umode +i by default
     def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
-            server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
+            server=None, ip='0.0.0.0', realname='', ts=None, opertype=None,
             manipulatable=False):
         """
         STUB: Pretends to spawn a new client with a subset of the given options.
@@ -81,9 +81,10 @@ class ClientbotWrapperProtocol(Protocol):
         uid = self.uidgen.next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or ''
+
         log.debug('(%s) spawnClient stub called, saving nick %s as PUID %s', self.irc.name, nick, uid)
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname, manipulatable=manipulatable)
+        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+                                          manipulatable=manipulatable, realhost=realhost, ip=ip)
         log.debug('(%s) self.irc.users: %s', self.irc.name, self.irc.users)
         self.irc.servers[server].users.add(uid)
 
