@@ -30,6 +30,12 @@ def _changehost(irc, target, args):
                     "Changehost will not function correctly!", irc.name)
         return
 
+    args = args.copy()
+    if not changehost_conf.get('force_host_expansion'):
+       del args['host']
+
+    log.debug('(%s) Changehost args: %s', irc.name, args)
+
     for host_glob, host_template in changehost_hosts.items():
         if irc.matchHost(host_glob, target):
             # This uses template strings for simple substitution:
@@ -38,10 +44,17 @@ def _changehost(irc, target, args):
 
             # Substitute using the fields provided the hook data. This means
             # that the following variables are available for substitution:
-            # $uid, $ts, $nick, $realhost, $ident, and $ip. $host is explicitly
-            # forbidden because it can cause recursive loops.
+            # $uid, $ts, $nick, $realhost, $ident, and $ip.
 
-            del args['host']
+            # $host is explicitly forbidden by default because it can cause
+            # recursive loops when IP or real host masks are used to match a
+            # target. vHost updates do not affect these fields, so any further
+            # execution of 'applyhosts' will cause $host to expand again to
+            # the user's new host, causing the vHost to grow rapidly in size.
+            # That said, it is possible to get away with this expansion if
+            # you're careful with what you're doing, and that is why this
+            # hidden option exists. -GLolol
+
             new_host = template.substitute(args)
 
             # Replace characters that are not allowed in hosts with "-".
