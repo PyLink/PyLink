@@ -38,7 +38,10 @@ def _changehost(irc, target, args):
 
             # Substitute using the fields provided the hook data. This means
             # that the following variables are available for substitution:
-            # $uid, $ts, $nick, $realhost, $host, $ident, $ip
+            # $uid, $ts, $nick, $realhost, $ident, and $ip. $host is explicitly
+            # forbidden because it can cause recursive loops.
+
+            del args['host']
             new_host = template.substitute(args)
 
             # Replace characters that are not allowed in hosts with "-".

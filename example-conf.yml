@@ -370,7 +370,7 @@ changehost:
     # This sets the hostmasks that Changehost should look for. Whenever someone
     # with a matching nick!user@host connects, their host will be set to the
     # text defined. The following substitutions are available here:
-    # $uid, $ts (time of connection), $nick, $realhost, $host, $ident, $ip.
+    # $uid, $ts (time of connection), $nick, $realhost, $ident, amd $ip.
     # Invalid characters in hosts are replaced with a "-".
     # Also, make sure you quote each entry so the YAML parser treats them as
     # raw strings.
