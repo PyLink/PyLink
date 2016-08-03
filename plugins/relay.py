@@ -187,7 +187,7 @@ def normalizeHost(irc, host):
     if irc.protoname == 'unreal':
         # UnrealIRCd doesn't allow slashes in hostnames
         host = host.replace('/', '.')
-    return host[:64]  # Limited to 64 chars
+    return host[:63]  # Limit hosts to 63 chars for best compatibility
 
 def loadDB():
     """Loads the relay database, creating a new one if this fails."""
