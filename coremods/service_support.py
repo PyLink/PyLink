@@ -58,8 +58,11 @@ def spawn_service(irc, source, command, args):
     channels = set(irc.serverdata.get('channels', [])) | sbot.extra_channels.get(irc.name, set())
 
     for chan in channels:
-        irc.proto.join(u, chan)
-        irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
+        if utils.isChannel(chan):
+            irc.proto.join(u, chan)
+            irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
+        else:
+            log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
 
 utils.add_hook(spawn_service, 'PYLINK_NEW_SERVICE')
 
