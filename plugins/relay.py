@@ -1620,6 +1620,17 @@ def link(irc, source, args):
                 irc.reply("Error: Remote channel '%s%s' is already linked here "
                           "as %r." % (remotenet, channel, link[1]))
                 return
+
+        our_ts = irc.channels[localchan].ts
+        their_ts = world.networkobjects[remotenet].channels[channel].ts
+        if our_ts < their_ts:
+            log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
+                      irc.name, localchan, remotenet, channel, our_ts, their_ts)
+            irc.reply("Error: the channel creation date (TS) on %s is lower than the target "
+                      "channel's; refusing to link. You should clear the local channel %s first "
+                      "before linking, or use a different local channel." % (localchan, localchan))
+            return
+
         entry['links'].add((irc.name, localchan))
         log.info('(%s) relay: Channel %s linked to %s%s by %s.', irc.name,
                  localchan, remotenet, channel, irc.getHostmask(source))
