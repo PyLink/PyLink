@@ -10,6 +10,8 @@ class ClientbotWrapperProtocol(Protocol):
     def __init__(self, irc):
         super().__init__(irc)
 
+        self.has_eob = False
+
         # Remove conf key checks for those not needed for Clientbot.
         self.conf_keys -= {'recvpass', 'sendpass', 'sid', 'sidrange', 'hostname'}
 
@@ -43,6 +45,7 @@ class ClientbotWrapperProtocol(Protocol):
 
     def connect(self):
         """Initializes a connection to a server."""
+        self.has_eob = False
         ts = self.irc.start_ts
         f = self.irc.send
 
@@ -318,14 +321,22 @@ class ClientbotWrapperProtocol(Protocol):
             self.irc.prefixmodes = self.parsePrefixes(self.caps['PREFIX'])
             log.debug('(%s) handle_005: prefix modes set to %s', self.irc.name, self.irc.prefixmodes)
 
-        if not self.irc.connected.is_set():
-            self.irc.connected.set()
+        self.irc.connected.set()
 
-            # Run autoperform commands.
-            for line in self.irc.serverdata.get("autoperform", []):
-                self.irc.send(line)
+    def handle_376(self, source, command, args):
+        """
+        Handles end of MOTD numerics, used to start things like autoperform.
+        """
 
+        # Run autoperform commands.
+        for line in self.irc.serverdata.get("autoperform", []):
+            self.irc.send(line)
+
+        # Virtual endburst hook.
+        if not self.has_eob:
+            self.has_eob = True
             return {'parse_as': 'ENDBURST'}
+    handle_422 = handle_376
 
     def handle_353(self, source, command, args):
         """
