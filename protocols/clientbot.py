@@ -227,12 +227,18 @@ class ClientbotWrapperProtocol(Protocol):
             self.irc.users[user].channels.add(channel)
 
         self.irc.channels[channel].users |= puids
+        nicks = {self.irc.getFriendlyName(u) for u in puids}
+        self.irc.callHooks([server, 'CLIENTBOT_SJOIN', {'channel': channel, 'nicks': nicks}])
 
     def squit(self, source, target, text):
         """STUB: SQUITs a server."""
         # What this actually does is just handle the SQUIT internally: i.e.
         # Removing pseudoclients and pseudoservers.
-        self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
+        squit_data = self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
+
+        nicks = {self.irc.getFriendlyName(u) for u in squit_data['users']}
+
+        self.irc.callHooks([server, 'CLIENTBOT_SQUIT', {'nicks': nicks}])
 
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
