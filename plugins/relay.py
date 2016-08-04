@@ -1574,8 +1574,22 @@ def link(irc, source, args):
         return
 
     if source not in irc.channels[localchan].users:
-        irc.reply('Error: You must be in %r to complete this operation.' % localchan)
-        return
+        # Caller is not in the requested channel.
+        log.debug('(%s) Source not in channel %s; protoname=%s', irc.name, localchan, irc.protoname)
+        if irc.protoname == 'clientbot':
+            # Special case for Clientbot: join the requested channel first, then
+            # require that the caller be opped.
+            if localchan not in irc.pseudoclient.channels:
+                irc.proto.join(irc.pseudoclient.uid, localchan)
+                irc.reply('Joining %r now; please run this command again in a few seconds.' % localchan)
+                return
+            elif not irc.channels[localchan].isOpPlus(source):
+                irc.reply('Error: You must be opped in %r to complete this operation.' % localchan)
+                return
+
+        else:
+            irc.reply('Error: You must be in %r to complete this operation.' % localchan)
+            return
 
     irc.checkAuthenticated(source)
 
