@@ -1285,9 +1285,14 @@ class Protocol():
 
     def _squit(self, numeric, command, args):
         """Handles incoming SQUITs."""
-        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
 
         split_server = self._getSid(args[0])
+
+        # Normally we'd only need to check for our SID as the SQUIT target, but Nefarious
+        # actually uses the uplink server as the SQUIT target.
+        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
+        if split_server in (self.irc.sid, self.irc.uplink):
+            raise ProtocolError('SQUIT received: (reason: %s)' % args[-1])
 
         affected_users = []
         affected_nicks = []
