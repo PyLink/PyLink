@@ -1290,6 +1290,7 @@ class Protocol():
         split_server = self._getSid(args[0])
 
         affected_users = []
+        affected_nicks = []
         log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
 
         if split_server not in self.irc.servers:
@@ -1310,16 +1311,20 @@ class Protocol():
 
         for user in self.irc.servers[split_server].users.copy():
             affected_users.append(user)
-            log.debug('Removing client %s (%s)', user, self.irc.users[user].nick)
+            nick = self.irc.users[user].nick
+            affected_nicks.append(nick)
+            log.debug('Removing client %s (%s)', user, nick)
             self.removeClient(user)
 
-        sname = self.irc.servers[split_server].name
-        uplink = self.irc.servers[split_server].uplink
+        serverdata = self.irc.servers[split_server]
+        sname = serverdata.name
+        uplink = serverdata.uplink
+
         del self.irc.servers[split_server]
         log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
 
         return {'target': split_server, 'users': affected_users, 'name': sname,
-                'uplink': uplink}
+                'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata}
 
     def parseCapabilities(self, args):
         """
