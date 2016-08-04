@@ -1480,9 +1480,13 @@ def create(irc, source, args):
     if not utils.isChannel(channel):
         irc.reply('Error: Invalid channel %r.' % channel)
         return
+    if irc.protoname == 'clientbot':
+        irc.reply('Error: Clientbot networks cannot be used to host a relay.')
+        return
     if source not in irc.channels[channel].users:
         irc.reply('Error: You must be in %r to complete this operation.' % channel)
         return
+
     irc.checkAuthenticated(source)
 
     # Check to see whether the channel requested is already part of a different
