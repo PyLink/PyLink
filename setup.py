@@ -54,20 +54,26 @@ setup(
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'Topic :: Communications :: Chat :: Internet Relay Chat',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
+        'Environment :: Console',
 
-        'Programming Language :: Python :: 3',
+        'Operating System :: OS Independent',
+        'Operating System :: POSIX',
+
+        'Natural Language :: English',
+
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
 
-    keywords='IRC services chat',
+    keywords='IRC services relay',
     install_requires=['pyyaml', 'ircmatch'],
 
     # Folders (packages of code)
