@@ -4,14 +4,18 @@ import string
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
 
-default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_nick> $text',
-                  'KICK': '\x02[$colored_netname]\x02 -$colored_nick$identhost has kicked $target_nick from $channel ($text)',
-                  'PART': '\x02[$colored_netname]\x02 -$colored_nick$identhost has left $channel ($text)',
-                  'JOIN': '\x02[$colored_netname]\x02 -$colored_nick$identhost has joined $channel',
-                  'NICK': '\x02[$colored_netname]\x02 -$colored_nick$identhost is now known as $newnick',
-                  'QUIT': '\x02[$colored_netname]\x02 -$colored_nick$identhost has quit ($text)',
-                  'ACTION': '\x02[$colored_netname]\x02 * $colored_nick $text',
-                  'NOTICE': '\x02[$colored_netname]\x02 * Notice from $colored_nick: $text',
+# TODO: document configurable styles in relay::clientbot_styles::COMMAND_NAME
+# These use template strings as documented @ https://docs.python.org/3/library/string.html#template-strings
+default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_sender> $text',
+                  'KICK': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has kicked $target_nick from $channel ($text)',
+                  'PART': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has left $channel ($text)',
+                  'JOIN': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has joined $channel',
+                  'NICK': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost is now known as $newnick',
+                  'QUIT': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has quit ($text)',
+                  'ACTION': '\x02[$colored_netname]\x02 * $colored_sender $text',
+                  'NOTICE': '\x02[$colored_netname]\x02 - Notice from $colored_sender: $text',
+                  'SQUIT': '\x02[$colored_netname]\x02 - Netsplit lost users: $colored_nicks',
+                  'SJOIN': '\x02[$colored_netname]\x02 - Netjoin gained users: $colored_nicks',
                   }
 
 def color_text(s):
@@ -61,13 +65,17 @@ def cb_relay_core(irc, source, command, args):
 
         if text_template:
             # Get the original client that the relay client source was meant for.
+            log.debug('(%s) relay_cb_core: Trying to find original sender (user) for %s', irc.name, source)
             try:
                 origuser = relay.getOrigUser(irc, source) or args['userdata'].remote
             except (AttributeError, KeyError):
+                log.debug('(%s) relay_cb_core: Trying to find original sender (server) for %s. serverdata=%s', irc.name, source, args.get('serverdata'))
                 try:
-                    origuser = (irc.servers[source].remote, '')
+                    origuser = ((args.get('serverdata') or irc.servers[source]).remote,)
                 except (AttributeError, KeyError):
                     return
+
+            log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
             netname = origuser[0]
             try:  # Try to get the full network name
                 netname = conf.conf['servers'][netname]['netname'].lower()
@@ -80,11 +88,15 @@ def cb_relay_core(irc, source, command, args):
                 # Quit and nick messages are not channel specific. Figure out all channels that the
                 # sender shares over the relay, and relay them that way.
                 userdata = args.get('userdata') or irc.users.get(source)
-                assert userdata, "Got a channel-less message from bad UID %s" % source
+                if not userdata:
+                    # No user data given. This was probably some other global event such as SQUIT.
+                    userdata = irc.pseudoclient
+
                 channels = [channel for channel in userdata.channels if relay.getRelay((irc.name, channel))]
             else:
                 # Pluralize the channel so that we can iterate over it.
                 channels = [target]
+            log.debug('(%s) relay_cb_core: Relaying event %s to channels: %s', irc.name, real_command, channels)
 
             if source in irc.users:
                 try:
@@ -97,17 +109,22 @@ def cb_relay_core(irc, source, command, args):
             else:
                 identhost = ''
 
-            # Convert the target for kicks, etc. from a UID to a nick
+            # $target_nick: Convert the target for kicks, etc. from a UID to a nick
             if args.get("target") in irc.users:
-                target_nick = irc.getFriendlyName(args['target'])
-            else:
-                target_nick = ''
+                args["target_nick"] = irc.getFriendlyName(args['target'])
 
-            args.update({'netname': netname, 'nick': sourcename, 'identhost': identhost,
-                         'colored_nick': color_text(sourcename), 'colored_netname': color_text(netname),
-                         'target_nick': target_nick})
+            # $nicks / $colored_nicks: used when the event affects multiple users, such as SJOIN or SQUIT.
+            if args.get('nicks'):
+                colored_nicks = [color_text(nick) for nick in args['nicks']]
 
-            text = text_template.substitute(args)
+                # Join both the nicks and colored_nicks fields into a comma separated string.
+                args['nicks'] = ', '.join(args['nicks'])
+                args['colored_nicks'] = ', '.join(colored_nicks)
+
+            args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
+                         'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
+
+            text = text_template.safe_substitute(args)
 
             for channel in channels:
                 irc.proto.message(irc.pseudoclient.uid, channel, text)
@@ -118,4 +135,5 @@ utils.add_hook(cb_relay_core, 'CLIENTBOT_PART')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_JOIN')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_QUIT')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_NICK')
-
+utils.add_hook(cb_relay_core, 'CLIENTBOT_SJOIN')
+utils.add_hook(cb_relay_core, 'CLIENTBOT_SQUIT')
