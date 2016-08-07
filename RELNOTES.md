@@ -1,5 +1,36 @@
-# PyLink 0.9.0
-Tagged as **0.9.0** by [GLolol](https://github.com/GLolol)
+# PyLink 0.9.1
+Tagged as **0.9.1** by [GLolol](https://github.com/GLolol)
+
+### *Important*, backwards incompatible changes for those upgrading from 0.8.x!
+- The configuration file is now **pylink.yml** by default, instead of **config.yml**.
+- PyLink now requires installing itself as a module, instead of simply running from source. Do this via `python3 setup.py install --user`.
+- The `use_experimental_whois` option for InspIRCd servers and the `spawn_servers` option in Relay have been removed, as they are now implied.
+
+### Changes from 0.9.0
+
+#### Bug fixes
+
+- Fixed various bugs in channel TS handling (this should reduce mode desyncs with relay).
+- protocols/unreal: fixed services account support for older services (e.g. Anope < 2.0) that don't explicitly use account names for logins (#296).
+- Mode changes are no longer sorted alphabetically when relayed: sorting now only applies for displaying a list of modes, such as in WHOIS.
+- Invalid autojoin channels are now ignored, instead of passing potentially invalid data to the IRCd.
+
+#### Feature changes
+
+- `setup.py` now explicitly forbids installing on Python 2 (#297).
+- The `nefarious` protocol module now forwards MODE and KICK through servers if the sender isn't opped, preventing many mode bounces, kick failures, and HACK server notices.
+
+#### Internal fixes / improvements
+
+- protocols/hybrid,ts6,unreal: Casemapping-specific lowercasing is now consistently used for channel names
+- Relay now catches errors on network removal and ignores them.
+- Channels names are now case normalized when receiving `@#channel` messages.
+
+#### Misc. changes
+- Minor example configuration updates.
+
+# [PyLink 0.9.0](https://github.com/GLolol/PyLink/releases/tag/0.9.0)
+Tagged as **0.9.0** by [GLolol](https://github.com/GLolol) on 2016-07-25T05:49:55Z
 
 ### *Important*, backwards incompatible changes for those upgrading from 0.8.x!
 - The configuration file is now **pylink.yml** by default, instead of **config.yml**.
