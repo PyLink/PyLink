@@ -11,7 +11,6 @@ except ImportError:
     raise ImportError("Please install Setuptools and try again.")
 from codecs import open
 import subprocess
-from os import path
 
 # Get version from Git tags.
 with open('VERSION', encoding='utf-8') as f:
@@ -29,11 +28,13 @@ with open('__init__.py', 'w') as f:
     f.write('__version__ = %r\n' % version)
     f.write('real_version = %r\n' % real_version)
 
-curdir = path.abspath(path.dirname(__file__))
-
-# FIXME: Convert markdown to RST
-with open(path.join(curdir, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+# Convert Markdown to RST for PyPI
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except ImportError:
+    print('WARNING: PyPandoc not available; skipping writing long description.')
+    long_description = None
 
 setup(
     name='pylinkirc',
@@ -53,20 +54,26 @@ setup(
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'Topic :: Communications :: Chat :: Internet Relay Chat',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
+        'Environment :: Console',
 
-        'Programming Language :: Python :: 3',
+        'Operating System :: OS Independent',
+        'Operating System :: POSIX',
+
+        'Natural Language :: English',
+
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
 
-    keywords='IRC services chat',
+    keywords='IRC services relay',
     install_requires=['pyyaml', 'ircmatch'],
 
     # Folders (packages of code)
