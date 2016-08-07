@@ -180,8 +180,8 @@ def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
 def normalizeHost(irc, host):
     """Creates a normalized hostname for the given host suitable for
     introduction to a remote network (as a relay client)."""
-    if irc.protoname == 'unreal':
-        # UnrealIRCd doesn't allow slashes in hostnames
+    if irc.protoname not in ('inspircd', 'ts6', 'clientbot', 'nefarious'):
+        # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
         host = host.replace('/', '.')
     return host[:64]  # Limited to 64 chars
 
