@@ -295,6 +295,11 @@ plugins:
     # below for configuration.
     #- relay
 
+    # Relay Clientbot extensions: this allows channel messages and events like
+    # JOIN, PART, KICK, etc. to relay over networks using Clientbot. You will
+    # want this loaded if you're using PyLink as a relay bot.
+    #- relay_clientbot
+
     # Fantasy plugin: Allows you to trigger commands in channels by PyLink's
     # nick or a configurable prefix character.
     #- fantasy
