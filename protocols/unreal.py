@@ -379,11 +379,11 @@ class UnrealProtocol(TS6BaseProtocol):
             # If +x is not set, update to use the person's real host.
             self.irc.users[uid].host = realhost
 
-        # Set the accountname if present
-        if ('+r', None) in parsedmodes and accountname == '0':
+        # Set the account name if present: if this is a number, set it to the user nick.
+        if ('+r', None) in parsedmodes and accountname.isdigit():
             accountname = nick
 
-        if accountname != "0":
+        if not accountname.isdigit():
             self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
@@ -709,16 +709,33 @@ class UnrealProtocol(TS6BaseProtocol):
         """
         Handles SVS2MODE, which sets services login information on the given target.
         """
+        # Once again this syntax is inconsistent and poorly documented. +d sets a
+        # "services stamp" that some services packages use as an account name field,
+        # while others simply use for tracking the login time? In a nutshell: check
+        # for the +d argument: if it's an integer, ignore it and set accountname to
+        # the user's nick. Otherwise, treat the parameter as a nick.
+
         # Logging in (with account info, atheme):
         # <- :NickServ SVS2MODE GL +rd GL
 
-        # Logging in (without account info, anope):
+        # Logging in (without account info, anope 2.0?):
         # <- :NickServ SVS2MODE 001WCO6YK +r
+
+        # Logging in (without account info, anope 1.8):
+        # Note: ignore the timestamp.
+        # <- :services.abc.net SVS2MODE GLolol +rd 1470696723
 
         # Logging out (atheme):
         # <- :NickServ SVS2MODE GL -r+d 0
 
-        # Logging in to account from a different nick:
+        # Logging out (anope 1.8):
+        # <- :services.abc.net SVS2MODE GLolol -r+d 1
+
+        # Logging out (anope 2.0):
+        # <- :NickServ SVS2MODE 009EWLA03 -r
+
+        # Logging in to account from a different nick (atheme):
+        # Note: no +r is being set.
         # <- :NickServ SVS2MODE somenick +d GL
 
         # Logging in to account from a different nick (anope):
@@ -740,6 +757,11 @@ class UnrealProtocol(TS6BaseProtocol):
                     account = self.irc.getFriendlyName(target)
                 else:
                     return
+            else:
+                if account.isdigit():
+                    # If the +d argument is a number, ignore it and set the account name to the nick.
+                    account = self.irc.getFriendlyName(target)
+
         elif ('-r', None) in parsedmodes:
             # Umode -r being set.
 
@@ -751,7 +773,7 @@ class UnrealProtocol(TS6BaseProtocol):
         elif ('+d', None) in parsedmodes:
             # Nick identification status wasn't changed, but services account was.
             account = args[2]
-            if account == '0':  # 0 means logout
+            if account == '0':  # +d 0 means logout
                 account = ''
         else:
             return
