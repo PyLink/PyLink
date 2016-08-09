@@ -316,7 +316,11 @@ class UnrealProtocol(TS6BaseProtocol):
         # EAUTH - Early auth? (Unreal 4 linking protocol)
         # NICKIP - Extends the NICK command used for introduction (for Unreal 3.2 servers)
         #          to include user IPs.
-        f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s' % (self.irc.serverdata["hostname"], self.irc.sid))
+        # VHP - Sends cloaked hosts of UnrealIRCd 3.2 users as the hostname. This is important
+        #       because UnrealIRCd 3.2 only has one vHost field in its NICK command, and not two
+        #       like UnrealIRCd 4.0 (cloaked host + displayed host). Without VHP, cloaking does
+        #       not work for any UnrealIRCd 3.2 users.
+        f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP' % (self.irc.serverdata["hostname"], self.irc.sid))
         sdesc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
@@ -589,9 +593,10 @@ class UnrealProtocol(TS6BaseProtocol):
             # internally using pseudo UIDs. In other words, we need to convert from this:
             #   <- NICK Global 3 1456843578 services novernet.com services.novernet.com 0 +ioS * :Global Noticer
             #   & nick hopcount timestamp username hostname server service-identifier-token :realname
-            #   <- NICK GL32 2 1460221959 gl localhost unreal32.midnight.vpn 0 +iowx * fwAAAQ== :realname (with NICKIP enabled)
+            #   With NICKIP and VHP enabled:
+            #   <- NICK GL32 2 1470699865 gl localhost unreal32.midnight.vpn GL +iowx hidden-1C620195 AAAAAAAAAAAAAAAAAAAAAQ== :realname
             # to this:
-            #   <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
+            #   <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * hidden-1C620195 fwAAAQ== :realname
             log.debug('(%s) got legacy NICK args: %s', self.irc.name, ' '.join(args))
 
             new_args = args[:]  # Clone the old args list
@@ -603,7 +608,9 @@ class UnrealProtocol(TS6BaseProtocol):
             fake_uid = self.legacy_uidgen.next_uid(prefix=args[0])
             new_args[5] = fake_uid
 
-            # Insert a fake cloaked host (just make it equal the real host, I don't care)
+            # This adds a dummy cloaked host (equal the real host) to put the displayed host in the
+            # right position. As long as the VHP capability is respected, this will propagate +x cloaked
+            # hosts from UnrealIRCd 3.2 users. Otherwise, +x host cloaking won't work!
             new_args.insert(-2, args[4])
 
             log.debug('(%s) translating legacy NICK args to: %s', self.irc.name, ' '.join(new_args))
