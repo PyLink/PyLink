@@ -96,9 +96,11 @@ The following hooks represent regular IRC commands sent between servers.
 - **QUIT**: `{'text': 'Quit: Bye everyone!'}`
     - `text` corresponds to the quit reason.
 
-- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X'}`
+- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X', 'nicks': {'#channel1: ['tester1', 'tester2'], '#channel3': ['somebot']}, 'serverdata': IrcServer(...)`
     - `target` is the SID of the server being split, while `name` is the server's name.
-    - `users` is a list of all UIDs affected by the netsplit.
+    - `users` is a list of all UIDs affected by the netsplit. `nicks` maps channels to lists of nicks affected.
+    - `serverdata` provides the `IrcServer` object of the server that was split.
+    - `chandata` provides the channel index of the network before the netsplit was processed, allowing plugins to track who was affected by a netsplit in a channel specific way.
 
 - **TOPIC**: `{'channel': channel, 'setter': numeric, 'text': 'Welcome to #Lounge!, 'oldtopic': 'Welcome to#Lounge!'}`
     - `oldtopic` denotes the original topic, and `text` indicates the new one being set.
