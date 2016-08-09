@@ -1,5 +1,6 @@
 # relay_clientbot.py: Clientbot extensions for Relay
 import string
+import collections
 
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
@@ -113,20 +114,28 @@ def cb_relay_core(irc, source, command, args):
             if args.get("target") in irc.users:
                 args["target_nick"] = irc.getFriendlyName(args['target'])
 
-            # $nicks / $colored_nicks: used when the event affects multiple users, such as SJOIN or SQUIT.
-            if args.get('nicks'):
-                colored_nicks = [color_text(nick) for nick in args['nicks']]
-
-                # Join both the nicks and colored_nicks fields into a comma separated string.
-                args['nicks'] = ', '.join(args['nicks'])
-                args['colored_nicks'] = ', '.join(colored_nicks)
-
             args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
                          'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
 
-            text = text_template.safe_substitute(args)
-
             for channel in channels:
+                cargs = args.copy()  # Copy args list to manipualte them in a channel specific way
+
+                # $nicks / $colored_nicks: used when the event affects multiple users, such as SJOIN or SQUIT.
+                # For SJOIN, this is simply a list of nicks. For SQUIT, this is sent as a dict
+                # mapping channels to lists of nicks, as netsplits aren't channel specific but
+                # still have to be relayed as such.
+                nicklist = args.get('nicks')
+                if nicklist:
+                    if type(nicklist) == collections.defaultdict:
+                        nicklist = nicklist.get(channel, [])
+
+                    colored_nicks = [color_text(nick) for nick in nicklist]
+
+                    # Join both the nicks and colored_nicks fields into a comma separated string.
+                    cargs['nicks'] = ', '.join(nicklist)
+                    cargs['colored_nicks'] = ', '.join(colored_nicks)
+
+                text = text_template.safe_substitute(cargs)
                 irc.proto.message(irc.pseudoclient.uid, channel, text)
 
 utils.add_hook(cb_relay_core, 'CLIENTBOT_MESSAGE')
