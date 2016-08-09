@@ -1,6 +1,7 @@
 # relay_clientbot.py: Clientbot extensions for Relay
 import string
 import collections
+import time
 
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
@@ -43,6 +44,11 @@ def cb_relay_core(irc, source, command, args):
         except KeyError:  # User has left due to /quit
             sourcename = args['userdata'].nick
 
+        relay_conf = conf.conf.get('relay', {})
+
+        # Be less floody on startup: don't relay non-PRIVMSGs for the first X seconds after connect.
+        startup_delay = relay_conf.get('startup_delay', 5)
+
         # Special case for CTCPs.
         if real_command == 'MESSAGE':
             # CTCP action, format accordingly
@@ -56,11 +62,15 @@ def cb_relay_core(irc, source, command, args):
                 return
             elif args.get('is_notice'):  # Different syntax for notices
                 real_command = 'NOTICE'
+        elif (time.time() - irc.start_ts) < startup_delay:
+            log.debug('(%s) relay_cb_core: Not relaying %s because of startup delay of %s.', irc.name,
+                      real_command, startup_delay)
+            return
 
-        # .get() chains are lovely. Try to fetch the format for the given command from the
-        # relay:clientbot_format:$command key, falling back to one defined in default_styles
-        # above, and then nothing if not found.
-        text_template = conf.conf.get('relay', {}).get('clientbot_styles', {}).get(real_command,
+        # Try to fetch the format for the given command from the relay:clientbot_styles:$command
+        # key, falling back to one defined in default_styles above, and then nothing if not found
+        # there.
+        text_template = relay_conf.get('clientbot_styles', {}).get(real_command,
                         default_styles.get(real_command, ''))
         text_template = string.Template(text_template)
 
@@ -126,6 +136,8 @@ def cb_relay_core(irc, source, command, args):
                 # still have to be relayed as such.
                 nicklist = args.get('nicks')
                 if nicklist:
+
+                    # Get channel-specific nick list if relevent.
                     if type(nicklist) == collections.defaultdict:
                         nicklist = nicklist.get(channel, [])
 
