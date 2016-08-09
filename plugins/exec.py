@@ -46,7 +46,7 @@ def _eval(irc, source, args):
 
     log.info('(%s) Evaluating %r for %s', irc.name, args,
              irc.getHostmask(source))
-    irc.reply(eval(args))
+    irc.reply(repr(eval(args)))
 utils.add_cmd(_eval, 'eval')
 
 @utils.add_cmd
