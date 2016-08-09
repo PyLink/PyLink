@@ -374,11 +374,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
         self.handle_part(kicked, 'KICK', [channel, args[2]])
         return {'channel': channel, 'target': kicked, 'text': args[2]}
 
-    def handle_error(self, numeric, command, args):
-        """Handles ERROR messages - these mean that our uplink has disconnected us!"""
-        self.irc.connected.clear()
-        raise ProtocolError('Received an ERROR, disconnecting!')
-
     def handle_nick(self, numeric, command, args):
         """Handles incoming NICK changes."""
         # <- :70MAAAAAA NICK GL-devel 1434744242

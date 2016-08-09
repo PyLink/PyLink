@@ -1359,3 +1359,8 @@ class Protocol():
         """
         prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', args)
         return dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
+
+    def handle_error(self, numeric, command, args):
+        """Handles ERROR messages - these mean that our uplink has disconnected us!"""
+        self.irc.connected.clear()
+        raise ProtocolError('Received an ERROR, disconnecting!')
