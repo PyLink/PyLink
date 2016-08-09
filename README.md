@@ -37,7 +37,7 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 * [charybdis](http://charybdis.io/) (3.5+ / git master) - module `ts6`
 * [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
     - For vHost setting to work, `m_chghost.so` must be loaded.
-    - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration
+    - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
 * [UnrealIRCd](https://www.unrealircd.org/) 4.x - module `unreal`
     - Linking to UnrealIRCd 3.2 servers is only supported when using an UnrealIRCd 4.x server as a hub, with topology such as  `pylink<->unreal4<->unreal3.2`. We nevertheless encourage you to upgrade so all your IRCds are running the same version.
 
