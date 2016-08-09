@@ -16,6 +16,7 @@ import hashlib
 from copy import deepcopy
 import inspect
 import re
+from collections import defaultdict
 
 try:
     import ircmatch
@@ -1295,7 +1296,7 @@ class Protocol():
             raise ProtocolError('SQUIT received: (reason: %s)' % args[-1])
 
         affected_users = []
-        affected_nicks = []
+        affected_nicks = defaultdict(list)
         log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
 
         if split_server not in self.irc.servers:
@@ -1304,6 +1305,8 @@ class Protocol():
 
         # Prevent RuntimeError: dictionary changed size during iteration
         old_servers = self.irc.servers.copy()
+        old_channels = self.irc.channels.copy()
+
         # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
         # remove them and all their users too.
         for sid, data in old_servers.items():
@@ -1317,7 +1320,13 @@ class Protocol():
         for user in self.irc.servers[split_server].users.copy():
             affected_users.append(user)
             nick = self.irc.users[user].nick
-            affected_nicks.append(nick)
+
+            # Nicks affected is channel specific for SQUIT:. This makes Clientbot's SQUIT relaying
+            # much easier to implement.
+            for name, cdata in old_channels.items():
+                if user in cdata.users:
+                    affected_nicks[name].append(nick)
+
             log.debug('Removing client %s (%s)', user, nick)
             self.removeClient(user)
 
@@ -1329,7 +1338,8 @@ class Protocol():
         log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
 
         return {'target': split_server, 'users': affected_users, 'name': sname,
-                'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata}
+                'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
+                'chandata': old_channels}
 
     def parseCapabilities(self, args):
         """
