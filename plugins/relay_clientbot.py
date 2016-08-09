@@ -129,6 +129,10 @@ def cb_relay_core(irc, source, command, args):
                     if type(nicklist) == collections.defaultdict:
                         nicklist = nicklist.get(channel, [])
 
+                    # Ignore if no nicks are affected on the channel.
+                    if not nicklist:
+                        continue
+
                     colored_nicks = [color_text(nick) for nick in nicklist]
 
                     # Join both the nicks and colored_nicks fields into a comma separated string.
