@@ -59,7 +59,7 @@ def cb_relay_core(irc, source, command, args):
         # .get() chains are lovely. Try to fetch the format for the given command from the
         # relay:clientbot_format:$command key, falling back to one defined in default_styles
         # above, and then nothing if not found.
-        text_template = conf.conf.get('relay', {}).get('clientbot_format', {}).get(real_command,
+        text_template = conf.conf.get('relay', {}).get('clientbot_styles', {}).get(real_command,
                         default_styles.get(real_command, ''))
         text_template = string.Template(text_template)
 
