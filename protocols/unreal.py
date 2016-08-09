@@ -320,7 +320,9 @@ class UnrealProtocol(TS6BaseProtocol):
         #       because UnrealIRCd 3.2 only has one vHost field in its NICK command, and not two
         #       like UnrealIRCd 4.0 (cloaked host + displayed host). Without VHP, cloaking does
         #       not work for any UnrealIRCd 3.2 users.
-        f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP' % (self.irc.serverdata["hostname"], self.irc.sid))
+        # ESVID - Supports account names in services stamps instead of just the signon time.
+        #         AFAIK this doesn't actually affect services' behaviour?
+        f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.irc.serverdata["hostname"], self.irc.sid))
         sdesc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
