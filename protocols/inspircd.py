@@ -265,6 +265,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
         else:
             # It is a client on another server, use CHGIDENT/HOST/NAME.
             if field == 'IDENT':
+                if 'm_chgident.so' not in self.modsupport:
+                    log.warning('(%s) Failed to change ident of %s to %r: load m_chgident.so!', self.irc.name, target, text)
+                    return
+
                 self.irc.users[target].ident = text
                 self._send(self.irc.sid, 'CHGIDENT %s %s' % (target, text))
 
@@ -272,6 +276,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self.irc.callHooks([self.irc.sid, 'CHGIDENT',
                                    {'target': target, 'newident': text}])
             elif field == 'HOST':
+                if 'm_chghost.so' not in self.modsupport:
+                    log.warning('(%s) Failed to change host of %s to %r: load m_chghost.so!', self.irc.name, target, text)
+                    return
+
                 self.irc.users[target].host = text
                 self._send(self.irc.sid, 'CHGHOST %s %s' % (target, text))
 
@@ -279,6 +287,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                    {'target': target, 'newhost': text}])
 
             elif field in ('REALNAME', 'GECOS'):
+                if 'm_chgname.so' not in self.modsupport:
+                    log.warning('(%s) Failed to change real name of %s to %r: load m_chgname.so!', self.irc.name, target, text)
+                    return
                 self.irc.users[target].realname = text
                 self._send(self.irc.sid, 'CHGNAME %s :%s' % (target, text))
 
@@ -367,6 +378,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
 
+        # Track the modules supported by the uplink.
+        self.modsupport = []
+
         f = self.irc.send
         f('CAPAB START %s' % self.proto_ver)
         f('CAPAB CAPABILITIES :PROTOCOL=%s' % self.proto_ver)
@@ -389,8 +403,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """
         # 6 CAPAB commands are usually sent on connect: CAPAB START, MODULES,
         # MODSUPPORT, CHANMODES, USERMODES, and CAPABILITIES.
-        # The only ones of interest to us are CHANMODES, USERMODES, and
-        # CAPABILITIES.
+        # The only ones of interest to us are CHANMODES, USERMODES,
+        # CAPABILITIES, and MODSUPPORT.
 
         if args[0] == 'CHANMODES':
             # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b
@@ -483,6 +497,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # Finally, set the irc.connected (protocol negotiation complete)
             # state to True.
             self.irc.connected.set()
+        elif args[0] == 'MODSUPPORT':
+            # <- CAPAB MODSUPPORT :m_alltime.so m_check.so m_chghost.so m_chgident.so m_chgname.so m_fullversion.so m_gecosban.so m_knock.so m_muteban.so m_nicklock.so m_nopartmsg.so m_opmoderated.so m_sajoin.so m_sanick.so m_sapart.so m_serverban.so m_services_account.so m_showwhois.so m_silence.so m_swhois.so m_uninvite.so m_watch.so
+            self.modsupport = args[-1].split()
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands, so we don't time out."""
