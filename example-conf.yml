@@ -60,7 +60,7 @@ servers:
     # name; usually something 3-5 characters should be good.
     inspnet:
         # Server IP, port, and passwords. The ip: field also supports resolving
-        # hostnames, but this is not well tested and thus not recommended.
+        # hostnames.
         ip: 127.0.0.1
         port: 7000
         recvpass: "abcd"
@@ -199,7 +199,8 @@ servers:
         #games_ident: magicgames
 
     nefarious:
-        ip: 1.2.3.4
+        ip: somenet.ddns.local
+        #ipv6: false
         port: 45454
         recvpass: "recv"
         sendpass: "send"
