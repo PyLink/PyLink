@@ -260,15 +260,19 @@ servers:
         channels: ["#this-works-as-usual"]
         protocol: "clientbot"
 
-        # You can set any clientbot-specific nicks and idents here
+        # You can set any clientbot-specific nicks and idents here if you wish. They default to
+        # the nick/ident specified in the bot: config block if not given.
         pylink_nick: pybot
         #pylink_ident: pybot
 
-        # SSL options. Certfile and keyfile are optional for clientbot but can be used for CertFP
-        # login if supported.
+        # SSL options. Certfile and keyfile are optional but can be used for CertFP login if
+        # supported.
         ssl: true
         #ssl_certfile: mycert.pem
         #ssl_keyfile: mycert.pem
+
+        # Autoconnect works like usual.
+        autoconnect: 30
 
 # Plugins to load (omit the .py extension)
 plugins:
