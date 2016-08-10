@@ -234,8 +234,11 @@ def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
     modes = ''
 
     if user in irc.channels[channel].users:
-        # Iterate over the the prefix modes for relay supported by IRCd
-        for pmode in irc.channels[channel].getPrefixModes(user, prefixmodes=mlist):
+        # Iterate over the the prefix modes for relay supported by the remote IRCd.
+        # Note: reverse the order so prefix modes are bursted in their traditional order
+        # (e.g. owner before op before halfop). TODO: SJOIN modes should probably be
+        # consistently sorted IRCd-side.
+        for pmode in reversed(irc.channels[channel].getPrefixModes(user, prefixmodes=mlist)):
             if pmode in remoteirc.cmodes:
                 modes += remoteirc.cmodes[pmode]
     return modes
