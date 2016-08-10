@@ -810,7 +810,8 @@ class Irc():
         Returns a detailed version string including the PyLink daemon version,
         the protocol module in use, and the server hostname.
         """
-        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (__version__, self.serverdata['hostname'], self.protoname)
+        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (__version__, self.serverdata.get('hostname', world.fallback_hostname),
+                                                        self.protoname)
         return fullversion
 
     ### State checking functions
