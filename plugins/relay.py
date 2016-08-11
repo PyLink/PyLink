@@ -1588,7 +1588,7 @@ def link(irc, source, args):
             # require that the caller be opped.
             if localchan not in irc.pseudoclient.channels:
                 irc.proto.join(irc.pseudoclient.uid, localchan)
-                irc.reply('Joining %r now; please run this command again in a few seconds.' % localchan)
+                irc.reply('Joining %r now to check for op status; please run this command again after I join.' % localchan)
                 return
             elif not irc.channels[localchan].isOpPlus(source):
                 irc.reply('Error: You must be opped in %r to complete this operation.' % localchan)
