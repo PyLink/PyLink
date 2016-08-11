@@ -521,6 +521,9 @@ class ClientbotWrapperProtocol(Protocol):
         changedmodes = self.irc.parseModes(target, modes)
         self.irc.applyModes(target, changedmodes)
 
+        if self.irc.isInternalClient(target):
+            log.debug('(%s) Suppressing MODE change hook for internal client %s', self.irc.name, target)
+            return
         return {'target': target, 'modes': changedmodes, 'oldchan': oldobj}
 
     def handle_nick(self, source, command, args):
