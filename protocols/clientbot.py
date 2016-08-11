@@ -6,6 +6,8 @@ from pylinkirc import utils, conf
 from pylinkirc.log import log
 from pylinkirc.classes import Protocol, IrcUser, IrcServer
 
+COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
+
 class ClientbotWrapperProtocol(Protocol):
     def __init__(self, irc):
         super().__init__(irc)
@@ -48,9 +50,6 @@ class ClientbotWrapperProtocol(Protocol):
         self.has_eob = False
         ts = self.irc.start_ts
         f = self.irc.send
-
-        # TODO: fetch channel/user/prefix modes from RPL_ISUPPORT.
-        #self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
 
         # Enumerate our own server
         self.irc.sid = self.sidgen.next_sid()
@@ -328,8 +327,16 @@ class ClientbotWrapperProtocol(Protocol):
         log.debug('(%s) handle_005: casemapping set to %s', self.irc.name, self.casemapping)
 
         if 'PREFIX' in self.caps:
-            self.irc.prefixmodes = self.parsePrefixes(self.caps['PREFIX'])
+            self.irc.prefixmodes = prefixmodes = self.parsePrefixes(self.caps['PREFIX'])
             log.debug('(%s) handle_005: prefix modes set to %s', self.irc.name, self.irc.prefixmodes)
+
+            # Autodetect common prefix mode names.
+            for char, modename in COMMON_PREFIXMODES:
+                # Don't overwrite existing named mode definitions.
+                if char in self.irc.prefixmodes and modename not in self.irc.cmodes:
+                    self.irc.cmodes[modename] = char
+                    log.debug('(%s) handle_005: autodetecting mode %s (%s) as %s', self.irc.name,
+                              char, self.irc.prefixmodes[char], modename)
 
         self.irc.connected.set()
 
