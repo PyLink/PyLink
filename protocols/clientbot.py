@@ -225,7 +225,12 @@ class ClientbotWrapperProtocol(Protocol):
         # given. modes and TS are currently ignored.
         puids = {u[-1] for u in users}
         for user in puids:
-            self.irc.users[user].channels.add(channel)
+            if self.irc.pseudoclient and self.irc.pseudoclient.uid == user:
+                # If the SJOIN affects our main client, forward it as a regular JOIN.
+                self.join(user, channel)
+            else:
+                # Otherwise, track the state for our virtual clients.
+                self.irc.users[user].channels.add(channel)
 
         self.irc.channels[channel].users |= puids
         nicks = {self.irc.getFriendlyName(u) for u in puids}
