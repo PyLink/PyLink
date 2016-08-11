@@ -122,15 +122,17 @@ class ClientbotWrapperProtocol(Protocol):
         """STUB: Joins a user to a channel."""
         channel = self.irc.toLower(channel)
 
-        self.irc.channels[channel].users.add(client)
-        self.irc.users[client].channels.add(channel)
-
         # Only joins for the main PyLink client are actually forwarded. Others are ignored.
+        # Note: we do not automatically add our main client to the channel state, as we
+        # rely on the /NAMES reply to sync it up properly.
         if self.irc.pseudoclient and client == self.irc.pseudoclient.uid:
             self.irc.send('JOIN %s' % channel)
             # Send a /who request right after
             self.irc.send('WHO %s' % channel)
         else:
+            self.irc.channels[channel].users.add(client)
+            self.irc.users[client].channels.add(channel)
+
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.irc.name, client,
                       self.irc.getFriendlyName(client), channel)
             self.irc.callHooks([client, 'CLIENTBOT_JOIN', {'channel': channel}])
