@@ -145,7 +145,7 @@ class Irc():
                        '*D': 'imnpstr'}
         self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
                        'oper': 'o',
-                       '*A': '', '*B': '', '*C': 's', '*D': 'iow'}
+                       '*A': '', '*B': '', '*C': '', '*D': 'iosw'}
 
         # This max nick length starts off as the config value, but may be
         # overwritten later by the protocol module if such information is
