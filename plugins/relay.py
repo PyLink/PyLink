@@ -158,18 +158,12 @@ def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
         if char not in allowed_chars:
             nick = nick.replace(char, fallback_separator)
 
-    # The nick we want exists? Darn, create another one then.
-    # Increase the separator length by 1 if the user was already tagged,
-    # but couldn't be created due to a nick conflict.
-    # This can happen when someone steals a relay user's nick.
-
-    # However, if the user is changing from, say, a long, cut-off nick to another long,
-    # cut-off nick, we don't need to check for duplicates and tag the nick twice.
-
-    # somecutoffnick/net would otherwise be erroneous NICK'ed to somecutoffnic//net,
-    # even though there would be no collision because the old and new nicks are from
-    # the same client.
     while irc.nickToUid(nick) and irc.nickToUid(nick) != uid:
+        # The nick we want exists: Increase the separator length by 1 if the user was already
+        # tagged, but couldn't be created due to a nick conflict. This can happen when someone
+        # steals a relay user's nick.
+        # However, if the a is changing from, say, a long, cut-off nick to another long, cut-off
+        # nick, we would skip tagging the nick twice if they originate from the same UID.
         times_tagged += 1
         log.debug('(%s) relay.normalizeNick: nick %r is in use; incrementing times tagged to %s.',
                   irc.name, nick, times_tagged)
