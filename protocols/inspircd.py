@@ -811,4 +811,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.kick(server, channel, target, reason)
         return {'channel': channel, 'target': target, 'text': reason}
 
+    def handle_alltime(self, source, command, args):
+        """Handles /ALLTIME requests."""
+        # -> :9PYAAAAAA ENCAP * ALLTIME
+        # <- :70M PUSH 0ALAAAAAC ::midnight.vpn NOTICE PyLink-devel :System time is 2016-08-13 02:23:06 (1471054986) on midnight.vpn
+
+        # XXX: We override notice() here because that abstraction doesn't allow messages from servers.
+        timestring = '%s (%s)' % (time.strftime('%Y-%m-%d %H:%M:%S'), int(time.time()))
+        self._send(self.irc.sid, 'NOTICE %s :System time is %s on %s' % (source, timestring, self.irc.hostname()))
+
 Class = InspIRCdProtocol
