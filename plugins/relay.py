@@ -162,7 +162,7 @@ def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
         # The nick we want exists: Increase the separator length by 1 if the user was already
         # tagged, but couldn't be created due to a nick conflict. This can happen when someone
         # steals a relay user's nick.
-        # However, if the a is changing from, say, a long, cut-off nick to another long, cut-off
+        # However, if a user is changing from, say, a long, cut-off nick to another long, cut-off
         # nick, we would skip tagging the nick twice if they originate from the same UID.
         times_tagged += 1
         log.debug('(%s) relay.normalizeNick: nick %r is in use; incrementing times tagged to %s.',
