@@ -252,10 +252,21 @@ class ClientbotWrapperProtocol(Protocol):
         """Updates the known ident, host, or realname of a client."""
         if field == 'IDENT':
             self.irc.users[target].ident = text
+            if not self.irc.isInternalClient(target):
+                # We're updating the host of an external client in our state, so send the appropriate
+                # hook payloads.
+                self.irc.callHooks([self.irc.sid, 'CHGIDENT',
+                                   {'target': target, 'newident': text}])
         elif field == 'HOST':
             self.irc.users[target].host = text
+            if not self.irc.isInternalClient(target):
+                self.irc.callHooks([self.irc.sid, 'CHGHOST',
+                                   {'target': target, 'newhost': text}])
         elif field in ('REALNAME', 'GECOS'):
             self.irc.users[target].realname = text
+            if not self.irc.isInternalClient(target):
+                self.irc.callHooks([self.irc.sid, 'CHGNAME',
+                                   {'target': target, 'newgecos': text}])
         else:
             raise NotImplementedError
 
