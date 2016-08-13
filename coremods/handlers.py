@@ -1,9 +1,11 @@
 """
 handlers.py - Implements miscellaneous IRC command handlers (WHOIS, services login, etc.)
 """
+import time
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
+
 def handle_whois(irc, source, command, args):
     """Handle WHOIS queries."""
     target = args['target']
@@ -146,3 +148,9 @@ def handle_version(irc, source, command, args):
     fullversion = irc.version()
     irc.proto.numeric(irc.sid, 351, source, fullversion)
 utils.add_hook(handle_version, 'VERSION')
+
+def handle_time(irc, source, command, args):
+    """Handles requests for the PyLink server time."""
+    timestring = time.ctime()
+    irc.proto.numeric(irc.sid, 391, source, '%s :%s' % (irc.hostname(), timestring))
+utils.add_hook(handle_time, 'TIME')

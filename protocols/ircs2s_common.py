@@ -82,3 +82,7 @@ class IRCS2SProtocol(Protocol):
         # <- ABAAB Q :Killed (GL_ (bangbang))
         self.removeClient(numeric)
         return {'text': args[0]}
+
+    def handle_time(self, numeric, command, args):
+        """Handles incoming /TIME requests."""
+        return {'target': args[0]}
