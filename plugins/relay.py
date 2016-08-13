@@ -626,6 +626,7 @@ def relayJoins(irc, channel, users, ts, burst=True):
     """
     Relays one or more users' joins from a channel to its relay links.
     """
+    joined_nets = {}
     for name, remoteirc in world.networkobjects.copy().items():
         queued_users = []
         if name == irc.name or not remoteirc.connected.is_set():
@@ -675,10 +676,11 @@ def relayJoins(irc, channel, users, ts, burst=True):
                 # A regular JOIN only needs the user and the channel. TS, source SID, etc., can all be omitted.
                 remoteirc.proto.join(queued_users[0][1], remotechan)
 
-            # Announce this JOIN as a hook, for plugins like Automode. Is this a hack? Yeah.
-            # Plugins can communicate with each other using hooks.
-            remoteirc.callHooks([remoteirc.sid, 'PYLINK_RELAY_JOIN',
-                                {'channel': remotechan, 'users': [u[-1] for u in queued_users]}])
+            joined_nets[remoteirc] = {'channel': remotechan, 'users': [u[-1] for u in queued_users]}
+
+    for remoteirc, hookdata in joined_nets.items():
+        # HACK: Announce this JOIN as a special hook on each network, for plugins like Automode.
+        remoteirc.callHooks([remoteirc.sid, 'PYLINK_RELAY_JOIN', hookdata])
 
 def relayPart(irc, channel, user):
     """
