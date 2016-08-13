@@ -27,7 +27,7 @@ def spawn_service(irc, source, command, args):
     ident = irc.serverdata.get("%s_ident" % name) or conf.conf.get(name, {}).get('ident') or sbot.ident or name
 
     # TODO: make this configurable?
-    host = irc.serverdata.get("hostname", world.fallback_hostname)
+    host = irc.hostname()
 
     # Spawning service clients with these umodes where supported. servprotect usage is a
     # configuration option.

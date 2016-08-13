@@ -276,7 +276,7 @@ class Irc():
                     self.proto.connect()
 
                     log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
-                    host = self.serverdata.get('hostname', world.fallback_hostname)
+                    host = self.hostname()
 
                     self.servers[self.sid] = IrcServer(None, host, internal=True,
                             desc=self.serverdata.get('serverdesc')
@@ -810,9 +810,14 @@ class Irc():
         Returns a detailed version string including the PyLink daemon version,
         the protocol module in use, and the server hostname.
         """
-        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (__version__, self.serverdata.get('hostname', world.fallback_hostname),
-                                                        self.protoname)
+        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (__version__, self.hostname(), self.protoname)
         return fullversion
+
+    def hostname(self):
+        """
+        Returns the server hostname used by PyLink on the given server.
+        """
+        return self.serverdata.get('hostname', world.fallback_hostname)
 
     ### State checking functions
     def nickToUid(self, nick):
