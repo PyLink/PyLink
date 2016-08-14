@@ -10,6 +10,10 @@ InterJanus-style links between PyLink daemons are not supported yet; see https:/
 
 Yes, starting with PyLink 0.10. Clientbot support is in alpha stages and is far from complete: [Clientbot TODO](https://github.com/GLolol/PyLink/issues?q=is%3Aissue+is%3Aopen+label%3Aprotocols%2Fclientbot).
 
+### Clientbot doesn't relay both ways!
+
+Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c/example-conf.yml#L303-L306
+
 ### What are PyLink Relay's benefits over Janus?
 
 In no particular order:
@@ -25,4 +29,5 @@ In no particular order:
 PyLink does not support inbound connections - much like regular services such as Atheme or Anope, it only connects outwards *to* IRCds. (If you don't understand what this means, it means you should turn autoconnect OFF for PyLink)
 
 ### I get errors like "ImportError: No module named 'yaml'" when I start PyLink
-- You are missing dependencies - re-read https://github.com/GLolol/PyLink#dependencies
+
+You are missing dependencies - re-read https://github.com/GLolol/PyLink#dependencies
