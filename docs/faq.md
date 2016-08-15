@@ -31,3 +31,7 @@ PyLink does not support inbound connections - much like regular services such as
 ### I get errors like "ImportError: No module named 'yaml'" when I start PyLink
 
 You are missing dependencies - re-read https://github.com/GLolol/PyLink#dependencies
+
+### I get errors like "yaml.scanner.ScannerError: while scanning for the next token, found character '\t' that cannot start any token"
+
+You must use SPACES and not tabs in your configuration! (`\t` is the escaped code for a tab, which is disallowed by YAML)
