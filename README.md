@@ -6,6 +6,8 @@ PyLink is an extensible, plugin-based IRC services framework written in Python. 
 
 2) a versatile framework and gateway to IRC.
 
+PyLink and any bundled software are licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The corresponding documentation in the [docs/](docs/) folder is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
+
 ## Support
 
 **First, MAKE SURE you've read the [FAQ](docs/faq.md)!**
@@ -16,17 +18,35 @@ Please report any bugs you find to the [issue tracker](https://github.com/GLolol
 
 You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks.com `([webchat](https://webchat.overdrivenetworks.com/?channels=PyLink,dev)) or `#PyLink @ chat.freenode.net`. Ask your questions and be patient for a response.
 
-## License
+## Installation
 
-PyLink and any bundled software are licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The corresponding documentation in the [docs/](docs/) folder is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
+### Installing from source (recommended)
 
-## Dependencies
+First, make sure the following dependencies are met:
 
 * Python 3.4+
-* Setuptools (`pip install setuptools`)
-* PyYAML (`pip install pyyaml`)
-* [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip install ircmatch`)
-* *For the servprotect plugin*: [expiringdict](https://github.com/mailgun/expiringdict) (note: unfortunately, installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
+* Setuptools (`pip3 install setuptools`)
+* PyYAML (`pip3 install pyyaml`)
+* [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip3 install ircmatch`)
+* *For the servprotect plugin*: [expiringdict](https://github.com/mailgun/expiringdict) (install this from source; installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
+
+1) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
+
+2) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
+    - Note: `--user` is a *literal* string; *do not* replace it with your username.
+
+### Installing via PyPI
+1) Make sure you're running the right pip command: on most distros, pip for Python3 uses the command `pip3`.
+
+2) Run `pip3 install pylinkirc` to download and install PyLink. pip will automatically resolve dependencies.
+
+3) Download or copy https://github.com/GLolol/PyLink/blob/master/example-conf.yml for an example configuration.
+
+## Configuration
+
+1) Rename `example-conf.yml` to `pylink.yml` (or a similarly named `.yml` file) and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
+
+2) Run `pylink` from the command line. PyLink will load its configuration from `pylink.yml` by default, but you can override this by running `pylink` with a config argument (e.g. `pylink mynet.yml`).
 
 ## Supported IRCds
 
@@ -53,13 +73,3 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - For optimal functionality (mode overrides in relay, etc.), a `UWorld{}` block / U-line should be added for every server that PyLink spawns.
 
 Other TS6 and P10 variations may work, but are not officially supported.
-
-## Setup
-
-1) Install PyLink by using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install; note: `--user` is a *literal* string)
-
-2) Rename `example-conf.yml` to `pylink.yml` and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
-
-3) Run `pylink` from the command line.
-
-4) Profit???
