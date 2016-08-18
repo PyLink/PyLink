@@ -886,4 +886,12 @@ class UnrealProtocol(TS6BaseProtocol):
 
         return super().handle_kill(numeric, command, new_args)
 
+    def handle_tsctl(self, source, command, args):
+        """Handles /TSCTL alltime requests."""
+        # <- :GL TSCTL alltime
+
+        if args[0] == 'alltime':
+            # XXX: We override notice() here because that abstraction doesn't allow messages from servers.
+            self._send(self.irc.sid, 'NOTICE %s :*** Server=%s time()=%d' % (source, self.irc.hostname(), time.time()))
+
 Class = UnrealProtocol
