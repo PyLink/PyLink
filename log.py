@@ -7,11 +7,15 @@ access the global logger object by importing "log" from this module
 """
 
 import logging
+import logging.handlers
 import sys
 import os
 
 from . import world
 from .conf import conf, confname
+
+# Stores a list of active file loggers.
+fileloggers = []
 
 stdout_level = conf['logging'].get('stdout') or 'INFO'
 
@@ -43,7 +47,8 @@ def makeFileLogger(filename, level=None):
     # PyLink instances from overwriting each others' log files.
     target = os.path.join(logdir, '%s-%s.log' % (confname, filename))
 
-    filelogger = logging.FileHandler(target, mode='w')
+    # TODO: configurable values here
+    filelogger = logging.handlers.RotatingFileHandler(target, maxBytes=52428800, backupCount=5)
     filelogger.setFormatter(logformatter)
 
     # If no log level is specified, use the same one as STDOUT.
@@ -51,8 +56,20 @@ def makeFileLogger(filename, level=None):
     filelogger.setLevel(level)
 
     log.addHandler(filelogger)
+    global fileloggers
+    fileloggers.append(filelogger)
 
     return filelogger
+
+def stopFileLoggers():
+    """
+    De-initializes all file loggers.
+    """
+    global fileloggers
+    for handler in fileloggers.copy():
+        handler.close()
+        log.removeHandler(handler)
+        fileloggers.remove(handler)
 
 # Set up file logging now, creating a file logger for each block.
 files = conf['logging'].get('files')

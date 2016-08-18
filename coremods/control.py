@@ -5,7 +5,7 @@ import signal
 import os
 
 from pylinkirc import world, utils, conf, classes
-from pylinkirc.log import log
+from pylinkirc.log import log, makeFileLogger, stopFileLoggers
 
 def remove_network(ircobj):
     """Removes a network object from the pool."""
@@ -47,6 +47,14 @@ def _rehash():
     new_conf = conf.loadConf(fname, errors_fatal=False)
     new_conf = conf.validateConf(new_conf)
     conf.conf = new_conf
+
+    # Reset any file logger options.
+    stopFileLoggers()
+    files = new_conf['logging'].get('files')
+    if files:
+        for filename, config in files.items():
+            makeFileLogger(filename, config.get('loglevel'))
+
     for network, ircobj in world.networkobjects.copy().items():
         # Server was removed from the config file, disconnect them.
         log.debug('rehash: checking if %r is in new conf still.', network)
