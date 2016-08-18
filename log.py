@@ -11,13 +11,12 @@ import logging.handlers
 import sys
 import os
 
-from . import world
-from .conf import conf, confname
+from . import world, conf
 
 # Stores a list of active file loggers.
 fileloggers = []
 
-stdout_level = conf['logging'].get('stdout') or 'INFO'
+stdout_level = conf.conf['logging'].get('stdout') or 'INFO'
 
 logdir = os.path.join(os.getcwd(), 'log')
 os.makedirs(logdir, exist_ok=True)
@@ -45,7 +44,7 @@ def makeFileLogger(filename, level=None):
     """
     # Use log names specific to the current instance, to prevent multiple
     # PyLink instances from overwriting each others' log files.
-    target = os.path.join(logdir, '%s-%s.log' % (confname, filename))
+    target = os.path.join(logdir, '%s-%s.log' % (conf.confname, filename))
 
     # TODO: configurable values here
     filelogger = logging.handlers.RotatingFileHandler(target, maxBytes=52428800, backupCount=5)
@@ -72,7 +71,7 @@ def stopFileLoggers():
         fileloggers.remove(handler)
 
 # Set up file logging now, creating a file logger for each block.
-files = conf['logging'].get('files')
+files = conf.conf['logging'].get('files')
 if files:
     for filename, config in files.items():
         makeFileLogger(filename, config.get('loglevel'))
