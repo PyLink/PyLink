@@ -46,8 +46,16 @@ def makeFileLogger(filename, level=None):
     # PyLink instances from overwriting each others' log files.
     target = os.path.join(logdir, '%s-%s.log' % (conf.confname, filename))
 
-    # TODO: configurable values here
-    filelogger = logging.handlers.RotatingFileHandler(target, maxBytes=52428800, backupCount=5)
+    logrotconf = conf.conf.get('logging', {}).get('filerotation', {})
+
+    # Max amount of bytes per file, before rotation is done. Defaults to 50 MiB.
+    maxbytes = logrotconf.get('max_bytes', 52428800)
+
+    # Amount of backups to make (e.g. pylink-debug.log, pylink-debug.log.1, pylink-debug.log.2, ...)
+    # Defaults to 5.
+    backups = logrotconf.get('backup_count', 5)
+
+    filelogger = logging.handlers.RotatingFileHandler(target, maxBytes=maxbytes, backupCount=backups)
     filelogger.setFormatter(logformatter)
 
     # If no log level is specified, use the same one as STDOUT.

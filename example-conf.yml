@@ -368,6 +368,17 @@ logging:
         "commands":
             loglevel: INFO
 
+    filerotation:
+        # Configures optional log file rotation. When enabled, PyLink will create rotate files
+        # in the format pylink-commands.log, pylink-commands.log.1, pylink-commands.log.2, etc.
+        # If either max_bytes or backup_count is 0, log rotation will be disabled.
+
+        # Max amount of bytes per file, before rotation is done. Defaults to 50 MiB (52428800 bytes).
+        #max_bytes: 52428800
+
+        # Amount of backups to make. Defaults to 5.
+        #backup_count: 5
+
 changehost:
     # This block configures the Changehost plugin. You don't need this if you
     # aren't using it.
