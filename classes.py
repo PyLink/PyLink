@@ -16,7 +16,7 @@ import hashlib
 from copy import deepcopy
 import inspect
 import re
-from collections import defaultdict
+from collections import defaultdict, deque
 
 try:
     import ircmatch
@@ -53,6 +53,8 @@ class Irc():
         self.proto = proto.Class(self)
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
+
+        self.queue = deque()
 
         self.connected = threading.Event()
         self.aborted = threading.Event()
@@ -108,6 +110,8 @@ class Irc():
         self.pseudoclient = None
         self.lastping = time.time()
 
+        self.queue.clear()
+
         # Internal variable to set the place and caller of the last command (in PM
         # or in a channel), used by fantasy command support.
         self.called_by = None
@@ -161,6 +165,14 @@ class Irc():
 
         # Set up channel logging for the network
         self.logSetup()
+
+    def processQueue(self):
+        """Loop to process outgoing queue data."""
+        while not self.aborted.is_set():
+            if self.queue:  # Only process if there's data.
+                data = self.queue.popleft()
+                self._send(data)
+            time.sleep(0.01)
 
     def connect(self):
         """
@@ -270,6 +282,11 @@ class Irc():
                                      hashtype, fp)
 
                 if checks_ok:
+
+                    self.queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
+                                                         target=self.processQueue, daemon=True)
+                    self.queue_thread.start()
+
                     self.sid = self.serverdata.get("sid")
                     # All our checks passed, get the protocol module to connect and run the listen
                     # loop. This also updates any SID values should the protocol module do so.
@@ -431,7 +448,7 @@ class Irc():
                           hook_args)
                 continue
 
-    def send(self, data):
+    def _send(self, data):
         """Sends raw text to the uplink server."""
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
@@ -439,10 +456,19 @@ class Irc():
         data = data.encode("utf-8") + b"\n"
         stripped_data = data.decode("utf-8").strip("\n")
         log.debug("(%s) -> %s", self.name, stripped_data)
+
+
         try:
             self.socket.send(data)
         except (OSError, AttributeError):
             log.debug("(%s) Dropping message %r; network isn't connected!", self.name, stripped_data)
+
+    def send(self, data, queue=True):
+        """send() wrapper with optional queueing support."""
+        if queue:
+            self.queue.append(data)
+        else:
+            self._send(data)
 
     def schedulePing(self):
         """Schedules periodic pings in a loop."""
