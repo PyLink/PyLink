@@ -91,7 +91,7 @@ def die(sourceirc):
         log.debug("Relay: cancelling exportDB timer thread %s due to die()", threading.get_ident())
         exportdb_timer.cancel()
 
-allowed_chars = string.digits + string.ascii_letters + '/^|\\-_[]`'
+allowed_chars = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
 fallback_separator = '|'
 def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
     """
