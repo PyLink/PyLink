@@ -172,7 +172,8 @@ class Irc():
             if self.queue:  # Only process if there's data.
                 data = self.queue.popleft()
                 self._send(data)
-            time.sleep(0.01)
+            throttle_time = self.serverdata.get('throttle_time', 0.01)
+            time.sleep(throttle_time)
 
     def connect(self):
         """

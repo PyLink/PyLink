@@ -274,6 +274,11 @@ servers:
         # Autoconnect works like usual.
         autoconnect: 30
 
+        # Message throttling: when set to a non-zero value, only one message will be sent every X
+        # seconds. If your bot is constantly running into Excess Flood errors, raising this to
+        # something like 0.5 or 1.0 should help. Defaults to 0.01 if not set.
+        throttle_time: 0.3
+
 # Plugins to load (omit the .py extension)
 plugins:
     # Commands plugin: Provides core commands such as logging in, shutting down
