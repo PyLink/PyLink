@@ -89,7 +89,7 @@ def cb_relay_core(irc, source, command, args):
             log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
             netname = origuser[0]
             try:  # Try to get the full network name
-                netname = conf.conf['servers'][netname]['netname'].lower()
+                netname = conf.conf['servers'][netname]['netname']
             except KeyError:
                 pass
 
