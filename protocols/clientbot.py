@@ -241,7 +241,8 @@ class ClientbotWrapperProtocol(Protocol):
         # Removing pseudoclients and pseudoservers.
         squit_data = self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
 
-        self.irc.callHooks([source, 'CLIENTBOT_SQUIT', squit_data])
+        if squit_data.get('nicks'):
+            self.irc.callHooks([source, 'CLIENTBOT_SQUIT', squit_data])
 
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
