@@ -180,6 +180,7 @@ def normalizeNick(irc, netname, nick, times_tagged=0, uid=''):
 def normalizeHost(irc, host):
     """Creates a normalized hostname for the given host suitable for
     introduction to a remote network (as a relay client)."""
+    log.debug('(%s) relay.normalizeHost: IRCd=%s, host=%s', irc.name, irc.protoname, host)
     if irc.protoname not in ('inspircd', 'ts6', 'clientbot', 'nefarious'):
         # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
         host = host.replace('/', '.')
@@ -1168,8 +1169,10 @@ def handle_chgclient(irc, source, command, args):
             remoteirc = world.networkobjects[netname]
             try:
                 if field == 'HOST':
-                    text = normalizeHost(remoteirc, text)
-                remoteirc.proto.updateClient(user, field, text)
+                    newtext = normalizeHost(remoteirc, text)
+                else:  # Don't overwrite the original text variable on every iteration.
+                    newtext = text
+                remoteirc.proto.updateClient(user, field, newtext)
             except NotImplementedError:  # IRCd doesn't support changing the field we want
                 log.debug('(%s) relay.handle_chgclient: Ignoring changing field %r of %s on %s (for %s/%s);'
                           ' remote IRCd doesn\'t support it', irc.name, field,
