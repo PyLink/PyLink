@@ -13,7 +13,7 @@ except ImportError:
                      "setup.py install' (global install) or 'python3 setup.py install --user'"
                      " (local install)\n")
     sys.exit(1)
-from pylinkirc import conf, __version__
+from pylinkirc import conf, __version__, real_version
 
 if __name__ == '__main__':
     import argparse
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.version:  # Display version and exit
-        print('PyLink ' + __version__)
+        print('PyLink %s (in VCS: %s)' % (__version__, real_version))
         sys.exit()
 
     # Load the config
