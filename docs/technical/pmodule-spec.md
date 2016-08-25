@@ -1,6 +1,10 @@
 # PyLink Protocol Module Specification
 
-In PyLink, each protocol module is a single file consisting of a protocol class, and a global `Class` attribute that is set equal to it (e.g. `Class = InspIRCdProtocol`). These classes should be based off of either [`classes.Protocol`](https://github.com/GLolol/PyLink/blob/e4fb64aebaf542122c70a8f3a49061386a00b0ca/classes.py#L532), a boilerplate class that only defines a few basic things, or something like  [`ts6_common.TS6BaseProtocol`](https://github.com/GLolol/PyLink/blob/0.9-alpha1/protocols/ts6_common.py). (`ts6_common.TS6BaseProtocol`  includes elements of the TS6 protocol that are shared by the InspIRCd, UnrealIRCd, and TS6 protocols.) IRC objects load protocol modules by creating an instance of its main class, and sends it commands accordingly.
+***Last updated for 0.10-alpha1 (2016-08-24).***
+
+In PyLink, each protocol module is a file consisting of a protocol class (e.g. `InspIRCdProtocol`), and a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These classes are usually based off boilerplate classes such as `classes.Protocol`, `protocols.ircs2s_common.IRCS2SProtocol`, or other protocol module classes that share functionality with it. [[Protocol module inheritence graph]](protocol-modules.png)
+
+IRC objects load protocol modules by creating an instance of this `Class` attribute, and then proceeding to call its commands.
 
 ## Tasks
 
@@ -14,9 +18,9 @@ Protocol modules have some very important jobs. If any of these aren't done corr
 
 4) Respond to both pings *and* pongs - the `irc.lastping` attribute **must** be set to the current time whenever a `PONG` is received from the uplink, so PyLink's doesn't [lag out the uplink thinking that it isn't responding to our pings](https://github.com/GLolol/PyLink/blob/e4fb64aebaf542122c70a8f3a49061386a00b0ca/classes.py#L309-L311).
 
-5) Implement a series of outgoing command functions, used by plugins to send commands to IRC. See the `Outbound commands` section below for a list of which ones are needed.
+5) Implement a series of outgoing command functions (see below), used by plugins to send commands to IRC.
 
-6) Set the threading.Event object `irc.connected` (via `irc.connected.set()`) when the protocol negotiation with the uplink is complete. This is important for plugins like relay which must check that links are ready before spawning clients, and they will fail to work if this is not set.
+6) Set the threading.Event object `irc.connected` (via `irc.connected.set()`) when the protocol negotiation with the uplink is complete. This is important for plugins like Relay which must check that links are ready before spawning clients, and they will fail to work if this is not set.
 
 7) Check to see that RECVPASS is correct. Always.
 
@@ -92,23 +96,23 @@ A protocol module should also set the following variables in their protocol clas
 
 - `self.casemapping`: set this to `rfc1459` (default) or `ascii` to determine which case mapping the IRCd uses.
 - `self.hook_map`: this is a `dict`, which maps non-standard command names sent by the IRCd to those that PyLink plugins use internally.
-    - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/unreal.py#L22) and [InspIRCd](https://github.com/GLolol/PyLink/blob/0.5-dev/protocols/inspircd.py#L24) modules.
-- `self.cmodes` / `self.umodes`: These are mappings of named IRC modes to mode letters, that should be either negotiated during link or preset in the `connect()` function of the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which should each be filled with a list of mode characters for that type of modes.
+    - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/0.10-alpha1/protocols/unreal.py#L24-L27) and [InspIRCd](https://github.com/GLolol/PyLink/blob/0.10-alpha1/protocols/inspircd.py#L25-L28) modules.
+- `self.cmodes` / `self.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
     - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
         - A = Mode that adds or removes a nick or address to a list. Always has a parameter.
         - B = Mode that changes a setting and always has a parameter.
         - C = Mode that changes a setting and only has a parameter when set.
         - D = Mode that changes a setting and never has a parameter.
-    - Examples in the TS6 protocol module: https://github.com/GLolol/PyLink/blob/cb3187c/protocols/ts6.py#L259-L300
-    - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/cb3187c/classes.py#L118-L152
+    - An example of mode mapping hardcoding can be found here: https://github.com/GLolol/PyLink/blob/0.10-alpha1/protocols/ts6.py#L259-L311
+    - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/0.10-alpha1/classes.py#L123-L148
 - `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
     - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 
 ### Topics
 
-When receiving or sending topics, there is a `topicset` attribute in the IRC channel (IrcChannel) object that should be set **True**. It simply denotes that a topic has been set in the channel at least once.
+When receiving or sending topics, there is a `topicset` attribute in the IRC channel (IrcChannel) object that should be set **True**. It simply denotes that a topic has been set in the channel at least once. Relay uses this so it doesn't overwrite topics with empty ones during burst, when a relay channel initialize before the uplink has sent the topic for it.
 
-(Relay uses this so it doesn't overwrite topics with empty ones during burst, when a relay channel initialize before the uplink has sent the topic for it)
+*Caveat:* Topic handling is not yet subject to TS rules (which vary by IRCds) and are currently blindly accepted. https://github.com/GLolol/PyLink/issues/277
 
 ### Mode formats
 
@@ -146,4 +150,10 @@ Internally, modes are stored in channel and user objects as sets: `(userobj or c
 
 When a certain mode (e.g. owner) isn't supported on a network, the key still exists in `prefixmodes` but is simply unused.
 
-You can see a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
+You can find a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
+
+### Configuration key validation
+
+Starting with PyLink 0.10.x, protocol modules can specify which config values within a server block they need in order to work. This is done by adjusting the `self.conf_keys` attribute, usually in the protocol module's `__init__()` method. The default set, defined in [`Classes.Protocol`](https://github.com/GLolol/PyLink/blob/0.10-alpha1/classes.py#L1166-L1168), includes `{'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass', 'recvpass'}`. Should any of these keys be missing from a server block, PyLink will bail with a configuration error.
+
+One protocol module that tweaks this is [`Clientbot`](https://github.com/GLolol/PyLink/blob/0.10-alpha1/protocols/clientbot.py#L17-18), which removes all options except `ip`, `protocol`, and `port`.
