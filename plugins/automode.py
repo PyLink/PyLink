@@ -125,6 +125,67 @@ def checkAccess(irc, uid, channel, command):
             raise utils.NotAuthorizedError("The network you are on does not own the relay channel %s." % channel)
         return True
 
+def match(irc, channel, uids=None):
+    """
+    Automode matcher engine.
+    """
+    dbentry = db.get(irc.name+channel)
+    if dbentry is None:
+        return
+
+    modebot_uid = modebot.uids.get(irc.name)
+
+    # Check every mask defined in the channel ACL.
+    outgoing_modes = []
+
+    # If UIDs are given, match those. Otherwise, match all users in the given channel.
+    uids = uids or irc.channels[channel].users
+
+    for mask, modes in dbentry.items():
+        for uid in uids:
+            if irc.matchHost(mask, uid):
+                # User matched a mask. Filter the mode list given to only those that are valid
+                # prefix mode characters.
+                outgoing_modes += [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
+                log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
+                          irc.name, modes, outgoing_modes, irc.protoname)
+
+    # If the Automode bot is missing, send the mode through the PyLink server.
+    if modebot_uid not in irc.users:
+        modebot_uid = irc.sid
+
+    log.debug("(%s) automode: sending modes from modebot_uid %s",
+              irc.name, modebot_uid)
+
+    irc.proto.mode(modebot_uid, channel, outgoing_modes)
+
+    # Create a hook payload to support plugins like relay.
+    irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
+                  {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
+
+def handle_join(irc, source, command, args):
+    """
+    Automode JOIN listener. This sets modes accordingly if the person joining matches a mask in the
+    ACL.
+    """
+    channel = irc.toLower(args['channel'])
+    match(irc, channel, args['users'])
+
+utils.add_hook(handle_join, 'JOIN')
+utils.add_hook(handle_join, 'PYLINK_RELAY_JOIN')  # Handle the relay version of join
+utils.add_hook(handle_join, 'PYLINK_SERVICE_JOIN')  # And the version for service bots
+
+def handle_services_login(irc, source, command, args):
+    """
+    Handles services login change, to trigger Automode matching.
+    """
+    for channel in irc.users[source].channels:
+        # Look at all the users' channels for any possible changes.
+        match(irc, channel, [source])
+
+utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
+utils.add_hook(handle_services_login, 'PYLINK_RELAY_SERVICES_LOGIN')
+
 def setacc(irc, source, args):
     """<channel> <mask> <mode list>
 
@@ -238,44 +299,6 @@ def save(irc, source, args):
     reply(irc, 'Done.')
 modebot.add_cmd(save)
 
-def match(irc, channel, uids=None):
-    """
-    Automode matcher engine.
-    """
-    dbentry = db.get(irc.name+channel)
-    if dbentry is None:
-        return
-
-    modebot_uid = modebot.uids.get(irc.name)
-
-    # Check every mask defined in the channel ACL.
-    outgoing_modes = []
-
-    # If UIDs are given, match those. Otherwise, match all users in the given channel.
-    uids = uids or irc.channels[channel].users
-
-    for mask, modes in dbentry.items():
-        for uid in uids:
-            if irc.matchHost(mask, uid):
-                # User matched a mask. Filter the mode list given to only those that are valid
-                # prefix mode characters.
-                outgoing_modes += [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
-                log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
-                          irc.name, modes, outgoing_modes, irc.protoname)
-
-    # If the Automode bot is missing, send the mode through the PyLink server.
-    if modebot_uid not in irc.users:
-        modebot_uid = irc.sid
-
-    log.debug("(%s) automode: sending modes from modebot_uid %s",
-              irc.name, modebot_uid)
-
-    irc.proto.mode(modebot_uid, channel, outgoing_modes)
-
-    # Create a hook payload to support plugins like relay.
-    irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
-                  {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
-
 def syncacc(irc, source, args):
     """<channel>
 
@@ -320,26 +343,3 @@ def clearacc(irc, source, args):
 modebot.add_cmd(clearacc, 'clearaccess')
 modebot.add_cmd(clearacc, 'clear')
 modebot.add_cmd(clearacc, featured=True)
-
-def handle_join(irc, source, command, args):
-    """
-    Automode JOIN listener. This sets modes accordingly if the person joining matches a mask in the
-    ACL.
-    """
-    channel = irc.toLower(args['channel'])
-    match(irc, channel, args['users'])
-
-utils.add_hook(handle_join, 'JOIN')
-utils.add_hook(handle_join, 'PYLINK_RELAY_JOIN')  # Handle the relay version of join
-utils.add_hook(handle_join, 'PYLINK_SERVICE_JOIN')  # And the version for service bots
-
-def handle_services_login(irc, source, command, args):
-    """
-    Handles services login change, to trigger Automode matching.
-    """
-    for channel in irc.users[source].channels:
-        # Look at all the users' channels for any possible changes.
-        match(irc, channel, [source])
-
-utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
-utils.add_hook(handle_services_login, 'PYLINK_RELAY_SERVICES_LOGIN')
