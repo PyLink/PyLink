@@ -34,16 +34,16 @@ def resetPermissions():
 def addDefaultPermissions(perms):
     """Adds default permissions to the index."""
     with permissions_lock:
-        global permissions
+        global default_permissions
         for target, permlist in perms.items():
-            permissions[target] |= set(permlist)
+            default_permissions[target] |= set(permlist)
 
 def removeDefaultPermissions(perms):
     """Remove default permissions from the index."""
     with permissions_lock:
-        global permissions
+        global default_permissions
         for target, permlist in perms.items():
-            permissions[target] -= set(permlist)
+            default_permissions[target] -= set(permlist)
 
 def checkPermissions(irc, uid, perms, also_show=[]):
     """
