@@ -47,13 +47,15 @@ def checkPermissions(irc, uid, perms):
     """
     # Iterate over all hostmask->permission list mappings.
     for host, permlist in permissions.copy().items():
+        log.debug('permissions: permlist for %s: %s', host, permlist)
         if irc.matchHost(host, uid):
             # Now, iterate over all the perms we are looking for.
-            for perm in perms:
+            for perm in permlist:
                 # Use irc.matchHost to expand globs in an IRC-case insensitive and wildcard
                 # friendly way. e.g. 'xyz.*.#Channel\' will match 'xyz.manage.#channel|' on IRCds
                 # using the RFC1459 casemapping.
-                if any(irc.matchHost(perm, p) for p in permlist):
+                log.debug('permissions: checking if %s glob matches anything in %s', perm, permlist)
+                if any(irc.matchHost(perm, p) for p in perms):
                     return True
     raise utils.NotAuthorizedError("You are missing one of the following permissions: %s" %
                                       (', '.join(perms)))
