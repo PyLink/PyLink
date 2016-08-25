@@ -180,10 +180,11 @@ class ClientbotWrapperProtocol(Protocol):
     def nick(self, source, newnick):
         """STUB: Sends NICK changes."""
         if source == self.irc.pseudoclient.uid:
-            self.irc.send('NICK :%s' % (channel, self._expandPUID(target), reason))
+            self.irc.send('NICK :%s' % newnick)
+            # No state update here: the IRCd will respond with a NICK acknowledgement if the change succeeds.
         else:
             self.irc.callHooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
-        self.irc.users[source].nick = newnick
+            self.irc.users[source].nick = newnick
 
     def notice(self, source, target, text):
         """Sends notices to the target."""
