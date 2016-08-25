@@ -24,11 +24,19 @@ def resetPermissions():
         global permissions
         log.debug('permissions.resetPermissions: old perm list: %s', permissions)
 
+        new_permissions = default_permissions.copy()
+        log.debug('permissions.resetPermissions: new_permissions %s', new_permissions)
         if not conf.conf.get('permissions_merge_defaults', True):
             log.debug('permissions.resetPermissions: clearing perm list due to permissions_merge_defaults set False.')
-            permissions.clear()
+            new_permissions.clear()
 
-        permissions.update(conf.conf.get('permissions', default_permissions))
+        # Convert all perm lists to sets.
+        for k, v in conf.conf.get('permissions', {}).items():
+            new_permissions[k] |= set(v)
+
+        log.debug('permissions.resetPermissions: new_permissions %s', new_permissions)
+        permissions.clear()
+        permissions.update(new_permissions)
         log.debug('permissions.resetPermissions: new perm list: %s', permissions)
 
 def addDefaultPermissions(perms):
@@ -64,7 +72,3 @@ def checkPermissions(irc, uid, perms, also_show=[]):
                     return True
     raise utils.NotAuthorizedError("You are missing one of the following permissions: %s" %
                                    (', '.join(perms+also_show)))
-
-
-# This is called on first import.
-resetPermissions()

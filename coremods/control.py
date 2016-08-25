@@ -6,6 +6,7 @@ import os
 
 from pylinkirc import world, utils, conf, classes
 from pylinkirc.log import log, makeFileLogger, stopFileLoggers
+from . import permissions
 
 def remove_network(ircobj):
     """Removes a network object from the pool."""
@@ -54,6 +55,10 @@ def _rehash():
     if files:
         for filename, config in files.items():
             makeFileLogger(filename, config.get('loglevel'))
+
+    # Reset permissions.
+    log.debug('rehash: resetting permissions.')
+    permissions.resetPermissions()
 
     for network, ircobj in world.networkobjects.copy().items():
         # Server was removed from the config file, disconnect them.

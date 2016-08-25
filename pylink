@@ -69,3 +69,6 @@ if __name__ == '__main__':
 
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
+
+    from pylinkirc import coremods
+    coremods.permissions.resetPermissions()
