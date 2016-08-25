@@ -267,7 +267,7 @@ class ServiceBot():
             try:
                 func(irc, source, cmd_args)
             except NotAuthorizedError as e:
-                self.reply(irc, 'Error: Not authorized. %s' % e)
+                self.reply(irc, 'Error: %s' % e)
             except Exception as e:
                 log.exception('Unhandled exception caught in command %r', cmd)
                 self.reply(irc, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
