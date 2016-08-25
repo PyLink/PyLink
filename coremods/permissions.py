@@ -7,7 +7,7 @@ import threading
 
 # Global variables: these store mappings of hostmasks/exttargets to lists of permissions each target has.
 default_permissions = defaultdict(set)
-permissions = defaultdict(set)
+permissions = defaultdict(set, {'$pylinkacc': {'*'}})
 
 # Only allow one thread to change the permissions index at once.
 permissions_lock = threading.Lock()
@@ -23,7 +23,12 @@ def resetPermissions():
     with permissions_lock:
         global permissions
         log.debug('permissions.resetPermissions: old perm list: %s', permissions)
-        permissions = conf.conf.get('permissions', default_permissions)
+
+        if not conf.conf.get('permissions_merge_defaults', True):
+            log.debug('permissions.resetPermissions: clearing perm list due to permissions_merge_defaults set False.')
+            permissions.clear()
+
+        permissions.update(conf.conf.get('permissions', default_permissions))
         log.debug('permissions.resetPermissions: new perm list: %s', permissions)
 
 def addDefaultPermissions(perms):
@@ -31,16 +36,16 @@ def addDefaultPermissions(perms):
     with permissions_lock:
         global permissions
         for target, permlist in perms.items():
-            permissions[target] |= permlist
+            permissions[target] |= set(permlist)
 
 def removeDefaultPermissions(perms):
     """Remove default permissions from the index."""
     with permissions_lock:
         global permissions
         for target, permlist in perms.items():
-            permissions[target] -= permlist
+            permissions[target] -= set(permlist)
 
-def checkPermissions(irc, uid, perms):
+def checkPermissions(irc, uid, perms, also_show=[]):
     """
     Checks permissions of the caller. If the caller has any of the permissions listed in perms,
     this function returns True. Otherwise, NotAuthorizedError is raised.
@@ -58,7 +63,7 @@ def checkPermissions(irc, uid, perms):
                 if any(irc.matchHost(perm, p) for p in perms):
                     return True
     raise utils.NotAuthorizedError("You are missing one of the following permissions: %s" %
-                                      (', '.join(perms)))
+                                   (', '.join(perms+also_show)))
 
 
 # This is called on first import.

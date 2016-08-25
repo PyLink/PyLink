@@ -24,6 +24,10 @@ exportdb_timer = None
 
 save_delay = conf.conf['bot'].get('save_delay', 300)
 
+# The default set of Automode permissions.
+default_permissions = {"$ircop": ['automode.manage.relay_owned', 'automode.sync.relay_owned'],
+                       "*!*@*": ['automode.list']}
+
 def loadDB():
     """Loads the Automode database, silently creating a new one if this fails."""
     global db
@@ -66,6 +70,9 @@ def main(irc=None):
     # Schedule periodic exports of the automode database.
     scheduleExport(starting=True)
 
+    # Register our permissions.
+    permissions.addDefaultPermissions(default_permissions)
+
     # Queue joins to all channels where Automode has entries.
     for entry in db:
         netname, channel = entry.split('#', 1)
@@ -94,6 +101,7 @@ def die(sourceirc):
         log.debug("Automode: cancelling exportDB timer thread %s due to die()", threading.get_ident())
         exportdb_timer.cancel()
 
+    permissions.removeDefaultPermissions(default_permissions)
     utils.unregisterService('automode')
 
 def checkAccess(irc, uid, channel, command):
@@ -111,10 +119,11 @@ def checkAccess(irc, uid, channel, command):
     baseperm = 'automode.%s' % command
     try:
         # First, check the catch all and channel permissions.
-        return permissions.checkPermissions(irc, uid, [baseperm, baseperm+'.*', '%s.%s' % (command, channel)])
+        perms = [baseperm, baseperm+'.*', '%s.%s' % (baseperm, channel)]
+        return permissions.checkPermissions(irc, uid, perms)
     except utils.NotAuthorizedError:
         log.debug('(%s) Automode: falling back to automode.%s.relay_owned', irc.name, command)
-        permissions.checkPermissions(irc, uid, [baseperm+'.relay_owned'])
+        permissions.checkPermissions(irc, uid, [baseperm+'.relay_owned'], also_show=perms)
 
         relay = world.plugins.get('relay')
         if relay is None:
