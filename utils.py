@@ -16,7 +16,7 @@ from . import world, conf
 # This is just so protocols and plugins are importable.
 from pylinkirc import protocols, plugins
 
-class NotAuthenticatedError(Exception):
+class NotAuthorizedError(Exception):
     """
     Exception raised by checkAuthenticated() when a user fails authentication
     requirements.
@@ -266,7 +266,7 @@ class ServiceBot():
         for func in self.commands[cmd]:
             try:
                 func(irc, source, cmd_args)
-            except NotAuthenticatedError as e:
+            except NotAuthorizedError as e:
                 self.reply(irc, 'Error: Not authorized. %s' % e)
             except Exception as e:
                 log.exception('Unhandled exception caught in command %r', cmd)

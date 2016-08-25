@@ -953,13 +953,13 @@ class Irc():
     def checkAuthenticated(self, uid, allowAuthed=True, allowOper=True):
         """
         Checks whether the given user has operator status on PyLink, raising
-        NotAuthenticatedError and logging the access denial if not.
+        NotAuthorizedError and logging the access denial if not.
         """
         lastfunc = inspect.stack()[1][3]
         if not self.isOper(uid, allowAuthed=allowAuthed, allowOper=allowOper):
             log.warning('(%s) Access denied for %s calling %r', self.name,
                         self.getHostmask(uid), lastfunc)
-            raise utils.NotAuthenticatedError("You are not authenticated!")
+            raise utils.NotAuthorizedError("You are not authenticated!")
         return True
 
     def matchHost(self, glob, target, ip=True, realhost=True):
