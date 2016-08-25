@@ -8,6 +8,7 @@ import json
 
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
+from pylinkirc.coremods import permissions
 
 mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by giving prefix modes "
           "to users matching hostmasks or exttargets.")
@@ -95,6 +96,35 @@ def die(sourceirc):
 
     utils.unregisterService('automode')
 
+def checkAccess(irc, uid, channel, command):
+    """Checks the caller's access to Automode."""
+    # Automode defines the following permissions, where <command> is either "manage", "list",
+    # "sync", or "clear":
+    # - automode.<command> OR automode.<command>.*: ability to <command> automode on all channels.
+    # - automode.<command>.relay_owned: ability to <command> automode on channels owned via Relay.
+    #   If Relay isn't loaded, this permission check FAILS.
+    # - automode.<command>.#channel: ability to <command> automode on the given channel.
+    # - automode.savedb: ability to save the automode DB.
+    log.debug('(%s) Automode: checking access for %s/%s for %s capability on %s', irc.name, uid,
+              irc.getHostmask(uid), command, channel)
+
+    baseperm = 'automode.%s' % command
+    try:
+        # First, check the catch all and channel permissions.
+        return permissions.checkPermissions(irc, uid, [baseperm, baseperm+'.*', '%s.%s' % (command, channel)])
+    except utils.NotAuthorizedError:
+        log.debug('(%s) Automode: falling back to automode.%s.relay_owned', irc.name, command)
+        permissions.checkPermissions(irc, uid, [baseperm+'.relay_owned'])
+
+        relay = world.plugins.get('relay')
+        if relay is None:
+            raise utils.NotAuthorizedError("You are not authorized to use Automode when Relay is "
+                                           "disabled. You are missing one of the following "
+                                           "permissions: %s or %s.%s" % (baseperm, baseperm, channel))
+        elif (irc.name, channel) not in relay.db:
+            raise utils.NotAuthorizedError("The network you are on does not own the relay channel %s." % channel)
+        return True
+
 def setacc(irc, source, args):
     """<channel> <mask> <mode list>
 
@@ -106,7 +136,7 @@ def setacc(irc, source, args):
     SET #channel $oper:Network?Administrator qo
     SET #staffchan $channel:#mainchan:op o
     """
-    irc.checkAuthenticated(source, allowOper=False)
+
     try:
         channel, mask, modes = args
     except ValueError:
@@ -119,6 +149,8 @@ def setacc(irc, source, args):
 
         # Store channels case insensitively
         channel = irc.toLower(channel)
+
+    checkAccess(irc, source, channel, 'manage')
 
     # Database entries for any network+channel pair are automatically created using
     # defaultdict. Note: string keys are used here instead of tuples so they can be
@@ -138,14 +170,14 @@ def delacc(irc, source, args):
 
     Removes the Automode entry for the given mask on the given channel, if one exists.
     """
-    irc.checkAuthenticated(source, allowOper=False)
-
     try:
         channel, mask = args
         channel = irc.toLower(channel)
     except ValueError:
         reply(irc, "Error: Invalid arguments given. Needs 2: channel, mask")
         return
+
+    checkAccess(irc, source, channel, 'manage')
 
     dbentry = db.get(irc.name+channel)
 
@@ -173,12 +205,14 @@ def listacc(irc, source, args):
     """<channel>
 
     Lists all Automode entries for the given channel."""
-    irc.checkAuthenticated(source)
     try:
         channel = irc.toLower(args[0])
     except IndexError:
         reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
         return
+
+    checkAccess(irc, source, channel, 'list')
+
     dbentry = db.get(irc.name+channel)
     if not dbentry:
         reply(irc, "Error: No Automode access entries exist for \x02%s\x02." % channel)
@@ -199,7 +233,7 @@ def save(irc, source, args):
     """takes no arguments.
 
     Saves the Automode database to disk."""
-    irc.checkAuthenticated(source)
+    permissions.checkPermissions(irc, source, ['automode.savedb'])
     exportDB()
     reply(irc, 'Done.')
 modebot.add_cmd(save)
@@ -247,13 +281,13 @@ def syncacc(irc, source, args):
 
     Syncs Automode access lists to the channel.
     """
-    irc.checkAuthenticated(source, allowOper=False)
     try:
         channel = irc.toLower(args[0])
     except IndexError:
         reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
         return
 
+    checkAccess(irc, source, channel, 'sync')
     match(irc, channel)
 
     reply(irc, 'Done.')
@@ -267,13 +301,14 @@ def clearacc(irc, source, args):
 
     Removes all Automode entries for the given channel.
     """
-    irc.checkAuthenticated(source, allowOper=False)
 
     try:
         channel = irc.toLower(args[0])
     except IndexError:
         reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
         return
+
+    checkAccess(irc, source, channel, 'clear')
 
     if db.get(irc.name+channel):
         log.debug("Automode: purging channel pair %s/%s", irc.name, channel)
