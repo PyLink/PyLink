@@ -496,7 +496,11 @@ class Irc():
     def msg(self, target, text, notice=False, source=None):
         """Handy function to send messages/notices to clients. Source
         is optional, and defaults to the main PyLink client if not specified."""
+        if not text:
+            return
+
         source = source or self.pseudoclient.uid
+
         if notice:
             self.proto.notice(source, target, text)
             cmd = 'PYLINK_SELF_NOTICE'
