@@ -71,6 +71,7 @@ class UnrealProtocol(TS6BaseProtocol):
         realhost = realhost or host
 
         # Add +xt so that vHost cloaking always works.
+        modes = set(modes)  # Ensure type safety
         modes |= {('+x', None), ('+t', None)}
 
         raw_modes = self.irc.joinModes(modes)
