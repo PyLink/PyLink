@@ -69,6 +69,10 @@ class UnrealProtocol(TS6BaseProtocol):
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
+
+        # Add +xt so that vHost cloaking always works.
+        modes |= {('+x', None), ('+t', None)}
+
         raw_modes = self.irc.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
@@ -99,11 +103,6 @@ class UnrealProtocol(TS6BaseProtocol):
                                 nick=nick, ident=ident, uid=uid,
                                 modes=raw_modes, realname=realname,
                                 realhost=realhost, ip=encoded_ip))
-
-        # Force the virtual hostname to show correctly by running SETHOST on
-        # the user. Otherwise, Unreal will show the real host of the person
-        # instead, which is probably not what we want.
-        self.updateClient(uid, 'HOST', host)
 
         return u
 
