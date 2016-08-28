@@ -179,7 +179,7 @@ class ClientbotWrapperProtocol(Protocol):
 
     def nick(self, source, newnick):
         """STUB: Sends NICK changes."""
-        if source == self.irc.pseudoclient.uid:
+        if self.irc.pseudoclient and source == self.irc.pseudoclient.uid:
             self.irc.send('NICK :%s' % newnick)
             # No state update here: the IRCd will respond with a NICK acknowledgement if the change succeeds.
         else:
