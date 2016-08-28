@@ -422,6 +422,7 @@ class TS6Protocol(TS6BaseProtocol):
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
         channel = self.irc.toLower(args[1])
+        chandata = self.irc.channels[channel].deepcopy()
         userlist = args[-1].split()
 
         modestring = args[2:-1] or args[2]
@@ -465,7 +466,8 @@ class TS6Protocol(TS6BaseProtocol):
         our_ts = self.irc.channels[channel].ts
         self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
-        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
+        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
+                'chandata': chandata}
 
     def handle_join(self, numeric, command, args):
         """Handles incoming channel JOINs."""

@@ -521,6 +521,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
         # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
         channel = self.irc.toLower(args[0])
+        chandata = self.irc.channels[channel].deepcopy()
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
 
@@ -554,7 +555,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         our_ts = self.irc.channels[channel].ts
         self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
-        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
+        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
+                'chandata': chandata}
 
     def handle_uid(self, numeric, command, args):
         """Handles incoming UID commands (user introduction)."""

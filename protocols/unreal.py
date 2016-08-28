@@ -544,6 +544,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # in ":001AAAAAA @001AAAAAB +001AAAAAC".
         # Interestingly, no modes are ever sent in this command as far as I've seen.
         channel = self.irc.toLower(args[1])
+        chandata = self.irc.channels[channel].deepcopy()
         userlist = args[-1].split()
 
         namelist = []
@@ -583,7 +584,8 @@ class UnrealProtocol(TS6BaseProtocol):
         their_ts = int(args[0])
         self.updateTS(numeric, channel, their_ts, changedmodes)
 
-        return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes, 'ts': their_ts}
+        return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes,
+                'ts': their_ts, 'chandata': chandata}
 
     def handle_nick(self, numeric, command, args):
         """Handles NICK changes, and legacy NICK introductions from pre-4.0 servers."""

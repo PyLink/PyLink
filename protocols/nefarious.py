@@ -991,6 +991,8 @@ class P10Protocol(IRCS2SProtocol):
             return
 
         channel = self.irc.toLower(args[0])
+        chandata = self.irc.channels[channel].deepcopy()
+
         userlist = args[-1].split()
 
         bans = []
@@ -1069,7 +1071,8 @@ class P10Protocol(IRCS2SProtocol):
         our_ts = self.irc.channels[channel].ts
         self.updateTS(source, channel, their_ts, changedmodes)
 
-        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts}
+        return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
+                'chandata': chandata}
 
     def handle_join(self, source, command, args):
         """Handles incoming JOINs and channel creations."""
