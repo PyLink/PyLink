@@ -1376,7 +1376,7 @@ class Protocol():
 
         return {'target': split_server, 'users': affected_users, 'name': sname,
                 'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
-                'chandata': old_channels}
+                'channeldata': old_channels}
 
     def parseCapabilities(self, args):
         """

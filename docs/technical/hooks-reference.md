@@ -100,7 +100,7 @@ The following hooks represent regular IRC commands sent between servers.
     - `target` is the SID of the server being split, while `name` is the server's name.
     - `users` is a list of all UIDs affected by the netsplit. `nicks` maps channels to lists of nicks affected.
     - `serverdata` provides the `IrcServer` object of the server that was split.
-    - `chandata` provides the channel index of the network before the netsplit was processed, allowing plugins to track who was affected by a netsplit in a channel specific way.
+    - `channeldata` provides the channel index of the network before the netsplit was processed, allowing plugins to track who was affected by a netsplit in a channel specific way.
 
 - **TOPIC**: `{'channel': channel, 'setter': numeric, 'text': 'Welcome to #Lounge!, 'oldtopic': 'Welcome to#Lounge!'}`
     - `oldtopic` denotes the original topic, and `text` indicates the new one being set.
