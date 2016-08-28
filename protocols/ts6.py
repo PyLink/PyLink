@@ -576,7 +576,7 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.applyModes(channel, changedmodes)
         ts = int(args[0])
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
-                'oldchan': oldobj}
+                'chandata': oldobj}
 
     def handle_mode(self, numeric, command, args):
         """Handles incoming user mode changes."""

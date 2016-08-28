@@ -660,7 +660,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 their_ts = int(args[-1])
                 if their_ts > 0:
                     self.updateTS(numeric, channel, their_ts)
-            return {'target': channel, 'modes': parsedmodes, 'oldchan': oldobj}
+            return {'target': channel, 'modes': parsedmodes, 'chandata': oldobj}
         else:
             log.warning("(%s) received MODE for non-channel target: %r",
                         self.irc.name, args)

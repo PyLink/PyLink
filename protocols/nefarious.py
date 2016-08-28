@@ -1246,7 +1246,7 @@ class P10Protocol(IRCS2SProtocol):
                     changedmodes.append(('-%s' % modechar, None))
 
         self.irc.applyModes(channel, changedmodes)
-        return {'target': channel, 'modes': changedmodes, 'oldchan': oldobj}
+        return {'target': channel, 'modes': changedmodes, 'chandata': oldobj}
 
     def handle_account(self, numeric, command, args):
         """Handles services account changes."""

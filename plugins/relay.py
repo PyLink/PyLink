@@ -1231,7 +1231,7 @@ def handle_mode(irc, numeric, command, args):
 
         if utils.isChannel(target):
             # Use the old state of the channel to check for CLAIM access.
-            oldchan = args.get('oldchan')
+            oldchan = args.get('chandata')
 
             if checkClaim(irc, target, numeric, chanobj=oldchan):
                 remotechan = getRemoteChan(irc, remoteirc, target)
