@@ -873,6 +873,41 @@ def handle_join(irc, numeric, command, args):
         return
     ts = args['ts']
     users = set(args['users'])
+
+    claim_passed = checkClaim(irc, channel, numeric)
+    current_chandata = irc.channels[channel]
+    chandata = args.get('chandata')
+    log.debug('(%s) relay.handle_join: claim for %s on %s: %s', irc.name, numeric, channel, claim_passed)
+    log.debug('(%s) relay.handle_join: old channel data %s', irc.name, chandata)
+    log.debug('(%s) relay.handle_join: current channel data %s', irc.name, current_chandata)
+    if chandata and not claim_passed:
+        # If the server we're receiving an SJOIN from isn't in the claim list, undo ALL attempts
+        # from it to burst modes.
+        # This option can prevent things like /OJOIN abuse or split riding with oper override, but
+        # has the side effect of causing all prefix modes on leaf links to be lost when networks
+        # split and rejoin.
+        modes = []
+        for user in users:
+            # XXX: Find the diff of the new and old mode lists of the channel. Not pretty, but I'd
+            # rather not change the 'users' format of SJOIN just for this. -GL
+            try:
+                oldmodes = set(chandata.getPrefixModes(user))
+            except KeyError:
+                # User was never in channel. Treat their mode list as empty.
+                oldmodes = set()
+            newmodes = set(current_chandata.getPrefixModes(user))
+            modediff = newmodes - oldmodes
+            log.debug('(%s) relay.handle_join: mode diff for %s on %s: %s oldmodes=%s newmodes=%s',
+                      irc.name, user, channel, modediff, oldmodes, newmodes)
+            for modename in modediff:
+                modechar = irc.cmodes.get(modename)
+                if modechar:
+                    modes.append(('-%s' % modechar, user))
+
+        if modes:
+            log.debug('(%s) relay.handle_join: reverting modes on BURST: %s', irc.name, irc.joinModes(modes))
+            irc.proto.mode(irc.sid, channel, modes)
+
     relayJoins(irc, channel, users, ts, burst=False)
 utils.add_hook(handle_join, 'JOIN')
 
