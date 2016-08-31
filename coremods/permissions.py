@@ -7,7 +7,7 @@ import threading
 
 # Global variables: these store mappings of hostmasks/exttargets to lists of permissions each target has.
 default_permissions = defaultdict(set)
-permissions = defaultdict(set, {'$pylinkacc': {'*'}})
+permissions = defaultdict(set)
 
 # Only allow one thread to change the permissions index at once.
 permissions_lock = threading.Lock()
@@ -58,6 +58,11 @@ def checkPermissions(irc, uid, perms, also_show=[]):
     Checks permissions of the caller. If the caller has any of the permissions listed in perms,
     this function returns True. Otherwise, NotAuthorizedError is raised.
     """
+    # If the user is logged in, they automatically have all permissions.
+    if irc.matchHost('$pylinkacc', uid):
+        log.debug('permissions: overriding permissions check for admin user %s', irc.getHostmask(uid))
+        return True
+
     # Iterate over all hostmask->permission list mappings.
     for host, permlist in permissions.copy().items():
         log.debug('permissions: permlist for %s: %s', host, permlist)
