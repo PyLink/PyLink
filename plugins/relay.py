@@ -1100,9 +1100,9 @@ def handle_messages(irc, numeric, command, args):
             return
         remoteirc = world.networkobjects[homenet]
 
-        if remoteirc.protoname == 'clientbot':
-            irc.msg(numeric, 'Error: Private messages to networks '
-                    'linked via Clientbot are not yet supported.', notice=True)
+        if remoteirc.protoname == 'clientbot' and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
+            irc.msg(numeric, 'Error: Private messages to users connected via Clientbot have '
+                    'been administratively disabled.', notice=True)
             return
 
         user = getRemoteUser(irc, remoteirc, numeric, spawnIfMissing=False)

@@ -174,7 +174,7 @@ class ClientbotWrapperProtocol(Protocol):
 
         if self.irc.pseudoclient and self.irc.pseudoclient.uid == source:
             self.irc.send('%s %s :%s' % (command, self._expandPUID(target), text))
-        elif utils.isChannel(target):
+        else:
             self.irc.callHooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
 
     def nick(self, source, newnick):
@@ -248,7 +248,7 @@ class ClientbotWrapperProtocol(Protocol):
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
         return
-    kill = mode = topic = topicBurst = knock = updateClient = numeric = _stub
+    kill = mode = topic = topicBurst = knock = numeric = _stub
 
     def updateClient(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""

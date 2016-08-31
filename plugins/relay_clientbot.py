@@ -18,6 +18,7 @@ default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_sender> $text
                   'NOTICE': '\x02[$colored_netname]\x02 - Notice from $colored_sender: $text',
                   'SQUIT': '\x02[$colored_netname]\x02 - Netsplit lost users: $colored_nicks',
                   'SJOIN': '\x02[$colored_netname]\x02 - Netjoin gained users: $colored_nicks',
+                  'PM': 'PM from $sender on $netname: $text',
                   }
 
 def color_text(s):
@@ -33,11 +34,14 @@ def color_text(s):
 
 def cb_relay_core(irc, source, command, args):
     """
-    This function takes Clientbot actions and outputs them to a channel as regular text.
+    This function takes Clientbot events and formats them as text to the target channel / user.
     """
     real_command = command.split('_')[-1]
 
     relay = world.plugins.get('relay')
+
+    force_notice = False
+
     if irc.pseudoclient and relay:
         try:
             sourcename = irc.getFriendlyName(source)
@@ -57,9 +61,17 @@ def cb_relay_core(irc, source, command, args):
 
                 real_command = 'ACTION'
 
+            elif not utils.isChannel(args['target']):
+                # Target is PM, handle accordingly.
+                if relay_conf.get('allow_clientbot_pms'):
+                    real_command = 'PM'
+                    # Always deliver this as a notice to prevent PM loops with bots, etc.
+                    force_notice = True
+
             # Other CTCPs are ignored
             elif args['text'].startswith('\x01'):
                 return
+
             elif args.get('is_notice'):  # Different syntax for notices
                 real_command = 'NOTICE'
         elif (time.time() - irc.start_ts) < startup_delay:
@@ -95,9 +107,10 @@ def cb_relay_core(irc, source, command, args):
 
             # Figure out where the message is destined to.
             target = args.get('channel') or args.get('target')
-            if target is None or not utils.isChannel(target):
-                # Quit and nick messages are not channel specific. Figure out all channels that the
-                # sender shares over the relay, and relay them that way.
+            if target is None or not (utils.isChannel(target) or real_command == 'PM'):
+                # Non-channel specific message (e.g. QUIT or NICK). If this isn't a PM, figure out
+                # all channels that the sender shares over the relay, and relay them to those
+                # channels.
                 userdata = args.get('userdata') or irc.users.get(source)
                 if not userdata:
                     # No user data given. This was probably some other global event such as SQUIT.
@@ -152,7 +165,11 @@ def cb_relay_core(irc, source, command, args):
                     cargs['colored_nicks'] = ', '.join(colored_nicks)
 
                 text = text_template.safe_substitute(cargs)
-                irc.proto.message(irc.pseudoclient.uid, channel, text)
+                if force_notice:
+                    f = irc.proto.notice
+                else:
+                    f = irc.proto.message
+                f(irc.pseudoclient.uid, channel, text)
 
 utils.add_hook(cb_relay_core, 'CLIENTBOT_MESSAGE')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_KICK')

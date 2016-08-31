@@ -464,6 +464,11 @@ relay:
     forcetag_nicks:
         - "*Serv"
 
+    # This determines whether private messages / notices will be forwarded over Clientbot relay,
+    # and whether the 'rpm' command will be allowed from Clientbot networks. This defaults to
+    # False.
+    allow_clientbot_pms: false
+
 games:
     # Sets the nick of the Games service, if you're using it.
     nick: Games
