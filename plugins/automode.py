@@ -229,6 +229,7 @@ def setacc(irc, source, args):
 
     # Otherwise, update the modes as is.
     dbentry[mask] = modes
+    log.info('(%s) %s set modes +%s for %s on %s', irc.name, irc.getHostmask(source), modes, mask, channel)
     reply(irc, "Done. \x02%s\x02 now has modes \x02%s\x02 in \x02%s\x02." % (mask, modes, channel))
 
 modebot.add_cmd(setacc, 'setaccess')
@@ -257,6 +258,7 @@ def delacc(irc, source, args):
 
     if mask in dbentry:
         del dbentry[mask]
+        log.info('(%s) %s removed modes for %s on %s', irc.name, irc.getHostmask(source), mask, channel)
         reply(irc, "Done. Removed the Automode access entry for \x02%s\x02 in \x02%s\x02." % (mask, channel))
     else:
         reply(irc, "Error: No Automode access entry for \x02%s\x02 exists in \x02%s\x02." % (mask, channel))
@@ -320,6 +322,7 @@ def syncacc(irc, source, args):
         return
 
     checkAccess(irc, source, channel, 'sync')
+    log.info('(%s) %s synced modes on %s', irc.name, irc.getHostmask(source), channel)
     match(irc, channel)
 
     reply(irc, 'Done.')
@@ -345,6 +348,7 @@ def clearacc(irc, source, args):
     if db.get(irc.name+channel):
         log.debug("Automode: purging channel pair %s/%s", irc.name, channel)
         del db[irc.name+channel]
+        log.info('(%s) %s cleared modes on %s', irc.name, irc.getHostmask(source), channel)
         reply(irc, "Done. Removed all Automode access entries for \x02%s\x02." %  channel)
     else:
         reply(irc, "Error: No Automode access entries exist for \x02%s\x02." % channel)
