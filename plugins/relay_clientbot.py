@@ -176,3 +176,41 @@ utils.add_hook(cb_relay_core, 'CLIENTBOT_QUIT')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_NICK')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_SJOIN')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_SQUIT')
+
+@utils.add_cmd
+def rpm(irc, source, args):
+    """<target> <text>
+
+    Sends PMs to users over the relay, if Clientbot PMs are enabled.
+    """
+
+    try:
+        target = args[0]
+        text = ' '.join(args[1:])
+    except IndexError:
+        irc.reply('Error: Not enough arguments. Needs 2: target nick and text.')
+        return
+
+    relay = world.plugins.get('relay')
+    if irc.protoname != 'clientbot':
+        irc.reply('Error: This command is only supported on Clientbot networks. Try /msg %s <text>' % target)
+        return
+    elif relay is None:
+        irc.reply('Error: PyLink Relay is not loaded.')
+        return
+    elif not text:
+        irc.reply('Error: No text given.')
+        return
+
+    uid = irc.nickToUid(target)
+    if not uid:
+        irc.reply('Error: Unknown user %s.' % target)
+        return
+    elif not relay.isRelayClient(irc, uid):
+        irc.reply('Error: %s is not a relay user.' % target)
+        return
+    else:
+        assert not irc.isInternalClient(source), "rpm is not allowed from PyLink bots"
+        # Send the message through relay by faking a hook for its handler.
+        relay.handle_messages(irc, source, 'RELAY_CLIENTBOT_PRIVMSG', {'target': uid, 'text': text})
+        irc.reply('Message sent.')
