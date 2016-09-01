@@ -307,7 +307,9 @@ class ClientbotWrapperProtocol(Protocol):
                 # Sender is a nick!user@host prefix. Split it into its relevant parts.
                 nick, ident, host = utils.splitHostmask(sender)
                 idsource = self.irc.nickToUid(nick)
+
                 if not idsource:
+                    # We don't know the sender, so it most be new.
                     idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink).uid
 
         try:
@@ -563,6 +565,19 @@ class ClientbotWrapperProtocol(Protocol):
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""
         # <- :GL|!~GL@127.0.0.1 NICK :GL_
+
+        if not self.irc.pseudoclient:
+            # We haven't properly logged on yet, so any initial NICK should be treated as a forced
+            # nick change for US. For example, this clause is used to handle forced nick changes
+            # sent by ZNC, when the login nick and the actual IRC nick of the bouncer differ.
+
+            # HACK: change the nick config entry so services_support knows what our main
+            # pseudoclient is called.
+            oldnick = self.irc.serverdata['pylink_nick']
+            self.irc.serverdata['pylink_nick'] = self.conf_nick = args[0]
+            log.debug('(%s) Pre-auth FNC: Forcing configured nick to %s from %s', self.irc.name, args[0], oldnick)
+            return
+
         oldnick = self.irc.users[source].nick
         self.nick(source, args[0])
         return {'newnick': args[0], 'oldnick': oldnick}
