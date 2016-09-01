@@ -252,25 +252,28 @@ class ClientbotWrapperProtocol(Protocol):
 
     def updateClient(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""
-        if field == 'IDENT':
-            self.irc.users[target].ident = text
+        assert target in self.irc.users, "Unknown target %s" % target
+        u = self.irc.users[target]
+
+        if field == 'IDENT' and u.ident != text:
+            u.ident = text
             if not self.irc.isInternalClient(target):
                 # We're updating the host of an external client in our state, so send the appropriate
                 # hook payloads.
                 self.irc.callHooks([self.irc.sid, 'CHGIDENT',
                                    {'target': target, 'newident': text}])
-        elif field == 'HOST':
-            self.irc.users[target].host = text
+        elif field == 'HOST' and u.host != text:
+            u.host = text
             if not self.irc.isInternalClient(target):
                 self.irc.callHooks([self.irc.sid, 'CHGHOST',
                                    {'target': target, 'newhost': text}])
-        elif field in ('REALNAME', 'GECOS'):
-            self.irc.users[target].realname = text
+        elif field in ('REALNAME', 'GECOS') and u.realname != text:
+            u.realname = text
             if not self.irc.isInternalClient(target):
                 self.irc.callHooks([self.irc.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
         else:
-            raise NotImplementedError
+            return  # Nothing changed
 
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
