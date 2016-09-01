@@ -16,11 +16,11 @@ PyLink and any bundled software are licensed under the Mozilla Public License, v
 
 Please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
-You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks.com `([webchat](https://webchat.overdrivenetworks.com/?channels=PyLink,dev)) or `#PyLink @ chat.freenode.net`. Ask your questions and be patient for a response.
+You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks.com `([webchat](https://webchat.overdrivenetworks.com/?channels=PyLink)) or `#PyLink @ chat.freenode.net`. Ask your questions and be patient for a response.
 
 ## Installation
 
-### Installing from source (recommended)
+### Installing from source
 
 First, make sure the following dependencies are met:
 
@@ -32,11 +32,16 @@ First, make sure the following dependencies are met:
 
 1) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
 
-2) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
-    - Note: `--user` is a *literal* string; *do not* replace it with your username.
+2) Pick your branch.
+* By default you'll be on the **master** (stable) branch, which is bugfix only for the most part (except when a new stable release is introduced).
+* However, new features or more intensive bug fixes may not always be included. Instead, the **devel** (pre-release) branch is where active development goes, and it can be accessed by running `git checkout devel` in your Git tree.
 
-### Installing via PyPI
-1) Make sure you're running the right pip command: on most distros, pip for Python3 uses the command `pip3`.
+3) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
+* Note: `--user` is a *literal* string; *do not* replace it with your username.
+*  **Whenever you switch branches or update PyLink's sources via `git pull`, you will need to re-run this command for changes to apply!**
+
+### Installing via PyPI (stable branch only)
+1) Make sure you're running the right pip command: on most distros, pip for Python 3 uses the command `pip3`.
 
 2) Run `pip3 install pylinkirc` to download and install PyLink. pip will automatically resolve dependencies.
 
