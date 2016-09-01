@@ -493,7 +493,7 @@ class Irc():
         """
         world.services['pylink'].call_cmd(self, source, text)
 
-    def msg(self, target, text, notice=False, source=None):
+    def msg(self, target, text, notice=False, source=None, loopback=True):
         """Handy function to send messages/notices to clients. Source
         is optional, and defaults to the main PyLink client if not specified."""
         if not text:
@@ -507,9 +507,14 @@ class Irc():
         else:
             self.proto.message(source, target, text)
             cmd = 'PYLINK_SELF_PRIVMSG'
-        self.callHooks([source, cmd, {'target': target, 'text': text}])
 
-    def reply(self, text, notice=False, source=None, private=False, force_privmsg_in_private=False):
+        if loopback:
+            # Determines whether we should send a hook for this msg(), to relay things like services
+            # replies across relay.
+            self.callHooks([source, cmd, {'target': target, 'text': text}])
+
+    def reply(self, text, notice=False, source=None, private=False, force_privmsg_in_private=False,
+            loopback=True):
         """Replies to the last caller in the right context (channel or PM)."""
 
         # Private reply is enabled, or the caller was originally a PM
@@ -523,7 +528,7 @@ class Irc():
         else:
             target = self.called_in
 
-        self.msg(target, text, notice=notice, source=source)
+        self.msg(target, text, notice=notice, source=source, loopback=loopback)
 
     def toLower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
