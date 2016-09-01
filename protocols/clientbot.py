@@ -579,7 +579,8 @@ class ClientbotWrapperProtocol(Protocol):
             return
 
         oldnick = self.irc.users[source].nick
-        self.nick(source, args[0])
+        self.irc.users[source].nick = args[0]
+
         return {'newnick': args[0], 'oldnick': oldnick}
 
     def handle_part(self, source, command, args):
