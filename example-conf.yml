@@ -279,6 +279,10 @@ servers:
         # something like 0.5 or 1.0 should help. Defaults to 0.01 if not set.
         throttle_time: 0.3
 
+        # Clientbot also supports auto perform, using raw IRC messages.
+        #autoperform:
+        #   - "NOTICE somebody :hello, i've connected"
+
 # Plugins to load (omit the .py extension)
 plugins:
     # Commands plugin: Provides core commands such as logging in, shutting down
