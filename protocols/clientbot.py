@@ -35,6 +35,10 @@ class ClientbotWrapperProtocol(Protocol):
         # things like failed KICK attempts from desyncing plugins like relay.
         self.kick_queue = {}
 
+        # Aliases: 463 (ERR_NOPERMFORHOST), 464 (ERR_PASSWDMISMATCH), and 465 (ERR_YOUREBANNEDCREEP)
+        # are essentially all fatal errors for connections.
+        self.handle_463 = self.handle_464 = self.handle_465 = self.handle_error
+
     def _expandPUID(self, uid):
         """
         Returns the real nick for the given PUID.
