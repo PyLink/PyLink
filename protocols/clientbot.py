@@ -84,22 +84,18 @@ class ClientbotWrapperProtocol(Protocol):
         """
 
         server = server or self.irc.sid
+        uid = self.uidgen.next_uid()
 
-        # First, check if the pseudouser we want already exists. If so, return their UID.
-        uid = self.irc.nickToUid(nick)
-        if uid:
-            log.debug('(%s) spawnClient stub called, returning existing PUID %s for %s',
-                      self.irc.name, uid, nick)
-            return self.irc.users[uid]
-        else:
-            uid = self.uidgen.next_uid()
-            ts = ts or int(time.time())
-            log.debug('(%s) spawnClient stub called, saving nick %s as PUID %s', self.irc.name, nick, uid)
-            u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
-                                              manipulatable=manipulatable, realhost=realhost, ip=ip)
-            self.irc.servers[server].users.add(uid)
-            self.irc.applyModes(uid, modes)
-            return u
+        ts = ts or int(time.time())
+
+        log.debug('(%s) spawnClient stub called, saving nick %s as PUID %s', self.irc.name, nick, uid)
+        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+                                          manipulatable=manipulatable, realhost=realhost, ip=ip)
+        self.irc.servers[server].users.add(uid)
+
+        self.irc.applyModes(uid, modes)
+
+        return u
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0, internal=True):
         """
@@ -580,6 +576,7 @@ class ClientbotWrapperProtocol(Protocol):
             oldnick = self.irc.serverdata['pylink_nick']
             self.irc.serverdata['pylink_nick'] = self.conf_nick = args[0]
             log.debug('(%s) Pre-auth FNC: Forcing configured nick to %s from %s', self.irc.name, args[0], oldnick)
+            return
 
         oldnick = self.irc.users[source].nick
         self.irc.users[source].nick = args[0]
