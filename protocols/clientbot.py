@@ -308,7 +308,7 @@ class ClientbotWrapperProtocol(Protocol):
                 nick, ident, host = utils.splitHostmask(sender)
                 idsource = self.irc.nickToUid(nick)
 
-                if not idsource:
+                if (not idsource) and self.irc.pseudoclient:
                     # We don't know the sender, so it most be new.
                     idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink).uid
 

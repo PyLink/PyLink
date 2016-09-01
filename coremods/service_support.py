@@ -51,6 +51,7 @@ def spawn_service(irc, source, command, args):
     # Special case: if this is the main PyLink client being spawned,
     # assign this as irc.pseudoclient.
     if name == 'pylink':
+        log.debug('(%s) irc.pseudoclient set to UID %s', irc.name, u)
         irc.pseudoclient = userobj
 
     # TODO: channels should be tracked in a central database, not hardcoded
