@@ -232,6 +232,12 @@ def setacc(irc, source, args):
     log.info('(%s) %s set modes +%s for %s on %s', irc.name, irc.getHostmask(source), modes, mask, channel)
     reply(irc, "Done. \x02%s\x02 now has modes \x02%s\x02 in \x02%s\x02." % (mask, modes, channel))
 
+    # Join the Automode bot to the channel if not explicitly told to.
+    modebot.extra_channels[irc.name].add(channel)
+    mbuid = modebot.uids.get(irc.name)
+    if mbuid and mbuid not in irc.channels[channel].users:
+        irc.proto.join(mbuid, channel)
+
 modebot.add_cmd(setacc, 'setaccess')
 modebot.add_cmd(setacc, 'set')
 modebot.add_cmd(setacc, featured=True)
