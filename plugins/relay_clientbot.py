@@ -201,6 +201,10 @@ def rpm(irc, source, args):
     elif not text:
         irc.reply('Error: No text given.')
         return
+    elif not conf.conf.get('relay').get('allow_clientbot_pms'):
+        irc.reply('Error: Private messages with users connected via Clientbot have been '
+                  'administratively disabled.')
+        return
 
     uid = irc.nickToUid(target)
     if not uid:
