@@ -19,6 +19,7 @@ default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_sender> $text
                   'SQUIT': '\x02[$colored_netname]\x02 - Netsplit lost users: $colored_nicks',
                   'SJOIN': '\x02[$colored_netname]\x02 - Netjoin gained users: $colored_nicks',
                   'PM': 'PM from $sender on $netname: $text',
+                  'PNOTICE': '<$sender> $text',
                   }
 
 def color_text(s):
@@ -40,7 +41,7 @@ def cb_relay_core(irc, source, command, args):
 
     relay = world.plugins.get('relay')
 
-    force_notice = False
+    private = False
 
     if irc.pseudoclient and relay:
         try:
@@ -62,11 +63,10 @@ def cb_relay_core(irc, source, command, args):
                 real_command = 'ACTION'
 
             elif not utils.isChannel(args['target']):
-                # Target is PM, handle accordingly.
+                # Target is a user; handle this accordingly.
                 if relay_conf.get('allow_clientbot_pms'):
-                    real_command = 'PM'
-                    # Always deliver this as a notice to prevent PM loops with bots, etc.
-                    force_notice = True
+                    real_command = 'PNOTICE' if args.get('is_notice') else 'PM'
+                    private = True
 
             # Other CTCPs are ignored
             elif args['text'].startswith('\x01'):
@@ -107,7 +107,7 @@ def cb_relay_core(irc, source, command, args):
 
             # Figure out where the message is destined to.
             target = args.get('channel') or args.get('target')
-            if target is None or not (utils.isChannel(target) or real_command == 'PM'):
+            if target is None or not (utils.isChannel(target) or private):
                 # Non-channel specific message (e.g. QUIT or NICK). If this isn't a PM, figure out
                 # all channels that the sender shares over the relay, and relay them to those
                 # channels.
@@ -116,11 +116,11 @@ def cb_relay_core(irc, source, command, args):
                     # No user data given. This was probably some other global event such as SQUIT.
                     userdata = irc.pseudoclient
 
-                channels = [channel for channel in userdata.channels if relay.getRelay((irc.name, channel))]
+                targets = [channel for channel in userdata.channels if relay.getRelay((irc.name, channel))]
             else:
                 # Pluralize the channel so that we can iterate over it.
-                channels = [target]
-            log.debug('(%s) relay_cb_core: Relaying event %s to channels: %s', irc.name, real_command, channels)
+                targets = [target]
+            log.debug('(%s) relay_cb_core: Relaying event %s to channels: %s', irc.name, real_command, targets)
 
             if source in irc.users:
                 try:
@@ -140,8 +140,8 @@ def cb_relay_core(irc, source, command, args):
             args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
                          'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
 
-            for channel in channels:
-                cargs = args.copy()  # Copy args list to manipualte them in a channel specific way
+            for target in targets:
+                cargs = args.copy()  # Copy args list to manipulate them in a channel specific way
 
                 # $nicks / $colored_nicks: used when the event affects multiple users, such as SJOIN or SQUIT.
                 # For SJOIN, this is simply a list of nicks. For SQUIT, this is sent as a dict
@@ -152,7 +152,7 @@ def cb_relay_core(irc, source, command, args):
 
                     # Get channel-specific nick list if relevent.
                     if type(nicklist) == collections.defaultdict:
-                        nicklist = nicklist.get(channel, [])
+                        nicklist = nicklist.get(target, [])
 
                     # Ignore if no nicks are affected on the channel.
                     if not nicklist:
@@ -165,11 +165,8 @@ def cb_relay_core(irc, source, command, args):
                     cargs['colored_nicks'] = ', '.join(colored_nicks)
 
                 text = text_template.safe_substitute(cargs)
-                if force_notice:
-                    f = irc.proto.notice
-                else:
-                    f = irc.proto.message
-                f(irc.pseudoclient.uid, channel, text)
+                # PMs are always sent as notice - this prevents unknown command loops with bots.
+                irc.msg(target, text, loopback=False, notice=private)
 
 utils.add_hook(cb_relay_core, 'CLIENTBOT_MESSAGE')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_KICK')
