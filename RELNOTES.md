@@ -1,5 +1,19 @@
-# PyLink 0.9.1
-Tagged as **0.9.1** by [GLolol](https://github.com/GLolol)
+# PyLink 0.9.2
+Tagged as **0.9.2** by [GLolol](https://github.com/GLolol)
+
+The "Acorn" release.
+
+### Changes from 0.9.1
+
+#### Bug fixes
+
+- Relay now treats `{}` as valid characters in nicks.
+- Fixed services login tracking for older Anope services + UnrealIRCd. Previously, PyLink would incorrectly store login timestamps as the account name, instead of the user's nick.
+- Relay now normalizes `/` to `.` in hostnames on IRCd-Hybrid.
+- Cloaked hosts for UnrealIRCd 3.2 users are now applied instead of the real host being visible.
+
+# [PyLink 0.9.1](https://github.com/GLolol/PyLink/releases/tag/0.9.1)
+Tagged as **0.9.1** by [GLolol](https://github.com/GLolol) on 2016-08-07T03:05:01Z
 
 ### *Important*, backwards incompatible changes for those upgrading from 0.8.x!
 - The configuration file is now **pylink.yml** by default, instead of **config.yml**.
@@ -27,7 +41,7 @@ Tagged as **0.9.1** by [GLolol](https://github.com/GLolol)
 - Channels names are now case normalized when receiving `@#channel` messages.
 
 #### Misc. changes
-- Minor example configuration updates.
+- Minor example configuration updates, including a mention of passwordless UnrealIRCd links by setting recvpass and sendpass to `*`.
 
 # [PyLink 0.9.0](https://github.com/GLolol/PyLink/releases/tag/0.9.0)
 Tagged as **0.9.0** by [GLolol](https://github.com/GLolol) on 2016-07-25T05:49:55Z
