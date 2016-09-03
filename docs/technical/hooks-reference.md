@@ -67,7 +67,7 @@ The following hooks represent regular IRC commands sent between servers.
     - `modes` returns a list of parsed modes: `(mode character, mode argument)` tuples, where the mode argument is either `None` (for modes without arguments), or a string.
     - The sender of this hook payload is IRCd-dependent, and is determined by whether the command was originally a SJOIN or regular JOIN - SJOIN is only sent by servers, and JOIN is only sent by users.
     - For IRCds that support joining multiple channels in one command (`/join #channel1,#channel2`), consecutive JOIN hook payloads of this format will be sent (one per channel).
-    - For SJOIN, the `chandata` key may also be sent, with a copy of the `IrcChannel` object BEFORE any mode changes from this burst command were processed.
+    - For SJOIN, the `channeldata` key may also be sent, with a copy of the `IrcChannel` object BEFORE any mode changes from this burst command were processed.
 
 - **KICK**: `{'channel': '#channel', 'target': 'UID1', 'text': 'some reason'}`
     - `text` refers to the kick reason. The `target` and `channel` fields send the target's UID and the channel they were kicked from, and the sender of the hook payload is the kicker.
@@ -76,10 +76,10 @@ The following hooks represent regular IRC commands sent between servers.
     - `text` refers to the kill reason. `target` is the target's UID.
     - The `userdata` key may include an `IrcUser` instance, depending on the IRCd. On IRCds where QUITs are explicitly sent (InspIRCd), `userdata` will be `None`. Other IRCds do not explicitly send QUIT messages for KILLed clients, so the daemon must assume that they've quit, and deliver their last state to plugins that require this info.
 
-- **MODE**: `{'target': '#channel', 'modes': [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')], 'chandata': IrcChannel(...)}`
+- **MODE**: `{'target': '#channel', 'modes': [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')], 'channeldata': IrcChannel(...)}`
     - `target` is the target the mode is being set on: it may be either a channel (for channel modes) OR a UID (for user modes).
     - `modes` is a list of prefixed parsed modes: `(mode character, mode argument)` tuples, but with `+/-` prefixes to denote whether each mode is being set or unset.
-    - For channels, the `chandata` key is also sent, with a copy of the `IrcChannel` BEFORE this MODE hook was processed.
+    - For channels, the `channeldata` key is also sent, with a copy of the `IrcChannel` BEFORE this MODE hook was processed.
         - One use for this is to prevent oper-override hacks: checks for whether a sender is opped have to be done before the MODE is processed; otherwise, someone can simply op themselves and circumvent this detection.
 
 - **NICK**: `{'newnick': 'Alakazam', 'oldnick': 'Abracadabra', 'ts': 1234567890}`

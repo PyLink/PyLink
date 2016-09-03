@@ -876,7 +876,7 @@ def handle_join(irc, numeric, command, args):
 
     claim_passed = checkClaim(irc, channel, numeric)
     current_chandata = irc.channels[channel]
-    chandata = args.get('chandata')
+    chandata = args.get('channeldata')
     log.debug('(%s) relay.handle_join: claim for %s on %s: %s', irc.name, numeric, channel, claim_passed)
     log.debug('(%s) relay.handle_join: old channel data %s', irc.name, chandata)
     log.debug('(%s) relay.handle_join: current channel data %s', irc.name, current_chandata)
@@ -1266,7 +1266,7 @@ def handle_mode(irc, numeric, command, args):
 
         if utils.isChannel(target):
             # Use the old state of the channel to check for CLAIM access.
-            oldchan = args.get('chandata')
+            oldchan = args.get('channeldata')
 
             if checkClaim(irc, target, numeric, chanobj=oldchan):
                 remotechan = getRemoteChan(irc, remoteirc, target)

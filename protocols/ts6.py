@@ -467,7 +467,7 @@ class TS6Protocol(TS6BaseProtocol):
         self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
-                'chandata': chandata}
+                'channeldata': chandata}
 
     def handle_join(self, numeric, command, args):
         """Handles incoming channel JOINs."""

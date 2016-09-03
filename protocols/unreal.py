@@ -585,7 +585,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.updateTS(numeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes,
-                'ts': their_ts, 'chandata': chandata}
+                'ts': their_ts, 'channeldata': chandata}
 
     def handle_nick(self, numeric, command, args):
         """Handles NICK changes, and legacy NICK introductions from pre-4.0 servers."""
@@ -662,7 +662,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 their_ts = int(args[-1])
                 if their_ts > 0:
                     self.updateTS(numeric, channel, their_ts)
-            return {'target': channel, 'modes': parsedmodes, 'chandata': oldobj}
+            return {'target': channel, 'modes': parsedmodes, 'channeldata': oldobj}
         else:
             log.warning("(%s) received MODE for non-channel target: %r",
                         self.irc.name, args)

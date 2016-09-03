@@ -1072,7 +1072,7 @@ class P10Protocol(IRCS2SProtocol):
         self.updateTS(source, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
-                'chandata': chandata}
+                'channeldata': chandata}
 
     def handle_join(self, source, command, args):
         """Handles incoming JOINs and channel creations."""

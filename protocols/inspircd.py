@@ -556,7 +556,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
-                'chandata': chandata}
+                'channeldata': chandata}
 
     def handle_uid(self, numeric, command, args):
         """Handles incoming UID commands (user introduction)."""
