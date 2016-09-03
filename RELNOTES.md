@@ -1,5 +1,88 @@
-# PyLink 0.9.2
-Tagged as **0.9.2** by [GLolol](https://github.com/GLolol)
+# PyLink 1.0-beta1
+Tagged as **1.0-beta1** by [GLolol](https://github.com/GLolol)
+
+The "Badgers" release. Note: This is an **beta** build and may not be completely stable!
+
+### Changes from 0.10-alpha1
+
+#### Bug fixes
+- Fixes for the Clientbot protocol module:
+    - Fix `nick()` referring to the wrong variables (and thus not working at all)
+    - Fix crashes caused by forced nick changes on connect
+    - Clientbot now only sends `CHGHOST/CHGIDENT/CHGNAME` hooks the field has actually changed
+- Automode now joins the Modebot client on `setacc`, if not already present
+
+#### Feature changes
+- Irc: implement basic message queueing (1 message sent per X seconds, where X defaults to 0.01 for servers) .
+    - This appears to also workaround sporadic SSL errors causing disconnects (https://github.com/GLolol/PyLink/issues/246)
+- relay: CLAIM is now more resistant to things like `/OJOIN` abuse<sup><sup><sup>Seriously people, show some respect for your linked networks ;)</sup></sup></sup>.
+- core: New permissions system, used exclusively by Automode at this time. See `example-permissions.yml` in the Git tree for configuration options.
+- relay_clientbot now optionally supports PMs with users linked via Clientbot. This can be enabled via the `relay::allow_clientbot_pms` option, and provides the following behaviour:
+    - Private messages and notices *TO* Clientbot users are forwarded from the Relay bot as NOTICE.
+    - Private messages can be sent *FROM* Clientbot users using the `rpm` command in `relay_clientbot`
+- The PyLink launcher now shows the full VCS version in `pylink -v`
+- Revert "relay_clientbot: always lowercase network name (stylistic choice)"
+
+#### Internal fixes / improvements
+- protocols/unreal: use umode `+xt` instead of blind `/SETHOST` when spawning users
+- protocols/clientbot: handle numerics 463 (ERR_NOPERMFORHOST), 464 (ERR_PASSWDMISMATCH), and 465 (ERR_YOUREBANNEDCREEP) as fatal errors
+- protocols: various fields in hook payloads are renamed for consistency:
+    - The `chandata` field in SQUIT payloads is renamed to `channeldata`
+    - The `oldchan` field in MODE payloads is renamed to `channeldata`
+- `Irc.msg()` should no longer send empty text strings (which are technically illegal) in things like help strings.
+- Irc: make sending of loopback hooks in `msg()` optional
+- relay_clientbot: switch to `irc.msg()` for relayed text
+
+#### Misc. changes
+- Various to documentation update and installation instruction improvements.
+
+# [PyLink 0.10-alpha1](https://github.com/GLolol/PyLink/releases/tag/0.10-alpha1)
+Tagged as **0.10-alpha1** by [GLolol](https://github.com/GLolol) on 2016-08-22T00:04:34Z
+
+The "Balloons" release. Note: This is an **alpha** build and may not be completely stable! This version includes all fixes from PyLink 0.9.2, with the following additions:
+
+### Changes from 0.9.2
+
+#### Bug fixes
+- Improved syncing between Automode and Relay on JOINs. In other words: fixed Automode sometimes setting modes on join before all of a target's relay clones have joined corresponding relay channels on remote networks.
+- protocols/inspircd now tracks required modules for vHost updating (CHGHOST/IDENT/NAME), instead of potentially sending unknown commands to the IRCd and causing a netsplit.
+- changehost now explicitly forbids `$host` from being used in expansion fields, preventing vHosts from potentially being set in a loop whenever `applyhosts` is called.
+- `eval` now formats empty strings correctly, instead of having no visible reply. In other words, it now wraps all output with `repr()`.
+- relay: fix reversed prefix mode order in bursts (e.g. `+@~UID` instead of `~@+UID`). Fortunately, this is minor detail; no noticeable adverse effects to IRCd linking was ever experienced.
+
+#### Feature changes
+
+- **WIP** Clientbot protocol module: allows PyLink to connect as a bot to servers, for purposes such as relay.
+    - Some features such as flood protection, services account tracking, and IRCv3 support are still missing.
+    - **For Clientbot relay support, remember to also load the `relay_clientbot` plugin!**
+- Added the ability to rotate logs at certain sizes, keeping X backups for reference.
+- REHASH now updates file logging settings.
+- Relay now allows configuring a list of nick globs to always tag nicks (`forcetag_nicks:` block in `relay:`)
+- networks: new `reloadproto` command, allowing in-place reloading of protocol modules without restart.
+- Ctrl-C / KeyboardInterrupt now cleanly shuts down PyLink (in most cases).
+- SSL cert file and key file are now optional.
+- changehost: show more friendly errors when an expansion field is unavailable
+- protocols/inspircd: add support for SAKICK, ALLTIME.
+- protocols/ unreal: add support for TSCTL ALLTIME.
+- Added support for `/time` requests.
+
+#### Internal fixes / improvements
+- Shutdown now cleanly quits the PyLink service bot instead of simply splitting off.
+- PyLink now shows a better error if a protocol module chosen is missing.
+- Config key validation is now protocol-specific.
+- The `IrcUser.identified` attribute was renamed to `IrcUser.account`.
+- exec: make `pylinkirc` and `importlib` accessible for easier debugging.
+- SQUIT hooks get a few more arguments, such as `nicks` (affected nicks) and `serverdata` (old IrcServer object).
+- Retrieving the hostname used by the current PyLink instance is now a shared function: `irc.hostname()`
+- Better handling of empty lines in command help - these are now sent as a single space instead of passing invalid text like `:<UID> NOTICE <UID> :` to the IRCd (no text in the text parameter).
+- protocols/ts6: handle incoming ETB (extended topic burst) and EOPMOD (partial support; op moderated +z messages are converted to forms like `@#channel`).
+- protocols/unreal: explicitly declare support for ESVID, or account name arguments in service stamps. Realistically this doesn't seem to affect S2S traffic, but it is the correct thing to do.
+
+#### Misc. changes
+- `FakeIRC` and `FakeProto` are removed (unused and not updated for 0.10 internal APIs)
+
+# [PyLink 0.9.2](https://github.com/GLolol/PyLink/releases/tag/0.9.2)
+Tagged as **0.9.2** by [GLolol](https://github.com/GLolol) on 2016-08-21T23:59:23Z
 
 The "Acorn" release.
 
