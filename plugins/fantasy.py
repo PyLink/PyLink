@@ -22,7 +22,9 @@ def handle_fantasy(irc, source, command, args):
         #   3) The message starts with one of our fantasy prefixes.
         #   4) The sender is NOT a PyLink client (this prevents infinite
         #      message loops).
-        for botname, sbot in world.services.items():
+        for botname, sbot in world.services.copy().items():
+            if botname not in world.services:  # Bot was removed during iteration
+                continue
             log.debug('(%s) fantasy: checking bot %s', irc.name, botname)
             servuid = sbot.uids.get(irc.name)
             if servuid in irc.channels[channel].users:
