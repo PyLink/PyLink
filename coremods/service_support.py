@@ -26,6 +26,10 @@ def spawn_service(irc, source, command, args):
     nick = irc.serverdata.get("%s_nick" % name) or conf.conf.get(name, {}).get('nick') or sbot.nick or name
     ident = irc.serverdata.get("%s_ident" % name) or conf.conf.get(name, {}).get('ident') or sbot.ident or name
 
+    if name != 'pylink' and irc.protoname == 'clientbot':
+        # Prefix service bots spawned on Clientbot to prevent possible nick collisions.
+        nick = 'PyLinkService@' + nick
+
     # TODO: make this configurable?
     host = irc.hostname()
 
@@ -43,6 +47,7 @@ def spawn_service(irc, source, command, args):
             modes.append((mode, None))
 
     # Track the service's UIDs on each network.
+    log.debug('(%s) Using nick %s for service %s', irc.name, nick, name)
     userobj = irc.proto.spawnClient(nick, ident, host, modes=modes, opertype="PyLink Service",
                                     manipulatable=sbot.manipulatable)
 
