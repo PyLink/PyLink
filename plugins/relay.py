@@ -405,7 +405,7 @@ def getOrigUser(irc, user, targetirc=None):
 
     If targetirc is given, getRemoteUser() is called to get the relay client
     representing the original user on that target network."""
-    # First, iterate over everyone!
+
     try:
         remoteuser = irc.users[user].remote
     except (AttributeError, KeyError):
