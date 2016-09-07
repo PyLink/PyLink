@@ -87,19 +87,26 @@ def cb_relay_core(irc, source, command, args):
         text_template = string.Template(text_template)
 
         if text_template:
-            # Get the original client that the relay client source was meant for.
-            log.debug('(%s) relay_cb_core: Trying to find original sender (user) for %s', irc.name, source)
-            try:
-                origuser = relay.getOrigUser(irc, source) or args['userdata'].remote
-            except (AttributeError, KeyError):
-                log.debug('(%s) relay_cb_core: Trying to find original sender (server) for %s. serverdata=%s', irc.name, source, args.get('serverdata'))
+            if irc.isServiceBot(source):
+                # HACK: service bots are global and lack the relay state we look for.
+                # just pretend the message comes from the current network.
+                log.debug('(%s) relay_cb_core: Overriding network origin to local (source=%s)', irc.name, source)
+                netname = irc.name
+            else:
+                # Get the original client that the relay client source was meant for.
+                log.debug('(%s) relay_cb_core: Trying to find original sender (user) for %s', irc.name, source)
                 try:
-                    origuser = ((args.get('serverdata') or irc.servers[source]).remote,)
+                    origuser = relay.getOrigUser(irc, source) or args['userdata'].remote
                 except (AttributeError, KeyError):
-                    return
+                    log.debug('(%s) relay_cb_core: Trying to find original sender (server) for %s. serverdata=%s', irc.name, source, args.get('serverdata'))
+                    try:
+                        origuser = ((args.get('serverdata') or irc.servers[source]).remote,)
+                    except (AttributeError, KeyError):
+                        return
 
-            log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
-            netname = origuser[0]
+                log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
+                netname = origuser[0]
+
             try:  # Try to get the full network name
                 netname = conf.conf['servers'][netname]['netname']
             except KeyError:
