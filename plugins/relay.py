@@ -578,6 +578,10 @@ def getSupportedUmodes(irc, remoteirc, modes):
 
         # Iterate over all supported user modes for the current network.
         for name, m in irc.umodes.items():
+            if name.startswith('*'):
+                # XXX: Okay, we need a better place to store modetypes.
+                continue
+
             supported_char = None
 
             # Mode character matches one in our list, so set that named mode
@@ -740,7 +744,12 @@ def getSupportedCmodes(irc, remoteirc, channel, modes):
         # this mode, and what its mode char for it is (if it is different).
         for name, m in irc.cmodes.items():
             supported_char = None
+            if name.startswith('*'):
+                # XXX: Okay, we need a better place to store modetypes.
+                continue
+
             if modechar == m:
+
                 supported_char = remoteirc.cmodes.get(name)
 
                 if supported_char is None:
