@@ -376,6 +376,11 @@ logging:
         "commands":
             loglevel: INFO
 
+        # Uncomment this to enable debug logging. This is only needed if you're developing for
+        # PyLink or are requested to enable this when reporting a bug.
+        #"debug":
+        #    loglevel: DEBUG
+
     filerotation:
         # Configures optional log file rotation. When enabled, PyLink will create rotate files
         # in the format pylink-commands.log, pylink-commands.log.1, pylink-commands.log.2, etc.
