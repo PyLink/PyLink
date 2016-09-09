@@ -349,7 +349,6 @@ logging:
 
         # Note 2: DEBUG logging is not supported here: any log level settings
         # below INFO be automatically raised to INFO.
-        loglevel: INFO
 
         inspnet:
             "#services":
