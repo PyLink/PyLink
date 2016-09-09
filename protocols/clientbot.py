@@ -256,7 +256,10 @@ class ClientbotWrapperProtocol(Protocol):
 
     def updateClient(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""
-        assert target in self.irc.users, "Unknown target %s" % target
+        if target not in self.irc.users:
+            log.warning("(%s) Unknown target %s for updateClient()", self.irc.name, target)
+            return
+
         u = self.irc.users[target]
 
         if field == 'IDENT' and u.ident != text:
