@@ -1,4 +1,6 @@
-# PyLink
+# PyLink IRC Services
+
+![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000) ![PyPI supported Python versions](https://img.shields.io/pypi/pyversions/pylinkirc.svg?maxAge=2592000) ![PyPi license](https://img.shields.io/pypi/l/pylinkirc.svg?maxAge=2592000)
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
