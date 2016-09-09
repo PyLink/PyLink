@@ -451,6 +451,10 @@ class ClientbotWrapperProtocol(Protocol):
         realname = args[-1].split(' ', 1)[-1]
         uid = self.irc.nickToUid(nick)
 
+        if uid is None:
+            log.debug("(%s) Ignoring extraneous /WHO info for %s", self.irc.name, nick)
+            return
+
         self.updateClient(uid, 'IDENT', ident)
         self.updateClient(uid, 'HOST', host)
         self.updateClient(uid, 'GECOS', realname)
