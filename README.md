@@ -1,6 +1,8 @@
 # PyLink IRC Services
 
-![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000) ![PyPI supported Python versions](https://img.shields.io/pypi/pyversions/pylinkirc.svg?maxAge=2592000) ![PyPi license](https://img.shields.io/pypi/l/pylinkirc.svg?maxAge=2592000)
+[webchatlink]: https://webchat.overdrivenetworks.com/?channels=PyLink
+
+[![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000) ![PyPI supported Python versions](https://img.shields.io/pypi/pyversions/pylinkirc.svg?maxAge=2592000) ![PyPi license](https://img.shields.io/pypi/l/pylinkirc.svg?maxAge=2592000)](https://pypi.python.org/pypi/pylinkirc/) [![Live chat](https://img.shields.io/badge/IRC-live%20chat%20%C2%BB-green.svg)][webchatlink]
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
@@ -18,7 +20,7 @@ PyLink and any bundled software are licensed under the Mozilla Public License, v
 
 Please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
-You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks.com `([webchat](https://webchat.overdrivenetworks.com/?channels=PyLink)) or `#PyLink @ chat.freenode.net`. Ask your questions and be patient for a response.
+You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks.com `([webchat][webchatlink]) or `#PyLink @ chat.freenode.net`. Ask your questions and be patient for a response.
 
 ## Installation
 
