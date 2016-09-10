@@ -11,6 +11,7 @@ PyLink is an extensible, plugin-based IRC services framework written in Python. 
 PyLink and any bundled software are licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The corresponding documentation in the [docs/](docs/) folder is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
 
 ## Support
+[![Visit our IRC channel](https://kiwiirc.com/buttons/irc.overdrivenetworks.com/pylink.png)](https://kiwiirc.com/client/irc.overdrivenetworks.com:+6697/?nick=ovdWebUser|?#pylink)
 
 **First, MAKE SURE you've read the [FAQ](docs/faq.md)!**
 
@@ -18,7 +19,7 @@ PyLink and any bundled software are licensed under the Mozilla Public License, v
 
 Please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
-You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks.com `([webchat](https://webchat.overdrivenetworks.com/?channels=PyLink)) or `#PyLink @ chat.freenode.net`. Ask your questions and be patient for a response.
+You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks.com` or `#PyLink @ chat.freenode.net` (or click the button above). Ask your questions and be patient for a response.
 
 ## Installation
 
