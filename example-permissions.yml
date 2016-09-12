@@ -27,8 +27,6 @@ permissions:
         # channels.
         - automode.manage.relay_owned
         - automode.sync.relay_owned
-    "*!*@*":
-        # Everyone can use /msg Automode list on any channel.
         - automode.list
     "$pylinkacc":
         # Those with an admin login in PyLink can do anything.

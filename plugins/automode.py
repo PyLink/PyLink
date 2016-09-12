@@ -25,8 +25,8 @@ exportdb_timer = None
 save_delay = conf.conf['bot'].get('save_delay', 300)
 
 # The default set of Automode permissions.
-default_permissions = {"$ircop": ['automode.manage.relay_owned', 'automode.sync.relay_owned'],
-                       "*!*@*": ['automode.list']}
+default_permissions = {"$ircop": ['automode.manage.relay_owned', 'automode.sync.relay_owned',
+                                  'automode.list']}
 
 def loadDB():
     """Loads the Automode database, silently creating a new one if this fails."""
