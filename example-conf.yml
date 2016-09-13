@@ -478,9 +478,9 @@ relay:
     allow_clientbot_pms: false
 
 games:
-    # Sets the nick of the Games service, if you're using it.
+    # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.
     nick: Games
 
 automode:
-    # Sets the nick of the Automode service, if you're using it.
-    nick: ModeBot
+    # Sets the nick of the Automode service, if you're using it. This defaults to "automode" if not defined.
+    nick: Automode
