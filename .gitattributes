@@ -1,0 +1,7 @@
+* text=auto
+
+*.py text
+*.md text
+
+*.png binary
+*.jpg binary
