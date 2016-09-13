@@ -1,10 +1,10 @@
-# Automode Tutorial
+# Automode & Exttargets Guide
 
-The Automode plugin was introduced in PyLink 0.9 as a simple way of managing channel access control lists. That said, it is not designed to entirely replace traditional IRC services such as ChanServ.
+The Automode plugin was introduced in PyLink 0.9 as a simple way of managing channel access control lists with Relay. That said, it is not designed to entirely replace traditional IRC services such as ChanServ.
 
 ## Starting steps
 
-Upon loading the `automode` plugin, you should see a ModeBot service client connect, using the name you defined. This client provides the commands used to manage access.
+Upon loading the `automode` plugin, you should see an Automode service bot connect, using the name that you defined. This bot provides the commands used to manage access.
 
 For a list of commands:
 - `/msg ModeBot help`
@@ -42,3 +42,32 @@ Extended targets or exttargets *replace* regular hostmasks with conditional matc
 - `$channel:#channel:op` -> Returns True if the target is in the given channel, and is opped. Any supported prefix mode (owner, admin, op, halfop, voice) can be used for the last part, but only one at a time.
 - `$pylinkacc` -> Returns True if the target is logged in to PyLink.
 - `$pylinkacc:accountname` -> Returns True if the target's PyLink login matches the one given (case insensitive).
+
+## Permissions
+
+Automode defines the following permissions, which can be customized by defining the `permissions:` configuration block (see [example-permissions.yml](../example-permissions.yml) for examples).
+
+By default, Automode integrates with Relay by only allowing access lists to be created on the network that owns each channel.
+
+- `automode.manage` OR `automode.manage.*`: ability to manage Automode (use `setacc` and `delacc`) on all channels on the network where the user is connected.
+- `automode.manage.relay_owned`: ability to manage Automode on channels owned by the current network in Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS. **With the default permissions set, this is granted to all opers.**
+- `automode.manage.#channel`: ability to manage Automode on the specific given channel.
+
+- `automode.list` OR `automode.list.*`: ability to list Automode on all channels. **With the default permissions set, this is granted to all opers.**
+- `automode.list.relay_owned`: ability to list automode on channels owned via Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS.
+- `automode.list.#channel`: ability to list Automode access entries on the specific given channel.
+
+- `automode.sync` OR `automode.sync.*`: ability to sync automode on all channels.
+- `automode.sync.relay_owned`: ability to sync automode on channels owned via Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS. **With the default permissions set, this is granted to all opers.**
+- `automode.sync.#channel`: ability to sync automode on the specific given channel.
+
+- `automode.clear` OR `automode.clear.*`: ability to clear automode on all channels.
+- `automode.clear.relay_owned`: ability to clear automode on channels owned via Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS.
+- `automode.clear.#channel`: ability to clear automode on the specific given channel.
+
+- `automode.savedb`: ability to save the automode DB.
+
+## Caveats
+
+- Service bot joining and Relay are not always consistently: https://github.com/GLolol/PyLink/issues/265
+- Automode does not yet auto-op itself on join, which may cause issues on IRCds that do not allow mode overrides from remote servers (e.g. P10). This can be worked around by U-Lining the PyLink server.
