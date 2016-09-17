@@ -1,5 +1,34 @@
-# PyLink 1.0-beta1
-Tagged as **1.0-beta1** by [GLolol](https://github.com/GLolol)
+# PyLink 1.0.0
+Tagged as **1.0.0** by [GLolol](https://github.com/GLolol)
+
+The "Benevolence" release.
+
+### Changes from 1.0-beta1
+
+#### Bug fixes
+- Clientbot now relays text sent from service bots.
+- Fixed KeyErrors in Clientbot when receiving WHO replies for clients we don't know -- these are now ignored.
+- Relay now skips mode type definitions when doing reverse mode lookup. This fixes channel mode `+l` mever being relayed UnrealIRCd, because `+l` happened to be the only supported type C mode.
+- protocols/nefarious: fix UnboundLocalError when no modes are given on user introduction
+- fantasy: don't error when bots are removed while processing a message (e.g. on shutdown)
+
+#### Feature changes
+- Automode now limits `listacc` to opers instead of all users (with default permissions settings).
+
+#### Internal fixes / improvements
+- Fixed incomplete hook payload keys from 1.0-beta1 (`oldchan`/`chandata` -> `channeldata`)
+- services_support: hack away nick clashes between service clients & real users from Clientbot networks
+- clientbot: downgrade bad updateClient() calls to warning
+
+#### Misc. changes
+- Documentation updates: Automode+permissions guide, README refresh, others.
+- Example configuration changes:
+  - Automode's bot nick now defaults to "Automode" instead of "ModeBot" for consistency.
+  - Added a debug log example <sup><sup><sup>because nobody knew how to turn it on</sup></sup></sup>
+  - Fix inverted option description for Relay's `show_netsplits` option.
+
+# [PyLink 1.0-beta1](https://github.com/GLolol/PyLink/releases/tag/1.0-beta1)
+Tagged as **1.0-beta1** by [GLolol](https://github.com/GLolol) on 2016-09-03T07:49:12Z
 
 The "Badgers" release. Note: This is an **beta** build and may not be completely stable!
 
