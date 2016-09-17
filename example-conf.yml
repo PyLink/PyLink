@@ -451,8 +451,8 @@ relay:
     # opers), and "none" (disabled). Defaults to none if not specified.
     whois_show_server: opers
 
-    # Determines whether netsplits should be hidden as *.net *.split over the relay.
-    # Defaults to False.
+    # Determines whether the servers disconnecting in a netsplit should be shown when
+    # relaying quits due to a netsplit. Defaults to False.
     show_netsplits: false
 
     # Sets the default Relay separator. Defaults to / if not specified. The "separator"
