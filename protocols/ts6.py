@@ -530,8 +530,23 @@ class TS6Protocol(TS6BaseProtocol):
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_uid(self, numeric, command, args):
-        raise ProtocolError("Servers should use EUID instead of UID to send users! "
-                            "This IS a required capability after all...")
+        """Handles legacy user introductions (UID)."""
+        # tl;dr We want to convert the following UID parameters:
+        #    nickname, hopcount, nickTS, umodes, username, visible hostname, IP address, UID, gecos
+        # to EUID parameters when parsing:
+        #    nickname, hopcount, nickTS, umodes, username, visible hostname, IP address, UID,
+        #    real hostname, account name, gecos
+
+        euid_args = args[:]
+
+        # Insert a * to denote that the user is not logged in.
+        euid_args.insert(8, '*')
+
+        # Copy the visible hostname to the real hostname, as this data isn't sent yet.
+        # TODO: handle encap realhost / encap login
+        euid_args.insert(8, args[5])
+
+        return self.handle_euid(numeric, command, euid_args)
 
     def handle_sid(self, numeric, command, args):
         """Handles incoming server introductions."""
