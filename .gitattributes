@@ -1,7 +1,7 @@
 * text=auto
 
-*.py text
-*.md text
+*.py eol=lf
+*.md eol=lf
 
 *.png binary
 *.jpg binary
