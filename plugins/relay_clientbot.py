@@ -148,6 +148,11 @@ def cb_relay_core(irc, source, command, args):
 
             args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
                          'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
+            if 'channel' in args:
+                # Display the real channel instead of the local name, if applicable
+                args['local_channel'] = args['channel']
+                args['channel'] = relay.getRemoteChan(irc, world.networkobjects[origuser[0]], args['channel'])
+                log.debug('(%s) relay_clientbot: coersing $channel from %s to %s', irc.name, args['local_channel'], args['channel'])
 
             for target in targets:
                 cargs = args.copy()  # Copy args list to manipulate them in a channel specific way
