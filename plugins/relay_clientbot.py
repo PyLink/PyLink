@@ -2,6 +2,7 @@
 import string
 import collections
 import time
+import hashlib
 
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
@@ -28,9 +29,10 @@ def color_text(s):
     (sum of all characters).
     """
     colors = ('02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
-              '12', '13')
-    num = sum([ord(char) for char in s])
-    num = num % len(colors)
+              '12', '13', '14', '15')
+    digest = hashlib.md5(s.encode()).hexdigest()
+    digest = int(digest, base=16)
+    num = digest % len(colors)
     return "\x03%s%s\x03" % (colors[num], s)
 
 def cb_relay_core(irc, source, command, args):
