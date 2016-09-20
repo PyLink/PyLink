@@ -74,7 +74,7 @@ def joinclient(irc, source, args):
         irc.reply("Error: No valid channels given.")
         return
 
-    if not irc.isManipulatableClient(u):
+    if not (irc.isManipulatableClient(u) or irc.isServiceBot(u)):
         irc.reply("Error: Cannot force join a protected PyLink services client.")
         return
 
@@ -116,7 +116,7 @@ def nick(irc, source, args):
         irc.reply('Error: Invalid nickname %r.' % newnick)
         return
 
-    elif not irc.isManipulatableClient(u):
+    elif not (irc.isManipulatableClient(u) or irc.isServiceBot(u)):
         irc.reply("Error: Cannot force nick changes for a protected PyLink services client.")
         return
 
@@ -158,7 +158,7 @@ def part(irc, source, args):
         irc.reply("Error: No valid channels given.")
         return
 
-    if not irc.isManipulatableClient(u):
+    if not (irc.isManipulatableClient(u) or irc.isServiceBot(u)):
         irc.reply("Error: Cannot force part a protected PyLink services client.")
         return
 
