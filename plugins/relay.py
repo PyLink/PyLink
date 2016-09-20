@@ -182,6 +182,15 @@ def normalizeHost(irc, host):
     if irc.protoname not in ('inspircd', 'ts6', 'clientbot', 'nefarious'):
         # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
         host = host.replace('/', '.')
+    host = host.replace('\x03', '')  # Strip colours
+    host = host.replace('\x02', '')  # Strip bold
+    host = host.replace('\x1f', '')  # Strip underline
+    host = host.replace('\x1d', '')  # Strip italic
+    host = host.replace('\x0f', '')  # Strip color reset
+    host = host.replace('\x16', '')  # Strip reverse color
+    # And no, I'm not supporting colours in hosts. Screw your IRCd-breaking patches if you think
+    # this is cool. -GL
+
     return host[:63]  # Limit hosts to 63 chars for best compatibility
 
 def loadDB():
