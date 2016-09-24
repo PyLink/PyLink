@@ -929,6 +929,7 @@ def handle_join(irc, numeric, command, args):
 
     relayJoins(irc, channel, users, ts, burst=False)
 utils.add_hook(handle_join, 'JOIN')
+utils.add_hook(handle_join, 'PYLINK_SERVICE_JOIN')
 
 def handle_quit(irc, numeric, command, args):
     # Lock the user spawning mechanism before proceeding, since we're going to be
