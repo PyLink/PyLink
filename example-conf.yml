@@ -477,6 +477,10 @@ relay:
     # False.
     allow_clientbot_pms: false
 
+    # Sets the suffix that relay subservers should use. Defaults to "relay" (as in net1.relay,
+    # net2.relay, etc.) if not specified.
+    #server_suffix: "relay.yournet.net"
+
 games:
     # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.
     nick: Games

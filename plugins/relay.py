@@ -252,7 +252,10 @@ def spawnRelayServer(irc, remoteirc):
     try:
         # ENDBURST is delayed by 3 secs on supported IRCds to prevent
         # triggering join-flood protection and the like.
-        sid = irc.proto.spawnServer('%s.relay' % remoteirc.name,
+        suffix = conf.conf.get('relay', {}).get('server_suffix', 'relay')
+        # Strip any leading or trailing .'s
+        suffix = suffix.strip('.')
+        sid = irc.proto.spawnServer('%s.%s' % (remoteirc.name, suffix),
                                     desc="PyLink Relay network - %s" %
                                     (remoteirc.serverdata.get('netname')\
                                     or remoteirc.name), endburst_delay=3)
