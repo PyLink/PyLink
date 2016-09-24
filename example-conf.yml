@@ -328,6 +328,9 @@ plugins:
     # for a usage guide.
     #- automode
 
+    # Servermaps plugin: displays network /map's from the PyLink server's perspective.
+    #- servermaps
+
 logging:
     # This configuration block defines targets that PyLink should log commands,
     # errors, etc., to.
