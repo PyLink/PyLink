@@ -235,6 +235,44 @@ class ServiceBot():
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
+    def join(self, irc, channels, autojoin=True):
+        """
+        Joins the given service bot to the given channel(s).
+        """
+        try:
+            u = self.uids[irc.name]
+        except KeyError:
+            log.debug('(%s/%s) Skipping join(), UID not initialized yet', irc.name, self.name)
+            return
+
+        # Ensure type safety: pluralize strings if only one channel was given, then convert to set.
+        if type(channels) == str:
+            channels = [channels]
+        channels = set(channels)
+
+        # Specify modes to join the services bot with.
+        joinmodes = irc.serverdata.get("%s_joinmodes" % self.name) or conf.conf.get(self.name, {}).get('joinmodes') or ''
+        joinmodes = ''.join([m for m in joinmodes if m in irc.prefixmodes])
+
+        if autojoin:
+            log.debug('(%s/%s) Adding channels %s to autojoin', irc.name, self.name, channels)
+            self.extra_channels[irc.name] |= channels
+
+        for chan in channels:
+            if isChannel(chan):
+                if u in irc.channels[chan].users:
+                    log.debug('(%s) Skipping join of services %s to channel %s - it is already present', irc.name, self.name, chan)
+                    continue
+                log.debug('(%s) Joining services %s to channel %s with modes %r', irc.name, self.name, chan, joinmodes)
+                if joinmodes:  # Modes on join were specified; use SJOIN to burst our service
+                    irc.proto.sjoin(irc.sid, chan, [(joinmodes, u)])
+                else:
+                    irc.proto.join(u, chan)
+
+                irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
+            else:
+                log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
+
     def reply(self, irc, text, notice=False, private=False):
         """Replies to a message as the service in question."""
         servuid = self.uids.get(irc.name)

@@ -26,10 +26,6 @@ def spawn_service(irc, source, command, args):
     nick = irc.serverdata.get("%s_nick" % name) or conf.conf.get(name, {}).get('nick') or sbot.nick or name
     ident = irc.serverdata.get("%s_ident" % name) or conf.conf.get(name, {}).get('ident') or sbot.ident or name
 
-    # Specify modes to join the services bot with.
-    joinmodes = irc.serverdata.get("%s_joinmodes" % name) or conf.conf.get(name, {}).get('joinmodes') or ''
-    joinmodes = ''.join([m for m in joinmodes if m in irc.prefixmodes])
-
     if name != 'pylink' and irc.protoname == 'clientbot':
         # Prefix service bots spawned on Clientbot to prevent possible nick collisions.
         nick = 'PyLinkService@' + nick
@@ -66,18 +62,7 @@ def spawn_service(irc, source, command, args):
     # TODO: channels should be tracked in a central database, not hardcoded
     # in conf.
     channels = set(irc.serverdata.get('channels', [])) | sbot.extra_channels.get(irc.name, set())
-
-    for chan in channels:
-        if utils.isChannel(chan):
-            log.debug('(%s) Joining services %s to channel %s with modes %r', irc.name, name, chan, joinmodes)
-            if joinmodes:  # Modes on join were specified; use SJOIN to burst our service
-                irc.proto.sjoin(irc.sid, chan, [(joinmodes, u)])
-            else:
-                irc.proto.join(u, chan)
-
-            irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
-        else:
-            log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
+    sbot.join(irc, channels)
 
 utils.add_hook(spawn_service, 'PYLINK_NEW_SERVICE')
 
