@@ -101,8 +101,9 @@ def handle_kick(irc, source, command, args):
     """Handle KICKs to the PyLink service bots, rejoining channels as needed."""
     kicked = args['target']
     channel = args['channel']
-    if irc.isServiceBot(kicked):
-        irc.proto.join(kicked, channel)
+    sbot = irc.isServiceBot(kicked)
+    if sbot:
+        sbot.join(irc, channel)
         irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': channel, 'users': [kicked]}])
 utils.add_hook(handle_kick, 'KICK')
 
