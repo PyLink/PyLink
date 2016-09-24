@@ -96,4 +96,11 @@ def _map(irc, source, args, show_relay=True):
           usercount/len(serverlist)))
 
 utils.add_cmd(_map, 'map')
-utils.add_cmd(lambda irc, source, args: _map(irc, source, args, show_relay=False), 'localmap')
+
+@utils.add_cmd
+def localmap(irc, source, args):
+    """[<network>]
+
+    Shows the network map for the given network, or the current network if not specified.
+    This command does not expand Relay subservers."""
+    _map(irc, source, args, show_relay=False)
