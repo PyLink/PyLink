@@ -239,24 +239,37 @@ class ServiceBot():
         """
         Joins the given service bot to the given channel(s).
         """
-        try:
-            u = self.uids[irc.name]
-        except KeyError:
-            log.debug('(%s/%s) Skipping join(), UID not initialized yet', irc.name, self.name)
-            return
+
+        if type(irc) == str:
+            netname = irc
+        else:
+            netname = irc.name
 
         # Ensure type safety: pluralize strings if only one channel was given, then convert to set.
         if type(channels) == str:
             channels = [channels]
         channels = set(channels)
 
+        if autojoin:
+            log.debug('(%s/%s) Adding channels %s to autojoin', netname, self.name, channels)
+            self.extra_channels[netname] |= channels
+
+        # If the network was given as a string, look up the Irc object here.
+        try:
+            irc = world.networkobjects[netname]
+        except KeyError:
+            log.debug('(%s/%s) Skipping join(), IRC object not initialized yet', irc, self.name)
+            return
+
+        try:
+            u = self.uids[irc.name]
+        except KeyError:
+            log.debug('(%s/%s) Skipping join(), UID not initialized yet', irc.name, self.name)
+            return
+
         # Specify modes to join the services bot with.
         joinmodes = irc.serverdata.get("%s_joinmodes" % self.name) or conf.conf.get(self.name, {}).get('joinmodes') or ''
         joinmodes = ''.join([m for m in joinmodes if m in irc.prefixmodes])
-
-        if autojoin:
-            log.debug('(%s/%s) Adding channels %s to autojoin', irc.name, self.name, channels)
-            self.extra_channels[irc.name] |= channels
 
         for chan in channels:
             if isChannel(chan):

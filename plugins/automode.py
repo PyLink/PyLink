@@ -78,8 +78,7 @@ def main(irc=None):
         netname, channel = entry.split('#', 1)
         channel = '#' + channel
         log.debug('automode: auto-joining %s on %s', channel, netname)
-        if netname in world.networkobjects:
-            modebot.join(world.networkobjects[netname], channel)
+        modebot.join(netname, channel)
 
 def die(sourceirc):
     """Saves the Automode database and quit."""
