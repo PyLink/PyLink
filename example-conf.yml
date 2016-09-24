@@ -488,3 +488,8 @@ games:
 automode:
     # Sets the nick of the Automode service, if you're using it. This defaults to "automode" if not defined.
     nick: Automode
+
+    # For each service, you can also specify what prefix modes you want the service bot to join channels with.
+    # Setting this to op (+o) for Automode makes it appear more like a standard IRC service, and lessens
+    # the risk of mode overrides being dropped.
+    joinmodes: 'o'
