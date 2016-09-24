@@ -78,18 +78,8 @@ def main(irc=None):
         netname, channel = entry.split('#', 1)
         channel = '#' + channel
         log.debug('automode: auto-joining %s on %s', channel, netname)
-        modebot.extra_channels[netname].add(channel)
-
-        # This explicitly forces a join to connected networks (on plugin load, etc.).
-        mb_uid = modebot.uids.get(netname)
-        if netname in world.networkobjects and mb_uid in world.networkobjects[netname].users:
-            remoteirc = world.networkobjects[netname]
-            remoteirc.proto.join(mb_uid, channel)
-
-            # Call a join hook manually so other plugins like relay can understand it.
-            remoteirc.callHooks([mb_uid, 'PYLINK_AUTOMODE_JOIN', {'channel': channel, 'users': [mb_uid],
-                                                                  'modes': remoteirc.channels[channel].modes,
-                                                                  'parse_as': 'JOIN'}])
+        if netname in world.networkobjects:
+            modebot.join(world.networkobjects[netname], channel)
 
 def die(sourceirc):
     """Saves the Automode database and quit."""
@@ -233,10 +223,7 @@ def setacc(irc, source, args):
     reply(irc, "Done. \x02%s\x02 now has modes \x02%s\x02 in \x02%s\x02." % (mask, modes, channel))
 
     # Join the Automode bot to the channel if not explicitly told to.
-    modebot.extra_channels[irc.name].add(channel)
-    mbuid = modebot.uids.get(irc.name)
-    if mbuid and mbuid not in irc.channels[channel].users:
-        irc.proto.join(mbuid, channel)
+    modebot.join(irc, channel)
 
 modebot.add_cmd(setacc, 'setaccess')
 modebot.add_cmd(setacc, 'set')
