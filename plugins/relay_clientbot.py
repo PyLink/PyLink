@@ -93,7 +93,7 @@ def cb_relay_core(irc, source, command, args):
                 # HACK: service bots are global and lack the relay state we look for.
                 # just pretend the message comes from the current network.
                 log.debug('(%s) relay_cb_core: Overriding network origin to local (source=%s)', irc.name, source)
-                netname = irc.name
+                sourcenet = irc.name
             else:
                 # Get the original client that the relay client source was meant for.
                 log.debug('(%s) relay_cb_core: Trying to find original sender (user) for %s', irc.name, source)
@@ -107,12 +107,12 @@ def cb_relay_core(irc, source, command, args):
                         return
 
                 log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
-                netname = origuser[0]
+                sourcenet = origuser[0]
 
             try:  # Try to get the full network name
-                netname = conf.conf['servers'][netname]['netname']
+                netname = conf.conf['servers'][sourcenet]['netname']
             except KeyError:
-                pass
+                netname = sourcenet
 
             # Figure out where the message is destined to.
             target = args.get('channel') or args.get('target')
@@ -151,7 +151,7 @@ def cb_relay_core(irc, source, command, args):
             if 'channel' in args:
                 # Display the real channel instead of the local name, if applicable
                 args['local_channel'] = args['channel']
-                args['channel'] = relay.getRemoteChan(irc, world.networkobjects[origuser[0]], args['channel'])
+                args['channel'] = relay.getRemoteChan(irc, world.networkobjects[sourcenet], args['channel'])
                 log.debug('(%s) relay_clientbot: coersing $channel from %s to %s', irc.name, args['local_channel'], args['channel'])
 
             for target in targets:
