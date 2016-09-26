@@ -667,7 +667,12 @@ def relayJoins(irc, channel, users, ts, burst=True):
 
                 # Fetch the known channel TS and all the prefix modes for each user. This ensures
                 # the different sides of the relay are merged properly.
-                ts = irc.channels[channel].ts
+                if irc.protoname == 'clientbot':
+                    # Special hack for clientbot: just use the remote's modes so mode changes
+                    # take precendence. protocols/clientbot does not track channel TS.
+                    ts = remoteirc.channels[remotechan].ts
+                else:
+                    ts = irc.channels[channel].ts
                 prefixes = getPrefixModes(irc, remoteirc, channel, user)
 
                 # proto.sjoin() takes its users as a list of (prefix mode characters, UID) pairs.
@@ -1275,10 +1280,6 @@ for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
 def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
-
-    if irc.protoname == 'clientbot' and utils.isChannel(target):
-        # We don't sync cmodes with clientbot networks yet.
-        return
 
     for name, remoteirc in world.networkobjects.copy().items():
         if irc.name == name or not remoteirc.connected.is_set():

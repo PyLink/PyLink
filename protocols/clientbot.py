@@ -181,6 +181,21 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             self.irc.callHooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
 
+    def mode(self, source, channel, modes, ts=None):
+        """Sends channel MODE changes."""
+        if utils.isChannel(channel):
+            extmodes = []
+            for modepair in extmodes:
+                # Ignore prefix modes for virtual internal clients.
+                if modepair[0] in self.irc.prefixmodes and self.irc.isInternalClient(modepair[0]):
+                    log.debug('(%s) mode: skipping virtual client prefixmode change %s', self.irc.name, modepair)
+                    continue
+                extmodes.append(modepair)
+
+            log.debug('(%s) mode: filtered modes for %s: %s', self.irc.name, channel, extmodes)
+            self.irc.send('MODE %s %s' % (channel, self.irc.joinModes(extmodes)))
+            # Don't update the state here: the IRCd sill respond with a MODE reply if successful.
+
     def nick(self, source, newnick):
         """STUB: Sends NICK changes."""
         if self.irc.pseudoclient and source == self.irc.pseudoclient.uid:
@@ -252,7 +267,7 @@ class ClientbotWrapperProtocol(Protocol):
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
         return
-    kill = mode = topic = topicBurst = knock = numeric = _stub
+    kill = topic = topicBurst = knock = numeric = _stub
 
     def updateClient(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""
@@ -497,9 +512,19 @@ class ClientbotWrapperProtocol(Protocol):
         self.who_received.clear()
 
         channel = self.irc.toLower(args[1])
-        self.irc.channels[channel].who_received = True
+        c = self.irc.channels[channel]
+        c.who_received = True
 
-        return {'channel': channel, 'users': users, 'modes': self.irc.channels[channel].modes,
+        modes = set(c.modes)
+        for user in users:
+            # Fill in prefix modes of everyone when doing mock SJOIN.
+            for mode in c.getPrefixModes(user):
+                modechar = self.irc.cmodes.get(mode)
+                log.debug('(%s) handle_315: adding mode %s +%s %s', self.irc.name, mode, modechar, user)
+                if modechar:
+                    modes.add((modechar, user))
+
+        return {'channel': channel, 'users': users, 'modes': modes,
                 'parse_as': "JOIN"}
 
     def handle_433(self, source, command, args):
