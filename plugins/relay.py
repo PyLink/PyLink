@@ -738,6 +738,9 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
 whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
                       'regdeaf', 'stripcolor', 'noctcp', 'wallops',
                       'hideidle'}
+clientbot_whitelisted_cmodes = {'admin', 'ban', 'banexception',
+                                'halfop', 'invex', 'op', 'owner', 'voice'}
+modesync_options = ('none', 'half', 'full')
 def getSupportedCmodes(irc, remoteirc, channel, modes):
     """
     Filters a channel mode change to the modes supported by the target IRCd.
@@ -745,6 +748,20 @@ def getSupportedCmodes(irc, remoteirc, channel, modes):
     remotechan = getRemoteChan(irc, remoteirc, channel)
     if not remotechan:  # Not a relay channel
         return []
+
+    # Handle Clientbot-specific mode whitelist settings
+    whitelist = whitelisted_cmodes
+    if remoteirc.protoname == 'clientbot' or irc.protoname == 'clientbot':
+        modesync = conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower()
+        if modesync not in modesync_options:
+            modesync = 'none'
+            log.warning('relay: Bad clientbot_modesync option %s: valid values are %s',
+                        modesync, modesync_options)
+
+        if modesync == 'none':
+            return []  # Do nothing
+        elif modesync == 'half':
+            whitelist = clientbot_whitelisted_cmodes
 
     supported_modes = []
     for modepair in modes:
@@ -770,7 +787,7 @@ def getSupportedCmodes(irc, remoteirc, channel, modes):
                 if supported_char is None:
                     break
 
-                if name not in whitelisted_cmodes:
+                if name not in whitelist:
                     log.debug("(%s) relay.getSupportedCmodes: skipping mode (%r, %r) because "
                               "it isn't a whitelisted (safe) mode for relay.",
                               irc.name, modechar, arg)
