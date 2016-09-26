@@ -200,8 +200,9 @@ class ClientbotWrapperProtocol(Protocol):
                 extmodes.append(modepair)
 
             log.debug('(%s) mode: filtered modes for %s: %s', self.irc.name, channel, extmodes)
-            self.irc.send('MODE %s %s' % (channel, self.irc.joinModes(extmodes)))
-            # Don't update the state here: the IRCd sill respond with a MODE reply if successful.
+            if extmodes:
+                self.irc.send('MODE %s %s' % (channel, self.irc.joinModes(extmodes)))
+                # Don't update the state here: the IRCd sill respond with a MODE reply if successful.
 
     def nick(self, source, newnick):
         """STUB: Sends NICK changes."""
