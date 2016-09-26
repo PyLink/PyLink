@@ -185,11 +185,18 @@ class ClientbotWrapperProtocol(Protocol):
         """Sends channel MODE changes."""
         if utils.isChannel(channel):
             extmodes = []
-            for modepair in extmodes:
-                # Ignore prefix modes for virtual internal clients.
-                if modepair[0] in self.irc.prefixmodes and self.irc.isInternalClient(modepair[0]):
-                    log.debug('(%s) mode: skipping virtual client prefixmode change %s', self.irc.name, modepair)
-                    continue
+            for modepair in modes:
+                log.debug('(%s) mode: checking if %s a prefix mode: %s', self.irc.name, modepair, self.irc.prefixmodes)
+                if modepair[0][-1] in self.irc.prefixmodes:
+                    if self.irc.isInternalClient(modepair[1]):
+                        # Ignore prefix modes for virtual internal clients.
+                        log.debug('(%s) mode: skipping virtual client prefixmode change %s', self.irc.name, modepair)
+                        continue
+                    else:
+                        # For other clients, change the mode argument to nick instead of PUID.
+                        nick = self.irc.getFriendlyName(modepair[1])
+                        log.debug('(%s) mode: coersing mode %s argument to %s', self.irc.name, modepair, nick)
+                        modepair = (modepair[0], nick)
                 extmodes.append(modepair)
 
             log.debug('(%s) mode: filtered modes for %s: %s', self.irc.name, channel, extmodes)
