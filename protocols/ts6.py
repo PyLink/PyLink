@@ -22,6 +22,8 @@ class TS6Protocol(TS6BaseProtocol):
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
 
+        self.required_caps = {'EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
+
     ### OUTGOING COMMANDS
 
     def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -370,7 +372,7 @@ class TS6Protocol(TS6BaseProtocol):
         # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
         self.irc.caps = caps = args[0].split()
 
-        for required_cap in ('EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'):
+        for required_cap in self.required_caps:
             if required_cap not in caps:
                 raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
