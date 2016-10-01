@@ -84,7 +84,8 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
 * [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ratbox`
-    -
+    - Host changing is not supported on ircd-ratbox.
+    - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is a cloaked relay client: if you're paranoid about this, turn off Relay IP forwarding by setting the `relay_no_ips` option in the ratbox network's `server:` block.
 * [juno-ircd](https://github.com/cooper/yiria) (11.x / janet) - module `ts6` (see [configuration example](https://github.com/cooper/juno/blob/master/doc/ts6.md#pylink))
 
 Other TS6 and P10 variations may work, but are not officially supported.
