@@ -54,8 +54,11 @@ class RatboxProtocol(TS6Protocol):
 
         ts = ts or int(time.time())
         realname = realname or self.irc.botdata['realname']
-        realhost = realhost or host
         raw_modes = self.irc.joinModes(modes)
+
+        orig_realhost = realhost
+        realhost = realhost or host
+
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         self.irc.applyModes(uid, modes)
@@ -64,6 +67,16 @@ class RatboxProtocol(TS6Protocol):
                    ":{realname}".format(ts=ts, host=host,
                     nick=nick, ident=ident, uid=uid,
                    modes=raw_modes, ip=ip, realname=realname))
+
+        if orig_realhost:
+            # If real host is specified, send it using ENCAP REALHOST
+            self._send(u, "ENCAP * REALHOST %s" % orig_realhost)
+
         return u
+
+    def handle_realhost(self, uid, command, args):
+        """Handles real host propagation."""
+        log.debug('(%s) Got REALHOST %s for %s', args[0], uid)
+        self.irc.users[uid].realhost = args[0]
 
 Class = RatboxProtocol
