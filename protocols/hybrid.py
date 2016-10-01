@@ -1,7 +1,4 @@
 import time
-import sys
-import os
-import re
 
 from pylinkirc import utils
 from pylinkirc.log import log

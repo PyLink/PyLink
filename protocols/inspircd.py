@@ -3,9 +3,6 @@ inspircd.py: InspIRCd 2.x protocol module for PyLink.
 """
 
 import time
-import sys
-import os
-import re
 import threading
 
 from pylinkirc import utils
@@ -774,7 +771,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """
         Stub VERSION handler (does nothing) to override the one in ts6_common.
         """
-        pass
 
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""

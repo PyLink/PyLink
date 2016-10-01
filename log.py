@@ -8,7 +8,6 @@ access the global logger object by importing "log" from this module
 
 import logging
 import logging.handlers
-import sys
 import os
 
 from . import world, conf

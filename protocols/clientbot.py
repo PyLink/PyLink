@@ -1,5 +1,4 @@
 import time
-import string
 import threading
 
 from pylinkirc import utils, conf

@@ -8,7 +8,6 @@ Here be dragons.
 """
 
 import threading
-from random import randint
 import time
 import socket
 import ssl

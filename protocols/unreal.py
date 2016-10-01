@@ -3,8 +3,6 @@ unreal.py: UnrealIRCd 4.0 protocol module for PyLink.
 """
 
 import time
-import sys
-import os
 import codecs
 import socket
 import re
