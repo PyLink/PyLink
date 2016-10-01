@@ -70,7 +70,7 @@ class RatboxProtocol(TS6Protocol):
 
         if orig_realhost:
             # If real host is specified, send it using ENCAP REALHOST
-            self._send(u, "ENCAP * REALHOST %s" % orig_realhost)
+            self._send(uid, "ENCAP * REALHOST %s" % orig_realhost)
 
         return u
 
