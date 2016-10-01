@@ -15,6 +15,8 @@ class RatboxProtocol(TS6Protocol):
         # Don't require EUID for Ratbox
         self.required_caps.discard('EUID')
 
+        self.hook_map['LOGIN'] = 'CLIENT_SERVICES_LOGIN'
+
     def connect(self):
         """Initializes a connection to a server."""
         super().connect()
@@ -82,5 +84,10 @@ class RatboxProtocol(TS6Protocol):
         """Handles real host propagation."""
         log.debug('(%s) Got REALHOST %s for %s', args[0], uid)
         self.irc.users[uid].realhost = args[0]
+
+    def handle_login(self, uid, command, args):
+        """Handles login propagation on burst."""
+        self.irc.users[uid].services_account = args[0]
+        return {'text': args[0]}
 
 Class = RatboxProtocol
