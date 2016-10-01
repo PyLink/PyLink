@@ -18,8 +18,14 @@ class RatboxProtocol(TS6Protocol):
         """Initializes a connection to a server."""
         super().connect()
 
-        self.irc.cmodes.update({'banexception': 'e', 'invex': 'I'})
-        self.irc.cmodes['*A'] += 'eI'
+        # Note: +r, +e, and +I support will be negotiated on link
+        self.irc.cmodes = {'op': 'o', 'secret': 's', 'private': 'p', 'noextmsg': 'n', 'moderated': 'm',
+                       'inviteonly': 'i', 'topiclock': 't', 'limit': 'l', 'ban': 'b', 'voice': 'v',
+                       'key': 'k', 'sslonly': 'S',
+                       '*A': 'beI',
+                       '*B': 'k',
+                       '*C': 'l',
+                       '*D': 'imnpstr'}
 
         self.irc.umodes = {
             'invisible': 'i', 'callerid': 'g', 'oper': 'o', 'admin': 'a', 'sno_botwarnings': 'b',
@@ -27,7 +33,7 @@ class RatboxProtocol(TS6Protocol):
             'sno_fullauthblock': 'f', 'sno_skill': 'k', 'sno_locops': 'l',
             'sno_rejectedclients': 'r', 'snomask': 's', 'sno_badclientconnections': 'u',
             'wallops': 'w', 'sno_server_connects': 'x', 'sno_admin_requests': 'y',
-            'sno_operwall': 'z', 'sno_operspy': 'Z', 'deaf': 'D',
+            'sno_operwall': 'z', 'sno_operspy': 'Z', 'deaf': 'D', 'servprotect': 'S',
             # Now, map all the ABCD type modes:
             '*A': '', '*B': '', '*C': '', '*D': 'igoabcCdfklrsuwxyzZD'
         }
