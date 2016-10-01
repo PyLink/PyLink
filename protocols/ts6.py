@@ -332,7 +332,7 @@ class TS6Protocol(TS6BaseProtocol):
         # RSFNC: states that we support RSFNC (forced nick changed attempts). XXX: With atheme services,
         #        does this actually do anything?
         # EOPMOD: supports ETB (extended TOPIC burst) and =#channel messages for opmoderated +z
-        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC EOPMOD')
+        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC EOPMOD SAVETS_100')
 
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
                                self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
