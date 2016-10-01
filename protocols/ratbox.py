@@ -32,7 +32,7 @@ class RatboxProtocol(TS6Protocol):
             'sno_clientconnections': 'c', 'sno_extclientconnections': 'C', 'sno_debug': 'd',
             'sno_fullauthblock': 'f', 'sno_skill': 'k', 'locops': 'l',
             'sno_rejectedclients': 'r', 'snomask': 's', 'sno_badclientconnections': 'u',
-            'wallops': 'w', 'sno_server_connects': 'x', 'sno_admin_requests': 'y',
+            'wallops': 'w', 'sno_serverconnects': 'x', 'sno_stats': 'y',
             'operwall': 'z', 'sno_operspy': 'Z', 'deaf': 'D', 'servprotect': 'S',
             # Now, map all the ABCD type modes:
             '*A': '', '*B': '', '*C': '', '*D': 'igoabcCdfklrsuwxyzZD'

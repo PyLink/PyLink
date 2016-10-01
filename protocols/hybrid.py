@@ -44,9 +44,9 @@ class HybridProtocol(TS6Protocol):
             'callerid': 'g', 'admin': 'a', 'deaf_commonchan': 'G', 'hideoper': 'H',
             'webirc': 'W', 'sno_clientconnections': 'c', 'sno_badclientconnections': 'u',
             'sno_rejectedclients': 'j', 'sno_skill': 'k', 'sno_fullauthblock': 'f',
-            'sno_remoteclientconnections': 'F', 'sno_admin_requests': 'y', 'sno_debug': 'd',
+            'sno_remoteclientconnections': 'F', 'sno_stats': 'y', 'sno_debug': 'd',
             'sno_nickchange': 'n', 'hideidle': 'q', 'registered': 'r',
-            'snomask': 's', 'ssl': 'S', 'sno_server_connects': 'e', 'sno_botfloods': 'b',
+            'snomask': 's', 'ssl': 'S', 'sno_serverconnects': 'e', 'sno_botfloods': 'b',
             # Now, map all the ABCD type modes:
             '*A': '', '*B': '', '*C': '', '*D': 'DFGHRSWabcdefgijklnopqrsuwxy'
         }

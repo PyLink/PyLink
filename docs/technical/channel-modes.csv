@@ -1,59 +1,59 @@
-Channel Mode / IRCd,InspIRCd,charybdis,Elemental-IRCd,UnrealIRCd,IRCd-Hybrid,Nefarious IRCu
-admin,a (m_customprefix/m_chanprotect),,a (when enabled),a,,
-adminonly,,A (extensions/chm_adminonly),A (extensions/chm_adminonly.c),,,a
-allowinvite,A (m_allowinvite),g,g,,,
-autoop,w (m_autoop),,,,,
-ban,b,b,b,b,b,b
-banexception,e (m_banexception),e,e,e,e,e
-blockcaps,B (m_blockcaps),,G (extensions/chm_nocaps.c),,,
-blockcolor,c (m_blockcolor),,,c,c,c
-delayjoin,,,,,,D
-exemptchanops,X (m_exemptchanops),,,,,
-filter,g (m_filter),,,,,
-flood,f (m_messageflood),,,,,
-flood_unreal,,,,f,,
-freetarget,,F,F,,,
-had_delayjoins,,,,,,d
-halfop,h (m_customprefix/m_halfop),,h (when enabled),h,h,
-hiddenbans,,,u,,,
-hidequits,,,,,,Q
-history,H (m_chanhistory),,,,,
-invex,I (m_inviteexception),I,I,I,I,
-inviteonly,i,i,i,i,i,i
-issecure,,,,Z,,
-joinflood,j (m_joinflood),j,j,,,
-key,k,k,k,k,k,k
-kicknorejoin,J (m_kicknorejoin),,J,,,
-largebanlist,,L,L,,,
-limit,l,l,l,l,l,l
-moderated,m,m,m,m,m,m
-nickflood,F (m_nickflood),,,,,
-noamsg,,,,,,T
-noctcp,C (m_noctcp),C,C,C,C,C
-noextmsg,n,n,n,n,n,n
-noforwards,,Q,Q,,,
-noinvite,,,,,,
-nokick,Q (m_nokicks),,E,Q,,
-noknock,K (m_knock),p,,K,p,
-nonick,N (m_nonicks),,d,N,,
-nonotice,T (m_nonotice),T (extensions/chm_nonotice),T,T,,N
-official-join,Y (m_ojoin),,,,,
-op,o,o,o,o,o,o
-operonly,O (m_operchans),O (extensions/chm_operonly),O (extensions/chm_operonly.c),O,O,O
-oplevel_apass,,,,,,A
-oplevel_upass,,,,,,U
-opmoderated,U (extras/m_opmoderated),z,z,,,
-owner,q (m_customprefix/m_chanprotect),,y (when enabled),q,,
-permanent,P (m_permchannels),P,P,P,,z
-private,p,,,p,,p
-quiet,,q,q,,,
-redirect,L (m_redirect),f,f,L,,L
-registered,r (m_services_account),,,r,r,R
-regmoderated,M (m_services_account),,,M,M,M
-regonly,R (m_services_account),r,r,R,R,r
-repeat,E (m_repeat),,K (extensions/chm_norepeat.c),,,
-secret,s,s,s,s,s,s
-sslonly,z (m_sslmodes),S (extensions/chm_sslonly),S (extensions/chm_sslonly.c),z,S,
-stripcolor,S (m_stripcolor),c,c,S,,S
-topiclock,t,t,t,t,t,t
-voice,v,v,v,v,v,v
+Channel Mode / IRCd,InspIRCd,charybdis,Elemental-IRCd,UnrealIRCd,IRCd-Hybrid,Nefarious IRCu,Ircd-ratbox
+admin,a (m_customprefix/m_chanprotect),,a (when enabled),a,,,
+adminonly,,A (extensions/chm_adminonly),A (extensions/chm_adminonly.c),,,a,
+allowinvite,A (m_allowinvite),g,g,,,,
+autoop,w (m_autoop),,,,,,
+ban,b,b,b,b,b,b,b
+banexception,e (m_banexception),e,e,e,e,e,e
+blockcaps,B (m_blockcaps),,G (extensions/chm_nocaps.c),,,,
+blockcolor,c (m_blockcolor),,,c,c,c,
+delayjoin,,,,,,D,
+exemptchanops,X (m_exemptchanops),,,,,,
+filter,g (m_filter),,,,,,
+flood,f (m_messageflood),,,,,,
+flood_unreal,,,,f,,,
+freetarget,,F,F,,,,
+had_delayjoins,,,,,,d,
+halfop,h (m_customprefix/m_halfop),,h (when enabled),h,h,,
+hiddenbans,,,u,,,,
+hidequits,,,,,,Q,
+history,H (m_chanhistory),,,,,,
+invex,I (m_inviteexception),I,I,I,I,,I
+inviteonly,i,i,i,i,i,i,i
+issecure,,,,Z,,,
+joinflood,j (m_joinflood),j,j,,,,
+key,k,k,k,k,k,k,k
+kicknorejoin,J (m_kicknorejoin),,J,,,,
+largebanlist,,L,L,,,,
+limit,l,l,l,l,l,l,l
+moderated,m,m,m,m,m,m,m
+nickflood,F (m_nickflood),,,,,,n
+noamsg,,,,,,T,
+noctcp,C (m_noctcp),C,C,C,C,C,
+noextmsg,n,n,n,n,n,n,n
+noforwards,,Q,Q,,,,
+noinvite,,,,,,,
+nokick,Q (m_nokicks),,E,Q,,,
+noknock,K (m_knock),p,,K,p,,
+nonick,N (m_nonicks),,d,N,,,
+nonotice,T (m_nonotice),T (extensions/chm_nonotice),T,T,,N,
+official-join,Y (m_ojoin),,,,,,
+op,o,o,o,o,o,o,o
+operonly,O (m_operchans),O (extensions/chm_operonly),O (extensions/chm_operonly.c),O,O,O,
+oplevel_apass,,,,,,A,
+oplevel_upass,,,,,,U,
+opmoderated,U (extras/m_opmoderated),z,z,,,,
+owner,q (m_customprefix/m_chanprotect),,y (when enabled),q,,,
+permanent,P (m_permchannels),P,P,P,,z,
+private,p,,,p,,p,p
+quiet,,q,q,,,,
+redirect,L (m_redirect),f,f,L,,L,
+registered,r (m_services_account),,,r,r,R,
+regmoderated,M (m_services_account),,,M,M,M,
+regonly,R (m_services_account),r,r,R,R,r,r
+repeat,E (m_repeat),,K (extensions/chm_norepeat.c),,,,
+secret,s,s,s,s,s,s,s
+sslonly,z (m_sslmodes),S (extensions/chm_sslonly),S (extensions/chm_sslonly.c),z,S,,S
+stripcolor,S (m_stripcolor),c,c,S,,S,
+topiclock,t,t,t,t,t,t,t
+voice,v,v,v,v,v,v,v
