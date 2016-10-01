@@ -28,12 +28,12 @@ class RatboxProtocol(TS6Protocol):
                        '*D': 'imnpstr'}
 
         self.irc.umodes = {
-            'invisible': 'i', 'callerid': 'g', 'oper': 'o', 'admin': 'a', 'sno_botwarnings': 'b',
+            'invisible': 'i', 'callerid': 'g', 'oper': 'o', 'admin': 'a', 'sno_botfloods': 'b',
             'sno_clientconnections': 'c', 'sno_extclientconnections': 'C', 'sno_debug': 'd',
-            'sno_fullauthblock': 'f', 'sno_skill': 'k', 'sno_locops': 'l',
+            'sno_fullauthblock': 'f', 'sno_skill': 'k', 'locops': 'l',
             'sno_rejectedclients': 'r', 'snomask': 's', 'sno_badclientconnections': 'u',
             'wallops': 'w', 'sno_server_connects': 'x', 'sno_admin_requests': 'y',
-            'sno_operwall': 'z', 'sno_operspy': 'Z', 'deaf': 'D', 'servprotect': 'S',
+            'operwall': 'z', 'sno_operspy': 'Z', 'deaf': 'D', 'servprotect': 'S',
             # Now, map all the ABCD type modes:
             '*A': '', '*B': '', '*C': '', '*D': 'igoabcCdfklrsuwxyzZD'
         }
