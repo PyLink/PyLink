@@ -21,6 +21,7 @@ digraph G {
 
 		"ircs2s_common.py" -> "nefarious.py";
 		"ts6_common.py" -> "ts6.py" -> "hybrid.py";
+		"ts6.py" -> "ratbox.py";
 		"ts6_common.py" -> "inspircd.py";
 		"ts6_common.py" -> "unreal.py";
 		"clientbot.py";
