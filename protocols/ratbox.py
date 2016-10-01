@@ -74,6 +74,10 @@ class RatboxProtocol(TS6Protocol):
 
         return u
 
+    def updateClient(self, target, field, text):
+        """updateClient() stub for ratbox."""
+        raise NotImplementedError
+
     def handle_realhost(self, uid, command, args):
         """Handles real host propagation."""
         log.debug('(%s) Got REALHOST %s for %s', args[0], uid)
