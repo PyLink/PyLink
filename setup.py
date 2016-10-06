@@ -81,7 +81,7 @@ setup(
 
     # Data files
     package_data={
-        '': ['example-conf.yml', 'example-permissions.yml', 'VERSION'],
+        '': ['example-conf.yml', 'example-permissions.yml', 'VERSION', 'README.md'],
     },
 
     package_dir = {'pylinkirc': '.'},
