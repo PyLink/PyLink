@@ -384,7 +384,7 @@ logging:
         #"debug":
         #    loglevel: DEBUG
 
-    filerotation:
+    #filerotation:
         # Configures optional log file rotation. When enabled, PyLink will create rotate files
         # in the format pylink-commands.log, pylink-commands.log.1, pylink-commands.log.2, etc.
         # If either max_bytes or backup_count is 0, log rotation will be disabled.

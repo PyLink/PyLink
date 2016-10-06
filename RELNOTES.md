@@ -1,5 +1,19 @@
-# PyLink 1.0.0
-Tagged as **1.0.0** by [GLolol](https://github.com/GLolol)
+# PyLink 1.0.1
+Tagged as **1.0.1** by [GLolol](https://github.com/GLolol)
+
+The "Beam" release.
+
+### Changes from 1.0.0
+
+#### Bug fixes
+
+- **Fix PyLink being uninstallable via PyPI due to a missing VERSION file.**
+- ts6: don't crash when CHGHOST target is a nick instead of UID
+- relay: clobber colour codes in hosts
+- bots: allow JOIN/NICK/QUIT on ServiceBot clients
+
+# [PyLink 1.0.0](https://github.com/GLolol/PyLink/releases/tag/1.0.0)
+Tagged as **1.0.0** by [GLolol](https://github.com/GLolol) on 2016-09-17T05:25:51Z
 
 The "Benevolence" release.
 
