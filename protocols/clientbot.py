@@ -5,6 +5,7 @@ from pylinkirc import utils, conf
 from pylinkirc.log import log
 from pylinkirc.classes import Protocol, IrcUser, IrcServer
 
+FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
 
 class ClientbotWrapperProtocol(Protocol):
@@ -341,7 +342,7 @@ class ClientbotWrapperProtocol(Protocol):
 
                 if (not idsource) and self.irc.pseudoclient:
                     # We don't know the sender, so it most be new.
-                    idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink).uid
+                    idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink, realname=FALLBACK_REALNAME).uid
 
         try:
             func = getattr(self, 'handle_'+command.lower())
@@ -430,7 +431,7 @@ class ClientbotWrapperProtocol(Protocol):
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user. TODO: wait for WHO responses for each nick before
             # spawning in order to get a real ident/host.
-            idsource = self.irc.nickToUid(nick) or self.spawnClient(nick, server=self.irc.uplink).uid
+            idsource = self.irc.nickToUid(nick) or self.spawnClient(nick, server=self.irc.uplink, realname=FALLBACK_REALNAME).uid
 
             # Queue these virtual users to be joined if they're not already in the channel,
             # or we're waiting for a kick acknowledgment for them.
