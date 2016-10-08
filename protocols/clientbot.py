@@ -184,7 +184,13 @@ class ClientbotWrapperProtocol(Protocol):
         """Sends channel MODE changes."""
         if utils.isChannel(channel):
             extmodes = []
-            for modepair in modes:
+            # Re-parse all channel modes locally to eliminate anything invalid, such as unbanning
+            # things that were never banned. This prevents the bot from getting caught in a loop
+            # with IRCd MODE acknowledgements.
+            # FIXME: More related safety checks should be added for this.
+            log.debug('(%s) mode: re-parsing modes %s', self.irc.name, modes)
+            joined_modes = self.irc.joinModes(modes)
+            for modepair in self.irc.parseModes(channel, joined_modes):
                 log.debug('(%s) mode: checking if %s a prefix mode: %s', self.irc.name, modepair, self.irc.prefixmodes)
                 if modepair[0][-1] in self.irc.prefixmodes:
                     if self.irc.isInternalClient(modepair[1]):
@@ -599,7 +605,8 @@ class ClientbotWrapperProtocol(Protocol):
         if self.irc.isInternalClient(target):
             log.debug('(%s) Suppressing MODE change hook for internal client %s', self.irc.name, target)
             return
-        return {'target': target, 'modes': changedmodes, 'channeldata': oldobj}
+        if changedmodes:
+            return {'target': target, 'modes': changedmodes, 'channeldata': oldobj}
 
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""

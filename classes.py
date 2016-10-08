@@ -601,7 +601,13 @@ class Irc():
                         # Must have parameter.
                         log.debug('Mode %s: This mode must have parameter.', mode)
                         arg = args.pop(0)
-                        if prefix == '-' and mode in supported_modes['*B'] and arg == '*':
+                        if prefix == '-':
+                            log.debug('(%s) parseModes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, oldmodes)
+                            if (mode, arg) not in oldmodes:
+                                # Ignore attempts to unset bans that don't exist.
+                                log.debug("(%s) parseModes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
+                                continue
+                        elif prefix == '-' and mode in supported_modes['*B'] and arg == '*':
                             # Charybdis allows unsetting +k without actually
                             # knowing the key by faking the argument when unsetting
                             # as a single "*".
