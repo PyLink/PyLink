@@ -606,7 +606,11 @@ class ClientbotWrapperProtocol(Protocol):
             log.debug('(%s) Suppressing MODE change hook for internal client %s', self.irc.name, target)
             return
         if changedmodes:
-            return {'target': target, 'modes': changedmodes, 'channeldata': oldobj}
+            # Prevent infinite loops: don't send MODE hooks if the sender is US.
+            # Note: this is not the only check in Clientbot to prevent mode loops: if our nick
+            # somehow gets desynced, this may not catch everything it's supposed to.
+            if (self.irc.pseudoclient and source != self.irc.pseudoclient.uid) or not self.irc.pseudoclient:
+                return {'target': target, 'modes': changedmodes, 'channeldata': oldobj}
 
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""
