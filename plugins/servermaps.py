@@ -68,9 +68,9 @@ def _map(irc, source, args, show_relay=True):
             serverusers = len(serverlist[leaf].users)
             if is_relay_server:
                 # Skip showing user data for relay servers.
-                reply("%s-\x02%s\x02[%s] (via PyLink Relay)" % ('    '*hops, serverlist[leaf].name, leaf))
+                reply("%s\x02%s\x02[%s] (via PyLink Relay)" % ('    '*hops, serverlist[leaf].name, leaf))
             else:
-                reply("%s-\x02%s\x02[%s]: %s user(s) (%s%%)" % ('    '*hops, serverlist[leaf].name, leaf,
+                reply("%s\x02%s\x02[%s]: %s user(s) (%s%%)" % ('    '*hops, serverlist[leaf].name, leaf,
                                                          serverusers, _percent(serverusers, usercount)))
             showall(ircobj, leaf, hops, is_relay_server=is_relay_server)
 
