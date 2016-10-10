@@ -92,6 +92,6 @@ Other TS6 and P10 variations may work, but are not officially supported.
 
 ### Clientbot
 
-Since v1.0, PyLink supports connecting to IRCds as a relay bot and forwarding users back, similar to Janus' Clientbot. This can be useful if the IRCd a network used isn't supported, or if you want to relay without fully linking to a network.
+Since v1.0, PyLink supports connecting to IRCds as a relay bot and forwarding users back, similar to Janus' Clientbot. This can be useful if the IRCd a network used isn't supported, or if you want to relay certain channels without fully linking with a network.
 
-For Relay to work properly with Clientbot, be sure to load the `relay_clientbot` plugin in conjunction with Relay.
+For Relay to work properly with Clientbot, be sure to load the `relay_clientbot` plugin in conjunction with `relay`.
