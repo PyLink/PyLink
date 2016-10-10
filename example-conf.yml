@@ -283,6 +283,11 @@ servers:
         #autoperform:
         #   - "NOTICE somebody :hello, i've connected"
 
+        # Determines whether oper statuses should be tracked on this Clientbot network. This
+        # defaults to False for the best security, since oper status may allow more access to the
+        # entire PyLink service than what's desired, even when PyLink is only connected as a bot.
+        track_oper_statuses: false
+
 # Plugins to load (omit the .py extension)
 plugins:
     # Commands plugin: Provides core commands such as logging in, shutting down

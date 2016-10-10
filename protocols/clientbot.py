@@ -503,16 +503,17 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             log.warning('(%s) handle_352: got wrong string %s for away status', self.irc.name, status[0])
 
-        if '*' in status:  # Track IRCop status
-            if not self.irc.isOper(uid, allowAuthed=False):
-                # Don't send duplicate oper ups if the target is already oper.
-                self.irc.applyModes(uid, [('+o', None)])
-                self.irc.callHooks([uid, 'MODE', {'target': uid, 'modes': {('+o', None)}}])
-                self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-        elif self.irc.isOper(uid, allowAuthed=False) and not self.irc.isInternalClient(uid):
-            # Track deopers
-            self.irc.applyModes(uid, [('-o', None)])
-            self.irc.callHooks([uid, 'MODE', {'target': uid, 'modes': {('-o', None)}}])
+        if self.irc.serverdata.get('track_oper_statuses'):
+            if '*' in status:  # Track IRCop status
+                if not self.irc.isOper(uid, allowAuthed=False):
+                    # Don't send duplicate oper ups if the target is already oper.
+                    self.irc.applyModes(uid, [('+o', None)])
+                    self.irc.callHooks([uid, 'MODE', {'target': uid, 'modes': {('+o', None)}}])
+                    self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+            elif self.irc.isOper(uid, allowAuthed=False) and not self.irc.isInternalClient(uid):
+                # Track deopers
+                self.irc.applyModes(uid, [('-o', None)])
+                self.irc.callHooks([uid, 'MODE', {'target': uid, 'modes': {('-o', None)}}])
 
         self.who_received.add(uid)
 
