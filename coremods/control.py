@@ -33,6 +33,12 @@ def _shutdown(irc=None):
         # Disconnect all our networks.
         remove_network(ircobj)
 
+    # Remove our pid file.
+    log.info("Removing our pid.")
+    os.remove("%s.pid" % conf.confname)
+
+    # Done.
+
 def sigterm_handler(signo, stack_frame):
     """Handles SIGTERM and SIGINT gracefully by shutting down the PyLink daemon."""
     log.info("Shutting down on signal %s." % signo)
