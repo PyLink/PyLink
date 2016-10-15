@@ -283,6 +283,27 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             return  # Nothing changed
 
+    def _getUid(self, nick, ident='unknown', host='unknown.host'):
+        """
+        Fetches the UID for the given nick, creating one if it does not already exist.
+
+        Limited (internal) nick collision checking is done here to prevent Clientbot users from
+        being confused with virtual clients, and vice versa."""
+        # If this sender isn't known or it is one of our virtual clients, spawn a new one.
+        # spawnClient() will take care of any nick collisions caused by new, Clientbot users
+        # taking the same nick as one of our virtual clients.
+        idsource = self.irc.nickToUid(nick)
+        is_internal = self.irc.isInternalClient(idsource)
+
+        if (not idsource) or (is_internal and self.irc.pseudoclient and idsource != self.irc.pseudoclient.uid):
+            if idsource:
+                log.debug('(%s) Nick-colliding virtual client %s/%s', self.irc.name, idsource, nick)
+                self.irc.callHooks([self.irc.sid, 'CLIENTBOT_NICKCOLLIDE', {'target': idsource, 'parse_as': 'SAVE'}])
+
+            idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink, realname=FALLBACK_REALNAME).uid
+
+        return idsource
+
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
         data = data.split(" ")
@@ -310,11 +331,7 @@ class ClientbotWrapperProtocol(Protocol):
             else:
                 # Sender is a nick!user@host prefix. Split it into its relevant parts.
                 nick, ident, host = utils.splitHostmask(sender)
-                idsource = self.irc.nickToUid(nick)
-
-                if (not idsource) and self.irc.pseudoclient:
-                    # We don't know the sender, so it most be new.
-                    idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink, realname=FALLBACK_REALNAME).uid
+                idsource = self._getUid(nick, ident, host)
 
         try:
             func = getattr(self, 'handle_'+command.lower())
@@ -403,7 +420,7 @@ class ClientbotWrapperProtocol(Protocol):
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user. TODO: wait for WHO responses for each nick before
             # spawning in order to get a real ident/host.
-            idsource = self.irc.nickToUid(nick) or self.spawnClient(nick, server=self.irc.uplink, realname=FALLBACK_REALNAME).uid
+            idsource = self._getUid(nick)
 
             # Queue these virtual users to be joined if they're not already in the channel,
             # or we're waiting for a kick acknowledgment for them.
@@ -631,8 +648,9 @@ class ClientbotWrapperProtocol(Protocol):
         if utils.isChannel(target):
             target = self.irc.toLower(target)
         else:
-            target = self._getUid(target)
-        return {'target': target, 'text': args[1]}
+            target = self.irc.nickToUid(target)
+        if target:
+            return {'target': target, 'text': args[1]}
 
     def handle_quit(self, source, command, args):
         """Handles incoming QUITs."""
