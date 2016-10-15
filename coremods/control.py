@@ -35,7 +35,10 @@ def _shutdown(irc=None):
 
     # Remove our pid file.
     log.info("Removing our pid.")
-    os.remove("%s.pid" % conf.confname)
+    try:
+        os.remove("%s.pid" % conf.confname)
+    except OSError:
+        log.exception("Failed to remove PID, ignoring...")
 
     # Done.
 
