@@ -41,8 +41,10 @@ if __name__ == '__main__':
     if not args.no_checkpid:
         config = conf.confname
         if os.path.exists("%s.pid" % config):
-            log.error("PID file exists!.. EXITING")
-            sys.exit()
+            log.error("PID file exists; aborting! If Pylink didn't shut down cleanly last time it "
+                      "was run, delete %s.pid and try again." % config)
+            sys.exit(1)
+
     # Write a PID file unless specifically told not to.
     if not args.no_pid:
         with open('%s.pid' % conf.confname, 'w') as f:
