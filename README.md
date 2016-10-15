@@ -66,7 +66,7 @@ First, make sure the following dependencies are met:
 
 These IRCds (in alphabetical order) are frequently tested and well supported. If any issues occur, please file a bug on the issue tracker.
 
-* [charybdis](http://charybdis.io/) (3.5+ / git master) - module `ts6`
+* [charybdis](http://charybdis.io/) (3.5+) - module `ts6`
 * [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
     - For vHost setting to work, `m_chghost.so` must be loaded.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
@@ -78,7 +78,7 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
-* [InspIRCd](http://www.inspircd.org/) 2.2 (git master) - module `inspircd`
+* [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
 * [juno-ircd](https://github.com/cooper/yiria) (11.x / janet) - module `ts6` (see [configuration example](https://github.com/cooper/juno/blob/master/doc/ts6.md#pylink))
@@ -87,3 +87,9 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - For optimal functionality (mode overrides in relay, etc.), consider adding `UWorld{}` blocks / U-lines for every server that PyLink spawns.
 
 Other TS6 and P10 variations may work, but are not officially supported.
+
+### Clientbot
+
+Since v1.0, PyLink supports connecting to IRCds as a relay bot and forwarding users back, similar to Janus' Clientbot. This can be useful if the IRCd a network used isn't supported, or if you want to relay certain channels without fully linking with a network.
+
+For Relay to work properly with Clientbot, be sure to load the `relay_clientbot` plugin in conjunction with `relay`.
