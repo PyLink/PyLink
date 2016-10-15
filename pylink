@@ -41,8 +41,8 @@ if __name__ == '__main__':
     if not args.no_checkpid:
         config = conf.confname
         if os.path.exists("%s.pid" % config):
-            log.error("PID file exists!")
-
+            log.error("PID file exists!.. EXITING")
+            sys.exit()
     # Write a PID file unless specifically told not to.
     if not args.no_pid:
         with open('%s.pid' % conf.confname, 'w') as f:
