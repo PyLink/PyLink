@@ -19,8 +19,9 @@ with open('VERSION', encoding='utf-8') as f:
 try:
     real_version = subprocess.check_output(['git', 'describe', '--tags']).decode('utf-8').strip()
 except Exception as e:
-    print('ERROR: Failed to get Git version from "git describe --tags": %s: %s' % (type(e).__name__, e))
-    real_version = version + '-dirty'
+    print('WARNING: Failed to get Git version from "git describe --tags": %s: %s' % (type(e).__name__, e))
+    print("If you're installing from PyPI or a tarball, ignore the above message.")
+    real_version = version + '-nogit'
 
 # Write the version to disk.
 with open('__init__.py', 'w') as f:
