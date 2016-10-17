@@ -35,9 +35,9 @@ Should you want to get the UID of a service bot on a specific server, use `myser
 
 ### Setting channels to join
 
-All services bots wil automatically join the autojoin channels configured for a specific network, if any.
+All services bots will automatically join the autojoin channels configured for a specific network, if any.
 
-However, plugins can modify the autojoin entries of a specific bot by adding items to the `myservice.extra_channels` channel set. After sending `irc.proto.join(...)` using the service bot's UID as a source, the bot should permanently remain on that channel throughout KILLs or disconnects.
+However, plugins can persistently join services bots to specific channels by calling `myservice.join(irc, channels)`. To manually add/remove channels from the service's autojoin list, modify the `myservice.extra_channels` set.
 
 ## Removing services on unload
 
