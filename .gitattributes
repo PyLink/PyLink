@@ -1,7 +1,4 @@
-* text=auto
-
-*.py eol=lf
-*.md eol=lf
+* eol=lf
 
 *.png binary
 *.jpg binary
