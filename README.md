@@ -27,6 +27,12 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 ## Installation
 
+### Installing via Debian APT repository (beta; stable branch only)
+
+The Utopia Repository hosts `.deb` packages for PyLink. For Debian Jessie (stable) and Stretch/sid (testing), the `pylink` package and its dependencies are available in the `main` section. See https://packages.overdrivenetworks.com/#instructions for setup instructions.
+
+Upon installing `pylink`, example configuration and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/), which is provided by the `pylink-doc` package.
+
 ### Installing from source
 
 First, make sure the following dependencies are met:
