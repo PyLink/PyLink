@@ -35,7 +35,7 @@ def loadDB():
         with open(dbname, "r") as f:
             db.update(json.load(f))
     except (ValueError, IOError, OSError):
-        log.info("Automode: failed to load links database %s; creating a new one in "
+        log.info("Automode: failed to load ACL database %s; creating a new one in "
                  "memory.", dbname)
 
 def exportDB():

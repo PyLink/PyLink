@@ -2,7 +2,7 @@
 
 ### I get errors like "ImportError: No module named 'yaml'" when I start PyLink
 
-You are missing dependencies - re-read https://github.com/GLolol/PyLink#dependencies
+You are missing dependencies - re-read https://github.com/GLolol/PyLink/blob/master/README.md#installation
 
 ### I get errors like "yaml.scanner.ScannerError: while scanning for the next token, found character '\t' that cannot start any token"
 

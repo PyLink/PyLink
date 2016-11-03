@@ -1,3 +1,20 @@
+# PyLink 1.0.2
+Tagged as **1.0.2** by [GLolol](https://github.com/GLolol)
+
+The "Baluga" release.
+
+### Changes from 1.0.1
+
+#### Bug fixes
+- Clientbot: Fixed nick collisions between virtual clients and real users (#327)
+- Fix typo in example conf that caused `log::filerotation` to become an empty, `None`-valued block. This in turn caused the `log` module to crash.
+
+#### Feature changes
+- Clientbot now uses a more specific realname fallback ("PyLink Relay Mirror Client") instead of potentially misleading text such as "PyLink Service Client". In the future, this text may be made configurable.
+
+#### Internal fixes / improvements
+ - setup.py: reworded warnings if `git describe --tags` fails / fallback version is used. Also, the internal VCS version for non-Git builds is now `-nogit` instead of `-dirty`.
+
 # PyLink 1.0.1
 Tagged as **1.0.1** by [GLolol](https://github.com/GLolol)
 
