@@ -180,6 +180,7 @@ class Irc():
         __init__ in a separate thread to allow multiple concurrent connections.
         """
         while True:
+
             self.aborted.clear()
             self.initVars()
 
@@ -326,6 +327,11 @@ class Irc():
             if autoconnect is not None and autoconnect >= 1:
                 log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
                 time.sleep(autoconnect)
+
+                if self not in world.networkobjects.values():
+                    log.debug('Stopping stale connect loop for old connection %r', self.name)
+                    return
+
             else:
                 log.info('(%s) Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
                 return
