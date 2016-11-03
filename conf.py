@@ -11,6 +11,7 @@ except ImportError:
     raise ImportError("Please install PyYAML and try again.")
 
 import sys
+import os.path
 from collections import defaultdict
 
 from . import world
@@ -58,8 +59,10 @@ def validateConf(conf):
 def loadConf(filename, errors_fatal=True):
     """Loads a PyLink configuration file from the filename given."""
     global confname, conf, fname
+    # Note: store globally the last loaded conf filename, for REHASH in coremods/control.
     fname = filename
-    confname = filename.split('.', 1)[0]
+    # For the internal config name, strip off any .yml extensions and absolute paths
+    confname = os.path.basename(filename).split('.', 1)[0]
     try:
         with open(filename, 'r') as f:
             conf = yaml.load(f)
