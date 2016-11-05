@@ -13,30 +13,30 @@ bot:
     # Server description (shown in /links, /whois, etc.)
     serverdesc: PyLink Server
 
-    # Options below this require the fantasy plugin to be loaded.
-
     # Sets the default fantasy command prefix for calling commands inside channels
+    # (requires fantasy plugin).
     prefix: "&"
 
     # Determines whether the bot will reply to commands prefixed with its nick
     # (case sensitive and requires the fantasy plugin).
     respondtonick: true
 
-    # Custom fantasy command prefixes for other service bots if they are loaded.
+    # Custom fantasy command prefixes for other service bots if they are loaded
+    # (requires fantasy plugin).
     prefixes:
         games: "@"
 
-    # Determines whether hideoper modes should be respected in WHOIS responses.
+    # Determines whether hideoper modes should be respected in WHOIS replies.
     # Defaults to true if not specified.
     whois_use_hideoper: true
 
-    # Determines whether extended WHOIS replies should be sent to users marked
-    # +B (bot). For better security, it is recommended to leave this off.
+    # Determines whether extended WHOIS replies should be sent to users with
+    # +B set (marked as a bot). For better security, it is recommended to leave this off.
     whois_show_extensions_to_bots: false
 
     # Determines whether PyLink service clients should protect themselves from
     # kicks, kills, etc. using IRCd-side servprotect modes. For this to work
-    # properly, this requires that PyLink be U-Lined (on most IRCds). Defaults to
+    # properly, this usually requires that PyLink be U-Lined. This defaults to
     # False.
     protect_services: false
 
@@ -72,9 +72,8 @@ servers:
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet.local"
 
-        # SID - required for InspIRCd and TS6 based servers. This must be three
-        # characters long.
-        # The first char must be a digit [0-9], and the remaining two chars may
+        # SID - required for TS6 and TS6-like servers. This must be three characters:
+        # the first char must be a digit [0-9], and the remaining two chars may
         # be either uppercase letters [A-Z] or digits.
         sid: "0PY"
 
@@ -83,33 +82,32 @@ servers:
         # and #'s. Each # denotes a range (0-9A-Z) of characters that can be
         # used by PyLink to generate appropriate SIDs. You will want to make
         # sure no other servers are using this range.
-        # There must be at least one # in the entry.
+        # There must be at least one # in this entry.
         sidrange: "8##"
 
         # Autojoin channels. Comment this line out if you don't want service bots
-        # tojoin any channels by default.
+        # to join any channels by default.
         channels: ["#pylink"]
 
-        # Sets the protocol module to use - see the protocols/ folder for a list
-        # of valid values (omitting the .py extension).
+        # Sets the protocol module to use for this network - see the README for a
+        # list of supported IRCds.
         protocol: "inspircd"
 
         # Sets autoconnect delay - comment this out or set the value below 1 to
         # disable autoconnect entirely.
         autoconnect: 5
 
-        # Sets ping frequency (i.e. how long we should wait between sending
-        # pings to our uplink). When more than two consecutive pings are missed,
-        # PyLink will disconnect with a ping timeout. This defaults to 90 if
-        # not set.
+        # Sets the ping frequency in seconds (i.e. how long we should wait between 
+        # sending pings to our uplink). When more than two consecutive pings are missed,
+        # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
         pingfreq: 90
 
-        # If enabled, this opts this network out of relay IP sharing. i.e. this network
+        # If enabled, this opts this network out of relay IP sharing: this network
         # will not have its users' IPs sent across the relay, and it will not see any
         # IPs of other networks' users.
         #relay_no_ips: true
 
-        # Sets the max nick length for the network. It is important this is
+        # Sets the max nick length for the network. It is important that this is
         # set correctly, or PyLink might introduce a nick that is too long and
         # cause netsplits! This defaults to 30 if not set.
         maxnicklen: 30
@@ -136,8 +134,8 @@ servers:
         ip: ::1
 
         # Determines whether IPv6 should be used for this connection. Should the ip:
-        # above be a hostname instead of an IP, this will affect whether A records
-        # (IPv4) or AAAA records (IPv6) will be used in resolving it.
+        # above be a hostname instead of an IP, this will also affect whether A records
+        # (no IPv6) or AAAA records (IPv6) will be used in resolving it.
         ipv6: yes
 
         port: 7000
@@ -152,7 +150,7 @@ servers:
         autoconnect: 5
 
         # Note: /'s in nicks are automatically converted to |'s for TS6
-        # networks, since they don't allow "/" in nicks.
+        # networks (charybdis, etc.), since they don't allow "/" in nicks.
         separator: "|"
 
         # The following options are specific to TS6 servers:
@@ -164,11 +162,9 @@ servers:
         use_halfop: false
 
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
-        # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks
-        # kickrejoin),
+        # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
         # +K (no repeat messages), +d (no nick changes), and user modes:
-        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides
-        # channel list)
+        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides WHOIS channel list)
         use_elemental_modes: false
 
     unrealnet:
@@ -254,7 +250,8 @@ servers:
         ip: 1.2.3.4
         port: 6697
 
-        # Server password (optional).
+        # Server password (optional). Some networks also forward this to NickServ, so you can
+        # use it to log in on connect.
         #sendpass: "wastedbytes103"
 
         channels: ["#this-works-as-usual"]
@@ -285,11 +282,11 @@ servers:
 
 # Plugins to load (omit the .py extension)
 plugins:
-    # Commands plugin: Provides core commands such as logging in, shutting down
-    # PyLink, and various command help.
+    # Commands plugin: Provides simple commands for things like checking login
+    # status, and showing info on users and channels.
     - commands
 
-    # Networks plugin: Allows you to manage (dis)connections to networks while
+    # Networks plugin: Allows you to manage connections to networks while
     # PyLink is running.
     - networks
 
@@ -305,21 +302,21 @@ plugins:
     # Bots plugin: Allows you to manipulate pseudo-clients (bots) on networks.
     #- bots
 
-    # Relay plugin: Janus-style server-side relay plugin. See the relay: block
+    # Relay plugin: Server-side (like Janus) relay plugin. See the relay: block
     # below for configuration.
     #- relay
 
-    # Relay Clientbot extensions: this allows channel messages and events like
+    # Relay Clientbot support: this allows channel messages and events like
     # JOIN, PART, KICK, etc. to relay over networks using Clientbot. You will
     # want this loaded if you're using PyLink as a relay bot.
     #- relay_clientbot
 
     # Fantasy plugin: Allows you to trigger commands in channels by PyLink's
-    # nick or a configurable prefix character.
+    # nick or configurable prefix characters.
     #- fantasy
 
-    # Changehost plugin: Automatically changes the hostmask of matching users
-    # to a template string, as they connect. This requires the changehost: block
+    # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on 
+    # matching users as they connect. This requires the changehost: block
     # to be configured correctly below.
     #- changehost
 
@@ -338,10 +335,9 @@ logging:
     stdout: INFO
 
     channels:
-        # Log to channels on the specified networks.
-        # Make sure that the main PyLink client is configured to join your
-        # log channel in the channels: blocks for the networks it will be
-        # logging on. It will not automatically join log channels.
+        # Logs to channels on the specified networks.
+        # Make sure that the main PyLink client is also configured to join your
+        # log channel in the "channels:" block for the relevant networks.
 
         # Note: Log messages are forwarded over relay, so you will get duplicate
         # messages if you add log blocks for more than one channel in one
@@ -363,7 +359,7 @@ logging:
     files:
         # Logs to file targets. These will be placed in the log/ folder in the
         # PyLink directory, with a filename based on the current instance name
-        # and the target name defined: instancename-targetname.log
+        # and the target name: instancename-targetname.log
         # Changing settings in this block will require a restart to take effect.
 
         # When running with ./pylink, this will create log/pylink-errors.log
@@ -468,11 +464,11 @@ relay:
     tag_nicks: true
 
     # If tag_nicks is False, this specifies a list of NICK globs that network
-    # tags should be added for anyways (e.g. for network services).
+    # tags should be added for anyways (e.g. network services).
     forcetag_nicks:
         - "*Serv"
 
-    # This determines whether private messages / notices will be forwarded over Clientbot relay,
+    # This determines whether private messages & notices will be forwarded over Clientbot relay,
     # and whether the 'rpm' command will be allowed from Clientbot networks. This defaults to
     # False.
     allow_clientbot_pms: false
