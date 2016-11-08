@@ -8,6 +8,7 @@ from collections import defaultdict
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 from pylinkirc.coremods import control
+from pylinkirc.coremods import permissions
 
 ### GLOBAL (statekeeping) VARIABLES
 relayusers = defaultdict(dict)
@@ -19,6 +20,11 @@ exportdb_timer = None
 save_delay = conf.conf['bot'].get('save_delay', 300)
 db = {}
 dbname = utils.getDatabaseName('pylinkrelay')
+
+default_permissions = {"*!*@*": ['relay.linked'],
+                       "$ircop": ['relay.create', 'relay.linkacl*',
+                                  'relay.destroy', 'relay.link', 'relay.delink',
+                                  'relay.claim']}
 
 ### INTERNAL FUNCTIONS
 
@@ -53,6 +59,8 @@ def main(irc=None):
 
     log.debug('relay.main: scheduling export loop')
 
+    permissions.addDefaultPermissions(default_permissions)
+
     if irc is not None:
         # irc is defined when the plugin is reloaded. Otherwise, it means that we've just started the
         # server. Iterate over all connected networks and initialize their relay users.
@@ -77,10 +85,13 @@ def die(sourceirc):
     relayservers.clear()
     relayusers.clear()
 
-    # 3) Export the relay links database.
+    # 3) Unload our permissions.
+    permissions.removeDefaultPermissions(default_permissions)
+
+    # 4) Export the relay links database.
     exportDB()
 
-    # 4) Kill the scheduling for any other exports.
+    # 5) Kill the scheduling for any other exports.
     global exportdb_timer
     if exportdb_timer:
         log.debug("Relay: cancelling exportDB timer thread %s due to die()", threading.get_ident())
@@ -1562,7 +1573,7 @@ def create(irc, source, args):
         irc.reply('Error: You must be in %r to complete this operation.' % channel)
         return
 
-    irc.checkAuthenticated(source)
+    permissions.checkPermissions(irc, source, ['relay.create'])
 
     # Check to see whether the channel requested is already part of a different
     # relay.
@@ -1601,12 +1612,12 @@ def destroy(irc, source, args):
         irc.reply('Error: Invalid channel %r.' % channel)
         return
 
+    # Check for different permissions based on whether we're destroying a local channel or
+    # a remote one.
     if network == irc.name:
-        # If we're destroying a channel on the current network, only oper is needed.
-        irc.checkAuthenticated(source)
+        permissions.checkPermissions(irc, source, ['relay.destroy'])
     else:
-        # Otherwise, we'll need to be logged in as admin.
-        irc.checkAuthenticated(source, allowOper=False)
+        permissions.checkPermissions(irc, source, ['relay.destroy.remote'])
 
     entry = (network, channel)
 
@@ -1670,7 +1681,7 @@ def link(irc, source, args):
             irc.reply('Error: You must be in %r to complete this operation.' % localchan)
             return
 
-    irc.checkAuthenticated(source)
+    permissions.checkPermissions(irc, source, ['relay.link'])
 
     if remotenet not in world.networkobjects:
         irc.reply('Error: No network named %r exists.' % remotenet)
@@ -1727,7 +1738,9 @@ def delink(irc, source, args):
         remotenet = args[1]
     except IndexError:
         remotenet = None
-    irc.checkAuthenticated(source)
+
+    permissions.checkPermissions(irc, source, ['relay.delink'])
+
     if not utils.isChannel(channel):
         irc.reply('Error: Invalid channel %r.' % channel)
         return
@@ -1843,7 +1856,7 @@ def linkacl(irc, source, args):
     Allows blocking / unblocking certain networks from linking to a relayed channel, based on a blacklist.
     LINKACL LIST returns a list of blocked networks for a channel, while the ALLOW and DENY subcommands allow manipulating this blacklist."""
     missingargs = "Error: Not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST), channel, remote network (for ALLOW/DENY)."
-    irc.checkAuthenticated(source)
+
     try:
         cmd = args[0].lower()
         channel = irc.toLower(args[1])
@@ -1858,10 +1871,12 @@ def linkacl(irc, source, args):
         irc.reply('Error: No such relay %r exists.' % channel)
         return
     if cmd == 'list':
+        permissions.checkPermissions(irc, source, ['relay.linkacl.view'])
         s = 'Blocked networks for \x02%s\x02: \x02%s\x02' % (channel, ', '.join(db[relay]['blocked_nets']) or '(empty)')
         irc.reply(s)
         return
 
+    permissions.checkPermissions(irc, source, ['relay.linkacl'])
     try:
         remotenet = args[2]
     except IndexError:
@@ -1922,7 +1937,7 @@ def save(irc, source, args):
     """takes no arguments.
 
     Saves the relay database to disk."""
-    irc.checkAuthenticated(source)
+    permissions.checkPermissions(irc, source, ['relay.savedb'])
     exportDB()
     irc.reply('Done.')
 
@@ -1933,12 +1948,13 @@ def claim(irc, source, args):
     Sets the CLAIM for a channel to a case-sensitive list of networks. If no list of networks is given, shows which networks have claim over the channel. A single hyphen (-) can also be given as a list of networks to remove claim from the channel entirely.
 
     CLAIM is a way of enforcing network ownership for a channel, similarly to Janus. Unless the list is empty, only networks on the CLAIM list for a channel (plus the creating network) are allowed to override kicks, mode changes, and topic changes in it - attempts from other networks' opers to do this are simply blocked or reverted."""
-    irc.checkAuthenticated(source)
     try:
         channel = irc.toLower(args[0])
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1-2: channel, list of networks (optional).")
         return
+
+    permissions.checkPermissions(irc, source, ['relay.claim'])
 
     # We override getRelay() here to limit the search to the current network.
     relay = (irc.name, channel)

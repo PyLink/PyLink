@@ -4,14 +4,14 @@
 # Permissions work by mapping hostmasks or exttargets to list of permissions, allowing
 # you to fine tune which users have access to which commands.
 
-# The permissions API is new, and optional for plugins. Currently, only Automode uses it.
+# The permissions API is new, and optional for plugins. Currently, only Automode and Relay use it.
 
 # If you do not specify any permissions block in your configuration, PyLink will default to a
 # permission set defined by plugins, which usually correspond to the list below, but can be
 # changed on every release.
 
-# This determines whether we should merge the plugin-default permissions with the ones specified
-# in the permissions: block. Disabling this allows you greater control over the permissions
+# This determines whether we should merge plugins' built-in default permissions with the ones specified
+# in the following permissions: block. Disabling this allows you greater control over the permissions
 # PyLink gives, but you should check this file on every major update to see if any new permissions
 # were added for commands. Otherwise, commands that were available before may cease to function!
 permissions_merge_defaults: true
@@ -28,6 +28,10 @@ permissions:
         - automode.manage.relay_owned
         - automode.sync.relay_owned
         - automode.list
+
+        # These allow opers to manage Relay links on their network.
+
+
     "$pylinkacc":
         # Those with an admin login in PyLink can do anything.
         - "*"
