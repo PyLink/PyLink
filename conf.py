@@ -51,10 +51,19 @@ def validateConf(conf):
     for section in ('bot', 'servers', 'login', 'logging'):
         assert conf.get(section), "Missing %r section in config." % section
 
-    assert type(conf['login'].get('password')) == type(conf['login'].get('user')) == str and \
-        conf['login']['password'] != "changeme", "You have not set the login details correctly!"
+    # Make sure at least one form of authentication is valid.
+    old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
+    newlogins = conf['login'].get('accounts', {})
+    new_login_valid = len(newlogins) >= 1
+    assert old_login_valid or new_login_valid, "No accounts were set, aborting!"
+    for account, block in newlogins.items():
+        assert type(account) == str, "Bad username format %s" % account
+        assert type(block.get('password')) == str, "Bad password %s for account %s" % (block.get('password'), account)
+
+    assert conf['login'].get('password') != "changeme", "You have not set the login details correctly!"
 
     return conf
+
 
 def loadConf(filename, errors_fatal=True):
     """Loads a PyLink configuration file from the filename given."""

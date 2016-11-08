@@ -16,6 +16,18 @@ from pylinkirc.log import log
 # Essential, core commands go here so that the "commands" plugin with less-important,
 # but still generic functions can be reloaded.
 
+def _login(irc, source, username):
+    """Internal function to process logins."""
+    irc.users[source].account = username
+    irc.reply('Successfully logged in as %s.' % username)
+    log.info("(%s) Successful login to %r by %s",
+             irc.name, username, irc.getHostmask(source))
+
+def _loginfail(irc, source, username):
+    """Internal function to process login failures."""
+    irc.reply('Error: Incorrect credentials.')
+    log.warning("(%s) Failed login to %r from %s", irc.name, username, irc.getHostmask(source))
+
 @utils.add_cmd
 def identify(irc, source, args):
     """<username> <password>
@@ -30,18 +42,29 @@ def identify(irc, source, args):
     except IndexError:
         irc.reply('Error: Not enough arguments.')
         return
-    # Usernames are case-insensitive, passwords are NOT.
-    if username.lower() == conf.conf['login']['user'].lower() and password == conf.conf['login']['password']:
-        realuser = conf.conf['login']['user']
-        irc.users[source].account = realuser
-        irc.reply('Successfully logged in as %s.' % realuser)
-        log.info("(%s) Successful login to %r by %s",
-                 irc.name, username, irc.getHostmask(source))
+
+    username = username.lower()
+
+    # Process new-style accounts. Note: usernames are case-insensitive, passwords are NOT.
+    for account, block in conf.conf['login'].get('accounts', {}).items():
+        if account.lower() == username:
+            # Username matched config.
+            if password and password == block.get('password'):
+                # Password exists and matched config. TODO: hash user passwords in config.
+                _login(irc, source, account)
+                break
+            else:
+                _loginfail(irc, source, account)
+                break
     else:
-        irc.reply('Error: Incorrect credentials.')
-        u = irc.users[source]
-        log.warning("(%s) Failed login to %r from %s",
-                    irc.name, username, irc.getHostmask(source))
+        # Process legacy logins (login:user).
+        if username.lower() == conf.conf['login'].get('user', '').lower() and password == conf.conf['login'].get('password'):
+            realuser = conf.conf['login']['user']
+            _login(irc, source, realuser)
+        else:
+            # Username not found.
+            _loginfail(irc, source, username)
+
 
 @utils.add_cmd
 def shutdown(irc, source, args):

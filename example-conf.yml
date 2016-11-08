@@ -46,9 +46,12 @@ bot:
     save_delay: 300
 
 login:
-    # PyLink administrative login - Change this, or the service will not start!
-    user: admin
-    password: changeme
+    accounts:
+        # Creates an account with username "user1".
+        user1:
+            # Defines the password for the user.
+            password: "somestring"
+
 
 servers:
     # Please note: these are only EXAMPLE link blocks. You should edit them and
@@ -97,7 +100,7 @@ servers:
         # disable autoconnect entirely.
         autoconnect: 5
 
-        # Sets the ping frequency in seconds (i.e. how long we should wait between 
+        # Sets the ping frequency in seconds (i.e. how long we should wait between
         # sending pings to our uplink). When more than two consecutive pings are missed,
         # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
         pingfreq: 90
@@ -320,7 +323,7 @@ plugins:
     # nick or configurable prefix characters.
     #- fantasy
 
-    # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on 
+    # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on
     # matching users as they connect. This requires the changehost: block
     # to be configured correctly below.
     #- changehost
