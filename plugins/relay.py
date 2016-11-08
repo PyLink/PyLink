@@ -354,6 +354,10 @@ def spawnRelayUser(irc, remoteirc, user, times_tagged=0):
             modes.add((hideoper_mode, None))
 
     rsid = getRemoteSid(remoteirc, irc)
+    if not rsid:
+        log.error('(%s) spawnRelayUser: aborting user spawn for %s/%s @ %s (failed to retrieve a '
+                  'working SID).', irc, user, nick, remoteirc.name)
+        return
     try:
         showRealIP = conf.conf['relay']['show_ips'] and not \
                      irc.serverdata.get('relay_no_ips') and not \
@@ -696,7 +700,9 @@ def relayJoins(irc, channel, users, ts, burst=True):
             # to be set on the joining user.
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 modes = getSupportedCmodes(irc, remoteirc, channel, irc.channels[channel].modes)
-                remoteirc.proto.sjoin(getRemoteSid(remoteirc, irc), remotechan, queued_users, ts=ts, modes=modes)
+                rsid = getRemoteSid(remoteirc, irc)
+                if rsid:
+                    remoteirc.proto.sjoin(rsid, remotechan, queued_users, ts=ts, modes=modes)
             else:
                 # A regular JOIN only needs the user and the channel. TS, source SID, etc., can all be omitted.
                 remoteirc.proto.join(queued_users[0][1], remotechan)
@@ -1263,6 +1269,7 @@ def handle_kick(irc, source, command, args):
                     text = "(%s/%s) %s" % (kname, irc.name, args['text'])
                 except AttributeError:
                     text = "(<unknown kicker>@%s) %s" % (irc.name, args['text'])
+            rsid = rsid or remoteirc.sid  # Fall back to the main PyLink SID if getRemoteSid() fails
             remoteirc.proto.kick(rsid, remotechan, real_target, text)
 
         # If the target isn't on any channels, quit them.
@@ -1328,6 +1335,7 @@ def handle_mode(irc, numeric, command, args):
                         remoteirc.proto.mode(u, remotechan, supported_modes)
                     else:
                         rsid = getRemoteSid(remoteirc, irc)
+                        rsid = rsid or remoteirc.sid
                         remoteirc.proto.mode(rsid, remotechan, supported_modes)
             else:  # Mode change blocked by CLAIM.
                 reversed_modes = irc.reverseModes(target, modes, oldobj=oldchan)
