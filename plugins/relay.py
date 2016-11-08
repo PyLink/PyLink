@@ -352,7 +352,7 @@ def spawnRelayUser(irc, remoteirc, user, times_tagged=0):
     rsid = getRemoteSid(remoteirc, irc)
     if not rsid:
         log.error('(%s) spawnRelayUser: aborting user spawn for %s/%s @ %s (failed to retrieve a '
-                  'working SID).', irc, user, nick, remoteirc.name)
+                  'working SID).', irc.name, user, nick, remoteirc.name)
         return
     try:
         showRealIP = conf.conf['relay']['show_ips'] and not \
