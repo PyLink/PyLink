@@ -62,8 +62,8 @@ def raw(irc, source, args):
         irc.reply('No text entered!')
         return
 
-    log.info('(%s) Sending raw text %r to IRC for %s', irc.name, args,
-             irc.getHostmask(source))
+    log.debug('(%s) Sending raw text %r to IRC for %s', irc.name, args,
+              irc.getHostmask(source))
     irc.send(args)
 
     irc.reply("Done.")
