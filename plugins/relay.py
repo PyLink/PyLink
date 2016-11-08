@@ -7,7 +7,6 @@ from collections import defaultdict
 
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
-from pylinkirc.coremods import control
 from pylinkirc.coremods import permissions
 
 ### GLOBAL (statekeeping) VARIABLES
@@ -274,10 +273,7 @@ def spawnRelayServer(irc, remoteirc):
         log.exception('(%s) Failed to spawn server for %r (possible jupe?):',
                       irc.name, remoteirc.name)
         # We will just bail here. Disconnect the bad network.
-        try:
-            control.remove_network(irc)
-        except KeyError:
-            pass
+        irc.disconnect()
         return
 
     # Mark the server as a relay server
