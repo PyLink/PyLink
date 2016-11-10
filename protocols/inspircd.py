@@ -50,7 +50,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         realname = realname or self.irc.botdata['realname']
         realhost = realhost or host
         raw_modes = self.irc.joinModes(modes)
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+        u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
         self.irc.applyModes(uid, modes)
@@ -560,7 +560,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
         realname = args[-1]
-        self.irc.users[uid] = userobj = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+        self.irc.users[uid] = userobj = IrcUser(nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
         parsedmodes = self.irc.parseModes(uid, [args[8], args[9]])
         self.irc.applyModes(uid, parsedmodes)

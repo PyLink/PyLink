@@ -1042,7 +1042,7 @@ class Irc():
 
 class IrcUser():
     """PyLink IRC user class."""
-    def __init__(self, nick, ts, uid, ident='null', host='null',
+    def __init__(self, nick, ts, uid, server, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
                  ip='0.0.0.0', manipulatable=False, opertype='IRC Operator'):
         self.nick = nick
@@ -1054,6 +1054,7 @@ class IrcUser():
         self.ip = ip
         self.realname = realname
         self.modes = set()  # Tracks user modes
+        self.server = server
 
         # Tracks PyLink identification status
         self.account = ''

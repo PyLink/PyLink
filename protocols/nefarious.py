@@ -277,7 +277,7 @@ class P10Protocol(IRCS2SProtocol):
         raw_modes = self.irc.joinModes(modes)
 
         # Initialize an IrcUser instance
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+        u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
                                           realhost=realhost, ip=ip, manipulatable=manipulatable,
                                           opertype=opertype)
 
@@ -838,7 +838,7 @@ class P10Protocol(IRCS2SProtocol):
                       'host=%s realname=%s realhost=%s ip=%s', self.irc.name, nick, ts, uid,
                       ident, host, realname, realhost, ip)
 
-            uobj = self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+            uobj = self.irc.users[uid] = IrcUser(nick, ts, uid, source, ident, host, realname, realhost, ip)
             self.irc.servers[source].users.add(uid)
 
             # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L708

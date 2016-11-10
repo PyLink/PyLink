@@ -73,7 +73,7 @@ class UnrealProtocol(TS6BaseProtocol):
         modes |= {('+x', None), ('+t', None)}
 
         raw_modes = self.irc.joinModes(modes)
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, ident=ident, host=host, realname=realname,
+        u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
         self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
@@ -363,7 +363,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         realname = args[-1]
 
-        self.irc.users[uid] = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
+        self.irc.users[uid] = IrcUser(nick, ts, uid, numeric, ident, host, realname, realhost, ip)
         self.irc.servers[numeric].users.add(uid)
 
         # Handle user modes
