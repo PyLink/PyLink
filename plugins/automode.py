@@ -6,7 +6,7 @@ import collections
 import threading
 import json
 
-from pylinkirc import utils, conf, world
+from pylinkirc import utils, conf, world, structures
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
@@ -19,56 +19,21 @@ reply = modebot.reply
 
 # Databasing variables.
 dbname = utils.getDatabaseName('automode')
-db = collections.defaultdict(dict)
-exportdb_timer = None
-
 save_delay = conf.conf['bot'].get('save_delay', 300)
+datastore = structures.JSONDataStore('automode', dbname, save_frequency=save_delay, default_db=collections.defaultdict(dict))
+
+db = datastore.store
 
 # The default set of Automode permissions.
 default_permissions = {"$ircop": ['automode.manage.relay_owned', 'automode.sync.relay_owned',
                                   'automode.list']}
 
-def loadDB():
-    """Loads the Automode database, silently creating a new one if this fails."""
-    global db
-    try:
-        with open(dbname, "r") as f:
-            db.update(json.load(f))
-    except (ValueError, IOError, OSError):
-        log.info("Automode: failed to load ACL database %s; creating a new one in "
-                 "memory.", dbname)
-
-def exportDB():
-    """Exports the automode database."""
-
-    log.debug("Automode: exporting database to %s.", dbname)
-    with open(dbname, 'w') as f:
-        # Pretty print the JSON output for better readability.
-        json.dump(db, f, indent=4)
-
-def scheduleExport(starting=False):
-    """
-    Schedules exporting of the Automode database in a repeated loop.
-    """
-    global exportdb_timer
-
-    if not starting:
-        # Export the database, unless this is being called the first
-        # thing after start (i.e. DB has just been loaded).
-        exportDB()
-
-    exportdb_timer = threading.Timer(save_delay, scheduleExport)
-    exportdb_timer.name = 'Automode exportDB Loop'
-    exportdb_timer.start()
 
 def main(irc=None):
     """Main function, called during plugin loading at start."""
 
     # Load the automode database.
-    loadDB()
-
-    # Schedule periodic exports of the automode database.
-    scheduleExport(starting=True)
+    datastore.load()
 
     # Register our permissions.
     permissions.addDefaultPermissions(default_permissions)
@@ -82,14 +47,7 @@ def main(irc=None):
 
 def die(sourceirc):
     """Saves the Automode database and quit."""
-    exportDB()
-
-    # Kill the scheduling for exports.
-    global exportdb_timer
-    if exportdb_timer:
-        log.debug("Automode: cancelling exportDB timer thread %s due to die()", threading.get_ident())
-        exportdb_timer.cancel()
-
+    datastore.die()
     permissions.removeDefaultPermissions(default_permissions)
     utils.unregisterService('automode')
 
@@ -298,8 +256,9 @@ def save(irc, source, args):
 
     Saves the Automode database to disk."""
     permissions.checkPermissions(irc, source, ['automode.savedb'])
-    exportDB()
+    datastore.save()
     reply(irc, 'Done.')
+
 modebot.add_cmd(save)
 
 def syncacc(irc, source, args):

@@ -6,6 +6,11 @@ This module contains custom data structures that may be useful in various situat
 
 import collections
 import json
+import pickle
+import os
+import threading
+
+from .log import log
 
 class KeyedDefaultdict(collections.defaultdict):
     """
@@ -19,66 +24,27 @@ class KeyedDefaultdict(collections.defaultdict):
             value = self[key] = self.default_factory(key)
             return value
 
-class JSONDataStore:
-    def load(self):
-        """Loads the database given via JSON."""
-        with self.store_lock:
-            try:
-                with open(self.filename, "r") as f:
-                    self.store.clear()
-                    self.store.update(json.load(f))
-            except (ValueError, IOError, OSError):
-                log.info("(DataStore:%s) failed to load database %s; creating a new one in "
-                         "memory", self.name, self.filename)
-
-    def save(self):
-        """Saves the database given via JSON."""
-        with self.store_lock:
-            with open(self.tmp_filename, 'w') as f:
-                # Pretty print the JSON output for better readability.
-                json.dump(self.store, f, indent=4)
-
-                os.rename(self.tmp_filename, self.filename)
-
-class PickleDataStore:
-    def load(self):
-        """Loads the database given via pickle."""
-        with self.store_lock:
-            try:
-                with open(self.filename, "r") as f:
-                    self.store.clear()
-                    self.store.update(pickle.load(f))
-            except (ValueError, IOError, OSError):
-                log.info("(DataStore:%s) failed to load database %s; creating a new one in "
-                         "memory", self.name, self.filename)
-
-    def save(self):
-        """Saves the database given via pickle."""
-        with self.store_lock:
-            with open(self.tmp_filename, 'w') as f:
-                # Force protocol version 4 as that is the lowest Python 3.4 supports.
-                pickle.dump(db, f, protocol=4)
-
-                os.rename(self.tmp_filename, self.filename)
-
-
 class DataStore:
     """
     Generic database class. Plugins should use a subclass of this such as JSONDataStore or
     PickleDataStore.
     """
-    def __init__(self, name, filename, save_frequency=30):
+    def __init__(self, name, filename, save_frequency=30, default_db=None):
         self.name = name
         self.filename = filename
         self.tmp_filename = filename + '.tmp'
 
-        log.debug('(DataStore:%s) database path set to %s', self.name, self._filename)
+        log.debug('(DataStore:%s) database path set to %s', self.name, self.filename)
 
         self.save_frequency = save_frequency
         log.debug('(DataStore:%s) saving every %s seconds', self.name, self.save_frequency)
 
-        self.store = {}
+        if default_db is not None:
+            self.store = default_db
+        else:
+            self.store = {}
         self.store_lock = threading.Lock()
+        self.exportdb_timer = None
 
         self.load()
 
@@ -110,3 +76,54 @@ class DataStore:
         and implement this.
         """
         raise NotImplementedError
+
+    def die(self):
+        """
+        Saves the database and stops any save loops.
+        """
+        if self.exportdb_timer:
+            self.exportdb_timer.cancel()
+
+        self.save()
+
+class JSONDataStore(DataStore):
+    def load(self):
+        """Loads the database given via JSON."""
+        with self.store_lock:
+            try:
+                with open(self.filename, "r") as f:
+                    self.store.clear()
+                    self.store.update(json.load(f))
+            except (ValueError, IOError, OSError):
+                log.info("(DataStore:%s) failed to load database %s; creating a new one in "
+                         "memory", self.name, self.filename)
+
+    def save(self):
+        """Saves the database given via JSON."""
+        with self.store_lock:
+            with open(self.tmp_filename, 'w') as f:
+                # Pretty print the JSON output for better readability.
+                json.dump(self.store, f, indent=4)
+
+                os.rename(self.tmp_filename, self.filename)
+
+class PickleDataStore(DataStore):
+    def load(self):
+        """Loads the database given via pickle."""
+        with self.store_lock:
+            try:
+                with open(self.filename, "rb") as f:
+                    self.store.clear()
+                    self.store.update(pickle.load(f))
+            except (ValueError, IOError, OSError):
+                log.info("(DataStore:%s) failed to load database %s; creating a new one in "
+                         "memory", self.name, self.filename)
+
+    def save(self):
+        """Saves the database given via pickle."""
+        with self.store_lock:
+            with open(self.tmp_filename, 'wb') as f:
+                # Force protocol version 4 as that is the lowest Python 3.4 supports.
+                pickle.dump(self.store, f, protocol=4)
+
+                os.rename(self.tmp_filename, self.filename)

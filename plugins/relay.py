@@ -5,7 +5,7 @@ import threading
 import string
 from collections import defaultdict
 
-from pylinkirc import utils, world, conf
+from pylinkirc import utils, world, conf, structures
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
@@ -15,10 +15,11 @@ relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
 
-exportdb_timer = None
 save_delay = conf.conf['bot'].get('save_delay', 300)
-db = {}
+
 dbname = utils.getDatabaseName('pylinkrelay')
+datastore = structures.PickleDataStore('pylinkrelay', dbname, save_frequency=save_delay)
+db = datastore.store
 
 default_permissions = {"*!*@*": ['relay.linked'],
                        "$ircop": ['relay.create', 'relay.linkacl*',
@@ -47,16 +48,8 @@ def initializeAll(irc):
 
 def main(irc=None):
     """Main function, called during plugin loading at start."""
-
-    # Load the relay links database.
-    loadDB()
-
     log.debug('relay.main: loading links database')
-
-    # Schedule periodic exports of the links database.
-    scheduleExport(starting=True)
-
-    log.debug('relay.main: scheduling export loop')
+    datastore.load()
 
     permissions.addDefaultPermissions(default_permissions)
 
@@ -87,14 +80,8 @@ def die(sourceirc):
     # 3) Unload our permissions.
     permissions.removeDefaultPermissions(default_permissions)
 
-    # 4) Export the relay links database.
-    exportDB()
-
-    # 5) Kill the scheduling for any other exports.
-    global exportdb_timer
-    if exportdb_timer:
-        log.debug("Relay: cancelling exportDB timer thread %s due to die()", threading.get_ident())
-        exportdb_timer.cancel()
+    # 4) Save the database and quit.
+    datastore.die()
 
 allowed_chars = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
 fallback_separator = '|'
@@ -202,39 +189,6 @@ def normalizeHost(irc, host):
     # this is cool. -GL
 
     return host[:63]  # Limit hosts to 63 chars for best compatibility
-
-def loadDB():
-    """Loads the relay database, creating a new one if this fails."""
-    global db
-    try:
-        with open(dbname, "rb") as f:
-            db = pickle.load(f)
-    except (ValueError, IOError, OSError):
-        log.info("Relay: failed to load links database %s"
-                 ", creating a new one in memory...", dbname)
-        db = {}
-
-def exportDB():
-    """Exports the relay database."""
-
-    log.debug("Relay: exporting links database to %s", dbname)
-    with open(dbname, 'wb') as f:
-        pickle.dump(db, f, protocol=4)
-
-def scheduleExport(starting=False):
-    """
-    Schedules exporting of the relay database in a repeated loop.
-    """
-    global exportdb_timer
-
-    if not starting:
-        # Export the database, unless this is being called the first
-        # thing after start (i.e. DB has just been loaded).
-        exportDB()
-
-    exportdb_timer = threading.Timer(save_delay, scheduleExport)
-    exportdb_timer.name = 'PyLink Relay exportDB Loop'
-    exportdb_timer.start()
 
 def getPrefixModes(irc, remoteirc, channel, user, mlist=None):
     """
@@ -1942,7 +1896,7 @@ def save(irc, source, args):
 
     Saves the relay database to disk."""
     permissions.checkPermissions(irc, source, ['relay.savedb'])
-    exportDB()
+    datastore.save()
     irc.reply('Done.')
 
 @utils.add_cmd
