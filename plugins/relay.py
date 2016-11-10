@@ -393,7 +393,7 @@ def getRemoteUser(irc, remoteirc, user, spawnIfMissing=True, times_tagged=0):
     irc.connected.wait(5)
 
     # Don't spawn clones for registered service bots.
-    sbot = irc.isServiceBot(user)
+    sbot = irc.getServiceBot(user)
     if sbot:
         return sbot.uids.get(remoteirc.name)
 
@@ -1196,7 +1196,7 @@ def handle_kick(irc, source, command, args):
         return
 
     # Don't relay kicks to protected service bots.
-    if relay is None or irc.isServiceBot(target):
+    if relay is None or irc.getServiceBot(target):
         return
 
     origuser = getOrigUser(irc, target)

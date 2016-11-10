@@ -94,7 +94,7 @@ utils.add_hook(handle_endburst, 'ENDBURST')
 def handle_kill(irc, source, command, args):
     """Handle KILLs to PyLink service bots, respawning them as needed."""
     target = args['target']
-    sbot = irc.isServiceBot(target)
+    sbot = irc.getServiceBot(target)
     if sbot:
         spawn_service(irc, source, command, {'name': sbot.name})
         return
@@ -104,7 +104,7 @@ def handle_kick(irc, source, command, args):
     """Handle KICKs to the PyLink service bots, rejoining channels as needed."""
     kicked = args['target']
     channel = args['channel']
-    sbot = irc.isServiceBot(kicked)
+    sbot = irc.getServiceBot(kicked)
     if sbot:
         sbot.join(irc, channel)
 utils.add_hook(handle_kick, 'KICK')
@@ -114,7 +114,7 @@ def handle_commands(irc, source, command, args):
     target = args['target']
     text = args['text']
 
-    sbot = irc.isServiceBot(target)
+    sbot = irc.getServiceBot(target)
     if sbot:
         sbot.call_cmd(irc, source, text)
 

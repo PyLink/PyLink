@@ -902,7 +902,7 @@ class Irc():
         """
         return self.isInternalClient(uid) and self.users[uid].manipulatable
 
-    def isServiceBot(self, uid):
+    def getServiceBot(self, uid):
         """
         Checks whether the given UID is a registered service bot. If True,
         returns the cooresponding ServiceBot object.

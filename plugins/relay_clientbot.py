@@ -89,7 +89,7 @@ def cb_relay_core(irc, source, command, args):
         text_template = string.Template(text_template)
 
         if text_template:
-            if irc.isServiceBot(source):
+            if irc.getServiceBot(source):
                 # HACK: service bots are global and lack the relay state we look for.
                 # just pretend the message comes from the current network.
                 log.debug('(%s) relay_cb_core: Overriding network origin to local (source=%s)', irc.name, source)
