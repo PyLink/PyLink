@@ -876,12 +876,11 @@ class Irc():
 
     def isInternalClient(self, numeric):
         """
-        Checks whether the given numeric is a PyLink Client,
-        returning the SID of the server it's on if so.
+        Returns whether the given client numeric (UID) is a PyLink client.
         """
-        for sid in self.servers:
-            if self.servers[sid].internal and numeric in self.servers[sid].users:
-                return sid
+        sid = self.getServer(numeric)
+        if sid and self.servers[sid].internal:
+            return True
         return False
 
     def isInternalServer(self, sid):

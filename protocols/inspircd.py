@@ -71,10 +71,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # so what we're actually doing here is sending FJOIN from the server,
         # on behalf of the clients that are joining.
         channel = self.irc.toLower(channel)
-        server = self.irc.isInternalClient(client)
-        if not server:
+
+        server = self.irc.getServer(client)
+        if not self.irc.isInternalServer(server):
             log.error('(%s) Error trying to join %r to %r (no such client exists)', self.irc.name, client, channel)
             raise LookupError('No such PyLink client exists.')
+
         # Strip out list-modes, they shouldn't be ever sent in FJOIN.
         modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
         self._send(server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
