@@ -35,6 +35,7 @@ class DataStore:
         self.filename = filename
         self.tmp_filename = filename + '.tmp'
 
+        log.debug('(DataStore:%s) using implementation %s', self.name, self.__class__.__name__)
         log.debug('(DataStore:%s) database path set to %s', self.name, self.filename)
 
         self.save_frequency = save_frequency or conf.conf['bot'].get('save_delay', 300)
