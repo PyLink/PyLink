@@ -890,9 +890,9 @@ class Irc():
 
     def getServer(self, numeric):
         """Finds the SID of the server a user is on."""
-        for server in self.servers:
-            if numeric in self.servers[server].users:
-                return server
+        userobj = self.users.get(numeric)
+        if userobj:
+            return userobj.server
 
     def isManipulatableClient(self, uid):
         """
