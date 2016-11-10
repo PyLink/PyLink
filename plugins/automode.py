@@ -19,8 +19,7 @@ reply = modebot.reply
 
 # Databasing variables.
 dbname = utils.getDatabaseName('automode')
-save_delay = conf.conf['bot'].get('save_delay', 300)
-datastore = structures.JSONDataStore('automode', dbname, save_frequency=save_delay, default_db=collections.defaultdict(dict))
+datastore = structures.JSONDataStore('automode', dbname, default_db=collections.defaultdict(dict))
 
 db = datastore.store
 

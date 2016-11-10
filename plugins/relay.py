@@ -15,10 +15,8 @@ relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
 
-save_delay = conf.conf['bot'].get('save_delay', 300)
-
 dbname = utils.getDatabaseName('pylinkrelay')
-datastore = structures.PickleDataStore('pylinkrelay', dbname, save_frequency=save_delay)
+datastore = structures.PickleDataStore('pylinkrelay', dbname)
 db = datastore.store
 
 default_permissions = {"*!*@*": ['relay.linked'],

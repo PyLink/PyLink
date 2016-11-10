@@ -11,6 +11,7 @@ import os
 import threading
 
 from .log import log
+from . import conf
 
 class KeyedDefaultdict(collections.defaultdict):
     """
@@ -29,14 +30,14 @@ class DataStore:
     Generic database class. Plugins should use a subclass of this such as JSONDataStore or
     PickleDataStore.
     """
-    def __init__(self, name, filename, save_frequency=30, default_db=None):
+    def __init__(self, name, filename, save_frequency=None, default_db=None):
         self.name = name
         self.filename = filename
         self.tmp_filename = filename + '.tmp'
 
         log.debug('(DataStore:%s) database path set to %s', self.name, self.filename)
 
-        self.save_frequency = save_frequency
+        self.save_frequency = save_frequency or conf.conf['bot'].get('save_delay', 300)
         log.debug('(DataStore:%s) saving every %s seconds', self.name, self.save_frequency)
 
         if default_db is not None:
@@ -48,7 +49,7 @@ class DataStore:
 
         self.load()
 
-        if save_frequency > 0:
+        if self.save_frequency > 0:
             # If autosaving is enabled, start the save_callback loop.
             self.save_callback(starting=True)
 
