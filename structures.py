@@ -19,107 +19,94 @@ class KeyedDefaultdict(collections.defaultdict):
             value = self[key] = self.default_factory(key)
             return value
 
-class DataStore:
-    # will come into play with subclassing and db version upgrading
-    initial_version = 1
-
-    def __init__(self, name, filename, db_format='json', save_frequency={'seconds': 30}):
-        self.name = name
-
-        self._filename = os.path.abspath(os.path.expanduser(filename))
-        self._tmp_filename = self._filename + '.tmp'
-        log.debug('(db:{}) database path set to {}'.format(self.name, self._filename))
-
-        self._format = db_format
-        log.debug('(db:{}) format set to {}'.format(self.name, self._format))
-
-        self._save_frequency = timedelta(**save_frequency).total_seconds()
-        log.debug('(db:{}) saving every {} seconds'.format(self.name, self._save_frequency))
-
-    def create_or_load(self):
-        log.debug('(db:{}) creating/loading datastore using {}'.format(self.name, self._format))
-
-        if self._format == 'json':
-            self._store = {}
-            self._store_lock = threading.Lock()
-
-            log.debug('(db:{}) loading json data store from {}'.format(self.name, self._filename))
+class JSONDataStore:
+    def load(self):
+        """Loads the database given via JSON."""
+        with self.store_lock:
             try:
-                self._store = json.loads(open(self._filename, 'r').read())
-            except (ValueError, IOError, FileNotFoundError):
-                log.exception('(db:{}) failed to load existing db, creating new one in memory'.format(self.name))
-                self.put('db.version', self.initial_version)
-        else:
-            raise Exception('(db:{}) Data store format [{}] not recognised'.format(self.name, self._format))
+                with open(self.filename, "r") as f:
+                    self.store.clear()
+                    self.store.update(json.load(f))
+            except (ValueError, IOError, OSError):
+                log.info("(DataStore:%s) failed to load database %s; creating a new one in "
+                         "memory", self.name, self.filename)
+
+    def save(self):
+        """Saves the database given via JSON."""
+        with self.store_lock:
+            with open(self.tmp_filename, 'w') as f:
+                # Pretty print the JSON output for better readability.
+                json.dump(self.store, f, indent=4)
+
+                os.rename(self.tmp_filename, self.filename)
+
+class PickleDataStore:
+    def load(self):
+        """Loads the database given via pickle."""
+        with self.store_lock:
+            try:
+                with open(self.filename, "r") as f:
+                    self.store.clear()
+                    self.store.update(pickle.load(f))
+            except (ValueError, IOError, OSError):
+                log.info("(DataStore:%s) failed to load database %s; creating a new one in "
+                         "memory", self.name, self.filename)
+
+    def save(self):
+        """Saves the database given via pickle."""
+        with self.store_lock:
+            with open(self.tmp_filename, 'w') as f:
+                # Force protocol version 4 as that is the lowest Python 3.4 supports.
+                pickle.dump(db, f, protocol=4)
+
+                os.rename(self.tmp_filename, self.filename)
+
+
+class DataStore:
+    """
+    Generic database class. Plugins should use a subclass of this such as JSONDataStore or
+    PickleDataStore.
+    """
+    def __init__(self, name, filename, save_frequency=30):
+        self.name = name
+        self.filename = filename
+        self.tmp_filename = filename + '.tmp'
+
+        log.debug('(DataStore:%s) database path set to %s', self.name, self._filename)
+
+        self.save_frequency = save_frequency
+        log.debug('(DataStore:%s) saving every %s seconds', self.name, self.save_frequency)
+
+        self.store = {}
+        self.store_lock = threading.Lock()
+
+        self.load()
+
+        if save_frequency > 0:
+            # If autosaving is enabled, start the save_callback loop.
+            self.save_callback(starting=True)
+
+    def load(self):
+        """
+        DataStore load stub. Database implementations should subclass DataStore
+        and implement this.
+        """
+        raise NotImplementedError
 
     def save_callback(self, starting=False):
         """Start the DB save loop."""
-        if self._format == 'json':
-            # don't actually save the first time
-            if not starting:
-                self.save()
+        # don't actually save the first time
+        if not starting:
+            self.save()
 
-            # schedule saving in a loop.
-            self.exportdb_timer = threading.Timer(self._save_frequency, self.save_callback)
-            self.exportdb_timer.name = 'PyLink {} save_callback Loop'.format(self.name)
-            self.exportdb_timer.start()
-        else:
-            raise Exception('(db:{}) Data store format [{}] not recognised'.format(self.name, self._format))
+        # schedule saving in a loop.
+        self.exportdb_timer = threading.Timer(self.save_frequency, self.save_callback)
+        self.exportdb_timer.name = 'DataStore {} save_callback loop'.format(self.name)
+        self.exportdb_timer.start()
 
     def save(self):
-        log.debug('(db:{}) saving datastore'.format(self.name))
-        if self._format == 'json':
-            with open(self._tmp_filename, 'w') as store_file:
-                store_file.write(json.dumps(self._store))
-            os.rename(self._tmp_filename, self._filename)
-
-    # single keys
-    def __contains__(self, key):
-        if self._format == 'json':
-            return key in self._store
-
-    def get(self, key, default=None):
-        if self._format == 'json':
-            return self._store.get(key, default)
-
-    def put(self, key, value):
-        if self._format == 'json':
-            # make sure we can serialize the given data
-            # so we don't choke later on saving the db out
-            json.dumps(value)
-
-            self._store[key] = value
-
-            return True
-
-    def delete(self, key):
-        if self._format == 'json':
-            try:
-                with self._store_lock:
-                    del self._store[key]
-            except KeyError:
-                # key is already gone, nothing to do
-                ...
-
-            return True
-
-    # multiple keys
-    def list_keys(self, prefix=None):
-        """Return all key names. If prefix given, return only keys that start with it."""
-        if self._format == 'json':
-            keys = []
-
-            with self._store_lock:
-                for key in self._store:
-                    if prefix is None or key.startswith(prefix):
-                        keys.append(key)
-
-            return keys
-
-    def delete_keys(self, prefix):
-        """Delete all keys with the given prefix."""
-        if self._format == 'json':
-            with self._store_lock:
-                for key in tuple(self._store):
-                    if key.startswith(prefix):
-                        del self._store[key]
+        """
+        DataStore save stub. Database implementations should subclass DataStore
+        and implement this.
+        """
+        raise NotImplementedError
