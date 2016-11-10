@@ -907,12 +907,20 @@ class Irc():
         Checks whether the given UID is a registered service bot. If True,
         returns the cooresponding ServiceBot object.
         """
-        if not uid:
+        userobj = self.users.get(uid)
+        if not userobj:
             return False
-        for sbot in world.services.values():
-            if uid == sbot.uids.get(self.name):
-                return sbot
-        return False
+
+        # Look for the "service" attribute in the IrcUser object, if one exists.
+        try:
+            sname = userobj.service
+            # Warn if the service name we fetched isn't a registered service.
+            if sname not in world.services.keys():
+                log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
+                            "exist (%s)!", self.name, uid, userobj.nick, sname)
+            return world.services.get(sname)
+        except AttributeError:
+            return False
 
     def getHostmask(self, user, realhost=False, ip=False):
         """
