@@ -1889,6 +1889,36 @@ def showuser(irc, source, args):
             irc.reply("\x02Relay channels\x02: %s" % ' '.join(relaychannels), private=True)
 
 @utils.add_cmd
+def showchan(irc, source, args):
+    """<user>
+
+    Shows relay data about the given channel. This supplements the 'showchan' command in the 'commands' plugin, which provides more general information."""
+    try:
+        channel = irc.toLower(args[0])
+    except IndexError:
+        return
+    if channel not in irc.channels:
+        return
+
+    f = lambda s: irc.reply(s, private=True)
+
+    c = irc.channels[channel]
+
+    # Only show verbose info if caller is oper or is in the target channel.
+    verbose = source in c.users or irc.isOper(source)
+    secret = ('s', None) in c.modes
+    if secret and not verbose:
+        # Hide secret channels from normal users.
+        return
+
+    else:
+        relayentry = getRelay((irc.name, channel))
+        if relayentry:
+            relays = ['\x02%s\x02' % ''.join(relayentry)]
+            relays += [''.join(link) for link in db[relayentry]['links']]
+            f('\x02Relayed channels:\x02 %s' % (' '.join(relays)))
+
+@utils.add_cmd
 def save(irc, source, args):
     """takes no arguments.
 
