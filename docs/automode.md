@@ -67,7 +67,8 @@ By default, Automode integrates with Relay by only allowing access lists to be c
 
 - `automode.savedb`: ability to save the automode DB.
 
+Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist for cross-network manipulation (e.g. `automode.remotemanage.*`)
+
 ## Caveats
 
-- Service bot joining and Relay are not always consistently: https://github.com/GLolol/PyLink/issues/265
-- Automode does not yet auto-op itself on join, which may cause issues on IRCds that do not allow mode overrides from remote servers (e.g. P10). This can be worked around by U-Lining the PyLink server.
+- Service bot joining and Relay don't always behave consistently: https://github.com/GLolol/PyLink/issues/265
