@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # Check for a pid file, unless told not to,
     # this stops instance overlap, which wrecks clientbots
-    if not args.no_checkpid:
+    if not args.no_check_pid:
         config = conf.confname
         if os.path.exists("%s.pid" % config):
             log.error("PID file exists; aborting! If PyLink didn't shut down cleanly last time it "
