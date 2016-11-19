@@ -294,7 +294,15 @@ class ServiceBot():
             return
 
         irc.reply(text, notice=notice, source=servuid, private=private)
+    def error(self, irc, text, notice=False, private=False):
+        """Replies with an error, as the service in question."""
+        servuid = self.uids.get(irc.name)
+        if not servuid:
+            log.warning("(%s) Possible desync? UID for service %s doesn't exist!", irc.name, self.name)
+            return
 
+        irc.error(text, notice=notice, source=servuid, private=private)
+        
     def call_cmd(self, irc, source, text, called_in=None):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
