@@ -15,7 +15,7 @@ def spawnclient(irc, source, args):
     try:
         nick, ident, host = args[:3]
     except ValueError:
-        irc.reply("Error: Not enough arguments. Needs 3: nick, user, host.")
+        irc.error("Not enough arguments. Needs 3: nick, user, host.")
         return
     irc.proto.spawnClient(nick, ident, host, manipulatable=True)
 
@@ -29,10 +29,10 @@ def quit(irc, source, args):
     try:
         nick = args[0]
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 1-2: nick, reason (optional).")
+        irc.error("Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
     if irc.pseudoclient.uid == irc.nickToUid(nick):
-        irc.reply("Error: Cannot quit the main PyLink PseudoClient!")
+        irc.error("Cannot quit the main PyLink PseudoClient!")
         return
 
     u = irc.nickToUid(nick)
@@ -40,7 +40,7 @@ def quit(irc, source, args):
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
 
     if not irc.isManipulatableClient(u):
-        irc.reply("Error: Cannot force quit a protected PyLink services client.")
+        irc.error("Cannot force quit a protected PyLink services client.")
         return
 
     irc.proto.quit(u, quitmsg)
@@ -66,21 +66,21 @@ def joinclient(irc, source, args):
         try:
             clist = args[0]
         except IndexError:
-            irc.reply("Error: Not enough arguments. Needs 1-2: nick (optional), comma separated list of channels.")
+            irc.error("Not enough arguments. Needs 1-2: nick (optional), comma separated list of channels.")
             return
 
     clist = clist.split(',')
     if not clist:
-        irc.reply("Error: No valid channels given.")
+        irc.error("No valid channels given.")
         return
 
     if not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
-        irc.reply("Error: Cannot force join a protected PyLink services client.")
+        irc.error("Cannot force join a protected PyLink services client.")
         return
 
     for channel in clist:
         if not utils.isChannel(channel):
-            irc.reply("Error: Invalid channel name %r." % channel)
+            irc.error("Invalid channel name %r." % channel)
             return
         irc.proto.join(u, channel)
 
@@ -105,7 +105,7 @@ def nick(irc, source, args):
             nick = irc.pseudoclient.nick
             newnick = args[0]
         except IndexError:
-            irc.reply("Error: Not enough arguments. Needs 1-2: nick (optional), newnick.")
+            irc.error("Not enough arguments. Needs 1-2: nick (optional), newnick.")
             return
     u = irc.nickToUid(nick)
 
@@ -113,11 +113,11 @@ def nick(irc, source, args):
         newnick = u
 
     elif not utils.isNick(newnick):
-        irc.reply('Error: Invalid nickname %r.' % newnick)
+        irc.error('Invalid nickname %r.' % newnick)
         return
 
     elif not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
-        irc.reply("Error: Cannot force nick changes for a protected PyLink services client.")
+        irc.error("Cannot force nick changes for a protected PyLink services client.")
         return
 
     irc.proto.nick(u, newnick)
@@ -149,22 +149,22 @@ def part(irc, source, args):
         try:
             clist = args[0]
         except IndexError:
-            irc.reply("Error: Not enough arguments. Needs 1-2: nick (optional), comma separated list of channels.")
+            irc.error("Not enough arguments. Needs 1-2: nick (optional), comma separated list of channels.")
             return
         reason = ' '.join(args[1:])
 
     clist = clist.split(',')
     if not clist:
-        irc.reply("Error: No valid channels given.")
+        irc.error("No valid channels given.")
         return
 
     if not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
-        irc.reply("Error: Cannot force part a protected PyLink services client.")
+        irc.error("Cannot force part a protected PyLink services client.")
         return
 
     for channel in clist:
         if not utils.isChannel(channel):
-            irc.reply("Error: Invalid channel name %r." % channel)
+            irc.error("Invalid channel name %r." % channel)
             return
         irc.proto.part(u, channel, reason)
 
@@ -197,18 +197,18 @@ def msg(irc, source, args):
             target = args[0]
             text = ' '.join(args[1:])
         except IndexError:
-            irc.reply('Error: Not enough arguments. Needs 2-3: source nick (optional), target, text.')
+            irc.error('Not enough arguments. Needs 2-3: source nick (optional), target, text.')
             return
 
     if not text:
-        irc.reply('Error: No text given.')
+        irc.error('No text given.')
         return
 
     if not utils.isChannel(target):
         # Convert nick of the message target to a UID, if the target isn't a channel
         real_target = irc.nickToUid(target)
         if real_target is None:  # Unknown target user, if target isn't a valid channel name
-            irc.reply('Error: Unknown user %r.' % target)
+            irc.error('Unknown user %r.' % target)
             return
     else:
         real_target = target
