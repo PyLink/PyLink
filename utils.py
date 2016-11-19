@@ -294,6 +294,7 @@ class ServiceBot():
             return
 
         irc.reply(text, notice=notice, source=servuid, private=private)
+        
     def error(self, irc, text, notice=False, private=False):
         """Replies with an error, as the service in question."""
         servuid = self.uids.get(irc.name)
