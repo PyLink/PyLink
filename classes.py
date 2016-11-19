@@ -535,6 +535,12 @@ class Irc():
 
         self.msg(target, text, notice=notice, source=source, loopback=loopback)
 
+    def error(self, text, notice=False, source=None, private=False, force_privmsg_in_private=False,
+            loopback=True):
+        """Replies with an error to the last caller in the right context (channel or PM)."""
+        # This is a stub to alias error to reply
+        self.reply("Error: %s" % text, notice=notice, source=source, loopback=loopback)
+        
     def toLower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
         casemapping (rfc1459 or ascii)."""
