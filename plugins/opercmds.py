@@ -14,7 +14,7 @@ def checkban(irc, source, args):
     try:
         banmask = args[0]
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 1-2: banmask, nick or hostmask to check (optional).")
+        irc.error("Not enough arguments. Needs 1-2: banmask, nick or hostmask to check (optional).")
         return
 
     try:
@@ -62,11 +62,11 @@ def jupe(irc, source, args):
         reason = ' '.join(args[1:]) or "No reason given"
         desc = "Juped by %s: [%s]" % (irc.getHostmask(source), reason)
     except IndexError:
-        irc.reply('Error: Not enough arguments. Needs 1-2: servername, reason (optional).')
+        irc.error('Not enough arguments. Needs 1-2: servername, reason (optional).')
         return
 
     if not utils.isServerName(servername):
-        irc.reply("Error: Invalid server name '%s'." % servername)
+        irc.error("Invalid server name '%s'." % servername)
         return
 
     sid = irc.proto.spawnServer(servername, desc=desc)
@@ -89,7 +89,7 @@ def kick(irc, source, args):
         target = args[2]
         reason = ' '.join(args[3:])
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
+        irc.error("Not enough arguments. Needs 3-4: source nick, channel, target, reason (optional).")
         return
 
     # Convert the source and target nicks to UIDs.
@@ -97,21 +97,21 @@ def kick(irc, source, args):
     targetu = irc.nickToUid(target)
 
     if channel not in irc.channels:  # KICK only works on channels that exist.
-        irc.reply("Error: Unknown channel %r." % channel)
+        irc.error("Unknown channel %r." % channel)
         return
 
     if (not irc.isInternalClient(sender)) and \
             (not irc.isInternalServer(sender)):
         # Whatever we were told to send the kick from wasn't valid; try to be
         # somewhat user friendly in the error message
-        irc.reply("Error: No such PyLink client '%s'. The first argument to "
+        irc.error("No such PyLink client '%s'. The first argument to "
                   "KICK should be the name of a PyLink client (e.g. '%s'; see "
                   "'help kick' for details." % (sourcenick,
                   irc.pseudoclient.nick))
         return
     elif not targetu:
         # Whatever we were told to kick doesn't exist!
-        irc.reply("Error: No such target nick '%s'." % target)
+        irc.error("No such target nick '%s'." % target)
         return
 
     irc.proto.kick(sender, channel, targetu, reason)
@@ -129,7 +129,7 @@ def kill(irc, source, args):
         target = args[1]
         reason = ' '.join(args[2:])
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 3-4: source nick, target, reason (optional).")
+        irc.error("Not enough arguments. Needs 3-4: source nick, target, reason (optional).")
         return
 
     # Convert the source and target nicks to UIDs.
@@ -141,14 +141,14 @@ def kill(irc, source, args):
             (not irc.isInternalServer(sender)):
         # Whatever we were told to send the kick from wasn't valid; try to be
         # somewhat user friendly in the error message
-        irc.reply("Error: No such PyLink client '%s'. The first argument to "
+        irc.error("No such PyLink client '%s'. The first argument to "
                   "KILL should be the name of a PyLink client (e.g. '%s'; see "
                   "'help kill' for details." % (sourcenick,
                   irc.pseudoclient.nick))
         return
     elif targetu not in irc.users:
         # Whatever we were told to kick doesn't exist!
-        irc.reply("Error: No such nick '%s'." % target)
+        irc.error("No such nick '%s'." % target)
         return
 
     irc.proto.kill(sender, targetu, reason)
@@ -171,15 +171,15 @@ def mode(irc, source, args):
     try:
         target, modes = args[0], args[1:]
     except IndexError:
-        irc.reply('Error: Not enough arguments. Needs 2: target, modes to set.')
+        irc.error('Not enough arguments. Needs 2: target, modes to set.')
         return
 
     if target not in irc.channels:
-        irc.reply("Error: Unknown channel '%s'." % target)
+        irc.error("Unknown channel '%s'." % target)
         return
     elif not modes:
         # No modes were given before parsing (i.e. mode list was blank).
-        irc.reply("Error: No valid modes were given.")
+        irc.error("No valid modes were given.")
         return
 
     parsedmodes = irc.parseModes(target, modes)
@@ -188,7 +188,7 @@ def mode(irc, source, args):
         # Modes were given but they failed to parse into anything meaningful.
         # For example, "mode #somechan +o" would be erroneous because +o
         # requires an argument!
-        irc.reply("Error: No valid modes were given.")
+        irc.error("No valid modes were given.")
         return
 
     irc.proto.mode(irc.pseudoclient.uid, target, parsedmodes)
@@ -209,11 +209,11 @@ def topic(irc, source, args):
         channel = args[0]
         topic = ' '.join(args[1:])
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 2: channel, topic.")
+        irc.error("Not enough arguments. Needs 2: channel, topic.")
         return
 
     if channel not in irc.channels:
-        irc.reply("Error: Unknown channel %r." % channel)
+        irc.error("Unknown channel %r." % channel)
         return
 
     irc.proto.topic(irc.pseudoclient.uid, channel, topic)

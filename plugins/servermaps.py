@@ -24,7 +24,7 @@ def _map(irc, source, args, show_relay=True):
     try:
         ircobj = world.networkobjects[netname]
     except KeyError:
-        irc.reply('Error: no such network %s' % netname)
+        irc.error('no such network %s' % netname)
         return
 
     servers = collections.defaultdict(set)

@@ -92,7 +92,7 @@ def applyhosts(irc, sender, args):
     except IndexError:  # No network was given
         network = irc
     except KeyError:  # Unknown network
-        irc.reply("Error: Unknown network '%s'." % network)
+        irc.error("Unknown network '%s'." % network)
         return
 
     for user, userdata in network.users.copy().items():

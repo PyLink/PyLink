@@ -25,14 +25,14 @@ def showuser(irc, source, args):
     try:
         target = args[0]
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 1: nick.")
+        irc.error("Not enough arguments. Needs 1: nick.")
         return
     u = irc.nickToUid(target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
     verbose = irc.isOper(source) or u == source
     if u not in irc.users:
-        irc.reply('Error: Unknown user %r.' % target)
+        irc.error('Unknown user %r.' % target)
         return
 
     f = lambda s: irc.reply(s, private=True)
@@ -68,10 +68,10 @@ def showchan(irc, source, args):
     try:
         channel = irc.toLower(args[0])
     except IndexError:
-        irc.reply("Error: Not enough arguments. Needs 1: channel.")
+        irc.error("Not enough arguments. Needs 1: channel.")
         return
     if channel not in irc.channels:
-        irc.reply('Error: Unknown channel %r.' % channel)
+        irc.error('Unknown channel %r.' % channel)
         return
 
     f = lambda s: irc.reply(s, private=True)
@@ -82,7 +82,7 @@ def showchan(irc, source, args):
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
-        irc.reply('Error: Unknown channel %r.' % channel, private=True)
+        irc.error('Unknown channel %r.' % channel, private=True)
         return
 
     nicks = [irc.users[u].nick for u in c.users]
@@ -140,7 +140,7 @@ def loglevel(irc, source, args):
         try:
             loglevel = loglevels[level]
         except KeyError:
-            irc.reply('Error: Unknown log level "%s".' % level)
+            irc.error('Unknown log level "%s".' % level)
             return
         else:
             world.stdout_handler.setLevel(loglevel)

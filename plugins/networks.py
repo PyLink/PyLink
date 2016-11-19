@@ -16,10 +16,10 @@ def disconnect(irc, source, args):
         netname = args[0]
         network = world.networkobjects[netname]
     except IndexError:  # No argument given.
-        irc.reply('Error: Not enough arguments (needs 1: network name (case sensitive)).')
+        irc.error('Not enough arguments (needs 1: network name (case sensitive)).')
         return
     except KeyError:  # Unknown network.
-        irc.reply('Error: No such network "%s" (case sensitive).' % netname)
+        irc.error('No such network "%s" (case sensitive).' % netname)
         return
     irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
 
@@ -37,13 +37,13 @@ def autoconnect(irc, source, args):
         seconds = float(args[1])
         network = world.networkobjects[netname]
     except IndexError:  # Arguments not given.
-        irc.reply('Error: Not enough arguments (needs 2: network name (case sensitive), autoconnect time (in seconds)).')
+        irc.error('Not enough arguments (needs 2: network name (case sensitive), autoconnect time (in seconds)).')
         return
     except KeyError:  # Unknown network.
-        irc.reply('Error: No such network "%s" (case sensitive).' % netname)
+        irc.error('No such network "%s" (case sensitive).' % netname)
         return
     except ValueError:
-        irc.reply('Error: Invalid argument "%s" for <seconds>.' % seconds)
+        irc.error('Invalid argument "%s" for <seconds>.' % seconds)
         return
     network.serverdata['autoconnect'] = seconds
     irc.reply("Done.")
@@ -60,10 +60,10 @@ def remote(irc, source, args):
         cmd_args = ' '.join(args[1:]).strip()
         remoteirc = world.networkobjects[netname]
     except IndexError:  # Arguments not given.
-        irc.reply('Error: Not enough arguments (needs 2 or more: network name (case sensitive), command name & arguments).')
+        irc.error('Not enough arguments (needs 2 or more: network name (case sensitive), command name & arguments).')
         return
     except KeyError:  # Unknown network.
-        irc.reply('Error: No such network "%s" (case sensitive).' % netname)
+        irc.error('No such network "%s" (case sensitive).' % netname)
         return
 
     if not cmd_args:
@@ -93,7 +93,7 @@ def reloadproto(irc, source, args):
     try:
         name = args[0]
     except IndexError:
-        irc.reply('Error: Not enough arguments (needs 1: protocol module name)')
+        irc.error('Not enough arguments (needs 1: protocol module name)')
         return
 
     proto = utils.getProtocolModule(name)

@@ -202,30 +202,30 @@ def rpm(irc, source, args):
         target = args[0]
         text = ' '.join(args[1:])
     except IndexError:
-        irc.reply('Error: Not enough arguments. Needs 2: target nick and text.')
+        irc.error('Not enough arguments. Needs 2: target nick and text.')
         return
 
     relay = world.plugins.get('relay')
     if irc.protoname != 'clientbot':
-        irc.reply('Error: This command is only supported on Clientbot networks. Try /msg %s <text>' % target)
+        irc.error('This command is only supported on Clientbot networks. Try /msg %s <text>' % target)
         return
     elif relay is None:
-        irc.reply('Error: PyLink Relay is not loaded.')
+        irc.error('PyLink Relay is not loaded.')
         return
     elif not text:
-        irc.reply('Error: No text given.')
+        irc.error('No text given.')
         return
     elif not conf.conf.get('relay').get('allow_clientbot_pms'):
-        irc.reply('Error: Private messages with users connected via Clientbot have been '
+        irc.error('Private messages with users connected via Clientbot have been '
                   'administratively disabled.')
         return
 
     uid = irc.nickToUid(target)
     if not uid:
-        irc.reply('Error: Unknown user %s.' % target)
+        irc.error('Unknown user %s.' % target)
         return
     elif not relay.isRelayClient(irc, uid):
-        irc.reply('Error: %s is not a relay user.' % target)
+        irc.error('%s is not a relay user.' % target)
         return
     else:
         assert not irc.isInternalClient(source), "rpm is not allowed from PyLink bots"

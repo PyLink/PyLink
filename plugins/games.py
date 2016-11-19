@@ -13,7 +13,7 @@ mydesc = "The \x02Games\x02 plugin provides simple games for IRC."
 
 gameclient = utils.registerService("Games", manipulatable=True, desc=mydesc)
 reply = gameclient.reply  # TODO find a better syntax for ServiceBot.reply()
-
+error = gameclient.error  # TODO find a better syntax for ServiceBot.error()
 # commands
 def dice(irc, source, args):
     """<num>d<sides>
@@ -92,7 +92,7 @@ def fml(irc, source, args):
     try:
         data = urllib.request.urlopen(url).read()
     except urllib.error as e:
-        reply(irc, 'Error: %s' % e)
+        error(irc, '%s' % e)
         return
 
     tree = ElementTree.fromstring(data.decode('utf-8'))
@@ -106,12 +106,12 @@ def fml(irc, source, args):
     except AttributeError as e:
         log.debug("games.FML: Error fetching FML %s from URL %s: %s",
                   query, url, e)
-        reply(irc, "Error: That FML does not exist or there was an error "
+        error(irc, "That FML does not exist or there was an error "
                    "fetching data from the API.")
         return
 
     if not fmlid:
-        reply(irc, "Error: That FML does not exist.")
+        error(irc, "That FML does not exist.")
         return
 
     # TODO: customizable formatting
