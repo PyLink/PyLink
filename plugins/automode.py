@@ -16,6 +16,7 @@ mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by
 # Register ourselves as a service.
 modebot = world.services.get("automode", utils.registerService("automode", desc=mydesc))
 reply = modebot.reply
+error = modebot.error
 
 # Databasing variables.
 dbname = utils.getDatabaseName('automode')
@@ -192,7 +193,7 @@ def setacc(irc, source, args):
     try:
         chanpair, mask, modes = args
     except ValueError:
-        reply(irc, "Error: Invalid arguments given. Needs 3: channel, mask, mode list.")
+        error(irc, "Invalid arguments given. Needs 3: channel, mask, mode list.")
         return
     else:
         ircobj, channel = getChannelPair(irc, source, chanpair, perm='manage')
@@ -222,7 +223,7 @@ def delacc(irc, source, args):
     try:
         chanpair, mask = args
     except ValueError:
-        reply(irc, "Error: Invalid arguments given. Needs 2: channel, mask")
+        error(irc, "Invalid arguments given. Needs 2: channel, mask")
         return
     else:
         ircobj, channel = getChannelPair(irc, source, chanpair, perm='manage')
@@ -230,7 +231,7 @@ def delacc(irc, source, args):
     dbentry = db.get(ircobj.name+channel)
 
     if dbentry is None:
-        reply(irc, "Error: no Automode access entries exist for \x02%s\x02." % channel)
+        error(irc, "Error: no Automode access entries exist for \x02%s\x02." % channel)
         return
 
     if mask in dbentry:
@@ -238,7 +239,7 @@ def delacc(irc, source, args):
         log.info('(%s) %s removed modes for %s on %s', ircobj.name, irc.getHostmask(source), mask, channel)
         reply(irc, "Done. Removed the Automode access entry for \x02%s\x02 in \x02%s\x02." % (mask, channel))
     else:
-        reply(irc, "Error: No Automode access entry for \x02%s\x02 exists in \x02%s\x02." % (mask, channel))
+        error(irc, "Error: No Automode access entry for \x02%s\x02 exists in \x02%s\x02." % (mask, channel))
 
     # Remove channels if no more entries are left.
     if not dbentry:
@@ -256,14 +257,14 @@ def listacc(irc, source, args):
     try:
         chanpair = args[0]
     except IndexError:
-        reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
+        error(irc, "Error: Invalid arguments given. Needs 1: channel.")
         return
     else:
         ircobj, channel = getChannelPair(irc, source, chanpair, perm='list')
 
     dbentry = db.get(ircobj.name+channel)
     if not dbentry:
-        reply(irc, "Error: No Automode access entries exist for \x02%s\x02." % channel)
+        error(irc, "Error: No Automode access entries exist for \x02%s\x02." % channel)
         return
 
     else:
@@ -296,7 +297,7 @@ def syncacc(irc, source, args):
     try:
         chanpair = args[0]
     except IndexError:
-        reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
+        error(irc, "Error: Invalid arguments given. Needs 1: channel.")
         return
     else:
         ircobj, channel = getChannelPair(irc, source, chanpair, perm='sync')
@@ -319,7 +320,7 @@ def clearacc(irc, source, args):
     try:
         chanpair = args[0]
     except IndexError:
-        reply(irc, "Error: Invalid arguments given. Needs 1: channel.")
+        error(irc, "Error: Invalid arguments given. Needs 1: channel.")
         return
     else:
         ircobj, channel = getChannelPair(irc, source, chanpair, perm='clear')
@@ -329,7 +330,7 @@ def clearacc(irc, source, args):
         log.info('(%s) %s cleared modes on %s', ircobj.name, irc.getHostmask(source), channel)
         reply(irc, "Done. Removed all Automode access entries for \x02%s\x02." % channel)
     else:
-        reply(irc, "Error: No Automode access entries exist for \x02%s\x02." % channel)
+        error(irc, "Error: No Automode access entries exist for \x02%s\x02." % channel)
 
 modebot.add_cmd(clearacc, 'clearaccess')
 modebot.add_cmd(clearacc, 'clear')
