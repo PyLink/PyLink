@@ -9,7 +9,7 @@ from pylinkirc.log import log
 def spawnclient(irc, source, args):
     """<nick> <ident> <host>
 
-    Admin-only. Spawns the specified PseudoClient on the PyLink server.
+    Admin-only. Spawns the specified client on the PyLink server.
     Note: this doesn't check the validity of any fields you give it!"""
     irc.checkAuthenticated(source, allowOper=False)
     try:
@@ -32,7 +32,7 @@ def quit(irc, source, args):
         irc.error("Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
     if irc.pseudoclient.uid == irc.nickToUid(nick):
-        irc.error("Cannot quit the main PyLink PseudoClient!")
+        irc.error("Cannot quit the main PyLink client!")
         return
 
     u = irc.nickToUid(nick)
