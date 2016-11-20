@@ -412,6 +412,11 @@ changehost:
         - inspnet
         - ts6net
 
+    # Sets the networks where Changehost hosts should be enforced: that is, any attempts
+    # by the user or other services to overwrite a host will be reverted.
+    #enforced_nets:
+    #    - inspnet
+
     # This sets the hostmasks that Changehost should look for. Whenever someone
     # with a matching nick!user@host connects, their host will be set to the
     # text defined. The following substitutions are available here:

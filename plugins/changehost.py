@@ -81,6 +81,26 @@ def handle_uid(irc, sender, command, args):
 
 utils.add_hook(handle_uid, 'UID')
 
+def handle_chghost(irc, sender, command, args):
+    """
+    Handles incoming CHGHOST requests for optional host-change enforcement.
+    """
+    changehost_conf = conf.conf.get("changehost")
+    if not changehost_conf:
+        return
+
+    target = args['target']
+
+    if (not irc.isInternalClient(sender)) and (not irc.isInternalServer(sender)):
+        if irc.name in changehost_conf.get('enforced_nets', []):
+            log.debug('(%s) Enforce for network is on, re-checking host for target %s/%s',
+                      irc.name, target, irc.getFriendlyName(target))
+            userdata = irc.users.get(target)
+            if userdata:
+                _changehost(irc, target, userdata.__dict__)
+
+utils.add_hook(handle_chghost, 'CHGHOST')
+
 @utils.add_cmd
 def applyhosts(irc, sender, args):
     """[<network>]
