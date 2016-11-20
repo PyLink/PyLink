@@ -41,6 +41,7 @@ First, make sure the following dependencies are met:
 * Setuptools (`pip3 install setuptools`)
 * PyYAML (`pip3 install pyyaml`)
 * [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip3 install ircmatch`)
+* passlib (`pip3 install passlib`)
 * *For the servprotect plugin*: [expiringdict](https://github.com/mailgun/expiringdict) (install this from source; installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
 
 1) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`

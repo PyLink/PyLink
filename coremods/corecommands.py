@@ -9,7 +9,7 @@ import gc
 import sys
 import importlib
 
-from . import control
+from . import control, login
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
@@ -43,27 +43,18 @@ def identify(irc, source, args):
         irc.reply('Error: Not enough arguments.')
         return
 
-    username = username.lower()
+    # Process new-style accounts.
+    if login.checkLogin(username, password):
+        _login(irc, source, username)
+        return
 
-    # Process new-style accounts. Note: usernames are case-insensitive, passwords are NOT.
-    for account, block in conf.conf['login'].get('accounts', {}).items():
-        if account.lower() == username:
-            # Username matched config.
-            if password and password == block.get('password'):
-                # Password exists and matched config. TODO: hash user passwords in config.
-                _login(irc, source, account)
-                break
-            else:
-                _loginfail(irc, source, account)
-                break
+    # Process legacy logins (login:user).
+    if username.lower() == conf.conf['login'].get('user', '').lower() and password == conf.conf['login'].get('password'):
+        realuser = conf.conf['login']['user']
+        _login(irc, source, realuser)
     else:
-        # Process legacy logins (login:user).
-        if username.lower() == conf.conf['login'].get('user', '').lower() and password == conf.conf['login'].get('password'):
-            realuser = conf.conf['login']['user']
-            _login(irc, source, realuser)
-        else:
-            # Username not found.
-            _loginfail(irc, source, username)
+        # Username not found.
+        _loginfail(irc, source, username)
 
 
 @utils.add_cmd
