@@ -417,6 +417,12 @@ changehost:
     #enforced_nets:
     #    - inspnet
 
+    # Sets the masks that Changehost enforcement should ignore: these can be users with certain
+    # hosts, exttargets, etc.
+    enforce_exceptions:
+        - "*!*@yournet/staff/*"
+        #- "$account"
+
     # This sets the hostmasks that Changehost should look for. Whenever someone
     # with a matching nick!user@host connects, their host will be set to the
     # text defined. The following substitutions are available here:

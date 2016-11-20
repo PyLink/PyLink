@@ -101,6 +101,13 @@ def handle_chghost(irc, sender, command, args):
         if irc.name in changehost_conf.get('enforced_nets', []):
             log.debug('(%s) Enforce for network is on, re-checking host for target %s/%s',
                       irc.name, target, irc.getFriendlyName(target))
+
+            for ex in changehost_conf.get("enforce_exceptions", []):
+                if irc.matchHost(ex, target):
+                    log.debug('(%s) Skipping host change for target %s; they are exempted by mask %s',
+                              irc.name, target, ex)
+                    return
+
             userdata = irc.users.get(target)
             if userdata:
                 _changehost(irc, target, userdata.__dict__)
