@@ -1043,7 +1043,7 @@ class Irc():
                 hosts.add(self.getHostmask(target, ip=True))
 
             if realhost:
-                hosts.add(self.getHostmask(target, ip=True))
+                hosts.add(self.getHostmask(target, realhost=True))
         else:  # We were given a host, use that.
             hosts = [target]
 
