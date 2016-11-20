@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+"""
+Password hashing utility for PyLink IRC Services.
+"""
+
+import passlib
+from passlib.apps import custom_app_context as pwd_context
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Hashes a password for use with PyLink IRC Services.')
+    parser.add_argument('password', help='specifies the password to hash')
+    args = parser.parse_args()
+
+    assert args.password, "Password cannot be empty!"
+    print(pwd_context.encrypt(args.password))

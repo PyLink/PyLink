@@ -49,9 +49,13 @@ login:
     accounts:
         # Creates an account with username "user1".
         user1:
-            # Defines the password for the user.
-            password: "somestring"
+            # Defines the password for the user. You can encrypt passwords using the
+            # 'mkpasswd' command or the 'pylink-mkpasswd' utility included with PyLink.
+            password: "$6$rounds=617998$BwHhwX4wB5R0H9uw$Lyo.4icYjVSnSCDsjNIO5Ap5LAcyqLspBcUqVR0qlIB9o6vKU.WyrttHZum4dVW35cuc2wGP2SKa5Bv/svdiv1"
 
+            # Determines whether the password given is in plain-text. Defaults to false
+            # (plain text) for backwards compatibility.
+            encrypted: true
 
 servers:
     # Please note: these are only EXAMPLE link blocks. You should edit them and
