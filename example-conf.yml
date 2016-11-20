@@ -423,6 +423,11 @@ changehost:
         - "*!*@yournet/staff/*"
         #- "$account"
 
+    # Determines whether Changehost rules should also match the host portion of a mask by IP and
+    # real hosts. These default to false.
+    #match_ip: false
+    #match_realhosts: false
+
     # This sets the hostmasks that Changehost should look for. Whenever someone
     # with a matching nick!user@host connects, their host will be set to the
     # text defined. The following substitutions are available here:

@@ -30,6 +30,9 @@ def _changehost(irc, target, args):
         # We're not enabled on the network, break.
         return
 
+    match_ip = changehost_conf.get('match_ip', False)
+    match_realhosts = changehost_conf.get('match_realhosts', False)
+
     changehost_hosts = changehost_conf.get('hosts')
     if not changehost_hosts:
         log.warning("(%s) No hosts were defined in changehost::hosts; "
@@ -43,7 +46,9 @@ def _changehost(irc, target, args):
     log.debug('(%s) Changehost args: %s', irc.name, args)
 
     for host_glob, host_template in changehost_hosts.items():
-        if irc.matchHost(host_glob, target):
+        log.debug('(%s) Changehost: checking mask %s', irc.name, host_glob)
+        if irc.matchHost(host_glob, target, ip=match_ip, realhost=match_realhosts):
+            log.debug('(%s) Changehost matched mask %s', irc.name, host_glob)
             # This uses template strings for simple substitution:
             # https://docs.python.org/3/library/string.html#template-strings
             template = string.Template(host_template)
