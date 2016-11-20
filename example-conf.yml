@@ -51,7 +51,7 @@ login:
         user1:
             # Defines the password for the user. You can encrypt passwords using the
             # 'mkpasswd' command or the 'pylink-mkpasswd' utility included with PyLink.
-            password: "$6$rounds=617998$BwHhwX4wB5R0H9uw$Lyo.4icYjVSnSCDsjNIO5Ap5LAcyqLspBcUqVR0qlIB9o6vKU.WyrttHZum4dVW35cuc2wGP2SKa5Bv/svdiv1"
+            password: "$6$rounds=81447$WlVlZYCgbnjPmVqy$28Tu/Zl0xNpePqimax2wABKn5GCoWomYEI1Pu5jqYyQNULazR4BxQmscZ0MgBHqBCCke.3u5eOtBSZwL3WwVf0"
 
             # Determines whether the password given is in plain-text. Defaults to false
             # (plain text) for backwards compatibility.

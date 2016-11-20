@@ -4,7 +4,12 @@ login.py - Implement core login abstraction.
 
 from pylinkirc import conf, utils, world
 from pylinkirc.log import log
-from passlib.apps import custom_app_context as pwd_context
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(["sha512_crypt", "sha256_crypt"],
+                           all__vary_rounds=0.1,
+                           sha256_crypt__default_rounds=180000,
+                           sha512_crypt__default_rounds=90000)
 
 def checkLogin(user, password):
     """Checks whether the given user and password is a valid combination."""
