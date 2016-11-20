@@ -16,6 +16,12 @@ allowed_chars = string.ascii_letters + '-./:' + string.digits
 def _changehost(irc, target, args):
     changehost_conf = conf.conf.get("changehost")
 
+    if target not in irc.users:
+        return
+    elif irc.isInternalClient(target):
+        log.debug('(%s) Skipping changehost on internal client %s', irc.name, target)
+        return
+
     if not changehost_conf:
         log.warning("(%s) Missing 'changehost:' configuration block; "
                     "Changehost will not function correctly!", irc.name)
