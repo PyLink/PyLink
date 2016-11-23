@@ -51,6 +51,13 @@ if __name__ == '__main__':
         with open('%s.pid' % conf.confname, 'w') as f:
             f.write(str(os.getpid()))
 
+    # warn users that admin configuration is changing
+    try:
+        if conf.conf['login']['accounts']:
+          pass
+    except KeyError:
+        log.warning("The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. Please switch to the new 'login:accounts' format as outlined in the example config.")
+
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
     to_load = conf.conf['plugins']
