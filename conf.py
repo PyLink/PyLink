@@ -52,6 +52,10 @@ def validateConf(conf):
         assert conf.get(section), "Missing %r section in config." % section
 
     # Make sure at least one form of authentication is valid.
+    # Also we'll warn them that login:user/login:password is deprecated
+    if conf['login'].get('password') or conf['login'].get('user'):
+        log.warning("The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. Please switch to the new 'login:accounts' format as outlined in the example config.")
+
     old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
     newlogins = conf['login'].get('accounts', {})
     new_login_valid = len(newlogins) >= 1
