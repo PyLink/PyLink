@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""
+Contrib module manager for PyLink IRC Services.
+"""
+
+from distutils.util import strtobool
+import sys
+import os
+import os.path
+import urllib.request
+import traceback
+
+BASE_URL = 'https://github.com/PyLink/pylink-contrib-modules'
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('path', nargs='+', help='specifies the paths to download (e.g. '
+                        '"plugins/helloworld", "protocols/blah", etc.)')
+    parser.add_argument('--version', '-v', nargs='?', help='specifies the tag (version) to download from',
+                        default='master')
+    parser.add_argument('--yes', '-y', action='store_true', help='skip yes/no confirmations')
+    args = parser.parse_args()
+
+    print('This will download the following URLs:')
+    print()
+
+    urls = {}
+    for target in set(args.path):
+        if not target.startswith(('plugins', 'protocols')):
+            print('ERROR: Target paths should be in one of the following forms: "plugins/<pluginname>" '
+                  'or "protocols/<modulename>" (got %r)' % target, file=sys.stderr)
+            sys.exit(1)
+
+        target += '.py'
+        url = '%s/blob/%s/%s' % (BASE_URL, args.version, target)
+        urls[target] = url
+        print(url, '=>', '%s' % os.path.join(os.getcwd(), target))
+
+    text = input('Continue (Y)es/(n)o? ').lower()
+    if not strtobool(text):
+        sys.exit(2)
+    print()
+
+    for filename, url in urls.items():
+        print('Retrieving %s...' % url)
+        try:
+            urllib.request.urlretrieve(url, filename)
+        except:
+            # If one request errors, move onto the next one.
+            traceback.print_exc()
+            continue
+
+    print()
+    print('All downloads finished.')
