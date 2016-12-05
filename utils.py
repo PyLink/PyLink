@@ -138,14 +138,6 @@ def applyModes(irc, target, changedmodes):
     log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
     return irc.applyModes(target, changedmodes)
 
-def loadModuleFromFolder(name, folder):
-    """
-    Imports and returns a module, if existing, from a specific folder.
-    """
-    fullpath = os.path.join(folder, '%s.py' % name)
-    m = importlib.machinery.SourceFileLoader(name, fullpath).load_module()
-    return m
-
 def loadPlugin(name):
     """
     Imports and returns the requested plugin.
@@ -294,7 +286,7 @@ class ServiceBot():
             return
 
         irc.reply(text, notice=notice, source=servuid, private=private)
-        
+
     def error(self, irc, text, notice=False, private=False):
         """Replies with an error, as the service in question."""
         servuid = self.uids.get(irc.name)
@@ -303,7 +295,7 @@ class ServiceBot():
             return
 
         irc.error(text, notice=notice, source=servuid, private=private)
-        
+
     def call_cmd(self, irc, source, text, called_in=None):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
