@@ -21,6 +21,13 @@ if __name__ == '__main__':
     parser.add_argument('--version', '-v', nargs='?', help='specifies the tag (version) to download from',
                         default='master')
     parser.add_argument('--yes', '-y', action='store_true', help='skip yes/no confirmations')
+
+    if len(sys.argv) < 2:
+        parser.print_help()
+        print()
+        print('For a list of available contrib modules, see %s' % BASE_URL)
+        sys.exit(1)
+
     args = parser.parse_args()
 
     print('This will download the following URLs:')
