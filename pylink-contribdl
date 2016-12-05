@@ -38,9 +38,10 @@ if __name__ == '__main__':
         urls[target] = url
         print(url, '=>', '%s' % os.path.join(os.getcwd(), target))
 
-    text = input('Continue (Y)es/(n)o? ').lower()
-    if not strtobool(text):
-        sys.exit(2)
+    if not args.yes:
+        text = input('Continue (Y)es/(n)o? ').lower()
+        if not strtobool(text):
+            sys.exit(2)
     print()
 
     for filename, url in urls.items():
