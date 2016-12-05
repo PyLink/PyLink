@@ -31,7 +31,11 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 [The Utopia Repository](https://packages.overdrivenetworks.com/) hosts `.deb` packages for PyLink. For Debian Jessie (stable) and Stretch/sid (testing), the `pylink` package and its dependencies are available in the `main` section. See https://packages.overdrivenetworks.com/#instructions for setup instructions.
 
-Upon installing `pylink`, example configuration and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/), which is provided by the `pylink-doc` package.
+Upon installing `pylink`, example configurations and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/), which is provided by the `pylink-doc` package.
+
+### Installing via Ubuntu PPA (beta; stable branch only)
+
+Ubuntu packages for PyLink are available from the [PyLink PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink) for Ubuntu 14.04 LTS  (trusty) and above. Like with the Debian installation, example configurations and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively.
 
 ### Installing from source
 

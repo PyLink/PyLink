@@ -1,5 +1,24 @@
-# PyLink 1.0.2
-Tagged as **1.0.2** by [GLolol](https://github.com/GLolol)
+# PyLink 1.0.3
+Tagged as **1.0.3** by [GLolol](https://github.com/GLolol)
+
+The "Buoyant" release.
+
+### Changes from 1.0.2
+
+#### Bug fixes
+- Fixed invalid database names such as "automode-/tmp/test.db" from being generated when PyLink is started with an absolute path to its config.
+- Backported fixes from 1.1-dev:
+    - relay: skip channel TS checks for Clientbot, preventing possible "channel too old" errors on link.
+
+#### Feature changes
+- Backported features from 1.1-dev:
+    - Relay: allow configuring custom relay server suffixes
+
+#### Misc. changes
+- Various spelling/grammar fixes in the example config.
+
+# [PyLink 1.0.2](https://github.com/GLolol/PyLink/releases/tag/1.0.2)
+Tagged as **1.0.2** by [GLolol](https://github.com/GLolol) on 2016-10-15T05:52:37Z
 
 The "Baluga" release.
 
@@ -15,8 +34,8 @@ The "Baluga" release.
 #### Internal fixes / improvements
  - setup.py: reworded warnings if `git describe --tags` fails / fallback version is used. Also, the internal VCS version for non-Git builds is now `-nogit` instead of `-dirty`.
 
-# PyLink 1.0.1
-Tagged as **1.0.1** by [GLolol](https://github.com/GLolol)
+# [PyLink 1.0.1](https://github.com/GLolol/PyLink/releases/tag/1.0.1)
+Tagged as **1.0.1** by [GLolol](https://github.com/GLolol) on 2016-10-06T02:13:42Z
 
 The "Beam" release.
 
@@ -24,7 +43,7 @@ The "Beam" release.
 
 #### Bug fixes
 
-- **Fix PyLink being uninstallable via PyPI due to a missing VERSION file.**
+- **Fix PyLink being uninstallable via PyPI due to missing VERSION and README.md**
 - ts6: don't crash when CHGHOST target is a nick instead of UID
 - relay: clobber colour codes in hosts
 - bots: allow JOIN/NICK/QUIT on ServiceBot clients
