@@ -1810,6 +1810,7 @@ def linkacl(irc, source, args):
     """ALLOW|DENY|LIST <channel> <remotenet>
 
     Allows blocking / unblocking certain networks from linking to a relayed channel, based on a blacklist.
+
     LINKACL LIST returns a list of blocked networks for a channel, while the ALLOW and DENY subcommands allow manipulating this blacklist."""
     missingargs = "Not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST), channel, remote network (for ALLOW/DENY)."
 
