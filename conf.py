@@ -44,7 +44,7 @@ conf = {'bot':
         }
 confname = 'unconfigured'
 
-def validateConf(conf):
+def validateConf(conf, logger=None):
     """Validates a parsed configuration dict."""
     assert type(conf) == dict, "Invalid configuration given: should be type dict, not %s." % type(conf).__name__
 
@@ -54,7 +54,14 @@ def validateConf(conf):
     # Make sure at least one form of authentication is valid.
     # Also we'll warn them that login:user/login:password is deprecated
     if conf['login'].get('password') or conf['login'].get('user'):
-        log.warning("The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. Please switch to the new 'login:accounts' format as outlined in the example config.")
+        e = "The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. " \
+            "Please switch to the new 'login:accounts' format as outlined in the example config."
+        if logger:
+            logger.warning(e)
+        else:
+            # FIXME: we need a better fallback when log isn't available on first
+            # start.
+            print('WARNING: %s' % e)
 
     old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
     newlogins = conf['login'].get('accounts', {})
@@ -69,7 +76,7 @@ def validateConf(conf):
     return conf
 
 
-def loadConf(filename, errors_fatal=True):
+def loadConf(filename, errors_fatal=True, logger=None):
     """Loads a PyLink configuration file from the filename given."""
     global confname, conf, fname
     # Note: store globally the last loaded conf filename, for REHASH in coremods/control.
@@ -79,7 +86,7 @@ def loadConf(filename, errors_fatal=True):
     try:
         with open(filename, 'r') as f:
             conf = yaml.load(f)
-            conf = validateConf(conf)
+            conf = validateConf(conf, logger=logger)
     except Exception as e:
         print('ERROR: Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e), file=sys.stderr)
         print('       Users upgrading from users < 0.9-alpha1 should note that the default configuration has been renamed to *pylink.yml*, not *config.yml*', file=sys.stderr)

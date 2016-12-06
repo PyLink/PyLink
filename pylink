@@ -29,7 +29,7 @@ if __name__ == '__main__':
         print('PyLink %s (in VCS: %s)' % (__version__, real_version))
         sys.exit()
 
-    # Load the config
+    # FIXME: we can't pass logging on to conf until we set up the config...
     conf.loadConf(args.config)
 
     from pylinkirc.log import log

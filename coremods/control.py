@@ -54,7 +54,7 @@ def _rehash():
     """Rehashes the PyLink daemon."""
     old_conf = conf.conf.copy()
     fname = conf.fname
-    new_conf = conf.loadConf(fname, errors_fatal=False)
+    new_conf = conf.loadConf(fname, errors_fatal=False, logger=log)
     new_conf = conf.validateConf(new_conf)
     conf.conf = new_conf
 
