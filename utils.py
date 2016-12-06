@@ -16,6 +16,8 @@ from . import world, conf
 # This is just so protocols and plugins are importable.
 from pylinkirc import protocols, plugins
 
+NORMALIZEWHITESPACE_RE = re.compile(r'\s+')
+
 class NotAuthorizedError(Exception):
     """
     Exception raised by checkAuthenticated() when a user fails authentication
@@ -362,14 +364,21 @@ class ServiceBot():
                     lines = doc.splitlines()
                     # Bold the first line, which usually just tells you what
                     # arguments the command takes.
-                    lines[0] = '\x02%s %s\x02' % (command, lines[0])
+                    args_desc = '\x02%s %s\x02' % (command, lines[0])
 
-                    if shortform:  # Short form is just the command name + args.
-                        _reply(lines[0].strip())
-                    else:
-                        for line in lines:
-                            # Otherwise, just output the rest of the docstring to IRC.
-                            _reply(line.strip())
+                    _reply(args_desc.strip())
+                    if not shortform:
+                        # Note: we handle newlines in docstrings a bit differently. Per
+                        # https://github.com/GLolol/PyLink/issues/307, only double newlines
+                        # have the effect of showing a new line on IRC. Single newlines
+                        # are stripped so that word wrap can be applied in the source code
+                        # without actually affecting the output on IRC.
+                        for line in doc.replace('\r', '').split('\n\n')[1:]:
+                            _reply(' ')  # Empty line to break up output a bit.
+                            real_line = line.replace('\n', ' ')
+                            real_line = real_line.strip()
+                            real_line = NORMALIZEWHITESPACE_RE.sub(' ', real_line)
+                            _reply(real_line)
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)
                     return
