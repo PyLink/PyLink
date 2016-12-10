@@ -3,7 +3,7 @@ import importlib
 
 from pylinkirc import utils, world, conf, classes
 from pylinkirc.log import log
-from pylinkirc.coremods import control
+from pylinkirc.coremods import control, permissions
 
 @utils.add_cmd
 def disconnect(irc, source, args):
@@ -12,6 +12,7 @@ def disconnect(irc, source, args):
     Disconnects the network <network>. When all networks are disconnected, PyLink will automatically exit.
 
     To reconnect a network disconnected using this command, use REHASH to reload the networks list."""
+    permissions.checkPermissions(irc, source, ['networks.disconnect'])
     try:
         netname = args[0]
         network = world.networkobjects[netname]
@@ -31,7 +32,7 @@ def autoconnect(irc, source, args):
 
     Sets the autoconnect time for <network> to <seconds>.
     You can disable autoconnect for a network by setting <seconds> to a negative value."""
-    irc.checkAuthenticated(source)
+    permissions.checkPermissions(irc, source, ['networks.autoconnect'])
     try:
         netname = args[0]
         seconds = float(args[1])
@@ -53,7 +54,7 @@ def remote(irc, source, args):
     """<network> <command>
 
     Runs <command> on the remote network <network>. No replies are sent back due to protocol limitations."""
-    irc.checkAuthenticated(source, allowOper=False)
+    permissions.checkPermissions(irc, source, ['networks.remote'])
 
     try:
         netname = args[0]
@@ -89,7 +90,7 @@ def reloadproto(irc, source, args):
     """<protocol module name>
 
     Reloads the given protocol module without restart. You will have to manually disconnect and reconnect any network using the module for changes to apply."""
-    irc.checkAuthenticated(source)
+    permissions.checkPermissions(irc, source, ['networks.reloadproto'])
     try:
         name = args[0]
     except IndexError:
