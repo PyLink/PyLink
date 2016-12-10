@@ -1,10 +1,8 @@
 # This file is an example of the permissions system in PyLink. Should you wish,
 # you may copy the contents of this file and paste it into the configuration you're
 # using.
-# Permissions work by mapping hostmasks or exttargets to list of permissions, allowing
+# Permissions work by mapping hostmasks, accounts, and exttargets to lists of permissions, allowing
 # you to fine tune which users have access to which commands.
-
-# The permissions API is new, and optional for plugins. Currently, only Automode and Relay use it.
 
 # If you do not specify any permissions block in your configuration, PyLink will default to a
 # permission set defined by plugins, which usually correspond to the list below, but can be
@@ -30,8 +28,20 @@ permissions:
         - automode.list
 
         # These allow opers to manage Relay links on their network.
+        - relay.create
+        - relay.destroy
+        - relay.claim
+        - relay.link
+        - relay.delink
+        - relay.linkacl.view
+        - relay.linkacl
 
+    "*!*@*":
+        # The following permissions are given to all users by default.
+        - relay.linked
 
-    "$pylinkacc":
-        # Those with an admin login in PyLink can do anything.
+    # Replace ABC123 with your PyLink account name (configured above)
+    # in order to give yourself admin access.
+    "$pylinkacc:ABC123":
         - "*"
+

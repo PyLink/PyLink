@@ -57,6 +57,14 @@ login:
             # (plain text) for backwards compatibility.
             encrypted: true
 
+permissions:
+    # Permissions are described in more detail in example-permissions.yml.
+
+    # Replace ABC123 with your PyLink account name (configured above)
+    # in order to give yourself admin access.
+    "$pylinkacc:ABC123":
+        - "*"
+
 servers:
     # Please note: these are only EXAMPLE link blocks. You should edit them and
     # remove ones that you don't need in your config.
