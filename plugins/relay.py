@@ -1550,6 +1550,14 @@ def create(irc, source, args):
     irc.reply('Done.')
 create = utils.add_cmd(create, featured=True)
 
+def _stop_relay(entry):
+    """Internal function to deinitialize a relay link and its leaves."""
+    network, channel = entry
+    # Iterate over all the channel links and deinitialize them.
+    for link in db[entry]['links']:
+        removeChannel(world.networkobjects.get(link[0]), link[1])
+    removeChannel(world.networkobjects.get(network), channel)
+
 def destroy(irc, source, args):
     """[<home network>] <channel>
 
@@ -1579,12 +1587,9 @@ def destroy(irc, source, args):
     entry = (network, channel)
 
     if entry in db:
-        # Iterate over all the channel links and deinitialize them.
-        for link in db[entry]['links']:
-            removeChannel(world.networkobjects.get(link[0]), link[1])
-        removeChannel(world.networkobjects.get(network), channel)
-
+        _stop_relay(entry)
         del db[entry]
+
         log.info('(%s) relay: Channel %s destroyed by %s.', irc.name,
                  channel, irc.getHostmask(source))
         irc.reply('Done.')
@@ -1593,6 +1598,37 @@ def destroy(irc, source, args):
                   "another network, use the DESTROY command." % channel)
         return
 destroy = utils.add_cmd(destroy, featured=True)
+
+@utils.add_cmd
+def purge(irc, source, args):
+    """<network>
+
+    Destroys all links relating to the target network."""
+    permissions.checkPermissions(irc, source, ['relay.purge'])
+    try:
+        network = args[0]
+    except IndexError:
+        irc.error("Not enough arguments. Needs 1: network.")
+        return
+
+    count = 0
+
+    ### XXX lock to make this thread safe!
+    for entry in db.copy():
+        # Entry was owned by the target network; remove it
+        if entry[0] == network:
+            count += 1
+            _stop_relay(entry)
+            del db[entry]
+        else:
+            # Drop leaf channels involving the target network
+            for link in db[entry]['links'].copy():
+                if link[0] == network:
+                    count += 1
+                    removeChannel(world.networkobjects.get(network), link[1])
+                    db[entry]['links'].remove(link)
+
+    irc.reply("Done. Purged %s entries involving the network %s." % (count, network))
 
 def link(irc, source, args):
     """<remotenet> <channel> <local channel>
