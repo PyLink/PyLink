@@ -3,6 +3,7 @@ from time import ctime
 
 from pylinkirc import utils, __version__, world, real_version
 from pylinkirc.log import log
+from pylinkirc.coremods import permissions
 
 @utils.add_cmd
 def status(irc, source, args):
