@@ -8,7 +8,7 @@ It provides simple checks for validating and loading YAML-format configurations 
 try:
     import yaml
 except ImportError:
-    raise ImportError("Please install PyYAML and try again.")
+    raise ImportError("PyLink requires PyYAML to function; please install it and try again.")
 
 import sys
 import os.path

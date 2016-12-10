@@ -20,7 +20,7 @@ from collections import defaultdict, deque
 try:
     import ircmatch
 except ImportError:
-    raise ImportError("Please install the ircmatch library and try again.")
+    raise ImportError("PyLink requires ircmatch to function; please install it and try again.")
 
 from . import world, utils, structures, __version__
 from .log import *
@@ -541,7 +541,7 @@ class Irc():
         # This is a stub to alias error to reply
         self.reply("Error: %s" % text, notice=notice, source=source, private=private,
             force_privmsg_in_private=force_privmsg_in_private, loopback=loopback)
-        
+
     def toLower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
         casemapping (rfc1459 or ascii)."""

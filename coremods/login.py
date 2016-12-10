@@ -4,7 +4,11 @@ login.py - Implement core login abstraction.
 
 from pylinkirc import conf, utils, world
 from pylinkirc.log import log
-from passlib.context import CryptContext
+
+try:
+    from passlib.context import CryptContext
+except ImportError:
+    raise ImportError("PyLink requires passlib to function; please install it and try again.")
 
 pwd_context = CryptContext(["sha512_crypt", "sha256_crypt"],
                            all__vary_rounds=0.1,
