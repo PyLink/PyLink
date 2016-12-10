@@ -58,9 +58,11 @@ def checkPermissions(irc, uid, perms, also_show=[]):
     Checks permissions of the caller. If the caller has any of the permissions listed in perms,
     this function returns True. Otherwise, NotAuthorizedError is raised.
     """
+    # For old (< 1.1 login blocks):
     # If the user is logged in, they automatically have all permissions.
-    if irc.matchHost('$pylinkacc', uid):
-        log.debug('permissions: overriding permissions check for admin user %s', irc.getHostmask(uid))
+    if irc.matchHost('$pylinkacc', uid) and conf.conf['login'].get('user'):
+        log.debug('permissions: overriding permissions check for old-style admin user %s',
+                  irc.getHostmask(uid))
         return True
 
     # Iterate over all hostmask->permission list mappings.
