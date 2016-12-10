@@ -57,6 +57,7 @@ def raw(irc, source, args):
     """<text>
 
     Admin-only. Sends raw text to the uplink IRC server.
+
     \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
     permissions.checkPermissions(irc, source, ['exec.raw'])
 
@@ -76,6 +77,7 @@ def inject(irc, source, args):
     """<text>
 
     Admin-only. Injects raw text into the running PyLink protocol module, replying with the hook data returned.
+
     \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
     permissions.checkPermissions(irc, source, ['exec.inject'])
 
