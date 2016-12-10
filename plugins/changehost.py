@@ -3,6 +3,7 @@ Changehost plugin - automatically changes the hostname of matching users.
 """
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
+from pylinkirc.coremods import permissions
 
 import string
 
@@ -86,6 +87,8 @@ def applyhosts(irc, sender, args):
     """[<network>]
 
     Applies all configured hosts for users on the given network, or the current network if none is specified."""
+
+    permissions.checkPermissions(irc, sender, ['changehost.applyhosts'])
 
     try:  # Try to get network from the command line.
         network = world.networkobjects[args[0]]
