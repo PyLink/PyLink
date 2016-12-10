@@ -98,7 +98,7 @@ def cb_relay_core(irc, source, command, args):
                 # Get the original client that the relay client source was meant for.
                 log.debug('(%s) relay_cb_core: Trying to find original sender (user) for %s', irc.name, source)
                 try:
-                    origuser = relay.getOrigUser(irc, source) or args['userdata'].remote
+                    origuser = relay.get_orig_user(irc, source) or args['userdata'].remote
                 except (AttributeError, KeyError):
                     log.debug('(%s) relay_cb_core: Trying to find original sender (server) for %s. serverdata=%s', irc.name, source, args.get('serverdata'))
                     try:
@@ -125,7 +125,7 @@ def cb_relay_core(irc, source, command, args):
                     # No user data given. This was probably some other global event such as SQUIT.
                     userdata = irc.pseudoclient
 
-                targets = [channel for channel in userdata.channels if relay.getRelay((irc.name, channel))]
+                targets = [channel for channel in userdata.channels if relay.get_relay((irc.name, channel))]
             else:
                 # Pluralize the channel so that we can iterate over it.
                 targets = [target]
@@ -151,7 +151,7 @@ def cb_relay_core(irc, source, command, args):
             if 'channel' in args:
                 # Display the real channel instead of the local name, if applicable
                 args['local_channel'] = args['channel']
-                args['channel'] = relay.getRemoteChan(irc, world.networkobjects[sourcenet], args['channel'])
+                args['channel'] = relay.get_remote_channel(irc, world.networkobjects[sourcenet], args['channel'])
                 log.debug('(%s) relay_clientbot: coersing $channel from %s to %s', irc.name, args['local_channel'], args['channel'])
 
             for target in targets:
