@@ -36,6 +36,14 @@ if __name__ == '__main__':
     from pylinkirc import classes, utils, coremods
     log.info('PyLink %s starting...', __version__)
 
+    # Set terminal window title. See https://bbs.archlinux.org/viewtopic.php?id=85567
+    # and https://stackoverflow.com/questions/7387276/
+    if os.name == 'nt':
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleTitleW("PyLink %s" % __version__)
+    elif os.name == 'posix':
+        sys.stdout.write("\x1b]2;PyLink %s\x07" % __version__)
+
     # Check for a pid file, unless told not to,
     # this stops instance overlap, which wrecks clientbots
     if not args.no_check_pid:
