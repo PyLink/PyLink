@@ -10,8 +10,8 @@ def disconnect(irc, source, args):
     """<network>
 
     Disconnects the network <network>. When all networks are disconnected, PyLink will automatically exit.
-    Note: This does not affect the autoreconnect settings of any network, so the network will likely just reconnect unless autoconnect is disabled (see the 'autoconnect' command)."""
-    irc.checkAuthenticated(source, allowOper=False)
+
+    To reconnect a network disconnected using this command, use REHASH to reload the networks list."""
     try:
         netname = args[0]
         network = world.networkobjects[netname]
