@@ -483,7 +483,8 @@ def removeChannel(irc, channel):
 
     if channel not in map(str.lower, irc.serverdata.get('channels', [])):
         world.services['pylink'].extra_channels[irc.name].discard(channel)
-        irc.proto.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
+        if irc.pseudoclient:
+            irc.proto.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
 
     relay = getRelay((irc.name, channel))
     if relay:
