@@ -9,7 +9,7 @@ import gc
 import sys
 import importlib
 
-from . import control, login
+from . import control, login, permissions
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
@@ -62,7 +62,9 @@ def shutdown(irc, source, args):
     """takes no arguments.
 
     Exits PyLink by disconnecting all networks."""
-    irc.checkAuthenticated(source, allowOper=False)
+
+    permissions.checkPermissions(irc, source, ['core.shutdown'])
+
     u = irc.users[source]
 
     log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
@@ -75,7 +77,10 @@ def load(irc, source, args):
     """<plugin name>.
 
     Loads a plugin from the plugin folder."""
-    irc.checkAuthenticated(source, allowOper=False)
+    # Note: reload capability is acceptable here, because all it actually does is call
+    # load after unload.
+    permissions.checkPermissions(irc, source, ['core.load', 'core.reload'])
+
     try:
         name = args[0]
     except IndexError:
@@ -104,6 +109,7 @@ def unload(irc, source, args):
     """<plugin name>.
 
     Unloads a currently loaded plugin."""
+    permissions.checkPermissions(irc, source, ['core.unload', 'core.reload'])
     irc.checkAuthenticated(source, allowOper=False)
     try:
         name = args[0]
@@ -177,6 +183,8 @@ def reload(irc, source, args):
     except IndexError:
         irc.reply("Error: Not enough arguments. Needs 1: plugin name.")
         return
+
+    # Note: these functions do permission checks, so there are none needed here.
     if unload(irc, source, args):
         load(irc, source, args)
 
@@ -185,8 +193,9 @@ def rehash(irc, source, args):
     """takes no arguments.
 
     Reloads the configuration file for PyLink, (dis)connecting added/removed networks.
-    Plugins must be manually reloaded."""
-    irc.checkAuthenticated(source, allowOper=False)
+
+    Note: plugins must be manually reloaded."""
+    permissions.checkPermissions(irc, source, ['core.rehash'])
     try:
         control._rehash()
     except Exception as e:  # Something went wrong, abort.
