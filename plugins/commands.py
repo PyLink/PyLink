@@ -134,7 +134,7 @@ def loglevel(irc, source, args):
 
     Sets the log level to the given <level>. <level> must be either DEBUG, INFO, WARNING, ERROR, or CRITICAL.
     If no log level is given, shows the current one."""
-    irc.checkAuthenticated(source, allowOper=False)
+    permissions.checkPermissions(irc, source, ['commands.loglevel'])
     try:
         level = args[0].upper()
         try:
