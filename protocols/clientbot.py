@@ -603,8 +603,18 @@ class ClientbotWrapperProtocol(Protocol):
                 self.kick_queue[channel][1].cancel()
                 del self.kick_queue[channel]
 
-        self.handle_part(target, 'KICK', [channel, reason])
-        return {'channel': channel, 'target': target, 'text': reason}
+        # Statekeeping: remove the target from the channel they were previously in.
+        self.irc.channels[channel].removeuser(target)
+        try:
+            self.irc.users[target].channels.remove(channel)
+        except KeyError:
+            pass
+
+        self.irc.callHooks([source, 'KICK', {'channel': channel, 'target': target, 'text': reason}])
+
+        # Delete channels that we were kicked from, for better state keeping.
+        if self.irc.pseudoclient and target == self.irc.pseudoclient.uid:
+            del self.irc.channels[channel]
 
     def handle_mode(self, source, command, args):
         """Handles MODE changes."""
@@ -667,7 +677,12 @@ class ClientbotWrapperProtocol(Protocol):
             self.irc.channels[channel].removeuser(source)
         self.irc.users[source].channels -= set(channels)
 
-        return {'channels': channels, 'text': reason}
+        self.irc.callHooks([source, 'PART', {'channels': channels, 'text': reason}])
+
+        # Clear channels that are empty, or that we're parting.
+        for channel in channels:
+            if (self.irc.pseudoclient and source == self.irc.pseudoclient.uid) or not self.irc.channels[channel].users:
+                del self.irc.channels[channel]
 
     def handle_ping(self, source, command, args):
         """
