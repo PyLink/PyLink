@@ -417,19 +417,24 @@ class ClientbotWrapperProtocol(Protocol):
             return
 
         sasl_mech = self.irc.serverdata.get('sasl_mech')
-        sasl_user = self.irc.serverdata.get('sasl_username')
-        ssl_cert = self.irc.serverdata.get('ssl_certfile')
-        ssl_key = self.irc.serverdata.get('ssl_keyfile')
-        if sasl_user and sasl_mech:
+        if sasl_mech:
+            sasl_user = self.irc.serverdata.get('sasl_username')
             sasl_pass = self.irc.serverdata.get('sasl_password')
+            ssl_cert = self.irc.serverdata.get('ssl_certfile')
+            ssl_key = self.irc.serverdata.get('ssl_keyfile')
+            ssl = self.irc.serverdata.get('ssl')
 
             if sasl_mech == 'PLAIN' and not (sasl_user and sasl_pass):
-                log.warning("(%s) Not attempting PLAIN authentication; either sasl_username or "
+                log.warning("(%s) Not attempting PLAIN authentication; sasl_username and/or "
                             "sasl_password aren't correctly set.", self.irc.name)
                 return False
             elif sasl_mech == 'EXTERNAL' and not (ssl_cert and ssl_key):
-                log.warning("(%s) Not attempting EXTERNAL authentication; either ssl_certfile or "
+                log.warning("(%s) Not attempting EXTERNAL authentication; ssl_certfile and/or "
                             "ssl_keyfile aren't correctly set.", self.irc.name)
+                return False
+            elif sasl_mech == 'EXTERNAL' and not ssl:
+                log.warning("(%s) Not attempting EXTERNAL authentication; SASL external requires "
+                            "SSL, but it isn't enabled.", self.irc.name)
                 return False
             self.irc.send('AUTHENTICATE %s' % sasl_mech, queue=False)
             return True
