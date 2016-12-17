@@ -494,7 +494,8 @@ class ClientbotWrapperProtocol(Protocol):
 
             # Only send CAP END immediately if SASL is disabled. Otherwise, wait for the 90x responses
             # to do so.
-            self.saslAuth()
+            if not self.saslAuth():
+                self.irc.send('CAP END')
         elif subcmd == 'NAK':
             self.irc.send('CAP END')
 
