@@ -3,6 +3,7 @@ control.py - Implements SHUTDOWN and REHASH functionality.
 """
 import signal
 import os
+import threading
 
 from pylinkirc import world, utils, conf, classes
 from pylinkirc.log import log, makeFileLogger, stopFileLoggers
@@ -39,6 +40,10 @@ def _shutdown(irc=None):
         os.remove("%s.pid" % conf.confname)
     except OSError:
         log.exception("Failed to remove PID, ignoring...")
+
+    log.info("Waiting for remaining threads to stop; this may take a few seconds. If PyLink freezes "
+             "at this stage, press Ctrl-C to force a shutdown.")
+    log.debug('_shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
 
     # Done.
 
