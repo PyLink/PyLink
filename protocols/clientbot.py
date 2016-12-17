@@ -467,7 +467,8 @@ class ClientbotWrapperProtocol(Protocol):
         """
         Handles SASL authentication status reports.
         """
-        log.info('(%s) %s', self.irc.name, args[-1])
+        logfunc = log.info if command == '903' else log.warning
+        logfunc('(%s) %s', self.irc.name, args[-1])
         self.irc.send('CAP END')
     handle_903 = handle_902 = handle_905 = handle_906 = handle_907 = handle_904
 
