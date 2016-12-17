@@ -84,7 +84,7 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 * [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `nefarious`
     - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (HOST_HIDING_STYLE settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
 * [UnrealIRCd](https://www.unrealircd.org/) 4.x - module `unreal`
-    - Linking to UnrealIRCd 3.2 servers is only supported when using an UnrealIRCd 4.x server as a hub, with topology such as  `pylink<->unreal4<->unreal3.2`. We nevertheless encourage you to upgrade so all your IRCds are running the same version.
+    - Linking to UnrealIRCd 3.2 servers is only possible when using an UnrealIRCd 4.x server as a hub, with topology such as  `pylink<->unreal4<->unreal3.2`. We nevertheless encourage you to upgrade so all your IRCds are running the same version.
 
 ### Extended support
 
