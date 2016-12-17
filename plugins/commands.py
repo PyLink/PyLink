@@ -5,11 +5,23 @@ from pylinkirc import utils, __version__, world, real_version
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
+default_permissions = {"*!*@*": ['commands.status', 'commands.showuser', 'commands.showchan']}
+
+def main(irc=None):
+    """Commands plugin main function, called on plugin load."""
+    # Register our permissions.
+    permissions.addDefaultPermissions(default_permissions)
+
+def die(irc):
+    """Commands plugin die function, called on plugin unload."""
+    permissions.removeDefaultPermissions(default_permissions)
+
 @utils.add_cmd
 def status(irc, source, args):
     """takes no arguments.
 
     Returns your current PyLink login status."""
+    permissions.checkPermissions(irc, source, ['commands.status'])
     identified = irc.users[source].account
     if identified:
         irc.reply('You are identified as \x02%s\x02.' % identified)
@@ -23,6 +35,7 @@ def showuser(irc, source, args):
     """<user>
 
     Shows information about <user>."""
+    permissions.checkPermissions(irc, source, ['commands.showuser'])
     try:
         target = args[0]
     except IndexError:
@@ -66,6 +79,7 @@ def showchan(irc, source, args):
     """<channel>
 
     Shows information about <channel>."""
+    permissions.checkPermissions(irc, source, ['commands.showchan'])
     try:
         channel = irc.toLower(args[0])
     except IndexError:
@@ -126,6 +140,7 @@ def echo(irc, source, args):
     """<text>
 
     Echoes the text given."""
+    permissions.checkPermissions(irc, source, ['commands.echo'])
     irc.reply(' '.join(args))
 
 loglevels = {'DEBUG': 10, 'INFO': 20, 'WARNING': 30, 'ERROR': 40, 'CRITICAL': 50}

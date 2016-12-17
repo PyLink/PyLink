@@ -39,6 +39,9 @@ permissions:
     "*!*@*":
         # The following permissions are given to all users by default.
         - relay.linked
+        - commands.status
+        - commands.showuser
+        - commands.showchan
 
     # Replace ABC123 with your PyLink account name (configured above)
     # in order to give yourself admin access.
