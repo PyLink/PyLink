@@ -1409,7 +1409,8 @@ class Protocol():
                 'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
                 'channeldata': old_channels}
 
-    def parseCapabilities(self, args):
+    @staticmethod
+    def parseCapabilities(args, fallback=''):
         """
         Parses a string of capabilities in the 005 / RPL_ISUPPORT format.
         """
@@ -1424,7 +1425,7 @@ class Protocol():
                 key, value = cap.split('=', 1)
             except ValueError:
                 key = cap
-                value = ''
+                value = fallback
             caps[key] = value
 
         return caps

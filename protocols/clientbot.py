@@ -332,9 +332,36 @@ class ClientbotWrapperProtocol(Protocol):
 
         return idsource
 
+    @staticmethod
+    def parseMessageTags(data):
+        """
+        Parses a message with IRC v3.2 message tags, as described at http://ircv3.net/specs/core/message-tags-3.2.html
+        """
+        # Example query:
+        # @aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello
+        if data[0].startswith('@'):
+            tagdata = data[0].lstrip('@').split(';')
+            for tag in tagdata:
+                tag = tag.replace(r'\s', ' ')
+                tag = tag.replace(r'\\', '\\')
+                tag = tag.replace(r'\r', '\r')
+                tag = tag.replace(r'\n', '\n')
+                tag = tag.replace(r'\:', ';')
+
+            results = self.parseCapabilities(tagdata, fallback=None)
+            log.debug('(%s) parsed message tags %s', self.irc.name, results)
+            return results
+        return {}
+
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
         data = data.split(" ")
+
+        tags = self.parseMessageTags(data)
+        if tags:
+            # If we have tags, split off the first argument.
+            data = data[1:]
+
         try:
             args = self.parsePrefixedArgs(data)
             sender = args[0]
@@ -348,7 +375,7 @@ class ClientbotWrapperProtocol(Protocol):
             command = args[0]
             args = args[1:]
         else:
-            # PyLink as a services framework expects UIDs and SIDs for everythiung. Since we connect
+            # PyLink as a services framework expects UIDs and SIDs for everything. Since we connect
             # as a bot here, there's no explicit user introduction, so we're going to generate
             # pseudo-uids and pseudo-sids as we see prefixes.
             if '!' not in sender:
