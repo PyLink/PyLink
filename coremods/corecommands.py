@@ -25,7 +25,7 @@ def _login(irc, source, username):
 
 def _loginfail(irc, source, username):
     """Internal function to process login failures."""
-    irc.reply('Error: Incorrect credentials.')
+    irc.error('Incorrect credentials.')
     log.warning("(%s) Failed login to %r from %s", irc.name, username, irc.getHostmask(source))
 
 @utils.add_cmd
