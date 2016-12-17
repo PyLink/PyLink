@@ -143,6 +143,54 @@ def echo(irc, source, args):
     permissions.checkPermissions(irc, source, ['commands.echo'])
     irc.reply(' '.join(args))
 
+def _check_logout_access(irc, source, target, perms):
+    """
+    Checks whether the source UID has access to log out the target UID.
+    This returns True if the source user has a permission specified,
+    or if the source and target are both logged in and have the same account.
+    """
+    assert source in irc.users, "Unknown source user"
+    assert target in irc.users, "Unknown target user"
+    try:
+        permissions.checkPermissions(irc, source, perms)
+    except utils.NotAuthorizedError:
+        if irc.users[source].account and (irc.users[source].account == irc.users[target].account):
+            return True
+        else:
+            raise
+    else:
+        return True
+
+@utils.add_cmd
+def logout(irc, source, args):
+    """[<other nick/UID>]
+
+    Logs your account out of PyLink. If you have the 'commands.logout.force' permission, or are
+    attempting to log out yourself, you can also specify a nick to force a logout for."""
+
+    try:
+        othernick = args[0]
+    except IndexError:  # No user specified
+        if irc.users[source].account:
+            irc.users[source].account = ''
+        else:
+            irc.error("You are not logged in!")
+            return
+    else:
+        otheruid = irc.nickToUid(othernick)
+        if not otheruid:
+            irc.error("Unknown user %s." % othernick)
+            return
+        else:
+            _check_logout_access(irc, source, otheruid, ['commands.logout.force'])
+            if irc.users[otheruid].account:
+                irc.users[otheruid].account = ''
+            else:
+                irc.error("%s is not logged in." % othernick)
+                return
+
+    irc.reply("Done.")
+
 loglevels = {'DEBUG': 10, 'INFO': 20, 'WARNING': 30, 'ERROR': 40, 'CRITICAL': 50}
 @utils.add_cmd
 def loglevel(irc, source, args):
