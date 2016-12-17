@@ -486,11 +486,12 @@ class ClientbotWrapperProtocol(Protocol):
             if args[2] != '*':
                 # Filter the capabilities we want by the ones actually supported by the server.
                 available_caps = [cap for cap in IRCV3_CAPABILITIES if cap in self.ircv3_caps_available]
+                log.debug('(%s) Requesting IRCv3 capabilities %s', self.irc.name, available_caps)
                 self.irc.send('CAP REQ :%s' % ' '.join(available_caps), queue=False)
         elif subcmd == 'ACK':
             # Server: CAP * ACK :multi-prefix sasl
             newcaps = set(args[-1].split())
-            log.debug('(%s) Received ACK for capabilities %s', self.irc.name, newcaps)
+            log.debug('(%s) Received ACK for IRCv3 capabilities %s', self.irc.name, newcaps)
             self.ircv3_caps |= newcaps
 
             # Only send CAP END immediately if SASL is disabled. Otherwise, wait for the 90x responses
@@ -498,6 +499,8 @@ class ClientbotWrapperProtocol(Protocol):
             if not self.saslAuth():
                 self.irc.send('CAP END')
         elif subcmd == 'NAK':
+            log.warning('(%s) Got NAK for IRCv3 capabilities %s, even though they were supposedly available',
+                        self.irc.name, args[-1])
             self.irc.send('CAP END')
 
     def handle_001(self, source, command, args):
