@@ -1,5 +1,6 @@
 import time
 import threading
+import base64
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
@@ -7,7 +8,7 @@ from pylinkirc.classes import Protocol, IrcUser, IrcServer
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
-IRCV3_CAPABILITIES = {'multi-prefix'}
+IRCV3_CAPABILITIES = {'multi-prefix', 'sasl'}
 
 class ClientbotWrapperProtocol(Protocol):
     def __init__(self, irc):
@@ -23,6 +24,7 @@ class ClientbotWrapperProtocol(Protocol):
 
         self.caps = {}
         self.ircv3_caps = set()
+        self.ircv3_caps_available = {}
 
         # Initialize counter-based pseudo UID  generators
         self.uidgen = utils.PUIDGenerator('PUID')
@@ -55,7 +57,7 @@ class ClientbotWrapperProtocol(Protocol):
         """Initializes a connection to a server."""
         self.has_eob = False
         ts = self.irc.start_ts
-        f = self.irc.send
+        f = lambda text: self.irc.send(text, queue=False)
 
         # Enumerate our own server
         self.irc.sid = self.sidgen.next_sid()
@@ -65,10 +67,7 @@ class ClientbotWrapperProtocol(Protocol):
         self.kick_queue.clear()
         self.caps.clear()
         self.ircv3_caps.clear()
-
-        f('CAP LS 302')
-        f('CAP REQ :%s' % ' '.join(IRCV3_CAPABILITIES))
-        f('CAP END')
+        self.ircv3_caps_available.clear()
 
         sendpass = self.irc.serverdata.get("sendpass")
         if sendpass:
@@ -82,6 +81,8 @@ class ClientbotWrapperProtocol(Protocol):
         ident = self.irc.serverdata.get('pylink_ident') or conf.conf["bot"].get("ident", "pylink")
         f('USER %s 8 * :%s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
+
+        f('CAP LS 302')
 
     # Note: clientbot clients are initialized with umode +i by default
     def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
@@ -406,6 +407,65 @@ class ClientbotWrapperProtocol(Protocol):
                 parsed_args['tags'] = tags  # Add message tags to this dict.
                 return [idsource, command, parsed_args]
 
+    def saslAuth(self):
+        """
+        Starts an authentication attempt via SASL. This returns True if SASL
+        is enabled and correctly configured, and False otherwise.
+        """
+        if 'sasl' not in self.ircv3_caps:
+            log.info("(%s) Skipping SASL auth since the IRCd doesn't support it.", self.irc.name)
+            return
+
+        sasl_mech = self.irc.serverdata.get('sasl_mech')
+        sasl_user = self.irc.serverdata.get('sasl_username')
+        ssl_cert = self.irc.serverdata.get('ssl_certfile')
+        ssl_key = self.irc.serverdata.get('ssl_keyfile')
+        if sasl_user and sasl_mech:
+            sasl_pass = self.irc.serverdata.get('sasl_password')
+
+            if sasl_mech == 'PLAIN' and not (sasl_user and sasl_pass):
+                log.warning("(%s) Not attempting PLAIN authentication; either sasl_username or "
+                            "sasl_password aren't correctly set.", self.irc.name)
+                return False
+            elif sasl_mech == 'EXTERNAL' and not (ssl_cert and ssl_key):
+                log.warning("(%s) Not attempting EXTERNAL authentication; either ssl_certfile or "
+                            "ssl_keyfile aren't correctly set.", self.irc.name)
+                return False
+            self.irc.send('AUTHENTICATE %s' % sasl_mech, queue=False)
+            return True
+        return False
+
+    def sendAuthChunk(self, data):
+        """Send Base64 encoded SASL authentication chunks."""
+        enc_data = base64.b64encode(data).decode()
+        self.irc.send('AUTHENTICATE %s' % enc_data, queue=False)
+
+    def handle_authenticate(self, source, command, args):
+        """
+        Handles AUTHENTICATE, or SASL authentication requests from the server.
+        """
+        # Client: AUTHENTICATE PLAIN
+        # Server: AUTHENTICATE +
+        # Client: AUTHENTICATE ...
+        if not args:
+            return
+        if args[0] == '+':
+            sasl_mech = self.irc.serverdata["sasl_mech"]
+            if sasl_mech == 'PLAIN':
+                sasl_user = self.irc.serverdata['sasl_username'].encode('utf-8')
+                sasl_pass = self.irc.serverdata['sasl_password'].encode('utf-8')
+                self.sendAuthChunk(b'%b\0%b\0%b' % (sasl_user, sasl_user, sasl_pass))
+            elif sasl_mech == 'EXTERNAL':
+                self.irc.send('AUTHENTICATE +')
+
+    def handle_904(self, source, command, args):
+        """
+        Handles SASL authentication status reports.
+        """
+        log.info('(%s) %s', self.irc.name, args[-1])
+        self.irc.send('CAP END')
+    handle_903 = handle_902 = handle_905 = handle_907 = handle_904
+
     def handle_cap(self, source, command, args):
         """
         Handles IRCv3 capabilities transmission.
@@ -416,12 +476,22 @@ class ClientbotWrapperProtocol(Protocol):
             # Server: CAP * LS * :multi-prefix extended-join account-notify batch invite-notify tls
             # Server: CAP * LS * :cap-notify server-time example.org/dummy-cap=dummyvalue example.org/second-dummy-cap
             # Server: CAP * LS :userhost-in-names sasl=EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN
-            caps = args[-1].split('=')
+            self.ircv3_caps_available.update(self.parseCapabilities(args[-1], None))
+            if args[2] != '*':
+                # Filter the capabilities we want by the ones actually supported by the server.
+                available_caps = [cap for cap in IRCV3_CAPABILITIES if cap in self.ircv3_caps_available]
+                self.irc.send('CAP REQ :%s' % ' '.join(available_caps), queue=False)
         elif subcmd == 'ACK':
             # Server: CAP * ACK :multi-prefix sasl
             newcaps = set(args[-1].split())
             log.debug('(%s) Received ACK for capabilities %s', self.irc.name, newcaps)
             self.ircv3_caps |= newcaps
+
+            # Only send CAP END immediately if SASL is disabled. Otherwise, wait for the 90x responses
+            # to do so.
+            self.saslAuth()
+        elif subcmd == 'NAK':
+            self.irc.send('CAP END')
 
     def handle_001(self, source, command, args):
         """
