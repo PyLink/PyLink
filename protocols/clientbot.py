@@ -7,6 +7,7 @@ from pylinkirc.classes import Protocol, IrcUser, IrcServer
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
+IRCV3_CAPABILITIES = {'multi-prefix'}
 
 class ClientbotWrapperProtocol(Protocol):
     def __init__(self, irc):
@@ -21,6 +22,7 @@ class ClientbotWrapperProtocol(Protocol):
         self.casemapping = 'ascii'
 
         self.caps = {}
+        self.ircv3_caps = set()
 
         # Initialize counter-based pseudo UID  generators
         self.uidgen = utils.PUIDGenerator('PUID')
@@ -61,6 +63,12 @@ class ClientbotWrapperProtocol(Protocol):
         # Clear states from last connect
         self.who_received.clear()
         self.kick_queue.clear()
+        self.caps.clear()
+        self.ircv3_caps.clear()
+
+        f('CAP LS 302')
+        f('CAP REQ :%s' % ' '.join(IRCV3_CAPABILITIES))
+        f('CAP END')
 
         sendpass = self.irc.serverdata.get("sendpass")
         if sendpass:
@@ -395,7 +403,25 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             parsed_args = func(idsource, command, args)
             if parsed_args is not None:
+                parsed_args['tags'] = tags  # Add message tags to this dict.
                 return [idsource, command, parsed_args]
+
+    def handle_cap(self, source, command, args):
+        """
+        Handles IRCv3 capabilities transmission.
+        """
+        subcmd = args[1]
+
+        if subcmd == 'LS':
+            # Server: CAP * LS * :multi-prefix extended-join account-notify batch invite-notify tls
+            # Server: CAP * LS * :cap-notify server-time example.org/dummy-cap=dummyvalue example.org/second-dummy-cap
+            # Server: CAP * LS :userhost-in-names sasl=EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN
+            caps = args[-1].split('=')
+        elif subcmd == 'ACK':
+            # Server: CAP * ACK :multi-prefix sasl
+            newcaps = set(args[-1].split())
+            log.debug('(%s) Received ACK for capabilities %s', self.irc.name, newcaps)
+            self.ircv3_caps |= newcaps
 
     def handle_001(self, source, command, args):
         """
