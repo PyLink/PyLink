@@ -46,8 +46,14 @@ bot:
     save_delay: 300
 
 login:
+    # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
+    # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
+    # it supports multiple accounts, hashed passwords, and allows more flexibility (accounts no
+    # longer imply admin access). However, you must also add your account to the "permissions:"
+    # block below, or you will lose IRC administration access to your PyLink daemon!
     accounts:
-        # Creates an account with username "user1".
+        # Creates an account with username "user1". You can define other usernames at the
+        # same level here (key name is user name).
         user1:
             # Defines the password for the user. You can encrypt passwords using the
             # 'mkpasswd' command or the 'pylink-mkpasswd' utility included with PyLink.
@@ -58,7 +64,8 @@ login:
             encrypted: true
 
 permissions:
-    # Permissions are described in more detail in example-permissions.yml.
+    # Permissions are described in more detail in example-permissions.yml, if you want to
+    # customize permissions further.
 
     # Replace ABC123 with your PyLink account name (configured above)
     # in order to give yourself admin access.
