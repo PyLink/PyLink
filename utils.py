@@ -16,6 +16,8 @@ from . import world, conf
 # This is just so protocols and plugins are importable.
 from pylinkirc import protocols, plugins
 
+PLUGIN_PREFIX = 'pylinkirc.plugins.'
+PROTOCOL_PREFIX = 'pylinkirc.protocols.'
 NORMALIZEWHITESPACE_RE = re.compile(r'\s+')
 
 class NotAuthorizedError(Exception):
@@ -144,13 +146,13 @@ def loadPlugin(name):
     """
     Imports and returns the requested plugin.
     """
-    return importlib.import_module('pylinkirc.plugins.' + name)
+    return importlib.import_module(PLUGIN_PREFIX + name)
 
 def getProtocolModule(name):
     """
     Imports and returns the protocol module requested.
     """
-    return importlib.import_module('pylinkirc.protocols.' + name)
+    return importlib.import_module(PROTOCOL_PREFIX + name)
 
 def getDatabaseName(dbname):
     """
@@ -402,26 +404,50 @@ class ServiceBot():
             self._show_command_help(irc, command)
 
     def listcommands(self, irc, source, args):
-        """takes no arguments.
+        """[<plugin name>]
 
-        Returns a list of available commands this service has to offer."""
+        Returns a list of available commands this service has to offer. The optional
+        plugin name argument also allows you to filter commands by plugin (case
+        insensitive)."""
+
+        try:
+            plugin_filter = args[0].lower()
+        except IndexError:
+            plugin_filter = None
 
         # Don't show CTCP handlers in the public command list.
-        cmds = sorted([cmd for cmd in self.commands.keys() if '\x01' not in cmd])
+        cmds = sorted(cmd for cmd in self.commands.keys() if '\x01' not in cmd)
+
+        if plugin_filter is not None:
+            # Filter by plugin, if the option was given.
+            new_cmds = []
+
+            # Add the pylinkirc.plugins prefix to the module name, so it can be used for matching.
+            plugin_module = PLUGIN_PREFIX + plugin_filter
+
+            for cmd_definition in cmds:
+                for cmdfunc in self.commands[cmd_definition]:
+                    if cmdfunc.__module__.lower() == plugin_module:
+                        new_cmds.append(cmd_definition)
+
+            # Replace the old command list.
+            cmds = new_cmds
 
         if cmds:
             self.reply(irc, 'Available commands include: %s' % ', '.join(cmds))
             self.reply(irc, 'To see help on a specific command, type \x02help <command>\x02.')
-        else:
+        elif not plugin_filter:
             self.reply(irc, 'This service doesn\'t provide any public commands.')
+        else:
+            self.reply(irc, 'This service doesn\'t provide any public commands from the plugin %s.' % plugin_filter)
 
         # If there are featured commands, list them by showing the help for each.
         # These definitions are sent in private to prevent flooding in channels.
-        if self.featured_cmds:
+        if self.featured_cmds and not plugin_filter:
             self.reply(irc, " ", private=True)
             self.reply(irc, 'Featured commands include:', private=True)
             for cmd in sorted(self.featured_cmds):
-                if self.commands.get(cmd):
+                if cmd in cmds:
                     # Only show featured commands that are both defined and loaded.
                     # TODO: perhaps plugin unload should remove unused featured command
                     # definitions automatically?
