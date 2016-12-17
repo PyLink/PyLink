@@ -463,7 +463,6 @@ class Irc():
         stripped_data = data.decode("utf-8").strip("\n")
         log.debug("(%s) -> %s", self.name, stripped_data)
 
-
         try:
             self.socket.send(data)
         except (OSError, AttributeError):
