@@ -464,7 +464,7 @@ class ClientbotWrapperProtocol(Protocol):
         """
         log.info('(%s) %s', self.irc.name, args[-1])
         self.irc.send('CAP END')
-    handle_903 = handle_902 = handle_905 = handle_907 = handle_904
+    handle_903 = handle_902 = handle_905 = handle_906 = handle_907 = handle_904
 
     def handle_cap(self, source, command, args):
         """
