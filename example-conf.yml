@@ -284,11 +284,19 @@ servers:
         pylink_nick: pybot
         #pylink_ident: pybot
 
-        # SSL options. Certfile and keyfile are optional but can be used for CertFP login if
-        # supported.
+        # SSL options. Certfile and keyfile are optional, but can be used for CertFP/SASL external
+        # if supported.
         ssl: true
         #ssl_certfile: mycert.pem
         #ssl_keyfile: mycert.pem
+
+        # SASL login: for mechanisms, only EXTERNAL (SSL cert) and PLAIN (username and password)
+        # are supported so far.
+        # SASL PLAIN requires the sasl_username and sasl_password options to be set, while
+        # SASL EXTERNAL requires ssl, ssl_certfile, and ssl_keyfile to work.
+        #sasl_mechanism: "PLAIN"
+        #sasl_username: "mIRCsKripterz"
+        #sasl_password: "DownLoaditn00b!!!"
 
         # Autoconnect works like usual.
         autoconnect: 30
