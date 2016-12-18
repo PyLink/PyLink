@@ -7,6 +7,18 @@ from pylinkirc.log import log
 
 class IRCS2SProtocol(Protocol):
 
+    def checkCollision(self, nick):
+        """
+        Nick collision checker.
+        """
+        uid = self.irc.nickToUid(nick)
+        # If there is a nick collision, we simply alert plugins. Relay will purposely try to
+        # lose fights and tag nicks instead, while other plugins can choose how to handle this.
+        if uid:
+            log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.irc.name,
+                     uid, nick)
+            self.irc.callHooks([self.irc.sid, 'SAVE', {'target': uid}])
+
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""
         killed = args[0]
