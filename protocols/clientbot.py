@@ -418,23 +418,29 @@ class ClientbotWrapperProtocol(Protocol):
 
         sasl_mech = self.irc.serverdata.get('sasl_mechanism')
         if sasl_mech:
+            sasl_mech = sasl_mech.upper()
             sasl_user = self.irc.serverdata.get('sasl_username')
             sasl_pass = self.irc.serverdata.get('sasl_password')
             ssl_cert = self.irc.serverdata.get('ssl_certfile')
             ssl_key = self.irc.serverdata.get('ssl_keyfile')
             ssl = self.irc.serverdata.get('ssl')
 
-            if sasl_mech == 'PLAIN' and not (sasl_user and sasl_pass):
-                log.warning("(%s) Not attempting PLAIN authentication; sasl_username and/or "
-                            "sasl_password aren't correctly set.", self.irc.name)
-                return False
-            elif sasl_mech == 'EXTERNAL' and not (ssl_cert and ssl_key):
-                log.warning("(%s) Not attempting EXTERNAL authentication; ssl_certfile and/or "
-                            "ssl_keyfile aren't correctly set.", self.irc.name)
-                return False
-            elif sasl_mech == 'EXTERNAL' and not ssl:
-                log.warning("(%s) Not attempting EXTERNAL authentication; SASL external requires "
-                            "SSL, but it isn't enabled.", self.irc.name)
+            if sasl_mech == 'PLAIN':
+                if not (sasl_user and sasl_pass):
+                    log.warning("(%s) Not attempting PLAIN authentication; sasl_username and/or "
+                                "sasl_password aren't correctly set.", self.irc.name)
+                    return False
+            elif sasl_mech == 'EXTERNAL':
+                if not ssl:
+                    log.warning("(%s) Not attempting EXTERNAL authentication; SASL external requires "
+                                "SSL, but it isn't enabled.", self.irc.name)
+                    return False
+                elif not (ssl_cert and ssl_key):
+                    log.warning("(%s) Not attempting EXTERNAL authentication; ssl_certfile and/or "
+                                "ssl_keyfile aren't correctly set.", self.irc.name)
+                    return False
+            else:
+                log.warning('(%s) Unsupported SASL mechanism %s; aborting SASL.', self.irc.name, sasl_mech)
                 return False
             self.irc.send('AUTHENTICATE %s' % sasl_mech, queue=False)
             return True
@@ -455,7 +461,7 @@ class ClientbotWrapperProtocol(Protocol):
         if not args:
             return
         if args[0] == '+':
-            sasl_mech = self.irc.serverdata['sasl_mechanism']
+            sasl_mech = self.irc.serverdata['sasl_mechanism'].upper()
             if sasl_mech == 'PLAIN':
                 sasl_user = self.irc.serverdata['sasl_username'].encode('utf-8')
                 sasl_pass = self.irc.serverdata['sasl_password'].encode('utf-8')
