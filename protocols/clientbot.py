@@ -416,7 +416,7 @@ class ClientbotWrapperProtocol(Protocol):
             log.info("(%s) Skipping SASL auth since the IRCd doesn't support it.", self.irc.name)
             return
 
-        sasl_mech = self.irc.serverdata.get('sasl_mech')
+        sasl_mech = self.irc.serverdata.get('sasl_mechanism')
         if sasl_mech:
             sasl_user = self.irc.serverdata.get('sasl_username')
             sasl_pass = self.irc.serverdata.get('sasl_password')
@@ -455,7 +455,7 @@ class ClientbotWrapperProtocol(Protocol):
         if not args:
             return
         if args[0] == '+':
-            sasl_mech = self.irc.serverdata["sasl_mech"]
+            sasl_mech = self.irc.serverdata['sasl_mechanism']
             if sasl_mech == 'PLAIN':
                 sasl_user = self.irc.serverdata['sasl_username'].encode('utf-8')
                 sasl_pass = self.irc.serverdata['sasl_password'].encode('utf-8')
