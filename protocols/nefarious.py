@@ -827,6 +827,7 @@ class P10Protocol(IRCS2SProtocol):
             # <- AB N GL 1 1460673049 ~gl nefarious.midnight.vpn +iw B]AAAB ABAAA :realname
 
             nick = args[0]
+            self.checkCollision(nick)
             ts, ident, host = args[2:5]
             realhost = host
             ip = args[-3]

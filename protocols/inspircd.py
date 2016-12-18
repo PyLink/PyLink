@@ -562,6 +562,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming UID commands (user introduction)."""
         # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
+        self.checkCollision(nick)
         realname = args[-1]
         self.irc.users[uid] = userobj = IrcUser(nick, ts, uid, ident, host, realname, realhost, ip)
 

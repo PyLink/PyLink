@@ -171,6 +171,7 @@ class HybridProtocol(TS6Protocol):
         """
         # <- :0UY UID dan 1 1451041551 +Facdeiklosuw ~ident localhost 127.0.0.1 0UYAAAAAB * :realname
         nick = args[0]
+        self.checkCollision(nick)
         ts, modes, ident, host, ip, uid, account, realname = args[2:10]
         if account == '*':
             account = None
