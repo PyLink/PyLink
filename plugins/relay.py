@@ -182,6 +182,10 @@ def normalizeHost(irc, host):
     if irc.protoname not in ('inspircd', 'ts6', 'clientbot', 'nefarious'):
         # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
         host = host.replace('/', '.')
+    if irc.protoname in ('ts6', 'ratbox'):
+        # TS6 doesn't allow _ in hosts.
+        host = host.replace('_', '.')
+
     host = host.replace('\x03', '')  # Strip colours
     host = host.replace('\x02', '')  # Strip bold
     host = host.replace('\x1f', '')  # Strip underline
