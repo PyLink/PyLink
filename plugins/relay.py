@@ -172,21 +172,14 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
 
     return nick
 
+ALLOWED_HOST_CHARS = string.ascii_letters + string.digits + '-.:'
 def normalize_host(irc, host):
     """Creates a normalized hostname for the given host suitable for
     introduction to a remote network (as a relay client)."""
     log.debug('(%s) relay.normalize_host: IRCd=%s, host=%s', irc.name, irc.protoname, host)
-    if irc.protoname not in ('inspircd', 'ts6', 'clientbot', 'nefarious'):
-        # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
-        host = host.replace('/', '.')
-    host = host.replace('\x03', '')  # Strip colours
-    host = host.replace('\x02', '')  # Strip bold
-    host = host.replace('\x1f', '')  # Strip underline
-    host = host.replace('\x1d', '')  # Strip italic
-    host = host.replace('\x0f', '')  # Strip color reset
-    host = host.replace('\x16', '')  # Strip reverse color
-    # And no, I'm not supporting colours in hosts. Screw your IRCd-breaking patches if you think
-    # this is cool. -GL
+    for char in host:
+        if char not in ALLOWED_HOST_CHARS:
+            host = host.replace(char, '-')
 
     return host[:63]  # Limit hosts to 63 chars for best compatibility
 
