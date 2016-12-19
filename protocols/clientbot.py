@@ -478,6 +478,16 @@ class ClientbotWrapperProtocol(Protocol):
         self.irc.send('CAP END')
     handle_903 = handle_902 = handle_905 = handle_906 = handle_907 = handle_904
 
+    def requestNewCaps(self):
+        # Filter the capabilities we want by the ones actually supported by the server.
+        available_caps = {cap for cap in IRCV3_CAPABILITIES if cap in self.ircv3_caps_available}
+        # And by the ones we don't already have.
+        caps_wanted = available_caps - self.ircv3_caps
+
+        log.debug('(%s) Requesting IRCv3 capabilities %s (available: %s)', self.irc.name, caps_wanted, available_caps)
+        if caps_wanted:
+            self.irc.send('CAP REQ :%s' % ' '.join(caps_wanted), queue=False)
+
     def handle_cap(self, source, command, args):
         """
         Handles IRCv3 capabilities transmission.
@@ -488,12 +498,11 @@ class ClientbotWrapperProtocol(Protocol):
             # Server: CAP * LS * :multi-prefix extended-join account-notify batch invite-notify tls
             # Server: CAP * LS * :cap-notify server-time example.org/dummy-cap=dummyvalue example.org/second-dummy-cap
             # Server: CAP * LS :userhost-in-names sasl=EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN
+            log.debug('(%s) Got new capabilities %s', self.irc.name, args[-1])
             self.ircv3_caps_available.update(self.parseCapabilities(args[-1], None))
             if args[2] != '*':
-                # Filter the capabilities we want by the ones actually supported by the server.
-                available_caps = [cap for cap in IRCV3_CAPABILITIES if cap in self.ircv3_caps_available]
-                log.debug('(%s) Requesting IRCv3 capabilities %s', self.irc.name, available_caps)
-                self.irc.send('CAP REQ :%s' % ' '.join(available_caps), queue=False)
+                self.requestNewCaps()
+
         elif subcmd == 'ACK':
             # Server: CAP * ACK :multi-prefix sasl
             newcaps = set(args[-1].split())
@@ -508,6 +517,22 @@ class ClientbotWrapperProtocol(Protocol):
             log.warning('(%s) Got NAK for IRCv3 capabilities %s, even though they were supposedly available',
                         self.irc.name, args[-1])
             self.irc.send('CAP END')
+        elif subcmd == 'NEW':
+            # :irc.example.com CAP modernclient NEW :batch
+            # :irc.example.com CAP tester NEW :away-notify extended-join
+            # Note: CAP NEW allows capabilities with values (e.g. sasl=mech1,mech2), while CAP DEL
+            # does not.
+            log.debug('(%s) Got new capabilities %s', self.irc.name, args[-1])
+            self.ircv3_caps_available.update(self.parseCapabilities(args[-1], None))
+            self.requestNewCaps()
+
+        elif subcmd == 'DEL':
+            # :irc.example.com CAP modernclient DEL :userhost-in-names multi-prefix away-notify
+            log.debug('(%s) Removing capabilities %s', self.irc.name, args[-1])
+            for cap in args[-1].split():
+                # Remove the capabilities from the list available, and return None (ignore) if any fail
+                self.ircv3_caps_available.pop(cap, None)
+                self.ircv3_caps.discard(cap)
 
     def handle_001(self, source, command, args):
         """
