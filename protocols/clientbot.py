@@ -341,8 +341,7 @@ class ClientbotWrapperProtocol(Protocol):
 
         return idsource
 
-    @staticmethod
-    def parseMessageTags(data):
+    def parseMessageTags(self, data):
         """
         Parses a message with IRC v3.2 message tags, as described at http://ircv3.net/specs/core/message-tags-3.2.html
         """
@@ -350,12 +349,13 @@ class ClientbotWrapperProtocol(Protocol):
         # @aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello
         if data[0].startswith('@'):
             tagdata = data[0].lstrip('@').split(';')
-            for tag in tagdata:
+            for idx, tag in enumerate(tagdata):
                 tag = tag.replace(r'\s', ' ')
                 tag = tag.replace(r'\\', '\\')
                 tag = tag.replace(r'\r', '\r')
                 tag = tag.replace(r'\n', '\n')
                 tag = tag.replace(r'\:', ';')
+                tagdata[idx] = tag
 
             results = self.parseCapabilities(tagdata, fallback=None)
             log.debug('(%s) parsed message tags %s', self.irc.name, results)
