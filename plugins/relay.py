@@ -172,13 +172,18 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
 
     return nick
 
-ALLOWED_HOST_CHARS = string.ascii_letters + string.digits + '-.:'
 def normalize_host(irc, host):
     """Creates a normalized hostname for the given host suitable for
     introduction to a remote network (as a relay client)."""
     log.debug('(%s) relay.normalize_host: IRCd=%s, host=%s', irc.name, irc.protoname, host)
+
+    allowed_chars = string.ascii_letters + string.digits + '-.:'
+    if irc.protoname in ('inspircd', 'ts6', 'clientbot', 'nefarious'):
+        # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
+        allowed_chars += '/'
+
     for char in host:
-        if char not in ALLOWED_HOST_CHARS:
+        if char not in allowed_chars:
             host = host.replace(char, '-')
 
     return host[:63]  # Limit hosts to 63 chars for best compatibility
