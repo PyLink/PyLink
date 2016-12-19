@@ -526,8 +526,13 @@ class ClientbotWrapperProtocol(Protocol):
             # Note: CAP NEW allows capabilities with values (e.g. sasl=mech1,mech2), while CAP DEL
             # does not.
             log.debug('(%s) Got new capabilities %s', self.irc.name, args[-1])
-            self.ircv3_caps_available.update(self.parseCapabilities(args[-1], None))
+            newcaps = self.parseCapabilities(args[-1], None)
+            self.ircv3_caps_available.update(newcaps)
             self.requestNewCaps()
+
+            # Attempt SASL auth routines if sasl was added/removed
+            if 'sasl' in newcaps:
+                self.saslAuth()
 
         elif subcmd == 'DEL':
             # :irc.example.com CAP modernclient DEL :userhost-in-names multi-prefix away-notify
