@@ -499,6 +499,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming EUID commands (user introduction)."""
         # <- :42X EUID GL 1 1437505322 +ailoswz ~gl 127.0.0.1 127.0.0.1 42XAAAAAB * * :realname
         nick = args[0]
+        self.checkCollision(nick)
         ts, modes, ident, host, ip, uid, realhost, accountname, realname = args[2:11]
         if realhost == '*':
             realhost = None
