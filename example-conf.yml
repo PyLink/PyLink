@@ -298,6 +298,12 @@ servers:
         #sasl_username: "mIRCsKripterz"
         #sasl_password: "DownLoaditn00b!!!"
 
+        # If this option is enabled, the bot will attempt SASL authentication even after it's
+        # connected, as services become available throughout netsplits and reconnects.
+        # Note: This requires an IRC server capable of IRCv3.2 cap-notify and sasl:
+        # InspIRCd 3.x and charybdis 4+ (and derivatives) are some compatible examples (as of 2016-12-19)
+        #sasl_reauth: true
+
         # Autoconnect works like usual.
         autoconnect: 30
 

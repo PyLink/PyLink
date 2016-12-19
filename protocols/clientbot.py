@@ -530,8 +530,9 @@ class ClientbotWrapperProtocol(Protocol):
             self.ircv3_caps_available.update(newcaps)
             self.requestNewCaps()
 
-            # Attempt SASL auth routines if sasl was added/removed
-            if 'sasl' in newcaps:
+            # Attempt SASL auth routines when sasl is added/removed, if doing so is enabled.
+            if 'sasl' in newcaps and self.irc.serverdata.get('sasl_reauth'):
+                log.debug('(%s) Attempting SASL reauth due to CAP NEW', self.irc.name)
                 self.saslAuth()
 
         elif subcmd == 'DEL':
