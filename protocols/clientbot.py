@@ -475,7 +475,8 @@ class ClientbotWrapperProtocol(Protocol):
         """
         logfunc = log.info if command == '903' else log.warning
         logfunc('(%s) %s', self.irc.name, args[-1])
-        self.irc.send('CAP END')
+        if not self.has_eob:
+            self.irc.send('CAP END')
     handle_903 = handle_902 = handle_905 = handle_906 = handle_907 = handle_904
 
     def requestNewCaps(self):
@@ -512,11 +513,13 @@ class ClientbotWrapperProtocol(Protocol):
             # Only send CAP END immediately if SASL is disabled. Otherwise, wait for the 90x responses
             # to do so.
             if not self.saslAuth():
-                self.irc.send('CAP END')
+                if not self.has_eob:
+                    self.irc.send('CAP END')
         elif subcmd == 'NAK':
             log.warning('(%s) Got NAK for IRCv3 capabilities %s, even though they were supposedly available',
                         self.irc.name, args[-1])
-            self.irc.send('CAP END')
+            if not self.has_eob:
+                self.irc.send('CAP END')
         elif subcmd == 'NEW':
             # :irc.example.com CAP modernclient NEW :batch
             # :irc.example.com CAP tester NEW :away-notify extended-join
