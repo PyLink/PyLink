@@ -1,5 +1,21 @@
-# PyLink 1.0.3
-Tagged as **1.0.3** by [GLolol](https://github.com/GLolol)
+# PyLink 1.0.4
+Tagged as **1.0.4** by [GLolol](https://github.com/GLolol)
+
+The "Bonfire" release.
+
+#### Bug fixes
+- protocols: implement basic nick collision detection in UID handlers. This fixes users potentially going missing on UnrealIRCd networks, if the remote IRCd introduces a user of the same nick *after* PyLink does. Thanks to kevin for reporting!
+- relay: strip underscores (`_`) from hosts on ts6 and ratbox, fixing possible invalid user@host errors
+- Backported fixes from 1.1.x / devel:
+    - Demote "unknown user" warnings in mode handling to DEBUG, suppressing warnings when old services like Anope 1.8 set modes on users as they quit.
+    - Fix `irc.matchHost()` confusing the `realhost` boolean to be the same as `ip`.
+    - changehost: add missing permissions check to `applyhosts`; it now requires the `changehost.applyhost` permission.
+
+#### Misc changes
+- networks: update help for `disconnect` to reflect how it now always disables autoconnect.
+
+# [PyLink 1.0.3](https://github.com/GLolol/PyLink/releases/tag/1.0.3)
+Tagged as **1.0.3** by [GLolol](https://github.com/GLolol) on 2016-11-20T04:51:11Z
 
 The "Buoyant" release.
 
