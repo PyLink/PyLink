@@ -538,9 +538,17 @@ relay:
     #server_suffix: "relay.yournet.net"
 
     # Sets whether Clientbot mode sync will be enabled. Valid options:
-    # "full" - Sync bans, ban/invite exceptions, prefix modes, and all RFC1459-standard modes
-    # "half" - Sync only bans, ban/invite exceptions, and prefix modes
+    # "full" - Sync bans, ban/invite exceptions, prefix modes, and all RFC1459-standard modes. The
+    #          bot will need op in the Clientbot channel for this to work both ways.
+    # "half" - Sync only bans, ban/invite exceptions, and prefix modes. The bot will need op in the
+    #          Clientbot channel for this to work both ways.
     # "none" - Turns off mode sync. This is the default.
+    #
+    # Note: when mode sync is enabled and the bot is opped, CLAIM protection will be enforced across
+    # Clientbot links as well. This means that the bot will try to revert any mode changes by non-ops
+    # or services not in the channel. The workaround is to add all Clientbot networks to the CLAIM
+    # list of any affected channels.
+    #
     #clientbot_modesync: none
 
 games:
