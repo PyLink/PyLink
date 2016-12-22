@@ -25,14 +25,12 @@ default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_sender> $text
 
 def color_text(s):
     """
-    Returns a colorized version of the given text based on a simple hash algorithm
-    (sum of all characters).
+    Returns a colorized version of the given text based on a simple hash algorithm.
     """
     colors = ('02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
               '12', '13', '15')
-    digest = hashlib.md5(s.encode()).hexdigest()
-    digest = int(digest, base=16)
-    num = digest % len(colors)
+    hash_output = hash(s.encode())
+    num = hash_output % len(colors)
     return "\x03%s%s\x03" % (colors[num], s)
 
 def cb_relay_core(irc, source, command, args):
