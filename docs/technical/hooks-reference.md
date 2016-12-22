@@ -7,7 +7,7 @@ Each hook payload is formatted as a Python `list`, with three arguments: `numeri
 
 1) **numeric**: The sender of the hook payload (normally a UID or SID).
 
-2) **command**: The command name (hook name) of the payload. These are *always* UPPERCASE, and those starting with "PYLINK_" indicate hooks sent out by PyLink IRC objects themselves; i.e. they don't require protocol modules to handle them.
+2) **command**: The command name (hook name) of the payload. These are *always* UPPERCASE, and those starting with "PYLINK_" indicate hooks sent out by PyLink IRC objects themselves (i.e. they don't require protocol modules to handle them).
 
 3) **args**: The hook data (args), a Python `dict`, with different data keys and values depending on the command given.
 
@@ -23,22 +23,22 @@ On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would re
 
 - `['001ZJZW01', 'CHGHOST', {'ts': 1451174512, 'target': '001ZJZW01', 'newhost': 'blah'}]`
 
-Some hooks, like MODE, are more complex and can include the entire state of a channel! This will be further described later. `:GL MODE #chat +o PyLink-devel` is converted into (pretty-printed for readability):
+Some hooks, like MODE, are more complex and can include the entire state of a channel. This will be further described later. `:GL MODE #chat +o PyLink-devel` is converted into (pretty-printed for readability):
 
 ```
 ['001ZJZW01',
  'MODE',
  {'modes': [('+o', '38QAAAAAA')],
-  'oldchan': IrcChannel({'modes': set(),
-                        'prefixmodes': {'admin': set(),
-                                        'halfop': set(),
-                                        'op': set(),
-                                        'owner': set(),
-                                        'voice': set()},
-                        'topic': '',
-                        'topicset': False,
-                        'ts': 1451169448,
-                        'users': {'38QAAAAAA', '001ZJZW01'}}),
+  'channeldata': IrcChannel({'modes': set(),
+                             'prefixmodes': {'admin': set(),
+                                             'halfop': set(),
+                                             'op': set(),
+                                             'owner': set(),
+                                             'voice': set()},
+                             'topic': '',
+                             'topicset': False,
+                             'ts': 1451169448,
+                             'users': {'38QAAAAAA', '001ZJZW01'}}),
   'target': '#chat',
   'ts': 1451174702}]
 ```
@@ -132,6 +132,7 @@ The following hooks represent regular IRC commands sent between servers.
 
 - **SAVE**: `{'target': 'UID8', 'ts': 1234567892, 'oldnick': 'Abracadabra'}`
     - For protocols that use TS6-style nick saving. During nick collisions, instead of killing the losing client, servers that support SAVE will send such a command targeting the losing client, which forces that user's nick to their UID.
+    - As of 1.1.x, SAVE is also used internally to alert plugins of nick collisions, when protocol modules receive a user introduction for a nick that already exists.
 
 - **SVSNICK**: `{'target': 'UID1', 'newnick': 'abcd'}`
     - PyLink does not comply with SVSNICK requests, but instead forwards it to plugins that listen for it.
@@ -139,11 +140,11 @@ The following hooks represent regular IRC commands sent between servers.
 
 - **VERSION**: `{}`
     - This is used for protocols that send VERSION requests between servers when a client requests it (e.g. `/raw version pylink.local`).
-    - `coreplugin` automatically handles this by responding with a 351 numeric, with the data being the output of `utils.fullVersion(irc)`.
+    - `coremods/handlers.py` automatically handles this by responding with a 351 numeric, with the data being the output of `irc.fullVersion()`.
 
 - **WHOIS**: `{'target': 'UID1'}`
     - On protocols supporting it (everything except InspIRCd), the WHOIS command is sent between servers for remote WHOIS requests.
-    - This requires servers to respond with a complete WHOIS reply (using all the different numerics), as done in `coreplugin`.
+    - PyLink has built-in handling for this via `coremods/handlers.py` - plugins wishing to add custom WHOIS text should use the PYLINK_CUSTOM_WHOIS hook below.
 
 ## Hooks that don't map to IRC commands
 Some hooks do not map directly to IRC commands, but to events that protocol modules should handle.
@@ -160,9 +161,9 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
     - The sender here is always **None**.
 
 - **PYLINK_CUSTOM_WHOIS**: `{'target': UID1, 'server': SID1}`
-    - This hook is called by `coreplugin` during its WHOIS handling process, to allow plugins to provide custom WHOIS information. The `target` field represents the target UID, while the `server` field represents the SID that should be replying to the WHOIS request. The source of the payload is the user using `/whois`.
+    - This hook is called by `coremods/handlers.py` during its WHOIS handling process, to allow plugins to provide custom WHOIS information. The `target` field represents the target UID, while the `server` field represents the SID that should be replying to the WHOIS request. The source of the payload is the user using `/whois`.
     - Plugins wishing to implement this should use the standard WHOIS numerics, using `irc.proto.numeric()` to reply to the source from the given server.
-    - This hook replaces the pre-0.8 fashion of defining custom WHOIS handlers, which was non-standard and poorly documented.
+    - This hook replaces the pre-0.8.x fashion of defining custom WHOIS handlers, which was non-standard and poorly documented.
 
 ## Commands handled WITHOUT hooks
 At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
