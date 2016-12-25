@@ -45,30 +45,8 @@ Extended targets or exttargets *replace* regular hostmasks with conditional matc
 
 ## Permissions
 
-Automode defines the following permissions, which can be customized by defining the `permissions:` configuration block (see [example-permissions.yml](../example-permissions.yml) for examples).
-
-By default, Automode integrates with Relay by only allowing access lists to be created on the network that owns each channel.
-
-- `automode.manage` OR `automode.manage.*`: ability to manage Automode (use `setacc` and `delacc`) on all channels on the network where the user is connected.
-- `automode.manage.relay_owned`: ability to manage Automode on channels owned by the current network in Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS. **With the default permissions set, this is granted to all opers.**
-- `automode.manage.#channel`: ability to manage Automode on the specific given channel.
-
-- `automode.list` OR `automode.list.*`: ability to list Automode on all channels. **With the default permissions set, this is granted to all opers.**
-- `automode.list.relay_owned`: ability to list automode on channels owned via Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS.
-- `automode.list.#channel`: ability to list Automode access entries on the specific given channel.
-
-- `automode.sync` OR `automode.sync.*`: ability to sync automode on all channels.
-- `automode.sync.relay_owned`: ability to sync automode on channels owned via Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS. **With the default permissions set, this is granted to all opers.**
-- `automode.sync.#channel`: ability to sync automode on the specific given channel.
-
-- `automode.clear` OR `automode.clear.*`: ability to clear automode on all channels.
-- `automode.clear.relay_owned`: ability to clear automode on channels owned via Relay. If Relay isn't loaded or the channel in question isn't shared via Relay, this permission check FAILS.
-- `automode.clear.#channel`: ability to clear automode on the specific given channel.
-
-- `automode.savedb`: ability to save the automode DB.
-
-Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist for cross-network manipulation (e.g. `automode.remotemanage.*`)
+See the [Permissions Reference](permissions-reference.md#automode) for a list of permissions defined by Automode.
 
 ## Caveats
 
-- Service bot joining and Relay don't always behave consistently: https://github.com/GLolol/PyLink/issues/265
+- Service bot joining and Relay don't always behave consistently: see https://github.com/GLolol/PyLink/issues/265

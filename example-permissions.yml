@@ -1,6 +1,7 @@
-# This file is an example of the permissions system in PyLink. Should you wish,
-# you may copy the contents of this file and paste it into the configuration you're
-# using.
+# This file is an example of the permissions system in PyLink. To fine-tune permissions, you should
+# merge the "permissions:" block in this file with the one in your PyLink configuration, creating it
+# if it doesn't already exist. Simply renaming this file to permissions.yml DOES NOT work!
+
 # Permissions work by mapping hostmasks, accounts, and exttargets to lists of permissions, allowing
 # you to fine tune which users have access to which commands.
 
