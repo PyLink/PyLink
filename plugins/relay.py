@@ -1782,6 +1782,8 @@ def linked(irc, source, args):
 
     Returns a list of channels shared across PyLink Relay. If \x02network\x02 is given, filters output to channels linked to the given network."""
 
+    permissions.checkPermissions(irc, source, ['relay.linked'])
+
     # Only show remote networks that are marked as connected.
     remote_networks = [netname for netname, ircobj in world.networkobjects.copy().items()
                        if ircobj.connected.is_set()]
