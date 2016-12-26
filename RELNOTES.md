@@ -1,3 +1,32 @@
+# PyLink 1.1-beta1
+
+The "Crunchy" release. This release includes all bug fixes from PyLink 1.0.4, along with the following:
+
+### Changes from 1.1-alpha1
+
+#### Feature changes
+- Most plugins were ported to use the permissions API, meaning multiple accounts are actually useful now!
+    - Having a **PyLink login** with *new* style accounts **no longer implies access to everything** on the PyLink daemon. See the updated example conf regarding the new `permissions:` block.
+    - **Logins implying admin access** is limited to **old accounts ONLY** (i.e. logins defined via login:user/password)
+    - The `commands` plugin now has permissions checks for `echo`, `showuser`, `showchan`, and `status`. The latter three are granted to all users (`*!*@*`) by default, while `echo` is restricted.
+- Clientbot now supports IRCv3 SASL (with optional reauth!) and multi-prefix. See the example conf for details on the former (the latter is enabled automatically when available).
+- PID file checking is now **disabled** by default for better migration from 1.0.x. Run PyLink with `--check-pid` in order to turn it on.
+- commands: add a new `logout` command (#370)
+- The `list` command now supports optionally filtering commands by plugin.
+
+#### Bug fixes
+- The permission to use servermaps is now `servermaps.map` instead of `servermap.map`.
+- networks: fix the `remote` command to work with permissions (i.e. override the correct account name)
+- relay: add missing permissions check on the `linked` command
+
+#### Internal fixes / improvements
+- relay: rewrite host normalization to whitelist instead of blacklist characters. This should improve compatibility with IRCds as previously untested characters are introduced.
+- relay_clientbot: faster colour hashing using built-in `hash()` instead of md5
+- opercmds: removed the source argument from `kick` and `kill`; it's confusing and isn't very useful
+
+#### Misc. changes
+- Documentation updates: add a permissions reference, document advanced relay config, etc.
+
 # PyLink 1.1-alpha1
 
 The "Candescent" release.
