@@ -784,7 +784,9 @@ class ClientbotWrapperProtocol(Protocol):
         except KeyError:
             pass
 
-        self.irc.callHooks([source, 'KICK', {'channel': channel, 'target': target, 'text': reason}])
+        if (not self.irc.isInternalClient(source)) and not self.irc.isInternalServer(source):
+            # Don't repeat hooks if we're the kicker.
+            self.irc.callHooks([source, 'KICK', {'channel': channel, 'target': target, 'text': reason}])
 
         # Delete channels that we were kicked from, for better state keeping.
         if self.irc.pseudoclient and target == self.irc.pseudoclient.uid:
