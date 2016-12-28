@@ -463,9 +463,10 @@ class ClientbotWrapperProtocol(Protocol):
         if args[0] == '+':
             sasl_mech = self.irc.serverdata['sasl_mechanism'].upper()
             if sasl_mech == 'PLAIN':
-                sasl_user = self.irc.serverdata['sasl_username'].encode('utf-8')
-                sasl_pass = self.irc.serverdata['sasl_password'].encode('utf-8')
-                self.sendAuthChunk(b'%b\0%b\0%b' % (sasl_user, sasl_user, sasl_pass))
+                sasl_user = self.irc.serverdata['sasl_username']
+                sasl_pass = self.irc.serverdata['sasl_password']
+                authstring = '%s\0%s\0%s' % (sasl_user, sasl_user, sasl_pass)
+                self.sendAuthChunk(authstring.encode('utf-8'))
             elif sasl_mech == 'EXTERNAL':
                 self.irc.send('AUTHENTICATE +')
 
