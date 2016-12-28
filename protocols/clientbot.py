@@ -724,11 +724,15 @@ class ClientbotWrapperProtocol(Protocol):
         modes = set(c.modes)
         for user in users:
             # Fill in prefix modes of everyone when doing mock SJOIN.
-            for mode in c.getPrefixModes(user):
-                modechar = self.irc.cmodes.get(mode)
-                log.debug('(%s) handle_315: adding mode %s +%s %s', self.irc.name, mode, modechar, user)
-                if modechar:
-                    modes.add((modechar, user))
+            try:
+                for mode in c.getPrefixModes(user):
+                    modechar = self.irc.cmodes.get(mode)
+                    log.debug('(%s) handle_315: adding mode %s +%s %s', self.irc.name, mode, modechar, user)
+                    if modechar:
+                        modes.add((modechar, user))
+            except KeyError as e:
+                log.debug("(%s) Ignoring KeyError (%s) from WHO response; it's probably someone we "
+                          "don't share any channels with", self.irc.name, e)
 
         return {'channel': channel, 'users': users, 'modes': modes,
                 'parse_as': "JOIN"}
