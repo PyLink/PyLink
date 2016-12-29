@@ -1644,7 +1644,7 @@ def purge(irc, source, args):
     irc.reply("Done. Purged %s entries involving the network %s." % (count, network))
 
 def link(irc, source, args):
-    """<remotenet> <channel> <local channel>
+    """<remotenet> <channel> [<local channel>]
 
     Links the specified channel on \x02remotenet\x02 over PyLink Relay as \x02local channel\x02.
     If \x02local channel\x02 is not specified, it defaults to the same name as \x02channel\x02."""
