@@ -305,6 +305,7 @@ class UnrealProtocol(TS6BaseProtocol):
         f('PASS :%s' % self.irc.serverdata["sendpass"])
         # https://github.com/unrealircd/unrealircd/blob/2f8cb55e/doc/technical/protoctl.txt
         # We support the following protocol features:
+        # SJOIN - supports SJOIN for user introduction
         # SJ3 - extended SJOIN
         # NOQUIT - QUIT messages aren't sent for all users in a netsplit
         # NICKv2 - Extended NICK command, sending MODE and CHGHOST info with it
@@ -320,7 +321,7 @@ class UnrealProtocol(TS6BaseProtocol):
         #       not work for any UnrealIRCd 3.2 users.
         # ESVID - Supports account names in services stamps instead of just the signon time.
         #         AFAIK this doesn't actually affect services' behaviour?
-        f('PROTOCTL SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.irc.serverdata["hostname"], self.irc.sid))
+        f('PROTOCTL SJOIN SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.irc.serverdata["hostname"], self.irc.sid))
         sdesc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
@@ -538,10 +539,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_sjoin(self, numeric, command, args):
         """Handles the UnrealIRCd SJOIN command."""
-        # <- :001 SJOIN 1444361345 #test :001DJ1O02
-        # memberlist should be a list of UIDs with their channel status prefixes, as
-        # in ":001AAAAAA @001AAAAAB +001AAAAAC".
-        # Interestingly, no modes are ever sent in this command as far as I've seen.
+        # <- :001 SJOIN 1444361345 #test :001AAAAAA @001AAAAAB +001AAAAAC
         channel = self.irc.toLower(args[1])
         chandata = self.irc.channels[channel].deepcopy()
         userlist = args[-1].split()
@@ -549,35 +547,48 @@ class UnrealProtocol(TS6BaseProtocol):
         namelist = []
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
 
-        # Keep track of other modes that are added due to prefix modes being joined too.
-        changedmodes = set(self.irc.channels[channel].modes)
+        modestring = ''
+        # FIXME: Implement edge-case mode conflict handling as documented here:
+        # https://www.unrealircd.org/files/docs/technical/serverprotocol.html#S5_1
+        changedmodes = set()
+        try:
+            if args[2].startswith('+'):
+                modestring = args[2]
+                changedmodes = set(self.irc.parseModes(channel, modestring))
+        except IndexError:
+            pass
 
         for userpair in userlist:
-            if userpair.startswith("&\"'"):  # TODO: handle ban bursts too
-                # &, ", and ' entries are used for bursting bans:
-                # https://www.unrealircd.org/files/docs/technical/serverprotocol.html#S5_1
-                break
-            r = re.search(r'([^\w]*)(.*)', userpair)
-            user = r.group(2)
-            # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
-            # and +a is ~ instead of &.
-            modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
-            finalprefix = ''
-            assert user, 'Failed to get the UID from %r; our regex needs updating?' % userpair
-            log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.irc.name, modeprefix, user)
-            for m in modeprefix:
-                # Iterate over the mapping of prefix chars to prefixes, and
-                # find the characters that match.
-                for char, prefix in self.irc.prefixmodes.items():
-                    if m == prefix:
-                        finalprefix += char
-            namelist.append(user)
-            self.irc.users[user].channels.add(channel)
+            # &, ", and ' entries are used for bursting bans:
+            # https://www.unrealircd.org/files/docs/technical/serverprotocol.html#S5_1
+            if userpair.startswith("&"):
+                changedmodes.add(('+b', userpair[1:]))
+            elif userpair.startswith('"'):
+                changedmodes.add(('+e', userpair[1:]))
+            elif userpair.startswith("'"):
+                changedmodes.add(('+I', userpair[1:]))
+            else:
+                r = re.search(r'([^\w]*)(.*)', userpair)
+                user = r.group(2)
+                # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
+                # and +a is ~ instead of &.
+                modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
+                finalprefix = ''
+                assert user, 'Failed to get the UID from %r; our regex needs updating?' % userpair
+                log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.irc.name, modeprefix, user)
+                for m in modeprefix:
+                    # Iterate over the mapping of prefix chars to prefixes, and
+                    # find the characters that match.
+                    for char, prefix in self.irc.prefixmodes.items():
+                        if m == prefix:
+                            finalprefix += char
+                namelist.append(user)
+                self.irc.users[user].channels.add(channel)
 
-            # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
-            changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
+                # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
+                changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
 
-            self.irc.channels[channel].users.add(user)
+                self.irc.channels[channel].users.add(user)
 
         our_ts = self.irc.channels[channel].ts
         their_ts = int(args[0])
