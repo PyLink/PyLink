@@ -595,6 +595,7 @@ class UnrealProtocol(TS6BaseProtocol):
             else:
                 r = re.search(r'([^\w]*)(.*)', userpair)
                 user = r.group(2)
+                user = self._getUid(user)  # Normalize nicks to UIDs for Unreal 3.2 links
                 # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
                 # and +a is ~ instead of &.
                 modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
