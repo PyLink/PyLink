@@ -1025,16 +1025,10 @@ class P10Protocol(IRCS2SProtocol):
         else:
             parsedmodes = []
 
-        # This list is used to keep track of prefix modes being added to the mode list.
-        changedmodes = set(parsedmodes)
-
-        # Also add the the ban list to the list of modes to process internally.
-        parsedmodes.extend(bans)
-        if parsedmodes:
-            self.irc.applyModes(channel, parsedmodes)
+        changedmodes = set(parsedmodes + bans)
 
         namelist = []
-        log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
+        log.debug('(%s) handle_burst: got userlist %r for %r', self.irc.name, userlist, channel)
 
         prefixes = ''
 

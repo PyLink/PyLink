@@ -526,7 +526,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         modestring = args[2:-1] or args[2]
         parsedmodes = self.irc.parseModes(channel, modestring)
-        self.irc.applyModes(channel, parsedmodes)
         namelist = []
 
         # Keep track of other modes that are added due to prefix modes being joined too.
