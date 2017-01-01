@@ -12,6 +12,14 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
+SJOIN_PREFIXES = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+', 'b': '&', 'e': '"', 'I': "'"}
+
+# I'm not sure what the real limit is, but the text posted at
+# https://github.com/GLolol/PyLink/issues/378 suggests 427 characters.
+# https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
+# also help. (but why BUFSIZE-*80*?) -GL
+S2S_BUFSIZE = 427
+
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
         super().__init__(irc)
@@ -124,14 +132,8 @@ class UnrealProtocol(TS6BaseProtocol):
         Example uses:
             sjoin('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
             sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
-
-        Note that for UnrealIRCd, no mode data is sent in an SJOIN command, only
-        The channel name, TS, and user list.
         """
-        # <- :001 SJOIN 1444361345 #test :001DJ1O02
-        # The nicklist consists of users joining the channel, with status prefixes for
-        # their status ('@+', '@', '+' or ''), for example:
-        # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'.
+        # <- :001 SJOIN 1444361345 #test :*@+1JJAAAAAB %2JJAAAA4C 1JJAAAADS
         channel = self.irc.toLower(channel)
         server = server or self.irc.sid
         assert users, "sjoin: No users sent?"
@@ -142,7 +144,7 @@ class UnrealProtocol(TS6BaseProtocol):
         orig_ts = self.irc.channels[channel].ts
         ts = ts or orig_ts
         uids = []
-        namelist = []
+        itemlist = []
 
         for userpair in users:
             assert len(userpair) == 2, "Incorrect format of userpair: %r" % userpair
@@ -151,13 +153,12 @@ class UnrealProtocol(TS6BaseProtocol):
             # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
             # and +a is ~ instead of &.
             # &, ", and ' are used for bursting bans.
-            sjoin_prefixes = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+'}
-            prefixchars = ''.join([sjoin_prefixes.get(prefix, '') for prefix in prefixes])
+            prefixchars = ''.join([SJOIN_PREFIXES.get(prefix, '') for prefix in prefixes])
 
             if prefixchars:
                 changedmodes |= {('+%s' % prefix, user) for prefix in prefixes}
 
-            namelist.append(prefixchars+user)
+            itemlist.append(prefixchars+user)
             uids.append(user)
 
             try:
@@ -165,15 +166,35 @@ class UnrealProtocol(TS6BaseProtocol):
             except KeyError:  # Not initialized yet?
                 log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
 
-        namelist = ' '.join(namelist)
+        # Track simple modes separately.
+        simplemodes = set()
+        for modepair in modes:
+            if modepair[0][-1] in self.irc.cmodes['*A']:
+                # Bans, exempts, invex get expanded to forms like "&*!*@some.host" in SJOIN.
 
-        self._send(server, "SJOIN {ts} {channel} :{users}".format(
-                   ts=ts, users=namelist, channel=channel))
+                if (modepair[0][-1], modepair[1]) in self.irc.channels[channel].modes:
+                    # Mode is already set; skip it.
+                    continue
 
-        # Burst modes separately. No really, this is what I see UnrealIRCd do! It sends
-        # JOINs on burst and then MODE!
+                sjoin_prefix = SJOIN_PREFIXES.get(modepair[0][-1])
+                if sjoin_prefix:
+                    itemlist.append(sjoin_prefix+modepair[1])
+            else:
+                simplemodes.add(modepair)
+
+        # Store the part of the SJOIN that we may reuse due to line wrapping (i.e. the sjoin
+        # "prefix")
+        sjoin_prefix = "SJOIN {ts} {channel}".format(ts=ts, channel=channel)
+
+        # Modes are optional; add them if they exist
         if modes:
-            self.mode(server, channel, modes, ts=ts)
+            sjoin_prefix += " %s" % self.irc.joinModes(simplemodes)
+
+        sjoin_prefix += " :"
+        # Wrap arguments to the max supported S2S line length to prevent cutoff
+        # (https://github.com/GLolol/PyLink/issues/378)
+        for line in utils.wrapArguments(sjoin_prefix, itemlist, S2S_BUFSIZE):
+            self._send(server, line)
 
         self.irc.channels[channel].users.update(uids)
 
@@ -540,6 +561,7 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_sjoin(self, numeric, command, args):
         """Handles the UnrealIRCd SJOIN command."""
         # <- :001 SJOIN 1444361345 #test :001AAAAAA @001AAAAAB +001AAAAAC
+        # <- :001 SJOIN 1483250129 #services +nt :+001OR9V02 @*~001DH6901 &*!*@test "*!*@blah.blah '*!*@yes.no
         channel = self.irc.toLower(args[1])
         chandata = self.irc.channels[channel].deepcopy()
         userlist = args[-1].split()
@@ -548,8 +570,10 @@ class UnrealProtocol(TS6BaseProtocol):
         log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
 
         modestring = ''
+
         # FIXME: Implement edge-case mode conflict handling as documented here:
         # https://www.unrealircd.org/files/docs/technical/serverprotocol.html#S5_1
+
         changedmodes = set()
         try:
             if args[2].startswith('+'):
