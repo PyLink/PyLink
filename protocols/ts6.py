@@ -113,6 +113,10 @@ class TS6Protocol(TS6BaseProtocol):
             modechar = mode[0][-1]
             if modechar in self.irc.cmodes['*A']:
                 # Mode character is one of 'beIq'
+                if (modechar, mode[1]) in self.irc.channels[channel].modes:
+                    # Don't reset modes that are already set.
+                    continue
+
                 banmodes[modechar].add(mode[1])
             else:
                 regularmodes.append(mode)
