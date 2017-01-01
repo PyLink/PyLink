@@ -479,3 +479,39 @@ def unregisterService(name):
         ircobj.proto.quit(uid, "Service unloaded.")
 
     del world.services[name]
+
+def wrapArguments(prefix, args, length, separator=' '):
+    """
+    Takes a static prefix and a list of arguments, and returns a list of strings
+    with the arguments wrapped across multiple lines. This is useful for breaking up
+    long SJOIN or MODE strings so they aren't cut off by message length limits.
+
+    Example:
+    wrapArguments(['test1!*@long.ban.abcdefghijklmnopq', 'test2!*@long.ban.abcdefghijklmnopq',
+                   'test3!*@long.ban.abcdefghijklmnopq'])
+        =>
+
+    """
+    strings = []
+
+    assert args, "wrapArguments: no arguments given"
+
+    buf = prefix
+
+    while args:
+        assert len(prefix+args[0]) <= length, \
+            "wrapArguments: Argument %r is too long for the given length %s" % (args[0], length)
+
+        # Add arguments until our buffer is up to the length limit.
+        if (len(buf + args[0]) + 1) <= length:
+            if buf != prefix:  # Only add a separator if this isn't the first argument of a line
+                buf += separator
+            buf += args.pop(0)
+        else:
+            # Once this is full, add the string to the list and reset the buffer.
+            strings.append(buf)
+            buf = prefix
+    else:
+        strings.append(buf)
+
+    return strings
