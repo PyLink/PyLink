@@ -1117,7 +1117,7 @@ class IrcChannel():
     def __init__(self, name=None):
         # Initialize variables, such as the topic, user list, TS, who's opped, etc.
         self.users = set()
-        self.modes = {('n', None), ('t', None)}
+        self.modes = set()
         self.topic = ''
         self.ts = int(time.time())
         self.prefixmodes = {'op': set(), 'halfop': set(), 'voice': set(),
