@@ -575,10 +575,11 @@ class UnrealProtocol(TS6BaseProtocol):
         # https://www.unrealircd.org/files/docs/technical/serverprotocol.html#S5_1
 
         changedmodes = set()
+        parsedmodes = []
         try:
             if args[2].startswith('+'):
-                modestring = args[2]
-                changedmodes = set(self.irc.parseModes(channel, modestring))
+                parsedmodes = self.irc.parseModes(channel, args[2])
+                changedmodes = set(parsedmodes)
         except IndexError:
             pass
 
@@ -618,7 +619,7 @@ class UnrealProtocol(TS6BaseProtocol):
         their_ts = int(args[0])
         self.updateTS(numeric, channel, their_ts, changedmodes)
 
-        return {'channel': channel, 'users': namelist, 'modes': self.irc.channels[channel].modes,
+        return {'channel': channel, 'users': namelist, 'modes': parsedmodes,
                 'ts': their_ts, 'channeldata': chandata}
 
     def handle_nick(self, numeric, command, args):
