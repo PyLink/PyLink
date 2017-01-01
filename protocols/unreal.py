@@ -578,7 +578,7 @@ class UnrealProtocol(TS6BaseProtocol):
         parsedmodes = []
         try:
             if args[2].startswith('+'):
-                parsedmodes = self.irc.parseModes(channel, args[2])
+                parsedmodes = self.irc.parseModes(channel, args[2:-1] or args[2])
                 changedmodes = set(parsedmodes)
         except IndexError:
             pass
