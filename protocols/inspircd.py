@@ -507,15 +507,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if self.irc.isInternalServer(args[1]):
             self._send(args[1], 'PONG %s %s' % (args[1], source))
 
-    def handle_pong(self, source, command, args):
-        """Handles incoming PONG commands.
-
-        This is used to keep track of whether the uplink is alive by the Irc()
-        internals - a server that fails to reply to our PINGs eventually
-        times out and is disconnected."""
-        if source == self.irc.uplink and args[1] == self.irc.sid:
-            self.irc.lastping = time.time()
-
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
         # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>

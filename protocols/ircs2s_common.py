@@ -98,3 +98,8 @@ class IRCS2SProtocol(Protocol):
     def handle_time(self, numeric, command, args):
         """Handles incoming /TIME requests."""
         return {'target': args[0]}
+
+    def handle_pong(self, source, command, args):
+        """Handles incoming PONG commands."""
+        if source == self.irc.uplink:
+            self.irc.lastping = time.time()

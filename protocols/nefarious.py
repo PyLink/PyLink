@@ -966,12 +966,6 @@ class P10Protocol(IRCS2SProtocol):
         if args[0] != self.irc.serverdata['recvpass']:
             raise ProtocolError("Error: RECVPASS from uplink does not match configuration!")
 
-    def handle_pong(self, source, command, args):
-        """Handles incoming PONGs."""
-        # <- AB Z AB :Ay
-        if source == self.irc.uplink:
-            self.irc.lastping = time.time()
-
     def handle_burst(self, source, command, args):
         """Handles the BURST command, used for bursting channels on link.
 

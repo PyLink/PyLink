@@ -424,12 +424,6 @@ class UnrealProtocol(TS6BaseProtocol):
         if numeric == self.irc.uplink:
             self.irc.send('PONG %s :%s' % (self.irc.serverdata['hostname'], args[-1]))
 
-    def handle_pong(self, source, command, args):
-        log.debug('(%s) Ping received from %s for %s.', self.irc.name, source, args[-1])
-        if source in (self.irc.uplink, self.irc.servers[self.irc.uplink].name) and args[-1] == self.irc.serverdata['hostname']:
-            log.debug('(%s) Set self.irc.lastping.', self.irc.name)
-            self.irc.lastping = time.time()
-
     def handle_server(self, numeric, command, args):
         """Handles the SERVER command, which is used for both authentication and
         introducing legacy (non-SID) servers."""
