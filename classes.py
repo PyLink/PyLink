@@ -858,6 +858,77 @@ class Irc():
             modelist += ' %s' % ' '.join(args)
         return modelist
 
+    @staticmethod
+    def wrapModes(modes, limit):
+        """
+        Takes a list of modes and wraps it across multiple lines.
+        """
+        strings = []
+
+        # This process is slightly trickier than just wrapping arguments, because modes create
+        # positional arguments that can't be separated from its character.
+        queued_modes = []
+        total_length = 0
+
+        last_prefix = '+'
+        orig_modes = modes.copy()
+        while modes:
+            # PyLink mode lists come in the form [('+t', None), ('-b', '*!*@someone'), ('+l', 3)]
+            # The +/- part is optional depending on context, and should either:
+            # 1) The prefix of the last mode.
+            # 2) + (adding modes), if no prefix was ever given
+            next_mode = modes.pop(0)
+
+            modechar, arg = next_mode
+            prefix = modechar[0]
+            if prefix not in '+-':
+                prefix = last_prefix
+                # Explicitly add the prefix to the mode character to prevent
+                # ambiguity when passing it to joinModes().
+                modechar = prefix + modechar
+                # XXX: because tuples are immutable, we have to replace the entire modepair..
+                next_mode = (modechar, arg)
+
+            # Figure out the length that the next mode will add to the buffer. If we're changing
+            # from + to - (setting to removing modes) or vice versa, we'll need two characters
+            # ("+" or "-") plus the mode char itself.
+            next_length = 1
+            if prefix != last_prefix:
+                next_length += 1
+
+            # Replace the last_prefix with the current one for the next iteration.
+            last_prefix = prefix
+
+            if arg:
+                # This mode has an argument, so add the length of that and a space.
+                next_length += 1
+                next_length += len(arg)
+
+            assert next_length <= limit, \
+                "wrapModes: Mode %s is too long for the given length %s" % (next_mode, limit)
+
+            if (next_length + total_length) <= limit:
+                # We can fit this mode in the next message; add it.
+                total_length += next_length
+                log.debug('wrapModes: Adding mode %s to queued modes', str(next_mode))
+                queued_modes.append(next_mode)
+                log.debug('wrapModes: queued modes: %s', queued_modes)
+            else:
+                # Otherwise, create a new message by joining the previous queue.
+                # Then, add our current mode.
+                strings.append(self.joinModes(queued_modes))
+                queued_modes.clear()
+
+                log.debug('wrapModes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
+                queued_modes.append(next_mode)
+                total_length = next_length
+        else:
+            # Everything fit in one line, so just use that.
+            strings.append(self.joinModes(queued_modes))
+
+        log.debug('wrapModes: returning %s for %s', strings, orig_modes)
+        return strings
+
     def version(self):
         """
         Returns a detailed version string including the PyLink daemon version,
