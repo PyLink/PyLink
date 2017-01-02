@@ -858,8 +858,8 @@ class Irc():
             modelist += ' %s' % ' '.join(args)
         return modelist
 
-    @staticmethod
-    def wrapModes(modes, limit):
+    @classmethod
+    def wrapModes(cls, modes, limit):
         """
         Takes a list of modes and wraps it across multiple lines.
         """
@@ -916,7 +916,7 @@ class Irc():
             else:
                 # Otherwise, create a new message by joining the previous queue.
                 # Then, add our current mode.
-                strings.append(self.joinModes(queued_modes))
+                strings.append(cls.joinModes(queued_modes))
                 queued_modes.clear()
 
                 log.debug('wrapModes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
@@ -924,7 +924,7 @@ class Irc():
                 total_length = next_length
         else:
             # Everything fit in one line, so just use that.
-            strings.append(self.joinModes(queued_modes))
+            strings.append(cls.joinModes(queued_modes))
 
         log.debug('wrapModes: returning %s for %s', strings, orig_modes)
         return strings
