@@ -77,10 +77,11 @@ servers:
     # remove ones that you don't need in your config.
 
     # Short name for the network. This is used for relay's nick suffixes, the
-    # network plugin's (dis)connect commands, and elsewhere internally.
-    # You should change this to some abbreviation representing your network
-    # name; usually something 3-5 characters should be good.
+    # network plugin's (dis)connect commands, and various other places internally.
+    # CHANGE THIS to some abbreviation representing your network; usually
+    # something 3-5 characters should be good.
     inspnet:
+
         # Server IP, port, and passwords. The ip: field also supports resolving
         # hostnames.
         ip: 127.0.0.1
