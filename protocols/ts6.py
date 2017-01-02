@@ -411,12 +411,6 @@ class TS6Protocol(TS6BaseProtocol):
                 # Return the endburst hook.
                 return {'parse_as': 'ENDBURST'}
 
-
-    def handle_pong(self, source, command, args):
-        """Handles incoming PONG commands."""
-        if source == self.irc.uplink:
-            self.irc.lastping = time.time()
-
     def handle_sjoin(self, servernumeric, command, args):
         """Handles incoming SJOIN commands."""
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
