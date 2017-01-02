@@ -988,8 +988,6 @@ class P10Protocol(IRCS2SProtocol):
         channel = self.irc.toLower(args[0])
         chandata = self.irc.channels[channel].deepcopy()
 
-        userlist = args[-1].split()
-
         bans = []
         if args[-1].startswith('%'):
             # Ban lists start with a %. However, if one argument is "~",
