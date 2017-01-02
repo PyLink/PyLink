@@ -485,12 +485,6 @@ def wrapArguments(prefix, args, length, separator=' '):
     Takes a static prefix and a list of arguments, and returns a list of strings
     with the arguments wrapped across multiple lines. This is useful for breaking up
     long SJOIN or MODE strings so they aren't cut off by message length limits.
-
-    Example:
-    wrapArguments(['test1!*@long.ban.abcdefghijklmnopq', 'test2!*@long.ban.abcdefghijklmnopq',
-                   'test3!*@long.ban.abcdefghijklmnopq'])
-        =>
-
     """
     strings = []
 
