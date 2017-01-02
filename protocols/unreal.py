@@ -220,11 +220,24 @@ class UnrealProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client/server exists.')
 
         self.irc.applyModes(target, modes)
-        joinedmodes = self.irc.joinModes(modes)
+
         if utils.isChannel(target):
             # The MODE command is used for channel mode changes only
             ts = ts or self.irc.channels[self.irc.toLower(target)].ts
-            self._send(numeric, 'MODE %s %s %s' % (target, joinedmodes, ts))
+
+            # 7 characters for "MODE", the space between MODE and the target, the space between the
+            # target and mode list, and the space between the mode list and TS.
+            bufsize = S2S_BUFSIZE - 7
+
+            # Subtract the length of the TS and channel arguments
+            bufsize -= len(str(ts))
+            bufsize -= len(target)
+
+            # Subtract the prefix (":SID " for servers or ":SIDAAAAAA " for servers)
+            bufsize -= (5 if self.irc.isInternalServer(numeric) else 9)
+
+            for modestring in self.irc.wrapModes(modes, bufsize):
+                self._send(numeric, 'MODE %s %s %s' % (target, modestring, ts))
         else:
             # For user modes, the only way to set modes (for non-U:Lined servers)
             # is through UMODE2, which sets the modes on the caller.
@@ -232,6 +245,10 @@ class UnrealProtocol(TS6BaseProtocol):
             # U:Line a PyLink daemon...
             if not self.irc.isInternalClient(target):
                 raise ProtocolError('Cannot force mode change on external clients!')
+
+            # XXX: I don't expect usermode changes to ever get cut off, but length
+            # checks could be added just to be safe...
+            joinedmodes = self.irc.joinModes(modes)
             self._send(target, 'UMODE2 %s' % joinedmodes)
 
     def topicBurst(self, numeric, target, text):
