@@ -578,7 +578,11 @@ class UnrealProtocol(TS6BaseProtocol):
         parsedmodes = []
         try:
             if args[2].startswith('+'):
-                parsedmodes = self.irc.parseModes(channel, args[2:-1] or args[2])
+                modestring = args[2:-1] or args[2]
+                # Strip extra spaces between the mode argument and the user list, if
+                # there are any. XXX: report this as a bug in unreal's s2s protocol?
+                modestring = [m for m in modestring if m]
+                parsedmodes = self.irc.parseModes(channel, modestring)
                 changedmodes = set(parsedmodes)
         except IndexError:
             pass
@@ -679,7 +683,7 @@ class UnrealProtocol(TS6BaseProtocol):
             channel = self.irc.toLower(args[0])
             oldobj = self.irc.channels[channel].deepcopy()
 
-            modes = list(filter(None, args[1:]))  # normalize whitespace
+            modes = [arg for arg in args[1:] if arg]  # normalize whitespace
             parsedmodes = self.irc.parseModes(channel, modes)
 
             if parsedmodes:
