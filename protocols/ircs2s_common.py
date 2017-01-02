@@ -2,6 +2,8 @@
 ircs2s_common.py: Common base protocol class with functions shared by TS6 and P10-based protocols.
 """
 
+import time
+
 from pylinkirc.classes import Protocol
 from pylinkirc.log import log
 
