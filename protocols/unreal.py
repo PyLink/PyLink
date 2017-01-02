@@ -715,9 +715,8 @@ class UnrealProtocol(TS6BaseProtocol):
                     self.updateTS(numeric, channel, their_ts)
             return {'target': channel, 'modes': parsedmodes, 'channeldata': oldobj}
         else:
-            log.warning("(%s) received MODE for non-channel target: %r",
-                        self.irc.name, args)
-            raise NotImplementedError
+            # User mode change: pass those on to handle_umode2()
+            self.handle_umode2(numeric, 'MODE', args[1:])
 
     def checkCloakChange(self, uid, parsedmodes):
         """
