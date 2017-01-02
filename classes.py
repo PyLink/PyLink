@@ -201,6 +201,10 @@ class Irc():
                 self.socket = socket.socket(stype)
                 self.socket.setblocking(0)
 
+                # Set the socket bind if applicable.
+                if 'bindhost' in self.serverdata:
+                    self.socket.bind((self.serverdata['bindhost'], 0))
+
                 # Set the connection timeouts. Initial connection timeout is a
                 # lot smaller than the timeout after we've connected; this is
                 # intentional.

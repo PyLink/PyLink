@@ -88,6 +88,9 @@ servers:
         recvpass: "abcd"
         sendpass: "abcd"
 
+        # Set the bind host, useful for multi-homed hosts.
+        #bindhost: 1.2.3.4
+
         # The full network name, used by plugins.
         netname: "InspIRCd Network"
 
