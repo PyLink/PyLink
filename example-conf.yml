@@ -440,7 +440,10 @@ changehost:
     # This block configures the Changehost plugin. You don't need this if you
     # aren't using it.
 
-    # Sets the networks where Changehost should be enabled.
+    # Sets the networks where Changehost should be enabled. Please note: changehost does NOT support
+    # arbitrarily cloaking clients introduced by PyLink (e.g. relay clients), as doing so would make
+    # ban matching impossible. In these cases, it is the remote admin's job to turn on cloaking on
+    # their IRCd!
     enabled_nets:
         - inspnet
         - ts6net
