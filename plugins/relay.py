@@ -776,6 +776,12 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
 
+                    if irc.protoname == 'clientbot' and irc.pseudoclient and arg == irc.pseudoclient.uid:
+                        # Skip modesync on the main PyLink client.
+                        log.debug("(%s) relay.get_supported_cmodes: filtering prefix change (%r, %r) on Clientbot relayer",
+                                  irc.name, name, arg)
+                        break
+
                     # If the target is a remote user, get the real target
                     # (original user).
                     arg = get_orig_user(irc, arg, targetirc=remoteirc) or \
