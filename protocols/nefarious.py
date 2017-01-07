@@ -12,6 +12,8 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
 
+S2S_BUFSIZE = 510
+
 class P10UIDGenerator(utils.IncrementalUIDGenerator):
      """Implements an incremental P10 UID Generator."""
 
@@ -399,33 +401,40 @@ class P10Protocol(IRCS2SProtocol):
         modes = list(modes)
 
         # According to the P10 specification:
-        # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L29
+        # https://github.com/evilnet/nefarious2/blob/4e2dcb1/doc/p10.txt#L146
         # One line can have a max of 15 parameters. Excluding the target and the first part of the
         # modestring, this means we can send a max of 13 modes with arguments per line.
-        if utils.isChannel(target):
+        is_cmode = utils.isChannel(target)
+        if is_cmode:
             # Channel mode changes have a trailing TS. User mode changes do not.
             cobj = self.irc.channels[self.irc.toLower(target)]
             ts = ts or cobj.ts
-            send_ts = True
 
             # HACK: prevent mode bounces by sending our mode through the server if
             # the sender isn't op.
             if numeric not in self.irc.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
                 numeric = self.irc.getServer(numeric)
 
+            # Wrap modes: start with max bufsize and subtract the lengths of the source, target,
+            # mode command, and whitespace.
+            bufsize = S2S_BUFSIZE - len(numeric) - 4 - len(target) - len(str(ts))
+
             real_target = target
         else:
             assert target in self.irc.users, "Unknown mode target %s" % target
             # P10 uses nicks in user MODE targets, NOT UIDs. ~GL
             real_target = self.irc.users[target].nick
-            send_ts = False
 
         self.irc.applyModes(target, modes)
 
         while modes[:12]:
             joinedmodes = self.irc.joinModes([m for m in modes[:12]])
+            if is_cmode:
+                for wrapped_modes in self.irc.wrapModes(modes[:12], bufsize):
+                    self._send(numeric, 'M %s %s %s' % (real_target, wrapped_modes, ts))
+            else:
+                self._send(numeric, 'M %s %s%s' % (real_target, joinedmodes))
             modes = modes[12:]
-            self._send(numeric, 'M %s %s%s' % (real_target, joinedmodes, ' %s' % ts if send_ts else ''))
 
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
