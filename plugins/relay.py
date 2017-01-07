@@ -610,6 +610,12 @@ def relay_joins(irc, channel, users, ts, burst=True):
     Relays one or more users' joins from a channel to its relay links.
     """
     joined_nets = {}
+
+    if ts < 750000:
+        current_ts = int(time.time())
+        log.debug('(%s) relay: resetting too low TS value of %s on %s to %s', irc.name, ts, users, current_ts)
+        ts = current_ts
+
     for name, remoteirc in world.networkobjects.copy().items():
         queued_users = []
         if name == irc.name or not remoteirc.connected.is_set():
