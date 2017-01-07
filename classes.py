@@ -1295,9 +1295,12 @@ class Protocol():
                 _apply()
 
             elif (their_ts < our_ts):
-                log.debug('(%s) Resetting channel TS of %s from %s to %s (remote has lower TS)',
-                          self.irc.name, channel, our_ts, their_ts)
-                self.irc.channels[channel].ts = their_ts
+                if their_ts < 750000:
+                    log.warning('(%s) Possible desync? Not setting bogus TS %s on channel %s', self.irc.name, their_ts, channel)
+                else:
+                    log.debug('(%s) Resetting channel TS of %s from %s to %s (remote has lower TS)',
+                              self.irc.name, channel, our_ts, their_ts)
+                    self.irc.channels[channel].ts = their_ts
 
                 # Remote TS was lower and we're receiving modes. Clear the modelist and apply theirs.
 
