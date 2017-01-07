@@ -492,6 +492,8 @@ def wrapArguments(prefix, args, length, separator=' '):
 
     buf = prefix
 
+    args = list(args)
+
     while args:
         assert len(prefix+args[0]) <= length, \
             "wrapArguments: Argument %r is too long for the given length %s" % (args[0], length)

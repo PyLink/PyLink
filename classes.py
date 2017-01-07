@@ -876,6 +876,7 @@ class Irc():
 
         last_prefix = '+'
         orig_modes = modes.copy()
+        modes = list(modes)
         while modes:
             # PyLink mode lists come in the form [('+t', None), ('-b', '*!*@someone'), ('+l', 3)]
             # The +/- part is optional depending on context, and should either:
