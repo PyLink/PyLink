@@ -546,6 +546,10 @@ class P10Protocol(IRCS2SProtocol):
         # Joins should look like: A0AAB,A0AAC,ABAAA:v,ABAAB:o,ABAAD,ACAAA:ov
         users = sorted(users, key=self.access_sort)
 
+        msgprefix = '{sid} B {channel} {ts} '.format(sid=server, channel=channel, ts=ts)
+        if regularmodes:
+            msgprefix += '%s ' % self.irc.joinModes(regularmodes)
+
         last_prefixes = ''
         for userpair in users:
             # We take <users> as a list of (prefixmodes, uid) pairs.
@@ -568,30 +572,59 @@ class P10Protocol(IRCS2SProtocol):
                     changedmodes.add(('+%s' % prefix, user))
 
             self.irc.users[user].channels.add(channel)
-
-        namelist = ','.join(namelist)
-        log.debug('(%s) sjoin: got %r for namelist', self.irc.name, namelist)
-
-        # Format bans as the last argument if there are any.
-        banstring = ''
-        if bans or exempts:
-            banstring += ' :%'  # Ban string starts with a % if there is anything
-            if bans:
-                banstring += ' '.join(bans)  # Join all bans, separated by a space
-            if exempts:
-                # Exempts are separated from the ban list by a single argument "~".
-                banstring += ' ~ '
-                banstring += ' '.join(exempts)
-
-        if modes:  # Only send modes if there are any.
-            self._send(server, "B {channel} {ts} {modes} {users}{banstring}".format(
-                       ts=ts, users=namelist, channel=channel,
-                       modes=self.irc.joinModes(regularmodes), banstring=banstring))
         else:
-            self._send(server, "B {channel} {ts} {users}{banstring}".format(
-                       ts=ts, users=namelist, channel=channel, banstring=banstring))
+            if namelist:
+                log.debug('(%s) sjoin: got %r for namelist', self.irc.name, namelist)
+
+                # Flip the (prefixmodes, user) pairs in users, and save it as a dict for easy lookup
+                # later of what modes each target user should have.
+                names_dict = dict([(uid, prefixes) for prefixes, uid in users])
+
+                # Wrap all users and send them to prevent cutoff. Subtract 4 off the maximum
+                # buf size to account for user prefix data that may be re-added (e.g. ":ohv")
+                for linenum, wrapped_msg in \
+                        enumerate(utils.wrapArguments(msgprefix, namelist, S2S_BUFSIZE-1-len(self.irc.prefixmodes),
+                                                      separator=',')):
+                    if linenum:  # Implies "if linenum > 0"
+                        # XXX: Ugh, this postprocessing sucks, but we have to make sure that mode prefixes are accounted
+                        # for in the burst.
+                        wrapped_args = self.parseArgs(wrapped_msg.split(" "))
+                        wrapped_namelist = wrapped_args[-1].split(',')
+                        log.debug('(%s) sjoin: wrapped args: %s (post-wrap fixing)', self.irc.name,
+                                  wrapped_args)
+
+                        # If the first UID was supposed to have a prefix mode attached, re-add it here
+                        first_uid = wrapped_namelist[0]
+                        # XXX: I'm not sure why the prefix list has to be reversed for it to match the
+                        # original string...
+                        first_prefix = names_dict.get(first_uid, '')[::-1]
+                        log.debug('(%s) sjoin: prefixes for first user %s: %s (post-wrap fixing)', self.irc.name,
+                                  first_uid, first_prefix)
+
+                        if (':' not in first_uid) and first_prefix:
+                            log.debug('(%s) sjoin: re-adding prefix %s to user %s (post-wrap fixing)', self.irc.name,
+                                      first_uid, first_prefix)
+                            wrapped_namelist[0] += ':%s' % prefixes
+                            wrapped_msg = ' '.join(wrapped_args[:-1])
+                            wrapped_msg += ' '
+                            wrapped_msg += ','.join(wrapped_namelist)
+
+                    self.irc.send(wrapped_msg)
 
         self.irc.channels[channel].users.update(changedusers)
+
+        # Technically we can send bans together with the above user introductions, but
+        # it's easier to line wrap them separately.
+        if bans or exempts:
+            msgprefix += ':%'  # Ban string starts with a % if there is anything
+            if bans:
+                for wrapped_msg in utils.wrapArguments(msgprefix, bans, S2S_BUFSIZE):
+                    self.irc.send(wrapped_msg)
+            if exempts:
+                # Now add exempts, which are separated from the ban list by a single argument "~".
+                msgprefix += ' ~ '
+                for wrapped_msg in utils.wrapArguments(msgprefix, exempts, S2S_BUFSIZE):
+                    self.irc.send(wrapped_msg)
 
         self.updateTS(server, channel, ts, changedmodes)
 
