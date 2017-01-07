@@ -1020,11 +1020,10 @@ class P10Protocol(IRCS2SProtocol):
         changedmodes = set(parsedmodes + bans)
 
         namelist = []
+        prefixes = ''
+        userlist = args[-1].split(',')
         log.debug('(%s) handle_burst: got userlist %r for %r', self.irc.name, userlist, channel)
 
-        prefixes = ''
-
-        userlist = args[-1].split(',')
         if args[-1] != args[1]:  # Make sure the user list is the right argument (not the TS).
             for userpair in userlist:
                 # This is given in the form UID1,UID2:prefixes. However, when one userpair is given
