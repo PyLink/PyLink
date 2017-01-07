@@ -184,7 +184,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Store the part of the SJOIN that we may reuse due to line wrapping (i.e. the sjoin
         # "prefix")
-        sjoin_prefix = "SJOIN {ts} {channel}".format(ts=ts, channel=channel)
+        sjoin_prefix = ":{sid} SJOIN {ts} {channel}".format(sid=server, ts=ts, channel=channel)
 
         # Modes are optional; add them if they exist
         if modes:
@@ -194,7 +194,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # Wrap arguments to the max supported S2S line length to prevent cutoff
         # (https://github.com/GLolol/PyLink/issues/378)
         for line in utils.wrapArguments(sjoin_prefix, itemlist, S2S_BUFSIZE):
-            self._send(server, line)
+            self.irc.send(line)
 
         self.irc.channels[channel].users.update(uids)
 
