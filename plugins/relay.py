@@ -1205,9 +1205,9 @@ def handle_kick(irc, source, command, args):
                 # Join the kicked client back with its respective modes.
                 irc.proto.sjoin(irc.sid, channel, [(modes, target)])
                 if kicker in irc.users:
-                    log.info('(%s) relay: Blocked KICK (reason %r) from %s/%s to relay client %s/%s on %s.',
+                    log.info('(%s) relay: Blocked KICK (reason %r) from %s/%s to relay client %s on %s.',
                              irc.name, args['text'], irc.users[source].nick, irc.name,
-                             remoteirc.users[real_target].nick, remoteirc.name, channel)
+                             remoteirc.users[real_target].nick, channel)
                     irc.msg(kicker, "This channel is claimed; your kick to "
                                     "%s has been blocked because you are not "
                                     "(half)opped." % channel, notice=True)
