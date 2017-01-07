@@ -15,18 +15,23 @@ from . import world, conf
 # Stores a list of active file loggers.
 fileloggers = []
 
-stdout_level = conf.conf['logging'].get('stdout') or 'INFO'
-
 logdir = os.path.join(os.getcwd(), 'log')
 os.makedirs(logdir, exist_ok=True)
 
+# TODO: perhaps make this format configurable?
 _format = '%(asctime)s [%(levelname)s] %(message)s'
 logformatter = logging.Formatter(_format)
+
+def stdoutLogLevel():
+    """
+    Returns the configured STDOUT log level.
+    """
+    return conf.conf['logging'].get('stdout') or 'INFO'
 
 # Set up logging to STDERR
 world.stdout_handler = logging.StreamHandler()
 world.stdout_handler.setFormatter(logformatter)
-world.stdout_handler.setLevel(stdout_level)
+world.stdout_handler.setLevel(stdoutLogLevel())
 
 # Get the main logger object; plugins can import this variable for convenience.
 log = logging.getLogger()

@@ -6,7 +6,7 @@ import os
 import threading
 
 from pylinkirc import world, utils, conf, classes
-from pylinkirc.log import log, makeFileLogger, stopFileLoggers
+from pylinkirc.log import log, makeFileLogger, stopFileLoggers, stdoutLogLevel
 from . import permissions
 
 def remove_network(ircobj):
@@ -70,8 +70,11 @@ def _rehash():
         for filename, config in files.items():
             makeFileLogger(filename, config.get('loglevel'))
 
+    log.debug('rehash: updating STDOUT log level')
+    world.stdout_handler.setLevel(stdoutLogLevel())
+
     # Reset permissions.
-    log.debug('rehash: resetting permissions.')
+    log.debug('rehash: resetting permissions')
     permissions.resetPermissions()
 
     for network, ircobj in world.networkobjects.copy().items():
