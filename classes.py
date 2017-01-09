@@ -618,22 +618,25 @@ class Irc():
                         log.debug('Mode %s: This mode must have parameter.', mode)
                         arg = args.pop(0)
                         if prefix == '-':
+                            if mode in supported_modes['*B'] and arg == '*':
+                                # Charybdis allows unsetting +k without actually
+                                # knowing the key by faking the argument when unsetting
+                                # as a single "*".
+                                # We'd need to know the real argument of +k for us to
+                                # be able to unset the mode.
+                                oldarg = dict(oldmodes).get(mode)
+                                if oldarg:
+                                    # Set the arg to the old one on the channel.
+                                    arg = oldarg
+                                    log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
+
                             log.debug('(%s) parseModes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, oldmodes)
+
                             if (mode, arg) not in oldmodes:
                                 # Ignore attempts to unset bans that don't exist.
                                 log.debug("(%s) parseModes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
                                 continue
-                        elif prefix == '-' and mode in supported_modes['*B'] and arg == '*':
-                            # Charybdis allows unsetting +k without actually
-                            # knowing the key by faking the argument when unsetting
-                            # as a single "*".
-                            # We'd need to know the real argument of +k for us to
-                            # be able to unset the mode.
-                            oldargs = [m[1] for m in oldmodes if m[0] == mode]
-                            if oldargs:
-                                # Set the arg to the old one on the channel.
-                                arg = oldargs[0]
-                                log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
+
                     elif prefix == '+' and mode in supported_modes['*C']:
                         # Only has parameter when setting.
                         log.debug('Mode %s: Only has parameter when setting.', mode)
