@@ -408,7 +408,6 @@ logging:
         # Logs to file targets. These will be placed in the log/ folder in the
         # PyLink directory, with a filename based on the current instance name
         # and the target name: instancename-targetname.log
-        # Changing settings in this block will require a restart to take effect.
 
         # When running with ./pylink, this will create log/pylink-errors.log
         # When running with ./pylink someconf.yml, this will create log/someconf-errors.log
