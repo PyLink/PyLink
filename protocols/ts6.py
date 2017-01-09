@@ -10,6 +10,8 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
+S2S_BUFSIZE = 510
+
 class TS6Protocol(TS6BaseProtocol):
     def __init__(self, irc):
         super().__init__(irc)
@@ -183,12 +185,11 @@ class TS6Protocol(TS6BaseProtocol):
 
             # On output, at most ten cmode parameters should be sent; if there are more,
             # multiple TMODE messages should be sent.
-            while modes[:10]:
-                # Seriously, though. If you send more than 10 mode parameters in
-                # a line, charybdis will silently REJECT the entire command!
-                joinedmodes = self.irc.joinModes([m for m in modes[:10]])
-                modes = modes[10:]
-                self._send(numeric, 'TMODE %s %s %s' % (ts, target, joinedmodes))
+            msgprefix = ':%s TMODE %s %s ' % (numeric, ts, target)
+            bufsize = S2S_BUFSIZE - len(msgprefix)
+
+            for modestr in self.irc.wrapModes(modes, bufsize, max_modes_per_msg=10):
+                self.irc.send(msgprefix + modestr)
         else:
             joinedmodes = self.irc.joinModes(modes)
             self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
