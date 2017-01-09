@@ -866,7 +866,7 @@ class Irc():
         return modelist
 
     @classmethod
-    def wrapModes(cls, modes, limit):
+    def wrapModes(cls, modes, limit, max_modes_per_msg=0):
         """
         Takes a list of modes and wraps it across multiple lines.
         """
@@ -915,7 +915,8 @@ class Irc():
             assert next_length <= limit, \
                 "wrapModes: Mode %s is too long for the given length %s" % (next_mode, limit)
 
-            if (next_length + total_length) <= limit:
+            # Check both message length and max. modes per msg if enabled.
+            if (next_length + total_length) <= limit and ((not max_modes_per_msg) or len(queued_modes) < max_modes_per_msg):
                 # We can fit this mode in the next message; add it.
                 total_length += next_length
                 log.debug('wrapModes: Adding mode %s to queued modes', str(next_mode))
