@@ -139,7 +139,8 @@ class ClientbotWrapperProtocol(Protocol):
         # rely on the /NAMES reply to sync it up properly.
         if self.irc.pseudoclient and client == self.irc.pseudoclient.uid:
             self.irc.send('JOIN %s' % channel)
-            # Send a /who request right after
+            # Send /names and /who requests right after
+            self.irc.send('NAMES %s' % channel)
             self.irc.send('WHO %s' % channel)
         else:
             self.irc.channels[channel].users.add(client)
