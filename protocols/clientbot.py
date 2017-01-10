@@ -320,7 +320,7 @@ class ClientbotWrapperProtocol(Protocol):
         else:
             return  # Nothing changed
 
-    def _getUid(self, nick, ident='unknown', host='unknown.host'):
+    def _getUid(self, nick, ident=None, host=None):
         """
         Fetches the UID for the given nick, creating one if it does not already exist.
 
@@ -337,7 +337,8 @@ class ClientbotWrapperProtocol(Protocol):
                 log.debug('(%s) Nick-colliding virtual client %s/%s', self.irc.name, idsource, nick)
                 self.irc.callHooks([self.irc.sid, 'CLIENTBOT_NICKCOLLIDE', {'target': idsource, 'parse_as': 'SAVE'}])
 
-            idsource = self.spawnClient(nick, ident, host, server=self.irc.uplink, realname=FALLBACK_REALNAME).uid
+            idsource = self.spawnClient(nick, ident or 'unknown', host or 'unknown',
+                                        server=self.irc.uplink, realname=FALLBACK_REALNAME).uid
 
         return idsource
 
@@ -387,14 +388,18 @@ class ClientbotWrapperProtocol(Protocol):
             # PyLink as a services framework expects UIDs and SIDs for everything. Since we connect
             # as a bot here, there's no explicit user introduction, so we're going to generate
             # pseudo-uids and pseudo-sids as we see prefixes.
-            if '!' not in sender:
-                # Sender is a server name.
+            if ('!' not in sender) and '.' in sender:
+                # Sender is a server name. XXX: make this check more foolproof
                 idsource = self._getSid(sender)
                 if idsource not in self.irc.servers:
                     idsource = self.spawnServer(sender, internal=False)
             else:
-                # Sender is a nick!user@host prefix. Split it into its relevant parts.
-                nick, ident, host = utils.splitHostmask(sender)
+                # Sender is a either a nick or a nick!user@host prefix. Split it into its relevant parts.
+                try:
+                    nick, ident, host = utils.splitHostmask(sender)
+                except ValueError:
+                    ident = host = None  # Set ident and host as null for now.
+                    nick = sender  # Treat the sender prefix we received as a nick.
                 idsource = self._getUid(nick, ident, host)
 
         try:
