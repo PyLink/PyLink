@@ -1,7 +1,5 @@
 # PyLink hooks reference
 
-## Introduction
-
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
 Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
 
