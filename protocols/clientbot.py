@@ -635,7 +635,7 @@ class ClientbotWrapperProtocol(Protocol):
             if (idsource not in self.irc.channels[channel].users) or (idsource in \
                     self.kick_queue.get(channel, ([],))[0]):
                 names.add(idsource)
-                self.irc.users[idsource].channels.add(channel)
+            self.irc.users[idsource].channels.add(channel)
 
             # Process prefix modes
             for char in name:
