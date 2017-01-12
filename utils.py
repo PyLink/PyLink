@@ -480,7 +480,7 @@ def unregisterService(name):
 
     del world.services[name]
 
-def wrapArguments(prefix, args, length, separator=' '):
+def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
     """
     Takes a static prefix and a list of arguments, and returns a list of strings
     with the arguments wrapped across multiple lines. This is useful for breaking up
@@ -499,7 +499,7 @@ def wrapArguments(prefix, args, length, separator=' '):
             "wrapArguments: Argument %r is too long for the given length %s" % (args[0], length)
 
         # Add arguments until our buffer is up to the length limit.
-        if (len(buf + args[0]) + 1) <= length:
+        if (len(buf + args[0]) + 1) <= length and ((not max_args_per_line) or len(buf.split(' ')) < max_args_per_line):
             if buf != prefix:  # Only add a separator if this isn't the first argument of a line
                 buf += separator
             buf += args.pop(0)
