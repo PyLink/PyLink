@@ -108,7 +108,7 @@ class TS6Protocol(TS6BaseProtocol):
 
         # Get all the ban modes in a separate list. These are bursted using a separate BMASK
         # command.
-        banmodes = {k: set() for k in self.irc.cmodes['*A']}
+        banmodes = {k: [] for k in self.irc.cmodes['*A']}
         regularmodes = []
         log.debug('(%s) Unfiltered SJOIN modes: %s', self.irc.name, modes)
         for mode in modes:
@@ -119,7 +119,7 @@ class TS6Protocol(TS6BaseProtocol):
                     # Don't reset modes that are already set.
                     continue
 
-                banmodes[modechar].add(mode[1])
+                banmodes[modechar].append(mode[1])
             else:
                 regularmodes.append(mode)
         log.debug('(%s) Filtered SJOIN modes to be regular modes: %s, banmodes: %s', self.irc.name, regularmodes, banmodes)
@@ -158,11 +158,11 @@ class TS6Protocol(TS6BaseProtocol):
             # line)
             if bans:
                 log.debug('(%s) sjoin: bursting mode %s with bans %s, ts:%s', self.irc.name, bmode, bans, ts)
-                bans = list(bans)  # Convert into list for splicing
-                while bans[:12]:
-                    self._send(server, "BMASK {ts} {channel} {bmode} :{bans}".format(ts=ts,
-                               channel=channel, bmode=bmode, bans=' '.join(bans[:12])))
-                    bans = bans[12:]
+                msgprefix = ':{sid} BMASK {ts} {channel} {bmode} :'.format(sid=server, ts=ts,
+                                                                          channel=channel, bmode=bmode)
+                # Actually, we cut off at 17 arguments/line, since the prefix and command name don't count.
+                for msg in utils.wrapArguments(msgprefix, bans, S2S_BUFSIZE, max_args_per_line=17):
+                    self.irc.send(msg)
 
         self.updateTS(server, channel, ts, changedmodes)
 
