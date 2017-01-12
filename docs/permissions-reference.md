@@ -89,3 +89,6 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 
 ## Servermaps
 - `servermaps.map` - Allows access to the `map` and `localmap` commands.
+
+## Stats
+- `stats.uptime` - Allows access to the `stats` command.
