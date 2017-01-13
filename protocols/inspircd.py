@@ -694,7 +694,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_fhost(self, numeric, command, args):
         """Handles FHOST, used for denoting hostname changes."""
-        # <- :70MAAAAAB FIDENT some.host
+        # <- :70MAAAAAB FHOST some.host
         self.irc.users[numeric].host = newhost = args[0]
         return {'target': numeric, 'newhost': newhost}
 
