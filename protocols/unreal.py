@@ -234,7 +234,7 @@ class UnrealProtocol(TS6BaseProtocol):
             bufsize -= len(target)
 
             # Subtract the prefix (":SID " for servers or ":SIDAAAAAA " for servers)
-            bufsize -= (5 if self.irc.isInternalServer(numeric) else 9)
+            bufsize -= (5 if self.irc.isInternalServer(numeric) else 11)
 
             for modestring in self.irc.wrapModes(modes, bufsize):
                 self._send(numeric, 'MODE %s %s %s' % (target, modestring, ts))
