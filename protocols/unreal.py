@@ -236,7 +236,14 @@ class UnrealProtocol(TS6BaseProtocol):
             # Subtract the prefix (":SID " for servers or ":SIDAAAAAA " for servers)
             bufsize -= (5 if self.irc.isInternalServer(numeric) else 11)
 
-            for modestring in self.irc.wrapModes(modes, bufsize):
+            # There is also an (undocumented) 15 args per line limit for MODE. The target, mode
+            # characters, and TS take up three args, so we're left with 12 spaces for parameters.
+            # Any lines that go over 15 args/line has the potential of corrupting a channel's TS
+            # pretty badly, as the last argument gets mangled into a number:
+            # * *** Warning! Possible desynch: MODE for channel #test ('+bbbbbbbbbbbb *!*@0.1 *!*@1.1 *!*@2.1 *!*@3.1 *!*@4.1 *!*@5.1 *!*@6.1 *!*@7.1 *!*@8.1 *!*@9.1 *!*@10.1 *!*@11.1') has fishy timestamp (12) (from pylink.local/pylink.local)
+
+            # Thanks to kevin and Jobe for helping me debug this!
+            for modestring in self.irc.wrapModes(modes, bufsize, max_modes_per_msg=12):
                 self._send(numeric, 'MODE %s %s %s' % (target, modestring, ts))
         else:
             # For user modes, the only way to set modes (for non-U:Lined servers)
