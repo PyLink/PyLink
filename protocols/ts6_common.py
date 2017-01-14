@@ -371,8 +371,14 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # :70MAAAAAA KICK #test 70MAAAAAA :some reason
         channel = self.irc.toLower(args[0])
         kicked = self._getUid(args[1])
-        self.handle_part(kicked, 'KICK', [channel, args[2]])
-        return {'channel': channel, 'target': kicked, 'text': args[2]}
+
+        try:
+            reason = args[2]
+        except IndexError:
+            reason = ''
+
+        self.handle_part(kicked, 'KICK', [channel, reason])
+        return {'channel': channel, 'target': kicked, 'text': reason}
 
     def handle_nick(self, numeric, command, args):
         """Handles incoming NICK changes."""
