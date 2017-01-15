@@ -1,3 +1,31 @@
+# PyLink 1.1-beta2
+
+The "Conscience" release. Changes from 1.1-beta1:
+
+#### Bug fixes
+
+- Protocol modules now wrap longer messages (SJOIN and MODE) to prevent cutoff shenanigans from happening.
+    - This fixes a particularly nasty bug that can corrupt the TS on UnrealIRCd channels if a MODE command sets more than 12 modes at once (#393).
+- Pong handling is a lot less strict now (it just makes sure the sender is the uplink). In other words, fix issues on UnrealIRCd where PONGs get ignored if the argument doesn't match the server name exactly (e.g. different case).
+- Clientbot protocol fixes:
+    - Fix SASL PLAIN auth on Python 3.4 (TypeError with bytes formatting with `%b`).
+    - Don't repeat KICK hooks if the source is internal: this prevents KICK events from being relayed twice to Clientbot links, when the kicked user is also a Clientbot user.
+    - Clientbot now explicitly sends `/names` after join, to guarantee a response.
+    - Fix message recognition treating nick prefixes without `ident@host` as servers (this polluted the state)
+    - Fix prefix mode changes for unknown/missing users in `/who` causing KeyError crashes
+- ts6: fix setting mode `-k *` not working due to wrongly ordered logic (1.1-dev regression)
+- ts6: fix handling of KICK without a reason argument
+- Automode: remove some repeated "Error:" text in error messages
+- `IrcChannel` no longer assumes `+nt` on new channels, as this is not necessarily correct
+
+#### Feature changes
+- Changing the console log level via REHASH is now supported.
+- Added a bind host option for multi-homed hosts.
+
+#### Internal improvements
+- updateTS now ignores any broken TS values lower than 750000, instead of propagating them (e.g. over relay) and making the problem worse.
+- The UnrealIRCd protocol module was updated to actually use extended SJOIN (SJ3). This should make bursts/startup more efficient, as modes, users, and bans are now sent together.
+
 # PyLink 1.1-beta1
 
 The "Crunchy" release. This release includes all bug fixes from PyLink 1.0.4, along with the following:
