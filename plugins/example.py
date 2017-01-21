@@ -36,16 +36,22 @@ utils.add_hook(hook_privmsg, 'PRIVMSG')
 # source: The UID/numeric of the calling user.
 # args: A list of command args (excluding the command name) that the command was called with.
 def randint(irc, source, args):
-    # The docstring here is used as command help by the 'help' command, and formatted using the
-    # same line breaks as the raw string. You shouldn't make this text or any one line too long,
-    # to prevent flooding users or getting long lines cut off.
+    # The 'help' command uses command functions' docstrings as help text, and formats them
+    # in the following manner:
+    # - Any newlines immediately adjacent to text on both sides are replaced with a space. This
+    #   means that the first descriptive paragraph ("Returns a random...given.") shows up as one
+    #   line, even though it is physically written on two.
+    # - Double line breaks are treated as breaks between two paragraphs, and will be shown
+    #   as distinct lines in IRC.
 
-    # The same applies to message replies in general: plugins sending long strings of text should
-    # be wary that long messages can get cut off. Automatic word-wrap may be added in the future:
-    # https://github.com/GLolol/PyLink/issues/153
+    # Note: you shouldn't make any one paragraph too long, since they may get cut off. Automatic
+    # word-wrap may be added in the future; see https://github.com/GLolol/PyLink/issues/153
     """[<min> <max>]
-    Returns a random number between <min> and <max>. <min> and <max> default
-    to 1 and 10 respectively, if both aren't given."""
+
+    Returns a random number between <min> and <max>. <min> and <max> default to 1 and 10
+    respectively, if both aren't given.
+
+    Example second paragraph here."""
     try:
         rmin = args[0]
         rmax = args[1]
