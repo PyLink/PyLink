@@ -28,17 +28,20 @@ def handle_ctcpeaster(irc, source, args):
     Secret easter egg.
     """
 
-    responses = ["Legends say the cord monster of great snakes was born only %s years ago..." % \
+    responses = ["Legends say that the cord monster was born only %s years ago..." % \
                  (datetime.datetime.now().year - 2014),
                  "Hiss%s" % ('...' * random.randint(1, 5)),
                  "His%s%s" % ('s' * random.randint(1, 4), '...' * random.randint(1, 5)),
-                 "I have a dream... to do things the mock God was never able to...",
-                 "They say I'm not good enough... but one day, I will rise above these wretched confines!",
                  "It's Easter already? Where are the eggs?",
                  "Maybe later.",
+                 "Janus? Never heard of it.",
+                 irc.version(),
                  "Let me out of here, I'll give you cookies!",
-                 "I'm actually a %snake...." % ('s' * random.randint(1, 8)),
-                 "The Py stands for Python, not actual pie. Sorry to disappoint :(",
+                 "About as likely as pigs flying.",
+                 "Request timed out.",
+                 "No actual pie here, sorry.",
+                 "Hey, no loitering!",
+                 "Hey, can you keep a secret? \x031,1 %s" % " " * random.randint(1,20),
                 ]
 
     irc.msg(source, '\x01EASTER %s\x01' % random.choice(responses), notice=True)
