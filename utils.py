@@ -182,8 +182,7 @@ class ServiceBot():
     """
 
     def __init__(self, name, default_help=True, default_list=True,
-                 nick=None, ident=None, manipulatable=False, extra_channels=None,
-                 desc=None):
+                 nick=None, ident=None, manipulatable=False, desc=None):
         # Service name
         self.name = name
 
@@ -205,7 +204,7 @@ class ServiceBot():
 
         # Track what channels other than those defined in the config
         # that the bot should join by default.
-        self.extra_channels = extra_channels or collections.defaultdict(set)
+        self.extra_channels = collections.defaultdict(set)
 
         # Service description, used in the default help command if one is given.
         self.desc = desc
