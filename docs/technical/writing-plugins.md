@@ -2,7 +2,7 @@
 
 PyLink plugins are modules that extend its functionality by giving it something to do. Without any plugins loaded, PyLink can only sit on a server and do absolutely nothing.
 
-This guide, along with the sample plugins [`plugins/example.py`](../../plugins/example.py), and [`plugins/service.py`](../../plugins/demo_service.py) aim to show the basics of writing plugins for PyLink.
+This guide, along with the sample plugins [`plugins/example.py`](../../plugins/example.py), and [`plugins/example_service.py`](../../plugins/example_service.py) aim to show the basics of writing plugins for PyLink.
 
 ## Receiving data from IRC
 
