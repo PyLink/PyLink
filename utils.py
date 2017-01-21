@@ -186,6 +186,9 @@ class ServiceBot():
         # Service name
         self.name = name
 
+        # TODO: validate nick, ident, etc. on runtime as well
+        assert isNick(name), "Invalid service name %r" % name
+
         # Nick/ident to take. Defaults to the same as the service name if not given.
         self.nick = nick
         self.ident = ident
