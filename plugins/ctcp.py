@@ -28,7 +28,7 @@ def handle_ctcpeaster(irc, source, args):
     Secret easter egg.
     """
 
-    responses = ["Legends say that the cord monster was born only %s years ago..." % \
+    responses = ["Legends say the cord monster was born only %s years ago..." % \
                  (datetime.datetime.now().year - 2014),
                  "Hiss%s" % ('...' * random.randint(1, 5)),
                  "His%s%s" % ('s' * random.randint(1, 4), '...' * random.randint(1, 5)),
