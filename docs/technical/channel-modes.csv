@@ -1,4 +1,4 @@
-Channel Mode / IRCd,InspIRCd,charybdis,Elemental-IRCd,UnrealIRCd,IRCd-Hybrid,Nefarious IRCu,Ircd-ratbox
+Channel Mode / IRCd,InspIRCd,charybdis,Elemental-IRCd,UnrealIRCd,IRCd-Hybrid,Nefarious IRCu,ircd-ratbox
 admin,a (m_customprefix/m_chanprotect),,a (when enabled),a,,,
 adminonly,,A (extensions/chm_adminonly),A (extensions/chm_adminonly.c),,,a,
 allowinvite,A (m_allowinvite),g,g,,,,
