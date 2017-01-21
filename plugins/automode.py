@@ -3,8 +3,6 @@ automode.py - Provide simple channel ACL management by giving prefix modes to us
 hostmasks or exttargets.
 """
 import collections
-import threading
-import json
 
 from pylinkirc import utils, conf, world, structures
 from pylinkirc.log import log
@@ -27,7 +25,6 @@ db = datastore.store
 # The default set of Automode permissions.
 default_permissions = {"$ircop": ['automode.manage.relay_owned', 'automode.sync.relay_owned',
                                   'automode.list']}
-
 
 def main(irc=None):
     """Main function, called during plugin loading at start."""

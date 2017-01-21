@@ -1,5 +1,4 @@
 # relay.py: PyLink Relay plugin
-import pickle
 import time
 import threading
 import string
