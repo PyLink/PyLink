@@ -47,7 +47,6 @@ class Irc():
         self.sid = None
         self.serverdata = conf['servers'][netname]
         self.botdata = conf['bot']
-        self.bot_clients = {}
         self.protoname = proto.__name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = proto.Class(self)
         self.pingfreq = self.serverdata.get('pingfreq') or 90
