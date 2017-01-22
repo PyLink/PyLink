@@ -26,7 +26,6 @@ myservice = utils.registerService("myservice", desc=desc)
 - `default_list` - Determines whether the default LIST command should be used for the service. Defaults to True.
 - `nick`, `ident` - Sets the default nick and ident for the service bot. If not given, these simply default to the service name.
 - `manipulatable` - Determines whether the bot is marked manipulatable. Only manipulatable clients can be force joined, etc. using PyLink commands. Defaults to False.
-- `extra_channels` - Defines a dict mapping network names to a set of channels that the bot should autojoin on that network.
 - `desc` - Sets the command description of the service. This is shown in the default HELP command if enabled.
 
 ### Getting the UID of a bot
