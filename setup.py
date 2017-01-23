@@ -78,12 +78,12 @@ setup(
     install_requires=['pyyaml', 'ircmatch'],
 
     extras_require={
-        'password hashing': ['passlib'],
-        'servprotect': ['expringdict'],
+        'password-hashing': ['passlib'],
+        'servprotect': ['expiringdict>=1.1.4'],
     },
 
     dependency_links=[
-        "vcs+https://github.com/mailgun/expiringdict.git@v1.3.4#egg=expiringdict-1.3.4"
+        "git+https://github.com/mailgun/expiringdict.git@v1.1.4#egg=expiringdict-1.1.4"
     ],
 
     # Folders (packages of code)
