@@ -27,15 +27,15 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 ## Installation
 
-### Installing via Debian APT repository (beta; stable branch only)
+### Installing via Debian APT repository (stable branch only)
 
 [The Utopia Repository](https://packages.overdrivenetworks.com/) hosts `.deb` packages for PyLink. For Debian Jessie (stable) and Stretch/sid (testing), the `pylink` package and its dependencies are available in the `main` section. See https://packages.overdrivenetworks.com/#instructions for setup instructions.
 
 Upon installing `pylink`, example configurations and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/), which is provided by the `pylink-doc` package.
 
-### Installing via Ubuntu PPA (beta; stable branch only)
+### Installing via Ubuntu PPA (stable branch only)
 
-Ubuntu packages for PyLink are available from the [PyLink PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink) for Ubuntu 14.04 LTS  (trusty) and above. Like with the Debian installation, example configurations and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively.
+Ubuntu packages for PyLink are available from the [PyLink PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink) for Ubuntu 14.04 LTS (trusty) and above. Like with the Debian installation, example configurations and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively.
 
 ### Installing from source
 
@@ -44,9 +44,9 @@ First, make sure the following dependencies are met:
 * Python 3.4+
 * Setuptools (`pip3 install setuptools`)
 * PyYAML (`pip3 install pyyaml`)
-* [ircmatch](https://github.com/mammon-ircd/ircmatch) (`pip3 install ircmatch`)
-* passlib (`pip3 install passlib`)
-* *For the servprotect plugin*: [expiringdict](https://github.com/mailgun/expiringdict) (install this from source; installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
+* ircmatch (`pip3 install ircmatch`)
+* *For password encryption*: Passlib (`pip3 install passlib`)
+* *For the servprotect plugin*: expiringdict (install this from [source](https://github.com/mailgun/expiringdict); installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
 
 1) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
 

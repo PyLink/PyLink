@@ -75,7 +75,7 @@ setup(
     ],
 
     keywords='IRC services relay',
-    install_requires=['pyyaml', 'ircmatch'],
+    install_requires=['pyyaml', 'ircmatch', 'passlib'],
 
     # Folders (packages of code)
     packages=['pylinkirc', 'pylinkirc.protocols', 'pylinkirc.plugins', 'pylinkirc.coremods'],
