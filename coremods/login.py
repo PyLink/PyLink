@@ -8,12 +8,16 @@ from pylinkirc.log import log
 try:
     from passlib.context import CryptContext
 except ImportError:
-    raise ImportError("PyLink requires passlib to function; please install it and try again.")
+    CryptContext = None
+    log.warning("Hashed passwords are disabled because passlib is not installed. Please install "
+                "it (pip3 install passlib) and restart for this feature to work.")
 
-pwd_context = CryptContext(["sha512_crypt", "sha256_crypt"],
-                           all__vary_rounds=0.1,
-                           sha256_crypt__default_rounds=180000,
-                           sha512_crypt__default_rounds=90000)
+pwd_context = None
+if CryptContext:
+    pwd_context = CryptContext(["sha512_crypt", "sha256_crypt"],
+                               all__vary_rounds=0.1,
+                               sha256_crypt__default_rounds=180000,
+                               sha512_crypt__default_rounds=90000)
 
 def checkLogin(user, password):
     """Checks whether the given user and password is a valid combination."""
@@ -48,13 +52,12 @@ def checkLogin(user, password):
 def verifyHash(password, passhash):
     """Checks whether the password given matches the hash."""
     if password:
-        # ... good we have a password inputted
-        # XXX: the greatest thing here is that the hash
-        # is just a string either way, not a object with
-        # a method to output the hash
-        return pwd_context.verify(password, passhash)
-    return False
+        if not pwd_context:
+            raise utils.NotAuthorizedError("Cannot log in to an account with a hashed password "
+                                           "because passlib is not installed.")
 
+        return pwd_context.verify(password, passhash)
+    return False  # No password given!
 
 @utils.add_cmd
 def mkpasswd(irc, source, args):
@@ -68,6 +71,10 @@ def mkpasswd(irc, source, args):
         return
     if not password:
         irc.error("Password cannot be empty.")
+        return
+
+    if not pwd_context:
+        irc.error("Password encryption is not available (missing passlib)")
         return
 
     hashed_pass = pwd_context.encrypt(password)

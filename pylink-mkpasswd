@@ -3,7 +3,6 @@
 Password hashing utility for PyLink IRC Services.
 """
 
-#import passlib
 from pylinkirc.coremods.login import pwd_context
 
 if __name__ == '__main__':
@@ -13,5 +12,6 @@ if __name__ == '__main__':
     parser.add_argument('password', help='specifies the password to hash')
     args = parser.parse_args()
 
+    assert pwd_context, 'Cannot hash passwords because passlib is missing! Install it via "pip3 install passlib".'
     assert args.password, "Password cannot be empty!"
     print(pwd_context.encrypt(args.password))
