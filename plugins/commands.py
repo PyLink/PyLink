@@ -5,6 +5,8 @@ from pylinkirc import utils, __version__, world, real_version
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
+from pylinkirc.coremods.login import pwd_context
+
 default_permissions = {"*!*@*": ['commands.status', 'commands.showuser', 'commands.showchan']}
 
 def main(irc=None):
@@ -211,3 +213,24 @@ def loglevel(irc, source, args):
             irc.reply("Done.")
     except IndexError:
         irc.reply(world.stdout_handler.level)
+
+@utils.add_cmd
+def mkpasswd(irc, source, args):
+    """<password>
+    Hashes a password for use in the configuration file."""
+    # TODO: restrict to only certain users?
+    try:
+        password = args[0]
+    except IndexError:
+        irc.error("Not enough arguments. (Needs 1, password)")
+        return
+    if not password:
+        irc.error("Password cannot be empty.")
+        return
+
+    if not pwd_context:
+        irc.error("Password encryption is not available (missing passlib).")
+        return
+
+    hashed_pass = pwd_context.encrypt(password)
+    irc.reply(hashed_pass, private=True)

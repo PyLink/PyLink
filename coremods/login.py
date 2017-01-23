@@ -58,24 +58,3 @@ def verifyHash(password, passhash):
 
         return pwd_context.verify(password, passhash)
     return False  # No password given!
-
-@utils.add_cmd
-def mkpasswd(irc, source, args):
-    """<password>
-    Hashes a password for use in the configuration file."""
-    # TODO: restrict to only certain users?
-    try:
-        password = args[0]
-    except IndexError:
-        irc.error("Not enough arguments. (Needs 1, password)")
-        return
-    if not password:
-        irc.error("Password cannot be empty.")
-        return
-
-    if not pwd_context:
-        irc.error("Password encryption is not available (missing passlib)")
-        return
-
-    hashed_pass = pwd_context.encrypt(password)
-    irc.reply(hashed_pass, private=True)
