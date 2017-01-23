@@ -75,7 +75,16 @@ setup(
     ],
 
     keywords='IRC services relay',
-    install_requires=['pyyaml', 'ircmatch', 'passlib'],
+    install_requires=['pyyaml', 'ircmatch'],
+
+    extras_require={
+        'password hashing': ['passlib'],
+        'servprotect': ['expringdict'],
+    },
+
+    dependency_links=[
+        "vcs+https://github.com/mailgun/expiringdict.git@v1.3.4#egg=expiringdict-1.3.4"
+    ],
 
     # Folders (packages of code)
     packages=['pylinkirc', 'pylinkirc.protocols', 'pylinkirc.plugins', 'pylinkirc.coremods'],
