@@ -1,3 +1,28 @@
+# PyLink 1.1.0
+
+The "Calico" release. This is mostly a cleanup and documentation update from 1.1-beta2, with the following additional change:
+- Made passlib an optional dependency (password hashing will be disabled if passlib isn't installed), simplifying the upgrade process.
+
+For a full list of changes since 1.0.x, see the release notes for the 1.1 alpha & beta series. Summary of major changes since 1.0.x:
+
+- :closed_lock_with_key: **Redone authentication configuration**, now supporting **multiple accounts**, hashed passwords, and fine-tuned permissions.
+   - Old configurations using `login:user` and `login:password` will still work, but are now deprecated. Consider migrating to the new `login:` block in the example config.
+   - This also adds a new optional dependency of passlib (https://passlib.readthedocs.io/en/stable/), which is required for the password hashing portion.
+- Protocol modules now wrap long messages (SJOIN and MODE) to prevent cutoff shenanigans from happening.
+   - This fixes a particularly nasty bug that can corrupt the TS on UnrealIRCd channels if a MODE command sets more than 12 modes at once (#393).
+- Added utilities to download contrib modules (`pylink-contribdl`) and hash passwords for the new accounts configuration (`pylink-mkpasswd`).
+- Most plugins were ported to the permissions API.
+- Clientbot now supports mode syncing, SASL (with optional reauth), and IRCv3 multi-prefix.
+- Services bots now support setting modes on themselves on join: see "joinmodes" in the example conf
+- Changehost gained a few new features, including optional (per network) vHost enforcement.
+- Added a `bindhost` option in server blocks, for multi-homed hosts.
+- PID file checking was implemented - Run PyLink with the `--check-pid` argument in order to turn it on.
+- The `ts6` protocol module now supports `KICK` without arguments and legacy `UID` introduction (for older servers / services).
+- Relay: added a `purge` command to remove all relays involving a network.
+- Added support for ircd-ratbox (`ratbox` protocol module).
+- Changing the console log level via REHASH now works.
+- New `servermaps` plugin, displaying network `/map`'s from the PyLink server's perspective.
+
 # PyLink 1.1-beta2
 
 The "Conscience" release. Changes from 1.1-beta1:
