@@ -97,5 +97,5 @@ setup(
     package_dir = {'pylinkirc': '.'},
 
     # Executable scripts
-    scripts=["pylink"],
+    scripts=["pylink", "pylink-mkpasswd"],
 )
