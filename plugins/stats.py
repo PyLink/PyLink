@@ -28,9 +28,10 @@ DEFAULT_TIME_FORMAT = "%a, %d %b %Y %H:%M:%S +0000"
 
 @utils.add_cmd
 def uptime(irc, source, args):
-    """[<network>]
+    """[<network> / --all]
 
-    Returns the uptime for PyLink and the given network's connection (or the current network if not specified)."""
+    Returns the uptime for PyLink and the given network's connection (or the current network if not specified).
+    The --all argument can also be given to show the uptime for all networks."""
     permissions.checkPermissions(irc, source, ['stats.uptime'])
 
     try:
@@ -38,14 +39,20 @@ def uptime(irc, source, args):
     except IndexError:
         network = irc.name
 
-    try:
-        ircobj = world.networkobjects[network]
-    except KeyError:
-        irc.error("No such network %r." % network)
-        return
+    if network == '--all':  # XXX: we really need smart argument parsing some time
+        # Filter by all connected networks.
+        ircobjs = {k:v for k,v in world.networkobjects.items() if v.connected.is_set()}
+    else:
+        try:
+            ircobjs = {network: world.networkobjects[network]}
+        except KeyError:
+            irc.error("No such network %r." % network)
+            return
+        if not world.networkobjects[network].connected.is_set():
+            irc.error("Network %s is not connected." % network)
+            return
 
     current_time = int(time.time())
-
     time_format = conf.conf.get('stats', {}).get('time_format', DEFAULT_TIME_FORMAT)
 
     irc.reply("PyLink uptime: \x02%s\x02 (started on %s)" %
@@ -53,11 +60,13 @@ def uptime(irc, source, args):
                time.strftime(time_format, time.gmtime(world.start_ts))
               )
              )
-    irc.reply("Connected to %s: \x02%s\x02 (connected on %s)" %
-              (network,
-               timediff(ircobj.start_ts, current_time),
-               time.strftime(time_format, time.gmtime(ircobj.start_ts))
-              )
-             )
+
+    for network, ircobj in sorted(ircobjs.items()):
+        irc.reply("Connected to %s: \x02%s\x02 (connected on %s)" %
+                  (network,
+                   timediff(ircobj.start_ts, current_time),
+                   time.strftime(time_format, time.gmtime(ircobj.start_ts))
+                  )
+                 )
 
 
