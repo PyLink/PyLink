@@ -1052,6 +1052,10 @@ def handle_messages(irc, numeric, command, args):
         # Drop attempted PMs between internal clients (this shouldn't happen,
         # but whatever).
         return
+    elif (numeric in irc.servers) and (not notice):
+        log.warning('(%s) relay.handle_messages: dropping PM from server %s to %s',
+                    irc.name, numeric, target)
+        return
 
     relay = get_relay((irc.name, target))
     remoteusers = relayusers[(irc.name, numeric)]
@@ -1079,15 +1083,23 @@ def handle_messages(irc, numeric, command, args):
 
             if not user:
                 # No relay clone exists for the sender; route the message through our
-                # main client.
-                if numeric in irc.servers:
-                    displayedname = irc.servers[numeric].name
-                else:
-                    displayedname = irc.users[numeric].nick
+                # main client (or SID for notices).
 
-                real_text = '[from %s/%s] %s' % (displayedname, irc.name, text)
+                # Skip "from:" formatting for servers; it's messy with longer hostnames
+                if numeric not in irc.servers:
+                    displayedname = irc.getFriendlyName(numeric)
+                    real_text = '<%s/%s> %s' % (displayedname, irc.name, text)
+                else:
+                    real_text = text
+
+                # XXX: perhaps consider routing messages from the server where
+                # possible - most IRCds except TS6 (charybdis, ratbox, hybrid)
+                # allow this.
                 try:
-                    user = remoteirc.pseudoclient.uid
+                    user = get_remote_sid(remoteirc, irc, spawn_if_missing=False) \
+                        if notice else remoteirc.pseudoclient.uid
+                    if not user:
+                        continue
                 except AttributeError:
                     # Remote main client hasn't spawned yet. Drop the message.
                     continue
