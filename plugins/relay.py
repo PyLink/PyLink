@@ -239,15 +239,20 @@ def spawn_relay_server(irc, remoteirc):
 
     return sid
 
-def get_remote_sid(irc, remoteirc):
+def get_remote_sid(irc, remoteirc, spawn_if_missing=True):
     """Gets the remote server SID representing remoteirc on irc, spawning
-    it if it doesn't exist."""
+    it if it doesn't exist (and spawn_if_missing is enabled)."""
 
     log.debug('(%s) Grabbing spawnlocks_servers[%s]', irc.name, irc.name)
     if spawnlocks_servers[irc.name].acquire(5):
         try:
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
+            if not spawn_if_missing:
+                log.debug('(%s) get_remote_sid: %s.relay doesn\'t have a known SID, ignoring.', irc.name, remoteirc.name)
+                spawnlocks_servers[irc.name].release()
+                return
+
             log.debug('(%s) get_remote_sid: %s.relay doesn\'t have a known SID, spawning.', irc.name, remoteirc.name)
             sid = spawn_relay_server(irc, remoteirc)
 
