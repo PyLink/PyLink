@@ -4,12 +4,27 @@ stats.py: Simple statistics for PyLink IRC Services.
 import time
 import datetime
 
-from pylinkirc import utils, world
+from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
-def _timesince(before, now):
-    return str(datetime.timedelta(seconds=now-before))
+def timediff(before, now):
+    """
+    Returns the time difference between "before" and "now" as a formatted string.
+    """
+    td = datetime.timedelta(seconds=now-before)
+    days = td.days
+
+    hours, leftover = divmod(td.seconds, 3600)
+    minutes, seconds = divmod(leftover, 60)
+
+    # XXX: I would make this more configurable but it's a lot of work for little gain,
+    # since there's no strftime for time differences.
+    return '%d day%s, %02d:%02d:%02d' % (td.days, 's' if td.days != 1 else '',
+                                         hours, minutes, seconds)
+
+# From RFC 2822: https://tools.ietf.org/html/rfc2822.html#section-3.3
+DEFAULT_TIME_FORMAT = "%a, %d %b %Y %H:%M:%S +0000"
 
 @utils.add_cmd
 def uptime(irc, source, args):
@@ -31,6 +46,18 @@ def uptime(irc, source, args):
 
     current_time = int(time.time())
 
-    irc.reply("PyLink uptime: \x02%s\x02, Connected to %s: \x02%s\x02" % \
-              (_timesince(world.start_ts, current_time), network, _timesince(irc.start_ts, current_time)))
+    time_format = conf.conf.get('stats', {}).get('time_format', DEFAULT_TIME_FORMAT)
+
+    irc.reply("PyLink uptime: \x02%s\x02 (started on %s)" %
+              (timediff(world.start_ts, current_time),
+               time.strftime(time_format, time.gmtime(world.start_ts))
+              )
+             )
+    irc.reply("Connected to %s: \x02%s\x02 (connected on %s)" %
+              (network,
+               timediff(irc.start_ts, current_time),
+               time.strftime(time_format, time.gmtime(irc.start_ts))
+              )
+             )
+
 

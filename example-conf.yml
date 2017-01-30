@@ -569,3 +569,8 @@ automode:
     # Setting this to op (+o) for Automode makes it appear more like a standard IRC service, and lessens
     # the risk of mode overrides being dropped.
     joinmodes: 'o'
+
+stats:
+    # Determines the time format that the Stats plugin should use for showing dates + times.
+    # Defaults to "%a, %d %b %Y %H:%M:%S +0000" (the RFC 2812 standard) if not specified.
+    time_format: "%c"
