@@ -229,9 +229,10 @@ class TS6BaseProtocol(IRCS2SProtocol):
         self._send(numeric, 'PRIVMSG %s :%s' % (target, text))
 
     def notice(self, numeric, target, text):
-        """Sends a NOTICE from a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
+        """Sends a NOTICE from a PyLink client or server."""
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
 
         # Mangle message targets for IRCds that require it.
         target = self._expandPUID(target)

@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 1.0-beta1+ (2017-01-09).***
+***Last updated for 1.2-dev (2017-01-29).***
 
 In PyLink, each protocol module is a file consisting of a protocol class (e.g. `InspIRCdProtocol`), and a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These classes are usually based off boilerplate classes such as `classes.Protocol`, `protocols.ircs2s_common.IRCS2SProtocol`, or other protocol module classes that share functionality with it.
 
@@ -66,7 +66,7 @@ internals](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L474-L483)
 
 - **`nick`**`(self, source, newnick)` - Changes the nick of a PyLink client.
 
-- **`notice`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client.
+- **`notice`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client or server.
 
 - **`numeric`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
 
@@ -158,3 +158,8 @@ When a certain mode (e.g. owner) isn't supported on a network, the key still exi
 Starting with PyLink 0.10.x, protocol modules can specify which config values within a server block they need in order to work. This is done by adjusting the `self.conf_keys` attribute, usually in the protocol module's `__init__()` method. The default set, defined in [`Classes.Protocol`](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L1202-L1204), includes `{'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass', 'recvpass'}`. Should any of these keys be missing from a server block, PyLink will bail with a configuration error.
 
 As an example, one protocol module that tweaks this is [`Clientbot`](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/clientbot.py#L17-L18), which removes all options except `ip`, `protocol`, and `port`.
+
+## Changes
+* 2017-01-29 (1.2-dev)
+   - NOTICE can now be sent from servers.
+   - This section was added.

@@ -455,9 +455,10 @@ class P10Protocol(IRCS2SProtocol):
         self._send(source, '%s %s %s' % (numeric, target, text))
 
     def notice(self, numeric, target, text):
-        """Sends a NOTICE from a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
+        """Sends a NOTICE from a PyLink client or server."""
+        if (not self.irc.isInternalClient(numeric)) and \
+                (not self.irc.isInternalServer(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
 
         self._send(numeric, 'O %s :%s' % (target, text))
 
