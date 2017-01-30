@@ -55,8 +55,8 @@ def uptime(irc, source, args):
              )
     irc.reply("Connected to %s: \x02%s\x02 (connected on %s)" %
               (network,
-               timediff(irc.start_ts, current_time),
-               time.strftime(time_format, time.gmtime(irc.start_ts))
+               timediff(ircobj.start_ts, current_time),
+               time.strftime(time_format, time.gmtime(ircobj.start_ts))
               )
              )
 
