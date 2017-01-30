@@ -4,6 +4,7 @@ world.py: Stores global variables for PyLink, including lists of active IRC obje
 
 from collections import defaultdict
 import threading
+import time
 
 # This indicates whether we're running in tests mode. What it actually does
 # though is control whether IRC connections should be threaded or not.
@@ -21,6 +22,7 @@ exttarget_handlers = {}
 
 # Trigger to be set when all IRC objects are initially created.
 started = threading.Event()
+start_ts = time.time()
 
 # Source address.
 source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
