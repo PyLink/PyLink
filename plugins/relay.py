@@ -344,10 +344,10 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
     relayusers[(irc.name, user)][remoteirc.name] = u
     return u
 
-def get_remote_user(irc, remoteirc, user, spawnIfMissing=True, times_tagged=0):
+def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0):
     """
     Gets the UID of the relay client requested on the target network (remoteirc),
-    spawning one if it doesn't exist and spawnIfMissing is True."""
+    spawning one if it doesn't exist and spawn_if_missing is True."""
 
     # Wait until the network is working before trying to spawn anything.
     irc.connected.wait(5)
@@ -367,7 +367,7 @@ def get_remote_user(irc, remoteirc, user, spawnIfMissing=True, times_tagged=0):
             u = relayusers[(irc.name, user)][remoteirc.name]
         except KeyError:
             # User doesn't exist. Spawn a new one if requested.
-            if spawnIfMissing:
+            if spawn_if_missing:
                 u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged)
 
         # This is a sanity check to make sure netsplits and other state resets
@@ -407,7 +407,7 @@ def get_orig_user(irc, user, targetirc=None):
                 return remoteuser[1]
             # Otherwise, use get_remote_user to find our UID.
             res = get_remote_user(sourceobj, targetirc, remoteuser[1],
-                                spawnIfMissing=False)
+                                spawn_if_missing=False)
             log.debug('(%s) relay.get_orig_user: targetirc found as %s, getting %r as '
                       'remoteuser for %r (looking up %s/%s).', irc.name, targetirc.name,
                       res, remoteuser[1], user, irc.name)
@@ -695,7 +695,7 @@ def relay_part(irc, channel, user):
         log.debug('(%s) relay.relay_part: looking for %s/%s on %s', irc.name, user, irc.name, remoteirc.name)
         log.debug('(%s) relay.relay_part: remotechan found as %s', irc.name, remotechan)
 
-        remoteuser = get_remote_user(irc, remoteirc, user, spawnIfMissing=False)
+        remoteuser = get_remote_user(irc, remoteirc, user, spawn_if_missing=False)
         log.debug('(%s) relay.relay_part: remoteuser for %s/%s found as %s', irc.name, user, irc.name, remoteuser)
 
         if remotechan is None or remoteuser is None:
@@ -795,7 +795,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                     # If the target is a remote user, get the real target
                     # (original user).
                     arg = get_orig_user(irc, arg, targetirc=remoteirc) or \
-                        get_remote_user(irc, remoteirc, arg, spawnIfMissing=False)
+                        get_remote_user(irc, remoteirc, arg, spawn_if_missing=False)
 
                     if arg is None:
                         # Relay client for target user doesn't exist yet. Drop the mode.
@@ -1079,7 +1079,7 @@ def handle_messages(irc, numeric, command, args):
                     or (not irc.connected.is_set()):
                 continue
 
-            user = get_remote_user(irc, remoteirc, numeric, spawnIfMissing=False)
+            user = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
 
             if not user:
                 # No relay clone exists for the sender; route the message through our
@@ -1151,7 +1151,7 @@ def handle_messages(irc, numeric, command, args):
                     'been administratively disabled.', notice=True)
             return
 
-        user = get_remote_user(irc, remoteirc, numeric, spawnIfMissing=False)
+        user = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
 
         try:
             if notice:
@@ -1198,7 +1198,7 @@ def handle_kick(irc, source, command, args):
         log.debug('(%s) relay.handle_kick: remotechan for %s on %s is %s', irc.name, channel, name, remotechan)
         if remotechan is None:
             continue
-        real_kicker = get_remote_user(irc, remoteirc, kicker, spawnIfMissing=False)
+        real_kicker = get_remote_user(irc, remoteirc, kicker, spawn_if_missing=False)
         log.debug('(%s) relay.handle_kick: real kicker for %s on %s is %s', irc.name, kicker, name, real_kicker)
         if not isRelayClient(irc, target):
             log.debug('(%s) relay.handle_kick: target %s is NOT an internal client', irc.name, target)
@@ -1206,7 +1206,7 @@ def handle_kick(irc, source, command, args):
             # they originate from the same network. We won't have
             # to filter this; the uplink IRCd will handle it appropriately,
             # and we'll just follow.
-            real_target = get_remote_user(irc, remoteirc, target, spawnIfMissing=False)
+            real_target = get_remote_user(irc, remoteirc, target, spawn_if_missing=False)
             log.debug('(%s) relay.handle_kick: real target for %s is %s', irc.name, target, real_target)
         else:
             log.debug('(%s) relay.handle_kick: target %s is an internal client, going to look up the real user', irc.name, target)
@@ -1317,7 +1317,7 @@ def handle_mode(irc, numeric, command, args):
                 if supported_modes:
                     # Check if the sender is a user with a relay client; otherwise relay the mode
                     # from the corresponding server.
-                    u = get_remote_user(irc, remoteirc, numeric, spawnIfMissing=False)
+                    u = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
                     if u:
                         remoteirc.proto.mode(u, remotechan, supported_modes)
                     else:
@@ -1344,7 +1344,7 @@ def handle_mode(irc, numeric, command, args):
                 elif ('-o', None) in modes:
                     modes.append(('-%s' % hideoper_mode, None))
 
-            remoteuser = get_remote_user(irc, remoteirc, target, spawnIfMissing=False)
+            remoteuser = get_remote_user(irc, remoteirc, target, spawn_if_missing=False)
 
             if remoteuser and modes:
                 remoteirc.proto.mode(remoteuser, remoteuser, modes)
@@ -1365,7 +1365,7 @@ def handle_topic(irc, numeric, command, args):
             if remotechan is None or topic == remoteirc.channels[remotechan].topic:
                 continue
             # This might originate from a server too.
-            remoteuser = get_remote_user(irc, remoteirc, numeric, spawnIfMissing=False)
+            remoteuser = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
             if remoteuser:
                 remoteirc.proto.topic(remoteuser, remotechan, topic)
             else:
@@ -1439,7 +1439,7 @@ def handle_invite(irc, source, command, args):
         remotenet, remoteuser = get_orig_user(irc, target)
         remoteirc = world.networkobjects[remotenet]
         remotechan = get_remote_channel(irc, remoteirc, channel)
-        remotesource = get_remote_user(irc, remoteirc, source, spawnIfMissing=False)
+        remotesource = get_remote_user(irc, remoteirc, source, spawn_if_missing=False)
         if remotesource is None:
             irc.msg(source, 'You must be in a common channel '
                                    'with %s to invite them to channels.' % \
