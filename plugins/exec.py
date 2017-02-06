@@ -14,7 +14,9 @@ import time
 import pylinkirc
 import importlib
 
-def _exec(irc, source, args):
+exec_locals_dict = {}
+
+def _exec(irc, source, args, locals_dict=None):
     """<code>
 
     Admin-only. Executes <code> in the current PyLink instance. This command performs backslash escaping of characters, so things like \\n and \\ will work.
@@ -30,10 +32,24 @@ def _exec(irc, source, args):
 
     log.info('(%s) Executing %r for %s', irc.name, args,
              irc.getHostmask(source))
-    exec(args, globals(), locals())
+    if locals_dict is None:
+        locals_dict = locals()
+
+    exec(args, globals(), locals_dict)
 
     irc.reply("Done.")
 utils.add_cmd(_exec, 'exec')
+
+@utils.add_cmd
+def iexec(irc, source, args):
+    """<code>
+
+    Admin-only. Executes <code> in the current PyLink instance, using a persistent, isolated
+    locals scope (world.plugins['exec'].exec_local_dict).
+
+    \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02
+    """
+    _exec(irc, source, args, locals_dict=exec_locals_dict)
 
 def _eval(irc, source, args):
     """<Python expression>
