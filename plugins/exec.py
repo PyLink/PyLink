@@ -32,6 +32,7 @@ def _exec(irc, source, args):
              irc.getHostmask(source))
     exec(args, globals(), locals())
 
+    irc.reply("Done.")
 utils.add_cmd(_exec, 'exec')
 
 def _eval(irc, source, args):
