@@ -539,8 +539,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             self.irc.channels[channel].users.add(user)
 
-        # Statekeeping with timestamps
-        their_ts = int(args[1])
+        # Statekeeping with timestamps. Note: some service packages (Anope 1.8) send a trailing
+        # 'd' after the timestamp, which we should strip out to prevent int() from erroring.
+        # This is technically valid in InspIRCd S2S because atoi() ignores non-digit characters,
+        # but it's strange behaviour either way...
+        # <- :3AX FJOIN #monitor 1485462109d + :,3AXAAAAAK
+        their_ts = int(''.join(char for char in args[1] if char.isdigit()))
+
         our_ts = self.irc.channels[channel].ts
         self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
