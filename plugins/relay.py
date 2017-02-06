@@ -2016,7 +2016,8 @@ def claim(irc, source, args):
     relay = (irc.name, channel)
     with db_lock:
         if relay not in db:
-            irc.error('No such relay %r exists.' % channel)
+            irc.error('No relay %r exists on this network (this command must be run on the '
+                      'network this channel was created on).' % channel)
             return
         claimed = db[relay]["claim"]
         try:
