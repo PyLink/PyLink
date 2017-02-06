@@ -2018,9 +2018,17 @@ def save(irc, source, args):
 def claim(irc, source, args):
     """<channel> [<comma separated list of networks>]
 
-    Sets the CLAIM for a channel to a case-sensitive list of networks. If no list of networks is given, shows which networks have claim over the channel. A single hyphen (-) can also be given as a list of networks to remove claim from the channel entirely.
+    Sets the CLAIM for a channel to a case-sensitive list of networks. If no list of networks is
+    given, this shows which networks have a claim over the channel. A single hyphen (-) can also be
+    given as a list of networks to disable CLAIM from the channel entirely.
 
-    CLAIM is a way of enforcing network ownership for a channel, similarly to Janus. Unless the list is empty, only networks on the CLAIM list for a channel (plus the creating network) are allowed to override kicks, mode changes, and topic changes in it - attempts from other networks' opers to do this are simply blocked or reverted."""
+    CLAIM is a way of enforcing network ownership for channels, similar to Janus. Unless a
+    channel's CLAIM list is empty, only networks on its CLAIM list (plus the creating network) are
+    allowed to override kicks, mode changes, and topic changes - attempts from other networks are
+    either blocked or reverted. "override" in this case refers to any KICK, MODE, or TOPIC change
+    from a sender that is not halfop or above in the channel (this affects servers and services
+    as well).
+    """
     try:
         channel = irc.toLower(args[0])
     except IndexError:
