@@ -617,12 +617,18 @@ class UnrealProtocol(TS6BaseProtocol):
             else:
                 r = re.search(r'([^\w]*)(.*)', userpair)
                 user = r.group(2)
+
+                if not user:
+                    # Userpair with no user? Ignore. XXX: find out how this is even possible...
+                    # <- :002 SJOIN 1486361658 #idlerpg :@
+                    continue
+
                 user = self._getUid(user)  # Normalize nicks to UIDs for Unreal 3.2 links
                 # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
                 # and +a is ~ instead of &.
                 modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
                 finalprefix = ''
-                assert user, 'Failed to get the UID from %r; our regex needs updating?' % userpair
+
                 log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.irc.name, modeprefix, user)
                 for m in modeprefix:
                     # Iterate over the mapping of prefix chars to prefixes, and
