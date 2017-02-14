@@ -48,9 +48,14 @@ def quit(irc, source, args):
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
 def joinclient(irc, source, args):
-    """[<target>] <channel1>,[<channel2>], etc.
+    """[<target>] <channel1>[,<channel2>,<channel3>,...]
 
-    Admin-only. Joins <target>, the nick of a PyLink client, to a comma-separated list of channels. If <target> is not given, it defaults to the main PyLink client."""
+    Admin-only. Joins <target>, the nick of a PyLink client, to a comma-separated list of channels.
+    If <target> is not given, it defaults to the main PyLink client.
+
+    For the channel arguments, prefixes can also be specified to join the given client with
+    (e.g. @#channel will join the client with op, while ~@#channel will join it with +qo.
+    """
     permissions.checkPermissions(irc, source, ['bots.joinclient'])
 
     try:
@@ -79,16 +84,27 @@ def joinclient(irc, source, args):
         irc.error("Cannot force join a protected PyLink services client.")
         return
 
+    prefix_to_mode = {v: k for k, v in irc.prefixmodes.items()}
     for channel in clist:
-        if not utils.isChannel(channel):
-            irc.error("Invalid channel name %r." % channel)
+        real_channel = channel.lstrip(''.join(prefix_to_mode))
+        # XXX we need a better way to do this, but only the other option I can think of is regex...
+        prefixes = channel[:len(channel)-len(real_channel)]
+        joinmodes = ''.join(prefix_to_mode[prefix] for prefix in prefixes)
+
+        if not utils.isChannel(real_channel):
+            irc.error("Invalid channel name %r." % real_channel)
             return
-        irc.proto.join(u, channel)
+
+        # join() doesn't support prefixes.
+        if prefixes:
+            irc.proto.sjoin(irc.sid, real_channel, [(joinmodes, u)])
+        else:
+            irc.proto.join(u, real_channel)
 
         # Call a join hook manually so other plugins like relay can understand it.
-        irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': channel, 'users': [u],
-                                                'modes': irc.channels[channel].modes,
-                                                'parse_as': 'JOIN'}])
+        irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
+                                                     'modes': irc.channels[real_channel].modes,
+                                                     'parse_as': 'JOIN'}])
 utils.add_cmd(joinclient, name='join')
 
 @utils.add_cmd
