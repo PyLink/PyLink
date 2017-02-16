@@ -353,6 +353,14 @@ class ServiceBot():
             """
             self.reply(irc, text, private=private)
 
+        def _reply_format(next_line):
+            """
+            Formats and outputs the given line.
+            """
+            next_line = next_line.strip()
+            next_line = NORMALIZEWHITESPACE_RE.sub(' ', next_line)
+            _reply(next_line)
+
         if command not in self.commands:
             _reply('Error: Unknown command %r.' % command)
             return
@@ -373,16 +381,33 @@ class ServiceBot():
                     _reply(args_desc.strip())
                     if not shortform:
                         # Note: we handle newlines in docstrings a bit differently. Per
-                        # https://github.com/GLolol/PyLink/issues/307, only double newlines
-                        # have the effect of showing a new line on IRC. Single newlines
-                        # are stripped so that word wrap can be applied in the source code
-                        # without actually affecting the output on IRC.
-                        for line in doc.replace('\r', '').split('\n\n')[1:]:
-                            _reply(' ')  # Empty line to break up output a bit.
-                            real_line = line.replace('\n', ' ')
-                            real_line = real_line.strip()
-                            real_line = NORMALIZEWHITESPACE_RE.sub(' ', real_line)
-                            _reply(real_line)
+                        # https://github.com/GLolol/PyLink/issues/307, only double newlines (and
+                        # combinations of more) have the effect of showing a new line on IRC.
+                        # Single newlines are stripped so that word wrap can be applied in source
+                        # code without affecting the output on IRC.
+                        # TODO: we should probably verify that the output line doesn't exceed IRC
+                        # line length limits...
+                        next_line = ''
+                        for linenum, line in enumerate(lines[1:], 1):
+                            stripped_line = line.strip()
+                            log.debug("_show_command_help: Current line (%s): %r", linenum, stripped_line)
+                            log.debug("_show_command_help: Last line (%s-1=%s): %r", linenum, linenum-1, lines[linenum-1].strip())
+
+                            if stripped_line:
+                                # If this line has content, join it with the previous one.
+                                next_line += line.rstrip()
+                                next_line += ' '
+                            elif linenum > 0 and not lines[linenum-1].strip():
+                                # The line before us was empty, so treat this one as a legitimate
+                                # newline/break.
+                                log.debug("_show_command_help: Adding an extra break...")
+                                _reply(' ')
+                            else:
+                                # Otherwise, output it to IRC.
+                                _reply_format(next_line)
+                                next_line = ''  # Reset the next line buffer
+                        else:
+                            _reply_format(next_line)
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)
                     return
