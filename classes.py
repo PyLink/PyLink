@@ -533,7 +533,18 @@ class Irc():
                 notice = True
             target = self.called_by
         else:
-            target = self.called_in
+            if not self.botdata.get("always_notice", False)\
+            or not (self.serverdata.get("always_notice", False)):
+                target = self.called_in
+            elif self.botdata.get("always_notice", False)\
+            or self.serverdata.get("always_notice", False):
+                target = self.called_by
+                notice=True
+                private=True
+            else:
+                target = self.called_in
+                private=False
+                notice=False
 
         self.msg(target, text, notice=notice, source=source, loopback=loopback)
 
