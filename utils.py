@@ -284,7 +284,7 @@ class ServiceBot():
             else:
                 log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
 
-    def reply(self, irc, text, notice=False, private=False):
+    def reply(self, irc, text, notice=None, private=None):
         """Replies to a message as the service in question."""
         servuid = self.uids.get(irc.name)
         if not servuid:
@@ -293,7 +293,7 @@ class ServiceBot():
 
         irc.reply(text, notice=notice, source=servuid, private=private)
 
-    def error(self, irc, text, notice=False, private=False):
+    def error(self, irc, text, notice=None, private=None):
         """Replies with an error, as the service in question."""
         servuid = self.uids.get(irc.name)
         if not servuid:

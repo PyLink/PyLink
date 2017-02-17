@@ -524,6 +524,10 @@ class Irc():
             loopback=True):
         """Replies to the last caller in the right context (channel or PM)."""
 
+        if private is None:
+            # Allow using private replies as the default, if no explicit setting was given.
+            private = conf.conf['bot'].get("prefer_private_replies")
+
         # Private reply is enabled, or the caller was originally a PM
         if private or (self.called_in in self.users):
             if not force_privmsg_in_private:
