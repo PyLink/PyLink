@@ -4,10 +4,13 @@ control.py - Implements SHUTDOWN and REHASH functionality.
 import signal
 import os
 import threading
+import sys
 
 from pylinkirc import world, utils, conf, classes
 from pylinkirc.log import log, makeFileLogger, stopFileLoggers, stdoutLogLevel
 from . import permissions
+
+tried_shutdown = False
 
 def remove_network(ircobj):
     """Removes a network object from the pool."""
@@ -18,6 +21,12 @@ def remove_network(ircobj):
 
 def _shutdown(irc=None):
     """Shuts down the Pylink daemon."""
+    global tried_shutdown
+    if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
+        sys.exit()
+
+    tried_shutdown = True
+
     for name, plugin in world.plugins.items():
         # Before closing connections, tell all plugins to shutdown cleanly first.
         if hasattr(plugin, 'die'):
