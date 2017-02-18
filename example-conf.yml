@@ -561,18 +561,23 @@ relay:
     #
     #clientbot_modesync: none
 
-games:
-    # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.
-    nick: Games
-
 automode:
-    # Sets the nick of the Automode service, if you're using it. This defaults to "automode" if not defined.
+    # The following options in this block are common to all plugins that spawn service bots (games,
+    # automode, etc.):
+
+    # Sets the nick of the Automode service, if you're using it. If not defined, this defaults to
+    # the service name ("automode" in this case).
     nick: Automode
+    #ident: Automode
 
     # For each service, you can also specify what prefix modes you want the service bot to join channels with.
     # Setting this to op (+o) for Automode makes it appear more like a standard IRC service, and lessens
     # the risk of mode overrides being dropped.
     joinmodes: 'o'
+
+games:
+    # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.
+    nick: Games
 
 stats:
     # Determines the time format that the Stats plugin should use for showing dates + times.
