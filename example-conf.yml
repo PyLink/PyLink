@@ -287,8 +287,8 @@ servers:
         channels: ["#this-works-as-usual"]
         protocol: "clientbot"
 
-        # You can set any clientbot-specific nicks and idents here if you wish. They default to
-        # the nick/ident specified in the bot: config block if not given.
+        # Once again, you can override the nick and ident of service bots on specific networks using
+        # the "servicename_nick" and "servicename_ident" options.
         pylink_nick: pybot
         #pylink_ident: pybot
 
