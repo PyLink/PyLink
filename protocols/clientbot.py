@@ -4,7 +4,7 @@ import base64
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
-from pylinkirc.classes import Protocol, IrcUser, IrcServer
+from pylinkirc.classes import Protocol, IrcUser, IrcServer, ProtocolError
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
@@ -904,6 +904,10 @@ class ClientbotWrapperProtocol(Protocol):
 
     def handle_quit(self, source, command, args):
         """Handles incoming QUITs."""
+        if self.irc.pseudoclient and source == self.irc.pseudoclient.uid:
+            # Someone faked a quit from us? We should abort.
+            raise ProtocolError("Received QUIT from uplink (%s)" % args[0])
+
         self.quit(source, args[0])
         return {'text': args[0]}
 
