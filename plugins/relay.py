@@ -222,8 +222,7 @@ def spawn_relay_server(irc, remoteirc):
         suffix = suffix.strip('.')
         sid = irc.proto.spawnServer('%s.%s' % (remoteirc.name, suffix),
                                     desc="PyLink Relay network - %s" %
-                                    (remoteirc.serverdata.get('netname')\
-                                    or remoteirc.name), endburst_delay=3)
+                                    (remoteirc.getFullNetworkName()), endburst_delay=3)
     except (RuntimeError, ValueError):  # Network not initialized yet, or a server name conflict.
         log.exception('(%s) Failed to spawn server for %r (possible jupe?):',
                       irc.name, remoteirc.name)
@@ -870,7 +869,7 @@ def handle_relay_whois(irc, source, command, args):
         homenet, uid = origuser
         realirc = world.networkobjects[homenet]
         realuser = realirc.users[uid]
-        netname = realirc.serverdata.get('netname', homenet)
+        netname = realirc.getFullNetworkName()
 
         wreply(320, ":is a remote user connected via PyLink Relay. Home network: %s; "
                     "Home nick: %s" % (netname, realuser.nick))
