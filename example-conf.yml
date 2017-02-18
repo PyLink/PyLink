@@ -49,6 +49,11 @@ bot:
     # even if the command was called in a channel. This defaults to False.
     #prefer_private_replies: false
 
+    # Determines whether spawning additional services for bots (e.g. Automode, Games) should be
+    # enabled. This defaults to True, unless a network's protocol module doesn't support spawning
+    # extra service bots.
+    #spawn_services: true
+
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
     # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
@@ -574,6 +579,11 @@ automode:
     # Setting this to op (+o) for Automode makes it appear more like a standard IRC service, and lessens
     # the risk of mode overrides being dropped.
     joinmodes: 'o'
+
+    # Determines whether a separate service bot should be spawned for this plugin. This defaults to
+    # True, unless a network's protocol module doesn't support spawning extra service bots.
+    # This option overrides the global "spawn_services" option defined in "bot:".
+    #spawn_service: true
 
 games:
     # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.

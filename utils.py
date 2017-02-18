@@ -487,6 +487,11 @@ def registerService(name, *args, **kwargs):
     if name in world.services:
         raise ValueError("Service name %s is already bound!" % name)
 
+    # Allow disabling service spawning either globally or by service.
+    elif name != 'pylink' and not (conf.conf.get(name, {}).get('spawn_service',
+            conf.conf['bot'].get('spawn_services', True))):
+        return world.services['pylink']
+
     world.services[name] = sbot = ServiceBot(name, *args, **kwargs)
     sbot.spawn()
     return sbot
