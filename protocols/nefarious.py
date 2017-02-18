@@ -846,6 +846,10 @@ class P10Protocol(IRCS2SProtocol):
             return
 
         else:  # Send a hook with the hook arguments given by the handler function.
+            if self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender):
+                log.warning("(%s) Received command %s being routed the wrong way!", self.irc.name, command)
+                return
+
             parsed_args = func(sender, command, args)
             if parsed_args is not None:
                 return [sender, command, parsed_args]

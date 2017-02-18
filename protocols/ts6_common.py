@@ -330,6 +330,10 @@ class TS6BaseProtocol(IRCS2SProtocol):
             command = args[0]
             args = args[1:]
 
+        if self.irc.isInternalClient(numeric) or self.irc.isInternalServer(numeric):
+            log.warning("(%s) Received command %s being routed the wrong way!", self.irc.name, command)
+            return
+
         if command == 'ENCAP':
             # Special case for encapsulated commands (ENCAP), in forms like this:
             # <- :00A ENCAP * SU 42XAAAAAC :GLolol
