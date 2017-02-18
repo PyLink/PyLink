@@ -889,6 +889,10 @@ class ClientbotWrapperProtocol(Protocol):
         # <- :sender NOTICE somenick :afasfsa
         target = args[0]
 
+        if self.irc.isInternalClient(source) or self.irc.isInternalServer(source):
+            log.warning('(%s) Received %s to %s being routed the wrong way!', self.irc.name, command, target)
+            return
+
         # We use lowercase channels internally.
         if utils.isChannel(target):
             target = self.irc.toLower(target)
@@ -896,12 +900,12 @@ class ClientbotWrapperProtocol(Protocol):
             target = self.irc.nickToUid(target)
         if target:
             return {'target': target, 'text': args[1]}
+    handle_notice = handle_privmsg
 
     def handle_quit(self, source, command, args):
         """Handles incoming QUITs."""
         self.quit(source, args[0])
         return {'text': args[0]}
 
-    handle_notice = handle_privmsg
 
 Class = ClientbotWrapperProtocol
