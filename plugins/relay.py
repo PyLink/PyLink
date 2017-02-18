@@ -284,20 +284,18 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
     modes = set(get_supported_umodes(irc, remoteirc, userobj.modes))
     opertype = ''
     if ('o', None) in userobj.modes:
-        if hasattr(userobj, 'opertype'):
-            # InspIRCd's special OPERTYPE command; this is mandatory
-            # and setting of umode +/-o will fail unless this
-            # is used instead. This also sets an oper type for
-            # the user, which is used in WHOIS, etc.
 
-            # If an opertype exists for the user, add " (remote)"
-            # for the relayed clone, so that it shows in whois.
-            # Janus does this too. :)
+        # Try to get the oper type, adding an "(on <networkname>)" suffix similar to what
+        # Janus does.
+        if hasattr(userobj, 'opertype'):
             log.debug('(%s) relay.get_remote_user: setting OPERTYPE of client for %r to %s',
                       irc.name, user, userobj.opertype)
-            opertype = userobj.opertype + ' (remote)'
+            opertype = userobj.opertype
         else:
-            opertype = 'IRC Operator (remote)'
+            opertype = 'IRC Operator'
+
+        opertype += ' (on %s)' % irc.getFullNetworkName()
+
         # Set hideoper on remote opers, to prevent inflating
         # /lusers and various /stats
         hideoper_mode = remoteirc.umodes.get('hideoper')
@@ -890,7 +888,7 @@ def handle_operup(irc, numeric, command, args):
     """
     Handles setting oper types on relay clients during oper up.
     """
-    newtype = args['text'] + ' (remote)'
+    newtype = '%s (on %s)' % (args['text'], irc.getFullNetworkName())
     for netname, user in relayusers[(irc.name, numeric)].items():
         log.debug('(%s) relay.handle_opertype: setting OPERTYPE of %s/%s to %s',
                   irc.name, user, netname, newtype)

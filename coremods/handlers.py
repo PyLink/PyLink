@@ -80,10 +80,7 @@ def handle_whois(irc, source, command, args):
                 # write "an Operator" instead of "a Operator")
                 n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
 
-                # I want to normalize the syntax: PERSON is an OPERTYPE on NETWORKNAME.
-                # This is the only syntax InspIRCd supports, but for others it doesn't
-                # really matter since we're handling the WHOIS requests by ourselves.
-                f(313, source, "%s :is a%s %s on %s" % (nick, n, user.opertype, netname))
+                f(313, source, "%s :is a%s %s" % (nick, n, user.opertype))
 
         # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
         # Only show this to opers!
