@@ -433,7 +433,7 @@ class P10Protocol(IRCS2SProtocol):
                 for wrapped_modes in self.irc.wrapModes(modes[:12], bufsize):
                     self._send(numeric, 'M %s %s %s' % (real_target, wrapped_modes, ts))
             else:
-                self._send(numeric, 'M %s %s%s' % (real_target, joinedmodes))
+                self._send(numeric, 'M %s %s' % (real_target, joinedmodes))
             modes = modes[12:]
 
     def nick(self, numeric, newnick):
