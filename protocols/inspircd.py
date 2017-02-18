@@ -174,7 +174,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         log.debug('(%s) Sending OPERTYPE from %s to oper them up.',
                   self.irc.name, target)
         userobj.opertype = otype
-        self._send(target, 'OPERTYPE %s' % otype.replace(" ", "_"))
+
+        # InspIRCd 2.x uses _ in OPERTYPE to denote spaces, while InspIRCd 3.x does not. This is not
+        # backwards compatible: spaces in InspIRCd 2.x will cause the oper type to get cut off at
+        # the first word, while underscores in InspIRCd 3.x are shown literally as _.
+        # We can do the underscore fixing based on the version of our uplink:
+        if self.remote_proto_ver < 1205:
+            otype = otype.replace(" ", "_")
+        else:
+            otype = ':' + otype
+
+        self._send(target, 'OPERTYPE %s' % otype)
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
@@ -462,7 +472,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             log.debug("(%s) capabilities list: %s", self.irc.name, caps)
 
             # Check the protocol version
-            protocol_version = int(caps['PROTOCOL'])
+            self.remote_proto_ver = protocol_version = int(caps['PROTOCOL'])
 
             if protocol_version < self.min_proto_ver:
                 raise ProtocolError("Remote protocol version is too old! "
