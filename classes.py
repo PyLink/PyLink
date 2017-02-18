@@ -1043,13 +1043,21 @@ class Irc():
 
     def getFriendlyName(self, entityid):
         """
-        Returns the friendly name of a SID or UID (server name for SIDs, nick for UID)."""
+        Returns the friendly name of a SID or UID (server name for SIDs, nick for UID).
+        """
         if entityid in self.servers:
             return self.servers[entityid].name
         elif entityid in self.users:
             return self.users[entityid].nick
         else:
             raise KeyError("Unknown UID/SID %s" % entityid)
+
+    def getFullNetworkName(self):
+        """
+        Returns the full network name (as defined by the "netname" option), or the
+        short network name if that isn't defined.
+        """
+        return self.serverdata.get('netname', self.name)
 
     def isOper(self, uid, allowAuthed=True, allowOper=True):
         """
