@@ -481,7 +481,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                                           protocol_version))
             elif protocol_version > self.max_proto_ver:
                 log.warning("(%s) PyLink support for InspIRCd 2.2+ is experimental, "
-                            "and should not be relied upon for anything major.",
+                            "and should not be relied upon for anything important.",
                             self.irc.name)
 
             # Store the max nick and channel lengths
