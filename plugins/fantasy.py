@@ -37,7 +37,7 @@ def handle_fantasy(irc, source, command, args):
 
                 # If responding to nick is enabled, add variations of the current nick
                 # to the prefix list: "<nick>," and "<nick>:"
-                nick = irc.users[servuid].nick
+                nick = irc.toLower(irc.users[servuid].nick)
 
                 if respondtonick:
                     prefixes += [nick+',', nick+':']
@@ -48,8 +48,9 @@ def handle_fantasy(irc, source, command, args):
                                 "fantasy commands will not work!", irc.name, botname)
                     continue
 
+                lowered_text = irc.toLower(orig_text)
                 for prefix in prefixes:  # Cycle through the prefixes list we finished with.
-                     if prefix and orig_text.startswith(prefix):
+                     if prefix and lowered_text.startswith(prefix):
 
                         # Cut off the length of the prefix from the text.
                         text = orig_text[len(prefix):]
