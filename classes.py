@@ -1329,9 +1329,13 @@ class Protocol():
 
     @staticmethod
     def parseArgs(args):
-        """Parses a string of RFC1459-style arguments split into a list, where ":" may
+        """
+        Parses a string or list of of RFC1459-style arguments, where ":" may
         be used for multi-word arguments that last until the end of a line.
         """
+        if isinstance(args, str):
+            args = args.split(' ')
+
         real_args = []
         for idx, arg in enumerate(args):
             if arg.startswith(':') and idx != 0:
@@ -1432,10 +1436,11 @@ class Protocol():
         target = self.irc.nickToUid(target) or target
         return target
 
-    def parsePrefixedArgs(self, args):
+    @classmethod
+    def parsePrefixedArgs(cls, args):
         """Similar to parseArgs(), but stripping leading colons from the first argument
         of a line (usually the sender field)."""
-        args = self.parseArgs(args)
+        args = cls.parseArgs(args)
         args[0] = args[0].split(':', 1)[1]
         return args
 
