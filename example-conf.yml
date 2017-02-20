@@ -49,8 +49,11 @@ login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
     # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
     # it supports multiple accounts, hashed passwords, and allows more flexibility (accounts no
-    # longer imply admin access). However, you must also add your account to the "permissions:"
-    # block below, or you will lose IRC administration access to your PyLink daemon!
+    # longer imply admin access).
+
+    # IMPORTANT: If you're switching from login:user/login:password, you MUST ADD YOURSELF to a
+    # "permissions:" block like the one below, or you will lose IRC administration access to your
+    # PyLink daemon!
     accounts:
         # Creates an account with username "user1". You can define other usernames at the
         # same level here (key name is user name).
