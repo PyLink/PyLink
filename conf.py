@@ -17,14 +17,7 @@ from collections import defaultdict
 from . import world
 
 class ConfigValidationError(Exception):
-	"""Error when config conditions aren't met."""
-	
-	def __init__(self, msg):
-		self.msg = msg
-		
-	def __repr__(self):
-		return repr(self.msg)
-	
+    """Error when config conditions aren't met."""
 
 conf = {'bot':
                 {
@@ -55,10 +48,10 @@ conf = {'bot':
 confname = 'unconfigured'
 
 def validate(condition, errmsg):
-	"""Function to wrap validation for use in validateConf"""
-	if not condition:
-		raise ConfigValidationError(errmsg)
-	
+    """Function to wrap validation for use in validateConf"""
+    if not condition:
+        raise ConfigValidationError(errmsg)
+
 def validateConf(conf, logger=None):
     """Validates a parsed configuration dict."""
     validate(type(conf) == dict,
