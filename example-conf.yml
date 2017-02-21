@@ -566,6 +566,25 @@ relay:
     #
     #clientbot_modesync: none
 
+###
+#
+# Serv Protect
+#
+# If you use this please uncomment the following values
+# and set them to what you want them to be.
+#
+###
+
+#servprotect:
+    # THINK: LENGTH KILL/SAVE's in TIME seconds
+
+    # length: How many KILL/SAVE's before a disconnect
+    #length: 5
+
+    # time: How long till a period expires?
+    #max_age: 10
+
+
 automode:
     # The following options in this block are common to all plugins that spawn service bots (games,
     # automode, etc.):

@@ -86,6 +86,16 @@ def validateConf(conf, logger=None):
     if newlogins:
         validate(conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!")
 
+    # check to see if we are using servprotect
+    # if we aren't we SHOULD NOT have a servprotect::*
+    # or commented out.
+    if conf.get('plugins'):
+        if 'servprotect' not in conf.get('plugins'):
+            validate(conf.get('servprotect') == None, "ServProtect not loaded but we have a 'servprotect' config block?")
+        elif 'servprotect' in conf.get('plugins'):
+            if not conf.get('servprotect'):
+                print("servprotect: config values not set or not used, using default values.")
+
     return conf
 
 
