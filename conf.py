@@ -16,6 +16,9 @@ from collections import defaultdict
 
 from . import world
 
+class ConfigValidationError(Exception):
+    """Error when config conditions aren't met."""
+
 conf = {'bot':
                 {
                     'nick': 'PyLink',
@@ -44,12 +47,19 @@ conf = {'bot':
         }
 confname = 'unconfigured'
 
+def validate(condition, errmsg):
+    """Convenience function to validate conditions in validateConf()."""
+    if not condition:
+        raise ConfigValidationError(errmsg)
+
 def validateConf(conf, logger=None):
     """Validates a parsed configuration dict."""
-    assert type(conf) == dict, "Invalid configuration given: should be type dict, not %s." % type(conf).__name__
+    validate(type(conf) == dict,
+            "Invalid configuration given: should be type dict, not %s."
+            % type(conf).__name__)
 
     for section in ('bot', 'servers', 'login', 'logging'):
-        assert conf.get(section), "Missing %r section in config." % section
+        validate(conf.get(section),"Missing %r section in config." % section)
 
     # Make sure at least one form of authentication is valid.
     # Also we'll warn them that login:user/login:password is deprecated
@@ -66,15 +76,15 @@ def validateConf(conf, logger=None):
     old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
     newlogins = conf['login'].get('accounts', {})
     new_login_valid = len(newlogins) >= 1
-    assert old_login_valid or new_login_valid, "No accounts were set, aborting!"
+    validate(old_login_valid or new_login_valid, "No accounts were set, aborting!")
     for account, block in newlogins.items():
-        assert type(account) == str, "Bad username format %s" % account
-        assert type(block.get('password')) == str, "Bad password %s for account %s" % (block.get('password'), account)
+        validate(type(account) == str, "Bad username format %s" % account)
+        validate(type(block.get('password')) == str, "Bad password %s for account %s" % (block.get('password'), account))
 
-    assert conf['login'].get('password') != "changeme", "You have not set the login details correctly!"
+    validate(conf['login'].get('password') != "changeme", "You have not set the login details correctly!")
 
     if newlogins:
-        assert conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!"
+        validate(conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!")
 
     return conf
 
