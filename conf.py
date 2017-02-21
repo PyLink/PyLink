@@ -73,6 +73,9 @@ def validateConf(conf, logger=None):
 
     assert conf['login'].get('password') != "changeme", "You have not set the login details correctly!"
 
+    if conf['login'].get('accounts'):
+        assert conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!"
+
     return conf
 
 
