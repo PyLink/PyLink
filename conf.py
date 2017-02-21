@@ -1,8 +1,10 @@
 """
 conf.py - PyLink configuration core.
 
-This module is used to access the configuration of the current PyLink instance.
-It provides simple checks for validating and loading YAML-format configurations from arbitrary files.
+This module is used to access the configuration of
+the current PyLink instance.
+It provides simple checks for validating and loading YAML-format
+configurations from arbitrary files.
 """
 
 try:
@@ -84,9 +86,7 @@ def validateConf(conf, logger=None):
     validate(conf['login'].get('password') != "changeme", "You have not set the login details correctly!")
 
     if newlogins:
-        validate(conf.get('permissions'),
-                "New-style accounts enabled but no permissions block was found."+\
-                "You will not be able to administrate your PyLink instance!")
+        validate(conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!")
 
     return conf
 
