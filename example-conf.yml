@@ -382,6 +382,9 @@ plugins:
     # Servermaps plugin: displays network /map's from the PyLink server's perspective.
     #- servermaps
 
+    # ServProtect plugin: disconnects from network if a certain limit of
+    # kills/saves per X seconds is met, THINK: X ACTIONs in X seconds
+    #- servprotect
 logging:
     # This configuration block defines targets that PyLink should log commands,
     # errors, etc., to.
