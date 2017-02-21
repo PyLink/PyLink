@@ -48,15 +48,15 @@ conf = {'bot':
 confname = 'unconfigured'
 
 def validate(condition, errmsg):
-    """Function to wrap validation for use in validateConf"""
+    """Convenience function to validate conditions in validateConf()."""
     if not condition:
         raise ConfigValidationError(errmsg)
 
 def validateConf(conf, logger=None):
     """Validates a parsed configuration dict."""
     validate(type(conf) == dict,
-    "Invalid configuration given: should be type dict, not %s."
-    % type(conf).__name__)
+            "Invalid configuration given: should be type dict, not %s."
+            % type(conf).__name__)
 
     for section in ('bot', 'servers', 'login', 'logging'):
         validate(conf.get(section),"Missing %r section in config." % section)
@@ -85,8 +85,8 @@ def validateConf(conf, logger=None):
 
     if newlogins:
         validate(conf.get('permissions'),
-        "New-style accounts enabled but no permissions block was found."+\
-        "You will not be able to administrate your PyLink instance!")
+                "New-style accounts enabled but no permissions block was found."+\
+                "You will not be able to administrate your PyLink instance!")
 
     return conf
 
