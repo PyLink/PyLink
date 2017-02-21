@@ -1,10 +1,8 @@
 """
 conf.py - PyLink configuration core.
 
-This module is used to access the configuration of
-the current PyLink instance.
-It provides simple checks for validating and loading YAML-format
-configurations from arbitrary files.
+This module is used to access the configuration of the current PyLink instance.
+It provides simple checks for validating and loading YAML-format configurations from arbitrary files.
 """
 
 try:
