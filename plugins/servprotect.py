@@ -5,11 +5,14 @@ from pylinkirc import utils
 from pylinkirc.conf import conf
 from pylinkirc.log import log
 
-# we've already checked this combinations sanity.
-# so lets set this up
-
-length = conf.get('servprotect').get('length', 5)
-age    = conf.get('servprotect').get('max_age', 10)
+# check for definitions, if plugin isn't
+# loaded we stop anyways
+if conf.get('servprotect'):
+    length = conf.get('servprotect').get('length', 5)
+    age    = conf.get('servprotect').get('max_age', 10)
+else:
+    length = 5
+    age    = 10
 
 savecache = ExpiringDict(max_len=length, max_age_seconds=age)
 killcache = ExpiringDict(max_len=length, max_age_seconds=age)
