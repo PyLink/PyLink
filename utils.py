@@ -10,6 +10,7 @@ import re
 import importlib
 import os
 import collections
+import argparse
 
 from .log import log
 from . import world, conf
@@ -26,6 +27,11 @@ class NotAuthorizedError(Exception):
     requirements.
     """
     pass
+
+class InvalidArgumentsError(TypeError):
+    """
+    Exception raised (by IRCParser and potentially others) when a bot command is given invalid arguments.
+    """
 
 class IncrementalUIDGenerator():
     """
@@ -547,3 +553,11 @@ def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
         strings.append(buf)
 
     return strings
+
+class IRCParser(argparse.ArgumentParser):
+    """
+    Wrapper around argparse.ArgumentParser, without quitting on usage errors.
+    """
+
+    def error(self, message):
+        raise InvalidArgumentsError(message)
