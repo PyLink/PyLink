@@ -571,16 +571,12 @@ relay:
     #clientbot_modesync: none
 
 #servprotect:
-    # This block configures the servprotect plugin.
-    # You don't need this if you aren't using it.
+    # This block configures the servprotect plugin; you don't need this if you aren't using it.
 
-    # length: How many KILL/SAVE's before a disconnect
-
+    # length: How many KILL/SAVE's before a disconnect?
     #length: 5
 
-    # time: Determines how much time should pass before
-    # the servprotect cache is reset.
-
+    # max_age: Determines how much time should pass before the servprotect cache is reset.
     #max_age: 10
 
 

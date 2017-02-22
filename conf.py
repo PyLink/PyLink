@@ -86,7 +86,6 @@ def validateConf(conf, logger=None):
     if newlogins:
         validate(conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!")
 
-
     return conf
 
 
