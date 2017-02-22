@@ -576,7 +576,7 @@ relay:
     # length: How many KILL/SAVE's before a disconnect?
     #length: 5
 
-    # max_age: Determines how much time (in seconds) should pass before the servprotect cache is reset.
+    # age: Determines how much time (in seconds) should pass before the servprotect cache is reset.
     # Note: updates to this option require a reload of the servprotect plugin, which automatically
     # resets the cache.
     #age: 10
