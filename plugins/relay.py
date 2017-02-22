@@ -1744,9 +1744,9 @@ def link(irc, source, args):
         if (our_ts < their_ts) and irc.protoname != 'clientbot':
             log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
                       irc.name, localchan, remotenet, channel, our_ts, their_ts)
-            irc.error("the channel creation date (TS) on %s is lower than the target "
-                      "channel's; refusing to link. You should clear the local channel %s first "
-                      "before linking, or use a different local channel." % (localchan, localchan))
+            irc.error("The channel creation date (TS) on %s (%s) is lower than the target "
+                      "channel's (%s); refusing to link. You should clear the local channel %s first "
+                      "before linking, or use a different local channel." % (localchan, our_ts, their_ts, localchan))
             return
 
         entry['links'].add((irc.name, localchan))
