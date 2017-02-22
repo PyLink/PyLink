@@ -1,18 +1,13 @@
 # servprotect.py: Protects against KILL and nick collision floods
 from expiringdict import ExpiringDict
 
-from pylinkirc import utils
-from pylinkirc.conf import conf
+from pylinkirc import utils, conf
 from pylinkirc.log import log
 
-# check for definitions, if plugin isn't
-# loaded we stop anyways
-if conf.get('servprotect') != None:
-    length = conf['servprotect'].get('length', 5)
-    age    = conf['servprotect'].get('max_age', 10)
-else:
-    length = 5
-    age    = 10
+# check for definitions
+servprotect_conf = conf.conf.get('servprotect', {})
+length = servprotect_conf.get('length,' 5)
+age = servprotect_conf.get('age', 10)
 
 savecache = ExpiringDict(max_len=length, max_age_seconds=age)
 killcache = ExpiringDict(max_len=length, max_age_seconds=age)
