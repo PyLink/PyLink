@@ -1745,6 +1745,13 @@ def link(irc, source, args):
             log.info("(%s) relay: Forcing link %s%s -> %s%s", irc.name, irc.name, localchan, remotenet,
                      args.channel)
         else:
+            if not world.networkobjects[remotenet].connected.is_set():
+                log.debug('(%s) relay: Blocking link request %s%s -> %s%s because the target '
+                          'network is down', irc.name, irc.name, localchan, remotenet, args.channel)
+                irc.error("The target network %s is not connected; refusing to link (you may be "
+                          "able to override this with the --force option)." % remotenet)
+                return
+
             our_ts = irc.channels[localchan].ts
             their_ts = world.networkobjects[remotenet].channels[args.channel].ts
             if (our_ts < their_ts) and irc.protoname != 'clientbot':
@@ -1752,7 +1759,8 @@ def link(irc, source, args):
                           irc.name, localchan, remotenet, args.channel, our_ts, their_ts)
                 irc.error("The channel creation date (TS) on %s (%s) is lower than the target "
                           "channel's (%s); refusing to link. You should clear the local channel %s first "
-                          "before linking, or use a different local channel." % (localchan, our_ts, their_ts, localchan))
+                          "before linking, or use a different local channel (you may be able to "
+                          "override this with the --force option)." % (localchan, our_ts, their_ts, localchan))
                 return
 
         entry['links'].add((irc.name, localchan))
