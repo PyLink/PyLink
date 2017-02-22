@@ -6,7 +6,7 @@ from pylinkirc.log import log
 
 # check for definitions
 servprotect_conf = conf.conf.get('servprotect', {})
-length = servprotect_conf.get('length,' 5)
+length = servprotect_conf.get('length', 5)
 age = servprotect_conf.get('age', 10)
 
 savecache = ExpiringDict(max_len=length, max_age_seconds=age)
