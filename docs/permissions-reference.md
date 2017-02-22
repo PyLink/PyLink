@@ -83,6 +83,7 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `relay.linkacl` - Allows access to the `linkacl` command. **With the default permissions set, this is granted to all opers.**
 - `relay.linkacl.view` - Allows access to the `view` command. **With the default permissions set, this is granted to all opers.**
 - `relay.link` - Allows access to the `link` command. **With the default permissions set, this is granted to all opers.**
+- `relay.link.force` - Allows access to the `--force` option in the `link` command (skip TS and target network is connected checks).
 - `relay.linked` - Allows access to the `link` command. **With the default permissions set, this is granted to all users.**
 - `relay.purge` - Allows access to the `purge` command.
 - `relay.savedb` - Allows access to the `savedb` command.
