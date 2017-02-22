@@ -382,6 +382,10 @@ plugins:
     # Servermaps plugin: displays network /map's from the PyLink server's perspective.
     #- servermaps
 
+    # Servprotect plugin: disconnects from network if a certain limit
+    # of kills/saves per X seconds is met.
+    #- servprotect
+
 logging:
     # This configuration block defines targets that PyLink should log commands,
     # errors, etc., to.
@@ -565,6 +569,20 @@ relay:
     # list of any affected channels.
     #
     #clientbot_modesync: none
+
+#servprotect:
+    # This block configures the servprotect plugin.
+    # You don't need this if you aren't using it.
+
+    # length: How many KILL/SAVE's before a disconnect
+
+    #length: 5
+
+    # time: Determines how much time should pass before
+    # the servprotect cache is reset.
+
+    #max_age: 10
+
 
 automode:
     # The following options in this block are common to all plugins that spawn service bots (games,

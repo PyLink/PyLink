@@ -1,19 +1,23 @@
 # servprotect.py: Protects against KILL and nick collision floods
 from expiringdict import ExpiringDict
 
-from pylinkirc import utils
+from pylinkirc import utils, conf
 from pylinkirc.log import log
 
-# TODO: make length and time configurable
-savecache = ExpiringDict(max_len=5, max_age_seconds=10)
-killcache = ExpiringDict(max_len=5, max_age_seconds=10)
+# check for definitions
+servprotect_conf = conf.conf.get('servprotect', {})
+length = servprotect_conf.get('length,' 5)
+age = servprotect_conf.get('age', 10)
+
+savecache = ExpiringDict(max_len=length, max_age_seconds=age)
+killcache = ExpiringDict(max_len=length, max_age_seconds=age)
 
 def handle_kill(irc, numeric, command, args):
     """
     Tracks kills against PyLink clients. If too many are received,
     automatically disconnects from the network.
     """
-    if killcache.setdefault(irc.name, 1) >= 5:
+    if killcache.setdefault(irc.name, 1) >= length:
         log.error('(%s) servprotect: Too many kills received, aborting!', irc.name)
         irc.disconnect()
 
@@ -27,7 +31,7 @@ def handle_save(irc, numeric, command, args):
     Tracks SAVEs (nick collision) against PyLink clients. If too many are received,
     automatically disconnects from the network.
     """
-    if savecache.setdefault(irc.name, 0) >= 5:
+    if savecache.setdefault(irc.name, 0) >= length:
         log.error('(%s) servprotect: Too many nick collisions, aborting!', irc.name)
         irc.disconnect()
 
