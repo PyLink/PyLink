@@ -500,7 +500,7 @@ class Irc():
         """
         world.services['pylink'].call_cmd(self, source, text)
 
-    def msg(self, target, text, notice=False, source=None, loopback=True):
+    def msg(self, target, text, notice=None, source=None, loopback=True):
         """Handy function to send messages/notices to clients. Source
         is optional, and defaults to the main PyLink client if not specified."""
         if not text:
@@ -520,7 +520,7 @@ class Irc():
             # replies across relay.
             self.callHooks([source, cmd, {'target': target, 'text': text}])
 
-    def reply(self, text, notice=False, source=None, private=False, force_privmsg_in_private=False,
+    def reply(self, text, notice=None, source=None, private=None, force_privmsg_in_private=False,
             loopback=True):
         """Replies to the last caller in the right context (channel or PM)."""
 
@@ -541,12 +541,10 @@ class Irc():
 
         self.msg(target, text, notice=notice, source=source, loopback=loopback)
 
-    def error(self, text, notice=False, source=None, private=False, force_privmsg_in_private=False,
-            loopback=True):
+    def error(self, text, **kwargs):
         """Replies with an error to the last caller in the right context (channel or PM)."""
         # This is a stub to alias error to reply
-        self.reply("Error: %s" % text, notice=notice, source=source, private=private,
-            force_privmsg_in_private=force_privmsg_in_private, loopback=loopback)
+        self.reply("Error: %s" % text, **kwargs)
 
     def toLower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
