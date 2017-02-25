@@ -75,15 +75,15 @@ def validateConf(conf, logger=None):
 
     old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
     newlogins = conf['login'].get('accounts', {})
-    new_login_valid = len(newlogins) >= 1
-    validate(old_login_valid or new_login_valid, "No accounts were set, aborting!")
+
+    validate(old_login_valid or newlogins, "No accounts were set, aborting!")
     for account, block in newlogins.items():
         validate(type(account) == str, "Bad username format %s" % account)
         validate(type(block.get('password')) == str, "Bad password %s for account %s" % (block.get('password'), account))
 
     validate(conf['login'].get('password') != "changeme", "You have not set the login details correctly!")
 
-    if newlogins:
+    if newlogins and not old_login_valid:
         validate(conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!")
 
     return conf
