@@ -1,3 +1,22 @@
+# PyLink 1.1.1
+
+The "Crush" release. Changes from 1.1.0:
+
+#### Bug fixes
+- The `pylink-mkpasswd` program is actually installed now when using `pip` (PyPI) or `setup.py`.
+- Backported protocol module fixes from 1.2-dev:
+    - unreal: fix crashes when receiving `SJOIN` with only a prefix and no UID
+    - inspircd: work around extraneous letters sent in `FJOIN` timestamps (Anope 1.8.x bug)
+    - nefarious: fix a typo causing crashes on user mode changes
+- Relay: in `claim`, show a less ambiguous error when a relay channel doesn't exist on the caller's network.
+- corecommands: removed extraneous `irc.checkAuthenticated()` call
+
+#### Feature changes
+- `pylink-mkpasswd` now supports interactive password input via getpass, which is more secure than passing passwords raw on the command line.
+
+#### Misc changes
+- More prominent migration notes regarding permissions and new accounts system.
+
 # PyLink 1.1.0
 
 The "Calico" release. This is mostly a cleanup and documentation update from 1.1-beta2, with the following additional change:
