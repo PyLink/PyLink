@@ -192,7 +192,6 @@ class Irc():
             ip = self.serverdata["ip"]
             port = self.serverdata["port"]
             checks_ok = True
-            errored = False
             try:
                 # Set the socket type (IPv6 or IPv4).
                 stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
@@ -318,12 +317,12 @@ class Irc():
                 # exception, meaning we've disconnected!
                 log.error('(%s) Disconnected from IRC: %s: %s',
                           self.name, type(e).__name__, str(e))
-                errored = True
 
+            was_successful = self.connected.is_set()
             self.disconnect()
 
             # Internal hook signifying that a network has disconnected.
-            self.callHooks([None, 'PYLINK_DISCONNECT', {'was_successful': checks_ok and not errored}])
+            self.callHooks([None, 'PYLINK_DISCONNECT', {'was_successful': checks_ok and was_successful}])
 
             # If autoconnect is enabled, loop back to the start. Otherwise,
             # return and stop.
@@ -1536,5 +1535,4 @@ class Protocol():
 
     def handle_error(self, numeric, command, args):
         """Handles ERROR messages - these mean that our uplink has disconnected us!"""
-        self.irc.connected.clear()
         raise ProtocolError('Received an ERROR, disconnecting!')
