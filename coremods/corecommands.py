@@ -110,7 +110,7 @@ def unload(irc, source, args):
 
     Unloads a currently loaded plugin."""
     permissions.checkPermissions(irc, source, ['core.unload', 'core.reload'])
-    irc.checkAuthenticated(source, allowOper=False)
+
     try:
         name = args[0]
     except IndexError:
