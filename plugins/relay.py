@@ -1472,6 +1472,7 @@ utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
 
 def handle_disconnect(irc, numeric, command, args):
     """Handles IRC network disconnections (internal hook)."""
+
     # Quit all of our users' representations on other nets, and remove
     # them from our relay clients index.
     log.debug('(%s) Grabbing spawnlocks[%s]', irc.name, irc.name)
@@ -1505,6 +1506,22 @@ def handle_disconnect(irc, numeric, command, args):
             pass
 
         spawnlocks_servers[irc.name].release()
+
+    # Announce the disconnects to every leaf channel where the disconnected network is the owner
+    announcement = conf.conf.get('relay', {}).get('disconnect_announcement')
+    if announcement:
+        with db_lock:
+            for chanpair, entrydata in db.items():
+                if chanpair[0] == irc.name:
+                    for leaf in entrydata['links']:
+                        log.debug('(%s) relay: Announcing disconnect to %s%s', irc.name,
+                                  leaf[0], leaf[1])
+                        remoteirc = world.networkobjects.get(leaf[0])
+                        if remoteirc and remoteirc.connected.is_set():
+                            text = string.Template(announcement).safe_substitute(
+                                {'homenetwork': irc.name, 'homechannel': chanpair[1],
+                                 'network': remoteirc.name, 'channel': leaf[1]})
+                            remoteirc.msg(leaf[1], text, loopback=False)
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 

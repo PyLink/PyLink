@@ -584,6 +584,18 @@ relay:
     # silently dropped. This defaults to True for consistency with older releases.
     #accept_weird_senders: false
 
+    # Optionally defines a message that should be sent to all leaf channels that a network owns, when
+    # it disconnects. This uses a template string as documented at
+    # https://docs.python.org/3/library/string.html#template-strings, with the following substitutions:
+    #     $network: the name of the network that this message is being announced to
+    #     $channel: the channel that this message is being announced to
+    #     $homenetwork: the name of the network that disconnected
+    #     $homechannel: the original name of the channel this message is being announced to
+    # If this option is empty or not set, no announcement is made.
+    #disconnect_announcement: >-
+    # Network $homenetwork has disconnected: $channel will remain open as the link is
+    # re-established, but new links will be disabled.
+
 #servprotect:
     # This block configures the servprotect plugin; you don't need this if you aren't using it.
 
