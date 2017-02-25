@@ -23,8 +23,7 @@ NORMALIZEWHITESPACE_RE = re.compile(r'\s+')
 
 class NotAuthorizedError(Exception):
     """
-    Exception raised by checkAuthenticated() when a user fails authentication
-    requirements.
+    Exception raised by the PyLink permissions system when a user fails access requirements.
     """
     pass
 
