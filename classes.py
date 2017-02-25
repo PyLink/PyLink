@@ -33,7 +33,7 @@ class ProtocolError(Exception):
 
 ### Internal classes (users, servers, channels)
 
-class Irc():
+class Irc(utils.DeprecatedAttributesObject):
     """Base IRC object for PyLink."""
 
     def __init__(self, netname, proto, conf):
@@ -42,6 +42,8 @@ class Irc():
         (a string), the name of the protocol module to use for this connection,
         and a configuration object.
         """
+        self.deprecated_attributes = {'conf': 'Deprecated since 1.2; consider switching to conf.conf'}
+
         self.loghandlers = []
         self.name = netname
         self.conf = conf
