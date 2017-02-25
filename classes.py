@@ -16,6 +16,7 @@ from copy import deepcopy
 import inspect
 import re
 from collections import defaultdict, deque
+import ipaddress
 
 try:
     import ircmatch
@@ -1134,8 +1135,27 @@ class Irc():
             if ip:
                 hosts.add(self.getHostmask(target, ip=True))
 
+                # HACK: support CIDR hosts in the hosts portion
+                try:
+                    header, cidrtarget = glob.split('@', 1)
+                    log.debug('(%s) Processing CIDRs for %s (full host: %s)', self.name,
+                              cidrtarget, glob)
+                    # Try to parse the host portion as a CIDR range
+                    network = ipaddress.ip_network(cidrtarget)
+
+                    log.debug('(%s) Found CIDR for %s, replacing target host with IP %s', self.name,
+                              realhost, target)
+                    real_ip = self.users[target].ip
+                    if ipaddress.ip_address(real_ip) in network:
+                        # If the CIDR matches, hack around the host matcher by pretending that
+                        # the lookup target was the IP and not the CIDR range!
+                        glob = '@'.join((header, real_ip))
+                except ValueError:
+                    pass
+
             if realhost:
                 hosts.add(self.getHostmask(target, realhost=True))
+
         else:  # We were given a host, use that.
             hosts = [target]
 
