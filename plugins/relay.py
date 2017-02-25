@@ -1079,6 +1079,11 @@ def handle_messages(irc, numeric, command, args):
             user = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
 
             if not user:
+                if not (irc.serverdata.get('relay_weird_senders',
+                        conf.conf.get('relay', {}).get('accept_weird_senders', True))):
+                    log.debug("(%s) Dropping message for %s from user-less sender %s", irc.name,
+                              real_target, numeric)
+                    continue
                 # No relay clone exists for the sender; route the message through our
                 # main client (or SID for notices).
 

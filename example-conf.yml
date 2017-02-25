@@ -337,6 +337,12 @@ servers:
         # entire PyLink service than what's desired, even when PyLink is only connected as a bot.
         track_oper_statuses: false
 
+        # Determines whether messages from unknown clients (servers, clients not sharing in a -n
+        # channel, etc.) should be forwarded via the PyLink server. If this is disabled, these
+        # messages will be silently dropped. This overrides the "accept_weird_senders" option in the
+        # "relay:" configuration block, and defaults to True for consistency with older releases.
+        #relay_weird_senders: false
+
 # Plugins to load (omit the .py extension)
 plugins:
     # Commands plugin: Provides simple commands for things like checking login
@@ -572,6 +578,11 @@ relay:
     # list of any affected channels.
     #
     #clientbot_modesync: none
+
+    # Determines whether messages from unknown clients (servers, clients not sharing in a -n channel,
+    # etc.) should be forwarded via the PyLink server. If this is disabled, these messages will be
+    # silently dropped. This defaults to True for consistency with older releases.
+    #accept_weird_senders: false
 
 #servprotect:
     # This block configures the servprotect plugin; you don't need this if you aren't using it.
