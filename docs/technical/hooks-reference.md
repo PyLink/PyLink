@@ -1,5 +1,7 @@
 # PyLink hooks reference
 
+***Last updated for 1.2-dev (2017-02-24).***
+
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
 Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
 
@@ -50,8 +52,9 @@ These following hooks, sent with their correct data keys, are required for PyLin
     - This payload should be sent whenever a server finishes its burst, with the SID of the bursted server as the sender.
     - The service bot API and plugins like relay use this to make sure networks are properly connected. Should ENDBURST not be sent or emulated, they will likely fail to spawn users entirely.
 
-- **PYLINK_DISCONNECT**: `{}`
+- **PYLINK_DISCONNECT**: `{'was_successful': False}`
     - This is sent to plugins by IRC object instances whenever their network has disconnected. The sender here is always **None**.
+    - The `was_successful` key shows whether the last connection before this message was successful (i.e. whether the disconnect wasn't caused by a configuration error, etc.)
 
 ## IRC command hooks
 
@@ -165,3 +168,7 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
 
 ## Commands handled WITHOUT hooks
 At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
+
+## Changes
+* 2017-02-24 (1.2-dev)
+   - The `was_successful` key was added to PYLINK_DISCONNECT.
