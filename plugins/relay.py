@@ -1509,7 +1509,7 @@ def handle_disconnect(irc, numeric, command, args):
 
     # Announce the disconnects to every leaf channel where the disconnected network is the owner
     announcement = conf.conf.get('relay', {}).get('disconnect_announcement')
-    if announcement:
+    if announcement and args.get('was_successful'):
         with db_lock:
             for chanpair, entrydata in db.items():
                 if chanpair[0] == irc.name:
