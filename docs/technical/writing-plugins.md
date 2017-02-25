@@ -59,6 +59,10 @@ are preferred.
 
 The sender UID for both can be set using the `source` argument, and defaults to the main PyLink client.
 
+## Access checking for commands
+
+See the [Permissions API documentation](permissions-api.md) on how to restrict commands to certain users.
+
 ## Special triggers for plugin (un)loading
 
 The following functions can also be defined in the body of a plugin to hook onto plugin loading / unloading.
