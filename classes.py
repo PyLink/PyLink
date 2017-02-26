@@ -1094,8 +1094,12 @@ class Irc():
         Checks whether the given host, or given UID's hostmask matches the given nick!user@host
         glob.
 
-        If the target given is a UID, and the ip or realhost options are True, this will also match
-        against the target's IP address and real host, respectively.
+        If the target given is a UID, and the 'ip' or 'realhost' options are True, this will also
+        match against the target's IP address and real host, respectively.
+
+        This function respects IRC casemappings (rfc1459 and ascii). If the given target is a UID,
+        and the 'ip' option is enabled, the host portion of the glob is also matched as a CIDR
+        range.
         """
         # Get the corresponding casemapping value used by ircmatch.
         if self.proto.casemapping == 'rfc1459':
