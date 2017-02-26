@@ -1509,9 +1509,11 @@ def handle_disconnect(irc, numeric, command, args):
 
     # Announce the disconnects to every leaf channel where the disconnected network is the owner
     announcement = conf.conf.get('relay', {}).get('disconnect_announcement')
+    log.debug('(%s) relay: last connection successful: %s', irc.name, args.get('was_successful'))
     if announcement and args.get('was_successful'):
         with db_lock:
             for chanpair, entrydata in db.items():
+                log.debug('(%s) relay: Looking up %s', irc.name, chanpair)
                 if chanpair[0] == irc.name:
                     for leaf in entrydata['links']:
                         log.debug('(%s) relay: Announcing disconnect to %s%s', irc.name,

@@ -105,7 +105,6 @@ class Irc():
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 3
 
-        self.connected.clear()
         self.pseudoclient = None
         self.lastping = time.time()
 
@@ -319,11 +318,7 @@ class Irc():
                 log.error('(%s) Disconnected from IRC: %s: %s',
                           self.name, type(e).__name__, str(e))
 
-            was_successful = self.connected.is_set()
             self.disconnect()
-
-            # Internal hook signifying that a network has disconnected.
-            self.callHooks([None, 'PYLINK_DISCONNECT', {'was_successful': checks_ok and was_successful}])
 
             # If autoconnect is enabled, loop back to the start. Otherwise,
             # return and stop.
@@ -343,6 +338,8 @@ class Irc():
 
     def disconnect(self):
         """Handle disconnects from the remote server."""
+        was_successful = self.connected.is_set()
+        log.debug('(%s) disconnect: got %s for was_successful state', self.name, was_successful)
 
         log.debug('(%s) disconnect: Clearing self.connected state.', self.name)
         self.connected.clear()
@@ -365,6 +362,9 @@ class Irc():
 
         log.debug('(%s) disconnect: Setting self.aborted to True.', self.name)
         self.aborted.set()
+
+        # Internal hook signifying that a network has disconnected.
+        self.callHooks([None, 'PYLINK_DISCONNECT', {'was_successful': was_successful}])
 
         log.debug('(%s) disconnect: Clearing state via initVars().', self.name)
         self.initVars()
