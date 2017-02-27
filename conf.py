@@ -105,7 +105,7 @@ def loadConf(filename, errors_fatal=True, logger=None):
         print('       Users upgrading from users < 0.9-alpha1 should note that the default configuration has been renamed to *pylink.yml*, not *config.yml*', file=sys.stderr)
 
         if errors_fatal:
-            sys.exit(4)
+            sys.exit(1)
         raise
     else:
         return conf
