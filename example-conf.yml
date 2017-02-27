@@ -123,9 +123,13 @@ servers:
         # There must be at least one # in this entry.
         sidrange: "8##"
 
-        # Autojoin channels. Comment this line out if you don't want service bots
-        # to join any channels by default.
+        # Autojoin channels. The "channels" option affects all service bots, but you can also
+        # configure channels per service using keys in the name of "<servicename>_channels"
+        # Comment out or remove these keys if you don't want service bots# to join any channels by
+        # default.
         channels: ["#pylink"]
+        pylink_channels: ["#services"]
+        automode_channels: ["#chat"]
 
         # Sets the protocol module to use for this network - see the README for a
         # list of supported IRCds.
