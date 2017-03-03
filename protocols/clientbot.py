@@ -73,6 +73,8 @@ class ClientbotWrapperProtocol(Protocol):
         if sendpass:
             f('PASS %s' % sendpass)
 
+        f('CAP LS 302')
+
         # This is a really gross hack to get the defined NICK/IDENT/HOST/GECOS.
         # But this connection stuff is done before any of the spawnClient stuff in
         # services_support fires.
@@ -81,8 +83,6 @@ class ClientbotWrapperProtocol(Protocol):
         ident = self.irc.serverdata.get('pylink_ident') or conf.conf["bot"].get("ident", "pylink")
         f('USER %s 8 * :%s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
-
-        f('CAP LS 302')
 
     # Note: clientbot clients are initialized with umode +i by default
     def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
