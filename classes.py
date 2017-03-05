@@ -42,7 +42,10 @@ class Irc(utils.DeprecatedAttributesObject):
         (a string), the name of the protocol module to use for this connection,
         and a configuration object.
         """
-        self.deprecated_attributes = {'conf': 'Deprecated since 1.2; consider switching to conf.conf'}
+        self.deprecated_attributes = {
+            'conf': 'Deprecated since 1.2; consider switching to conf.conf',
+            'botdata': "Deprecated since 1.2; consider switching to conf.conf['bot']",
+        }
 
         self.loghandlers = []
         self.name = netname
