@@ -60,7 +60,7 @@ def iexec(irc, source, args):
     """
     _exec(irc, source, args, locals_dict=exec_locals_dict)
 
-def _eval(irc, source, args):
+def _eval(irc, source, args, locals_dict=None):
     """<Python expression>
 
     Admin-only. Evaluates the given Python expression and returns the result.
@@ -73,10 +73,33 @@ def _eval(irc, source, args):
         irc.reply('No code entered!')
         return
 
+    if locals_dict is None:
+        locals_dict = locals()
+    else:
+        # Add irc, source, and args to the given locals_dict, to allow basic things like irc.reply()
+        # to still work.
+        locals_dict['irc'] = irc
+        locals_dict['source'] = source
+        locals_dict['args'] = args
+
     log.info('(%s) Evaluating %r for %s', irc.name, args,
              irc.getHostmask(source))
-    irc.reply(repr(eval(args)))
+    irc.reply(repr(eval(args, globals(), locals_dict)))
 utils.add_cmd(_eval, 'eval')
+
+@utils.add_cmd
+def ieval(irc, source, args):
+    """<Python expression>
+
+    Admin-only. Evaluates the given Python expression using a persistent, isolated
+    locals scope (world.plugins['exec'].exec_local_dict).
+
+    Note: irc, source, and args are added into this locals dict to allow things like irc.reply()
+    to still work.
+
+    \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02
+    """
+    _eval(irc, source, args, locals_dict=exec_locals_dict)
 
 @utils.add_cmd
 def raw(irc, source, args):
