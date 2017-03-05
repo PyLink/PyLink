@@ -103,7 +103,6 @@ class Irc(utils.DeprecatedAttributesObject):
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
-        self.botdata = conf.conf['bot']
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 3
 
