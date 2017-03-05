@@ -23,7 +23,7 @@ try:
 except ImportError:
     raise ImportError("PyLink requires ircmatch to function; please install it and try again.")
 
-from . import world, utils, structures, __version__
+from . import world, utils, structures, conf, __version__
 from .log import *
 
 ### Exceptions
@@ -78,7 +78,7 @@ class Irc(utils.DeprecatedAttributesObject):
         Initializes any channel loggers defined for the current network.
         """
         try:
-            channels = self.conf['logging']['channels'][self.name]
+            channels = conf.conf['logging']['channels'][self.name]
         except KeyError:  # Not set up; just ignore.
             return
 
@@ -103,7 +103,7 @@ class Irc(utils.DeprecatedAttributesObject):
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
-        self.botdata = self.conf['bot']
+        self.botdata = conf.conf['bot']
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 3
 
@@ -303,7 +303,7 @@ class Irc(utils.DeprecatedAttributesObject):
 
                     self.servers[self.sid] = IrcServer(None, host, internal=True,
                             desc=self.serverdata.get('serverdesc')
-                            or self.botdata['serverdesc'])
+                            or conf.conf['bot']['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self.schedulePing()
