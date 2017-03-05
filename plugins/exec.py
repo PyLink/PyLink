@@ -34,6 +34,12 @@ def _exec(irc, source, args, locals_dict=None):
              irc.getHostmask(source))
     if locals_dict is None:
         locals_dict = locals()
+    else:
+        # Add irc, source, and args to the given locals_dict, to allow basic things like irc.reply()
+        # to still work.
+        locals_dict['irc'] = irc
+        locals_dict['source'] = source
+        locals_dict['args'] = args
 
     exec(args, globals(), locals_dict)
 
@@ -44,8 +50,11 @@ utils.add_cmd(_exec, 'exec')
 def iexec(irc, source, args):
     """<code>
 
-    Admin-only. Executes <code> in the current PyLink instance, using a persistent, isolated
+    Admin-only. Executes <code> in the current PyLink instance with a persistent, isolated
     locals scope (world.plugins['exec'].exec_local_dict).
+
+    Note: irc, source, and args are added into this locals dict to allow things like irc.reply()
+    to still work.
 
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02
     """
