@@ -560,3 +560,17 @@ class IRCParser(argparse.ArgumentParser):
 
     def error(self, message):
         raise InvalidArgumentsError(message)
+
+class DeprecatedAttributesObject():
+    """
+    Object implementing deprecated attributes and warnings on access.
+    """
+
+    def __getattribute__(self, attr):
+        # Note: "self.deprecated_attributes" calls this too, so the != check is
+        # needed to prevent a recursive loop!
+        if attr != 'deprecated_attributes' and attr in self.deprecated_attributes:
+            log.warning('Attribute %s.%s is deprecated: %s' % (self.__class__.__name__, attr,
+                        self.deprecated_attributes.get(attr)))
+
+        return object.__getattribute__(self, attr)

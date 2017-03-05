@@ -23,7 +23,7 @@ try:
 except ImportError:
     raise ImportError("PyLink requires ircmatch to function; please install it and try again.")
 
-from . import world, utils, structures, __version__
+from . import world, utils, structures, conf, __version__
 from .log import *
 
 ### Exceptions
@@ -33,7 +33,7 @@ class ProtocolError(Exception):
 
 ### Internal classes (users, servers, channels)
 
-class Irc():
+class Irc(utils.DeprecatedAttributesObject):
     """Base IRC object for PyLink."""
 
     def __init__(self, netname, proto, conf):
@@ -42,6 +42,11 @@ class Irc():
         (a string), the name of the protocol module to use for this connection,
         and a configuration object.
         """
+        self.deprecated_attributes = {
+            'conf': 'Deprecated since 1.2; consider switching to conf.conf',
+            'botdata': "Deprecated since 1.2; consider switching to conf.conf['bot']",
+        }
+
         self.loghandlers = []
         self.name = netname
         self.conf = conf
@@ -76,7 +81,7 @@ class Irc():
         Initializes any channel loggers defined for the current network.
         """
         try:
-            channels = self.conf['logging']['channels'][self.name]
+            channels = conf.conf['logging']['channels'][self.name]
         except KeyError:  # Not set up; just ignore.
             return
 
@@ -101,7 +106,6 @@ class Irc():
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
-        self.botdata = self.conf['bot']
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 3
 
@@ -301,7 +305,7 @@ class Irc():
 
                     self.servers[self.sid] = IrcServer(None, host, internal=True,
                             desc=self.serverdata.get('serverdesc')
-                            or self.botdata['serverdesc'])
+                            or conf.conf['bot']['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self.schedulePing()

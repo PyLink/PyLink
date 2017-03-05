@@ -5,7 +5,7 @@ inspircd.py: InspIRCd 2.x protocol module for PyLink.
 import time
 import threading
 
-from pylinkirc import utils
+from pylinkirc import utils, conf
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
@@ -47,7 +47,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or self.irc.botdata['realname']
+        realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.irc.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
@@ -351,7 +351,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         uplink = uplink or self.irc.sid
         name = name.lower()
         # "desc" defaults to the configured server description.
-        desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
+        desc = desc or self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
@@ -398,7 +398,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         host = self.irc.serverdata["hostname"]
         f('SERVER {host} {Pass} 0 {sid} :{sdesc}'.format(host=host,
           Pass=self.irc.serverdata["sendpass"], sid=self.irc.sid,
-          sdesc=self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
+          sdesc=self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
 
         self._send(self.irc.sid, 'BURST %s' % ts)
         # InspIRCd sends VERSION data on link, instead of whenever requested by a client.

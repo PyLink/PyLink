@@ -1,5 +1,5 @@
 # fantasy.py: Adds FANTASY command support, to allow calling commands in channels
-from pylinkirc import utils, world
+from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
 def handle_fantasy(irc, source, command, args):
@@ -9,7 +9,7 @@ def handle_fantasy(irc, source, command, args):
         # Break if the IRC network isn't ready.
         return
 
-    respondtonick = irc.botdata.get("respondtonick")
+    respondtonick = conf.conf['bot'].get("respondtonick")
 
     channel = args['target']
     orig_text = args['text']
@@ -32,8 +32,8 @@ def handle_fantasy(irc, source, command, args):
                 # Try to look up a prefix specific for this bot in
                 # bot: prefixes: <botname>, falling back to the default prefix if not
                 # specified.
-                prefixes = [irc.botdata.get('prefixes', {}).get(botname) or
-                            irc.botdata.get('prefix')]
+                prefixes = [conf.conf['bot'].get('prefixes', {}).get(botname) or
+                            conf.conf['bot'].get('prefix')]
 
                 # If responding to nick is enabled, add variations of the current nick
                 # to the prefix list: "<nick>," and "<nick>:"

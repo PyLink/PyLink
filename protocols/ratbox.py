@@ -1,6 +1,6 @@
 import time
 
-from pylinkirc import utils
+from pylinkirc import utils, conf
 from pylinkirc.log import log
 from pylinkirc.classes import *
 from pylinkirc.protocols.ts6 import *
@@ -58,7 +58,7 @@ class RatboxProtocol(TS6Protocol):
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or self.irc.botdata['realname']
+        realname = realname or conf.conf['bot']['realname']
         raw_modes = self.irc.joinModes(modes)
 
         orig_realhost = realhost
