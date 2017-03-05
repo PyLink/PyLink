@@ -7,7 +7,7 @@ import struct
 from ipaddress import ip_address
 import time
 
-from pylinkirc import utils, structures
+from pylinkirc import utils, structures, conf
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
@@ -274,7 +274,7 @@ class P10Protocol(IRCS2SProtocol):
 
         # Fill in all the values we need
         ts = ts or int(time.time())
-        realname = realname or self.irc.botdata['realname']
+        realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.irc.joinModes(modes)
 
@@ -642,7 +642,7 @@ class P10Protocol(IRCS2SProtocol):
         # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
         uplink = uplink or self.irc.sid
         name = name.lower()
-        desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
+        desc = desc or self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
@@ -764,7 +764,7 @@ class P10Protocol(IRCS2SProtocol):
         # Encode our SID using P10 Base64.
         self.irc.sid = sid = p10b64encode(self.irc.serverdata["sid"])
 
-        desc = self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
+        desc = self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
         # Enumerate modes, from https://github.com/evilnet/nefarious2/blob/master/doc/modes.txt
         cmodes = {'op': 'o', 'voice': 'v', 'private': 'p', 'secret': 's', 'moderated': 'm',

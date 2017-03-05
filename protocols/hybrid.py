@@ -1,6 +1,6 @@
 import time
 
-from pylinkirc import utils
+from pylinkirc import utils, conf
 from pylinkirc.log import log
 from pylinkirc.classes import *
 from pylinkirc.protocols.ts6 import *
@@ -79,7 +79,7 @@ class HybridProtocol(TS6Protocol):
         f('CAPAB :TBURST DLN KNOCK UNDLN UNKLN KLN ENCAP IE EX HOPS CHW SVS CLUSTER EOB QS')
 
         f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
-                               self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']))
+                               self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
 
         # send endburst now
         self.irc.send(':%s EOB' % (self.irc.sid,))
@@ -101,7 +101,7 @@ class HybridProtocol(TS6Protocol):
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or self.irc.botdata['realname']
+        realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.irc.joinModes(modes)
         u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,

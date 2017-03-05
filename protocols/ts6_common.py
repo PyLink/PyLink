@@ -5,7 +5,7 @@ ts6_common.py: Common base protocol class with functions shared by the UnrealIRC
 import string
 import time
 
-from pylinkirc import utils, structures
+from pylinkirc import utils, structures, conf
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
@@ -260,7 +260,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # -> :0AL SID test.server 1 0XY :some silly pseudoserver
         uplink = uplink or self.irc.sid
         name = name.lower()
-        desc = desc or self.irc.serverdata.get('serverdesc') or self.irc.botdata['serverdesc']
+        desc = desc or self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
