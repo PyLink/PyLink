@@ -558,8 +558,13 @@ class IRCParser(argparse.ArgumentParser):
     Wrapper around argparse.ArgumentParser, without quitting on usage errors.
     """
 
-    def error(self, message):
+    def print_help(self, *args, **kwargs):
+        # XXX: find a way to somehow route this through IRC
+        raise InvalidArgumentsError("Use help <commandname> to receive help for PyLink commands.")
+
+    def error(self, message, *args, **kwargs):
         raise InvalidArgumentsError(message)
+    _print_message = error  # XXX: ugly
 
     def exit(self, *args):
         return
