@@ -561,6 +561,9 @@ class IRCParser(argparse.ArgumentParser):
     def error(self, message):
         raise InvalidArgumentsError(message)
 
+    def exit(self, *args):
+        return
+
 class DeprecatedAttributesObject():
     """
     Object implementing deprecated attributes and warnings on access.
