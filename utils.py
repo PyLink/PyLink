@@ -557,6 +557,7 @@ class IRCParser(argparse.ArgumentParser):
     """
     Wrapper around argparse.ArgumentParser, without quitting on usage errors.
     """
+    REMAINDER = argparse.REMAINDER
 
     def print_help(self, *args, **kwargs):
         # XXX: find a way to somehow route this through IRC
