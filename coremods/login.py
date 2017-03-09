@@ -15,7 +15,6 @@ except ImportError:
 pwd_context = None
 if CryptContext:
     pwd_context = CryptContext(["sha512_crypt", "sha256_crypt"],
-                               all__vary_rounds=0.1,
                                sha256_crypt__default_rounds=180000,
                                sha512_crypt__default_rounds=90000)
 
