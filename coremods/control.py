@@ -106,6 +106,8 @@ def _rehash():
 
             # TODO: update file loggers here too.
 
+    utils.resetModuleDirs()
+
     for network, sdata in new_conf['servers'].items():
         # Connect any new networks or disconnected networks if they aren't already.
         if (network not in world.networkobjects) or (not world.networkobjects[network].connection_thread.is_alive()):

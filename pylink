@@ -62,6 +62,7 @@ if __name__ == '__main__':
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
     to_load = conf.conf['plugins']
+    utils.resetModuleDirs()
     # Here, we override the module lookup and import the plugins
     # dynamically depending on which were configured.
     for plugin in to_load:

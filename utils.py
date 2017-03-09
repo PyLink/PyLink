@@ -14,11 +14,12 @@ import argparse
 
 from .log import log
 from . import world, conf
-# This is just so protocols and plugins are importable.
+
+# Load the protocol and plugin packages.
 from pylinkirc import protocols, plugins
 
-PLUGIN_PREFIX = 'pylinkirc.plugins.'
-PROTOCOL_PREFIX = 'pylinkirc.protocols.'
+PLUGIN_PREFIX = plugins.__name__ + '.'
+PROTOCOL_PREFIX = protocols.__name__ + '.'
 NORMALIZEWHITESPACE_RE = re.compile(r'\s+')
 
 class NotAuthorizedError(Exception):
@@ -146,6 +147,21 @@ def applyModes(irc, target, changedmodes):
     """
     log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
     return irc.applyModes(target, changedmodes)
+
+def expandpath(path):
+    """
+    Returns a path expanded with environment variables and home folders (~) expanded, in that order."""
+    return os.path.expanduser(os.path.expandvars(path))
+
+def resetModuleDirs():
+    """
+    (Re)sets custom protocol module and plugin directories to the ones specified in the config.
+    """
+    # Note: This assumes that the first element of the package path is the default one.
+    plugins.__path__ = [plugins.__path__[0]] + [expandpath(path) for path in conf.conf['bot'].get('plugin_dirs', [])]
+    log.debug('resetModuleDirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
+    protocols.__path__ = [protocols.__path__[0]] + [expandpath(path) for path in conf.conf['bot'].get('protocol_dirs', [])]
+    log.debug('resetModuleDirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
 
 def loadPlugin(name):
     """

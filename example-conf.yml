@@ -54,6 +54,11 @@ bot:
     # extra service bots.
     #spawn_services: true
 
+    # Defines extra directories to look up plugins and protocol modules in.
+    # Environment variables (e.g. $HOME) and home folders (~) are expanded here, in that order.
+    #plugin_dirs: ["~/my-plugins", "~/pylink-contrib-modules/plugins"]
+    #protocol_dirs: ["~/pylink-contrib-modules/protocols"]
+
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
     # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
