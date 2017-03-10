@@ -1707,10 +1707,12 @@ def link(irc, source, args):
     network is alive, and link the channel anyways."""
     args = link_parser.parse_args(args)
 
+    # Normalize channel case
+    channel = irc.toLower(args.channel)
     localchan = irc.toLower(args.localchannel or args.channel)
     remotenet = args.remotenet
 
-    for c in (args.channel, localchan):
+    for c in (channel, localchan):
         if not utils.isChannel(c):
             irc.error('Invalid channel %r.' % c)
             return
@@ -1750,7 +1752,7 @@ def link(irc, source, args):
 
     try:
         with db_lock:
-            entry = db[(remotenet, args.channel)]
+            entry = db[(remotenet, channel)]
     except KeyError:
         irc.error('No such relay %r exists.' % args.channel)
         return
