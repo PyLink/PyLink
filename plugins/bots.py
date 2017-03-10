@@ -19,6 +19,7 @@ def spawnclient(irc, source, args):
         irc.error("Not enough arguments. Needs 3: nick, user, host.")
         return
     irc.proto.spawnClient(nick, ident, host, manipulatable=True)
+    irc.reply("Done.")
 
 @utils.add_cmd
 def quit(irc, source, args):
@@ -45,6 +46,7 @@ def quit(irc, source, args):
         return
 
     irc.proto.quit(u, quitmsg)
+    irc.reply("Done.")
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
 def joinclient(irc, source, args):
@@ -105,6 +107,7 @@ def joinclient(irc, source, args):
         irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
                                                      'modes': irc.channels[real_channel].modes,
                                                      'parse_as': 'JOIN'}])
+    irc.reply("Done.")
 utils.add_cmd(joinclient, name='join')
 
 @utils.add_cmd
@@ -139,6 +142,7 @@ def nick(irc, source, args):
         return
 
     irc.proto.nick(u, newnick)
+    irc.reply("Done.")
     # Ditto above: manually send a NICK change hook payload to other plugins.
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
@@ -186,6 +190,7 @@ def part(irc, source, args):
             return
         irc.proto.part(u, channel, reason)
 
+    irc.reply("Done.")
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
 @utils.add_cmd
@@ -232,5 +237,6 @@ def msg(irc, source, args):
         real_target = target
 
     irc.proto.message(sourceuid, real_target, text)
+    irc.reply("Done.")
     irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
 utils.add_cmd(msg, 'say')

@@ -105,6 +105,7 @@ def kick(irc, source, args):
 
     sender = irc.pseudoclient.uid
     irc.proto.kick(sender, channel, targetu, reason)
+    irc.reply("Done.")
     irc.callHooks([sender, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
                                         'text': reason, 'parse_as': 'KICK'}])
 
@@ -136,6 +137,7 @@ def kill(irc, source, args):
     # Format the kill reason properly in hooks.
     reason = "Killed (%s (%s))" % (irc.getFriendlyName(sender), reason)
 
+    irc.reply("Done.")
     irc.callHooks([sender, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
                                         'userdata': userdata, 'parse_as': 'KILL'}])
 
@@ -198,6 +200,7 @@ def topic(irc, source, args):
 
     irc.proto.topic(irc.pseudoclient.uid, channel, topic)
 
+    irc.reply("Done.")
     irc.callHooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
                    {'channel': channel, 'text': topic, 'setter': source,
                     'parse_as': 'TOPIC'}])
