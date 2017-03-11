@@ -93,9 +93,11 @@ def _rehash():
             log.debug('rehash: removing connection to %r (removed from config).', network)
             remove_network(ircobj)
         else:
+            # XXX: we should really just add abstraction to Irc to update config settings...
             ircobj.conf = new_conf
             ircobj.serverdata = new_conf['servers'][network]
             ircobj.botdata = new_conf['bot']
+            ircobj.autoconnect_cache = 1
 
             # Clear the IRC object's channel loggers and replace them with
             # new ones by re-running logSetup().

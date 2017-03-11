@@ -65,6 +65,9 @@ class Irc(utils.DeprecatedAttributesObject):
 
         self.pingTimer = None
 
+        # Sets the multiplier for autoconnect delay (grows with time).
+        self.autoconnect_active_multiplier = 1
+
         self.initVars()
 
         if world.testing:
@@ -310,6 +313,7 @@ class Irc(utils.DeprecatedAttributesObject):
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self.schedulePing()
                     log.info('(%s) Server ready; listening for data.', self.name)
+                    self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
                     self.run()
                 else:  # Configuration error :(
                     log.error('(%s) A configuration error was encountered '
@@ -327,14 +331,31 @@ class Irc(utils.DeprecatedAttributesObject):
             # If autoconnect is enabled, loop back to the start. Otherwise,
             # return and stop.
             autoconnect = self.serverdata.get('autoconnect')
+
+            # Sets the autoconnect growth multiplier (e.g. a value of 2 multiplies the autoconnect
+            # time by 2 on every failure, etc.)
+            autoconnect_multiplier = self.serverdata.get('autoconnect_multiplier', 2)
+            autoconnect_max = self.serverdata.get('autoconnect_max', 1800)
+            # These values must at least be 1.
+            autoconnect_multiplier = max(autoconnect_multiplier, 1)
+            autoconnect_max = max(autoconnect_max, 1)
+
             log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
             if autoconnect is not None and autoconnect >= 1:
+                log.debug('(%s) Multiplying autoconnect delay %s by %s.', self.name, autoconnect, self.autoconnect_active_multiplier)
+                autoconnect *= self.autoconnect_active_multiplier
+                # Add a cap on the max. autoconnect delay, so that we don't go on forever...
+                autoconnect = min(autoconnect, autoconnect_max)
+
                 log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
                 # Continue when either self.aborted is set or the autoconnect time passes.
                 # Compared to time.sleep(), this allows us to stop connections quicker if we
                 # break while while for autoconnect.
                 self.aborted.clear()
                 self.aborted.wait(autoconnect)
+
+                # Store in the local state what the autoconnect multiplier currently is.
+                self.autoconnect_active_multiplier *= autoconnect_multiplier
 
                 if self not in world.networkobjects.values():
                     log.debug('Stopping stale connect loop for old connection %r', self.name)

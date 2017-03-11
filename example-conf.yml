@@ -151,6 +151,13 @@ servers:
         # disable autoconnect entirely.
         autoconnect: 5
 
+        # Optional autoconnect settings:
+        # Defines whether we should multiply the autoconnect delay by a certain value every time
+        # a connection fails. This defaults to 2 if not set (30 secs becomes 60 secs, 120 secs, etc.)
+        #autoconnect_multiplier: 2
+        # Defines what the maximum autoconnect time will be (defaults to 1800 secs).
+        #autoconnect_max: 1800
+
         # Sets the ping frequency in seconds (i.e. how long we should wait between
         # sending pings to our uplink). When more than two consecutive pings are missed,
         # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
