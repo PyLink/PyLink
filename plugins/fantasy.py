@@ -29,11 +29,10 @@ def handle_fantasy(irc, source, command, args):
             servuid = sbot.uids.get(irc.name)
             if servuid in irc.channels[channel].users:
 
-                # Try to look up a prefix specific for this bot in
-                # bot: prefixes: <botname>, falling back to the default prefix if not
-                # specified.
-                prefixes = [conf.conf['bot'].get('prefixes', {}).get(botname) or
-                            conf.conf['bot'].get('prefix')]
+                # Look up a string prefix for this bot in either its own configuration block, or
+                # in bot::prefixes::<botname>.
+                prefixes = [conf.conf.get(botname, {}).get('prefix',
+                            conf.conf['bot'].get('prefixes', {}).get(botname))]
 
                 # If responding to nick is enabled, add variations of the current nick
                 # to the prefix list: "<nick>," and "<nick>:"
@@ -43,14 +42,12 @@ def handle_fantasy(irc, source, command, args):
                     prefixes += [nick+',', nick+':']
 
                 if not any(prefixes):
-                    # We finished with an empty prefixes list, meaning fantasy is misconfigured!
-                    log.warning("(%s) Fantasy prefix for bot %s was not set in configuration - "
-                                "fantasy commands will not work!", irc.name, botname)
+                    # No prefixes were set, so skip.
                     continue
 
                 lowered_text = irc.toLower(orig_text)
-                for prefix in prefixes:  # Cycle through the prefixes list we finished with.
-                     if prefix and lowered_text.startswith(prefix):
+                for prefix in filter(None, prefixes):  # Cycle through the prefixes list we finished with.
+                     if lowered_text.startswith(prefix):
 
                         # Cut off the length of the prefix from the text.
                         text = orig_text[len(prefix):]

@@ -15,18 +15,23 @@ pylink:
     # Server description (shown in /links, /whois, etc.)
     serverdesc: PyLink Server
 
-    # Sets the default fantasy command prefix for calling commands inside channels
-    # (requires fantasy plugin).
+    # Sets the fantasy command prefix for the main PyLink bot. To configure fantasy prefixes for
+    # other service bots, add or modify the "prefix:" option in the configuration section of each
+    # plugin.
+    # Note: prior to PyLink 1.2, defining a prefix here made it global for all service bots. This
+    # was removed because it called all bots in a channel at once (even if they have conflicting
+    # commands), which usually led to one successful reply and a string of "Command not found"
+    # errors.
     prefix: "&"
 
-    # Determines whether the bot will reply to commands prefixed with its nick
-    # (case sensitive and requires the fantasy plugin).
+    # Whether service bots will respond to commands prefixes with their nick.
     respondtonick: true
 
-    # Custom fantasy command prefixes for other service bots if they are loaded
-    # (requires fantasy plugin).
-    prefixes:
-        games: "@"
+    # Custom prefixes for other service bots if they are loaded. Note: this is deprecated
+    # since PyLink 1.2 in favour of adding prefixes into each plugin's configuration block
+    # itself (see the "prefix:" option in the "games:" block in this case).
+    #prefixes:
+    #    games: "@"
 
     # Determines whether hideoper modes should be respected in WHOIS replies.
     # Defaults to true if not specified.
@@ -638,9 +643,16 @@ automode:
     # This option overrides the global "spawn_services" option defined in "pylink:".
     #spawn_service: true
 
+    # Defines a fantasy prefix for the Automode bot (requires spawn_services to be set and the
+    # fantasy plugin to be loaded).
+    prefix: "@"
+
 games:
     # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.
     nick: Games
+
+    # Defines a fantasy prefix for the Games bot.
+    prefix: "./"
 
 stats:
     # Determines the time format that the Stats plugin should use for showing dates + times.
