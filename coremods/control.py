@@ -104,8 +104,6 @@ def _rehash():
 
             ircobj.logSetup()
 
-            # TODO: update file loggers here too.
-
     utils.resetModuleDirs()
 
     for network, sdata in new_conf['servers'].items():
