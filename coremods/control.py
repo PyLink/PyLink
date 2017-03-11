@@ -97,7 +97,7 @@ def _rehash():
             ircobj.conf = new_conf
             ircobj.serverdata = new_conf['servers'][network]
             ircobj.botdata = new_conf['bot']
-            ircobj.autoconnect_cache = 1
+            ircobj.autoconnect_active_multiplier = 1
 
             # Clear the IRC object's channel loggers and replace them with
             # new ones by re-running logSetup().
