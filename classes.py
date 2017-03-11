@@ -512,6 +512,9 @@ class Irc(utils.DeprecatedAttributesObject):
         if not text:
             return
 
+        if not (source or self.pseudoclient):
+            # No explicit source set and our main client wasn't available; abort.
+            return
         source = source or self.pseudoclient.uid
 
         if notice:
