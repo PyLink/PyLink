@@ -4,7 +4,9 @@
 # Note: lines starting with a "#" are comments and will be ignored.
 # Note 2: Use SPACES, NOT tabs to indent, or you will get parser errors on start!
 
-bot:
+# Defines general settings for the PyLink server. Prior to PyLink 1.2, this configuration block
+# was named "bot:".
+pylink:
     # Sets nick, user/ident, and real name.
     nick: PyLink
     ident: pylink
@@ -633,7 +635,7 @@ automode:
 
     # Determines whether a separate service bot should be spawned for this plugin. This defaults to
     # True, unless a network's protocol module doesn't support spawning extra service bots.
-    # This option overrides the global "spawn_services" option defined in "bot:".
+    # This option overrides the global "spawn_services" option defined in "pylink:".
     #spawn_service: true
 
 games:

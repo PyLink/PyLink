@@ -45,6 +45,7 @@ conf = {'bot':
                                      'sidrange': '0##'
                                     })
         }
+conf['pylink'] = conf['bot']
 confname = 'unconfigured'
 
 def validate(condition, errmsg):
@@ -58,8 +59,27 @@ def validateConf(conf, logger=None):
             "Invalid configuration given: should be type dict, not %s."
             % type(conf).__name__)
 
-    for section in ('bot', 'servers', 'login', 'logging'):
-        validate(conf.get(section),"Missing %r section in config." % section)
+    if 'pylink' in conf and 'bot' in conf:
+        e = ("Since PyLink 1.2, the 'pylink:' and 'bot:' configuration sections have been condensed "
+             "into one. You should merge any options under these sections into one 'pylink:' block.")
+        if logger:
+            logger.warning(e)
+        else:
+            # FIXME: we need a better fallback when log isn't available on first
+            # start.
+            print('WARNING: %s' % e)
+
+        new_block = conf['bot'].copy()
+        new_block.update(conf['pylink'])
+        conf['bot'] = conf['pylink'] = new_block
+    elif 'pylink' in conf:
+        conf['bot'] = conf['pylink']
+    elif 'bot' in conf:
+        conf['pylink'] = conf['bot']
+        # TODO: add a migration warning in the next release.
+
+    for section in ('pylink', 'servers', 'login', 'logging'):
+        validate(conf.get(section), "Missing %r section in config." % section)
 
     # Make sure at least one form of authentication is valid.
     # Also we'll warn them that login:user/login:password is deprecated
