@@ -330,7 +330,11 @@ class Irc(utils.DeprecatedAttributesObject):
             log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
             if autoconnect is not None and autoconnect >= 1:
                 log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
-                time.sleep(autoconnect)
+                # Continue when either self.aborted is set or the autoconnect time passes.
+                # Compared to time.sleep(), this allows us to stop connections quicker if we
+                # break while while for autoconnect.
+                self.aborted.clear()
+                self.aborted.wait(autoconnect)
 
                 if self not in world.networkobjects.values():
                     log.debug('Stopping stale connect loop for old connection %r', self.name)
