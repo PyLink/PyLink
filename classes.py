@@ -1240,7 +1240,7 @@ class IrcUser():
         self.manipulatable = manipulatable
 
     def __repr__(self):
-        return 'IrcUser(%s)' % self.__dict__
+        return 'IrcUser(%s/%s)' % (self.uid, self.nick)
 
 class IrcServer():
     """PyLink IRC server class.
@@ -1259,7 +1259,7 @@ class IrcServer():
         self.desc = desc
 
     def __repr__(self):
-        return 'IrcServer(%s)' % self.__dict__
+        return 'IrcServer(%s)' % self.name
 
 class IrcChannel():
     """PyLink IRC channel class."""
@@ -1280,7 +1280,7 @@ class IrcChannel():
         self.name = name
 
     def __repr__(self):
-        return 'IrcChannel(%s)' % self.__dict__
+        return 'IrcChannel(%s)' % self.name
 
     def removeuser(self, target):
         """Removes a user from a channel."""
