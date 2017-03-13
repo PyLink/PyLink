@@ -6,7 +6,7 @@ from pylinkirc.coremods import permissions
 
 def g(irc, source, args):
     """<message text>
-    
+
     Sends out a Instance-wide notice.
     """
     permissions.checkPermissions(irc, source, ["global.global"])
@@ -15,7 +15,8 @@ def g(irc, source, args):
     for name, ircd in world.networkobjects.items():
         if ircd.connected.is_set():  # Only attempt to send to connected networks
             for channel in ircd.pseudoclient.channels:
-                ircd.msg(channel, message)
-        
+                # Disable relaying or other plugins handling the global message.
+                ircd.msg(channel, message, loopback=False)
+
 
 utils.add_cmd(g, "global", featured=True)
