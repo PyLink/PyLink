@@ -60,6 +60,9 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `exec.raw` - Allows access to the `raw` command.
 - `exec.inject` - Allows access to the `inject` command.
 
+## Global
+- `global.global` - Allows access to the `global` command.
+
 ## Networks
 - `networks.disconnect` - Allows access to the `disconnect` command.
 - `networks.autoconnect` - Allows access to the `autoconnect` command.
