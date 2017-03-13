@@ -418,6 +418,10 @@ plugins:
     # of kills/saves per X seconds is met.
     #- servprotect
 
+    # Global plugin: Janus-style global plugin; announces messages to all channels the PyLink
+    # client is in.
+    #- global
+
 logging:
     # This configuration block defines targets that PyLink should log commands,
     # errors, etc., to.
@@ -665,3 +669,16 @@ stats:
     # Determines the time format that the Stats plugin should use for showing dates + times.
     # Defaults to "%a, %d %b %Y %H:%M:%S +0000" (the RFC 2812 standard) if not specified.
     time_format: "%c"
+
+global:
+    # Sets the text format for the global plugin, if it is loaded. This uses a template string as
+    # documented at https://docs.python.org/3/library/string.html#template-strings, with the
+    # following substitutions:
+    #     $sender: the nick of the sender
+    #     $network: the short network name of the origin network
+    #     $fullnetwork: the full network name of the origin network
+    #     $current_channel: the channel we're broadcasting on
+    #     $current_network: the network we're currently broadcasting on
+    #     $current_fullnetwork: the full name of the network we're currently broadcasting on
+    #     $text: the global text
+    #format: "[$sender@$fullnetwork] $text"
