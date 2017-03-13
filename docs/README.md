@@ -11,6 +11,7 @@ This folder contains general documentation for PyLink IRC services.
 
 - [Automode & Exttargets Guide](automode.md)
 - [Advanced Relay Configuration](advanced-relay-config.md)
+- [Advanced Services Configuration](advanced-services-config.md)
 - [PyLink Permissions Reference](permissions-reference.md)
 
 ----

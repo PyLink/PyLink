@@ -2,7 +2,7 @@
 
 Starting with PyLink 0.9.x, a services bot API was introduced to make writing custom services slightly easier. PyLink's Services API automatically connects service bots, and handles rejoin on kick/kill all by itself, meaning less code is needed per plugin to have functional service bots.
 
-## Creating new services
+## Creating new service bots
 
 Services can be created (registered) using code similar to the following in a plugin:
 
@@ -27,6 +27,8 @@ myservice = utils.registerService("myservice", desc=desc)
 - `nick`, `ident` - Sets the default nick and ident for the service bot. If not given, these simply default to the service name.
 - `manipulatable` - Determines whether the bot is marked manipulatable. Only manipulatable clients can be force joined, etc. using PyLink commands. Defaults to False.
 - `desc` - Sets the command description of the service. This is shown in the default HELP command if enabled.
+
+**NOTE**: It is a good practice for the SERVICE name in `utils.registerService("SERVICE")` to match your plugin name, as the service bot API implicitly loads [configuration options](../advanced-services-config.md) from config blocks named `SERVICE:`.
 
 ### Getting the UID of a bot
 

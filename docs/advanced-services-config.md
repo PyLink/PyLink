@@ -1,15 +1,10 @@
-# Advanced Service Config
+# Advanced Services Configuration
 
 There are some service configuration options that you may want to be aware of.
 
-**NOTE**: Your SERVICE name in the `utils.registerService("SERVICE", desc=desc)`
-call and the service configuration in 'SERVICE::' **MUST** match for these
-directives to apply.
-
-
 #### Nick / Ident
 
-In addition to setting a per-server 'nick' or 'ident' using,
+You can override the `nick` or `ident` of a service bot using a directive liek this:
 
 ```yaml
 servers:
@@ -17,9 +12,9 @@ servers:
         # ...
         SERVICE_nick: OTHERNICK
         SERVICE_ident: OTHERIDENT
-``` 
+```
 
-You can also just set an arbitrary nick/ident using a per-**service** directive.
+You can also set an arbitrary nick/ident using a per-**service** directive.
 
 ```yaml
 SERVICE:
@@ -27,20 +22,19 @@ SERVICE:
     ident: OTHERIDENT
 ```
 
-#### JoinModes
+#### joinmodes
 
-When joining a channel, ServiceBot Instances will just join and sit there.
-However, you can set a mode that the bot will ask for when it joins any channel.
+By default, service bots join channels without giving themselves any modes. You can configure what modes a service bot joins channels with using this directive:
 
 ```yaml
 SERVICE:
     joinmodes: 'o'
 ```
 
-This would request the mode 'o' (usually op on most IRCds) when joining the channel.
+This would request the mode 'o' (op on most IRCds) when joining the channel.
 
 Technically any mode can be put here, but if an IRCd in question doesn't support
-the mode then it just ignores it.
+the mode then it will be ignored.
 
 You can also use combinations of modes, such as 'ao' (usually admin/protect + op)
 
@@ -51,17 +45,17 @@ SERVICE:
 
 Combinations should work provided an IRCd in question supports it.
 
-#### Prefix
+#### Fantasy prefix
 
-You can also set the Service Bots fantasy prefix, of course this is only
-applicable if the 'fantasy' plugin is loaded.
+You can also set the service bot's fantasy prefix; of course this is only
+applicable if the `fantasy` plugin is loaded.
 
 The setting allows for one or more characters to be set as the prefix.
 
 ```yaml
 SERVICE:
-    prefix: './' 
+    prefix: './'
 ```
 
-This is perfectly valid, as is any other string.
+The above is perfectly valid, as is any other string.
 
