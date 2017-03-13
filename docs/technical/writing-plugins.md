@@ -38,9 +38,12 @@ Each command function takes 3 arguments: `irc, source, args`.
 - **source**: The numeric of the sender. This will usually be a UID (for users) or a SID (for server).
 - **args**: A `list` of space-separated command arguments (excluding the command name) that the command was called with. For example, `/msg PyLink hello world 1234` would give an `args` list of `['world', '1234']`
 
-(Unfortunately, this means that for now, any fancy argument parsing has to be done manually.)
+With the inclusion of argparse. PyLink is able to parse arguments two ways. You can either use argparse and be really fancy with your argument parsing, or you can do your own parsing just by using the regular `args` list.
+More information on using `utils.IRCParser()` can be found in 
+[using IRCParser](using-ircparser.md)
 
 Command handlers do not return anything and can raise exceptions, which are caught by the core and automatically return an error message.
+
 
 ## Sending data to IRC
 
