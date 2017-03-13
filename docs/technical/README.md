@@ -17,6 +17,7 @@ PyLink is an a modular, plugin-based IRC services framework. It uses swappable p
 - [PyLink hooks reference](hooks-reference.md)
 - [Services bot API/Creating your own service bots](services-api.md)
 - [Permissions API Introduction](permissions-api.md)
+- [Using `utils.IRCParser()`](using-ircparser.md)
 
 ----
 
