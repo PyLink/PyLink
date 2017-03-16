@@ -12,6 +12,7 @@ except ImportError:
 
 import sys
 import os.path
+import logging
 from collections import defaultdict
 
 from . import world
@@ -53,6 +54,12 @@ def validate(condition, errmsg):
     if not condition:
         raise ConfigValidationError(errmsg)
 
+def _log(level, text, *args, logger=None, **kwargs):
+    if logger:
+        logger.log(level, text, *args, **kwargs)
+    else:
+        world.log_queue.append((level, text))
+
 def validateConf(conf, logger=None):
     """Validates a parsed configuration dict."""
     validate(type(conf) == dict,
@@ -60,14 +67,8 @@ def validateConf(conf, logger=None):
             % type(conf).__name__)
 
     if 'pylink' in conf and 'bot' in conf:
-        e = ("Since PyLink 1.2, the 'pylink:' and 'bot:' configuration sections have been condensed "
+        _log(logging.WARNING, "Since PyLink 1.2, the 'pylink:' and 'bot:' configuration sections have been condensed "
              "into one. You should merge any options under these sections into one 'pylink:' block.")
-        if logger:
-            logger.warning(e)
-        else:
-            # FIXME: we need a better fallback when log isn't available on first
-            # start.
-            print('WARNING: %s' % e)
 
         new_block = conf['bot'].copy()
         new_block.update(conf['pylink'])
@@ -84,14 +85,8 @@ def validateConf(conf, logger=None):
     # Make sure at least one form of authentication is valid.
     # Also we'll warn them that login:user/login:password is deprecated
     if conf['login'].get('password') or conf['login'].get('user'):
-        e = "The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. " \
-            "Please switch to the new 'login:accounts' format as outlined in the example config."
-        if logger:
-            logger.warning(e)
-        else:
-            # FIXME: we need a better fallback when log isn't available on first
-            # start.
-            print('WARNING: %s' % e)
+        _log(logging.WARNING, "The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. "
+             "Please switch to the new 'login:accounts' format as outlined in the example config.")
 
     old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
     newlogins = conf['login'].get('accounts', {})

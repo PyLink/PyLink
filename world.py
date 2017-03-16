@@ -2,7 +2,7 @@
 world.py: Stores global variables for PyLink, including lists of active IRC objects and plugins.
 """
 
-from collections import defaultdict
+from collections import defaultdict, deque
 import threading
 import time
 
@@ -29,3 +29,7 @@ source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
 
 # Fallback hostname used in various places internally when hostname isn't configured.
 fallback_hostname = 'pylink.int'
+
+# Defines messages to be logged as soon as the log system is set up, for modules like conf that are
+# initialized before log. This is processed (and then not used again) when the log module loads.
+log_queue = deque()
