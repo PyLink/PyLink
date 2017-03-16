@@ -9,6 +9,11 @@ from pylinkirc.log import log
 
 class IRCS2SProtocol(Protocol):
 
+    def __init__(self, irc):
+        super().__init__(irc)
+        self.protocol_caps = {'can-spawn-clients', 'has-ts', 'can-host-relay',
+                              'can-track-servers'}
+
     def checkCollision(self, nick):
         """
         Nick collision checker.

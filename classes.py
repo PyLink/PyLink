@@ -1377,6 +1377,9 @@ class Protocol():
         self.conf_keys = {'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass',
                           'recvpass'}
 
+        # Defines a set of PyLink protocol capabilities
+        self.protocol_caps = set()
+
     def validateServerConf(self):
         """Validates that the server block given contains the required keys."""
         for k in self.conf_keys:
