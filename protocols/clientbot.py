@@ -14,7 +14,7 @@ class ClientbotWrapperProtocol(Protocol):
     def __init__(self, irc):
         super().__init__(irc)
 
-        self.protocol_caps = {'clear-channels-on-leave'}
+        self.protocol_caps = {'clear-channels-on-leave', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
         self.has_eob = False
 

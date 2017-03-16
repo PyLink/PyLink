@@ -35,6 +35,9 @@ def p10b64encode(num, length=2):
 class P10SIDGenerator():
     def __init__(self, irc):
         self.irc = irc
+
+        self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
+
         try:
             query = irc.serverdata["sidrange"]
         except (KeyError, ValueError):

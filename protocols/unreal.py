@@ -23,6 +23,7 @@ S2S_BUFSIZE = 427
 class UnrealProtocol(TS6BaseProtocol):
     def __init__(self, irc):
         super().__init__(irc)
+        self.protocol_caps |= {'slash-in-nicks', 'underscore-in-hosts'}
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example)
         self.casemapping = 'ascii'
         self.proto_ver = 4000
