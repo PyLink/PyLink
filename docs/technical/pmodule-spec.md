@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 1.2-dev (2017-01-29).***
+***Last updated for 1.2-dev (2017-03-15).***
 
 In PyLink, each protocol module is a file consisting of a protocol class (e.g. `InspIRCdProtocol`), and a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These classes are usually based off boilerplate classes such as `classes.Protocol`, `protocols.ircs2s_common.IRCS2SProtocol`, or other protocol module classes that share functionality with it.
 
@@ -96,10 +96,16 @@ optional, and defaults to the one we've stored in the channel state if not given
 
 A protocol module should also set the following variables in their protocol class:
 
-- `self.casemapping`: set this to `rfc1459` (default) or `ascii` to determine which case mapping the IRCd uses.
+- `self.casemapping`: a string (`'rfc1459'` or `'ascii'`) to determine which case mapping the IRCd uses.
 - `self.hook_map`: this is a `dict`, which maps non-standard command names sent by the IRCd to those used by [PyLink hooks](hooks-reference.md).
     - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/unreal.py#L24-L27) and [InspIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/inspircd.py#L25-L28) modules.
-- `self.cmodes` / `self.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
+- `self.conf_keys`: a set of strings determining which server configuration options a protocol module needs to function; see the [Configuration key validation](#configuration-key-validation) section below.
+
+#### IRC object variables
+
+A protocol module manipulates the following attributes in the IRC object it is attached to:
+
+- `self.irc.cmodes` / `self.irc.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
     - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
         - A = Mode that adds or removes a nick or address to a list. Always has a parameter.
         - B = Mode that changes a setting and always has a parameter.
@@ -108,8 +114,8 @@ A protocol module should also set the following variables in their protocol clas
     - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L127-L152
     - An example of mode mapping hardcoding can be found here: https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/ts6.py#L259-L311
     - You can find a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
-- `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
-    - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
+- `self.irc.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
+    - Example: `self.irc.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 
 ### Topics
 
@@ -160,6 +166,9 @@ Starting with PyLink 0.10.x, protocol modules can specify which config values wi
 As an example, one protocol module that tweaks this is [`Clientbot`](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/clientbot.py#L17-L18), which removes all options except `ip`, `protocol`, and `port`.
 
 ## Changes
+* 2017-03-15 (1.2-dev)
+   - Corrected the location of `self.irc.cmodes/umodes/prefixmodes` attributes
+   - Mention `self.conf_keys` as a special variable for completeness
 * 2017-01-29 (1.2-dev)
    - NOTICE can now be sent from servers.
    - This section was added.
