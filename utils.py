@@ -335,8 +335,8 @@ class ServiceBot():
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         if cmd not in self.commands:
-            if not cmd.startswith('\x01'):
-                # Ignore invalid command errors from CTCPs.
+            if cmd and not cmd.startswith('\x01'):
+                # Ignore empty commands and invalid command errors from CTCPs.
                 self.reply(irc, 'Error: Unknown command %r.' % cmd)
             log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.getHostmask(source))
             return
