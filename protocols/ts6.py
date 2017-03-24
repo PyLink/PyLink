@@ -15,6 +15,7 @@ S2S_BUFSIZE = 510
 class TS6Protocol(TS6BaseProtocol):
     def __init__(self, irc):
         super().__init__(irc)
+        self.protocol_caps |= {'slash-in-hosts'}
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
                          'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC'}

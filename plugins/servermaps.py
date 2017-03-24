@@ -78,7 +78,7 @@ def _map(irc, source, args, show_relay=True):
                 # This is a relay server - display the remote map of the network it represents
                 relay_server = serverlist[leaf].remote
                 remoteirc = world.networkobjects[relay_server]
-                if remoteirc.protoname != 'clientbot':
+                if remoteirc.proto.hasCap('can-track-servers'):
                     # Only ever show relay subservers once - this prevents infinite loops.
                     showall(remoteirc, remoteirc.sid, hops=hops, is_relay_server=True)
 

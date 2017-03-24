@@ -1409,6 +1409,12 @@ class Protocol():
 
         return real_args
 
+    def hasCap(self, capab):
+        """
+        Returns whether this protocol module instance has the requested capability.
+        """
+        return capab.lower() in self.protocol_caps
+
     def removeClient(self, numeric):
         """Internal function to remove a client from our internal state."""
         for c, v in self.irc.channels.copy().items():
