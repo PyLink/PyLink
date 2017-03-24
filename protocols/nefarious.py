@@ -36,8 +36,6 @@ class P10SIDGenerator():
     def __init__(self, irc):
         self.irc = irc
 
-        self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
-
         try:
             query = irc.serverdata["sidrange"]
         except (KeyError, ValueError):
@@ -76,6 +74,8 @@ class P10Protocol(IRCS2SProtocol):
         self.sidgen = P10SIDGenerator(irc)
 
         self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE', 'CLEARMODE': 'MODE', 'BURST': 'JOIN'}
+
+        self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
 
     def _send(self, source, text):
         self.irc.send("%s %s" % (source, text))
