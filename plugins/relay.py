@@ -112,13 +112,12 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
 
     log.debug('(%s) relay.normalize_nick: using %r as separator.', irc.name, separator)
     orig_nick = nick
-    protoname = irc.protoname
     maxnicklen = irc.maxnicklen
 
     # Charybdis, IRCu, etc. don't allow / in nicks, and will SQUIT with a protocol
     # violation if it sees one. Or it might just ignore the client introduction and
     # cause bad desyncs.
-    protocol_allows_slashes = protoname.startswith(('insp', 'unreal', 'clientbot')) or \
+    protocol_allows_slashes = irc.proto.hasCap('slash-in-nicks') or \
         irc.serverdata.get('relay_force_slashes')
 
     if '/' not in separator or not protocol_allows_slashes:
@@ -177,12 +176,12 @@ def normalize_host(irc, host):
     log.debug('(%s) relay.normalize_host: IRCd=%s, host=%s', irc.name, irc.protoname, host)
 
     allowed_chars = string.ascii_letters + string.digits + '-.:'
-    if irc.protoname in ('inspircd', 'ts6', 'clientbot', 'nefarious'):
+    if irc.proto.hasCap('slash-in-hosts'):
         # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
         allowed_chars += '/'
 
-    if irc.protoname in ('inspircd', 'clientbot', 'nefarious', 'unreal'):
-        # The above IRCds allow _ in hostnames, while TS6-like IRCds do not.
+    if irc.proto.hasCap('underscore-in-hosts'):
+        # Most IRCds allow _ in hostnames, but hybrid/charybdis/ratbox IRCds do not.
         allowed_chars += '_'
 
     for char in host:
