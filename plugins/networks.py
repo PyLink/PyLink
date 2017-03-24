@@ -78,7 +78,7 @@ def remote(irc, source, args):
         return
 
     if args.service not in world.services:
-        irc.reply('Unknown service %s' % args.service)
+        irc.error('Unknown service %r.' % args.service)
         return
 
     # Force remoteirc.called_in to something private in order to prevent
