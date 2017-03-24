@@ -1086,8 +1086,9 @@ def handle_messages(irc, numeric, command, args):
                 # No relay clone exists for the sender; route the message through our
                 # main client (or SID for notices).
 
-                # Skip "from:" formatting for servers; it's messy with longer hostnames
-                if numeric not in irc.servers:
+                # Skip "from:" formatting for servers; it's messy with longer hostnames.
+                # Also skip this formatting for servicebot relaying.
+                if numeric not in irc.servers and not irc.getServiceBot(numeric):
                     displayedname = irc.getFriendlyName(numeric)
                     real_text = '<%s/%s> %s' % (displayedname, irc.name, text)
                 else:
