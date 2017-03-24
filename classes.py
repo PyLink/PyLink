@@ -62,6 +62,7 @@ class Irc(utils.DeprecatedAttributesObject):
 
         self.connected = threading.Event()
         self.aborted = threading.Event()
+        self.reply_lock = threading.Lock()
 
         self.pingTimer = None
 
@@ -558,22 +559,23 @@ class Irc(utils.DeprecatedAttributesObject):
             loopback=True):
         """Replies to the last caller in the right context (channel or PM)."""
 
-        if private is None:
-            # Allow using private replies as the default, if no explicit setting was given.
-            private = conf.conf['bot'].get("prefer_private_replies")
+        with self.reply_lock:
+            if private is None:
+                # Allow using private replies as the default, if no explicit setting was given.
+                private = conf.conf['bot'].get("prefer_private_replies")
 
-        # Private reply is enabled, or the caller was originally a PM
-        if private or (self.called_in in self.users):
-            if not force_privmsg_in_private:
-                # For private replies, the default is to override the notice=True/False argument,
-                # and send replies as notices regardless. This is standard behaviour for most
-                # IRC services, but can be disabled if force_privmsg_in_private is given.
-                notice = True
-            target = self.called_by
-        else:
-            target = self.called_in
+            # Private reply is enabled, or the caller was originally a PM
+            if private or (self.called_in in self.users):
+                if not force_privmsg_in_private:
+                    # For private replies, the default is to override the notice=True/False argument,
+                    # and send replies as notices regardless. This is standard behaviour for most
+                    # IRC services, but can be disabled if force_privmsg_in_private is given.
+                    notice = True
+                target = self.called_by
+            else:
+                target = self.called_in
 
-        self.msg(target, text, notice=notice, source=source, loopback=loopback)
+            self.msg(target, text, notice=notice, source=source, loopback=loopback)
 
     def error(self, text, **kwargs):
         """Replies with an error to the last caller in the right context (channel or PM)."""
