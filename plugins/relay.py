@@ -648,7 +648,7 @@ def relay_joins(irc, channel, users, ts, burst=True):
 
                 # Fetch the known channel TS and all the prefix modes for each user. This ensures
                 # the different sides of the relay are merged properly.
-                if irc.protoname == 'clientbot':
+                if not irc.proto.hasCap('has-ts'):
                     # Special hack for clientbot: just use the remote's modes so mode changes
                     # take precendence. protocols/clientbot does not track channel TS.
                     ts = remoteirc.channels[remotechan].ts
@@ -783,7 +783,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
 
-                    if irc.protoname == 'clientbot' and irc.pseudoclient and arg == irc.pseudoclient.uid:
+                    if (not irc.proto.hasCap('can-spawn-clients')) and irc.pseudoclient and arg == irc.pseudoclient.uid:
                         # Skip modesync on the main PyLink client.
                         log.debug("(%s) relay.get_supported_cmodes: filtering prefix change (%r, %r) on Clientbot relayer",
                                   irc.name, name, arg)
@@ -876,7 +876,7 @@ def handle_relay_whois(irc, source, command, args):
             # Send account information if told to and the target is logged in.
             wreply(330, "%s :is logged in (on %s) as" % (realuser.services_account, netname))
 
-        if checkSendKey('whois_show_server') and realirc.protoname != 'clientbot':
+        if checkSendKey('whois_show_server') and realirc.proto.hasCap('can-track-servers'):
             wreply(320, ":is actually connected via the following server:")
             realserver = realirc.getServer(uid)
             realserver = realirc.servers[realserver]
@@ -1017,7 +1017,7 @@ def handle_part(irc, numeric, command, args):
     if numeric == irc.pseudoclient.uid:
         # For clientbot: treat forced parts to the bot as clearchan, and attempt to rejoin only
         # if it affected a relay.
-        if irc.protoname == 'clientbot':
+        if not irc.proto.hasCap('can-spawn-clients'):
             for channel in [c for c in channels if get_relay((irc.name, c))]:
                 for user in irc.channels[channel].users:
                     if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
@@ -1148,7 +1148,7 @@ def handle_messages(irc, numeric, command, args):
             return
         remoteirc = world.networkobjects[homenet]
 
-        if remoteirc.protoname == 'clientbot' and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
+        if (not remoteirc.proto.hasCap('can-spawn-clients')) and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
             irc.msg(numeric, 'Private messages to users connected via Clientbot have '
                     'been administratively disabled.', notice=True)
             return
@@ -1179,7 +1179,7 @@ def handle_kick(irc, source, command, args):
     relay = get_relay((irc.name, channel))
 
     # Special case for clientbot: treat kicks to the PyLink service bot as channel clear.
-    if irc.protoname == 'clientbot' and irc.pseudoclient and target == irc.pseudoclient.uid:
+    if (not irc.proto.hasCap('can-spawn-clients')) and irc.pseudoclient and target == irc.pseudoclient.uid:
         for user in irc.channels[channel].users:
             if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
                 reason = "Clientbot kicked by %s (Reason: %s)" % (irc.getFriendlyName(source), text)
@@ -1246,7 +1246,7 @@ def handle_kick(irc, source, command, args):
             # common channels with the target relay network.
             rsid = get_remote_sid(remoteirc, irc)
             log.debug('(%s) relay.handle_kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, rsid, kicker, irc.name)
-            if irc.protoname == 'clientbot':
+            if not irc.proto.hasCap('can-spawn-clients'):
                 # Special case for clientbot: no kick prefixes are needed.
                 text = args['text']
             else:
@@ -1582,7 +1582,7 @@ def create(irc, source, args):
     if not utils.isChannel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
-    if irc.protoname == 'clientbot':
+    if not irc.proto.hasCap('can-host-relay'):
         irc.error('Clientbot networks cannot be used to host a relay.')
         return
     if source not in irc.channels[channel].users:
@@ -1780,7 +1780,7 @@ def link(irc, source, args):
 
             our_ts = irc.channels[localchan].ts
             their_ts = world.networkobjects[remotenet].channels[args.channel].ts
-            if (our_ts < their_ts) and irc.protoname != 'clientbot':
+            if (our_ts < their_ts) and irc.proto.hasCap('has-ts'):
                 log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
                           irc.name, localchan, remotenet, args.channel, our_ts, their_ts)
                 irc.error("The channel creation date (TS) on %s (%s) is lower than the target "
