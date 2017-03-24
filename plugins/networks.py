@@ -64,6 +64,13 @@ def remote(irc, source, args):
 
     args = remote_parser.parse_args(args)
     netname = args.network
+
+    if netname == irc.name:
+        # This would actually throw _remote_reply() into a loop, so check for it here...
+        # XXX: properly fix this.
+        irc.error("Cannot remote-send a command to the local network; use a normal command!")
+        return
+
     try:
         remoteirc = world.networkobjects[netname]
     except KeyError:  # Unknown network.
@@ -85,6 +92,9 @@ def remote(irc, source, args):
         """
         reply() rerouter for the 'remote' command.
         """
+        assert irc.name != placeholder_self.name, \
+            "Refusing to route reply back to the same " \
+            "network, as this would cause a recursive loop"
         log.debug('(%s) networks.remote: re-routing reply %r from network %s', irc.name,
                   text, placeholder_self.name)
 
