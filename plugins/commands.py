@@ -108,7 +108,7 @@ def showchan(irc, source, args):
     if c.topic:
         f('\x02Channel topic\x02: %s' % c.topic)
 
-    if irc.protoname != 'clientbot':
+    if irc.proto.hasCap('has-ts'):
         # Clientbot-specific hack: don't show channel TS because it's not properly tracked.
         f('\x02Channel creation time\x02: %s (%s)' % (ctime(c.ts), c.ts))
 
