@@ -13,6 +13,7 @@ class RatboxProtocol(TS6Protocol):
         self.required_caps.discard('EUID')
 
         self.hook_map['LOGIN'] = 'CLIENT_SERVICES_LOGIN'
+        self.protocol_caps -= {'slash-in-hosts'}
 
     def connect(self):
         """Initializes a connection to a server."""
