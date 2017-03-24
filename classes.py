@@ -1409,7 +1409,7 @@ class Protocol():
 
         return real_args
 
-    def hasCap(capab):
+    def hasCap(self, capab):
         """
         Returns whether this protocol module instance has the requested capability.
         """
