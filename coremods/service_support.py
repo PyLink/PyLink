@@ -14,6 +14,11 @@ def spawn_service(irc, source, command, args):
     # Service name
     name = args['name']
 
+    if name != 'pylink' and not irc.proto.hasCap('can-spawn-clients'):
+        log.debug("(%s) Not spawning service %s because the server doesn't support spawning clients",
+                  irc.name, name)
+        return
+
     # Get the ServiceBot object.
     sbot = world.services[name]
 
@@ -25,10 +30,6 @@ def spawn_service(irc, source, command, args):
     # settings, and then falling back to the literal service name.
     nick = irc.serverdata.get("%s_nick" % name) or conf.conf.get(name, {}).get('nick') or sbot.nick or name
     ident = irc.serverdata.get("%s_ident" % name) or conf.conf.get(name, {}).get('ident') or sbot.ident or name
-
-    if name != 'pylink' and irc.protoname == 'clientbot':
-        # Prefix service bots spawned on Clientbot to prevent possible nick collisions.
-        nick = 'PyLinkService@' + nick
 
     # TODO: make this configurable?
     host = irc.hostname()
