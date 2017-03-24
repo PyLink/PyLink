@@ -49,26 +49,28 @@ def autoconnect(irc, source, args):
     network.serverdata['autoconnect'] = seconds
     irc.reply("Done.")
 
+
+remote_parser = utils.IRCParser()
+remote_parser.add_argument('network')
+remote_parser.add_argument('--service', type=str, default='pylink')
+remote_parser.add_argument('command', nargs=utils.IRCParser.REMAINDER)
 @utils.add_cmd
 def remote(irc, source, args):
-    """<network> <command>
+    """<network> [--service <service name>] <command>
 
     Runs <command> on the remote network <network>. No replies are sent back due to protocol limitations."""
     permissions.checkPermissions(irc, source, ['networks.remote'])
 
+    args = remote_parser.parse_args(args)
+    netname = args.network
     try:
-        netname = args[0]
-        cmd_args = ' '.join(args[1:]).strip()
         remoteirc = world.networkobjects[netname]
-    except IndexError:  # Arguments not given.
-        irc.error('Not enough arguments (needs 2 or more: network name (case sensitive), command name & arguments).')
-        return
     except KeyError:  # Unknown network.
         irc.error('No such network "%s" (case sensitive).' % netname)
         return
 
-    if not cmd_args:
-        irc.reply('No text entered!')
+    if args.service not in world.services:
+        irc.reply('Unknown service %s' % args.service)
         return
 
     # Force remoteirc.called_in to something private in order to prevent
@@ -79,7 +81,7 @@ def remote(irc, source, args):
     remoteirc.pseudoclient.account = irc.users[source].account
 
     try:  # Remotely call the command (use the PyLink client as a dummy user).
-        remoteirc.callCommand(remoteirc.pseudoclient.uid, cmd_args)
+        world.services[args.service].call_cmd(remoteirc, remoteirc.pseudoclient.uid, ' '.join(args.command))
     finally:  # Remove the identification override after we finish.
         remoteirc.pseudoclient.account = ''
 
