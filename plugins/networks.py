@@ -1,5 +1,6 @@
 """Networks plugin - allows you to manipulate connections to various configured networks."""
 import importlib
+import types
 
 from pylinkirc import utils, world, conf, classes
 from pylinkirc.log import log
@@ -49,7 +50,6 @@ def autoconnect(irc, source, args):
     network.serverdata['autoconnect'] = seconds
     irc.reply("Done.")
 
-
 remote_parser = utils.IRCParser()
 remote_parser.add_argument('network')
 remote_parser.add_argument('--service', type=str, default='pylink')
@@ -58,7 +58,8 @@ remote_parser.add_argument('command', nargs=utils.IRCParser.REMAINDER)
 def remote(irc, source, args):
     """<network> [--service <service name>] <command>
 
-    Runs <command> on the remote network <network>. No replies are sent back due to protocol limitations."""
+    Runs <command> on the remote network <network>. Plugin responses sent using irc.reply() are
+    supported and returned here, but others are dropped due to protocol limitations."""
     permissions.checkPermissions(irc, source, ['networks.remote'])
 
     args = remote_parser.parse_args(args)
@@ -80,12 +81,33 @@ def remote(irc, source, args):
     # Set the identification override to the caller's account.
     remoteirc.pseudoclient.account = irc.users[source].account
 
-    try:  # Remotely call the command (use the PyLink client as a dummy user).
-        world.services[args.service].call_cmd(remoteirc, remoteirc.pseudoclient.uid, ' '.join(args.command))
-    finally:  # Remove the identification override after we finish.
-        remoteirc.pseudoclient.account = ''
+    def _remote_reply(placeholder_self, text, **kwargs):
+        """
+        reply() rerouter for the 'remote' command.
+        """
+        log.debug('(%s) networks.remote: re-routing reply %r from network %s', irc.name,
+                  text, placeholder_self.name)
 
-    irc.reply("Done.")
+        # Override the source option to make sure the source is valid on the local network.
+        if 'source' in kwargs:
+            del kwargs['source']
+        irc.reply(text, **kwargs, source=irc.pseudoclient.uid)
+
+    old_reply = remoteirc.reply
+
+    with remoteirc.reply_lock:
+        try:  # Remotely call the command (use the PyLink client as a dummy user).
+            # Override the remote irc.reply() to send replies HERE.
+            log.debug('(%s) networks.remote: overriding reply() of IRC object %s', irc.name, netname)
+            remoteirc.reply = types.MethodType(_remote_reply, remoteirc)
+            world.services[args.service].call_cmd(remoteirc, remoteirc.pseudoclient.uid,
+                                                  ' '.join(args.command))
+        finally:
+            # Restore the original remoteirc.reply()
+            log.debug('(%s) networks.remote: restoring reply() of IRC object %s', irc.name, netname)
+            remoteirc.reply = old_reply
+            # Remove the identification override after we finish.
+            remoteirc.pseudoclient.account = ''
 
 @utils.add_cmd
 def reloadproto(irc, source, args):
