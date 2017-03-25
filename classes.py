@@ -179,7 +179,8 @@ class Irc(utils.DeprecatedAttributesObject):
                 data = self.queue.popleft()
                 self._send(data)
             throttle_time = self.serverdata.get('throttle_time', 0.01)
-            time.sleep(throttle_time)
+            self.aborted.wait(throttle_time)
+        log.debug('(%s) Stopping queue thread as aborted is set', self.name)
 
     def connect(self):
         """
