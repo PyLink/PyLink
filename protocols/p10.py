@@ -716,6 +716,10 @@ class P10Protocol(IRCS2SProtocol):
         uobj = self.irc.users[target]
 
         if self.irc.isInternalClient(target):
+            # Host changing via SETHOST is only supported on nefarious and snircd.
+            if self.irc.serverdata.get('p10_ircd', 'nefarious').lower() not in ('nefarious', 'snircd'):
+                raise NotImplementedError
+
             # Use SETHOST (umode +h) for internal clients.
             if field == 'HOST':
                 # Set umode +x, and +h with the given vHost as argument.
@@ -729,6 +733,10 @@ class P10Protocol(IRCS2SProtocol):
             else:
                 raise NotImplementedError
         elif field == 'HOST':
+            # Host changing via FAKE is only supported on nefarious.
+            if self.irc.serverdata.get('p10_ircd', 'nefarious').lower() != 'nefarious':
+                raise NotImplementedError
+
             # Use FAKE (FA) for external clients.
             self._send(self.irc.sid, 'FA %s %s' % (target, text))
 
