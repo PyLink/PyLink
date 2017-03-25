@@ -26,7 +26,7 @@ class RatboxProtocol(TS6Protocol):
                        '*A': 'beI',
                        '*B': 'k',
                        '*C': 'l',
-                       '*D': 'imnpstr'}
+                       '*D': 'imnpstrS'}
 
         self.irc.umodes = {
             'invisible': 'i', 'callerid': 'g', 'oper': 'o', 'admin': 'a', 'sno_botfloods': 'b',

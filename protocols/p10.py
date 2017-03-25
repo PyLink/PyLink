@@ -813,7 +813,7 @@ class P10Protocol(IRCS2SProtocol):
                       '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDdRcC'}
             self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
                                     'deaf': 'd', 'registered': 'r', 'locop': 'O',
-                                    '*A': '', '*B': '', '*C': '', '*D': 'imnpstrkgxdrO'})
+                                    '*A': '', '*B': '', '*C': '', '*D': 'imnpstrkgxdO'})
 
         if self.irc.serverdata.get('use_halfop'):
             cmodes['halfop'] = 'h'
