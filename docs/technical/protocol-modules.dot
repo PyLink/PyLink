@@ -19,7 +19,7 @@ digraph G {
 		node [style="filled",color="white"];
 		color="khaki";
 
-		"ircs2s_common.py" -> "nefarious.py";
+		"ircs2s_common.py" -> "p10.py";
 		"ts6_common.py" -> "ts6.py" -> "hybrid.py";
 		"ts6.py" -> "ratbox.py";
 		"ts6_common.py" -> "inspircd.py";
