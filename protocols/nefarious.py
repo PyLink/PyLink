@@ -770,29 +770,39 @@ class P10Protocol(IRCS2SProtocol):
         desc = self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
         # Enumerate modes, from https://github.com/evilnet/nefarious2/blob/master/doc/modes.txt
-        cmodes = {'op': 'o', 'voice': 'v', 'private': 'p', 'secret': 's', 'moderated': 'm',
-                  'topiclock': 't', 'inviteonly': 'i', 'noextmsg': 'n', 'regonly': 'r',
-                  'delayjoin': 'D', 'registered': 'R', 'key': 'k', 'ban': 'b', 'banexception': 'e',
-                  'limit': 'l', 'redirect': 'L', 'oplevel_apass': 'A', 'oplevel_upass': 'U',
-                  'adminonly': 'a', 'operonly': 'O', 'regmoderated': 'M', 'nonotice': 'N',
-                  'permanent': 'z', 'hidequits': 'Q', 'noctcp': 'C', 'noamsg': 'T', 'blockcolor': 'c',
-                  'stripcolor': 'S', 'had_delayjoins': 'd',
-                  '*A': 'be', '*B': 'AUk', '*C': 'Ll', '*D': 'psmtinrDRaOMNzQCTcSd'}
+        p10_ircd = self.irc.serverdata.get('p10_ircd', 'nefarious').lower()
+        if p10_ircd == 'nefarious':
+            cmodes = {'delayjoin': 'D', 'registered': 'R', 'key': 'k', 'banexception': 'e',
+                      'redirect': 'L', 'oplevel_apass': 'A', 'oplevel_upass': 'U',
+                      'adminonly': 'a', 'operonly': 'O', 'regmoderated': 'M', 'nonotice': 'N',
+                      'permanent': 'z', 'hidequits': 'Q', 'noctcp': 'C', 'noamsg': 'T', 'blockcolor': 'c',
+                      'stripcolor': 'S', 'had_delayjoins': 'd', 'regonly': 'r',
+                      '*A': 'be', '*B': 'AUk', '*C': 'Ll', '*D': 'psmtinrDRaOMNzQCTcSd'}
+            self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x', 'privdeaf': 'D',
+                                    'hidechans': 'n', 'deaf_commonchan': 'q', 'bot': 'B', 'deaf': 'd',
+                                    'hideoper': 'H', 'hideidle': 'I', 'regdeaf': 'R', 'showwhois': 'W',
+                                    'admin': 'a', 'override': 'X', 'noforward': 'L', 'ssl': 'z',
+                                    'registered': 'r', 'cloak_sethost': 'h', 'cloak_fakehost': 'f',
+                                    'cloak_hashedhost': 'C', 'cloak_hashedip': 'c', 'locop': 'O',
+                                    '*A': '', '*B': '', '*C': 'fCcrh', '*D': 'oOiwskgxnqBdDHIRWaXLz'})
+        elif p10_ircd == 'snircd':
+            # snircd has +u instead of +Q for hidequits, and fewer chanel modes.
+            cmodes = {'oplevel_apass': 'A', 'oplevel_upass': 'U', 'delayjoin': 'D', 'regonly': 'r',
+                      'had_delayjoin': 'd', 'hidequits': 'u', 'regmoderated': 'M', 'blockcolor': 'c',
+                      'noctcp': 'C', 'nonotice': 'N', 'noamsg': 'T',
+                      '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDrducCMNT'}
+            # From https://www.quakenet.org/help/general/what-user-modes-are-available-on-quakenet
+            # plus my own testing.
+            self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
+                                    'hidechans': 'n', 'deaf': 'd', 'hideidle': 'I', 'regdeaf': 'R',
+                                    'override': 'X', 'registered': 'r', 'cloak_sethost': 'h', 'locop': 'O',
+                                    '*A': '', '*B': '', '*C': 'h', '*D': 'imnpstrkgxndIRXrO'})
+
 
         if self.irc.serverdata.get('use_halfop'):
             cmodes['halfop'] = 'h'
             self.irc.prefixmodes['h'] = '%'
-
-        self.irc.cmodes = cmodes
-
-        self.irc.umodes = {'oper': 'o', 'locop': 'O', 'invisible': 'i', 'wallops': 'w',
-                           'snomask': 's', 'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
-                           'hidechans': 'n', 'deaf_commonchan': 'q', 'bot': 'B', 'deaf': 'D',
-                           'hideoper': 'H', 'hideidle': 'I', 'regdeaf': 'R', 'showwhois': 'W',
-                           'admin': 'a', 'override': 'X', 'noforward': 'L', 'ssl': 'z',
-                           'registered': 'r', 'cloak_sethost': 'h', 'cloak_fakehost': 'f',
-                           'cloak_hashedhost': 'C', 'cloak_hashedip': 'c',
-                           '*A': '', '*B': '', '*C': 'fCcrh', '*D': 'oOiwskgxnqBDHIRWaXLz'}
+        self.irc.cmodes.update(cmodes)
 
         self.irc.send('SERVER %s 1 %s %s J10 %s]]] +s6 :%s' % (name, ts, ts, sid, desc))
         self._send(sid, "EB")
