@@ -281,7 +281,7 @@ servers:
         use_extended_accounts: true
 
         # Sets the IRCd type. The following options are supported here: 'nefarious', 'snircd', and
-        # 'generic'.
+        # 'generic'. This defaults to 'nefarious'.
         # With this key set to 'nefarious', FAKE (external vHost changing) and SETHOST (host changing
         # for PyLink / relay clients) are enabled, along with a set of modes tailored to Nefarious.
 
@@ -292,19 +292,20 @@ servers:
         # and a baseline RFC1459 mode set is used.
         p10_ircd: nefarious
 
-        ### The following options are specific to Nefarious servers and should be set to false if
-        ### you're using another P10 IRCd (unless your variant supports them as well):
-        # Halfop is optional in Nefarious. This should match your IRCd configuration.
-        use_halfop: false
-
         # Determines whether account-based cloaks should be used (someone.users.yournet.org
         # format). This should match your IRCd configuration:
-        # ENABLE this if HOST_HIDING_STYLE is set to either 1 or 3.
+        # On Nefarious, ENABLE this if HOST_HIDING_STYLE is set to either 1 or 3.
+        # On other P10 IRCds, ENABLE this if HOST_HIDING is set to TRUE.
         use_account_cloaks: false
 
         # The cloak suffix to be used for account-based cloaks. This **MUST** match your
         # IRCd configuration if use_account_cloaks is enabled.
         cloak_suffix: "users.yournet.org"
+
+        ### The following options are specific to Nefarious servers and should be set to false if
+        ### you're using another P10 IRCd (unless your variant supports them as well):
+        # Halfop is optional in Nefarious. This should match your IRCd configuration.
+        use_halfop: false
 
         # Determines whether account-based cloaks should be used for opers
         # (someone.opers.yournet.org format). If use_account_cloaks is disabled,
