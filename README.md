@@ -81,10 +81,10 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 * [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
     - For vHost setting to work, `m_chghost.so` must be loaded.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
-* [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `nefarious`
+* [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `p10`
     - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (HOST_HIDING_STYLE settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
 * [UnrealIRCd](https://www.unrealircd.org/) 4.x - module `unreal`
-    - Linking to UnrealIRCd 3.2 servers is only possible when using an UnrealIRCd 4.x server as a hub, with topology such as  `pylink<->unreal4<->unreal3.2`. We nevertheless encourage you to upgrade so all your IRCds are running the same version.
+    - Linking to UnrealIRCd 3.2 servers is only possible when using an UnrealIRCd 4.x server as a hub, with topology such as `pylink<->unreal4<->unreal3.2`. We nevertheless encourage you to upgrade so all your IRCds are running the same version.
 
 ### Extended support
 
@@ -97,7 +97,11 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ratbox`
     - Host changing is not supported on ircd-ratbox.
     - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is a cloaked relay client: if you're paranoid about this, turn off Relay IP forwarding by setting the `relay_no_ips` option in the ratbox network's `server:` block.
+* [IRCu](http://coder-com.undernet.org/) (u2.10.12.16+) - module `p10`
+    - Host changing is not supported.
 * [juno-ircd](https://github.com/cooper/yiria) (11.x / janet) - module `ts6` (see [configuration example](https://github.com/cooper/juno/blob/master/doc/ts6.md#pylink))
+* [snircd](https://development.quakenet.org/) (1.3.x+) - module `p10`
+    - Outbound host changing (i.e. for the `changehost` plugin) is not supported on P10 variants other than Nefarious.
 
 Other TS6 and P10 variations may work, but are not officially supported.
 
