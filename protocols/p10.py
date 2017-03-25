@@ -785,7 +785,7 @@ class P10Protocol(IRCS2SProtocol):
                       'redirect': 'L', 'oplevel_apass': 'A', 'oplevel_upass': 'U',
                       'adminonly': 'a', 'operonly': 'O', 'regmoderated': 'M', 'nonotice': 'N',
                       'permanent': 'z', 'hidequits': 'Q', 'noctcp': 'C', 'noamsg': 'T', 'blockcolor': 'c',
-                      'stripcolor': 'S', 'had_delayjoins': 'd', 'regonly': 'r',
+                      'stripcolor': 'S', 'had_delayjoin': 'd', 'regonly': 'r',
                       '*A': 'be', '*B': 'AUk', '*C': 'Ll', '*D': 'psmtinrDRaOMNzQCTcSd'}
             self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x', 'privdeaf': 'D',
                                     'hidechans': 'n', 'deaf_commonchan': 'q', 'bot': 'B', 'deaf': 'd',
@@ -809,7 +809,7 @@ class P10Protocol(IRCS2SProtocol):
         elif p10_ircd == 'ircu':
             # ircu proper has even fewer modes.
             cmodes = {'oplevel_apass': 'A', 'oplevel_upass': 'U', 'delayjoin': 'D', 'regonly': 'r',
-                      'had_delayjoin': 'd', 'blockcolor': 'c', 'noctcp': 'C',
+                      'had_delayjoin': 'd', 'blockcolor': 'c', 'noctcp': 'C', 'registered': 'R',
                       '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDdRcC'}
             self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
                                     'deaf': 'd', 'registered': 'r', 'locop': 'O',
