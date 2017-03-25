@@ -777,7 +777,7 @@ class P10Protocol(IRCS2SProtocol):
                   'adminonly': 'a', 'operonly': 'O', 'regmoderated': 'M', 'nonotice': 'N',
                   'permanent': 'z', 'hidequits': 'Q', 'noctcp': 'C', 'noamsg': 'T', 'blockcolor': 'c',
                   'stripcolor': 'S', 'had_delayjoins': 'd',
-                  '*A': 'be', '*B': 'k', '*C': 'Ll', '*D': 'psmtinrDRAUaOMNzQCTcSd'}
+                  '*A': 'be', '*B': 'AUk', '*C': 'Ll', '*D': 'psmtinrDRaOMNzQCTcSd'}
 
         if self.irc.serverdata.get('use_halfop'):
             cmodes['halfop'] = 'h'
