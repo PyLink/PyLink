@@ -268,7 +268,7 @@ servers:
         sid: 50
         sidrange: "100-150"
         channels: ["#lounge"]
-        protocol: nefarious
+        protocol: p10
         autoconnect: 5
         netname: "Nefarious test server"
 
@@ -290,7 +290,7 @@ servers:
 
         # With this key set to 'generic', neither of these host changing features are enabled
         # and a baseline RFC1459 mode set is used.
-        p10_ircd: nefarious
+        #p10_ircd: nefarious
 
         # Determines whether account-based cloaks should be used (someone.users.yournet.org
         # format). This should match your IRCd configuration:
