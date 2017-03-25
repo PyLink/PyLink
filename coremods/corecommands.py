@@ -2,9 +2,6 @@
 corecommands.py - Implements core PyLink commands.
 """
 
-# Get the package name that plugins are stored under.
-plugin_root = __name__.split('.')[0] + '.plugins.'
-
 import gc
 import sys
 import importlib
@@ -119,7 +116,7 @@ def unload(irc, source, args):
 
     # Since we're using absolute imports in 0.9.x+, the module name differs from the actual plugin
     # name.
-    modulename = plugin_root + name
+    modulename = utils.PLUGIN_PREFIX + name
 
     if name in world.plugins:
         log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.getHostmask(source))
