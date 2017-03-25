@@ -743,6 +743,7 @@ class P10Protocol(IRCS2SProtocol):
             # Save the host change as a user mode (this is what P10 does on bursts),
             # so further host checks work.
             self.irc.applyModes(target, [('+f', text)])
+            self.mode(self.irc.sid, target, [('+x', None)])
         else:
             raise NotImplementedError
 
