@@ -280,7 +280,7 @@ servers:
         # For other P10 IRCds, this should be set to FALSE.
         use_extended_accounts: true
 
-        # Sets the IRCd type. The following options are supported here: 'nefarious', 'snircd', and
+        # Sets the IRCd type. The following options are supported here: 'nefarious', 'snircd', 'ircu', and
         # 'generic'. This defaults to 'nefarious'.
         # With this key set to 'nefarious', FAKE (external vHost changing) and SETHOST (host changing
         # for PyLink / relay clients) are enabled, along with a set of modes tailored to Nefarious.
@@ -288,8 +288,11 @@ servers:
         # With this key set to 'snircd', SETHOST and a set of modes tailored to snircd are enabled.
         # vHost changing of other users (e.g. via the changehost plugin) is not supported.
 
+        # With this key set to 'ircu', a set of modes tailored to IRCu is enabled.
+        # vHost changing is not supported.
+
         # With this key set to 'generic', neither of these host changing features are enabled
-        # and a baseline RFC1459 mode set is used.
+        # and a baseline RFC1459 mode set is used. This configuration is not officially supported.
         #p10_ircd: nefarious
 
         # Determines whether account-based cloaks should be used (someone.users.yournet.org

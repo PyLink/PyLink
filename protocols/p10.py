@@ -799,14 +799,21 @@ class P10Protocol(IRCS2SProtocol):
             cmodes = {'oplevel_apass': 'A', 'oplevel_upass': 'U', 'delayjoin': 'D', 'regonly': 'r',
                       'had_delayjoin': 'd', 'hidequits': 'u', 'regmoderated': 'M', 'blockcolor': 'c',
                       'noctcp': 'C', 'nonotice': 'N', 'noamsg': 'T',
-                      '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDrducCMNT'}
+                      '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDducCMNT'}
             # From https://www.quakenet.org/help/general/what-user-modes-are-available-on-quakenet
             # plus my own testing.
             self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
                                     'hidechans': 'n', 'deaf': 'd', 'hideidle': 'I', 'regdeaf': 'R',
                                     'override': 'X', 'registered': 'r', 'cloak_sethost': 'h', 'locop': 'O',
-                                    '*A': '', '*B': '', '*C': 'h', '*D': 'imnpstrkgxndIRXrO'})
-
+                                    '*A': '', '*B': '', '*C': 'h', '*D': 'imnpstrkgxndIRXO'})
+        elif p10_ircd == 'ircu':
+            # ircu proper has even fewer modes.
+            cmodes = {'oplevel_apass': 'A', 'oplevel_upass': 'U', 'delayjoin': 'D', 'regonly': 'r',
+                      'had_delayjoin': 'd', 'blockcolor': 'c', 'noctcp': 'C',
+                      '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDdRcC'}
+            self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
+                                    'deaf': 'd', 'registered': 'r', 'locop': 'O',
+                                    '*A': '', '*B': '', '*C': '', '*D': 'imnpstrkgxdrO'})
 
         if self.irc.serverdata.get('use_halfop'):
             cmodes['halfop'] = 'h'
