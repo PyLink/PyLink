@@ -23,7 +23,7 @@ def _shutdown(irc=None):
     """Shuts down the Pylink daemon."""
     global tried_shutdown
     if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
-        sys.exit(1)
+        raise KeyboardInterrupt("Forcing shutdown.")
 
     tried_shutdown = True
 
