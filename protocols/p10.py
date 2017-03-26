@@ -715,10 +715,13 @@ class P10Protocol(IRCS2SProtocol):
         """Updates the ident or host of any connected client."""
         uobj = self.irc.users[target]
 
+        ircd = self.irc.serverdata.get('p10_ircd', 'nefarious').lower()
+
         if self.irc.isInternalClient(target):
             # Host changing via SETHOST is only supported on nefarious and snircd.
-            if self.irc.serverdata.get('p10_ircd', 'nefarious').lower() not in ('nefarious', 'snircd'):
-                raise NotImplementedError
+            if ircd not in ('nefarious', 'snircd'):
+                raise NotImplementedError("Host changing for internal clients (via SETHOST) is only "
+                                          "available on nefarious and snircd, and we're using p10_ircd=%r" % ircd)
 
             # Use SETHOST (umode +h) for internal clients.
             if field == 'HOST':
@@ -731,11 +734,13 @@ class P10Protocol(IRCS2SProtocol):
                 self.mode(target, target, [('-h', None)])
                 self.mode(target, target, [('+x', None), ('+h', '%s@%s' % (text, uobj.host))])
             else:
-                raise NotImplementedError
+                raise NotImplementedError("Changing field %r of a client is "
+                                          "unsupported by this protocol." % field)
         elif field == 'HOST':
             # Host changing via FAKE is only supported on nefarious.
-            if self.irc.serverdata.get('p10_ircd', 'nefarious').lower() != 'nefarious':
-                raise NotImplementedError
+            if ircd != 'nefarious':
+                raise NotImplementedError("vHost changing for non-PyLink clients (via FAKE) is "
+                                          "only available on nefarious, and we're using p10_ircd=%r" % ircd)
 
             # Use FAKE (FA) for external clients.
             self._send(self.irc.sid, 'FA %s %s' % (target, text))
@@ -745,7 +750,8 @@ class P10Protocol(IRCS2SProtocol):
             self.irc.applyModes(target, [('+f', text)])
             self.mode(self.irc.sid, target, [('+x', None)])
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Changing field %r of a client is "
+                                      "unsupported by this protocol." % field)
 
         # P10 cloaks aren't as simple as just replacing the displayed host with the one we're
         # sending. Check for cloak changes properly.
