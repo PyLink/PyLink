@@ -24,12 +24,14 @@ pylink:
     # errors.
     prefix: "&"
 
-    # Whether service bots will respond to commands prefixes with their nick.
-    respondtonick: true
+    # Determines whether PyLink service bots will respond to commands prefixed with their nick
+    # (requires the fantasy plugin). Prior to PyLink 1.2, this option was named "respondtonick";
+    # it was renamed for consistency. This defaults to false.
+    #respond_to_nick: true
 
     # Custom prefixes for other service bots if they are loaded. Note: this is deprecated
     # since PyLink 1.2 in favour of adding prefixes into each plugin's configuration block
-    # itself (see the "prefix:" option in the "games:" block in this case).
+    # itself (see the "prefix:" option in the "games:" block for this example).
     #prefixes:
     #    games: "@"
 
@@ -674,8 +676,14 @@ automode:
     #spawn_service: true
 
     # Defines a fantasy prefix for the Automode bot (requires spawn_services to be set and the
-    # fantasy plugin to be loaded).
+    # fantasy plugin to be loaded). This overrides the "prefix" option in the "pylink:" config
+    # block.
     prefix: "@"
+
+    # Determines whether this bot should respond to its nick (requires spawn_services to be set and the
+    # fantasy plugin to be loaded). This overrides the "respond_to_nick" option in the "pylink:" config
+    # block.
+    #respond_to_nick: true
 
 games:
     # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.

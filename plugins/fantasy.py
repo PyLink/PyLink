@@ -9,8 +9,6 @@ def handle_fantasy(irc, source, command, args):
         # Break if the IRC network isn't ready.
         return
 
-    respondtonick = conf.conf['bot'].get("respondtonick")
-
     channel = args['target']
     orig_text = args['text']
 
@@ -25,6 +23,14 @@ def handle_fantasy(irc, source, command, args):
         for botname, sbot in world.services.copy().items():
             if botname not in world.services:  # Bot was removed during iteration
                 continue
+
+            # Check respond to nick options in this order:
+            # 1) The service specific "respond_to_nick" option
+            # 2) The global "pylink::respond_to_nick" option
+            # 3) The (deprecated) global "bot::respondtonick" option.
+            respondtonick = conf.conf.get(botname, {}).get('respond_to_nick',
+                conf.conf['pylink'].get("respond_to_nick", conf.conf['bot'].get("respondtonick")))
+
             log.debug('(%s) fantasy: checking bot %s', irc.name, botname)
             servuid = sbot.uids.get(irc.name)
             if servuid in irc.channels[channel].users:
