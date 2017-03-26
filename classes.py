@@ -322,13 +322,12 @@ class Irc(utils.DeprecatedAttributesObject):
                               'trying to set up this connection. Please check'
                               ' your configuration file and try again.',
                               self.name)
+            # self.run() or the protocol module it called raised an exception, meaning we've disconnected!
             # Note: socket.error, ConnectionError, IOError, etc. are included in OSError since Python 3.3,
             # so we don't need to explicitly catch them here.
             # We also catch SystemExit here as a way to abort out connection threads properly, and stop the
             # IRC connection from freezing instead.
             except (OSError, RuntimeError, SystemExit) as e:
-                # self.run() or the protocol module it called raised an
-                # exception, meaning we've disconnected!
                 log.error('(%s) Disconnected from IRC: %s: %s',
                           self.name, type(e).__name__, str(e))
 
