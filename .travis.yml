@@ -1,0 +1,32 @@
+language: python
+python:
+  - '3.4'
+  - '3.5'
+  - '3.6'
+
+install: echo "On tag $TRAVIS_TAG" && pip install pypandoc
+script: python3 -m compileall .
+
+addons:
+  apt:
+    packages:
+    - pandoc
+
+deploy:
+  provider: pypi
+  server: https://testpypi.python.org/pypi
+  user:
+    secure: Ql6ihu5MDgWuAvT9NYfriGUYGhHpsqwXfZHWDQT+DfRjOqHo9QT7PnfexeBoe6L6cYUkEnIrnAXKtBXGy6UmyvfrnvBl68877dLVuoC8PfQ4J0ej7TVnCJmT/LwRqFvzZXkeg4CIlJsVJ6pvrPHXQBDPH1rj/rWCucchrofmps8=
+  password:
+    secure: JOHSaZDPCImV/TlQ7hqKLzEvxY4/gpYGlZlOvxgFEd/k/sGk13sva1MfQkOh7Fgjblhk/CHt59wVKXa0VaylRugFQnXb+NYNrxYON0IRVsKON20XaLXg7qsyKCS4ml+7cd2KvM8a6LVO9078yLWAhTZkZ69nLIRZwFbmL5+mep4=
+
+  on:
+    tags: true
+    # Only deploy on tags that don't have -alpha, -beta, etc. suffixes attached
+    condition: $(python3 -c 'import re,os; print(bool(re.match(r"^(\d+\.){2,}\d+$", os.environ.get("TRAVIS_TAG", ""))))') == "True"
+    python: '3.6'
+
+  skip_upload_docs: true
+
+notifications:
+  email: false
