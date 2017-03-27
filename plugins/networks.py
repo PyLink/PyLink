@@ -101,7 +101,7 @@ def remote(irc, source, args):
         # Override the source option to make sure the source is valid on the local network.
         if 'source' in kwargs:
             del kwargs['source']
-        irc.reply(text, **kwargs, source=irc.pseudoclient.uid)
+        irc.reply(text, source=irc.pseudoclient.uid, **kwargs)
 
     old_reply = remoteirc.reply
 
