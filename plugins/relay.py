@@ -1779,7 +1779,7 @@ def link(irc, source, args):
                 return
 
             our_ts = irc.channels[localchan].ts
-            their_ts = world.networkobjects[remotenet].channels[args.channel].ts
+            their_ts = world.networkobjects[remotenet].channels[channel].ts
             if (our_ts < their_ts) and irc.proto.hasCap('has-ts'):
                 log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
                           irc.name, localchan, remotenet, args.channel, our_ts, their_ts)
