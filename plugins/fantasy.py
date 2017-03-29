@@ -44,8 +44,9 @@ def handle_fantasy(irc, source, command, args):
                 # to the prefix list: "<nick>," and "<nick>:"
                 nick = irc.toLower(irc.users[servuid].nick)
 
+                nick_prefixes = [nick+',', nick+':']
                 if respondtonick:
-                    prefixes += [nick+',', nick+':']
+                    prefixes += nick_prefixes
 
                 if not any(prefixes):
                     # No prefixes were set, so skip.
@@ -57,6 +58,13 @@ def handle_fantasy(irc, source, command, args):
 
                         # Cut off the length of the prefix from the text.
                         text = orig_text[len(prefix):]
+
+                        # HACK: don't trigger on commands like "& help" to prevent false positives.
+                        # Weird spacing like "PyLink:   help" and "/msg PyLink   help" should still
+                        # work though.
+                        if text.startswith(' ') and prefix not in nick_prefixes:
+                            log.debug('(%s) fantasy: skipping trigger with text prefix followed by space', irc.name)
+                            continue
 
                         # Finally, call the bot command and loop to the next bot.
                         sbot.call_cmd(irc, source, text, called_in=channel)
