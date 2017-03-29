@@ -68,6 +68,9 @@ pylink:
     #plugin_dirs: ["~/my-plugins", "~/pylink-contrib-modules/plugins"]
     #protocol_dirs: ["~/pylink-contrib-modules/protocols"]
 
+    # Determines whether we should show unknown command errors for service bots. Defaults to True.
+    #show_unknown_commands: true
+
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
     # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
@@ -684,6 +687,10 @@ automode:
     # fantasy plugin to be loaded). This overrides the "respond_to_nick" option in the "pylink:" config
     # block.
     #respond_to_nick: true
+
+    # Determines whether we should show unknown command errors for this service bot. Defaults to True.
+    # This overrides the "show_unknown_commands" option in the "pylink:" config block.
+    #show_unknown_commands: true
 
 games:
     # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.

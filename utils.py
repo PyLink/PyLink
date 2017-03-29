@@ -335,7 +335,12 @@ class ServiceBot():
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
         if cmd not in self.commands:
-            if cmd and not cmd.startswith('\x01'):
+            # XXX: we really need abstraction for this kind of config fetching...
+            show_unknown_cmds = irc.serverdata.get('%s_show_unknown_commands' % self.name,
+                                                   conf.conf.get(self.name, {}).get('show_unknown_commands',
+                                                   conf.conf['pylink'].get('show_unknown_commands', True)))
+
+            if cmd and show_unknown_cmds and not cmd.startswith('\x01'):
                 # Ignore empty commands and invalid command errors from CTCPs.
                 self.reply(irc, 'Error: Unknown command %r.' % cmd)
             log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.getHostmask(source))
