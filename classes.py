@@ -178,7 +178,7 @@ class Irc(utils.DeprecatedAttributesObject):
             if self.queue:  # Only process if there's data.
                 data = self.queue.popleft()
                 self._send(data)
-            throttle_time = self.serverdata.get('throttle_time', 0.01)
+            throttle_time = self.serverdata.get('throttle_time', 0.005)
             self.aborted.wait(throttle_time)
         log.debug('(%s) Stopping queue thread as aborted is set', self.name)
 
