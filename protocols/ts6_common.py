@@ -109,9 +109,9 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # SID generator for TS6.
         self.sidgen = TS6SIDGenerator(irc)
 
-    def _send(self, source, msg):
+    def _send(self, source, msg, **kwargs):
         """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""
-        self.irc.send(':%s %s' % (source, msg))
+        self.irc.send(':%s %s' % (source, msg), **kwargs)
 
     def _expandPUID(self, uid):
         """

@@ -518,7 +518,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :70M PING 70M 0AL
         # -> :0AL PONG 0AL 70M
         if self.irc.isInternalServer(args[1]):
-            self._send(args[1], 'PONG %s %s' % (args[1], source))
+            self._send(args[1], 'PONG %s %s' % (args[1], source), queue=False)
 
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""

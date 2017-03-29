@@ -407,7 +407,7 @@ class TS6Protocol(TS6BaseProtocol):
         except IndexError:
             destination = self.irc.sid
         if self.irc.isInternalServer(destination):
-            self._send(destination, 'PONG %s %s' % (destination, source))
+            self._send(destination, 'PONG %s %s' % (destination, source), queue=False)
 
             if destination == self.irc.sid and not self.has_eob:
                 # Charybdis' idea of endburst is just sending a PING. No, really!

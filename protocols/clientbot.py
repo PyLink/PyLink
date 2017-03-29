@@ -893,7 +893,7 @@ class ClientbotWrapperProtocol(Protocol):
         """
         Handles incoming PING requests.
         """
-        self.irc.send('PONG :%s' % args[0])
+        self.irc.send('PONG :%s' % args[0], queue=False)
 
     def handle_pong(self, source, command, args):
         """

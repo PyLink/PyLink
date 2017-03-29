@@ -77,8 +77,8 @@ class P10Protocol(IRCS2SProtocol):
 
         self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
 
-    def _send(self, source, text):
-        self.irc.send("%s %s" % (source, text))
+    def _send(self, source, text, **kwargs):
+        self.irc.send("%s %s" % (source, text), **kwargs)
 
     @staticmethod
     def access_sort(key):
@@ -1040,7 +1040,7 @@ class P10Protocol(IRCS2SProtocol):
         if self.irc.isInternalServer(sid):
             # Only respond if the target server is ours. No forwarding is needed because
             # no IRCds can ever connect behind us...
-            self._send(self.irc.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime))
+            self._send(self.irc.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime), queue=False)
 
     def handle_pass(self, source, command, args):
         """Handles authentication with our uplink."""

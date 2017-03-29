@@ -447,7 +447,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_ping(self, numeric, command, args):
         if numeric == self.irc.uplink:
-            self.irc.send('PONG %s :%s' % (self.irc.serverdata['hostname'], args[-1]))
+            self.irc.send('PONG %s :%s' % (self.irc.serverdata['hostname'], args[-1]), queue=False)
 
     def handle_server(self, numeric, command, args):
         """Handles the SERVER command, which is used for both authentication and
