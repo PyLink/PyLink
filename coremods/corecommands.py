@@ -201,3 +201,11 @@ def rehash(irc, source, args):
         return
     else:
         irc.reply("Done.")
+
+@utils.add_cmd
+def clearqueue(irc, source, args):
+    """takes no arguments.
+
+    Clears the outgoing text queue for the current connection."""
+    permissions.checkPermissions(irc, source, ['core.clearqueue'])
+    irc.queue.clear()

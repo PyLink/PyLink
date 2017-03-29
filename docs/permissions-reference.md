@@ -3,6 +3,7 @@
 Below is a list of all the permissions defined by PyLink and its official plugins. For instructions on how to fine-tune permissions, see [example-permissions.yml](../example-permissions.yml).
 
 ## PyLink Core
+- `core.clearqueue` - Allows access to the `clearqueue` command.
 - `core.shutdown` - Allows access to the `shutdown` command.
 - `core.load` - Allows access to the `load` command.
 - `core.unload` - Allows access to the `unload` command.
