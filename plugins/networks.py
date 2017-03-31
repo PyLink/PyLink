@@ -1,10 +1,13 @@
 """Networks plugin - allows you to manipulate connections to various configured networks."""
 import importlib
 import types
+import threading
 
 from pylinkirc import utils, world, conf, classes
 from pylinkirc.log import log
 from pylinkirc.coremods import control, permissions
+
+REMOTE_IN_USE = threading.Event()
 
 @utils.add_cmd
 def disconnect(irc, source, args):
@@ -65,20 +68,30 @@ def remote(irc, source, args):
     args = remote_parser.parse_args(args)
     netname = args.network
 
+    # XXX: things like 'remote network1 remote network2 echo hi' will crash PyLink if the source network is network1...
+    global REMOTE_IN_USE
+    if REMOTE_IN_USE.is_set():
+        irc.error("The 'remote' command can not be nested.")
+        return
+
+    REMOTE_IN_USE.set()
     if netname == irc.name:
         # This would actually throw _remote_reply() into a loop, so check for it here...
         # XXX: properly fix this.
         irc.error("Cannot remote-send a command to the local network; use a normal command!")
+        REMOTE_IN_USE.clear()
         return
 
     try:
         remoteirc = world.networkobjects[netname]
     except KeyError:  # Unknown network.
         irc.error('No such network "%s" (case sensitive).' % netname)
+        REMOTE_IN_USE.clear()
         return
 
     if args.service not in world.services:
         irc.error('Unknown service %r.' % args.service)
+        REMOTE_IN_USE.clear()
         return
 
     # Force remoteirc.called_in to something private in order to prevent
@@ -118,6 +131,7 @@ def remote(irc, source, args):
             remoteirc._reply = old_reply
             # Remove the identification override after we finish.
             remoteirc.pseudoclient.account = ''
+            REMOTE_IN_USE.clear()
 
 @utils.add_cmd
 def reloadproto(irc, source, args):
