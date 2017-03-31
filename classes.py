@@ -62,7 +62,7 @@ class Irc(utils.DeprecatedAttributesObject):
 
         self.connected = threading.Event()
         self.aborted = threading.Event()
-        self.reply_lock = threading.Lock()
+        self.reply_lock = threading.RLock()
 
         self.pingTimer = None
 
@@ -559,27 +559,38 @@ class Irc(utils.DeprecatedAttributesObject):
             # replies across relay.
             self.callHooks([source, cmd, {'target': target, 'text': text}])
 
-    def reply(self, text, notice=None, source=None, private=None, force_privmsg_in_private=False,
+    def _reply(self, text, notice=None, source=None, private=None, force_privmsg_in_private=False,
             loopback=True):
-        """Replies to the last caller in the right context (channel or PM)."""
+        """
+        Core of the reply() function - replies to the last caller in the right context
+        (channel or PM).
+        """
+        if private is None:
+            # Allow using private replies as the default, if no explicit setting was given.
+            private = conf.conf['bot'].get("prefer_private_replies")
 
+        # Private reply is enabled, or the caller was originally a PM
+        if private or (self.called_in in self.users):
+            if not force_privmsg_in_private:
+                # For private replies, the default is to override the notice=True/False argument,
+                # and send replies as notices regardless. This is standard behaviour for most
+                # IRC services, but can be disabled if force_privmsg_in_private is given.
+                notice = True
+            target = self.called_by
+        else:
+            target = self.called_in
+
+        self.msg(target, text, notice=notice, source=source, loopback=loopback)
+
+    def reply(self, *args, **kwargs):
+        """
+        Replies to the last caller in the right context (channel or PM).
+
+        This function wraps around _reply() and can be monkey-patched in a thread-safe manner
+        to temporarily redirect plugin output to another target.
+        """
         with self.reply_lock:
-            if private is None:
-                # Allow using private replies as the default, if no explicit setting was given.
-                private = conf.conf['bot'].get("prefer_private_replies")
-
-            # Private reply is enabled, or the caller was originally a PM
-            if private or (self.called_in in self.users):
-                if not force_privmsg_in_private:
-                    # For private replies, the default is to override the notice=True/False argument,
-                    # and send replies as notices regardless. This is standard behaviour for most
-                    # IRC services, but can be disabled if force_privmsg_in_private is given.
-                    notice = True
-                target = self.called_by
-            else:
-                target = self.called_in
-
-            self.msg(target, text, notice=notice, source=source, loopback=loopback)
+            self._reply(*args, **kwargs)
 
     def error(self, text, **kwargs):
         """Replies with an error to the last caller in the right context (channel or PM)."""

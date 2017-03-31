@@ -103,19 +103,19 @@ def remote(irc, source, args):
             del kwargs['source']
         irc.reply(text, source=irc.pseudoclient.uid, **kwargs)
 
-    old_reply = remoteirc.reply
+    old_reply = remoteirc._reply
 
     with remoteirc.reply_lock:
         try:  # Remotely call the command (use the PyLink client as a dummy user).
             # Override the remote irc.reply() to send replies HERE.
             log.debug('(%s) networks.remote: overriding reply() of IRC object %s', irc.name, netname)
-            remoteirc.reply = types.MethodType(_remote_reply, remoteirc)
+            remoteirc._reply = types.MethodType(_remote_reply, remoteirc)
             world.services[args.service].call_cmd(remoteirc, remoteirc.pseudoclient.uid,
                                                   ' '.join(args.command))
         finally:
             # Restore the original remoteirc.reply()
             log.debug('(%s) networks.remote: restoring reply() of IRC object %s', irc.name, netname)
-            remoteirc.reply = old_reply
+            remoteirc._reply = old_reply
             # Remove the identification override after we finish.
             remoteirc.pseudoclient.account = ''
 
