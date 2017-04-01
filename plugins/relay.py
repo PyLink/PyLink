@@ -665,6 +665,28 @@ def relay_joins(irc, channel, users, ts, burst=True):
             # to be set on the joining user.
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 modes = get_supported_cmodes(irc, remoteirc, channel, irc.channels[channel].modes)
+
+                # Subtract any mode delta modes from this burst
+                relay = db[get_relay((irc.name, channel))]
+                modedelta_modes = relay.get('modedelta')
+                if modedelta_modes:
+                    # Check if the target is a leaf channel: if so, add the mode delta modes to the target mode set.
+                    # Otherwise, subtract this mode set (otherwise, leaf channel modes will apply onto
+                    # the original channel.
+                    adding = (name, remotechan) in relay['links']
+
+                    # Add this to the SJOIN mode list.
+                    for mode in modedelta_modes:
+                        modechar = remoteirc.cmodes.get(mode[0])
+                        if modechar:
+                            modedelta_mode = ('+%s' % modechar, mode[1])
+                            if adding:
+                                log.debug('(%s) relay.relay_joins: adding %r on %s/%s (modedelta)', irc.name, str(modedelta_mode), name, remotechan)
+                                modes.append(modedelta_mode)
+                            elif modedelta_mode in modes:
+                                log.debug('(%s) relay.relay_joins: removing %r on %s/%s (modedelta)', irc.name, str(modedelta_mode), name, remotechan)
+                                modes.remove(modedelta_mode)
+
                 rsid = get_remote_sid(remoteirc, irc)
                 if rsid:
                     remoteirc.proto.sjoin(rsid, remotechan, queued_users, ts=ts, modes=modes)
@@ -2168,6 +2190,8 @@ def modedelta(irc, source, args):
         for chanpair in db[relay]['links']:
             remotenet, remotechan = chanpair
             remoteirc = world.networkobjects.get(remotenet)
+            if not remoteirc:
+                continue
 
             remote_modes = []
             # For each leaf channel, unset the old mode delta and set the new one
