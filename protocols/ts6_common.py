@@ -144,9 +144,9 @@ class TS6BaseProtocol(IRCS2SProtocol):
             reason = 'No reason given'
 
         # Mangle kick targets for IRCds that require it.
-        target = self._expandPUID(target)
+        real_target = self._expandPUID(target)
 
-        self._send(numeric, 'KICK %s %s :%s' % (channel, target, reason))
+        self._send(numeric, 'KICK %s %s :%s' % (channel, real_target, reason))
 
         # We can pretend the target left by its own will; all we really care about
         # is that the target gets removed from the channel userlist, and calling
@@ -377,6 +377,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         except IndexError:
             reason = ''
 
+        log.debug('(%s) Removing kick target %s from %s', self.irc.name, kicked, channel)
         self.handle_part(kicked, 'KICK', [channel, reason])
         return {'channel': channel, 'target': kicked, 'text': reason}
 
