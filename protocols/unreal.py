@@ -223,6 +223,13 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.applyModes(target, modes)
 
         if utils.isChannel(target):
+
+            # Make sure we expand any PUIDs when sending outgoing modes...
+            for idx, mode in enumerate(modes):
+                if mode[0][-1] in self.irc.prefixmodes:
+                    log.debug('(%s) mode: expanding PUID of mode %s', self.irc.name, str(mode))
+                    modes[idx] = (mode[0], self._expandPUID(mode[1]))
+
             # The MODE command is used for channel mode changes only
             ts = ts or self.irc.channels[self.irc.toLower(target)].ts
 
@@ -616,7 +623,9 @@ class UnrealProtocol(TS6BaseProtocol):
             elif userpair.startswith("'"):
                 changedmodes.add(('+I', userpair[1:]))
             else:
-                r = re.search(r'([^\w]*)(.*)', userpair)
+                # Note: don't be too zealous in matching here or we'll break with nicks
+                # like "[abcd]".
+                r = re.search(r'([~*@%+]*)(.*)', userpair)
                 user = r.group(2)
 
                 if not user:
