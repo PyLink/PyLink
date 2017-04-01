@@ -615,7 +615,9 @@ class UnrealProtocol(TS6BaseProtocol):
             elif userpair.startswith("'"):
                 changedmodes.add(('+I', userpair[1:]))
             else:
-                r = re.search(r'([^\w]*)(.*)', userpair)
+                # Note: don't be too zealous in matching here or we'll break with nicks
+                # like "[abcd]".
+                r = re.search(r'([~*@%+]*)(.*)', userpair)
                 user = r.group(2)
 
                 if not user:
