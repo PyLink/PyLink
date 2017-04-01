@@ -68,6 +68,10 @@ def remote(irc, source, args):
     args = remote_parser.parse_args(args)
     netname = args.network
 
+    if not args.command:
+        irc.error("No command specified!")
+        return
+
     # XXX: things like 'remote network1 remote network2 echo hi' will crash PyLink if the source network is network1...
     global REMOTE_IN_USE
     if REMOTE_IN_USE.is_set():
