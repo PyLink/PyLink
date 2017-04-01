@@ -2186,7 +2186,12 @@ def modedelta(irc, source, args):
                 irc.reply('Mode delta for channel \x02%s\x02 is set to: %s' %
                           (channel, db[relay].get('modedelta') or '\x1D(none)\x1D'))
 
-        target_modes += [('-%s' % modepair[0], modepair[1]) for modepair in old_modes]
+        # Add to target_modes all former modedelta modes that don't have a positive equivalent
+        # Note: We only check for (modechar, modedata) and not for (+modechar, modedata) here
+        # internally, but the actual filtering below checks for both?
+        modedelta_diff = [('-%s' % modepair[0], modepair[1]) for modepair in old_modes if
+                          modepair not in target_modes]
+        target_modes += modedelta_diff
         for chanpair in db[relay]['links']:
             remotenet, remotechan = chanpair
             remoteirc = world.networkobjects.get(remotenet)
@@ -2196,6 +2201,7 @@ def modedelta(irc, source, args):
             remote_modes = []
             # For each leaf channel, unset the old mode delta and set the new one
             # if applicable.
+            log.debug('(%s) modedelta target modes for %s/%s: %s', irc.name, remotenet, remotechan, target_modes)
             for modepair in target_modes:
                 modeprefix = modepair[0][0]
                 if modeprefix not in '+-':  # Assume + if no prefix was given.
