@@ -15,8 +15,9 @@ import hashlib
 from copy import deepcopy
 import inspect
 import re
-from collections import defaultdict, deque
+from collections import defaultdict
 import ipaddress
+import queue
 
 try:
     import ircmatch
@@ -58,7 +59,7 @@ class Irc(utils.DeprecatedAttributesObject):
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
 
-        self.queue = deque()
+        self.queue = None
 
         self.connected = threading.Event()
         self.aborted = threading.Event()
@@ -116,7 +117,8 @@ class Irc(utils.DeprecatedAttributesObject):
         self.pseudoclient = None
         self.lastping = time.time()
 
-        self.queue.clear()
+        self.maxsendq = self.serverdata.get('maxsendq', 4096)
+        self.queue = queue.Queue(self.maxsendq)
 
         # Internal variable to set the place and caller of the last command (in PM
         # or in a channel), used by fantasy command support.
@@ -175,11 +177,10 @@ class Irc(utils.DeprecatedAttributesObject):
     def processQueue(self):
         """Loop to process outgoing queue data."""
         while not self.aborted.is_set():
-            if self.queue:  # Only process if there's data.
-                data = self.queue.popleft()
-                self._send(data)
             throttle_time = self.serverdata.get('throttle_time', 0.005)
-            self.aborted.wait(throttle_time)
+            data = self.queue.get(throttle_time)
+            if data:
+                self._send(data)
         log.debug('(%s) Stopping queue thread as aborted is set', self.name)
 
     def connect(self):
@@ -510,7 +511,9 @@ class Irc(utils.DeprecatedAttributesObject):
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
         if queue:
-            self.queue.append(data)
+            # XXX: we don't really know how to handle blocking queues yet, so
+            # it's better to not expose that yet.
+            self.queue.put_nowait(data)
         else:
             self._send(data)
 

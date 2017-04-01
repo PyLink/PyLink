@@ -178,6 +178,10 @@ servers:
         # cause netsplits! This defaults to 30 if not set.
         maxnicklen: 30
 
+        # Determines the maximum size of the network's outgoing data queue (sendq), in message lines.
+        # This defaults to 4096 if not set.
+        #maxsendq: 4096
+
         # Toggles SSL for this network. Defaults to False if not specified.
         #ssl: true
 

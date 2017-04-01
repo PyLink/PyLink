@@ -208,4 +208,4 @@ def clearqueue(irc, source, args):
 
     Clears the outgoing text queue for the current connection."""
     permissions.checkPermissions(irc, source, ['core.clearqueue'])
-    irc.queue.clear()
+    irc.queue.queue.clear()
