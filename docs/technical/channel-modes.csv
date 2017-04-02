@@ -7,7 +7,7 @@ ban,b,b,b,b,b,b,b,b,b
 banexception,e (m_banexception),e,e,e,e,e,e,,
 blockcaps,B (m_blockcaps),,G (extensions/chm_nocaps.c),,,,,,
 blockcolor,c (m_blockcolor),,,c,c,c,,c,c
-delayjoin,,,,,,D,,D,D
+delayjoin,,,,D,,D,,D,D
 exemptchanops,X (m_exemptchanops),,,,,,,,
 filter,g (m_filter),,,,,,,,
 flood,f (m_messageflood),,,,,,,,
@@ -32,7 +32,7 @@ noamsg,,,,,,T,,T,
 noctcp,C (m_noctcp),C,C,C,C,C,,C,C
 noextmsg,n,n,n,n,n,n,n,,
 noforwards,,Q,Q,,,,,,
-noinvite,,,,,,,,,
+noinvite,,,,V,,,,,
 nokick,Q (m_nokicks),,E,Q,,,,,
 noknock,K (m_knock),p,,K,p,,,,
 nonick,N (m_nonicks),,d,N,,,,,
