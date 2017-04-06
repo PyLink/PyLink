@@ -1,3 +1,23 @@
+# PyLink 1.1.2
+
+The "Calamari" release.
+
+#### Bug fixes
+- Multiple fixes for the `unreal` protocol module when using UnrealIRCd 3.2 links:
+    - fccec3a Fix crashes on processing SJOIN when a user behind a 3.2 server has a nick starting with a symbol
+    - 8465edd Fix kicks to Unreal 3.2 users (PUIDs) not updating the internal state - this would've caused odd prefix mode desyncs if a user was kicked and rejoined.
+    - df4acbf Fix prefix modes not being set on Unreal 3.2 users (affects Automode, etc.)
+- Backported SASL fixes from 1.2-dev:
+    - b14ea4f Send CAP LS before NICK/USER so that we consistently get a SASL response before connect - this fixes SASL on networks like freenode, where connections can often complete before a SASL response from services is ever received.
+    - 84448e9 22ceb3f The above commit rewrites SASL to depend on a timely response from the server, so a configurable timeout for SASL/CAP is also introduced. (#424)
+
+#### Feature changes
+- 22ceb3f Added the `sasl_timeout` option for Clientbot networks (this defaults to 15 seconds if not set).
+
+#### Internal improvements
+- Backported stability improvements from 1.2-dev:
+    - d70ca9f Rewrite connection error handling to include `RuntimeError` and `SystemExit` (#438)
+
 # PyLink 1.1.1
 
 The "Crush" release. Changes from 1.1.0:
