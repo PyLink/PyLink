@@ -83,7 +83,7 @@ class ClientbotWrapperProtocol(Protocol):
             log.info('(%s) Skipping SASL due to timeout; are the IRCd and services configured '
                      'properly?', self.irc.name)
             self.capEnd()
-        self._cap_timer = threading.Timer(5, capEnd)
+        self._cap_timer = threading.Timer(self.irc.serverdata.get('sasl_timeout') or 15, capEnd)
         self._cap_timer.start()
 
         # This is a really gross hack to get the defined NICK/IDENT/HOST/GECOS.
