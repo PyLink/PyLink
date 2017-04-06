@@ -305,6 +305,9 @@ servers:
         #sasl_username: "mIRCsKripterz"
         #sasl_password: "DownLoaditn00b!!!"
 
+        # Defines the SASL timeout - this defaults to 15 seconds.
+        #sasl_timeout: 15
+
         # If this option is enabled, the bot will attempt SASL authentication even after it's
         # connected, as services become available throughout netsplits and reconnects.
         # Note: This requires an IRC server capable of IRCv3.2 cap-notify and sasl:

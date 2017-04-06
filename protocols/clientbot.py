@@ -73,6 +73,17 @@ class ClientbotWrapperProtocol(Protocol):
         if sendpass:
             f('PASS %s' % sendpass)
 
+        f('CAP LS 302')
+
+        # Start a timer to call CAP END if registration freezes (e.g. if AUTHENTICATE for SASL is
+        # never replied to).
+        def capEnd():
+            log.info('(%s) Skipping SASL due to timeout; are the IRCd and services configured '
+                     'properly?', self.irc.name)
+            self.capEnd()
+        self._cap_timer = threading.Timer(self.irc.serverdata.get('sasl_timeout') or 15, capEnd)
+        self._cap_timer.start()
+
         # This is a really gross hack to get the defined NICK/IDENT/HOST/GECOS.
         # But this connection stuff is done before any of the spawnClient stuff in
         # services_support fires.
@@ -81,8 +92,6 @@ class ClientbotWrapperProtocol(Protocol):
         ident = self.irc.serverdata.get('pylink_ident') or conf.conf["bot"].get("ident", "pylink")
         f('USER %s 8 * :%s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
-
-        f('CAP LS 302')
 
     # Note: clientbot clients are initialized with umode +i by default
     def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
@@ -413,6 +422,14 @@ class ClientbotWrapperProtocol(Protocol):
                 parsed_args['tags'] = tags  # Add message tags to this dict.
                 return [idsource, command, parsed_args]
 
+    def capEnd(self):
+        """
+        Abort SASL login by sending CAP END.
+        """
+        self.irc.send('CAP END')
+        log.debug("(%s) Stopping CAP END timer.", self.irc.name)
+        self._cap_timer.cancel()
+
     def saslAuth(self):
         """
         Starts an authentication attempt via SASL. This returns True if SASL
@@ -483,7 +500,7 @@ class ClientbotWrapperProtocol(Protocol):
         logfunc = log.info if command == '903' else log.warning
         logfunc('(%s) %s', self.irc.name, args[-1])
         if not self.has_eob:
-            self.irc.send('CAP END')
+            self.capEnd()
     handle_903 = handle_902 = handle_905 = handle_906 = handle_907 = handle_904
 
     def requestNewCaps(self):
@@ -521,12 +538,12 @@ class ClientbotWrapperProtocol(Protocol):
             # to do so.
             if not self.saslAuth():
                 if not self.has_eob:
-                    self.irc.send('CAP END')
+                    self.capEnd()
         elif subcmd == 'NAK':
             log.warning('(%s) Got NAK for IRCv3 capabilities %s, even though they were supposedly available',
                         self.irc.name, args[-1])
             if not self.has_eob:
-                self.irc.send('CAP END')
+                self.capEnd()
         elif subcmd == 'NEW':
             # :irc.example.com CAP modernclient NEW :batch
             # :irc.example.com CAP tester NEW :away-notify extended-join
