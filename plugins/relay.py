@@ -649,7 +649,7 @@ def relay_joins(irc, channel, users, ts, burst=True):
                 # the different sides of the relay are merged properly.
                 if not irc.proto.hasCap('has-ts'):
                     # Special hack for clientbot: just use the remote's modes so mode changes
-                    # take precendence. protocols/clientbot does not track channel TS.
+                    # take precendence. (TS is always outside the clientbot's control)
                     ts = remoteirc.channels[remotechan].ts
                 else:
                     ts = irc.channels[channel].ts

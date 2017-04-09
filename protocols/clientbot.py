@@ -151,6 +151,7 @@ class ClientbotWrapperProtocol(Protocol):
         if self.irc.pseudoclient and client == self.irc.pseudoclient.uid:
             self.irc.send('JOIN %s' % channel)
             # Send /names and /who requests right after
+            self.irc.send('MODE %s' % channel)
             self.irc.send('NAMES %s' % channel)
             self.irc.send('WHO %s' % channel)
         else:
@@ -845,6 +846,23 @@ class ClientbotWrapperProtocol(Protocol):
             # somehow gets desynced, this may not catch everything it's supposed to.
             if (self.irc.pseudoclient and source != self.irc.pseudoclient.uid) or not self.irc.pseudoclient:
                 return {'target': target, 'modes': changedmodes, 'channeldata': oldobj}
+
+    def handle_324(self, source, command, args):
+        """Handles MODE announcements via RPL_CHANNELMODEIS (i.e. the response to /mode #channel)"""
+        # -> MODE #test
+        # <- :midnight.vpn 324 GL #test +nt
+        # <- :midnight.vpn 329 GL #test 1491773459
+        channel = self.irc.toLower(args[1])
+        modes = args[2:]
+        log.debug('(%s) Got RPL_CHANNELMODEIS (324) modes %s for %s', self.irc.name, modes, channel)
+        changedmodes = self.irc.parseModes(channel, modes)
+        self.irc.applyModes(channel, changedmodes)
+
+    def handle_329(self, source, command, args):
+        """Handles TS announcements via RPL_CREATIONTIME."""
+        channel = self.irc.toLower(args[1])
+        ts = int(args[2])
+        self.irc.channels[channel].ts = ts
 
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""
