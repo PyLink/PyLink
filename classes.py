@@ -1450,7 +1450,7 @@ class Protocol():
         log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
         self.irc.servers[sid].users.discard(numeric)
 
-    def updateTS(self, sender, channel, their_ts, modes=[]):
+    def updateTS(self, sender, channel, their_ts, modes=None):
         """
         Merges modes of a channel given the remote TS and a list of modes.
         """
@@ -1460,6 +1460,9 @@ class Protocol():
         #                       | our TS lower | TS equal | their TS lower
         # mode origin is us     |   OVERWRITE  |   MERGE  |    IGNORE
         # mode origin is uplink |    IGNORE    |   MERGE  |   OVERWRITE
+
+        if modes is None:
+            modes = []
 
         def _clear():
             log.debug("(%s) Clearing local modes from channel %s due to TS change", self.irc.name,
