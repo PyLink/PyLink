@@ -134,7 +134,11 @@ def remote(irc, source, args):
             log.debug('(%s) networks.remote: restoring reply() of IRC object %s', irc.name, netname)
             remoteirc._reply = old_reply
             # Remove the identification override after we finish.
-            remoteirc.pseudoclient.account = ''
+            try:
+                remoteirc.pseudoclient.account = ''
+            except:
+                log.warning('(%s) networks.remote: failed to restore pseudoclient account for %s; '
+                            'did the remote network disconnect while running this command?', irc.name, netname)
             REMOTE_IN_USE.clear()
 
 @utils.add_cmd
