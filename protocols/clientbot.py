@@ -339,6 +339,7 @@ class ClientbotWrapperProtocol(Protocol):
 
         Limited (internal) nick collision checking is done here to prevent Clientbot users from
         being confused with virtual clients, and vice versa."""
+        self._validateNick(nick)
         idsource = self.irc.nickToUid(nick)
         is_internal = self.irc.isInternalClient(idsource)
 
@@ -682,6 +683,13 @@ class ClientbotWrapperProtocol(Protocol):
             return {'channel': channel, 'users': names, 'modes': self.irc.channels[channel].modes,
                     'parse_as': "JOIN"}
 
+    def _validateNick(self, nick):
+        """
+        Checks to make sure a nick doesn't clash with a PUID.
+        """
+        if nick in self.irc.users or nick in self.irc.servers:
+            raise ProtocolError("Got bad nick %s from IRC which clashes with a PUID. Is someone trying to spoof users?" % nick)
+
     def handle_352(self, source, command, args):
         """
         Handles 352 / RPL_WHOREPLY.
@@ -695,6 +703,8 @@ class ClientbotWrapperProtocol(Protocol):
         status = args[6]
         # Hopcount and realname field are together. We only care about the latter.
         realname = args[-1].split(' ', 1)[-1]
+
+        self._validateNick(nick)
         uid = self.irc.nickToUid(nick)
 
         if uid is None:
