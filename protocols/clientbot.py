@@ -104,7 +104,7 @@ class ClientbotWrapperProtocol(Protocol):
         """
 
         server = server or self.irc.sid
-        uid = self.uidgen.next_uid()
+        uid = self.uidgen.next_uid(prefix=nick)
 
         ts = ts or int(time.time())
 
@@ -122,7 +122,7 @@ class ClientbotWrapperProtocol(Protocol):
         STUB: Pretends to spawn a new server with a subset of the given options.
         """
         name = name.lower()
-        sid = self.sidgen.next_sid()
+        sid = self.sidgen.next_sid(prefix=name)
         self.irc.servers[sid] = IrcServer(uplink, name, internal=internal)
         return sid
 
