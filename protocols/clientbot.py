@@ -339,12 +339,12 @@ class ClientbotWrapperProtocol(Protocol):
 
         Limited (internal) nick collision checking is done here to prevent Clientbot users from
         being confused with virtual clients, and vice versa."""
-        # If this sender isn't known or it is one of our virtual clients, spawn a new one.
-        # spawnClient() will take care of any nick collisions caused by new, Clientbot users
-        # taking the same nick as one of our virtual clients.
         idsource = self.irc.nickToUid(nick)
         is_internal = self.irc.isInternalClient(idsource)
 
+        # If this sender isn't known or it is one of our virtual clients, spawn a new one.
+        # This also takes care of any nick collisions caused by new, Clientbot users
+        # taking the same nick as one of our virtual clients, and will force the virtual client to lose.
         if (not idsource) or (is_internal and self.irc.pseudoclient and idsource != self.irc.pseudoclient.uid):
             if idsource:
                 log.debug('(%s) Nick-colliding virtual client %s/%s', self.irc.name, idsource, nick)
