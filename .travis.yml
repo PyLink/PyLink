@@ -14,7 +14,8 @@ addons:
 
 deploy:
   provider: pypi
-  server: https://testpypi.python.org/pypi
+# Enable this to use test mode
+# server: https://testpypi.python.org/pypi
   user:
     secure: Ql6ihu5MDgWuAvT9NYfriGUYGhHpsqwXfZHWDQT+DfRjOqHo9QT7PnfexeBoe6L6cYUkEnIrnAXKtBXGy6UmyvfrnvBl68877dLVuoC8PfQ4J0ej7TVnCJmT/LwRqFvzZXkeg4CIlJsVJ6pvrPHXQBDPH1rj/rWCucchrofmps8=
   password:
