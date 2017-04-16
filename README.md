@@ -77,7 +77,7 @@ Ubuntu packages for PyLink are available from the [PyLink PPA](https://launchpad
 
 These IRCds (in alphabetical order) are frequently tested and well supported. If any issues occur, please file a bug on the issue tracker.
 
-* [charybdis](http://charybdis.io/) (3.5+) - module `ts6`
+* [charybdis](https://github.com/charybdis-ircd/charybdis) (3.5+) - module `ts6`
 * [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
     - For vHost setting to work, `m_chghost.so` must be loaded.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
