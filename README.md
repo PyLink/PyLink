@@ -29,24 +29,24 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 ### Installing from source
 
-First, make sure the following dependencies are met:
+1) First, make sure the following dependencies are met:
 
-* Python 3.4+
-* Setuptools (`pip3 install setuptools`)
-* PyYAML (`pip3 install pyyaml`)
-* ircmatch (`pip3 install ircmatch`)
-* *For password encryption*: Passlib (`pip3 install passlib`)
-* *For the servprotect plugin*: expiringdict (install this from [source](https://github.com/mailgun/expiringdict); installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
+    * Python 3.4+
+    * Setuptools (`pip3 install setuptools`)
+    * PyYAML (`pip3 install pyyaml`)
+    * ircmatch (`pip3 install ircmatch`)
+    * *For password encryption*: Passlib (`pip3 install passlib`)
+    * *For the servprotect plugin*: expiringdict (install this from [source](https://github.com/mailgun/expiringdict); installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
 
-1) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
+2) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
 
-2) Pick your branch.
-* By default you'll be on the **master** (stable) branch, which is bugfix only for the most part (except when a new stable release is introduced).
-* However, new features or more intensive bug fixes may not always be included. Instead, the **devel** (pre-release) branch is where active development goes, and it can be accessed by running `git checkout devel` in your Git tree.
+3) Pick your branch.
+    * By default you'll be on the **master** (stable) branch, which is mostly bugfix only (except when a new stable release is introduced). This means that new features or more intensive bug fixes may not always be included.
+    * Instead, the **devel** (pre-release) branch is where active development goes, and it can be accessed by running `git checkout devel` in your Git tree.
 
-3) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
-* Note: `--user` is a *literal* string; *do not* replace it with your username.
-*  **Whenever you switch branches or update PyLink's sources via `git pull`, you will need to re-run this command for changes to apply!**
+4) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
+    * Note: `--user` is a *literal* string; *do not* replace it with your username.
+    *  **Whenever you switch branches or update PyLink's sources via `git pull`, you will need to re-run this command for changes to apply!**
 
 ### Installing via PyPI (stable branch only)
 1) Make sure you're running the right pip command: on most distros, pip for Python 3 uses the command `pip3`.
