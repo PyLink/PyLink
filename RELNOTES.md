@@ -1,3 +1,51 @@
+# PyLink 1.2-alpha1
+The "Darkness" release. This release includes all fixes from 1.1.2, plus the following summary of changes:
+
+#### Feature changes
+- **Added support for snircd, ircu, and other (generic) P10 variants.** The target IRCd can be chosen using the new server-specific `p10_ircd` option; see the example config for details (#330).
+- **The `nefarious` protocol module was renamed to `p10` - you should update your configuration to use the new name!**
+- Plugins and protocol modules can now be loaded from any directory, making pylink-contrib 20% more useful! Look for the `plugin_dirs` and `protocol_dirs` options in the example config. (#350)
+    - The `pylink-contribdl` utility was dropped as this makes it obsolete.
+- Relay now forbids linking to channels where the home network is down, which previously caused errors due to unreliable target TS (#419). This, along with the regular TS check, can be overridden with a new `link --force` option.
+- SASL timeout for clientbot is now configurable, with the default raised to 15 seconds
+- **New-style accounts (i.e. anything under `login:accounts`) now require a `permissions:` block for PyLink to start** (#413).
+- New `stats` (uptime info) and `global` (global announcement) plugins
+- Improvements to the `remote` command of the `networks` plugin:
+    - Plugin replies are now routed back to the sender's network.
+    - Added an optional `--service` option to call commands for service bots other than the main PyLink service.
+- `servprotect` KILL/SAVE limits and expiry time are now configurable (#417)
+- Added the `pylink::show_unknown_commands` option to optionally disable "unknown command" errors. This option can also be overridden per-server and per-service (#441).
+- Added the `pylink::prefer_private_replies` option to default to private command replies (#409)
+- Relay message formatting became more flexible, and messages from user-less senders can now be dropped (fa30d3c c03f2d7)
+- Added global and per-service `spawn_service(s)` options to optionally disable service bot spawning
+- The `bots` plugin now allows specifying channel prefixes (e.g. `@+`) in `join`
+- exec: Added `iexec`, `ieval`, `peval`, `pieval`: `i`\* commands run code in an isolated, persistent local scope, while `p`\* commands evaluate expressions while pretty-printing the output
+- Relay: implement optional network disconnect announcements (see the `relay::disconnect_announcement` option; #421)
+
+#### Bug fixes
+- Service bots no longer throw errors when attempting to call empty commands via fantasy.
+- Protocol modules now send PONG immediately instead of queuing it, which should prevent ping timeouts at times of very high activity.
+
+#### Internal improvements
+- Protocols now verify that incoming messages originate from the right direction (#405)
+- `Irc.matchHost` now supports matching CIDR ranges (#411)
+- Added an `utils.IRCParser` class based off `argparse`, for flexible argument parsing (#6).
+- Rewrote outgoing message queues to use `queue.Queue` (#430), and support a limit to the amount of queued lines (#442)
+   - Also, added a `clearqueue` command to force clear the queue on a network.
+- PyLink protocol capabilities were introduced, reducing the amount of protocol name hardcoding in plugins (#337)
+- Service bots no longer create stubs on Clientbot networks, and instead route replies through the main bot (#403)
+- The default throttle time was halved from 0.01s to 0.005s.
+- ServiceBot is now more flexible in help formatting, fixing indented lines and consecutive newlines not showing on IRC.
+- Configuration validation no longer uses skippable asserts (#414)
+- inspircd: better support for OPERTYPE on InspIRCd 3.x
+- Clientbot now tracks channel modes and channel TS on join.
+- Clientbot now generates PUIDs/PSIDs with the nick or server name as prefix, and checks to make sure incoming senders don't clash with one.
+- commands: `showchan` now shows TS on connections without the `has-ts` protocol capability as well, even though this value may be unreliable
+
+#### Misc changes
+- The `bot:` config block is renamed to `pylink:`. Existing configurations will still work, as the `bot` and `pylink` blocks are always merged together (#343).
+- Added better documentation for generic options available to all service bots (`nick`, `ident`, `prefix` for fantasy, etc.)
+- `Irc.botdata`, `Irc.conf`, `Irc.checkAuthenticated()` have been deprecated: use `conf.conf['pylink']`, `conf.conf`, and the permissions API respectively instead!
 # PyLink 1.1.2
 
 The "Calamari" release.
