@@ -99,7 +99,7 @@ def showchan(irc, source, args):
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
-        irc.error('Unknown channel %r.' % channel, private=True)
+        irc.error('Unknown channel %r.' % channel)
         return
 
     nicks = [irc.users[u].nick for u in c.users]
