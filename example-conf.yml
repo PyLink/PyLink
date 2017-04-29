@@ -88,7 +88,7 @@ login:
             # 'mkpasswd' command or the 'pylink-mkpasswd' utility included with PyLink.
             password: "$6$rounds=81447$WlVlZYCgbnjPmVqy$28Tu/Zl0xNpePqimax2wABKn5GCoWomYEI1Pu5jqYyQNULazR4BxQmscZ0MgBHqBCCke.3u5eOtBSZwL3WwVf0"
 
-            # Determines whether the password given is in plain-text. Defaults to false
+            # Determines whether the password given is encrypted. Defaults to false
             # (plain text) for backwards compatibility.
             encrypted: true
 
