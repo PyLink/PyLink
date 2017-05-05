@@ -44,6 +44,14 @@ Extended targets or exttargets *replace* regular hostmasks with conditional matc
 - `$pylinkacc:accountname` -> Returns True if the target's PyLink login matches the one given (case insensitive).
 - `$network:netname` -> Returns True if the target user originates from the given network (this supports and looks up the home network of Relay users).
 
+### The "$and" target
+The `$and` target is slightly more complex. Examples:
+
+- `$and:($ircop:*admin*+$network:ovd)` -> Matches all opers on the network ovd.
+- `$and:($account+$pylinkirc)` -> Matches all users logged in to both services and PyLink.
+- `$and:(*!*@localhost+$ircop)` -> Matches all opers with the host `localhost`.
+- `$and:(*!*@*.mibbit.com+!$ircop+!$account)` -> Matches all mibbit users that aren't opered or logged in to services.
+
 ## Permissions
 
 See the [Permissions Reference](permissions-reference.md#automode) for a list of permissions defined by Automode.
