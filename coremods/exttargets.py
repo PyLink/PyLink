@@ -144,3 +144,25 @@ def pylinkacc(irc, host, uid):
     elif len(groups) == 2:
         # Second scenario. Return True if the user's login matches the one given.
         return login == groups[1]
+
+@bind
+def network(irc, host, uid):
+    """
+    $network exttarget handler. This exttarget takes one argument: a network name, and returns
+    a match for all users on that network.
+
+    Note: network names are case sensitive.
+    """
+    try:
+        targetnet = host.split(':')[1]
+    except IndexError:  # No network arg given, bail.
+        return False
+
+    userobj = irc.users[uid]
+    if hasattr(userobj, 'remote'):
+        # User is a PyLink Relay client; set the correct network name.
+        homenet = userobj.remote[0]
+    else:
+        homenet = irc.name
+
+    return homenet == targetnet

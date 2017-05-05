@@ -42,6 +42,7 @@ Extended targets or exttargets *replace* regular hostmasks with conditional matc
 - `$channel:#channel:op` -> Returns True if the target is in the given channel, and is opped. Any supported prefix mode (owner, admin, op, halfop, voice) can be used for the last part, but only one at a time.
 - `$pylinkacc` -> Returns True if the target is logged in to PyLink.
 - `$pylinkacc:accountname` -> Returns True if the target's PyLink login matches the one given (case insensitive).
+- `$network:netname` -> Returns True if the target user originates from the given network (this supports and looks up the home network of Relay users).
 
 ## Permissions
 
