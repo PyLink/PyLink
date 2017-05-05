@@ -1,4 +1,4 @@
-# Automode & Exttargets Guide
+# Automode Tutorial
 
 The Automode plugin was introduced in PyLink 0.9 as a simple way of managing channel access control lists with Relay. That said, it is not designed to entirely replace traditional IRC services such as ChanServ.
 
@@ -26,31 +26,7 @@ Clearing all access entries on a channel:
 - `/msg ModeBot clearacc #channel`
 
 ## Supported masks and extended targets
-
-Extended targets or exttargets *replace* regular hostmasks with conditional matching based on the given situation. The following exttargets are supported:
-
-- `$account` -> Returns True (a match) if the target is registered.
-- `$account:accountname` -> Returns True if the target's account name matches the one given, and the target is connected to the local network. Account names are case insensitive.
-- `$account:accountname:netname` -> Returns True if both the target's account name and origin network name match the ones given. Account names are case insensitive, but network names ARE case sensitive.
-- `$account:*:netname` -> Matches all logged in users on the given network. Globs are not supported here; only a literal `*`.
-- `$ircop` -> Returns True (a match) if the target is opered.
-- `$ircop:*admin*` -> Returns True if the target's is opered and their oper type matches the glob given (case insensitive).
-- `$server:server.name` -> Returns True (a match) if the target is connected on the given server. Server names are matched case insensitively.
-- `$server:*server.glob*` -> Returns True (a match) if the target is connected on a server matching the glob.
-- `$server:1XY` -> Returns True if the target's is connected on the server with the given SID. Note: SIDs ARE case sensitive.
-- `$channel:#channel` -> Returns True if the target is in the given channel (case insensitive).
-- `$channel:#channel:op` -> Returns True if the target is in the given channel, and is opped. Any supported prefix mode (owner, admin, op, halfop, voice) can be used for the last part, but only one at a time.
-- `$pylinkacc` -> Returns True if the target is logged in to PyLink.
-- `$pylinkacc:accountname` -> Returns True if the target's PyLink login matches the one given (case insensitive).
-- `$network:netname` -> Returns True if the target user originates from the given network (this supports and looks up the home network of Relay users).
-
-### The "$and" target
-The `$and` target is slightly more complex. Examples:
-
-- `$and:($ircop:*admin*+$network:ovd)` -> Matches all opers on the network ovd.
-- `$and:($account+$pylinkirc)` -> Matches all users logged in to both services and PyLink.
-- `$and:(*!*@localhost+$ircop)` -> Matches all opers with the host `localhost`.
-- `$and:(*!*@*.mibbit.com+!$ircop+!$account)` -> Matches all mibbit users that aren't opered or logged in to services.
+Automode supports any hostmask or extended target implemented in PyLink; see the [Exttargets Guide](exttargets.md) for more details.
 
 ## Permissions
 
