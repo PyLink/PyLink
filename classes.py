@@ -1162,65 +1162,78 @@ class Irc(utils.DeprecatedAttributesObject):
         # Try to convert target into a UID. If this fails, it's probably a hostname.
         target = self.nickToUid(target) or target
 
-        # Prepare a list of hosts to check against.
-        if target in self.users:
-            if glob.startswith(('$', '!$')):
-                # !$exttarget inverts the given match.
-                invert = glob.startswith('!$')
+        # Allow queries like !$exttarget to invert the given match.
+        invert = glob.startswith('!')
+        if invert:
+            glob = glob.lstrip('!')
 
-                # Exttargets start with $. Skip regular ban matching and find the matching ban handler.
-                glob = glob.lstrip('$!')
-                exttargetname = glob.split(':', 1)[0]
-                handler = world.exttarget_handlers.get(exttargetname)
+        def match_host_core():
+            """
+            Core processor for matchHost(), minus the inversion check.
+            """
+            # Work with variables in the matchHost() scope, from
+            # http://stackoverflow.com/a/8178808
+            nonlocal glob
 
-                if handler:
-                    # Handler exists. Return what it finds.
-                    result = handler(self, glob, target)
-                    log.debug('(%s) Got %s from exttarget %s in matchHost() glob $%s for target %s',
-                              self.name, result, exttargetname, glob, target)
-                    if invert:  # Anti-exttarget was specified.
-                        result = not result
-                    return result
-                else:
-                    log.debug('(%s) Unknown exttarget %s in matchHost() glob $%s', self.name,
-                              exttargetname, glob)
-                    return False
+            # Prepare a list of hosts to check against.
+            if target in self.users:
+                if glob.startswith('$'):
+                    # Exttargets start with $. Skip regular ban matching and find the matching ban handler.
+                    glob = glob.lstrip('$')
+                    exttargetname = glob.split(':', 1)[0]
+                    handler = world.exttarget_handlers.get(exttargetname)
 
-            hosts = {self.getHostmask(target)}
+                    if handler:
+                        # Handler exists. Return what it finds.
+                        result = handler(self, glob, target)
+                        log.debug('(%s) Got %s from exttarget %s in matchHost() glob $%s for target %s',
+                                  self.name, result, exttargetname, glob, target)
+                        return result
+                    else:
+                        log.debug('(%s) Unknown exttarget %s in matchHost() glob $%s', self.name,
+                                  exttargetname, glob)
+                        return False
 
-            if ip:
-                hosts.add(self.getHostmask(target, ip=True))
+                hosts = {self.getHostmask(target)}
 
-                # HACK: support CIDR hosts in the hosts portion
-                try:
-                    header, cidrtarget = glob.split('@', 1)
-                    log.debug('(%s) Processing CIDRs for %s (full host: %s)', self.name,
-                              cidrtarget, glob)
-                    # Try to parse the host portion as a CIDR range
-                    network = ipaddress.ip_network(cidrtarget)
+                if ip:
+                    hosts.add(self.getHostmask(target, ip=True))
 
-                    log.debug('(%s) Found CIDR for %s, replacing target host with IP %s', self.name,
-                              realhost, target)
-                    real_ip = self.users[target].ip
-                    if ipaddress.ip_address(real_ip) in network:
-                        # If the CIDR matches, hack around the host matcher by pretending that
-                        # the lookup target was the IP and not the CIDR range!
-                        glob = '@'.join((header, real_ip))
-                except ValueError:
-                    pass
+                    # HACK: support CIDR hosts in the hosts portion
+                    try:
+                        header, cidrtarget = glob.split('@', 1)
+                        log.debug('(%s) Processing CIDRs for %s (full host: %s)', self.name,
+                                  cidrtarget, glob)
+                        # Try to parse the host portion as a CIDR range
+                        network = ipaddress.ip_network(cidrtarget)
 
-            if realhost:
-                hosts.add(self.getHostmask(target, realhost=True))
+                        log.debug('(%s) Found CIDR for %s, replacing target host with IP %s', self.name,
+                                  realhost, target)
+                        real_ip = self.users[target].ip
+                        if ipaddress.ip_address(real_ip) in network:
+                            # If the CIDR matches, hack around the host matcher by pretending that
+                            # the lookup target was the IP and not the CIDR range!
+                            glob = '@'.join((header, real_ip))
+                    except ValueError:
+                        pass
 
-        else:  # We were given a host, use that.
-            hosts = [target]
+                if realhost:
+                    hosts.add(self.getHostmask(target, realhost=True))
 
-        # Iterate over the hosts to match using ircmatch.
-        for host in hosts:
-            if ircmatch.match(casemapping, glob, host):
-                return True
+            else:  # We were given a host, use that.
+                hosts = [target]
 
-        return False
+            # Iterate over the hosts to match using ircmatch.
+            for host in hosts:
+                if ircmatch.match(casemapping, glob, host):
+                    return True
+
+            return False
+
+        result = match_host_core()
+        if invert:
+            result = not result
+        return result
 
 class IrcUser():
     """PyLink IRC user class."""
