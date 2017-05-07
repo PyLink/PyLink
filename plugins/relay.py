@@ -483,7 +483,8 @@ def initialize_channel(irc, channel):
         log.debug('(%s) relay.initialize_channel: joining our (%s) users: %s', irc.name, remotenet, irc.channels[channel].users)
         relay_joins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
 
-        world.services['pylink'].join(irc, channel)
+        if 'pylink' in world.services:
+            world.services['pylink'].join(irc, channel)
 
 def remove_channel(irc, channel):
     """Destroys a relay channel by parting all of its users."""
