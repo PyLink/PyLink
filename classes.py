@@ -510,6 +510,9 @@ class Irc(utils.DeprecatedAttributesObject):
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
+        if self.aborted.is_set():
+            log.debug('(%s) refusing to queue data %r as self.aborted is set', self.name, data)
+            return
         if queue:
             # XXX: we don't really know how to handle blocking queues yet, so
             # it's better to not expose that yet.
