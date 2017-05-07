@@ -385,7 +385,7 @@ class Irc(utils.DeprecatedAttributesObject):
 
         try:
             log.debug('(%s) disconnect: Shutting down socket.', self.name)
-            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.shutdown(socket.SHUT_WR)
         except:  # Socket timed out during creation; ignore
             pass
 
