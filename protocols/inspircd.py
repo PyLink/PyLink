@@ -370,12 +370,18 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
         self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
 
-        endburstf = lambda: self._send(sid, 'ENDBURST')
-        if endburst_delay:
+        def endburstf():
             # Delay ENDBURST by X seconds if requested.
-            threading.Timer(endburst_delay, endburstf, ()).start()
+            if self.irc.aborted.wait(endburst_delay):
+                # We managed to catch the abort flag before sending ENDBURST, so break
+                log.debug('(%s) stopping endburstf() for %s as aborted was set', self.irc.name, sid)
+                return
+            self._send(sid, 'ENDBURST')
+
+        if endburst_delay:
+            threading.Thread(target=endburstf).start()
         else:  # Else, send burst immediately
-            endburstf()
+            self._send(sid, 'ENDBURST')
         return sid
 
     def squit(self, source, target, text='No reason given'):
