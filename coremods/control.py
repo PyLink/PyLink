@@ -19,10 +19,14 @@ def remove_network(ircobj):
     ircobj.disconnect()
     del world.networkobjects[ircobj.name]
 
+def _print_remaining_threads():
+    log.debug('_shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
+
 def _shutdown(irc=None):
     """Shuts down the Pylink daemon."""
     global tried_shutdown
     if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
+        _print_remaining_threads()
         raise KeyboardInterrupt("Forcing shutdown.")
 
     tried_shutdown = True
@@ -52,7 +56,7 @@ def _shutdown(irc=None):
 
     log.info("Waiting for remaining threads to stop; this may take a few seconds. If PyLink freezes "
              "at this stage, press Ctrl-C to force a shutdown.")
-    log.debug('_shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
+    _print_remaining_threads()
 
     # Done.
 
