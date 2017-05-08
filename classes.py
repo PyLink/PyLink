@@ -182,7 +182,7 @@ class Irc(utils.DeprecatedAttributesObject):
                 try:
                     data = self.queue.get_nowait()
                     self._send(data)
-                except Queue.Empty:
+                except queue.Empty:
                     pass
 
         log.debug('(%s) Stopping queue thread as aborted is set', self.name)
