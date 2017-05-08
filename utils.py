@@ -277,7 +277,7 @@ class ServiceBot():
         try:
             irc = world.networkobjects[netname]
         except KeyError:
-            log.debug('(%s/%s) Skipping join(), IRC object not initialized yet', irc.name, self.name)
+            log.debug('(%s/%s) Skipping join(), IRC object not initialized yet', netname, self.name)
             return
 
         try:
