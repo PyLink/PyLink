@@ -176,11 +176,15 @@ class Irc(utils.DeprecatedAttributesObject):
 
     def processQueue(self):
         """Loop to process outgoing queue data."""
-        while not self.aborted.is_set():
+        while True:
             throttle_time = self.serverdata.get('throttle_time', 0.005)
-            data = self.queue.get(throttle_time)
-            if data:
-                self._send(data)
+            if not self.aborted.wait(throttle_time):
+                try:
+                    data = self.queue.get_nowait()
+                    self._send(data)
+                except Queue.Empty:
+                    pass
+
         log.debug('(%s) Stopping queue thread as aborted is set', self.name)
 
     def connect(self):
