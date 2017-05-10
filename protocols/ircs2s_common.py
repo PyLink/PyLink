@@ -14,7 +14,7 @@ class IRCS2SProtocol(Protocol):
         self.protocol_caps = {'can-spawn-clients', 'has-ts', 'can-host-relay',
                               'can-track-servers'}
 
-    def checkCollision(self, nick):
+    def check_nick_collision(self, nick):
         """
         Nick collision checker.
         """

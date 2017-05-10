@@ -390,7 +390,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # arguments: nick, hopcount?, ts, ident, real-host, UID, services account (0 if none), modes,
         #            displayed host, cloaked (+x) host, base64-encoded IP, and realname
         nick = args[0]
-        self.checkCollision(nick)
+        self.check_nick_collision(nick)
         ts, ident, realhost, uid, accountname, modestring, host = args[2:9]
 
         if host == '*':
