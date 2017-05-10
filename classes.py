@@ -184,8 +184,9 @@ class Irc(utils.DeprecatedAttributesObject):
                     self._send(data)
                 except queue.Empty:
                     pass
-
-        log.debug('(%s) Stopping queue thread as aborted is set', self.name)
+            else:
+                log.debug('(%s) Stopping queue thread as aborted is set', self.name)
+                break
 
     def connect(self):
         """
