@@ -510,7 +510,7 @@ class Irc(utils.DeprecatedAttributesObject):
         try:
             self.socket.send(data)
         except (OSError, AttributeError):
-            log.exception("(%s) Dropping message %r; network isn't connected!", self.name, stripped_data)
+            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, stripped_data)
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
