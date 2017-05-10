@@ -63,6 +63,93 @@ class P10SIDGenerator():
         return sid
 
 class P10Protocol(IRCS2SProtocol):
+    COMMAND_TOKENS = {
+        'AC': 'ACCOUNT',
+        'AD': 'ADMIN',
+        'LL': 'ASLL',
+        'A': 'AWAY',
+        'B': 'BURST',
+        'CAP': 'CAP',
+        'CM': 'CLEARMODE',
+        'CLOSE': 'CLOSE',
+        'CN': 'CNOTICE',
+        'CO': 'CONNECT',
+        'CP': 'CPRIVMSG',
+        'C': 'CREATE',
+        'DE': 'DESTRUCT',
+        'DS': 'DESYNCH',
+        'DIE': 'DIE',
+        'DNS': 'DNS',
+        'EB': 'END_OF_BURST',
+        'EA': 'EOB_ACK',
+        'Y': 'ERROR',
+        'GET': 'GET',
+        'GL': 'GLINE',
+        'HASH': 'HASH',
+        'HELP': 'HELP',
+        'F': 'INFO',
+        'I': 'INVITE',
+        'ISON': 'ISON',
+        'J': 'JOIN',
+        'JU': 'JUPE',
+        'K': 'KICK',
+        'D': 'KILL',
+        'LI': 'LINKS',
+        'LIST': 'LIST',
+        'LU': 'LUSERS',
+        'MAP': 'MAP',
+        'M': 'MODE',
+        'MO': 'MOTD',
+        'E': 'NAMES',
+        'N': 'NICK',
+        'O': 'NOTICE',
+        'OPER': 'OPER',
+        'OM': 'OPMODE',
+        'L': 'PART',
+        'PA': 'PASS',
+        'G': 'PING',
+        'Z': 'PONG',
+        'POST': 'POST',
+        'P': 'PRIVMSG',
+        'PRIVS': 'PRIVS',
+        'PROTO': 'PROTO',
+        'Q': 'QUIT',
+        'REHASH': 'REHASH',
+        'RESET': 'RESET',
+        'RESTART': 'RESTART',
+        'RI': 'RPING',
+        'RO': 'RPONG',
+        'S': 'SERVER',
+        'SERVSET': 'SERVLIST',
+        'SERVSET': 'SERVSET',
+        'SET': 'SET',
+        'SE': 'SETTIME',
+        'U': 'SILENCE',
+        'SQUERY': 'SQUERY',
+        'SQ': 'SQUIT',
+        'R': 'STATS',
+        'TI': 'TIME',
+        'T': 'TOPIC',
+        'TR': 'TRACE',
+        'UP': 'UPING',
+        'USER': 'USER',
+        'USERHOST': 'USERHOST',
+        'USERIP': 'USERIP',
+        'V': 'VERSION',
+        'WC': 'WALLCHOPS',
+        'WA': 'WALLOPS',
+        'WU': 'WALLUSERS',
+        'WV': 'WALLVOICES',
+        'H': 'WHO',
+        'W': 'WHOIS',
+        'X': 'WHOWAS',
+        'XQ': 'XQUERY',
+        'XR': 'XREPLY',
+        'SN': 'SVSNICK',
+        'SJ': 'SVSJOIN',
+        'SH': 'SETHOST',
+        'FA': 'FAKE'
+    }
 
     def __init__(self, irc):
         super().__init__(irc)
@@ -150,99 +237,6 @@ class P10Protocol(IRCS2SProtocol):
                 # when sending to other IRCds.
                 ip = '0' + ip
             return ip
-
-    @staticmethod
-    def _getCommand(token):
-        """Returns the command name for the given token."""
-        tokens = {
-            'AC': 'ACCOUNT',
-            'AD': 'ADMIN',
-            'LL': 'ASLL',
-            'A': 'AWAY',
-            'B': 'BURST',
-            'CAP': 'CAP',
-            'CM': 'CLEARMODE',
-            'CLOSE': 'CLOSE',
-            'CN': 'CNOTICE',
-            'CO': 'CONNECT',
-            'CP': 'CPRIVMSG',
-            'C': 'CREATE',
-            'DE': 'DESTRUCT',
-            'DS': 'DESYNCH',
-            'DIE': 'DIE',
-            'DNS': 'DNS',
-            'EB': 'END_OF_BURST',
-            'EA': 'EOB_ACK',
-            'Y': 'ERROR',
-            'GET': 'GET',
-            'GL': 'GLINE',
-            'HASH': 'HASH',
-            'HELP': 'HELP',
-            'F': 'INFO',
-            'I': 'INVITE',
-            'ISON': 'ISON',
-            'J': 'JOIN',
-            'JU': 'JUPE',
-            'K': 'KICK',
-            'D': 'KILL',
-            'LI': 'LINKS',
-            'LIST': 'LIST',
-            'LU': 'LUSERS',
-            'MAP': 'MAP',
-            'M': 'MODE',
-            'MO': 'MOTD',
-            'E': 'NAMES',
-            'N': 'NICK',
-            'O': 'NOTICE',
-            'OPER': 'OPER',
-            'OM': 'OPMODE',
-            'L': 'PART',
-            'PA': 'PASS',
-            'G': 'PING',
-            'Z': 'PONG',
-            'POST': 'POST',
-            'P': 'PRIVMSG',
-            'PRIVS': 'PRIVS',
-            'PROTO': 'PROTO',
-            'Q': 'QUIT',
-            'REHASH': 'REHASH',
-            'RESET': 'RESET',
-            'RESTART': 'RESTART',
-            'RI': 'RPING',
-            'RO': 'RPONG',
-            'S': 'SERVER',
-            'SERVSET': 'SERVLIST',
-            'SERVSET': 'SERVSET',
-            'SET': 'SET',
-            'SE': 'SETTIME',
-            'U': 'SILENCE',
-            'SQUERY': 'SQUERY',
-            'SQ': 'SQUIT',
-            'R': 'STATS',
-            'TI': 'TIME',
-            'T': 'TOPIC',
-            'TR': 'TRACE',
-            'UP': 'UPING',
-            'USER': 'USER',
-            'USERHOST': 'USERHOST',
-            'USERIP': 'USERIP',
-            'V': 'VERSION',
-            'WC': 'WALLCHOPS',
-            'WA': 'WALLOPS',
-            'WU': 'WALLUSERS',
-            'WV': 'WALLVOICES',
-            'H': 'WHO',
-            'W': 'WHOIS',
-            'X': 'WHOWAS',
-            'XQ': 'XQUERY',
-            'XR': 'XREPLY',
-            'SN': 'SVSNICK',
-            'SJ': 'SVSJOIN',
-            'SH': 'SETHOST',
-            'FA': 'FAKE'
-        }
-        # If the token isn't in the list, return it raw.
-        return tokens.get(token, token)
 
     ### COMMANDS
 
@@ -869,14 +863,12 @@ class P10Protocol(IRCS2SProtocol):
         args = args[2:]
 
         log.debug('(%s) Found message sender as %s', self.irc.name, sender)
+        # Convert the token given into a regular command, if present.
+        command = self.COMMAND_TOKENS.get(command_token, command_token)
+        log.debug('(%s) Translating token %s to command %s', self.irc.name, command_token, command)
 
         try:
-            # Convert the token given into a regular command, if present.
-            command = self._getCommand(command_token)
-            log.debug('(%s) Translating token %s to command %s', self.irc.name, command_token, command)
-
             func = getattr(self, 'handle_'+command.lower())
-
         except AttributeError:  # Unhandled command, ignore
             return
 
