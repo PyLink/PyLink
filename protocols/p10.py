@@ -63,6 +63,93 @@ class P10SIDGenerator():
         return sid
 
 class P10Protocol(IRCS2SProtocol):
+    COMMAND_TOKENS = {
+        'AC': 'ACCOUNT',
+        'AD': 'ADMIN',
+        'LL': 'ASLL',
+        'A': 'AWAY',
+        'B': 'BURST',
+        'CAP': 'CAP',
+        'CM': 'CLEARMODE',
+        'CLOSE': 'CLOSE',
+        'CN': 'CNOTICE',
+        'CO': 'CONNECT',
+        'CP': 'CPRIVMSG',
+        'C': 'CREATE',
+        'DE': 'DESTRUCT',
+        'DS': 'DESYNCH',
+        'DIE': 'DIE',
+        'DNS': 'DNS',
+        'EB': 'END_OF_BURST',
+        'EA': 'EOB_ACK',
+        'Y': 'ERROR',
+        'GET': 'GET',
+        'GL': 'GLINE',
+        'HASH': 'HASH',
+        'HELP': 'HELP',
+        'F': 'INFO',
+        'I': 'INVITE',
+        'ISON': 'ISON',
+        'J': 'JOIN',
+        'JU': 'JUPE',
+        'K': 'KICK',
+        'D': 'KILL',
+        'LI': 'LINKS',
+        'LIST': 'LIST',
+        'LU': 'LUSERS',
+        'MAP': 'MAP',
+        'M': 'MODE',
+        'MO': 'MOTD',
+        'E': 'NAMES',
+        'N': 'NICK',
+        'O': 'NOTICE',
+        'OPER': 'OPER',
+        'OM': 'OPMODE',
+        'L': 'PART',
+        'PA': 'PASS',
+        'G': 'PING',
+        'Z': 'PONG',
+        'POST': 'POST',
+        'P': 'PRIVMSG',
+        'PRIVS': 'PRIVS',
+        'PROTO': 'PROTO',
+        'Q': 'QUIT',
+        'REHASH': 'REHASH',
+        'RESET': 'RESET',
+        'RESTART': 'RESTART',
+        'RI': 'RPING',
+        'RO': 'RPONG',
+        'S': 'SERVER',
+        'SERVSET': 'SERVLIST',
+        'SERVSET': 'SERVSET',
+        'SET': 'SET',
+        'SE': 'SETTIME',
+        'U': 'SILENCE',
+        'SQUERY': 'SQUERY',
+        'SQ': 'SQUIT',
+        'R': 'STATS',
+        'TI': 'TIME',
+        'T': 'TOPIC',
+        'TR': 'TRACE',
+        'UP': 'UPING',
+        'USER': 'USER',
+        'USERHOST': 'USERHOST',
+        'USERIP': 'USERIP',
+        'V': 'VERSION',
+        'WC': 'WALLCHOPS',
+        'WA': 'WALLOPS',
+        'WU': 'WALLUSERS',
+        'WV': 'WALLVOICES',
+        'H': 'WHO',
+        'W': 'WHOIS',
+        'X': 'WHOWAS',
+        'XQ': 'XQUERY',
+        'XR': 'XREPLY',
+        'SN': 'SVSNICK',
+        'SJ': 'SVSJOIN',
+        'SH': 'SETHOST',
+        'FA': 'FAKE'
+    }
 
     def __init__(self, irc):
         super().__init__(irc)
@@ -150,99 +237,6 @@ class P10Protocol(IRCS2SProtocol):
                 # when sending to other IRCds.
                 ip = '0' + ip
             return ip
-
-    @staticmethod
-    def _getCommand(token):
-        """Returns the command name for the given token."""
-        tokens = {
-            'AC': 'ACCOUNT',
-            'AD': 'ADMIN',
-            'LL': 'ASLL',
-            'A': 'AWAY',
-            'B': 'BURST',
-            'CAP': 'CAP',
-            'CM': 'CLEARMODE',
-            'CLOSE': 'CLOSE',
-            'CN': 'CNOTICE',
-            'CO': 'CONNECT',
-            'CP': 'CPRIVMSG',
-            'C': 'CREATE',
-            'DE': 'DESTRUCT',
-            'DS': 'DESYNCH',
-            'DIE': 'DIE',
-            'DNS': 'DNS',
-            'EB': 'END_OF_BURST',
-            'EA': 'EOB_ACK',
-            'Y': 'ERROR',
-            'GET': 'GET',
-            'GL': 'GLINE',
-            'HASH': 'HASH',
-            'HELP': 'HELP',
-            'F': 'INFO',
-            'I': 'INVITE',
-            'ISON': 'ISON',
-            'J': 'JOIN',
-            'JU': 'JUPE',
-            'K': 'KICK',
-            'D': 'KILL',
-            'LI': 'LINKS',
-            'LIST': 'LIST',
-            'LU': 'LUSERS',
-            'MAP': 'MAP',
-            'M': 'MODE',
-            'MO': 'MOTD',
-            'E': 'NAMES',
-            'N': 'NICK',
-            'O': 'NOTICE',
-            'OPER': 'OPER',
-            'OM': 'OPMODE',
-            'L': 'PART',
-            'PA': 'PASS',
-            'G': 'PING',
-            'Z': 'PONG',
-            'POST': 'POST',
-            'P': 'PRIVMSG',
-            'PRIVS': 'PRIVS',
-            'PROTO': 'PROTO',
-            'Q': 'QUIT',
-            'REHASH': 'REHASH',
-            'RESET': 'RESET',
-            'RESTART': 'RESTART',
-            'RI': 'RPING',
-            'RO': 'RPONG',
-            'S': 'SERVER',
-            'SERVSET': 'SERVLIST',
-            'SERVSET': 'SERVSET',
-            'SET': 'SET',
-            'SE': 'SETTIME',
-            'U': 'SILENCE',
-            'SQUERY': 'SQUERY',
-            'SQ': 'SQUIT',
-            'R': 'STATS',
-            'TI': 'TIME',
-            'T': 'TOPIC',
-            'TR': 'TRACE',
-            'UP': 'UPING',
-            'USER': 'USER',
-            'USERHOST': 'USERHOST',
-            'USERIP': 'USERIP',
-            'V': 'VERSION',
-            'WC': 'WALLCHOPS',
-            'WA': 'WALLOPS',
-            'WU': 'WALLUSERS',
-            'WV': 'WALLVOICES',
-            'H': 'WHO',
-            'W': 'WHOIS',
-            'X': 'WHOWAS',
-            'XQ': 'XQUERY',
-            'XR': 'XREPLY',
-            'SN': 'SVSNICK',
-            'SJ': 'SVSJOIN',
-            'SH': 'SETHOST',
-            'FA': 'FAKE'
-        }
-        # If the token isn't in the list, return it raw.
-        return tokens.get(token, token)
 
     ### COMMANDS
 
@@ -755,8 +749,8 @@ class P10Protocol(IRCS2SProtocol):
 
         # P10 cloaks aren't as simple as just replacing the displayed host with the one we're
         # sending. Check for cloak changes properly.
-        # Note: we don't need to send any hooks here, checkCloakChange does that for us.
-        self.checkCloakChange(target)
+        # Note: we don't need to send any hooks here, check_cloak_change does that for us.
+        self.check_cloak_change(target)
 
     ### HANDLERS
 
@@ -869,14 +863,12 @@ class P10Protocol(IRCS2SProtocol):
         args = args[2:]
 
         log.debug('(%s) Found message sender as %s', self.irc.name, sender)
+        # Convert the token given into a regular command, if present.
+        command = self.COMMAND_TOKENS.get(command_token, command_token)
+        log.debug('(%s) Translating token %s to command %s', self.irc.name, command_token, command)
 
         try:
-            # Convert the token given into a regular command, if present.
-            command = self._getCommand(command_token)
-            log.debug('(%s) Translating token %s to command %s', self.irc.name, command_token, command)
-
             func = getattr(self, 'handle_'+command.lower())
-
         except AttributeError:  # Unhandled command, ignore
             return
 
@@ -909,7 +901,7 @@ class P10Protocol(IRCS2SProtocol):
             # <- AB N GL 1 1460673049 ~gl nefarious.midnight.vpn +iw B]AAAB ABAAA :realname
 
             nick = args[0]
-            self.checkCollision(nick)
+            self.check_nick_collision(nick)
             ts, ident, host = args[2:5]
             realhost = host
             ip = args[-3]
@@ -943,7 +935,7 @@ class P10Protocol(IRCS2SProtocol):
                 if ('+o', None) in parsedmodes:
                     self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
-            self.checkCloakChange(uid)
+            self.check_cloak_change(uid)
 
             return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -957,13 +949,13 @@ class P10Protocol(IRCS2SProtocol):
             # Update the nick TS.
             return {'newnick': newnick, 'oldnick': oldnick, 'ts': ts}
 
-    def checkCloakChange(self, uid):
+    def check_cloak_change(self, uid):
         """Checks for cloak changes (ident and host) on the given UID."""
         uobj = self.irc.users[uid]
         ident = uobj.ident
 
         modes = dict(uobj.modes)
-        log.debug('(%s) checkCloakChange: modes of %s are %s', self.irc.name, uid, modes)
+        log.debug('(%s) check_cloak_change: modes of %s are %s', self.irc.name, uid, modes)
 
         if 'x' not in modes:  # +x isn't set, so cloaking is disabled.
             newhost = uobj.realhost
@@ -1219,7 +1211,7 @@ class P10Protocol(IRCS2SProtocol):
 
         if target in self.irc.users:
             # Target was a user. Check for any cloak changes.
-            self.checkCloakChange(target)
+            self.check_cloak_change(target)
 
         return {'target': target, 'modes': changedmodes}
     # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
@@ -1353,7 +1345,7 @@ class P10Protocol(IRCS2SProtocol):
         self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         # Check for any cloak changes now.
-        self.checkCloakChange(target)
+        self.check_cloak_change(target)
 
     def handle_fake(self, numeric, command, args):
         """Handles incoming FAKE hostmask changes."""
@@ -1363,8 +1355,8 @@ class P10Protocol(IRCS2SProtocol):
         # Assume a usermode +f change, and then update the cloak checking.
         self.irc.applyModes(target, [('+f', text)])
 
-        self.checkCloakChange(target)
-        # We don't need to send any hooks here, checkCloakChange does that for us.
+        self.check_cloak_change(target)
+        # We don't need to send any hooks here, check_cloak_change does that for us.
 
     def handle_svsnick(self, source, command, args):
         """Handles SVSNICK (forced nickname change attempts)."""
