@@ -48,9 +48,15 @@ def spawn_service(irc, source, command, args):
             modes.append((mode, None))
 
     # Track the service's UIDs on each network.
-    log.debug('(%s) Using nick %s for service %s', irc.name, nick, name)
-    userobj = irc.proto.spawnClient(nick, ident, host, modes=modes, opertype="PyLink Service",
-                                    manipulatable=sbot.manipulatable)
+    log.debug('(%s) spawn_service: Using nick %s for service %s', irc.name, nick, name)
+    u = irc.nickToUid(nick)
+    if u and irc.isInternalClient(u):  # If an internal client exists, reuse it.
+        log.debug('(%s) spawn_service: Using existing client %s/%s', irc.name, u, nick)
+        userobj = irc.users[u]
+    else:
+        log.debug('(%s) spawn_service: Spawning new client %s', irc.name, nick)
+        userobj = irc.proto.spawnClient(nick, ident, host, modes=modes, opertype="PyLink Service",
+                                        manipulatable=sbot.manipulatable)
 
     # Store the service name in the IrcUser object for easier access.
     userobj.service = name
@@ -60,7 +66,7 @@ def spawn_service(irc, source, command, args):
     # Special case: if this is the main PyLink client being spawned,
     # assign this as irc.pseudoclient.
     if name == 'pylink':
-        log.debug('(%s) irc.pseudoclient set to UID %s', irc.name, u)
+        log.debug('(%s) spawn_service: irc.pseudoclient set to UID %s', irc.name, u)
         irc.pseudoclient = userobj
 
     channels = set(irc.serverdata.get(name+'_channels', [])) | set(irc.serverdata.get('channels', [])) | \
