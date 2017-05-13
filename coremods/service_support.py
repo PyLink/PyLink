@@ -100,10 +100,18 @@ utils.add_hook(handle_endburst, 'ENDBURST')
 def handle_kill(irc, source, command, args):
     """Handle KILLs to PyLink service bots, respawning them as needed."""
     target = args['target']
+    userdata = args.get('userdata')
     sbot = irc.getServiceBot(target)
-    if sbot:
-        spawn_service(irc, source, command, {'name': sbot.name})
-        return
+    servicename = None
+
+    if userdata and hasattr(userdata, 'service'):  # Look for the target's service name attribute
+        servicename = userdata.service
+    elif sbot:  # Or their service bot instance
+        servicename = sbot.name
+    if servicename:
+        log.debug('(%s) services_support: respawning service %s after KILL.', irc.name, servicename)
+        spawn_service(irc, source, command, {'name': servicename})
+
 utils.add_hook(handle_kill, 'KILL')
 
 def handle_kick(irc, source, command, args):
