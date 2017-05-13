@@ -179,14 +179,12 @@ class Irc(utils.DeprecatedAttributesObject):
         while True:
             throttle_time = self.serverdata.get('throttle_time', 0.005)
             if not self.aborted.wait(throttle_time):
-                try:
-                    data = self.queue.get_nowait()
+                data = self.queue.get()
+                if data is None:
+                    log.debug('(%s) Stopping queue thread due to getting None as item', self.name)
+                    break
+                elif data:
                     self._send(data)
-                except queue.Empty:
-                    pass
-            else:
-                log.debug('(%s) Stopping queue thread as aborted is set', self.name)
-                break
 
     def connect(self):
         """
@@ -396,6 +394,12 @@ class Irc(utils.DeprecatedAttributesObject):
 
         self.socket.close()
 
+        # Stop the queue thread.
+        if self.queue:
+            # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
+            self.queue.queue.appendleft(None)
+
+        # Stop the ping timer.
         if self.pingTimer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
             self.pingTimer.cancel()
