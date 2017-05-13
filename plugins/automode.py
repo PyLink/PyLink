@@ -200,10 +200,10 @@ def setacc(irc, source, args):
     # exported easily as JSON.
     dbentry = db[ircobj.name+channel]
 
-    # Otherwise, update the modes as is.
+    modes = modes.lstrip('+')  # remove extraneous leading +'s
     dbentry[mask] = modes
     log.info('(%s) %s set modes +%s for %s on %s', ircobj.name, irc.getHostmask(source), modes, mask, channel)
-    reply(irc, "Done. \x02%s\x02 now has modes \x02%s\x02 in \x02%s\x02." % (mask, modes, channel))
+    reply(irc, "Done. \x02%s\x02 now has modes \x02+%s\x02 in \x02%s\x02." % (mask, modes, channel))
 
     # Join the Automode bot to the channel if not explicitly told to.
     modebot.join(ircobj, channel)
