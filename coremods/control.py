@@ -5,6 +5,7 @@ import signal
 import os
 import threading
 import sys
+import atexit
 
 from pylinkirc import world, utils, conf, classes
 from pylinkirc.log import log, makeFileLogger, stopFileLoggers, stdoutLogLevel
@@ -22,15 +23,16 @@ def remove_network(ircobj):
 def _print_remaining_threads():
     log.debug('_shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
 
-def _shutdown(irc=None):
-    """Shuts down the Pylink daemon."""
-    global tried_shutdown
-    if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
-        _print_remaining_threads()
-        raise KeyboardInterrupt("Forcing shutdown.")
+def _remove_pid():
+    # Remove our pid file.
+    log.info("Removing our pid file.")
+    try:
+        os.remove("%s.pid" % conf.confname)
+    except OSError:
+        log.exception("Failed to remove PID, ignoring...")
 
-    tried_shutdown = True
-
+def _kill_plugins(irc=None):
+    log.info("Shutting down plugins.")
     for name, plugin in world.plugins.items():
         # Before closing connections, tell all plugins to shutdown cleanly first.
         if hasattr(plugin, 'die'):
@@ -40,19 +42,31 @@ def _shutdown(irc=None):
             except:  # But don't allow it to crash the server.
                 log.exception('coremods.control: Error occurred in die() of plugin %s, skipping...', name)
 
+# We use atexit to register certain functions so that when PyLink cleans up after itself if it
+# shuts down because all networks have been disconnected.
+atexit.register(_remove_pid)
+atexit.register(_kill_plugins)
+
+def _shutdown(irc=None):
+    """Shuts down the Pylink daemon."""
+    global tried_shutdown
+    if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
+        _print_remaining_threads()
+        raise KeyboardInterrupt("Forcing shutdown.")
+
+    tried_shutdown = True
+
+    # HACK: run the _kill_plugins trigger with the current IRC object. XXX: We should really consider removing this
+    # argument, since no plugins actually use it to do anything.
+    atexit.unregister(_kill_plugins)
+    _kill_plugins(irc)
+
     # Remove our main PyLink bot as well.
     utils.unregisterService('pylink')
 
     for ircobj in world.networkobjects.copy().values():
         # Disconnect all our networks.
         remove_network(ircobj)
-
-    # Remove our pid file.
-    log.info("Removing our pid.")
-    try:
-        os.remove("%s.pid" % conf.confname)
-    except OSError:
-        log.exception("Failed to remove PID, ignoring...")
 
     log.info("Waiting for remaining threads to stop; this may take a few seconds. If PyLink freezes "
              "at this stage, press Ctrl-C to force a shutdown.")
