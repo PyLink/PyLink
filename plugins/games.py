@@ -122,5 +122,5 @@ def fml(irc, source, args):
     reply(irc, s)
 gameclient.add_cmd(fml, featured=True)
 
-def die(irc):
+def die(irc=None):
     utils.unregisterService('games')

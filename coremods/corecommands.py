@@ -98,7 +98,7 @@ def load(irc, source, args):
     else:
         if hasattr(pl, 'main'):
             log.debug('Calling main() function of plugin %r', pl)
-            pl.main(irc)
+            pl.main(irc=irc)
     irc.reply("Loaded plugin %r." % name)
 
 @utils.add_cmd
@@ -150,7 +150,7 @@ def unload(irc, source, args):
         # Call the die() function in the plugin, if present.
         if hasattr(pl, 'die'):
             try:
-                pl.die(irc)
+                pl.die(irc=irc)
             except:  # But don't allow it to crash the server.
                 log.exception('(%s) Error occurred in die() of plugin %s, skipping...', irc.name, pl)
 

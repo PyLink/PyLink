@@ -42,7 +42,7 @@ def main(irc=None):
         log.debug('automode: auto-joining %s on %s', channel, netname)
         modebot.join(netname, channel)
 
-def die(sourceirc):
+def die(irc=None):
     """Saves the Automode database and quit."""
     datastore.die()
     permissions.removeDefaultPermissions(default_permissions)

@@ -14,7 +14,7 @@ def main(irc=None):
     # Register our permissions.
     permissions.addDefaultPermissions(default_permissions)
 
-def die(irc):
+def die(irc=None):
     """Commands plugin die function, called on plugin unload."""
     permissions.removeDefaultPermissions(default_permissions)
 

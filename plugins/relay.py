@@ -61,16 +61,16 @@ def main(irc=None):
 
     log.debug('relay.main: finished initialization sequence')
 
-def die(sourceirc):
+def die(irc=None):
     """Deinitialize PyLink Relay by quitting all relay clients and saving the
     relay DB."""
 
     # For every connected network:
-    for irc in world.networkobjects.values():
+    for ircobj in world.networkobjects.values():
         # 1) SQUIT every relay subserver.
-        for server, sobj in irc.servers.copy().items():
+        for server, sobj in ircobj.servers.copy().items():
             if hasattr(sobj, 'remote'):
-                irc.proto.squit(irc.sid, server, text="Relay plugin unloaded.")
+                ircobj.proto.squit(ircobj.sid, server, text="Relay plugin unloaded.")
 
     # 2) Clear our internal servers and users caches.
     relayservers.clear()
