@@ -100,10 +100,14 @@ def remote(irc, source, args):
 
     # Force remoteirc.called_in to something private in order to prevent
     # accidental information leakage from replies.
-    remoteirc.called_in = remoteirc.called_by = remoteirc.pseudoclient.uid
+    try:
+        remoteirc.called_in = remoteirc.called_by = remoteirc.pseudoclient.uid
 
-    # Set the identification override to the caller's account.
-    remoteirc.pseudoclient.account = irc.users[source].account
+        # Set the identification override to the caller's account.
+        remoteirc.pseudoclient.account = irc.users[source].account
+    except:
+        REMOTE_IN_USE.clear()
+        raise
 
     def _remote_reply(placeholder_self, text, **kwargs):
         """
