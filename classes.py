@@ -185,6 +185,8 @@ class Irc(utils.DeprecatedAttributesObject):
                     break
                 elif data:
                     self._send(data)
+            else:
+                break
 
     def connect(self):
         """
