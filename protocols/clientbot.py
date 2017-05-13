@@ -28,10 +28,6 @@ class ClientbotWrapperProtocol(Protocol):
         self.ircv3_caps = set()
         self.ircv3_caps_available = {}
 
-        # Initialize counter-based pseudo UID  generators
-        self.uidgen = utils.PUIDGenerator('PUID')
-        self.sidgen = utils.PUIDGenerator('PSID')
-
         # Tracks the users sent in a list of /who replies, so that users can be bursted all at once
         # when ENDOFWHO is received.
         self.who_received = set()
@@ -57,6 +53,10 @@ class ClientbotWrapperProtocol(Protocol):
 
     def connect(self):
         """Initializes a connection to a server."""
+        # (Re)initialize counter-based pseudo UID generators
+        self.uidgen = utils.PUIDGenerator('PUID')
+        self.sidgen = utils.PUIDGenerator('PSID')
+
         self.has_eob = False
         ts = self.irc.start_ts
         f = lambda text: self.irc.send(text, queue=False)
