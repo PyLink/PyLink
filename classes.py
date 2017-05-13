@@ -390,7 +390,7 @@ class Irc(utils.DeprecatedAttributesObject):
 
         try:
             log.debug('(%s) disconnect: Shutting down socket.', self.name)
-            self.socket.shutdown(socket.SHUT_WR)
+            self.socket.shutdown(socket.SHUT_RDWR)
         except Exception as e:  # Socket timed out during creation; ignore
             log.debug('(%s) error on socket shutdown: %s: %s', self.name, type(e).__name__, e)
 
