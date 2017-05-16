@@ -334,8 +334,7 @@ class Irc(utils.DeprecatedAttributesObject):
             # We also catch SystemExit here as a way to abort out connection threads properly, and stop the
             # IRC connection from freezing instead.
             except (OSError, RuntimeError, SystemExit) as e:
-                log.error('(%s) Disconnected from IRC: %s: %s',
-                          self.name, type(e).__name__, str(e))
+                log.exception('(%s) Disconnected from IRC:', self.name)
 
             self.disconnect()
 
