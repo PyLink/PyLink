@@ -1050,8 +1050,8 @@ def handle_messages(irc, numeric, command, args):
         # but whatever).
         return
     elif (numeric in irc.servers) and (not notice):
-        log.warning('(%s) relay.handle_messages: dropping PM from server %s to %s',
-                    irc.name, numeric, target)
+        log.debug('(%s) relay.handle_messages: dropping PM from server %s to %s',
+                  irc.name, numeric, target)
         return
 
     relay = get_relay((irc.name, target))
