@@ -15,7 +15,7 @@ These options take template strings as documented here: https://docs.python.org/
 - For all events:
     - `$netname`: origin network name
     - `$sender`: nick of sender
-    - `sender_identhost`: ident@host string of sender
+    - `$sender_identhost`: ident@host string of sender
     - `$colored_sender`: color hashed version of `$sender`
     - `$colored_netname`: color hashed version of `$netname`
 - For KICK, and other events that have a `$target` field corresponding to a user:
