@@ -17,12 +17,14 @@ def handle_kill(irc, numeric, command, args):
     Tracks kills against PyLink clients. If too many are received,
     automatically disconnects from the network.
     """
-    if killcache.setdefault(irc.name, 1) >= length:
-        log.error('(%s) servprotect: Too many kills received, aborting!', irc.name)
-        irc.disconnect()
 
-    log.debug('(%s) servprotect: Incrementing killcache by 1', irc.name)
-    killcache[irc.name] += 1
+    if (args['userdata'] and irc.isInternalServer(args['userdata'].server)) or irc.isInternalClient(args['target']):
+        if killcache.setdefault(irc.name, 1) >= length:
+            log.error('(%s) servprotect: Too many kills received, aborting!', irc.name)
+            irc.disconnect()
+
+        log.debug('(%s) servprotect: Incrementing killcache by 1', irc.name)
+        killcache[irc.name] += 1
 
 utils.add_hook(handle_kill, 'KILL')
 
@@ -31,11 +33,12 @@ def handle_save(irc, numeric, command, args):
     Tracks SAVEs (nick collision) against PyLink clients. If too many are received,
     automatically disconnects from the network.
     """
-    if savecache.setdefault(irc.name, 0) >= length:
-        log.error('(%s) servprotect: Too many nick collisions, aborting!', irc.name)
-        irc.disconnect()
+    if irc.isInternalClient(args['target']):
+        if savecache.setdefault(irc.name, 0) >= length:
+            log.error('(%s) servprotect: Too many nick collisions, aborting!', irc.name)
+            irc.disconnect()
 
-    log.debug('(%s) servprotect: Incrementing savecache by 1', irc.name)
-    savecache[irc.name] += 1
+        log.debug('(%s) servprotect: Incrementing savecache by 1', irc.name)
+        savecache[irc.name] += 1
 
 utils.add_hook(handle_save, 'SAVE')
