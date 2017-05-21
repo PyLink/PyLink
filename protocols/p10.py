@@ -824,63 +824,6 @@ class P10Protocol(IRCS2SProtocol):
         self._send(sid, "EB")
         self.irc.connected.set()
 
-    def handle_events(self, data):
-        """
-        Event handler for the P10 protocol.
-
-        This passes most commands to the various handle_ABCD() functions defined elsewhere in the
-        protocol modules, coersing various sender prefixes from nicks and server names to P10
-        "numeric nicks", whenever possible.
-
-        Commands sent without an explicit sender prefix are treated as originating from the uplink
-        server.
-        """
-        data = data.split(" ")
-        args = self.parseArgs(data)
-
-        sender = args[0]
-        if sender.startswith(':'):
-            # From https://github.com/evilnet/nefarious2/blob/a29b63144/doc/p10.txt#L140:
-            # if source begins with a colon, it (except for the colon) is the name. otherwise, it is
-            # a numeric. a P10 implementation must only send lines with a numeric source prefix.
-            sender = sender[1:]
-
-        # If the sender isn't in numeric format, try to convert it automatically.
-        sender_sid = self._getSid(sender)
-        sender_uid = self._getUid(sender)
-        if sender_sid in self.irc.servers:
-            # Sender is a server (converting from name to SID gave a valid result).
-            sender = sender_sid
-        elif sender_uid in self.irc.users:
-            # Sender is a user (converting from name to UID gave a valid result).
-            sender = sender_uid
-        else:
-            # No sender prefix; treat as coming from uplink IRCd.
-            sender = self.irc.uplink
-            args.insert(0, sender)
-
-        command_token = args[1].upper()
-        args = args[2:]
-
-        log.debug('(%s) Found message sender as %s', self.irc.name, sender)
-        # Convert the token given into a regular command, if present.
-        command = self.COMMAND_TOKENS.get(command_token, command_token)
-        log.debug('(%s) Translating token %s to command %s', self.irc.name, command_token, command)
-
-        try:
-            func = getattr(self, 'handle_'+command.lower())
-        except AttributeError:  # Unhandled command, ignore
-            return
-
-        else:  # Send a hook with the hook arguments given by the handler function.
-            if self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender):
-                log.warning("(%s) Received command %s being routed the wrong way!", self.irc.name, command)
-                return
-
-            parsed_args = func(sender, command, args)
-            if parsed_args is not None:
-                return [sender, command, parsed_args]
-
     def handle_server(self, source, command, args):
         """Handles incoming server introductions."""
         # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
@@ -1168,22 +1111,6 @@ class P10Protocol(IRCS2SProtocol):
                 self.irc.channels[channel].modes, 'ts': ts or int(time.time())}
 
     handle_create = handle_join
-
-    def handle_privmsg(self, source, command, args):
-        """Handles incoming PRIVMSG/NOTICE."""
-        # <- ABAAA P AyAAA :privmsg text
-        # <- ABAAA O AyAAA :notice text
-        target = args[0]
-
-        # We use lower case channels internally, but mixed case UIDs.
-        stripped_target = target.lstrip(''.join(self.irc.prefixmodes.values()))
-        if utils.isChannel(stripped_target):
-            target = self.irc.toLower(target)
-
-        return {'target': target, 'text': args[1]}
-
-    handle_notice = handle_privmsg
-
     def handle_end_of_burst(self, source, command, args):
         """Handles end of burst from our uplink."""
         # Send EOB acknowledgement; this is required by the P10 specification,
