@@ -95,6 +95,7 @@ class IRCS2SProtocol(Protocol):
         # We use lowercase channels internally, but uppercase UIDs.
         # Strip the target of leading prefix modes (for targets like @#channel)
         # before checking whether it's actually a channel.
+
         split_channel = target.split('#', 1)
         if len(split_channel) >= 2 and utils.isChannel('#' + split_channel[1]):
             # Note: don't mess with the case of the channel prefix, or ~#channel
