@@ -29,9 +29,9 @@ pylink:
     # it was renamed for consistency. This defaults to false.
     #respond_to_nick: true
 
-    # Custom prefixes for other service bots if they are loaded. Note: this is deprecated
+    # Custom prefixes for other service bots if they are loaded. Note: this is DEPRECATED
     # since PyLink 1.2 in favour of adding prefixes into each plugin's configuration block
-    # itself (see the "prefix:" option in the "games:" block for this example).
+    # itself (see the "prefix:" option in the "games:" block for an example).
     #prefixes:
     #    games: "@"
 
@@ -39,8 +39,9 @@ pylink:
     # Defaults to true if not specified.
     whois_use_hideoper: true
 
-    # Determines whether extended WHOIS replies should be sent to users with
-    # +B set (marked as a bot). For better security, it is recommended to leave this off.
+    # Determines whether extended WHOIS replies should be sent to users marked as a
+    # bot (usually with umode +B). For better security (i.e. with bots that track services
+    # accounts for authentication), it is recommended to leave this off.
     whois_show_extensions_to_bots: false
 
     # Determines whether PyLink service clients should protect themselves from
