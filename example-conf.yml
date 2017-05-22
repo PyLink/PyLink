@@ -399,42 +399,38 @@ servers:
 
 # Plugins to load (omit the .py extension)
 plugins:
-    # Commands plugin: Provides simple commands for things like checking login
-    # status, and showing info on users and channels.
+    # Commands plugin: Provides simple commands to check login status, show info on users and
+    # channels, etc.
     - commands
 
-    # Networks plugin: Allows you to manage connections to networks while
-    # PyLink is running.
+    # Networks plugin: Allows you to manage connections to networks while PyLink is running.
     - networks
 
     # Ctcp plugin: handles basic CTCP replies (VERSION, etc).
     - ctcp
 
-    # Oper commands plugin: Provides a subset of network management commands.
-    # (KILL, JUPE, etc.)
-    # Note: these commands will be made available to anyone who's opered on your
-    # network, so make sure your opers are trustworthy!
+    # Oper commands plugin: Provides a handful of network management commands. (KILL, JUPE, etc.)
     #- opercmds
 
-    # Bots plugin: Allows you to manipulate pseudo-clients (bots) on networks.
+    # Bots plugin: Allows you to manipulate PyLink service bots on networks.
     #- bots
 
-    # Relay plugin: Server-side (like Janus) relay plugin. See the relay: block
-    # below for configuration.
+    # Relay plugin: Transparent server-side relay between channels (like Janus). See
+    # the relay: block below for configuration.
     #- relay
 
-    # Relay Clientbot support: this allows channel messages and events like
+    # Relay Clientbot plugin: this allows channel messages and events like
     # JOIN, PART, KICK, etc. to relay over networks using Clientbot. You will
     # want this loaded if you're using PyLink as a relay bot.
     #- relay_clientbot
 
-    # Fantasy plugin: Allows you to trigger commands in channels by PyLink's
-    # nick or configurable prefix characters.
+    # Fantasy plugin: Allows you to trigger commands in channels by prefixing them
+    # with the PyLink service's nick or configurable prefix characters.
     #- fantasy
 
     # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on
-    # matching users as they connect. This requires the changehost: block
-    # to be configured correctly below.
+    # matching users as they connect. This requires the changehost: block to be
+    # configured correctly below.
     #- changehost
 
     # Automode plugin: allows assigning channel access to specific hostmasks or
@@ -445,8 +441,8 @@ plugins:
     # Servermaps plugin: displays network /map's from the PyLink server's perspective.
     #- servermaps
 
-    # Servprotect plugin: disconnects from network if a certain limit
-    # of kills/saves per X seconds is met.
+    # Servprotect plugin: disconnects from networks if too many kills or nick collisions to
+    # PyLink clients are received.
     #- servprotect
 
     # Global plugin: Janus-style global plugin; announces messages to all channels the PyLink
