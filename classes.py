@@ -416,8 +416,6 @@ class Irc(utils.DeprecatedAttributesObject):
 
     def run(self):
         """Main IRC loop which listens for messages."""
-        # Some magic below cause this to work, though anything that's
-        # not encoded in UTF-8 doesn't work very well.
         buf = b""
         data = b""
         while not self.aborted.is_set():
@@ -438,11 +436,14 @@ class Irc(utils.DeprecatedAttributesObject):
             elif (time.time() - self.lastping) > self.pingtimeout:
                 log.error('(%s) Connection timed out.', self.name)
                 return
+
+            # Get the encoding from the config file, falling back to UTF-8 if none is specified.
+            encoding = self.serverdata.get('encoding') or 'utf-8'
+
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
-                # FIXME: respect other encodings?
-                line = line.decode("utf-8", "replace")
+                line = line.decode(encoding, "replace")
                 self.runline(line)
 
     def runline(self, line):
@@ -509,8 +510,9 @@ class Irc(utils.DeprecatedAttributesObject):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
-        data = data.encode("utf-8") + b"\n"
-        stripped_data = data.decode("utf-8").strip("\n")
+        encoding = self.serverdata.get('encoding') or 'utf-8'
+        data = data.encode(encoding) + b"\n"
+        stripped_data = data.decode(encoding).strip("\n")
         log.debug("(%s) -> %s", self.name, stripped_data)
 
         try:

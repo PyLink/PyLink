@@ -201,6 +201,12 @@ servers:
         # This setting defaults to sha256.
         #ssl_fingerprint_type: sha256
 
+        # Encoding: allows you to override the network's encoding. This can be useful for networks
+        # using m_nationalchars or something similar. Encoding defaults to utf-8 if not set, and
+        # should be one of the standard encodings defined at
+        # https://docs.python.org/3/library/codecs.html#standard-encodings
+        #encoding: utf-8
+
     ts6net:
         ip: ::1
 
