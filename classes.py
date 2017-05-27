@@ -511,14 +511,14 @@ class Irc(utils.DeprecatedAttributesObject):
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
         encoding = self.serverdata.get('encoding') or 'utf-8'
-        data = data.encode(encoding) + b"\n"
-        stripped_data = data.decode(encoding).strip("\n")
-        log.debug("(%s) -> %s", self.name, stripped_data)
+        encoded_data = data.encode(encoding, 'replace') + b"\n"
+
+        log.debug("(%s) -> %s", self.name, data)
 
         try:
-            self.socket.send(data)
+            self.socket.send(encoded_data)
         except (OSError, AttributeError):
-            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, stripped_data)
+            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, data)
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
