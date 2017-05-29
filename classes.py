@@ -229,8 +229,7 @@ class Irc(utils.DeprecatedAttributesObject):
                 ip = socket.getaddrinfo(ip, port, stype)[0][-1][0]
                 log.debug('(%s) Resolving address %s to %s', self.name, old_ip, ip)
 
-                # Enable SSL if set to do so. This requires a valid keyfile and
-                # certfile to be present.
+                # Enable SSL if set to do so.
                 self.ssl = self.serverdata.get('ssl')
                 if self.ssl:
                     log.info('(%s) Attempting SSL for this connection...', self.name)
@@ -242,6 +241,7 @@ class Irc(utils.DeprecatedAttributesObject):
                     context.options |= ssl.OP_NO_SSLv2
                     context.options |= ssl.OP_NO_SSLv3
 
+                    # Cert and key files are optional, load them if specified.
                     if certfile and keyfile:
                         try:
                             context.load_cert_chain(certfile, keyfile)
