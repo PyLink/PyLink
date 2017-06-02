@@ -1218,6 +1218,11 @@ class P10Protocol(IRCS2SProtocol):
         kicked = args[1]
 
         self.handle_part(kicked, 'KICK', [channel, args[2]])
+
+        # Send PART in response to acknowledge the KICK, per
+        # https://github.com/evilnet/nefarious2/blob/ed12d64/doc/p10.txt#L611-L616
+        self._send(kicked, 'L %s :%s' % (channel, args[2]))
+
         return {'channel': channel, 'target': kicked, 'text': args[2]}
 
     def handle_topic(self, source, command, args):
