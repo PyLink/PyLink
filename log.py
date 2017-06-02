@@ -22,20 +22,21 @@ os.makedirs(logdir, exist_ok=True)
 _format = '%(asctime)s [%(levelname)s] %(message)s'
 logformatter = logging.Formatter(_format)
 
-def stdoutLogLevel():
+def getConsoleLogLevel():
     """
-    Returns the configured STDOUT log level.
+    Returns the configured console log level.
     """
-    return conf.conf['logging'].get('stdout') or 'INFO'
+    logconf = conf.conf['logging']
+    return logconf.get('console', logconf.get('stdout')) or 'INFO'
 
 # Set up logging to STDERR
-world.stdout_handler = logging.StreamHandler()
-world.stdout_handler.setFormatter(logformatter)
-world.stdout_handler.setLevel(stdoutLogLevel())
+world.console_handler = logging.StreamHandler()
+world.console_handler.setFormatter(logformatter)
+world.console_handler.setLevel(getConsoleLogLevel())
 
 # Get the main logger object; plugins can import this variable for convenience.
 log = logging.getLogger()
-log.addHandler(world.stdout_handler)
+log.addHandler(world.console_handler)
 
 # This is confusing, but we have to set the root logger to accept all events. Only this way
 # can other loggers filter out events on their own, instead of having everything dropped by
@@ -62,8 +63,8 @@ def makeFileLogger(filename, level=None):
     filelogger = logging.handlers.RotatingFileHandler(target, maxBytes=maxbytes, backupCount=backups)
     filelogger.setFormatter(logformatter)
 
-    # If no log level is specified, use the same one as STDOUT.
-    level = level or stdout_level
+    # If no log level is specified, use the same one as the console logger.
+    level = level or getConsoleLogLevel()
     filelogger.setLevel(level)
 
     log.addHandler(filelogger)

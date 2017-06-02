@@ -209,10 +209,10 @@ def loglevel(irc, source, args):
             irc.error('Unknown log level "%s".' % level)
             return
         else:
-            world.stdout_handler.setLevel(loglevel)
+            world.console_handler.setLevel(loglevel)
             irc.reply("Done.")
     except IndexError:
-        irc.reply(world.stdout_handler.level)
+        irc.reply(world.console_handler.level)
 
 @utils.add_cmd
 def mkpasswd(irc, source, args):

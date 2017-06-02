@@ -463,10 +463,12 @@ logging:
     # This configuration block defines targets that PyLink should log commands,
     # errors, etc., to.
 
-    # This sets the level for STDOUT logging, which is always enabled. Valid
+    # This sets the level for console logging, which is always enabled. Valid
     # settings include DEBUG, INFO, WARNING, ERROR, and CRITICAL: see
     # https://docs.python.org/3/library/logging.html#logging-levels for details.
-    stdout: INFO
+    # Prior to PyLink 1.2, this option was erroneously named 'log:stdout', even though the actual
+    # logging output goes to stderr. That option name (log:stdout) is now *deprecated*.
+    console: INFO
 
     channels:
         # Logs to channels on the specified networks.

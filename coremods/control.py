@@ -8,7 +8,7 @@ import sys
 import atexit
 
 from pylinkirc import world, utils, conf, classes
-from pylinkirc.log import log, makeFileLogger, stopFileLoggers, stdoutLogLevel
+from pylinkirc.log import log, makeFileLogger, stopFileLoggers, getConsoleLogLevel
 from . import permissions
 
 tried_shutdown = False
@@ -96,8 +96,8 @@ def _rehash():
         for filename, config in files.items():
             makeFileLogger(filename, config.get('loglevel'))
 
-    log.debug('rehash: updating STDOUT log level')
-    world.stdout_handler.setLevel(stdoutLogLevel())
+    log.debug('rehash: updating console log level')
+    world.console_handler.setLevel(getConsoleLogLevel())
 
     # Reset permissions.
     log.debug('rehash: resetting permissions')

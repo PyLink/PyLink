@@ -101,6 +101,11 @@ def validateConf(conf, logger=None):
     if newlogins and not old_login_valid:
         validate(conf.get('permissions'), "New-style accounts enabled but no permissions block was found. You will not be able to administrate your PyLink instance!")
 
+    if conf['logging'].get('stdout'):
+         _log(logging.WARNING, 'The log:stdout option is deprecated since PyLink 1.2 in favour of '
+                               '(a more correctly named) log:console. Please update your '
+                               'configuration accordingly!', logger=logger)
+
     return conf
 
 
