@@ -6,13 +6,102 @@ import time
 
 from pylinkirc.classes import Protocol
 from pylinkirc.log import log
+from pylinkirc import utils
 
 class IRCS2SProtocol(Protocol):
+    COMMAND_TOKENS = {}
 
     def __init__(self, irc):
         super().__init__(irc)
         self.protocol_caps = {'can-spawn-clients', 'has-ts', 'can-host-relay',
                               'can-track-servers'}
+
+    def handle_events(self, data):
+        """Event handler for RFC1459-like protocols.
+
+        This passes most commands to the various handle_ABCD() functions
+        elsewhere defined protocol modules, coersing various sender prefixes
+        from nicks and server names to UIDs and SIDs respectively,
+        whenever possible.
+
+        Commands sent without an explicit sender prefix will have them set to
+        the SID of the uplink server.
+        """
+        data = data.split(" ")
+        args = self.parseArgs(data)
+
+        sender = args[0]
+        sender = sender.lstrip(':')
+
+        # If the sender isn't in numeric format, try to convert it automatically.
+        sender_sid = self._getSid(sender)
+        sender_uid = self._getUid(sender)
+
+        if sender_sid in self.irc.servers:
+            # Sender is a server (converting from name to SID gave a valid result).
+            sender = sender_sid
+        elif sender_uid in self.irc.users:
+            # Sender is a user (converting from name to UID gave a valid result).
+            sender = sender_uid
+        else:
+            # No sender prefix; treat as coming from uplink IRCd.
+            sender = self.irc.uplink
+            args.insert(0, sender)
+
+        if self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender):
+            log.warning("(%s) Received command %s being routed the wrong way!", self.irc.name, command)
+            return
+
+        raw_command = args[1].upper()
+        args = args[2:]
+
+        log.debug('(%s) Found message sender as %s', self.irc.name, sender)
+
+        # For P10, convert the command token into a regular command, if present.
+        command = self.COMMAND_TOKENS.get(raw_command, raw_command)
+        if command != raw_command:
+            log.debug('(%s) Translating token %s to command %s', self.irc.name, raw_command, command)
+
+        if command == 'ENCAP':
+            # Special case for TS6 encapsulated commands (ENCAP), in forms like this:
+            # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+            command = args[1]
+            args = args[2:]
+            log.debug("(%s) Rewriting incoming ENCAP to command %s (args: %s)", self.irc.name, command, args)
+
+        try:
+            func = getattr(self, 'handle_'+command.lower())
+        except AttributeError:  # Unhandled command
+            pass
+        else:
+            parsed_args = func(sender, command, args)
+            if parsed_args is not None:
+                return [sender, command, parsed_args]
+
+    def handle_privmsg(self, source, command, args):
+        """Handles incoming PRIVMSG/NOTICE."""
+        # TS6:
+        # <- :70MAAAAAA PRIVMSG #dev :afasfsa
+        # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
+        # P10:
+        # <- ABAAA P AyAAA :privmsg text
+        # <- ABAAA O AyAAA :notice text
+        target = args[0]
+
+        # Coerse =#channel from Charybdis op moderated +z to @#channel.
+        if target.startswith('='):
+            target = '@' + target[1:]
+
+        # We use lowercase channels internally, but uppercase UIDs.
+        # Strip the target of leading prefix modes (for targets like @#channel)
+        # before checking whether it's actually a channel.
+        stripped_target = target.lstrip(''.join(self.irc.prefixmodes.values()))
+        if utils.isChannel(stripped_target):
+            target = self.irc.toLower(target)
+
+        return {'target': target, 'text': args[1]}
+
+    handle_notice = handle_privmsg
 
     def check_nick_collision(self, nick):
         """
