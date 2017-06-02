@@ -1013,7 +1013,7 @@ class Irc(utils.DeprecatedAttributesObject):
         Returns a detailed version string including the PyLink daemon version,
         the protocol module in use, and the server hostname.
         """
-        fullversion = 'PyLink-%s. %s :[protocol:%s]' % (__version__, self.hostname(), self.protoname)
+        fullversion = 'PyLink-%s. %s :[protocol:%s, encoding:%s]' % (__version__, self.hostname(), self.protoname, self.encoding)
         return fullversion
 
     def hostname(self):
