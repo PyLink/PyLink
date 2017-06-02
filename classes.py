@@ -56,6 +56,9 @@ class Irc(utils.DeprecatedAttributesObject):
         self.botdata = conf['bot']
         self.protoname = proto.__name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = proto.Class(self)
+
+        # These options depend on self.serverdata from above to be set.
+        self.encoding = None
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
 
@@ -111,6 +114,7 @@ class Irc(utils.DeprecatedAttributesObject):
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
+        self.encoding = self.serverdata.get('encoding') or 'utf-8'
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 3
 
@@ -416,8 +420,6 @@ class Irc(utils.DeprecatedAttributesObject):
 
     def run(self):
         """Main IRC loop which listens for messages."""
-        # Some magic below cause this to work, though anything that's
-        # not encoded in UTF-8 doesn't work very well.
         buf = b""
         data = b""
         while not self.aborted.is_set():
@@ -438,11 +440,11 @@ class Irc(utils.DeprecatedAttributesObject):
             elif (time.time() - self.lastping) > self.pingtimeout:
                 log.error('(%s) Connection timed out.', self.name)
                 return
+
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
-                # FIXME: respect other encodings?
-                line = line.decode("utf-8", "replace")
+                line = line.decode(self.encoding, "replace")
                 self.runline(line)
 
     def runline(self, line):
@@ -509,14 +511,14 @@ class Irc(utils.DeprecatedAttributesObject):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
-        data = data.encode("utf-8") + b"\n"
-        stripped_data = data.decode("utf-8").strip("\n")
-        log.debug("(%s) -> %s", self.name, stripped_data)
+        encoded_data = data.encode(self.encoding, 'replace') + b"\n"
+
+        log.debug("(%s) -> %s", self.name, data)
 
         try:
-            self.socket.send(data)
+            self.socket.send(encoded_data)
         except (OSError, AttributeError):
-            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, stripped_data)
+            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, data)
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
