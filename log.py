@@ -42,13 +42,6 @@ log.addHandler(world.stdout_handler)
 # the root logger. https://stackoverflow.com/questions/16624695
 log.setLevel(1)
 
-log.debug("log: Emptying log_queue")
-# Process and empty the log queue
-while world.log_queue:
-    level, text = world.log_queue.popleft()
-    log.log(level, text)
-log.debug("log: Emptied log_queue")
-
 def makeFileLogger(filename, level=None):
     """
     Initializes a file logging target with the given filename and level.
@@ -94,6 +87,13 @@ files = conf.conf['logging'].get('files')
 if files:
     for filename, config in files.items():
         makeFileLogger(filename, config.get('loglevel'))
+
+log.debug("log: Emptying log_queue")
+# Process and empty the log queue
+while world.log_queue:
+    level, text = world.log_queue.popleft()
+    log.log(level, text)
+log.debug("log: Emptied log_queue")
 
 class PyLinkChannelLogger(logging.Handler):
     """
