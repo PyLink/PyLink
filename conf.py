@@ -68,7 +68,7 @@ def validateConf(conf, logger=None):
 
     if 'pylink' in conf and 'bot' in conf:
         _log(logging.WARNING, "Since PyLink 1.2, the 'pylink:' and 'bot:' configuration sections have been condensed "
-             "into one. You should merge any options under these sections into one 'pylink:' block.")
+             "into one. You should merge any options under these sections into one 'pylink:' block.", logger=logger)
 
         new_block = conf['bot'].copy()
         new_block.update(conf['pylink'])
@@ -86,7 +86,7 @@ def validateConf(conf, logger=None):
     # Also we'll warn them that login:user/login:password is deprecated
     if conf['login'].get('password') or conf['login'].get('user'):
         _log(logging.WARNING, "The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. "
-             "Please switch to the new 'login:accounts' format as outlined in the example config.")
+             "Please switch to the new 'login:accounts' format as outlined in the example config.", logger=logger)
 
     old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
     newlogins = conf['login'].get('accounts', {})
