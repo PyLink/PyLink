@@ -548,15 +548,6 @@ class UnrealProtocol(TS6BaseProtocol):
         self.irc.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
                                 'op': 'o', 'voice': 'v'})
 
-    def handle_privmsg(self, source, command, args):
-        # Convert nicks to UIDs, where they exist.
-        target = self._getUid(args[0])
-        # We use lowercase channels internally, but uppercase UIDs.
-        if utils.isChannel(target):
-            target = self.irc.toLower(target)
-        return {'target': target, 'text': args[1]}
-    handle_notice = handle_privmsg
-
     def handle_join(self, numeric, command, args):
         """Handles the UnrealIRCd JOIN command."""
         # <- :GL JOIN #pylink,#test

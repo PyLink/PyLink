@@ -86,7 +86,7 @@ class IRCS2SProtocol(Protocol):
         # P10:
         # <- ABAAA P AyAAA :privmsg text
         # <- ABAAA O AyAAA :notice text
-        target = args[0]
+        target = self._getUid(args[0])
 
         # Coerse =#channel from Charybdis op moderated +z to @#channel.
         if target.startswith('='):
