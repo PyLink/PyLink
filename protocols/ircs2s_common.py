@@ -95,9 +95,13 @@ class IRCS2SProtocol(Protocol):
         # We use lowercase channels internally, but uppercase UIDs.
         # Strip the target of leading prefix modes (for targets like @#channel)
         # before checking whether it's actually a channel.
-        stripped_target = target.lstrip(''.join(self.irc.prefixmodes.values()))
-        if utils.isChannel(stripped_target):
-            target = self.irc.toLower(target)
+        split_channel = target.split('#', 1)
+        if len(split_channel) >= 2 and utils.isChannel('#' + split_channel[1]):
+            # Note: don't mess with the case of the channel prefix, or ~#channel
+            # messages will break on RFC1459 casemapping networks (it becomes ^#channel
+            # instead).
+            target = '#'.join((split_channel[0], self.irc.toLower(split_channel[1])))
+            log.debug('(%s) Normalizing channel target %s to %s', self.irc.name, args[0], target)
 
         return {'target': target, 'text': args[1]}
 
