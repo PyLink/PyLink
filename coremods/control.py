@@ -84,6 +84,7 @@ signal.signal(signal.SIGINT, sigterm_handler)
 
 def _rehash():
     """Rehashes the PyLink daemon."""
+    log.info('Reloading PyLink configuration...')
     old_conf = conf.conf.copy()
     fname = conf.fname
     new_conf = conf.loadConf(fname, errors_fatal=False, logger=log)
@@ -130,6 +131,7 @@ def _rehash():
         if (network not in world.networkobjects) or (not world.networkobjects[network].connection_thread.is_alive()):
             proto = utils.getProtocolModule(sdata['protocol'])
             world.networkobjects[network] = classes.Irc(network, proto, new_conf)
+    log.info('Finished reloading PyLink configuration.')
 
 if os.name == 'posix':
     # Only register SIGHUP on *nix.
