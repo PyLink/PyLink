@@ -56,6 +56,9 @@ class Irc(utils.DeprecatedAttributesObject):
         self.botdata = conf['bot']
         self.protoname = proto.__name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = proto.Class(self)
+
+        # These options depend on self.serverdata from above to be set.
+        self.encoding = None
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
 
@@ -111,6 +114,7 @@ class Irc(utils.DeprecatedAttributesObject):
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
+        self.encoding = self.serverdata.get('encoding') or 'utf-8'
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 3
 
@@ -437,13 +441,10 @@ class Irc(utils.DeprecatedAttributesObject):
                 log.error('(%s) Connection timed out.', self.name)
                 return
 
-            # Get the encoding from the config file, falling back to UTF-8 if none is specified.
-            encoding = self.serverdata.get('encoding') or 'utf-8'
-
             while b'\n' in buf:
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
-                line = line.decode(encoding, "replace")
+                line = line.decode(self.encoding, "replace")
                 self.runline(line)
 
     def runline(self, line):
@@ -510,8 +511,7 @@ class Irc(utils.DeprecatedAttributesObject):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
-        encoding = self.serverdata.get('encoding') or 'utf-8'
-        encoded_data = data.encode(encoding, 'replace') + b"\n"
+        encoded_data = data.encode(self.encoding, 'replace') + b"\n"
 
         log.debug("(%s) -> %s", self.name, data)
 

@@ -205,6 +205,9 @@ servers:
         # using m_nationalchars or something similar. Encoding defaults to utf-8 if not set, and
         # should be one of the standard encodings defined at
         # https://docs.python.org/3/library/codecs.html#standard-encodings
+        # Changing this setting requires a disconnect and reconnect of the corresponding network
+        # to apply.
+        # This setting is EXPERIMENTAL as of PyLink 1.2.x.
         #encoding: utf-8
 
     ts6net:
