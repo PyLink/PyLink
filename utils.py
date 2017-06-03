@@ -606,3 +606,27 @@ class DeprecatedAttributesObject():
                         self.deprecated_attributes.get(attr)))
 
         return object.__getattribute__(self, attr)
+
+class CamelCaseToSnakeCase():
+    """
+    Class which automatically converts missing attributes from camel case to snake case.
+    """
+
+    def __getattr__(self, attr):
+        """
+        Attribute fetching fallback function which normalizes camel case attributes to snake case.
+        """
+        assert isinstance(attr, str), "Requested attribute %r is not a string!" % attr
+
+        normalized_attr = ''  # Start off with the first letter, which is ignored when processing
+        for char in attr:
+            if char in string.ascii_uppercase:
+                char = '_' + char.lower()
+            normalized_attr += char
+
+        if normalized_attr == attr:
+            # __getattr__ only fires if normal attribute fetching fails, so we can assume that
+            # the attribute was tried already and failed.
+            raise AttributeError('%s object has no attribute of normalized name %r' % (__class__.__name__, attr))
+
+        return getattr(self, normalized_attr)
