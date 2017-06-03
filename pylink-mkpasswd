@@ -10,7 +10,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Hashes a password for use with PyLink IRC Services.')
-    parser.add_argument('password', help='specifies the password to hash', nargs='?', default='')
+    parser.add_argument('password', help='specifies the password to hash', default='')
     args = parser.parse_args()
 
     assert pwd_context, 'Cannot hash passwords because passlib is missing! Install it via "pip3 install passlib".'
