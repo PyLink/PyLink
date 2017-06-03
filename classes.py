@@ -34,7 +34,7 @@ class ProtocolError(RuntimeError):
 
 ### Internal classes (users, servers, channels)
 
-class Irc(utils.DeprecatedAttributesObject):
+class Irc(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
 
     def __init__(self, netname, proto, conf):
@@ -73,7 +73,7 @@ class Irc(utils.DeprecatedAttributesObject):
         # Sets the multiplier for autoconnect delay (grows with time).
         self.autoconnect_active_multiplier = 1
 
-        self.initVars()
+        self.init_vars()
 
         if world.testing:
             # HACK: Don't thread if we're running tests.
@@ -84,7 +84,7 @@ class Irc(utils.DeprecatedAttributesObject):
                                                       self.name)
             self.connection_thread.start()
 
-    def logSetup(self):
+    def log_setup(self):
         """
         Initializes any channel loggers defined for the current network.
         """
@@ -109,7 +109,7 @@ class Irc(utils.DeprecatedAttributesObject):
                 self.loghandlers.append(handler)
                 log.addHandler(handler)
 
-    def initVars(self):
+    def init_vars(self):
         """
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
@@ -176,9 +176,9 @@ class Irc(utils.DeprecatedAttributesObject):
         self.start_ts = int(time.time())
 
         # Set up channel logging for the network
-        self.logSetup()
+        self.log_setup()
 
-    def processQueue(self):
+    def process_queue(self):
         """Loop to process outgoing queue data."""
         while True:
             throttle_time = self.serverdata.get('throttle_time', 0.005)
@@ -200,7 +200,7 @@ class Irc(utils.DeprecatedAttributesObject):
         while True:
 
             self.aborted.clear()
-            self.initVars()
+            self.init_vars()
 
             try:
                 self.proto.validateServerConf()
@@ -307,7 +307,7 @@ class Irc(utils.DeprecatedAttributesObject):
                 if checks_ok:
 
                     self.queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
-                                                         target=self.processQueue, daemon=True)
+                                                         target=self.process_queue, daemon=True)
                     self.queue_thread.start()
 
                     self.sid = self.serverdata.get("sid")
@@ -323,7 +323,7 @@ class Irc(utils.DeprecatedAttributesObject):
                             or conf.conf['bot']['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)
-                    self.schedulePing()
+                    self.schedule_ping()
                     log.info('(%s) Server ready; listening for data.', self.name)
                     self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
                     self.run()
@@ -413,10 +413,10 @@ class Irc(utils.DeprecatedAttributesObject):
         self.aborted.set()
 
         # Internal hook signifying that a network has disconnected.
-        self.callHooks([None, 'PYLINK_DISCONNECT', {'was_successful': was_successful}])
+        self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': was_successful}])
 
-        log.debug('(%s) disconnect: Clearing state via initVars().', self.name)
-        self.initVars()
+        log.debug('(%s) disconnect: Clearing state via init_vars().', self.name)
+        self.init_vars()
 
     def run(self):
         """Main IRC loop which listens for messages."""
@@ -463,11 +463,11 @@ class Irc(utils.DeprecatedAttributesObject):
         # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
         # 'UID3']}, etc.
         if hook_args is not None:
-            self.callHooks(hook_args)
+            self.call_hooks(hook_args)
 
         return hook_args
 
-    def callHooks(self, hook_args):
+    def call_hooks(self, hook_args):
         """Calls a hook function with the given hook args."""
         numeric, command, parsed_args = hook_args
         # Always make sure TS is sent.
@@ -532,11 +532,11 @@ class Irc(utils.DeprecatedAttributesObject):
         else:
             self._send(data)
 
-    def schedulePing(self):
+    def schedule_ping(self):
         """Schedules periodic pings in a loop."""
         self.proto.ping()
 
-        self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
+        self.pingTimer = threading.Timer(self.pingfreq, self.schedule_ping)
         self.pingTimer.daemon = True
         self.pingTimer.name = 'Ping timer loop for %s' % self.name
         self.pingTimer.start()
@@ -547,7 +547,7 @@ class Irc(utils.DeprecatedAttributesObject):
         return "<classes.Irc object for %r>" % self.name
 
     ### General utility functions
-    def callCommand(self, source, text):
+    def call_command(self, source, text):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
@@ -575,7 +575,7 @@ class Irc(utils.DeprecatedAttributesObject):
         if loopback:
             # Determines whether we should send a hook for this msg(), to relay things like services
             # replies across relay.
-            self.callHooks([source, cmd, {'target': target, 'text': text}])
+            self.call_hooks([source, cmd, {'target': target, 'text': text}])
 
     def _reply(self, text, notice=None, source=None, private=None, force_privmsg_in_private=False,
             loopback=True):
@@ -615,7 +615,7 @@ class Irc(utils.DeprecatedAttributesObject):
         # This is a stub to alias error to reply
         self.reply("Error: %s" % text, **kwargs)
 
-    def toLower(self, text):
+    def to_lower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
         casemapping (rfc1459 or ascii)."""
         if self.proto.casemapping == 'rfc1459':
@@ -628,7 +628,7 @@ class Irc(utils.DeprecatedAttributesObject):
         # a protocol!!!
         return text.encode().lower().decode()
 
-    def parseModes(self, target, args):
+    def parse_modes(self, target, args):
         """Parses a modestring list into a list of (mode, argument) tuples.
         ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
         """
@@ -677,7 +677,7 @@ class Irc(utils.DeprecatedAttributesObject):
                         arg = args.pop(0)
                         # Convert nicks to UIDs implicitly; most IRCds will want
                         # this already.
-                        arg = self.nickToUid(arg) or arg
+                        arg = self.nick_to_uid(arg) or arg
                         if arg not in self.users:  # Target doesn't exist, skip it.
                             log.debug('(%s) Skipping setting mode "%s %s"; the '
                                       'target doesn\'t seem to exist!', self.name,
@@ -700,11 +700,11 @@ class Irc(utils.DeprecatedAttributesObject):
                                     arg = oldarg
                                     log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
 
-                            log.debug('(%s) parseModes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, oldmodes)
+                            log.debug('(%s) parse_modes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, oldmodes)
 
                             if (mode, arg) not in oldmodes:
                                 # Ignore attempts to unset bans that don't exist.
-                                log.debug("(%s) parseModes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
+                                log.debug("(%s) parse_modes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
                                 continue
 
                     elif prefix == '+' and mode in supported_modes['*C']:
@@ -719,7 +719,7 @@ class Irc(utils.DeprecatedAttributesObject):
                 res.append((prefix + mode, arg))
         return res
 
-    def applyModes(self, target, changedmodes):
+    def apply_modes(self, target, changedmodes):
         """Takes a list of parsed IRC modes, and applies them on the given target.
 
         The target can be either a channel or a user; this is handled automatically."""
@@ -740,7 +740,7 @@ class Irc(utils.DeprecatedAttributesObject):
         modelist = set(old_modelist)
         log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', self.name, changedmodes, target, modelist)
         for mode in changedmodes:
-            # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
+            # Chop off the +/- part that parse_modes gives; it's meaningless for a mode list.
             try:
                 real_mode = (mode[0][1], mode[1])
             except IndexError:
@@ -815,7 +815,7 @@ class Irc(utils.DeprecatedAttributesObject):
             mode.insert(0, '-')
         return ''.join(mode)
 
-    def reverseModes(self, target, modes, oldobj=None):
+    def reverse_modes(self, target, modes, oldobj=None):
         """Reverses/Inverts the mode string or mode list given.
 
         Optionally, an oldobj argument can be given to look at an earlier state of
@@ -832,7 +832,7 @@ class Irc(utils.DeprecatedAttributesObject):
         origtype = type(modes)
         # If the query is a string, we have to parse it first.
         if origtype == str:
-            modes = self.parseModes(target, modes.split(" "))
+            modes = self.parse_modes(target, modes.split(" "))
         # Get the current mode list first.
         if utils.isChannel(target):
             c = oldobj or self.channels[target]
@@ -849,7 +849,7 @@ class Irc(utils.DeprecatedAttributesObject):
             oldmodes = self.users[target].modes
             possible_modes = self.umodes
         newmodes = []
-        log.debug('(%s) reverseModes: old/current mode list for %s is: %s', self.name,
+        log.debug('(%s) reverse_modes: old/current mode list for %s is: %s', self.name,
                    target, oldmodes)
         for char, arg in modes:
             # Mode types:
@@ -875,27 +875,27 @@ class Irc(utils.DeprecatedAttributesObject):
                 mpair = (self._flip(char), arg)
             if char[0] != '-' and (mchar, arg) in oldmodes:
                 # Mode is already set.
-                log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since we're "
+                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since we're "
                           "setting a mode that's already set.", self.name, char, arg, mpair)
                 continue
             elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
                 # We're unsetting a prefixmode that was never set - don't set it in response!
                 # Charybdis lacks verification for this server-side.
-                log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since it "
+                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
                           "wasn't previously set.", self.name, char, arg, mpair)
                 continue
             newmodes.append(mpair)
 
-        log.debug('(%s) reverseModes: new modes: %s', self.name, newmodes)
+        log.debug('(%s) reverse_modes: new modes: %s', self.name, newmodes)
         if origtype == str:
             # If the original query is a string, send it back as a string.
-            return self.joinModes(newmodes)
+            return self.join_modes(newmodes)
         else:
             return set(newmodes)
 
     @staticmethod
-    def joinModes(modes, sort=False):
-        """Takes a list of (mode, arg) tuples in parseModes() format, and
+    def join_modes(modes, sort=False):
+        """Takes a list of (mode, arg) tuples in parse_modes() format, and
         joins them into a string.
 
         See testJoinModes in tests/test_utils.py for some examples."""
@@ -936,7 +936,7 @@ class Irc(utils.DeprecatedAttributesObject):
         return modelist
 
     @classmethod
-    def wrapModes(cls, modes, limit, max_modes_per_msg=0):
+    def wrap_modes(cls, modes, limit, max_modes_per_msg=0):
         """
         Takes a list of modes and wraps it across multiple lines.
         """
@@ -962,7 +962,7 @@ class Irc(utils.DeprecatedAttributesObject):
             if prefix not in '+-':
                 prefix = last_prefix
                 # Explicitly add the prefix to the mode character to prevent
-                # ambiguity when passing it to joinModes().
+                # ambiguity when passing it to join_modes().
                 modechar = prefix + modechar
                 # XXX: because tuples are immutable, we have to replace the entire modepair..
                 next_mode = (modechar, arg)
@@ -983,29 +983,29 @@ class Irc(utils.DeprecatedAttributesObject):
                 next_length += len(arg)
 
             assert next_length <= limit, \
-                "wrapModes: Mode %s is too long for the given length %s" % (next_mode, limit)
+                "wrap_modes: Mode %s is too long for the given length %s" % (next_mode, limit)
 
             # Check both message length and max. modes per msg if enabled.
             if (next_length + total_length) <= limit and ((not max_modes_per_msg) or len(queued_modes) < max_modes_per_msg):
                 # We can fit this mode in the next message; add it.
                 total_length += next_length
-                log.debug('wrapModes: Adding mode %s to queued modes', str(next_mode))
+                log.debug('wrap_modes: Adding mode %s to queued modes', str(next_mode))
                 queued_modes.append(next_mode)
-                log.debug('wrapModes: queued modes: %s', queued_modes)
+                log.debug('wrap_modes: queued modes: %s', queued_modes)
             else:
                 # Otherwise, create a new message by joining the previous queue.
                 # Then, add our current mode.
-                strings.append(cls.joinModes(queued_modes))
+                strings.append(cls.join_modes(queued_modes))
                 queued_modes.clear()
 
-                log.debug('wrapModes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
+                log.debug('wrap_modes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
                 queued_modes.append(next_mode)
                 total_length = next_length
         else:
             # Everything fit in one line, so just use that.
-            strings.append(cls.joinModes(queued_modes))
+            strings.append(cls.join_modes(queued_modes))
 
-        log.debug('wrapModes: returning %s for %s', strings, orig_modes)
+        log.debug('wrap_modes: returning %s for %s', strings, orig_modes)
         return strings
 
     def version(self):
@@ -1023,42 +1023,42 @@ class Irc(utils.DeprecatedAttributesObject):
         return self.serverdata.get('hostname', world.fallback_hostname)
 
     ### State checking functions
-    def nickToUid(self, nick):
+    def nick_to_uid(self, nick):
         """Looks up the UID of a user with the given nick, if one is present."""
-        nick = self.toLower(nick)
+        nick = self.to_lower(nick)
         for k, v in self.users.copy().items():
-            if self.toLower(v.nick) == nick:
+            if self.to_lower(v.nick) == nick:
                 return k
 
-    def isInternalClient(self, numeric):
+    def is_internal_client(self, numeric):
         """
         Returns whether the given client numeric (UID) is a PyLink client.
         """
-        sid = self.getServer(numeric)
+        sid = self.get_server(numeric)
         if sid and self.servers[sid].internal:
             return True
         return False
 
-    def isInternalServer(self, sid):
+    def is_internal_server(self, sid):
         """Returns whether the given SID is an internal PyLink server."""
         return (sid in self.servers and self.servers[sid].internal)
 
-    def getServer(self, numeric):
+    def get_server(self, numeric):
         """Finds the SID of the server a user is on."""
         userobj = self.users.get(numeric)
         if userobj:
             return userobj.server
 
-    def isManipulatableClient(self, uid):
+    def is_manipulatable_client(self, uid):
         """
         Returns whether the given user is marked as an internal, manipulatable
         client. Usually, automatically spawned services clients should have this
         set True to prevent interactions with opers (like mode changes) from
         causing desyncs.
         """
-        return self.isInternalClient(uid) and self.users[uid].manipulatable
+        return self.is_internal_client(uid) and self.users[uid].manipulatable
 
-    def getServiceBot(self, uid):
+    def get_service_bot(self, uid):
         """
         Checks whether the given UID is a registered service bot. If True,
         returns the cooresponding ServiceBot object.
@@ -1078,7 +1078,7 @@ class Irc(utils.DeprecatedAttributesObject):
         except AttributeError:
             return False
 
-    def getHostmask(self, user, realhost=False, ip=False):
+    def get_hostmask(self, user, realhost=False, ip=False):
         """
         Returns the hostmask of the given user, if present. If the realhost option
         is given, return the real host of the user instead of the displayed host.
@@ -1108,7 +1108,7 @@ class Irc(utils.DeprecatedAttributesObject):
 
         return '%s!%s@%s' % (nick, ident, host)
 
-    def getFriendlyName(self, entityid):
+    def get_friendly_name(self, entityid):
         """
         Returns the friendly name of a SID or UID (server name for SIDs, nick for UID).
         """
@@ -1119,14 +1119,14 @@ class Irc(utils.DeprecatedAttributesObject):
         else:
             raise KeyError("Unknown UID/SID %s" % entityid)
 
-    def getFullNetworkName(self):
+    def get_full_network_name(self):
         """
         Returns the full network name (as defined by the "netname" option), or the
         short network name if that isn't defined.
         """
         return self.serverdata.get('netname', self.name)
 
-    def isOper(self, uid, allowAuthed=True, allowOper=True):
+    def is_oper(self, uid, allowAuthed=True, allowOper=True):
         """
         Returns whether the given user has operator status on PyLink. This can be achieved
         by either identifying to PyLink as admin (if allowAuthed is True),
@@ -1141,22 +1141,22 @@ class Irc(utils.DeprecatedAttributesObject):
                 return True
         return False
 
-    def checkAuthenticated(self, uid, allowAuthed=True, allowOper=True):
+    def check_authenticated(self, uid, allowAuthed=True, allowOper=True):
         """
         Checks whether the given user has operator status on PyLink, raising
         NotAuthorizedError and logging the access denial if not.
         """
-        log.warning("(%s) Irc.checkAuthenticated() is deprecated as of PyLink 1.2 and may be "
+        log.warning("(%s) Irc.check_authenticated() is deprecated as of PyLink 1.2 and may be "
                     "removed in a future relase. Consider migrating to the PyLink Permissions API.",
                     self.name)
         lastfunc = inspect.stack()[1][3]
-        if not self.isOper(uid, allowAuthed=allowAuthed, allowOper=allowOper):
+        if not self.is_oper(uid, allowAuthed=allowAuthed, allowOper=allowOper):
             log.warning('(%s) Access denied for %s calling %r', self.name,
-                        self.getHostmask(uid), lastfunc)
+                        self.get_hostmask(uid), lastfunc)
             raise utils.NotAuthorizedError("You are not authenticated!")
         return True
 
-    def matchHost(self, glob, target, ip=True, realhost=True):
+    def match_host(self, glob, target, ip=True, realhost=True):
         """
         Checks whether the given host, or given UID's hostmask matches the given nick!user@host
         glob.
@@ -1175,7 +1175,7 @@ class Irc(utils.DeprecatedAttributesObject):
             casemapping = 1
 
         # Try to convert target into a UID. If this fails, it's probably a hostname.
-        target = self.nickToUid(target) or target
+        target = self.nick_to_uid(target) or target
 
         # Allow queries like !$exttarget to invert the given match.
         invert = glob.startswith('!')
@@ -1184,9 +1184,9 @@ class Irc(utils.DeprecatedAttributesObject):
 
         def match_host_core():
             """
-            Core processor for matchHost(), minus the inversion check.
+            Core processor for match_host(), minus the inversion check.
             """
-            # Work with variables in the matchHost() scope, from
+            # Work with variables in the match_host() scope, from
             # http://stackoverflow.com/a/8178808
             nonlocal glob
 
@@ -1201,18 +1201,18 @@ class Irc(utils.DeprecatedAttributesObject):
                     if handler:
                         # Handler exists. Return what it finds.
                         result = handler(self, glob, target)
-                        log.debug('(%s) Got %s from exttarget %s in matchHost() glob $%s for target %s',
+                        log.debug('(%s) Got %s from exttarget %s in match_host() glob $%s for target %s',
                                   self.name, result, exttargetname, glob, target)
                         return result
                     else:
-                        log.debug('(%s) Unknown exttarget %s in matchHost() glob $%s', self.name,
+                        log.debug('(%s) Unknown exttarget %s in match_host() glob $%s', self.name,
                                   exttargetname, glob)
                         return False
 
-                hosts = {self.getHostmask(target)}
+                hosts = {self.get_hostmask(target)}
 
                 if ip:
-                    hosts.add(self.getHostmask(target, ip=True))
+                    hosts.add(self.get_hostmask(target, ip=True))
 
                     # HACK: support CIDR hosts in the hosts portion
                     try:
@@ -1233,7 +1233,7 @@ class Irc(utils.DeprecatedAttributesObject):
                         pass
 
                 if realhost:
-                    hosts.add(self.getHostmask(target, realhost=True))
+                    hosts.add(self.get_hostmask(target, realhost=True))
 
             else:  # We were given a host, use that.
                 hosts = [target]
@@ -1472,7 +1472,7 @@ class Protocol():
                 del self.irc.channels[c]
             assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
 
-        sid = self.irc.getServer(numeric)
+        sid = self.irc.get_server(numeric)
         log.debug('Removing client %s from self.irc.users', numeric)
         del self.irc.users[numeric]
         log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
@@ -1498,14 +1498,14 @@ class Protocol():
             self.irc.channels[channel].modes.clear()
             for p in self.irc.channels[channel].prefixmodes.values():
                 for user in p.copy():
-                    if not self.irc.isInternalClient(user):
+                    if not self.irc.is_internal_client(user):
                         p.discard(user)
 
         def _apply():
             if modes:
                 log.debug("(%s) Applying modes on channel %s (TS ok)", self.irc.name,
                           channel)
-                self.irc.applyModes(channel, modes)
+                self.irc.apply_modes(channel, modes)
 
         # Use a lock so only one thread can change a channel's TS at once: this prevents race
         # conditions from desyncing the channel list.
@@ -1515,7 +1515,7 @@ class Protocol():
             assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
             # Check if we're the mode sender based on the UID / SID given.
-            our_mode = self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender)
+            our_mode = self.irc.is_internal_client(sender) or self.irc.is_internal_server(sender)
 
             log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.irc.name,
                       channel, our_ts, their_ts, our_mode)
@@ -1549,9 +1549,9 @@ class Protocol():
             return sname  # Fall back to given text instead of None
 
     def _getUid(self, target):
-        """Converts a nick argument to its matching UID. This differs from irc.nickToUid()
+        """Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
         in that it returns the original text instead of None, if no matching nick is found."""
-        target = self.irc.nickToUid(target) or target
+        target = self.irc.nick_to_uid(target) or target
         return target
 
     @classmethod
