@@ -595,6 +595,8 @@ class DeprecatedAttributesObject():
     """
     Object implementing deprecated attributes and warnings on access.
     """
+    def __init__(self):
+        self.deprecated_attributes = {}
 
     def __getattribute__(self, attr):
         # Note: "self.deprecated_attributes" calls this too, so the != check is
