@@ -12,10 +12,10 @@ except ImportError:
 from codecs import open
 import subprocess
 
-# Get version from Git tags.
 with open('VERSION', encoding='utf-8') as f:
     version = f.read().strip()
 
+# Try to fetch the current commit hash from Git.
 try:
     real_version = subprocess.check_output(['git', 'describe', '--tags']).decode('utf-8').strip()
 except Exception as e:
@@ -48,7 +48,7 @@ setup(
 
     # Author details
     author='James Lu',
-    author_email='GLolol@overdrivenetworks.com',
+    author_email='james@overdrivenetworks.com',
 
     # Choose your license
     license='MPL 2.0',
