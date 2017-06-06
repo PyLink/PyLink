@@ -94,7 +94,7 @@ setup(
         '': ['example-conf.yml', 'example-permissions.yml', 'VERSION', 'README.md'],
     },
 
-    package_dir = {'pylinkirc': '.'},
+    package_dir = {'pylinkirc': ''},
 
     # Executable scripts
     scripts=["pylink", "pylink-mkpasswd"],
