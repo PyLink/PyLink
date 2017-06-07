@@ -32,7 +32,7 @@ with open('__init__.py', 'w') as f:
 # Convert Markdown to RST for PyPI
 try:
     import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
+    long_description = pypandoc.convert('README.md', 'rst', format='markdown_github')
 except ImportError:
     print('WARNING: PyPandoc not available; skipping writing long description.')
     long_description = None
