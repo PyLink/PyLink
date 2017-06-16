@@ -940,7 +940,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             result = not result
         return result
 
-class PyLinkIRCNetwork(PyLinkNetworkCoreWithUtils):
+class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def __init__(self, *args):
         super().__init__(*args)
         if world.testing:
@@ -1258,7 +1258,7 @@ class PyLinkIRCNetwork(PyLinkNetworkCoreWithUtils):
             else:
                 break
 
-Irc = PyLinkIRCNetwork
+Irc = IRCNetwork
 
 class User():
     """PyLink IRC user class."""
