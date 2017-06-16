@@ -73,6 +73,8 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # Sets the multiplier for autoconnect delay (grows with time).
         self.autoconnect_active_multiplier = 1
 
+        self.was_successful = False
+
         self.init_vars()
 
     def log_setup(self):
@@ -324,6 +326,75 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
         return hook_args
     runline = parse_protocol_command
+
+    def _pre_connect(self):
+        self.aborted.clear()
+        self.init_vars()
+
+        try:
+            self.proto.validateServerConf()
+        except AssertionError as e:
+            log.exception("(%s) Configuration error: %s", self.name, e)
+            raise
+
+    def _run_autoconnect(self):
+        """Blocks for the autoconnect time and returns True if autoconnect is enabled."""
+        autoconnect = self.serverdata.get('autoconnect')
+
+        # Sets the autoconnect growth multiplier (e.g. a value of 2 multiplies the autoconnect
+        # time by 2 on every failure, etc.)
+        autoconnect_multiplier = self.serverdata.get('autoconnect_multiplier', 2)
+        autoconnect_max = self.serverdata.get('autoconnect_max', 1800)
+        # These values must at least be 1.
+        autoconnect_multiplier = max(autoconnect_multiplier, 1)
+        autoconnect_max = max(autoconnect_max, 1)
+
+        log.debug('(%s) _run_autoconnect: Autoconnect delay set to %s seconds.', self.name, autoconnect)
+        if autoconnect is not None and autoconnect >= 1:
+            log.debug('(%s) _run_autoconnect: Multiplying autoconnect delay %s by %s.', self.name, autoconnect, self.autoconnect_active_multiplier)
+            autoconnect *= self.autoconnect_active_multiplier
+            # Add a cap on the max. autoconnect delay, so that we don't go on forever...
+            autoconnect = min(autoconnect, autoconnect_max)
+
+            log.info('(%s) _run_autoconnect: Going to auto-reconnect in %s seconds.', self.name, autoconnect)
+            # Continue when either self.aborted is set or the autoconnect time passes.
+            # Compared to time.sleep(), this allows us to stop connections quicker if we
+            # break while while for autoconnect.
+            self.aborted.clear()
+            self.aborted.wait(autoconnect)
+
+            # Store in the local state what the autoconnect multiplier currently is.
+            self.autoconnect_active_multiplier *= autoconnect_multiplier
+
+            if self not in world.networkobjects.values():
+                log.debug('(%s) _run_autoconnect: Stopping stale connect loop', self.name)
+                return
+            return True
+
+        else:
+            log.info('(%s) _run_autoconnect: Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
+            return
+
+    def _pre_disconnect(self):
+        self.was_successful = self.connected.is_set()
+        log.debug('(%s) _pre_disconnect: got %s for was_successful state', self.name, self.was_successful)
+
+        log.debug('(%s) _pre_disconnect: Clearing self.connected state.', self.name)
+        self.connected.clear()
+
+        log.debug('(%s) _pre_disconnect: Removing channel logging handlers due to disconnect.', self.name)
+        while self.loghandlers:
+            log.removeHandler(self.loghandlers.pop())
+
+    def _post_disconnect(self):
+        log.debug('(%s) _post_disconnect: Setting self.aborted to True.', self.name)
+        self.aborted.set()
+
+        # Internal hook signifying that a network has disconnected.
+        self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
+
+        log.debug('(%s) _post_disconnect: Clearing state via init_vars().', self.name)
+        self.init_vars()
 
 class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def to_lower(self, text):
@@ -969,15 +1040,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         __init__ in a separate thread to allow multiple concurrent connections.
         """
         while True:
-
-            self.aborted.clear()
-            self.init_vars()
-
-            try:
-                self.proto.validateServerConf()
-            except AssertionError as e:
-                log.exception("(%s) Configuration error: %s", self.name, e)
-                return
+            self._pre_connect()
 
             ip = self.serverdata["ip"]
             port = self.serverdata["port"]
@@ -1112,55 +1175,12 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 log.exception('(%s) Disconnected from IRC:', self.name)
 
             self.disconnect()
-
-            # If autoconnect is enabled, loop back to the start. Otherwise,
-            # return and stop.
-            autoconnect = self.serverdata.get('autoconnect')
-
-            # Sets the autoconnect growth multiplier (e.g. a value of 2 multiplies the autoconnect
-            # time by 2 on every failure, etc.)
-            autoconnect_multiplier = self.serverdata.get('autoconnect_multiplier', 2)
-            autoconnect_max = self.serverdata.get('autoconnect_max', 1800)
-            # These values must at least be 1.
-            autoconnect_multiplier = max(autoconnect_multiplier, 1)
-            autoconnect_max = max(autoconnect_max, 1)
-
-            log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
-            if autoconnect is not None and autoconnect >= 1:
-                log.debug('(%s) Multiplying autoconnect delay %s by %s.', self.name, autoconnect, self.autoconnect_active_multiplier)
-                autoconnect *= self.autoconnect_active_multiplier
-                # Add a cap on the max. autoconnect delay, so that we don't go on forever...
-                autoconnect = min(autoconnect, autoconnect_max)
-
-                log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
-                # Continue when either self.aborted is set or the autoconnect time passes.
-                # Compared to time.sleep(), this allows us to stop connections quicker if we
-                # break while while for autoconnect.
-                self.aborted.clear()
-                self.aborted.wait(autoconnect)
-
-                # Store in the local state what the autoconnect multiplier currently is.
-                self.autoconnect_active_multiplier *= autoconnect_multiplier
-
-                if self not in world.networkobjects.values():
-                    log.debug('Stopping stale connect loop for old connection %r', self.name)
-                    return
-
-            else:
-                log.info('(%s) Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
+            if not self._run_autoconnect():
                 return
 
     def disconnect(self):
         """Handle disconnects from the remote server."""
-        was_successful = self.connected.is_set()
-        log.debug('(%s) disconnect: got %s for was_successful state', self.name, was_successful)
-
-        log.debug('(%s) disconnect: Clearing self.connected state.', self.name)
-        self.connected.clear()
-
-        log.debug('(%s) Removing channel logging handlers due to disconnect.', self.name)
-        while self.loghandlers:
-            log.removeHandler(self.loghandlers.pop())
+        self._pre_disconnect()
 
         try:
             log.debug('(%s) disconnect: Shutting down socket.', self.name)
@@ -1179,15 +1199,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         if self.pingTimer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
             self.pingTimer.cancel()
-
-        log.debug('(%s) disconnect: Setting self.aborted to True.', self.name)
-        self.aborted.set()
-
-        # Internal hook signifying that a network has disconnected.
-        self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': was_successful}])
-
-        log.debug('(%s) disconnect: Clearing state via init_vars().', self.name)
-        self.init_vars()
+        self._post_disconnect()
 
     def run(self):
         """Main IRC loop which listens for messages."""
