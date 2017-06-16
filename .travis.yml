@@ -1,3 +1,6 @@
+dist: trusty
+sudo: false
+
 language: python
 python:
   - '3.4'
@@ -26,8 +29,6 @@ deploy:
     # Only deploy on tags that don't have -alpha, -beta, etc. suffixes attached
     condition: $(python3 -c 'import re,os; print(bool(re.match(r"^(\d+\.){2,}\d+$", os.environ.get("TRAVIS_TAG", ""))))') == "True"
     python: '3.6'
-
-  skip_upload_docs: true
 
 notifications:
   email: false
