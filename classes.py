@@ -1260,7 +1260,7 @@ class PyLinkIRCNetwork(PyLinkNetworkCoreWithUtils):
 
 Irc = PyLinkIRCNetwork
 
-class IrcUser():
+class User():
     """PyLink IRC user class."""
     def __init__(self, nick, ts, uid, server, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
@@ -1299,14 +1299,15 @@ class IrcUser():
 
     def __repr__(self):
         return 'IrcUser(%s/%s)' % (self.uid, self.nick)
+IrcUser = User
 
-class IrcServer():
+class Server():
     """PyLink IRC server class.
 
-    uplink: The SID of this IrcServer instance's uplink. This is set to None
-            for the main PyLink PseudoServer!
+    uplink: The SID of this PyLinkServer instance's uplink. This is set to None
+            for the main PyLink server.
     name: The name of the server.
-    internal: Whether the server is an internal PyLink PseudoServer.
+    internal: Whether the server is an internal PyLink server.
     """
 
     def __init__(self, uplink, name, internal=False, desc="(None given)"):
@@ -1318,8 +1319,9 @@ class IrcServer():
 
     def __repr__(self):
         return 'IrcServer(%s)' % self.name
+IrcServer = Server
 
-class IrcChannel():
+class Channel():
     """PyLink IRC channel class."""
     def __init__(self, name=None):
         # Initialize variables, such as the topic, user list, TS, who's opped, etc.
@@ -1420,6 +1422,7 @@ class IrcChannel():
                 result.append(mode)
 
         return sorted(result, key=self.sortPrefixes)
+IrcChannel = Channel
 
 class Protocol():
     """Base Protocol module class for PyLink."""
