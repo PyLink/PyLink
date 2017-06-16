@@ -304,6 +304,27 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         """
         return self.serverdata.get('netname', self.name)
 
+    def parse_protocol_command(self, line):
+        """Sends a command to the protocol module."""
+        log.debug("(%s) <- %s", self.name, line)
+        try:
+            hook_args = self.proto.handle_events(line)
+        except Exception:
+            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
+            log.error('(%s) The offending line was: <- %s', self.name, line)
+            self.aborted.set()
+            return
+        # Only call our hooks if there's data to process. Handlers that support
+        # hooks will return a dict of parsed arguments, which can be passed on
+        # to plugins and the like. For example, the JOIN handler will return
+        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
+        # 'UID3']}, etc.
+        if hook_args is not None:
+            self.call_hooks(hook_args)
+
+        return hook_args
+    runline = parse_protocol_command
+
 class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def to_lower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
@@ -1196,27 +1217,6 @@ class PyLinkIRCNetwork(PyLinkNetworkCoreWithUtils):
                 line = line.strip(b'\r')
                 line = line.decode(self.encoding, "replace")
                 self.runline(line)
-
-    def runline(self, line):
-        """Sends a command to the protocol module."""
-        log.debug("(%s) <- %s", self.name, line)
-        try:
-            hook_args = self.proto.handle_events(line)
-        except Exception:
-            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
-            log.error('(%s) The offending line was: <- %s', self.name, line)
-            self.aborted.set()
-            return
-        # Only call our hooks if there's data to process. Handlers that support
-        # hooks will return a dict of parsed arguments, which can be passed on
-        # to plugins and the like. For example, the JOIN handler will return
-        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
-        # 'UID3']}, etc.
-        if hook_args is not None:
-            self.call_hooks(hook_args)
-
-        return hook_args
-
 
     def _send(self, data):
         """Sends raw text to the uplink server."""
