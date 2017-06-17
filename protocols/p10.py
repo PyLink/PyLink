@@ -1124,7 +1124,7 @@ class P10Protocol(IRCS2SProtocol):
         # <- ABAAA M GL -w
         # <- ABAAA M #test +v ABAAB 1460747615
         # <- ABAAA OM #test +h ABAAA
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         if utils.isChannel(target):
             target = self.irc.toLower(target)
 
@@ -1204,7 +1204,7 @@ class P10Protocol(IRCS2SProtocol):
         # 2 <channel>
         # - note that the target is a nickname, not a numeric.
         # <- ABAAA I PyLink-devel #services 1460948992
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         channel = self.irc.toLower(args[1])
 
         return {'target': target, 'channel': channel}

@@ -646,7 +646,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_chghost(self, numeric, command, args):
         """Handles incoming CHGHOST commands."""
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         self.irc.users[target].host = newhost = args[1]
         return {'target': target, 'newhost': newhost}
 

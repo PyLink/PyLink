@@ -333,7 +333,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         else:
             return  # Nothing changed
 
-    def _getUid(self, nick, ident=None, host=None):
+    def _get_UID(self, nick, ident=None, host=None):
         """
         Fetches the UID for the given nick, creating one if it does not already exist.
 
@@ -414,7 +414,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 except ValueError:
                     ident = host = None  # Set ident and host as null for now.
                     nick = sender  # Treat the sender prefix we received as a nick.
-                idsource = self._getUid(nick, ident, host)
+                idsource = self._get_UID(nick, ident, host)
 
         try:
             func = getattr(self, 'handle_'+command.lower())
@@ -649,7 +649,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user. TODO: wait for WHO responses for each nick before
             # spawning in order to get a real ident/host.
-            idsource = self._getUid(nick)
+            idsource = self._get_UID(nick)
 
             # Queue these virtual users to be joined if they're not already in the channel,
             # or we're waiting for a kick acknowledgment for them.

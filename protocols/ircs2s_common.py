@@ -166,7 +166,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         # If the sender isn't in numeric format, try to convert it automatically.
         sender_sid = self._getSid(sender)
-        sender_uid = self._getUid(sender)
+        sender_uid = self._get_UID(sender)
 
         if sender_sid in self.irc.servers:
             # Sender is a server (converting from name to SID gave a valid result).
@@ -217,7 +217,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # P10:
         # <- ABAAA P AyAAA :privmsg text
         # <- ABAAA O AyAAA :notice text
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
 
         # Coerse =#channel from Charybdis op moderated +z to @#channel.
         if target.startswith('='):
@@ -316,7 +316,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # WHOIS commands received are for us, since we don't host any real servers
         # to route it to.
 
-        return {'target': self._getUid(args[-1])}
+        return {'target': self._get_UID(args[-1])}
 
     def handle_quit(self, numeric, command, args):
         """Handles incoming QUIT commands."""

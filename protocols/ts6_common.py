@@ -298,7 +298,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """Handles incoming KICKs."""
         # :70MAAAAAA KICK #test 70MAAAAAA :some reason
         channel = self.irc.toLower(args[0])
-        kicked = self._getUid(args[1])
+        kicked = self._get_UID(args[1])
 
         try:
             reason = args[2]
@@ -381,4 +381,4 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
         # UnrealIRCd:
         # <- :services.midnight.vpn SVSNICK GL Guest87795 1468303726
-        return {'target': self._getUid(args[0]), 'newnick': args[1]}
+        return {'target': self._get_UID(args[0]), 'newnick': args[1]}

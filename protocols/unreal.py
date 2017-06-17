@@ -624,7 +624,7 @@ class UnrealProtocol(TS6BaseProtocol):
                     # <- :002 SJOIN 1486361658 #idlerpg :@
                     continue
 
-                user = self._getUid(user)  # Normalize nicks to UIDs for Unreal 3.2 links
+                user = self._get_UID(user)  # Normalize nicks to UIDs for Unreal 3.2 links
                 # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
                 # and +a is ~ instead of &.
                 modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
@@ -769,7 +769,7 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_svsmode(self, numeric, command, args):
         """Handles SVSMODE, used by services for setting user modes on others."""
         # <- :source SVSMODE target +usermodes
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         modes = args[1:]
 
         parsedmodes = self.irc.parseModes(target, modes)
@@ -817,7 +817,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :NickServ SVS2MODE 001SALZ01 +d GL
         # <- :NickServ SVS2MODE 001SALZ01 +r
 
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         parsedmodes = self.irc.parseModes(target, args[1:])
 
         if ('+r', None) in parsedmodes:
@@ -911,14 +911,14 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_chgident(self, numeric, command, args):
         """Handles CHGIDENT, used for denoting ident changes."""
         # <- :GL CHGIDENT GL test
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         self.irc.users[target].ident = newident = args[1]
         return {'target': target, 'newident': newident}
 
     def handle_chghost(self, numeric, command, args):
         """Handles CHGHOST, used for denoting hostname changes."""
         # <- :GL CHGHOST GL some.host
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         self.irc.users[target].host = newhost = args[1]
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
@@ -930,14 +930,14 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_chgname(self, numeric, command, args):
         """Handles CHGNAME, used for denoting real name/gecos changes."""
         # <- :GL CHGNAME GL :afdsafasf
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         self.irc.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
 
     def handle_invite(self, numeric, command, args):
         """Handles incoming INVITEs."""
         # <- :GL INVITE PyLink-devel :#a
-        target = self._getUid(args[0])
+        target = self._get_UID(args[0])
         channel = self.irc.toLower(args[1])
         # We don't actually need to process this; it's just something plugins/hooks can use
         return {'target': target, 'channel': channel}
@@ -947,7 +947,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)
         # Use ts6_common's handle_kill, but coerse UIDs to nicks first.
 
-        new_args = [self._getUid(args[0])]
+        new_args = [self._get_UID(args[0])]
         new_args.extend(args[1:])
 
         return super().handle_kill(numeric, command, new_args)
