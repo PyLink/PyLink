@@ -14,8 +14,6 @@ import ssl
 import hashlib
 from copy import deepcopy
 import inspect
-import re
-from collections import defaultdict
 import ipaddress
 import queue
 
@@ -1454,33 +1452,7 @@ class Protocol():
         self.protocol_caps = set()
 
     def validateServerConf(self):
-        """Validates that the server block given contains the required keys."""
-        for k in self.conf_keys:
-            assert k in self.irc.serverdata, "Missing option %r in server block for network %s." % (k, self.irc.name)
-
-        port = self.irc.serverdata['port']
-        assert type(port) == int and 0 < port < 65535, "Invalid port %r for network %s" % (port, self.irc.name)
-
-    @staticmethod
-    def parseArgs(args):
-        """
-        Parses a string or list of of RFC1459-style arguments, where ":" may
-        be used for multi-word arguments that last until the end of a line.
-        """
-        if isinstance(args, str):
-            args = args.split(' ')
-
-        real_args = []
-        for idx, arg in enumerate(args):
-            if arg.startswith(':') and idx != 0:
-                # ":" is used to begin multi-word arguments that last until the end of the message.
-                # Use list splicing here to join them into one argument, and then add it to our list of args.
-                joined_arg = ' '.join(args[idx:])[1:]  # Cut off the leading : as well
-                real_args.append(joined_arg)
-                break
-            real_args.append(arg)
-
-        return real_args
+        return
 
     def hasCap(self, capab):
         """
@@ -1564,7 +1536,7 @@ class Protocol():
                 _clear()
                 _apply()
 
-    def _getSid(self, sname):
+    def _get_SID(self, sname):
         """Returns the SID of a server with the given name, if present."""
         name = sname.lower()
         for k, v in self.irc.servers.items():
@@ -1572,108 +1544,11 @@ class Protocol():
                 return k
         else:
             return sname  # Fall back to given text instead of None
+    _getSid = _get_SID
 
-    def _getUid(self, target):
+    def _get_UID(self, target):
         """Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
         in that it returns the original text instead of None, if no matching nick is found."""
         target = self.irc.nick_to_uid(target) or target
         return target
-
-    @classmethod
-    def parsePrefixedArgs(cls, args):
-        """Similar to parseArgs(), but stripping leading colons from the first argument
-        of a line (usually the sender field)."""
-        args = cls.parseArgs(args)
-        args[0] = args[0].split(':', 1)[1]
-        return args
-
-    def _squit(self, numeric, command, args):
-        """Handles incoming SQUITs."""
-
-        split_server = self._getSid(args[0])
-
-        # Normally we'd only need to check for our SID as the SQUIT target, but Nefarious
-        # actually uses the uplink server as the SQUIT target.
-        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
-        if split_server in (self.irc.sid, self.irc.uplink):
-            raise ProtocolError('SQUIT received: (reason: %s)' % args[-1])
-
-        affected_users = []
-        affected_nicks = defaultdict(list)
-        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
-
-        if split_server not in self.irc.servers:
-            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
-            return
-
-        # Prevent RuntimeError: dictionary changed size during iteration
-        old_servers = self.irc.servers.copy()
-        old_channels = self.irc.channels.copy()
-
-        # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
-        # remove them and all their users too.
-        for sid, data in old_servers.items():
-            if data.uplink == split_server:
-                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
-                # Recursively run SQUIT on any other hubs this server may have been connected to.
-                args = self._squit(sid, 'SQUIT', [sid, "0",
-                                   "PyLink: Automatically splitting leaf servers of %s" % sid])
-                affected_users += args['users']
-
-        for user in self.irc.servers[split_server].users.copy():
-            affected_users.append(user)
-            nick = self.irc.users[user].nick
-
-            # Nicks affected is channel specific for SQUIT:. This makes Clientbot's SQUIT relaying
-            # much easier to implement.
-            for name, cdata in old_channels.items():
-                if user in cdata.users:
-                    affected_nicks[name].append(nick)
-
-            log.debug('Removing client %s (%s)', user, nick)
-            self.removeClient(user)
-
-        serverdata = self.irc.servers[split_server]
-        sname = serverdata.name
-        uplink = serverdata.uplink
-
-        del self.irc.servers[split_server]
-        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
-
-        return {'target': split_server, 'users': affected_users, 'name': sname,
-                'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
-                'channeldata': old_channels}
-
-    @staticmethod
-    def parseCapabilities(args, fallback=''):
-        """
-        Parses a string of capabilities in the 005 / RPL_ISUPPORT format.
-        """
-
-        if type(args) == str:
-            args = args.split(' ')
-
-        caps = {}
-        for cap in args:
-            try:
-                # Try to split it as a KEY=VALUE pair.
-                key, value = cap.split('=', 1)
-            except ValueError:
-                key = cap
-                value = fallback
-            caps[key] = value
-
-        return caps
-
-    @staticmethod
-    def parsePrefixes(args):
-        """
-        Separates prefixes field like "(qaohv)~&@%+" into a dict mapping mode characters to mode
-        prefixes.
-        """
-        prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', args)
-        return dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
-
-    def handle_error(self, numeric, command, args):
-        """Handles ERROR messages - these mean that our uplink has disconnected us!"""
-        raise ProtocolError('Received an ERROR, disconnecting!')
+    _getUid = _get_UID

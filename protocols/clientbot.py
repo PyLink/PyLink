@@ -10,7 +10,7 @@ FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
 IRCV3_CAPABILITIES = {'multi-prefix', 'sasl'}
 
-class ClientbotWrapperProtocol(Protocol):
+class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, irc):
         super().__init__(irc)
 
