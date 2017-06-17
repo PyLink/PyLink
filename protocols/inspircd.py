@@ -759,7 +759,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # If we receive such a remote SQUIT, just forward it as a regular
         # SQUIT, in order to be consistent with other IRCds which make SQUITs
         # implicit.
-        target = self._getSid(args[0])
+        target = self._get_SID(args[0])
         if self.irc.isInternalServer(target):
             # The target has to be one of our servers in order to work...
             uplink = self.irc.servers[target].uplink

@@ -966,7 +966,7 @@ class P10Protocol(IRCS2SProtocol):
         # Why is this the way it is? I don't know... -GL
 
         target = args[1]
-        sid = self._getSid(target)
+        sid = self._get_SID(target)
         orig_pingtime = args[0][1:]  # Strip the !, used to denote a TS instead of a server name.
 
         currtime = time.time()

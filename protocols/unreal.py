@@ -511,7 +511,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles the SQUIT command."""
         # <- SQUIT services.int :Read error
         # Convert the server name to a SID...
-        args[0] = self._getSid(args[0])
+        args[0] = self._get_SID(args[0])
         # Then, use the SQUIT handler in TS6BaseProtocol as usual.
         return super().handle_squit(numeric, 'SQUIT', args)
 

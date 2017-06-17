@@ -51,7 +51,7 @@ class IRCCommonProtocol(Protocol):
     def _squit(self, numeric, command, args):
         """Handles incoming SQUITs."""
 
-        split_server = self._getSid(args[0])
+        split_server = self._get_SID(args[0])
 
         # Normally we'd only need to check for our SID as the SQUIT target, but Nefarious
         # actually uses the uplink server as the SQUIT target.
@@ -165,7 +165,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         sender = sender.lstrip(':')
 
         # If the sender isn't in numeric format, try to convert it automatically.
-        sender_sid = self._getSid(sender)
+        sender_sid = self._get_SID(sender)
         sender_uid = self._get_UID(sender)
 
         if sender_sid in self.irc.servers:
