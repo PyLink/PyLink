@@ -21,8 +21,8 @@ SJOIN_PREFIXES = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+', 'b': '&', 'e
 S2S_BUFSIZE = 427
 
 class UnrealProtocol(TS6BaseProtocol):
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.protocol_caps |= {'slash-in-nicks', 'underscore-in-hosts'}
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example)
         self.casemapping = 'ascii'
@@ -335,7 +335,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     ### HANDLERS
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
         self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}

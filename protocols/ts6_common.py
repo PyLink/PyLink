@@ -99,15 +99,14 @@ class TS6UIDGenerator(utils.IncrementalUIDGenerator):
          super().__init__(sid)
 
 class TS6BaseProtocol(IRCS2SProtocol):
-
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Dictionary of UID generators (one for each server).
         self.uidgen = structures.KeyedDefaultdict(TS6UIDGenerator)
 
         # SID generator for TS6.
-        self.sidgen = TS6SIDGenerator(irc)
+        self.sidgen = TS6SIDGenerator(self)
 
     def _send_with_prefix(self, source, msg, **kwargs):
         """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""

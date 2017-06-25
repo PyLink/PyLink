@@ -1130,17 +1130,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     _getUid = _get_UID
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
-    def __init__(self, *args):
-        super().__init__(*args)
-        if world.testing:
-            # HACK: Don't thread if we're running tests.
-            self.connect()
-        else:
-            self.connection_thread = threading.Thread(target=self.connect,
-                                                      name="Listener for %s" %
-                                                      self.name)
-            self.connection_thread.start()
-
     def schedule_ping(self):
         """Schedules periodic pings in a loop."""
         self.proto.ping()
@@ -1152,7 +1141,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
         log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
-    def connect(self):
+    def _connect(self):
         """
         Runs the connect loop for the IRC object. This is usually called by
         __init__ in a separate thread to allow multiple concurrent connections.
@@ -1265,7 +1254,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                     self.sid = self.serverdata.get("sid")
                     # All our checks passed, get the protocol module to connect and run the listen
                     # loop. This also updates any SID values should the protocol module do so.
-                    self.proto.connect()
+                    self.post_connect()
 
                     log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
                     host = self.hostname()
@@ -1295,6 +1284,17 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self.disconnect()
             if not self._run_autoconnect():
                 return
+
+    def connect(self):
+        log.debug('(%s) calling _connect() (world.testing=%s)', self.name, world.testing)
+        if world.testing:
+            # HACK: Don't thread if we're running tests.
+            self._connect()
+        else:
+            self.connection_thread = threading.Thread(target=self._connect,
+                                                      name="Listener for %s" %
+                                                      self.name)
+            self.connection_thread.start()
 
     def disconnect(self):
         """Handle disconnects from the remote server."""

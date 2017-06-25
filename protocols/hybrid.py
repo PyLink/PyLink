@@ -5,10 +5,10 @@ from pylinkirc.log import log
 from pylinkirc.classes import *
 from pylinkirc.protocols.ts6 import *
 
+# This protocol module inherits from the TS6 protocol.
 class HybridProtocol(TS6Protocol):
-    def __init__(self, irc):
-        # This protocol module inherits from the TS6 protocol.
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.casemapping = 'ascii'
         self.caps = {}
@@ -16,7 +16,7 @@ class HybridProtocol(TS6Protocol):
         self.has_eob = False
         self.protocol_caps -= {'slash-in-hosts'}
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
         self.has_eob = False

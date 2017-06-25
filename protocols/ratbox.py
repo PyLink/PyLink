@@ -7,17 +7,16 @@ from pylinkirc.protocols.ts6 import *
 
 class RatboxProtocol(TS6Protocol):
 
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Don't require EUID for Ratbox
         self.required_caps.discard('EUID')
 
         self.hook_map['LOGIN'] = 'CLIENT_SERVICES_LOGIN'
         self.protocol_caps -= {'slash-in-hosts'}
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
-        super().connect()
 
         # Note: +r, +e, and +I support will be negotiated on link
         self.irc.cmodes = {'op': 'o', 'secret': 's', 'private': 'p', 'noextmsg': 'n', 'moderated': 'm',

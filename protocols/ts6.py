@@ -13,8 +13,8 @@ from pylinkirc.protocols.ts6_common import *
 S2S_BUFSIZE = 510
 
 class TS6Protocol(TS6BaseProtocol):
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.protocol_caps |= {'slash-in-hosts'}
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
@@ -255,7 +255,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     ### Core / handlers
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
         self.has_eob = False

@@ -11,7 +11,7 @@ from pylinkirc.log import log
 from pylinkirc import utils
 
 class IRCCommonProtocol(IRCNetwork):
-    def validateServerConf(self):
+    def validate_server_conf(self):
         """Validates that the server block given contains the required keys."""
         for k in self.conf_keys:
             assert k in self.irc.serverdata, "Missing option %r in server block for network %s." % (k, self.irc.name)
@@ -142,8 +142,8 @@ class IRCCommonProtocol(IRCNetwork):
 class IRCS2SProtocol(IRCCommonProtocol):
     COMMAND_TOKENS = {}
 
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.protocol_caps = {'can-spawn-clients', 'has-ts', 'can-host-relay',
                               'can-track-servers'}
 

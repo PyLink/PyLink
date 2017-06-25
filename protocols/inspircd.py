@@ -11,8 +11,8 @@ from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
 class InspIRCdProtocol(TS6BaseProtocol):
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.protocol_caps |= {'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
@@ -392,7 +392,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     ### Core / command handlers
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
 

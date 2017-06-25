@@ -151,14 +151,14 @@ class P10Protocol(IRCS2SProtocol):
         'FA': 'FAKE'
     }
 
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Dictionary of UID generators (one for each server).
         self.uidgen = structures.KeyedDefaultdict(P10UIDGenerator)
 
         # SID generator for P10.
-        self.sidgen = P10SIDGenerator(irc)
+        self.sidgen = P10SIDGenerator(self)
 
         self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE', 'CLEARMODE': 'MODE', 'BURST': 'JOIN'}
 
@@ -754,7 +754,7 @@ class P10Protocol(IRCS2SProtocol):
 
     ### HANDLERS
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.irc.start_ts
 

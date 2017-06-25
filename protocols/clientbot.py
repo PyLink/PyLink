@@ -11,8 +11,8 @@ COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'ow
 IRCV3_CAPABILITIES = {'multi-prefix', 'sasl'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.protocol_caps = {'clear-channels-on-leave', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
@@ -51,7 +51,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             return nick
         return uid
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
         # (Re)initialize counter-based pseudo UID generators
         self.uidgen = utils.PUIDGenerator('PUID')
