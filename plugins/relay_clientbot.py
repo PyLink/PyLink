@@ -204,7 +204,7 @@ def rpm(irc, source, args):
         return
 
     relay = world.plugins.get('relay')
-    if irc.proto.hasCap('can-spawn-clients'):
+    if irc.hasCap('can-spawn-clients'):
         irc.error('This command is only supported on Clientbot networks. Try /msg %s <text>' % target)
         return
     elif relay is None:

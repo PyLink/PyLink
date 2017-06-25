@@ -18,7 +18,7 @@ def spawnclient(irc, source, args):
     except ValueError:
         irc.error("Not enough arguments. Needs 3: nick, user, host.")
         return
-    irc.proto.spawnClient(nick, ident, host, manipulatable=True)
+    irc.spawnClient(nick, ident, host, manipulatable=True)
     irc.reply("Done.")
 
 @utils.add_cmd
@@ -45,7 +45,7 @@ def quit(irc, source, args):
         irc.error("Cannot force quit a protected PyLink services client.")
         return
 
-    irc.proto.quit(u, quitmsg)
+    irc.quit(u, quitmsg)
     irc.reply("Done.")
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
@@ -99,9 +99,9 @@ def joinclient(irc, source, args):
 
         # join() doesn't support prefixes.
         if prefixes:
-            irc.proto.sjoin(irc.sid, real_channel, [(joinmodes, u)])
+            irc.sjoin(irc.sid, real_channel, [(joinmodes, u)])
         else:
-            irc.proto.join(u, real_channel)
+            irc.join(u, real_channel)
 
         # Call a join hook manually so other plugins like relay can understand it.
         irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
@@ -141,7 +141,7 @@ def nick(irc, source, args):
         irc.error("Cannot force nick changes for a protected PyLink services client.")
         return
 
-    irc.proto.nick(u, newnick)
+    irc.nick(u, newnick)
     irc.reply("Done.")
     # Ditto above: manually send a NICK change hook payload to other plugins.
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
@@ -188,7 +188,7 @@ def part(irc, source, args):
         if not utils.isChannel(channel):
             irc.error("Invalid channel name %r." % channel)
             return
-        irc.proto.part(u, channel, reason)
+        irc.part(u, channel, reason)
 
     irc.reply("Done.")
     irc.callHooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
@@ -236,7 +236,7 @@ def msg(irc, source, args):
     else:
         real_target = target
 
-    irc.proto.message(sourceuid, real_target, text)
+    irc.message(sourceuid, real_target, text)
     irc.reply("Done.")
     irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
 utils.add_cmd(msg, 'say')

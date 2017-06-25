@@ -113,7 +113,7 @@ def match(irc, channel, uids=None):
     log.debug("(%s) automode: sending modes from modebot_uid %s",
               irc.name, modebot_uid)
 
-    irc.proto.mode(modebot_uid, channel, outgoing_modes)
+    irc.mode(modebot_uid, channel, outgoing_modes)
 
     # Create a hook payload to support plugins like relay.
     irc.callHooks([modebot_uid, 'AUTOMODE_MODE',

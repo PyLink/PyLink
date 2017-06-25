@@ -78,7 +78,7 @@ def _changehost(irc, target, args):
                 if char not in allowed_chars:
                     new_host = new_host.replace(char, '-')
 
-            irc.proto.updateClient(target, 'HOST', new_host)
+            irc.updateClient(target, 'HOST', new_host)
 
             # Only operate on the first match.
             break

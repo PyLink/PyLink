@@ -70,7 +70,7 @@ def jupe(irc, source, args):
         irc.error("Invalid server name '%s'." % servername)
         return
 
-    sid = irc.proto.spawnServer(servername, desc=desc)
+    sid = irc.spawnServer(servername, desc=desc)
 
     irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_SPAWNSERVER',
                    {'name': servername, 'sid': sid, 'text': desc}])
@@ -104,7 +104,7 @@ def kick(irc, source, args):
         return
 
     sender = irc.pseudoclient.uid
-    irc.proto.kick(sender, channel, targetu, reason)
+    irc.kick(sender, channel, targetu, reason)
     irc.reply("Done.")
     irc.callHooks([sender, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
                                         'text': reason, 'parse_as': 'KICK'}])
@@ -132,7 +132,7 @@ def kill(irc, source, args):
         irc.error("No such nick '%s'." % target)
         return
 
-    irc.proto.kill(sender, targetu, reason)
+    irc.kill(sender, targetu, reason)
 
     # Format the kill reason properly in hooks.
     reason = "Killed (%s (%s))" % (irc.getFriendlyName(sender), reason)
@@ -173,7 +173,7 @@ def mode(irc, source, args):
         irc.error("No valid modes were given.")
         return
 
-    irc.proto.mode(irc.pseudoclient.uid, target, parsedmodes)
+    irc.mode(irc.pseudoclient.uid, target, parsedmodes)
 
     # Call the appropriate hooks for plugins like relay.
     irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_MODEOVERRIDE',
@@ -198,7 +198,7 @@ def topic(irc, source, args):
         irc.error("Unknown channel %r." % channel)
         return
 
-    irc.proto.topic(irc.pseudoclient.uid, channel, topic)
+    irc.topic(irc.pseudoclient.uid, channel, topic)
 
     irc.reply("Done.")
     irc.callHooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',

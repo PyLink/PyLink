@@ -110,7 +110,7 @@ def showchan(irc, source, args):
 
     # Mark TS values as untrusted on Clientbot and others (where TS is read-only or not trackable)
     f('\x02Channel creation time\x02: %s (%s)%s' % (ctime(c.ts), c.ts,
-                                                    ' [UNTRUSTED]' if not irc.proto.hasCap('has-ts') else ''))
+                                                    ' [UNTRUSTED]' if not irc.hasCap('has-ts') else ''))
 
     # Show only modes that aren't list-style modes.
     modes = irc.joinModes([m for m in c.modes if m[0] not in irc.cmodes['*A']], sort=True)
