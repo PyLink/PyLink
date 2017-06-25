@@ -85,7 +85,7 @@ if __name__ == '__main__':
         else:
             # Fetch the correct protocol module
             proto = utils.getProtocolModule(protoname)
-            world.networkobjects[network] = irc = classes.Irc(network, proto, conf.conf)
+            world.networkobjects[network] = proto.Class(network)
 
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))

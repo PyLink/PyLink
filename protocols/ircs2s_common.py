@@ -6,11 +6,11 @@ import time
 import re
 from collections import defaultdict
 
-from pylinkirc.classes import Protocol
+from pylinkirc.classes import IRCNetwork
 from pylinkirc.log import log
 from pylinkirc import utils
 
-class IRCCommonProtocol(Protocol):
+class IRCCommonProtocol(IRCNetwork):
     def validateServerConf(self):
         """Validates that the server block given contains the required keys."""
         for k in self.conf_keys:
