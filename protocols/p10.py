@@ -165,7 +165,7 @@ class P10Protocol(IRCS2SProtocol):
         self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
 
     def _send_with_prefix(self, source, text, **kwargs):
-        self.irc.send("%s %s" % (source, text), **kwargs)
+        self.send("%s %s" % (source, text), **kwargs)
 
     @staticmethod
     def access_sort(key):
@@ -261,8 +261,8 @@ class P10Protocol(IRCS2SProtocol):
         # -2 <numeric>
         # -1 <fullname>
 
-        server = server or self.irc.sid
-        if not self.irc.isInternalServer(server):
+        server = server or self.sid
+        if not self.isInternalServer(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         # Create an UIDGenerator instance for every SID, so that each gets
@@ -273,16 +273,16 @@ class P10Protocol(IRCS2SProtocol):
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
-        raw_modes = self.irc.joinModes(modes)
+        raw_modes = self.joinModes(modes)
 
         # Initialize an IrcUser instance
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
                                           realhost=realhost, ip=ip, manipulatable=manipulatable,
                                           opertype=opertype)
 
         # Fill in modes and add it to our users index
-        self.irc.applyModes(uid, modes)
-        self.irc.servers[server].users.add(uid)
+        self.applyModes(uid, modes)
+        self.servers[server].users.add(uid)
 
         # Encode IPs when sending
         if ip_address(ip).version == 4:
@@ -301,62 +301,62 @@ class P10Protocol(IRCS2SProtocol):
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
-        if not self.irc.isInternalClient(source):
+        if not self.isInternalClient(source):
             raise LookupError('No such PyLink client exists.')
 
         if text:
             self._send_with_prefix(source, 'A :%s' % text)
         else:
             self._send_with_prefix(source, 'A')
-        self.irc.users[source].away = text
+        self.users[source].away = text
 
     def invite(self, numeric, target, channel):
         """Sends INVITEs from a PyLink client."""
         # Note: we have to send a nick as the target, not a UID.
         # <- ABAAA I PyLink-devel #services 1460948992
 
-        if not self.irc.isInternalClient(numeric):
+        if not self.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        nick = self.irc.users[target].nick
+        nick = self.users[target].nick
 
-        self._send_with_prefix(numeric, 'I %s %s %s' % (nick, channel, self.irc.channels[channel].ts))
+        self._send_with_prefix(numeric, 'I %s %s %s' % (nick, channel, self.channels[channel].ts))
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # <- ABAAB J #test3 1460744371
-        channel = self.irc.toLower(channel)
-        ts = self.irc.channels[channel].ts
+        channel = self.toLower(channel)
+        ts = self.channels[channel].ts
 
-        if not self.irc.isInternalClient(client):
+        if not self.isInternalClient(client):
             raise LookupError('No such PyLink client exists.')
 
-        if not self.irc.channels[channel].users:
+        if not self.channels[channel].users:
             # Empty channels should be created with the CREATE command.
             self._send_with_prefix(client, "C {channel} {ts}".format(ts=ts, channel=channel))
         else:
             self._send_with_prefix(client, "J {channel} {ts}".format(ts=ts, channel=channel))
 
-        self.irc.channels[channel].users.add(client)
-        self.irc.users[client].channels.add(channel)
+        self.channels[channel].users.add(client)
+        self.users[client].channels.add(channel)
 
     def kick(self, numeric, channel, target, reason=None):
         """Sends kicks from a PyLink client/server."""
 
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
+        if (not self.isInternalClient(numeric)) and \
+                (not self.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        channel = self.irc.toLower(channel)
+        channel = self.toLower(channel)
         if not reason:
             reason = 'No reason given'
 
-        cobj = self.irc.channels[channel]
+        cobj = self.channels[channel]
         # HACK: prevent kick bounces by sending our kick through the server if
         # the sender isn't op.
-        if numeric not in self.irc.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
-            reason = '(%s) %s' % (self.irc.getFriendlyName(numeric), reason)
-            numeric = self.irc.getServer(numeric)
+        if numeric not in self.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
+            reason = '(%s) %s' % (self.getFriendlyName(numeric), reason)
+            numeric = self.getServer(numeric)
 
         self._send_with_prefix(numeric, 'K %s %s :%s' % (channel, target, reason))
 
@@ -369,8 +369,8 @@ class P10Protocol(IRCS2SProtocol):
         """Sends a kill from a PyLink client/server."""
         # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
 
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
+        if (not self.isInternalClient(numeric)) and \
+                (not self.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
         self._send_with_prefix(numeric, 'D %s :Killed (%s)' % (target, reason))
@@ -381,7 +381,7 @@ class P10Protocol(IRCS2SProtocol):
 
     def message(self, numeric, target, text):
         """Sends a PRIVMSG from a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
+        if not self.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
         self._send_with_prefix(numeric, 'P %s :%s' % (target, text))
@@ -391,8 +391,8 @@ class P10Protocol(IRCS2SProtocol):
         # <- ABAAA M GL -w
         # <- ABAAA M #test +v ABAAB 1460747615
 
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
+        if (not self.isInternalClient(numeric)) and \
+                (not self.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
         modes = list(modes)
@@ -404,13 +404,13 @@ class P10Protocol(IRCS2SProtocol):
         is_cmode = utils.isChannel(target)
         if is_cmode:
             # Channel mode changes have a trailing TS. User mode changes do not.
-            cobj = self.irc.channels[self.irc.toLower(target)]
+            cobj = self.channels[self.toLower(target)]
             ts = ts or cobj.ts
 
             # HACK: prevent mode bounces by sending our mode through the server if
             # the sender isn't op.
-            if numeric not in self.irc.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
-                numeric = self.irc.getServer(numeric)
+            if numeric not in self.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
+                numeric = self.getServer(numeric)
 
             # Wrap modes: start with max bufsize and subtract the lengths of the source, target,
             # mode command, and whitespace.
@@ -418,16 +418,16 @@ class P10Protocol(IRCS2SProtocol):
 
             real_target = target
         else:
-            assert target in self.irc.users, "Unknown mode target %s" % target
+            assert target in self.users, "Unknown mode target %s" % target
             # P10 uses nicks in user MODE targets, NOT UIDs. ~GL
-            real_target = self.irc.users[target].nick
+            real_target = self.users[target].nick
 
-        self.irc.applyModes(target, modes)
+        self.applyModes(target, modes)
 
         while modes[:12]:
-            joinedmodes = self.irc.joinModes([m for m in modes[:12]])
+            joinedmodes = self.joinModes([m for m in modes[:12]])
             if is_cmode:
-                for wrapped_modes in self.irc.wrapModes(modes[:12], bufsize):
+                for wrapped_modes in self.wrapModes(modes[:12], bufsize):
                     self._send_with_prefix(numeric, 'M %s %s %s' % (real_target, wrapped_modes, ts))
             else:
                 self._send_with_prefix(numeric, 'M %s %s' % (real_target, joinedmodes))
@@ -436,14 +436,14 @@ class P10Protocol(IRCS2SProtocol):
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
         # <- ABAAA N GL_ 1460753763
-        if not self.irc.isInternalClient(numeric):
+        if not self.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
         self._send_with_prefix(numeric, 'N %s %s' % (newnick, int(time.time())))
-        self.irc.users[numeric].nick = newnick
+        self.users[numeric].nick = newnick
 
         # Update the NICK TS.
-        self.irc.users[numeric].ts = int(time.time())
+        self.users[numeric].ts = int(time.time())
 
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client. This is used for WHOIS
@@ -453,17 +453,17 @@ class P10Protocol(IRCS2SProtocol):
 
     def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client or server."""
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
+        if (not self.isInternalClient(numeric)) and \
+                (not self.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
         self._send_with_prefix(numeric, 'O %s :%s' % (target, text))
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
-        channel = self.irc.toLower(channel)
+        channel = self.toLower(channel)
 
-        if not self.irc.isInternalClient(client):
+        if not self.isInternalClient(client):
             raise LookupError('No such PyLink client exists.')
 
         msg = "L %s" % channel
@@ -475,7 +475,7 @@ class P10Protocol(IRCS2SProtocol):
     def ping(self, source=None, target=None):
         """Sends a PING to a target server. Periodic PINGs are sent to our uplink
         automatically by the Irc() internals; plugins shouldn't have to use this."""
-        source = source or self.irc.sid
+        source = source or self.sid
         if source is None:
             return
         if target is not None:
@@ -485,7 +485,7 @@ class P10Protocol(IRCS2SProtocol):
 
     def quit(self, numeric, reason):
         """Quits a PyLink client."""
-        if self.irc.isInternalClient(numeric):
+        if self.isInternalClient(numeric):
             self._send_with_prefix(numeric, "Q :%s" % reason)
             self.removeClient(numeric)
         else:
@@ -500,14 +500,14 @@ class P10Protocol(IRCS2SProtocol):
 
         Example uses:
             sjoin('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
-            sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
+            sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
         # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host ~ *!*@bad.host
-        channel = self.irc.toLower(channel)
-        server = server or self.irc.sid
+        channel = self.toLower(channel)
+        server = server or self.sid
 
         assert users, "sjoin: No users sent?"
-        log.debug('(%s) sjoin: got %r for users', self.irc.name, users)
+        log.debug('(%s) sjoin: got %r for users', self.name, users)
         if not server:
             raise LookupError('No such PyLink client exists.')
 
@@ -515,8 +515,8 @@ class P10Protocol(IRCS2SProtocol):
         # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host *!*@bad.host
         # <- AB B #test2 1460743539 +l 10 ABAAA:vo :%*!*@bad.host
         # <- AB B #test 1460747615 ABAAA:o :% ~ *!*@test.host
-        modes = modes or self.irc.channels[channel].modes
-        orig_ts = self.irc.channels[channel].ts
+        modes = modes or self.channels[channel].modes
+        orig_ts = self.channels[channel].ts
         ts = ts or orig_ts
 
         bans = []
@@ -525,8 +525,8 @@ class P10Protocol(IRCS2SProtocol):
         for mode in modes:
             modechar = mode[0][-1]
             # Store bans and exempts in separate lists for processing, but don't reset bans that have already been set.
-            if modechar in self.irc.cmodes['*A']:
-                if (modechar, mode[1]) not in self.irc.channels[channel].modes:
+            if modechar in self.cmodes['*A']:
+                if (modechar, mode[1]) not in self.channels[channel].modes:
                     if modechar == 'b':
                         bans.append(mode[1])
                     elif modechar == 'e':
@@ -534,7 +534,7 @@ class P10Protocol(IRCS2SProtocol):
             else:
                 regularmodes.append(mode)
 
-        log.debug('(%s) sjoin: bans: %s, exempts: %s, other modes: %s', self.irc.name, bans, exempts, regularmodes)
+        log.debug('(%s) sjoin: bans: %s, exempts: %s, other modes: %s', self.name, bans, exempts, regularmodes)
 
         changedmodes = set(modes)
         changedusers = []
@@ -546,7 +546,7 @@ class P10Protocol(IRCS2SProtocol):
 
         msgprefix = '{sid} B {channel} {ts} '.format(sid=server, channel=channel, ts=ts)
         if regularmodes:
-            msgprefix += '%s ' % self.irc.joinModes(regularmodes)
+            msgprefix += '%s ' % self.joinModes(regularmodes)
 
         last_prefixes = ''
         for userpair in users:
@@ -557,7 +557,7 @@ class P10Protocol(IRCS2SProtocol):
             # Keep track of all the users and modes that are added. namelist is used
             # to track what we actually send to the IRCd.
             changedusers.append(user)
-            log.debug('(%s) sjoin: adding %s:%s to namelist', self.irc.name, user, prefixes)
+            log.debug('(%s) sjoin: adding %s:%s to namelist', self.name, user, prefixes)
 
             if prefixes and prefixes != last_prefixes:
                 namelist.append('%s:%s' % (user, prefixes))
@@ -569,10 +569,10 @@ class P10Protocol(IRCS2SProtocol):
                 for prefix in prefixes:
                     changedmodes.add(('+%s' % prefix, user))
 
-            self.irc.users[user].channels.add(channel)
+            self.users[user].channels.add(channel)
         else:
             if namelist:
-                log.debug('(%s) sjoin: got %r for namelist', self.irc.name, namelist)
+                log.debug('(%s) sjoin: got %r for namelist', self.name, namelist)
 
                 # Flip the (prefixmodes, user) pairs in users, and save it as a dict for easy lookup
                 # later of what modes each target user should have.
@@ -581,14 +581,14 @@ class P10Protocol(IRCS2SProtocol):
                 # Wrap all users and send them to prevent cutoff. Subtract 4 off the maximum
                 # buf size to account for user prefix data that may be re-added (e.g. ":ohv")
                 for linenum, wrapped_msg in \
-                        enumerate(utils.wrapArguments(msgprefix, namelist, S2S_BUFSIZE-1-len(self.irc.prefixmodes),
+                        enumerate(utils.wrapArguments(msgprefix, namelist, S2S_BUFSIZE-1-len(self.prefixmodes),
                                                       separator=',')):
                     if linenum:  # Implies "if linenum > 0"
                         # XXX: Ugh, this postprocessing sucks, but we have to make sure that mode prefixes are accounted
                         # for in the burst.
                         wrapped_args = self.parseArgs(wrapped_msg.split(" "))
                         wrapped_namelist = wrapped_args[-1].split(',')
-                        log.debug('(%s) sjoin: wrapped args: %s (post-wrap fixing)', self.irc.name,
+                        log.debug('(%s) sjoin: wrapped args: %s (post-wrap fixing)', self.name,
                                   wrapped_args)
 
                         # If the first UID was supposed to have a prefix mode attached, re-add it here
@@ -596,20 +596,20 @@ class P10Protocol(IRCS2SProtocol):
                         # XXX: I'm not sure why the prefix list has to be reversed for it to match the
                         # original string...
                         first_prefix = names_dict.get(first_uid, '')[::-1]
-                        log.debug('(%s) sjoin: prefixes for first user %s: %s (post-wrap fixing)', self.irc.name,
+                        log.debug('(%s) sjoin: prefixes for first user %s: %s (post-wrap fixing)', self.name,
                                   first_uid, first_prefix)
 
                         if (':' not in first_uid) and first_prefix:
-                            log.debug('(%s) sjoin: re-adding prefix %s to user %s (post-wrap fixing)', self.irc.name,
+                            log.debug('(%s) sjoin: re-adding prefix %s to user %s (post-wrap fixing)', self.name,
                                       first_uid, first_prefix)
                             wrapped_namelist[0] += ':%s' % prefixes
                             wrapped_msg = ' '.join(wrapped_args[:-1])
                             wrapped_msg += ' '
                             wrapped_msg += ','.join(wrapped_namelist)
 
-                    self.irc.send(wrapped_msg)
+                    self.send(wrapped_msg)
 
-        self.irc.channels[channel].users.update(changedusers)
+        self.channels[channel].users.update(changedusers)
 
         # Technically we can send bans together with the above user introductions, but
         # it's easier to line wrap them separately.
@@ -617,12 +617,12 @@ class P10Protocol(IRCS2SProtocol):
             msgprefix += ':%'  # Ban string starts with a % if there is anything
             if bans:
                 for wrapped_msg in utils.wrapArguments(msgprefix, bans, S2S_BUFSIZE):
-                    self.irc.send(wrapped_msg)
+                    self.send(wrapped_msg)
             if exempts:
                 # Now add exempts, which are separated from the ban list by a single argument "~".
                 msgprefix += ' ~ '
                 for wrapped_msg in utils.wrapArguments(msgprefix, exempts, S2S_BUFSIZE):
-                    self.irc.send(wrapped_msg)
+                    self.send(wrapped_msg)
 
         self.updateTS(server, channel, ts, changedmodes)
 
@@ -637,37 +637,37 @@ class P10Protocol(IRCS2SProtocol):
         option will be ignored if given.
         """
         # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
-        uplink = uplink or self.irc.sid
+        uplink = uplink or self.sid
         name = name.lower()
-        desc = desc or self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
 
         assert len(sid) == 2, "Incorrect SID length"
-        if sid in self.irc.servers:
+        if sid in self.servers:
             raise ValueError('A server with SID %r already exists!' % sid)
 
-        for server in self.irc.servers.values():
+        for server in self.servers.values():
             if name == server.name:
                 raise ValueError('A server named %r already exists!' % name)
 
-        if not self.irc.isInternalServer(uplink):
+        if not self.isInternalServer(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
 
         self._send_with_prefix(uplink, 'SERVER %s 1 %s %s P10 %s]]] +h6 :%s' % \
-                   (name, self.irc.start_ts, int(time.time()), sid, desc))
+                   (name, self.start_ts, int(time.time()), sid, desc))
 
-        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
+        self.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
         return sid
 
     def squit(self, source, target, text='No reason given'):
         """SQUITs a PyLink server."""
         # <- ABAAE SQ nefarious.midnight.vpn 0 :test
 
-        targetname = self.irc.servers[target].name
+        targetname = self.servers[target].name
 
         self._send_with_prefix(source, 'SQ %s 0 :%s' % (targetname, text))
         self.handle_squit(source, 'SQUIT', [target, text])
@@ -677,41 +677,41 @@ class P10Protocol(IRCS2SProtocol):
         # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
         # First timestamp is channel creation time, second is current time,
 
-        if not self.irc.isInternalClient(numeric):
+        if not self.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        sendername = self.irc.getHostmask(numeric)
+        sendername = self.getHostmask(numeric)
 
-        creationts = self.irc.channels[target].ts
+        creationts = self.channels[target].ts
 
         self._send_with_prefix(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
                    int(time.time()), text))
-        self.irc.channels[target].topic = text
-        self.irc.channels[target].topicset = True
+        self.channels[target].topic = text
+        self.channels[target].topicset = True
 
     def topicBurst(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink server."""
         # <- AB T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
 
-        if not self.irc.isInternalServer(numeric):
+        if not self.isInternalServer(numeric):
             raise LookupError('No such PyLink server exists.')
 
-        sendername = self.irc.servers[numeric].name
+        sendername = self.servers[numeric].name
 
-        creationts = self.irc.channels[target].ts
+        creationts = self.channels[target].ts
 
         self._send_with_prefix(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
                    int(time.time()), text))
-        self.irc.channels[target].topic = text
-        self.irc.channels[target].topicset = True
+        self.channels[target].topic = text
+        self.channels[target].topicset = True
 
     def updateClient(self, target, field, text):
         """Updates the ident or host of any connected client."""
-        uobj = self.irc.users[target]
+        uobj = self.users[target]
 
-        ircd = self.irc.serverdata.get('p10_ircd', 'nefarious').lower()
+        ircd = self.serverdata.get('p10_ircd', 'nefarious').lower()
 
-        if self.irc.isInternalClient(target):
+        if self.isInternalClient(target):
             # Host changing via SETHOST is only supported on nefarious and snircd.
             if ircd not in ('nefarious', 'snircd'):
                 raise NotImplementedError("Host changing for internal clients (via SETHOST) is only "
@@ -737,12 +737,12 @@ class P10Protocol(IRCS2SProtocol):
                                           "only available on nefarious, and we're using p10_ircd=%r" % ircd)
 
             # Use FAKE (FA) for external clients.
-            self._send_with_prefix(self.irc.sid, 'FA %s %s' % (target, text))
+            self._send_with_prefix(self.sid, 'FA %s %s' % (target, text))
 
             # Save the host change as a user mode (this is what P10 does on bursts),
             # so further host checks work.
-            self.irc.applyModes(target, [('+f', text)])
-            self.mode(self.irc.sid, target, [('+x', None)])
+            self.applyModes(target, [('+f', text)])
+            self.mode(self.sid, target, [('+x', None)])
         else:
             raise NotImplementedError("Changing field %r of a client is "
                                       "unsupported by this protocol." % field)
@@ -756,9 +756,9 @@ class P10Protocol(IRCS2SProtocol):
 
     def post_connect(self):
         """Initializes a connection to a server."""
-        ts = self.irc.start_ts
+        ts = self.start_ts
 
-        self.irc.send("PASS :%s" % self.irc.serverdata["sendpass"])
+        self.send("PASS :%s" % self.serverdata["sendpass"])
 
         # {7S} *** SERVER
 
@@ -771,15 +771,15 @@ class P10Protocol(IRCS2SProtocol):
         # 7 <flags> <-- Mark ourselves as a service with IPv6 support (+s & +6) -GLolol
         # -1 <description of new server>
 
-        name = self.irc.serverdata["hostname"]
+        name = self.serverdata["hostname"]
 
         # Encode our SID using P10 Base64.
-        self.irc.sid = sid = p10b64encode(self.irc.serverdata["sid"])
+        self.sid = sid = p10b64encode(self.serverdata["sid"])
 
-        desc = self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
         # Enumerate modes, from https://github.com/evilnet/nefarious2/blob/master/doc/modes.txt
-        p10_ircd = self.irc.serverdata.get('p10_ircd', 'nefarious').lower()
+        p10_ircd = self.serverdata.get('p10_ircd', 'nefarious').lower()
         if p10_ircd == 'nefarious':
             cmodes = {'delayjoin': 'D', 'registered': 'R', 'key': 'k', 'banexception': 'e',
                       'redirect': 'L', 'oplevel_apass': 'A', 'oplevel_upass': 'U',
@@ -787,7 +787,7 @@ class P10Protocol(IRCS2SProtocol):
                       'permanent': 'z', 'hidequits': 'Q', 'noctcp': 'C', 'noamsg': 'T', 'blockcolor': 'c',
                       'stripcolor': 'S', 'had_delayjoin': 'd', 'regonly': 'r',
                       '*A': 'be', '*B': 'AUk', '*C': 'Ll', '*D': 'psmtinrDRaOMNzQCTcSd'}
-            self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x', 'privdeaf': 'D',
+            self.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x', 'privdeaf': 'D',
                                     'hidechans': 'n', 'deaf_commonchan': 'q', 'bot': 'B', 'deaf': 'd',
                                     'hideoper': 'H', 'hideidle': 'I', 'regdeaf': 'R', 'showwhois': 'W',
                                     'admin': 'a', 'override': 'X', 'noforward': 'L', 'ssl': 'z',
@@ -802,7 +802,7 @@ class P10Protocol(IRCS2SProtocol):
                       '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDducCMNT'}
             # From https://www.quakenet.org/help/general/what-user-modes-are-available-on-quakenet
             # plus my own testing.
-            self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
+            self.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
                                     'hidechans': 'n', 'deaf': 'd', 'hideidle': 'I', 'regdeaf': 'R',
                                     'override': 'X', 'registered': 'r', 'cloak_sethost': 'h', 'locop': 'O',
                                     '*A': '', '*B': '', '*C': 'h', '*D': 'imnpstrkgxndIRXO'})
@@ -811,18 +811,18 @@ class P10Protocol(IRCS2SProtocol):
             cmodes = {'oplevel_apass': 'A', 'oplevel_upass': 'U', 'delayjoin': 'D', 'regonly': 'r',
                       'had_delayjoin': 'd', 'blockcolor': 'c', 'noctcp': 'C', 'registered': 'R',
                       '*A': 'b', '*B': 'AUk', '*C': 'l', '*D': 'imnpstrDdRcC'}
-            self.irc.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
+            self.umodes.update({'servprotect': 'k', 'sno_debug': 'g', 'cloak': 'x',
                                     'deaf': 'd', 'registered': 'r', 'locop': 'O',
                                     '*A': '', '*B': '', '*C': '', '*D': 'imnpstrkgxdO'})
 
-        if self.irc.serverdata.get('use_halfop'):
+        if self.serverdata.get('use_halfop'):
             cmodes['halfop'] = 'h'
-            self.irc.prefixmodes['h'] = '%'
-        self.irc.cmodes.update(cmodes)
+            self.prefixmodes['h'] = '%'
+        self.cmodes.update(cmodes)
 
-        self.irc.send('SERVER %s 1 %s %s J10 %s]]] +s6 :%s' % (name, ts, ts, sid, desc))
+        self.send('SERVER %s 1 %s %s J10 %s]]] +s6 :%s' % (name, ts, ts, sid, desc))
         self._send_with_prefix(sid, "EB")
-        self.irc.connected.set()
+        self.connected.set()
 
     def handle_server(self, source, command, args):
         """Handles incoming server introductions."""
@@ -830,11 +830,11 @@ class P10Protocol(IRCS2SProtocol):
         servername = args[0].lower()
         sid = args[5][:2]
         sdesc = args[-1]
-        self.irc.servers[sid] = IrcServer(source, servername, desc=sdesc)
+        self.servers[sid] = IrcServer(source, servername, desc=sdesc)
 
-        if self.irc.uplink is None:
+        if self.uplink is None:
             # If we haven't already found our uplink, this is probably it.
-            self.irc.uplink = sid
+            self.uplink = sid
 
         return {'name': servername, 'sid': sid, 'text': sdesc}
 
@@ -853,11 +853,11 @@ class P10Protocol(IRCS2SProtocol):
             realname = args[-1]
 
             log.debug('(%s) handle_nick got args: nick=%s ts=%s uid=%s ident=%s '
-                      'host=%s realname=%s realhost=%s ip=%s', self.irc.name, nick, ts, uid,
+                      'host=%s realname=%s realhost=%s ip=%s', self.name, nick, ts, uid,
                       ident, host, realname, realhost, ip)
 
-            uobj = self.irc.users[uid] = IrcUser(nick, ts, uid, source, ident, host, realname, realhost, ip)
-            self.irc.servers[source].users.add(uid)
+            uobj = self.users[uid] = IrcUser(nick, ts, uid, source, ident, host, realname, realhost, ip)
+            self.servers[source].users.add(uid)
 
             # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L708
             # Mode list is optional, and can be detected if the 6th argument starts with a +.
@@ -865,18 +865,18 @@ class P10Protocol(IRCS2SProtocol):
             # parameters attached.
             if args[5].startswith('+'):
                 modes = args[5:-3]
-                parsedmodes = self.irc.parseModes(uid, modes)
-                self.irc.applyModes(uid, parsedmodes)
+                parsedmodes = self.parseModes(uid, modes)
+                self.applyModes(uid, parsedmodes)
 
                 for modepair in parsedmodes:
                     if modepair[0][-1] == 'r':
                         # Parse account registrations, sent as usermode "+r accountname:TS"
                         accountname = modepair[1].split(':', 1)[0]
-                        self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+                        self.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
                 # Call the OPERED UP hook if +o is being added to the mode list.
                 if ('+o', None) in parsedmodes:
-                    self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+                    self.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
             self.check_cloak_change(uid)
 
@@ -884,21 +884,21 @@ class P10Protocol(IRCS2SProtocol):
 
         else:
             # <- ABAAA N GL_ 1460753763
-            oldnick = self.irc.users[source].nick
-            newnick = self.irc.users[source].nick = args[0]
+            oldnick = self.users[source].nick
+            newnick = self.users[source].nick = args[0]
 
-            self.irc.users[source].ts = ts = int(args[1])
+            self.users[source].ts = ts = int(args[1])
 
             # Update the nick TS.
             return {'newnick': newnick, 'oldnick': oldnick, 'ts': ts}
 
     def check_cloak_change(self, uid):
         """Checks for cloak changes (ident and host) on the given UID."""
-        uobj = self.irc.users[uid]
+        uobj = self.users[uid]
         ident = uobj.ident
 
         modes = dict(uobj.modes)
-        log.debug('(%s) check_cloak_change: modes of %s are %s', self.irc.name, uid, modes)
+        log.debug('(%s) check_cloak_change: modes of %s are %s', self.name, uid, modes)
 
         if 'x' not in modes:  # +x isn't set, so cloaking is disabled.
             newhost = uobj.realhost
@@ -912,7 +912,7 @@ class P10Protocol(IRCS2SProtocol):
                 # +f represents another way of setting vHosts, via a command called FAKE.
                 # Atheme uses this for vHosts, afaik.
                 newhost = modes['f']
-            elif uobj.services_account and self.irc.serverdata.get('use_account_cloaks'):
+            elif uobj.services_account and self.serverdata.get('use_account_cloaks'):
                 # The user is registered. However, if account cloaks are enabled, we have to figure
                 # out their new cloaked host. There can be oper cloaks and user cloaks, each with
                 # a different suffix. Account cloaks take the format of <accountname>.<suffix>.
@@ -920,24 +920,24 @@ class P10Protocol(IRCS2SProtocol):
                 #      someone opered and logged in as "person2" might get cloak "person.opers.somenet.org"
                 # This is a lot of extra configuration on the services' side, but there's nothing else
                 # we can do about it.
-                if self.irc.serverdata.get('use_oper_account_cloaks') and 'o' in modes:
+                if self.serverdata.get('use_oper_account_cloaks') and 'o' in modes:
                     try:
                         # These errors should be fatal.
-                        suffix = self.irc.serverdata['oper_cloak_suffix']
+                        suffix = self.serverdata['oper_cloak_suffix']
                     except KeyError:
                         raise ProtocolError("(%s) use_oper_account_cloaks was enabled, but "
-                                            "oper_cloak_suffix was not defined!" % self.irc.name)
+                                            "oper_cloak_suffix was not defined!" % self.name)
                 else:
                     try:
-                        suffix = self.irc.serverdata['cloak_suffix']
+                        suffix = self.serverdata['cloak_suffix']
                     except KeyError:
                         raise ProtocolError("(%s) use_account_cloaks was enabled, but "
-                                            "cloak_suffix was not defined!" % self.irc.name)
+                                            "cloak_suffix was not defined!" % self.name)
 
                 accountname = uobj.services_account
                 newhost = "%s.%s" % (accountname, suffix)
 
-            elif 'C' in modes and self.irc.serverdata.get('use_account_cloaks'):
+            elif 'C' in modes and self.serverdata.get('use_account_cloaks'):
                 # +C propagates hashed IP cloaks, similar to UnrealIRCd. (thank god we don't
                 # need to generate these ourselves)
                 newhost = modes['C']
@@ -947,9 +947,9 @@ class P10Protocol(IRCS2SProtocol):
 
         # Propagate a hostname update to plugins, but only if the changed host is different.
         if newhost != uobj.host:
-             self.irc.callHooks([uid, 'CHGHOST', {'target': uid, 'newhost': newhost}])
+             self.callHooks([uid, 'CHGHOST', {'target': uid, 'newhost': newhost}])
         if ident != uobj.ident:
-             self.irc.callHooks([uid, 'CHGIDENT', {'target': uid, 'newident': ident}])
+             self.callHooks([uid, 'CHGIDENT', {'target': uid, 'newident': ident}])
         uobj.host = newhost
         uobj.ident = ident
 
@@ -972,15 +972,15 @@ class P10Protocol(IRCS2SProtocol):
         currtime = time.time()
         timediff = int(time.time() - float(orig_pingtime))
 
-        if self.irc.isInternalServer(sid):
+        if self.isInternalServer(sid):
             # Only respond if the target server is ours. No forwarding is needed because
             # no IRCds can ever connect behind us...
-            self._send_with_prefix(self.irc.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime), queue=False)
+            self._send_with_prefix(self.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime), queue=False)
 
     def handle_pass(self, source, command, args):
         """Handles authentication with our uplink."""
         # <- PASS :testpass
-        if args[0] != self.irc.serverdata['recvpass']:
+        if args[0] != self.serverdata['recvpass']:
             raise ProtocolError("Error: RECVPASS from uplink does not match configuration!")
 
     def handle_burst(self, source, command, args):
@@ -1002,8 +1002,8 @@ class P10Protocol(IRCS2SProtocol):
             # No useful data was sent, ignore.
             return
 
-        channel = self.irc.toLower(args[0])
-        chandata = self.irc.channels[channel].deepcopy()
+        channel = self.toLower(args[0])
+        chandata = self.channels[channel].deepcopy()
 
         bans = []
         if args[-1].startswith('%'):
@@ -1030,7 +1030,7 @@ class P10Protocol(IRCS2SProtocol):
         # If no modes are given, this will simply be empty.
         modestring = args[2:-1]
         if modestring:
-            parsedmodes = self.irc.parseModes(channel, modestring)
+            parsedmodes = self.parseModes(channel, modestring)
         else:
             parsedmodes = []
 
@@ -1039,7 +1039,7 @@ class P10Protocol(IRCS2SProtocol):
         namelist = []
         prefixes = ''
         userlist = args[-1].split(',')
-        log.debug('(%s) handle_burst: got userlist %r for %r', self.irc.name, userlist, channel)
+        log.debug('(%s) handle_burst: got userlist %r for %r', self.name, userlist, channel)
 
         if args[-1] != args[1]:  # Make sure the user list is the right argument (not the TS).
             for userpair in userlist:
@@ -1052,26 +1052,26 @@ class P10Protocol(IRCS2SProtocol):
                     user, prefixes = userpair.split(':')
                 except ValueError:
                     user = userpair
-                log.debug('(%s) handle_burst: got mode prefixes %r for user %r', self.irc.name, prefixes, user)
+                log.debug('(%s) handle_burst: got mode prefixes %r for user %r', self.name, prefixes, user)
 
                 # Don't crash when we get an invalid UID.
-                if user not in self.irc.users:
+                if user not in self.users:
                     log.warning('(%s) handle_burst: tried to introduce user %s not in our user list, ignoring...',
-                                self.irc.name, user)
+                                self.name, user)
                     continue
 
                 namelist.append(user)
 
-                self.irc.users[user].channels.add(channel)
+                self.users[user].channels.add(channel)
 
                 # Only save mode changes if the remote has lower TS than us.
                 changedmodes |= {('+%s' % mode, user) for mode in prefixes}
 
-                self.irc.channels[channel].users.add(user)
+                self.channels[channel].users.add(user)
 
         # Statekeeping with timestamps
         their_ts = int(args[1])
-        our_ts = self.irc.channels[channel].ts
+        our_ts = self.channels[channel].ts
         self.updateTS(source, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
@@ -1090,33 +1090,33 @@ class P10Protocol(IRCS2SProtocol):
 
         if args[0] == '0' and command == 'JOIN':
             # /join 0; part the user from all channels
-            oldchans = self.irc.users[source].channels.copy()
+            oldchans = self.users[source].channels.copy()
             log.debug('(%s) Got /join 0 from %r, channel list is %r',
-                      self.irc.name, source, oldchans)
+                      self.name, source, oldchans)
 
             for channel in oldchans:
-                self.irc.channels[channel].users.discard(source)
-                self.irc.users[source].channels.discard(channel)
+                self.channels[channel].users.discard(source)
+                self.users[source].channels.discard(channel)
 
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
-            channel = self.irc.toLower(args[0])
+            channel = self.toLower(args[0])
             if ts:  # Only update TS if one was sent.
                 self.updateTS(source, channel, ts)
 
-            self.irc.users[source].channels.add(channel)
-            self.irc.channels[channel].users.add(source)
+            self.users[source].channels.add(channel)
+            self.channels[channel].users.add(source)
 
         return {'channel': channel, 'users': [source], 'modes':
-                self.irc.channels[channel].modes, 'ts': ts or int(time.time())}
+                self.channels[channel].modes, 'ts': ts or int(time.time())}
 
     handle_create = handle_join
     def handle_end_of_burst(self, source, command, args):
         """Handles end of burst from our uplink."""
         # Send EOB acknowledgement; this is required by the P10 specification,
         # and needed if we want to be able to receive channel messages, etc.
-        if source == self.irc.uplink:
-            self._send_with_prefix(self.irc.sid, 'EA')
+        if source == self.uplink:
+            self._send_with_prefix(self.sid, 'EA')
             return {}
 
     def handle_mode(self, source, command, args):
@@ -1126,17 +1126,17 @@ class P10Protocol(IRCS2SProtocol):
         # <- ABAAA OM #test +h ABAAA
         target = self._get_UID(args[0])
         if utils.isChannel(target):
-            target = self.irc.toLower(target)
+            target = self.toLower(target)
 
         modestrings = args[1:]
-        changedmodes = self.irc.parseModes(target, modestrings)
-        self.irc.applyModes(target, changedmodes)
+        changedmodes = self.parseModes(target, modestrings)
+        self.applyModes(target, changedmodes)
 
         # Call the CLIENT_OPERED hook if +o is being set.
-        if ('+o', None) in changedmodes and target in self.irc.users:
-            self.irc.callHooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+        if ('+o', None) in changedmodes and target in self.users:
+            self.callHooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
-        if target in self.irc.users:
+        if target in self.users:
             # Target was a user. Check for any cloak changes.
             self.check_cloak_change(target)
 
@@ -1149,31 +1149,31 @@ class P10Protocol(IRCS2SProtocol):
         # <- ABAAA L #test,#test2
         # <- ABAAA L #test :test
 
-        channels = self.irc.toLower(args[0]).split(',')
+        channels = self.toLower(args[0]).split(',')
         for channel in channels:
             # We should only get PART commands for channels that exist, right??
-            self.irc.channels[channel].removeuser(source)
+            self.channels[channel].removeuser(source)
 
             try:
-                self.irc.users[source].channels.discard(channel)
+                self.users[source].channels.discard(channel)
             except KeyError:
                 log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?",
-                          self.irc.name, channel, source)
+                          self.name, channel, source)
             try:
                 reason = args[1]
             except IndexError:
                 reason = ''
 
             # Clear empty non-permanent channels.
-            if not self.irc.channels[channel].users:
-                del self.irc.channels[channel]
+            if not self.channels[channel].users:
+                del self.channels[channel]
 
         return {'channels': channels, 'text': reason}
 
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
         # <- ABAAA K #TEST AyAAA :PyLink-devel
-        channel = self.irc.toLower(args[0])
+        channel = self.toLower(args[0])
         kicked = args[1]
 
         self.handle_part(kicked, 'KICK', [channel, args[2]])
@@ -1187,12 +1187,12 @@ class P10Protocol(IRCS2SProtocol):
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""
         # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
-        channel = self.irc.toLower(args[0])
+        channel = self.toLower(args[0])
         topic = args[-1]
 
-        oldtopic = self.irc.channels[channel].topic
-        self.irc.channels[channel].topic = topic
-        self.irc.channels[channel].topicset = True
+        oldtopic = self.channels[channel].topic
+        self.channels[channel].topic = topic
+        self.channels[channel].topicset = True
 
         return {'channel': channel, 'setter': args[1], 'text': topic,
                 'oldtopic': oldtopic}
@@ -1205,25 +1205,25 @@ class P10Protocol(IRCS2SProtocol):
         # - note that the target is a nickname, not a numeric.
         # <- ABAAA I PyLink-devel #services 1460948992
         target = self._get_UID(args[0])
-        channel = self.irc.toLower(args[1])
+        channel = self.toLower(args[1])
 
         return {'target': target, 'channel': channel}
 
     def handle_clearmode(self, numeric, command, args):
         """Handles CLEARMODE, which is used to clear a channel's modes."""
         # <- ABAAA CM #test ovpsmikbl
-        channel = self.irc.toLower(args[0])
+        channel = self.toLower(args[0])
         modes = args[1]
 
         # Enumerate a list of our existing modes, including prefix modes.
-        existing = list(self.irc.channels[channel].modes)
-        for pmode, userlist in self.irc.channels[channel].prefixmodes.items():
+        existing = list(self.channels[channel].modes)
+        for pmode, userlist in self.channels[channel].prefixmodes.items():
             # Expand the prefix modes lists to individual ('o', 'UID') mode pairs.
-            modechar = self.irc.cmodes.get(pmode)
+            modechar = self.cmodes.get(pmode)
             existing += [(modechar, user) for user in userlist]
 
         # Back up the channel state.
-        oldobj = self.irc.channels[channel].deepcopy()
+        oldobj = self.channels[channel].deepcopy()
 
         changedmodes = []
 
@@ -1233,14 +1233,14 @@ class P10Protocol(IRCS2SProtocol):
 
             # Check if each mode matches any that we're unsetting.
             if modechar in modes:
-                if modechar in (self.irc.cmodes['*A']+self.irc.cmodes['*B']+''.join(self.irc.prefixmodes.keys())):
+                if modechar in (self.cmodes['*A']+self.cmodes['*B']+''.join(self.prefixmodes.keys())):
                     # Mode is a list mode, prefix mode, or one that always takes a parameter when unsetting.
                     changedmodes.append(('-%s' % modechar, data))
                 else:
                     # Mode does not take an argument when unsetting.
                     changedmodes.append(('-%s' % modechar, None))
 
-        self.irc.applyModes(channel, changedmodes)
+        self.applyModes(channel, changedmodes)
         return {'target': channel, 'modes': changedmodes, 'channeldata': oldobj}
 
     def handle_account(self, numeric, command, args):
@@ -1250,7 +1250,7 @@ class P10Protocol(IRCS2SProtocol):
 
         target = args[0]
 
-        if self.irc.serverdata.get('use_extended_accounts'):
+        if self.serverdata.get('use_extended_accounts'):
             # Registration: <- AA AC ABAAA R GL 1459019072
             # Logout: <- AA AC ABAAA U
 
@@ -1274,7 +1274,7 @@ class P10Protocol(IRCS2SProtocol):
             accountname = args[1]
 
         # Call this manually because we need the UID to be the sender.
-        self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+        self.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         # Check for any cloak changes now.
         self.check_cloak_change(target)
@@ -1285,7 +1285,7 @@ class P10Protocol(IRCS2SProtocol):
         text = args[1]
 
         # Assume a usermode +f change, and then update the cloak checking.
-        self.irc.applyModes(target, [('+f', text)])
+        self.applyModes(target, [('+f', text)])
 
         self.check_cloak_change(target)
         # We don't need to send any hooks here, check_cloak_change does that for us.

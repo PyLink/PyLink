@@ -11,6 +11,6 @@ class NefariousProtocol(P10Protocol):
         log.warning("(%s) protocols/nefarious.py has been renamed to protocols/p10.py, which "
                     "now also supports other IRCu variants. Please update your configuration, "
                     "as this migration stub will be removed in a future version.",
-                    self.irc.name)
+                    self.name)
 
 Class = NefariousProtocol

@@ -421,18 +421,18 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
     def remove_client(self, numeric):
         """Internal function to remove a client from our internal state."""
-        for c, v in self.irc.channels.copy().items():
+        for c, v in self.channels.copy().items():
             v.removeuser(numeric)
             # Clear empty non-permanent channels.
-            if not (self.irc.channels[c].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[c].modes)):
-                del self.irc.channels[c]
+            if not (self.channels[c].users or ((self.cmodes.get('permanent'), None) in self.channels[c].modes)):
+                del self.channels[c]
             assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
 
-        sid = self.irc.get_server(numeric)
-        log.debug('Removing client %s from self.irc.users', numeric)
-        del self.irc.users[numeric]
-        log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
-        self.irc.servers[sid].users.discard(numeric)
+        sid = self.get_server(numeric)
+        log.debug('Removing client %s from self.users', numeric)
+        del self.users[numeric]
+        log.debug('Removing client %s from self.servers[%s].users', numeric, sid)
+        self.servers[sid].users.discard(numeric)
 
 
 class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
@@ -1065,46 +1065,46 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             modes = []
 
         def _clear():
-            log.debug("(%s) Clearing local modes from channel %s due to TS change", self.irc.name,
+            log.debug("(%s) Clearing local modes from channel %s due to TS change", self.name,
                       channel)
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
+            self.channels[channel].modes.clear()
+            for p in self.channels[channel].prefixmodes.values():
                 for user in p.copy():
-                    if not self.irc.is_internal_client(user):
+                    if not self.is_internal_client(user):
                         p.discard(user)
 
         def _apply():
             if modes:
-                log.debug("(%s) Applying modes on channel %s (TS ok)", self.irc.name,
+                log.debug("(%s) Applying modes on channel %s (TS ok)", self.name,
                           channel)
-                self.irc.apply_modes(channel, modes)
+                self.apply_modes(channel, modes)
 
         # Use a lock so only one thread can change a channel's TS at once: this prevents race
         # conditions from desyncing the channel list.
         with self.ts_lock:
-            our_ts = self.irc.channels[channel].ts
+            our_ts = self.channels[channel].ts
             assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
             assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
             # Check if we're the mode sender based on the UID / SID given.
-            our_mode = self.irc.is_internal_client(sender) or self.irc.is_internal_server(sender)
+            our_mode = self.is_internal_client(sender) or self.is_internal_server(sender)
 
-            log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.irc.name,
+            log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.name,
                       channel, our_ts, their_ts, our_mode)
 
             if their_ts == our_ts:
                 log.debug("(%s/%s) remote TS of %s is equal to our %s; mode query %s",
-                          self.irc.name, channel, their_ts, our_ts, modes)
+                          self.name, channel, their_ts, our_ts, modes)
                 # Their TS is equal to ours. Merge modes.
                 _apply()
 
             elif (their_ts < our_ts):
                 if their_ts < 750000:
-                    log.warning('(%s) Possible desync? Not setting bogus TS %s on channel %s', self.irc.name, their_ts, channel)
+                    log.warning('(%s) Possible desync? Not setting bogus TS %s on channel %s', self.name, their_ts, channel)
                 else:
                     log.debug('(%s) Resetting channel TS of %s from %s to %s (remote has lower TS)',
-                              self.irc.name, channel, our_ts, their_ts)
-                    self.irc.channels[channel].ts = their_ts
+                              self.name, channel, our_ts, their_ts)
+                    self.channels[channel].ts = their_ts
 
                 # Remote TS was lower and we're receiving modes. Clear the modelist and apply theirs.
 
@@ -1115,7 +1115,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def _get_SID(self, sname):
         """Returns the SID of a server with the given name, if present."""
         name = sname.lower()
-        for k, v in self.irc.servers.items():
+        for k, v in self.servers.items():
             if v.name.lower() == name:
                 return k
         else:
@@ -1125,7 +1125,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def _get_UID(self, target):
         """Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
         in that it returns the original text instead of None, if no matching nick is found."""
-        target = self.irc.nick_to_uid(target) or target
+        target = self.nick_to_uid(target) or target
         return target
     _getUid = _get_UID
 

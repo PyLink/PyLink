@@ -14,10 +14,10 @@ class IRCCommonProtocol(IRCNetwork):
     def validate_server_conf(self):
         """Validates that the server block given contains the required keys."""
         for k in self.conf_keys:
-            assert k in self.irc.serverdata, "Missing option %r in server block for network %s." % (k, self.irc.name)
+            assert k in self.serverdata, "Missing option %r in server block for network %s." % (k, self.name)
 
-        port = self.irc.serverdata['port']
-        assert type(port) == int and 0 < port < 65535, "Invalid port %r for network %s" % (port, self.irc.name)
+        port = self.serverdata['port']
+        assert type(port) == int and 0 < port < 65535, "Invalid port %r for network %s" % (port, self.name)
 
     @staticmethod
     def parseArgs(args):
@@ -56,20 +56,20 @@ class IRCCommonProtocol(IRCNetwork):
         # Normally we'd only need to check for our SID as the SQUIT target, but Nefarious
         # actually uses the uplink server as the SQUIT target.
         # <- ABAAE SQ nefarious.midnight.vpn 0 :test
-        if split_server in (self.irc.sid, self.irc.uplink):
+        if split_server in (self.sid, self.uplink):
             raise ProtocolError('SQUIT received: (reason: %s)' % args[-1])
 
         affected_users = []
         affected_nicks = defaultdict(list)
-        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
+        log.debug('(%s) Splitting server %s (reason: %s)', self.name, split_server, args[-1])
 
-        if split_server not in self.irc.servers:
-            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
+        if split_server not in self.servers:
+            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.name, split_server)
             return
 
         # Prevent RuntimeError: dictionary changed size during iteration
-        old_servers = self.irc.servers.copy()
-        old_channels = self.irc.channels.copy()
+        old_servers = self.servers.copy()
+        old_channels = self.channels.copy()
 
         # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
         # remove them and all their users too.
@@ -81,9 +81,9 @@ class IRCCommonProtocol(IRCNetwork):
                                    "PyLink: Automatically splitting leaf servers of %s" % sid])
                 affected_users += args['users']
 
-        for user in self.irc.servers[split_server].users.copy():
+        for user in self.servers[split_server].users.copy():
             affected_users.append(user)
-            nick = self.irc.users[user].nick
+            nick = self.users[user].nick
 
             # Nicks affected is channel specific for SQUIT:. This makes Clientbot's SQUIT relaying
             # much easier to implement.
@@ -94,12 +94,12 @@ class IRCCommonProtocol(IRCNetwork):
             log.debug('Removing client %s (%s)', user, nick)
             self.removeClient(user)
 
-        serverdata = self.irc.servers[split_server]
+        serverdata = self.servers[split_server]
         sname = serverdata.name
         uplink = serverdata.uplink
 
-        del self.irc.servers[split_server]
-        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
+        del self.servers[split_server]
+        log.debug('(%s) Netsplit affected users: %s', self.name, affected_users)
 
         return {'target': split_server, 'users': affected_users, 'name': sname,
                 'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
@@ -168,37 +168,37 @@ class IRCS2SProtocol(IRCCommonProtocol):
         sender_sid = self._get_SID(sender)
         sender_uid = self._get_UID(sender)
 
-        if sender_sid in self.irc.servers:
+        if sender_sid in self.servers:
             # Sender is a server (converting from name to SID gave a valid result).
             sender = sender_sid
-        elif sender_uid in self.irc.users:
+        elif sender_uid in self.users:
             # Sender is a user (converting from name to UID gave a valid result).
             sender = sender_uid
         else:
             # No sender prefix; treat as coming from uplink IRCd.
-            sender = self.irc.uplink
+            sender = self.uplink
             args.insert(0, sender)
 
-        if self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender):
-            log.warning("(%s) Received command %s being routed the wrong way!", self.irc.name, command)
+        if self.isInternalClient(sender) or self.isInternalServer(sender):
+            log.warning("(%s) Received command %s being routed the wrong way!", self.name, command)
             return
 
         raw_command = args[1].upper()
         args = args[2:]
 
-        log.debug('(%s) Found message sender as %s', self.irc.name, sender)
+        log.debug('(%s) Found message sender as %s', self.name, sender)
 
         # For P10, convert the command token into a regular command, if present.
         command = self.COMMAND_TOKENS.get(raw_command, raw_command)
         if command != raw_command:
-            log.debug('(%s) Translating token %s to command %s', self.irc.name, raw_command, command)
+            log.debug('(%s) Translating token %s to command %s', self.name, raw_command, command)
 
         if command == 'ENCAP':
             # Special case for TS6 encapsulated commands (ENCAP), in forms like this:
             # <- :00A ENCAP * SU 42XAAAAAC :GLolol
             command = args[1]
             args = args[2:]
-            log.debug("(%s) Rewriting incoming ENCAP to command %s (args: %s)", self.irc.name, command, args)
+            log.debug("(%s) Rewriting incoming ENCAP to command %s (args: %s)", self.name, command, args)
 
         try:
             func = getattr(self, 'handle_'+command.lower())
@@ -232,8 +232,8 @@ class IRCS2SProtocol(IRCCommonProtocol):
             # Note: don't mess with the case of the channel prefix, or ~#channel
             # messages will break on RFC1459 casemapping networks (it becomes ^#channel
             # instead).
-            target = '#'.join((split_channel[0], self.irc.toLower(split_channel[1])))
-            log.debug('(%s) Normalizing channel target %s to %s', self.irc.name, args[0], target)
+            target = '#'.join((split_channel[0], self.toLower(split_channel[1])))
+            log.debug('(%s) Normalizing channel target %s to %s', self.name, args[0], target)
 
         return {'target': target, 'text': args[1]}
 
@@ -243,13 +243,13 @@ class IRCS2SProtocol(IRCCommonProtocol):
         """
         Nick collision checker.
         """
-        uid = self.irc.nickToUid(nick)
+        uid = self.nickToUid(nick)
         # If there is a nick collision, we simply alert plugins. Relay will purposely try to
         # lose fights and tag nicks instead, while other plugins can choose how to handle this.
         if uid:
-            log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.irc.name,
+            log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.name,
                      uid, nick)
-            self.irc.callHooks([self.irc.sid, 'SAVE', {'target': uid}])
+            self.callHooks([self.sid, 'SAVE', {'target': uid}])
 
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""
@@ -259,7 +259,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # removed from our user list.
         # If not, we have to assume that KILL = QUIT and remove them
         # ourselves.
-        data = self.irc.users.get(killed)
+        data = self.users.get(killed)
         if data:
             self.removeClient(killed)
 
@@ -270,7 +270,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         try:
             # Get the nick or server name of the caller.
-            killer = self.irc.getFriendlyName(source)
+            killer = self.getFriendlyName(source)
         except KeyError:
             # Killer was... neither? We must have aliens or something. Fallback
             # to the given "UID".
@@ -295,9 +295,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- ABAAA A :blah
         # <- ABAAA A
         try:
-            self.irc.users[numeric].away = text = args[0]
+            self.users[numeric].away = text = args[0]
         except IndexError:  # User is unsetting away status
-            self.irc.users[numeric].away = text = ''
+            self.users[numeric].away = text = ''
         return {'text': text}
 
     def handle_version(self, numeric, command, args):
@@ -333,5 +333,5 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
     def handle_pong(self, source, command, args):
         """Handles incoming PONG commands."""
-        if source == self.irc.uplink:
-            self.irc.lastping = time.time()
+        if source == self.uplink:
+            self.lastping = time.time()
