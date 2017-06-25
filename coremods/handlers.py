@@ -11,7 +11,7 @@ def handle_whois(irc, source, command, args):
     target = args['target']
     user = irc.users.get(target)
 
-    f = lambda num, source, text: irc.proto.numeric(irc.sid, num, source, text)
+    f = lambda num, source, text: irc.numeric(irc.sid, num, source, text)
 
     # Get the server that the target is on.
     server = irc.getServer(target)
@@ -118,7 +118,7 @@ def handle_mode(irc, source, command, args):
     # client, revert any forced deoper attempts.
     if irc.isInternalClient(target) and not irc.isInternalClient(source):
         if ('-o', None) in modes and (target == irc.pseudoclient.uid or not irc.isManipulatableClient(target)):
-            irc.proto.mode(irc.sid, target, {('+o', None)})
+            irc.mode(irc.sid, target, {('+o', None)})
 utils.add_hook(handle_mode, 'MODE')
 
 def handle_operup(irc, source, command, args):
@@ -143,11 +143,11 @@ def handle_version(irc, source, command, args):
     """Handles requests for the PyLink server version."""
     # 351 syntax is usually "<server version>. <server hostname> :<anything else you want to add>
     fullversion = irc.version()
-    irc.proto.numeric(irc.sid, 351, source, fullversion)
+    irc.numeric(irc.sid, 351, source, fullversion)
 utils.add_hook(handle_version, 'VERSION')
 
 def handle_time(irc, source, command, args):
     """Handles requests for the PyLink server time."""
     timestring = time.ctime()
-    irc.proto.numeric(irc.sid, 391, source, '%s :%s' % (irc.hostname(), timestring))
+    irc.numeric(irc.sid, 391, source, '%s :%s' % (irc.hostname(), timestring))
 utils.add_hook(handle_time, 'TIME')

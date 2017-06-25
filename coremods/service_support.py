@@ -14,7 +14,7 @@ def spawn_service(irc, source, command, args):
     # Service name
     name = args['name']
 
-    if name != 'pylink' and not irc.proto.hasCap('can-spawn-clients'):
+    if name != 'pylink' and not irc.hasCap('can-spawn-clients'):
         log.debug("(%s) Not spawning service %s because the server doesn't support spawning clients",
                   irc.name, name)
         return
@@ -55,7 +55,7 @@ def spawn_service(irc, source, command, args):
         userobj = irc.users[u]
     else:
         log.debug('(%s) spawn_service: Spawning new client %s', irc.name, nick)
-        userobj = irc.proto.spawnClient(nick, ident, host, modes=modes, opertype="PyLink Service",
+        userobj = irc.spawnClient(nick, ident, host, modes=modes, opertype="PyLink Service",
                                         manipulatable=sbot.manipulatable)
 
     # Store the service name in the IrcUser object for easier access.
