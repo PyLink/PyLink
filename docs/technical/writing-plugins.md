@@ -46,7 +46,7 @@ Command handlers do not return anything and can raise exceptions, which are caug
 
 Plugins receive data from the underlying protocol module, and communicate back using outgoing [command functions](pmodule-spec.md) implemented by the protocol module. They should *never* send raw data directly back to IRC, because that wouldn't be portable across different IRCds.
 
-These functions are usually called in this fashion: `irc.proto.command(arg1, arg2, ...)`. For example, the command `irc.proto.join('10XAAAAAB', '#bots')` would join a PyLink client with UID `10XAAAAAB` to channel `#bots`.
+These functions are usually called in this fashion: `irc.command(arg1, arg2, ...)`. For example, the command `irc.join('10XAAAAAB', '#bots')` would join a PyLink client with UID `10XAAAAAB` to channel `#bots`.
 
 For sending messages (e.g. replies to commands), simpler forms of:
 
