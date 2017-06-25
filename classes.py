@@ -198,7 +198,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         if 'ts' not in parsed_args:
             parsed_args['ts'] = int(time.time())
         hook_cmd = command
-        hook_map = self.proto.hook_map
+        hook_map = self.hook_map
 
         # If the hook name is present in the protocol module's hook_map, then we
         # should set the hook name to the name that points to instead.
@@ -249,10 +249,10 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         source = source or self.pseudoclient.uid
 
         if notice:
-            self.proto.notice(source, target, text)
+            self.notice(source, target, text)
             cmd = 'PYLINK_SELF_NOTICE'
         else:
-            self.proto.message(source, target, text)
+            self.message(source, target, text)
             cmd = 'PYLINK_SELF_PRIVMSG'
 
         if loopback:
@@ -324,7 +324,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         """Sends a command to the protocol module."""
         log.debug("(%s) <- %s", self.name, line)
         try:
-            hook_args = self.proto.handle_events(line)
+            hook_args = self.handle_events(line)
         except Exception:
             log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
             log.error('(%s) The offending line was: <- %s', self.name, line)
@@ -346,7 +346,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.init_vars()
 
         try:
-            self.proto.validateServerConf()
+            self.validateServerConf()
         except AssertionError as e:
             log.exception("(%s) Configuration error: %s", self.name, e)
             raise
@@ -439,7 +439,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def to_lower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
         casemapping (rfc1459 or ascii)."""
-        if self.proto.casemapping == 'rfc1459':
+        if self.casemapping == 'rfc1459':
             text = text.replace('{', '[')
             text = text.replace('}', ']')
             text = text.replace('|', '\\')
@@ -969,7 +969,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         range.
         """
         # Get the corresponding casemapping value used by ircmatch.
-        if self.proto.casemapping == 'rfc1459':
+        if self.casemapping == 'rfc1459':
             casemapping = 0
         else:
             casemapping = 1
@@ -1132,7 +1132,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def schedule_ping(self):
         """Schedules periodic pings in a loop."""
-        self.proto.ping()
+        self.ping()
 
         self.pingTimer = threading.Timer(self.pingfreq, self.schedule_ping)
         self.pingTimer.daemon = True
