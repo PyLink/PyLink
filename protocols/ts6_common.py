@@ -109,7 +109,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # SID generator for TS6.
         self.sidgen = TS6SIDGenerator(irc)
 
-    def _send(self, source, msg, **kwargs):
+    def _send_with_prefix(self, source, msg, **kwargs):
         """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""
         self.irc.send(':%s %s' % (source, msg), **kwargs)
 
@@ -130,7 +130,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # Mangle the target for IRCds that require it.
         target = self._expandPUID(target)
 
-        self._send(source, '%s %s %s' % (numeric, target, text))
+        self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
 
     def kick(self, numeric, channel, target, reason=None):
         """Sends kicks from a PyLink client/server."""
@@ -146,7 +146,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # Mangle kick targets for IRCds that require it.
         real_target = self._expandPUID(target)
 
-        self._send(numeric, 'KICK %s %s :%s' % (channel, real_target, reason))
+        self._send_with_prefix(numeric, 'KICK %s %s :%s' % (channel, real_target, reason))
 
         # We can pretend the target left by its own will; all we really care about
         # is that the target gets removed from the channel userlist, and calling
@@ -183,7 +183,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
                         self.irc.name, numeric)
             killpath = self.irc.servers[self.irc.sid].name
 
-        self._send(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
+        self._send_with_prefix(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
         self.removeClient(target)
 
     def nick(self, numeric, newnick):
@@ -191,7 +191,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
+        self._send_with_prefix(numeric, 'NICK %s %s' % (newnick, int(time.time())))
 
         self.irc.users[numeric].nick = newnick
 
@@ -207,13 +207,13 @@ class TS6BaseProtocol(IRCS2SProtocol):
         msg = "PART %s" % channel
         if reason:
             msg += " :%s" % reason
-        self._send(client, msg)
+        self._send_with_prefix(client, msg)
         self.handle_part(client, 'PART', [channel])
 
     def quit(self, numeric, reason):
         """Quits a PyLink client."""
         if self.irc.isInternalClient(numeric):
-            self._send(numeric, "QUIT :%s" % reason)
+            self._send_with_prefix(numeric, "QUIT :%s" % reason)
             self.removeClient(numeric)
         else:
             raise LookupError("No such PyLink client exists.")
@@ -226,7 +226,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # Mangle message targets for IRCds that require it.
         target = self._expandPUID(target)
 
-        self._send(numeric, 'PRIVMSG %s :%s' % (target, text))
+        self._send_with_prefix(numeric, 'PRIVMSG %s :%s' % (target, text))
 
     def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client or server."""
@@ -237,13 +237,13 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # Mangle message targets for IRCds that require it.
         target = self._expandPUID(target)
 
-        self._send(numeric, 'NOTICE %s :%s' % (target, text))
+        self._send_with_prefix(numeric, 'NOTICE %s :%s' % (target, text))
 
     def topic(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
-        self._send(numeric, 'TOPIC %s :%s' % (target, text))
+        self._send_with_prefix(numeric, 'TOPIC %s :%s' % (target, text))
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
@@ -273,7 +273,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
-        self._send(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
+        self._send_with_prefix(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
         self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
         return sid
 
@@ -281,16 +281,16 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """SQUITs a PyLink server."""
         # -> SQUIT 9PZ :blah, blah
         log.debug('source=%s, target=%s', source, target)
-        self._send(source, 'SQUIT %s :%s' % (target, text))
+        self._send_with_prefix(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
         if text:
-            self._send(source, 'AWAY :%s' % text)
+            self._send_with_prefix(source, 'AWAY :%s' % text)
         else:
-            self._send(source, 'AWAY')
+            self._send_with_prefix(source, 'AWAY')
         self.irc.users[source].away = text
 
     ### HANDLERS

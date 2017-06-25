@@ -56,7 +56,7 @@ class TS6Protocol(TS6BaseProtocol):
         self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
 
-        self._send(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+        self._send_with_prefix(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                 "{realhost} * :{realname}".format(ts=ts, host=host,
                 nick=nick, ident=ident, uid=uid,
                 modes=raw_modes, ip=ip, realname=realname,
@@ -72,7 +72,7 @@ class TS6Protocol(TS6BaseProtocol):
         if not self.irc.isInternalClient(client):
             log.error('(%s) Error trying to join %r to %r (no such client exists)', self.irc.name, client, channel)
             raise LookupError('No such PyLink client exists.')
-        self._send(client, "JOIN {ts} {channel} +".format(ts=self.irc.channels[channel].ts, channel=channel))
+        self._send_with_prefix(client, "JOIN {ts} {channel} +".format(ts=self.irc.channels[channel].ts, channel=channel))
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
 
@@ -147,7 +147,7 @@ class TS6Protocol(TS6BaseProtocol):
                     log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
             users = users[12:]
             namelist = ' '.join(namelist)
-            self._send(server, "SJOIN {ts} {channel} {modes} :{users}".format(
+            self._send_with_prefix(server, "SJOIN {ts} {channel} {modes} :{users}".format(
                     ts=ts, users=namelist, channel=channel,
                     modes=self.irc.joinModes(regularmodes)))
             self.irc.channels[channel].users.update(uids)
@@ -193,7 +193,7 @@ class TS6Protocol(TS6BaseProtocol):
                 self.irc.send(msgprefix + modestr)
         else:
             joinedmodes = self.irc.joinModes(modes)
-            self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
+            self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
 
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
@@ -206,7 +206,7 @@ class TS6Protocol(TS6BaseProtocol):
         # parameters: channel, topicTS, opt. topic setter, topic
         ts = self.irc.channels[target].ts
         servername = self.irc.servers[numeric].name
-        self._send(numeric, 'TB %s %s %s :%s' % (target, ts, servername, text))
+        self._send_with_prefix(numeric, 'TB %s %s %s :%s' % (target, ts, servername, text))
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
@@ -214,7 +214,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Sends an INVITE from a PyLink client.."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
-        self._send(numeric, 'INVITE %s %s %s' % (target, channel, self.irc.channels[channel].ts))
+        self._send_with_prefix(numeric, 'INVITE %s %s %s' % (target, channel, self.irc.channels[channel].ts))
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
@@ -225,14 +225,14 @@ class TS6Protocol(TS6BaseProtocol):
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
         # No text value is supported here; drop it.
-        self._send(numeric, 'KNOCK %s' % target)
+        self._send_with_prefix(numeric, 'KNOCK %s' % target)
 
     def updateClient(self, target, field, text):
         """Updates the hostname of any connected client."""
         field = field.upper()
         if field == 'HOST':
             self.irc.users[target].host = text
-            self._send(self.irc.sid, 'CHGHOST %s :%s' % (target, text))
+            self._send_with_prefix(self.irc.sid, 'CHGHOST %s :%s' % (target, text))
             if not self.irc.isInternalClient(target):
                 # If the target isn't one of our clients, send hook payload
                 # for other plugins to listen to.
@@ -249,9 +249,9 @@ class TS6Protocol(TS6BaseProtocol):
         if source is None:
             return
         if target is not None:
-            self._send(source, 'PING %s %s' % (source, target))
+            self._send_with_prefix(source, 'PING %s %s' % (source, target))
         else:
-            self._send(source, 'PING %s' % source)
+            self._send_with_prefix(source, 'PING %s' % source)
 
     ### Core / handlers
 
@@ -407,7 +407,7 @@ class TS6Protocol(TS6BaseProtocol):
         except IndexError:
             destination = self.irc.sid
         if self.irc.isInternalServer(destination):
-            self._send(destination, 'PONG %s %s' % (destination, source), queue=False)
+            self._send_with_prefix(destination, 'PONG %s %s' % (destination, source), queue=False)
 
             if destination == self.irc.sid and not self.has_eob:
                 # Charybdis' idea of endburst is just sending a PING. No, really!

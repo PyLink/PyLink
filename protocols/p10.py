@@ -164,7 +164,7 @@ class P10Protocol(IRCS2SProtocol):
 
         self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
 
-    def _send(self, source, text, **kwargs):
+    def _send_with_prefix(self, source, text, **kwargs):
         self.irc.send("%s %s" % (source, text), **kwargs)
 
     @staticmethod
@@ -292,7 +292,7 @@ class P10Protocol(IRCS2SProtocol):
         else:  # TODO: propagate IPv6 address, but only if uplink supports it
             b64ip = 'AAAAAA'
 
-        self._send(server, "N {nick} 1 {ts} {ident} {host} {modes} {ip} {uid} "
+        self._send_with_prefix(server, "N {nick} 1 {ts} {ident} {host} {modes} {ip} {uid} "
                    ":{realname}".format(ts=ts, host=host, nick=nick, ident=ident, uid=uid,
                                         modes=raw_modes, ip=b64ip, realname=realname,
                                         realhost=realhost))
@@ -305,9 +305,9 @@ class P10Protocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client exists.')
 
         if text:
-            self._send(source, 'A :%s' % text)
+            self._send_with_prefix(source, 'A :%s' % text)
         else:
-            self._send(source, 'A')
+            self._send_with_prefix(source, 'A')
         self.irc.users[source].away = text
 
     def invite(self, numeric, target, channel):
@@ -320,7 +320,7 @@ class P10Protocol(IRCS2SProtocol):
 
         nick = self.irc.users[target].nick
 
-        self._send(numeric, 'I %s %s %s' % (nick, channel, self.irc.channels[channel].ts))
+        self._send_with_prefix(numeric, 'I %s %s %s' % (nick, channel, self.irc.channels[channel].ts))
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
@@ -333,9 +333,9 @@ class P10Protocol(IRCS2SProtocol):
 
         if not self.irc.channels[channel].users:
             # Empty channels should be created with the CREATE command.
-            self._send(client, "C {channel} {ts}".format(ts=ts, channel=channel))
+            self._send_with_prefix(client, "C {channel} {ts}".format(ts=ts, channel=channel))
         else:
-            self._send(client, "J {channel} {ts}".format(ts=ts, channel=channel))
+            self._send_with_prefix(client, "J {channel} {ts}".format(ts=ts, channel=channel))
 
         self.irc.channels[channel].users.add(client)
         self.irc.users[client].channels.add(channel)
@@ -358,7 +358,7 @@ class P10Protocol(IRCS2SProtocol):
             reason = '(%s) %s' % (self.irc.getFriendlyName(numeric), reason)
             numeric = self.irc.getServer(numeric)
 
-        self._send(numeric, 'K %s %s :%s' % (channel, target, reason))
+        self._send_with_prefix(numeric, 'K %s %s :%s' % (channel, target, reason))
 
         # We can pretend the target left by its own will; all we really care about
         # is that the target gets removed from the channel userlist, and calling
@@ -373,7 +373,7 @@ class P10Protocol(IRCS2SProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        self._send(numeric, 'D %s :Killed (%s)' % (target, reason))
+        self._send_with_prefix(numeric, 'D %s :Killed (%s)' % (target, reason))
         self.removeClient(target)
 
     def knock(self, numeric, target, text):
@@ -384,7 +384,7 @@ class P10Protocol(IRCS2SProtocol):
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        self._send(numeric, 'P %s :%s' % (target, text))
+        self._send_with_prefix(numeric, 'P %s :%s' % (target, text))
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
@@ -428,9 +428,9 @@ class P10Protocol(IRCS2SProtocol):
             joinedmodes = self.irc.joinModes([m for m in modes[:12]])
             if is_cmode:
                 for wrapped_modes in self.irc.wrapModes(modes[:12], bufsize):
-                    self._send(numeric, 'M %s %s %s' % (real_target, wrapped_modes, ts))
+                    self._send_with_prefix(numeric, 'M %s %s %s' % (real_target, wrapped_modes, ts))
             else:
-                self._send(numeric, 'M %s %s' % (real_target, joinedmodes))
+                self._send_with_prefix(numeric, 'M %s %s' % (real_target, joinedmodes))
             modes = modes[12:]
 
     def nick(self, numeric, newnick):
@@ -439,7 +439,7 @@ class P10Protocol(IRCS2SProtocol):
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        self._send(numeric, 'N %s %s' % (newnick, int(time.time())))
+        self._send_with_prefix(numeric, 'N %s %s' % (newnick, int(time.time())))
         self.irc.users[numeric].nick = newnick
 
         # Update the NICK TS.
@@ -449,7 +449,7 @@ class P10Protocol(IRCS2SProtocol):
         """Sends raw numerics from a server to a remote client. This is used for WHOIS
         replies."""
         # <- AB 311 AyAAA GL ~gl nefarious.midnight.vpn * :realname
-        self._send(source, '%s %s %s' % (numeric, target, text))
+        self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
 
     def notice(self, numeric, target, text):
         """Sends a NOTICE from a PyLink client or server."""
@@ -457,7 +457,7 @@ class P10Protocol(IRCS2SProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        self._send(numeric, 'O %s :%s' % (target, text))
+        self._send_with_prefix(numeric, 'O %s :%s' % (target, text))
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
@@ -469,7 +469,7 @@ class P10Protocol(IRCS2SProtocol):
         msg = "L %s" % channel
         if reason:
             msg += " :%s" % reason
-        self._send(client, msg)
+        self._send_with_prefix(client, msg)
         self.handle_part(client, 'PART', [channel])
 
     def ping(self, source=None, target=None):
@@ -479,14 +479,14 @@ class P10Protocol(IRCS2SProtocol):
         if source is None:
             return
         if target is not None:
-            self._send(source, 'G %s %s' % (source, target))
+            self._send_with_prefix(source, 'G %s %s' % (source, target))
         else:
-            self._send(source, 'G %s' % source)
+            self._send_with_prefix(source, 'G %s' % source)
 
     def quit(self, numeric, reason):
         """Quits a PyLink client."""
         if self.irc.isInternalClient(numeric):
-            self._send(numeric, "Q :%s" % reason)
+            self._send_with_prefix(numeric, "Q :%s" % reason)
             self.removeClient(numeric)
         else:
             raise LookupError("No such PyLink client exists.")
@@ -657,7 +657,7 @@ class P10Protocol(IRCS2SProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
 
-        self._send(uplink, 'SERVER %s 1 %s %s P10 %s]]] +h6 :%s' % \
+        self._send_with_prefix(uplink, 'SERVER %s 1 %s %s P10 %s]]] +h6 :%s' % \
                    (name, self.irc.start_ts, int(time.time()), sid, desc))
 
         self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
@@ -669,7 +669,7 @@ class P10Protocol(IRCS2SProtocol):
 
         targetname = self.irc.servers[target].name
 
-        self._send(source, 'SQ %s 0 :%s' % (targetname, text))
+        self._send_with_prefix(source, 'SQ %s 0 :%s' % (targetname, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
     def topic(self, numeric, target, text):
@@ -684,7 +684,7 @@ class P10Protocol(IRCS2SProtocol):
 
         creationts = self.irc.channels[target].ts
 
-        self._send(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
+        self._send_with_prefix(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
                    int(time.time()), text))
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
@@ -700,7 +700,7 @@ class P10Protocol(IRCS2SProtocol):
 
         creationts = self.irc.channels[target].ts
 
-        self._send(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
+        self._send_with_prefix(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
                    int(time.time()), text))
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
@@ -737,7 +737,7 @@ class P10Protocol(IRCS2SProtocol):
                                           "only available on nefarious, and we're using p10_ircd=%r" % ircd)
 
             # Use FAKE (FA) for external clients.
-            self._send(self.irc.sid, 'FA %s %s' % (target, text))
+            self._send_with_prefix(self.irc.sid, 'FA %s %s' % (target, text))
 
             # Save the host change as a user mode (this is what P10 does on bursts),
             # so further host checks work.
@@ -821,7 +821,7 @@ class P10Protocol(IRCS2SProtocol):
         self.irc.cmodes.update(cmodes)
 
         self.irc.send('SERVER %s 1 %s %s J10 %s]]] +s6 :%s' % (name, ts, ts, sid, desc))
-        self._send(sid, "EB")
+        self._send_with_prefix(sid, "EB")
         self.irc.connected.set()
 
     def handle_server(self, source, command, args):
@@ -975,7 +975,7 @@ class P10Protocol(IRCS2SProtocol):
         if self.irc.isInternalServer(sid):
             # Only respond if the target server is ours. No forwarding is needed because
             # no IRCds can ever connect behind us...
-            self._send(self.irc.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime), queue=False)
+            self._send_with_prefix(self.irc.sid, 'Z %s %s %s %s' % (target, orig_pingtime, timediff, currtime), queue=False)
 
     def handle_pass(self, source, command, args):
         """Handles authentication with our uplink."""
@@ -1116,7 +1116,7 @@ class P10Protocol(IRCS2SProtocol):
         # Send EOB acknowledgement; this is required by the P10 specification,
         # and needed if we want to be able to receive channel messages, etc.
         if source == self.irc.uplink:
-            self._send(self.irc.sid, 'EA')
+            self._send_with_prefix(self.irc.sid, 'EA')
             return {}
 
     def handle_mode(self, source, command, args):
@@ -1180,7 +1180,7 @@ class P10Protocol(IRCS2SProtocol):
 
         # Send PART in response to acknowledge the KICK, per
         # https://github.com/evilnet/nefarious2/blob/ed12d64/doc/p10.txt#L611-L616
-        self._send(kicked, 'L %s :%s' % (channel, args[2]))
+        self._send_with_prefix(kicked, 'L %s :%s' % (channel, args[2]))
 
         return {'channel': channel, 'target': kicked, 'text': args[2]}
 

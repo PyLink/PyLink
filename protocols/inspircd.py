@@ -59,7 +59,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
 
-        self._send(server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
+        self._send_with_prefix(server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
                         " {ts} {modes} + :{realname}".format(ts=ts, host=host,
                                                  nick=nick, ident=ident, uid=uid,
                                                  modes=raw_modes, ip=ip, realname=realname,
@@ -82,7 +82,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         # Strip out list-modes, they shouldn't be ever sent in FJOIN.
         modes = [m for m in self.irc.channels[channel].modes if m[0] not in self.irc.cmodes['*A']]
-        self._send(server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
+        self._send_with_prefix(server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
                 ts=self.irc.channels[channel].ts, uid=client, channel=channel,
                 modes=self.irc.joinModes(modes)))
         self.irc.channels[channel].users.add(client)
@@ -142,7 +142,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
 
         namelist = ' '.join(namelist)
-        self._send(server, "FJOIN {channel} {ts} {modes} :{users}".format(
+        self._send_with_prefix(server, "FJOIN {channel} {ts} {modes} :{users}".format(
                 ts=ts, users=namelist, channel=channel,
                 modes=self.irc.joinModes(modes)))
         self.irc.channels[channel].users.update(uids)
@@ -150,7 +150,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if banmodes:
             # Burst ban modes if there are any.
             # <- :1ML FMODE #test 1461201525 +bb *!*@bad.user *!*@rly.bad.user
-            self._send(server, "FMODE {channel} {ts} {modes} ".format(
+            self._send_with_prefix(server, "FMODE {channel} {ts} {modes} ".format(
                 ts=ts, channel=channel, modes=self.irc.joinModes(banmodes)))
 
         self.updateTS(server, channel, ts, changedmodes)
@@ -187,7 +187,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         else:
             otype = ':' + otype
 
-        self._send(target, 'OPERTYPE %s' % otype)
+        self._send_with_prefix(target, 'OPERTYPE %s' % otype)
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
@@ -198,7 +198,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 (not self.irc.isInternalServer(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        log.debug('(%s) inspircd._sendModes: received %r for mode list', self.irc.name, modes)
+        log.debug('(%s) inspircd._send_with_prefixModes: received %r for mode list', self.irc.name, modes)
         if ('+o', None) in modes and not utils.isChannel(target):
             # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
@@ -207,9 +207,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         joinedmodes = self.irc.joinModes(modes)
         if utils.isChannel(target):
             ts = ts or self.irc.channels[self.irc.toLower(target)].ts
-            self._send(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
+            self._send_with_prefix(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
         else:
-            self._send(numeric, 'MODE %s %s' % (target, joinedmodes))
+            self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
 
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
@@ -225,7 +225,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         else:
             sourcenick = self.irc.users[numeric].nick
 
-        self._send(numeric, 'KILL %s :Killed (%s (%s))' % (target, sourcenick, reason))
+        self._send_with_prefix(numeric, 'KILL %s :Killed (%s (%s))' % (target, sourcenick, reason))
 
         # We only need to call removeClient here if the target is one of our
         # clients, since any remote servers will send a QUIT from
@@ -239,7 +239,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink server exists.')
         ts = int(time.time())
         servername = self.irc.servers[numeric].name
-        self._send(numeric, 'FTOPIC %s %s %s :%s' % (target, ts, servername, text))
+        self._send_with_prefix(numeric, 'FTOPIC %s %s %s :%s' % (target, ts, servername, text))
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
@@ -247,13 +247,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Sends an INVITE from a PyLink client.."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
-        self._send(numeric, 'INVITE %s %s' % (target, channel))
+        self._send_with_prefix(numeric, 'INVITE %s %s' % (target, channel))
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
         if not self.irc.isInternalClient(numeric):
             raise LookupError('No such PyLink client exists.')
-        self._send(numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
+        self._send_with_prefix(numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
     def updateClient(self, target, field, text):
         """Updates the ident, host, or realname of any connected client."""
@@ -267,13 +267,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # It is one of our clients, use FIDENT/HOST/NAME.
             if field == 'IDENT':
                 self.irc.users[target].ident = text
-                self._send(target, 'FIDENT %s' % text)
+                self._send_with_prefix(target, 'FIDENT %s' % text)
             elif field == 'HOST':
                 self.irc.users[target].host = text
-                self._send(target, 'FHOST %s' % text)
+                self._send_with_prefix(target, 'FHOST %s' % text)
             elif field in ('REALNAME', 'GECOS'):
                 self.irc.users[target].realname = text
-                self._send(target, 'FNAME :%s' % text)
+                self._send_with_prefix(target, 'FNAME :%s' % text)
         else:
             # It is a client on another server, use CHGIDENT/HOST/NAME.
             if field == 'IDENT':
@@ -282,7 +282,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     return
 
                 self.irc.users[target].ident = text
-                self._send(self.irc.sid, 'CHGIDENT %s %s' % (target, text))
+                self._send_with_prefix(self.irc.sid, 'CHGIDENT %s %s' % (target, text))
 
                 # Send hook payloads for other plugins to listen to.
                 self.irc.callHooks([self.irc.sid, 'CHGIDENT',
@@ -293,7 +293,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     return
 
                 self.irc.users[target].host = text
-                self._send(self.irc.sid, 'CHGHOST %s %s' % (target, text))
+                self._send_with_prefix(self.irc.sid, 'CHGHOST %s %s' % (target, text))
 
                 self.irc.callHooks([self.irc.sid, 'CHGHOST',
                                    {'target': target, 'newhost': text}])
@@ -303,7 +303,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     log.warning('(%s) Failed to change real name of %s to %r: load m_chgname.so!', self.irc.name, target, text)
                     return
                 self.irc.users[target].realname = text
-                self._send(self.irc.sid, 'CHGNAME %s :%s' % (target, text))
+                self._send_with_prefix(self.irc.sid, 'CHGNAME %s :%s' % (target, text))
 
                 self.irc.callHooks([self.irc.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
@@ -314,7 +314,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         source = source or self.irc.sid
         target = target or self.irc.uplink
         if not (target is None or source is None):
-            self._send(source, 'PING %s %s' % (source, target))
+            self._send_with_prefix(source, 'PING %s %s' % (source, target))
 
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client."""
@@ -327,15 +327,15 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # :<sid> NUM <numeric source sid> <target uuid> <3 digit number> <params>
         # Take this into consideration if we ever target InspIRCd 2.2, even though m_spanningtree
         # does provide backwards compatibility for commands like this. -GLolol
-        self._send(self.irc.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
+        self._send_with_prefix(self.irc.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
 
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
         if text:
-            self._send(source, 'AWAY %s :%s' % (int(time.time()), text))
+            self._send_with_prefix(source, 'AWAY %s :%s' % (int(time.time()), text))
         else:
-            self._send(source, 'AWAY')
+            self._send_with_prefix(source, 'AWAY')
         self.irc.users[source].away = text
 
     def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
@@ -367,7 +367,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
-        self._send(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
+        self._send_with_prefix(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
         self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
 
         def endburstf():
@@ -376,18 +376,18 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 # We managed to catch the abort flag before sending ENDBURST, so break
                 log.debug('(%s) stopping endburstf() for %s as aborted was set', self.irc.name, sid)
                 return
-            self._send(sid, 'ENDBURST')
+            self._send_with_prefix(sid, 'ENDBURST')
 
         if endburst_delay:
             threading.Thread(target=endburstf).start()
         else:  # Else, send burst immediately
-            self._send(sid, 'ENDBURST')
+            self._send_with_prefix(sid, 'ENDBURST')
         return sid
 
     def squit(self, source, target, text='No reason given'):
         """SQUITs a PyLink server."""
         # -> :9PY SQUIT 9PZ :blah, blah
-        self._send(source, 'SQUIT %s :%s' % (target, text))
+        self._send_with_prefix(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
     ### Core / command handlers
@@ -409,10 +409,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
           Pass=self.irc.serverdata["sendpass"], sid=self.irc.sid,
           sdesc=self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
 
-        self._send(self.irc.sid, 'BURST %s' % ts)
+        self._send_with_prefix(self.irc.sid, 'BURST %s' % ts)
         # InspIRCd sends VERSION data on link, instead of whenever requested by a client.
-        self._send(self.irc.sid, 'VERSION :%s' % self.irc.version())
-        self._send(self.irc.sid, 'ENDBURST')
+        self._send_with_prefix(self.irc.sid, 'VERSION :%s' % self.irc.version())
+        self._send_with_prefix(self.irc.sid, 'ENDBURST')
 
     def handle_capab(self, source, command, args):
         """
@@ -524,7 +524,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :70M PING 70M 0AL
         # -> :0AL PONG 0AL 70M
         if self.irc.isInternalServer(args[1]):
-            self._send(args[1], 'PONG %s %s' % (args[1], source), queue=False)
+            self._send_with_prefix(args[1], 'PONG %s %s' % (args[1], source), queue=False)
 
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
@@ -764,7 +764,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # The target has to be one of our servers in order to work...
             uplink = self.irc.servers[target].uplink
             reason = 'Requested by %s' % self.irc.getHostmask(numeric)
-            self._send(uplink, 'SQUIT %s :%s' % (target, reason))
+            self._send_with_prefix(uplink, 'SQUIT %s :%s' % (target, reason))
             return self.handle_squit(numeric, 'SQUIT', [target, reason])
         else:
             log.debug("(%s) Got RSQUIT for '%s', which is either invalid or not "
@@ -833,6 +833,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         # XXX: We override notice() here because that abstraction doesn't allow messages from servers.
         timestring = '%s (%s)' % (time.strftime('%Y-%m-%d %H:%M:%S'), int(time.time()))
-        self._send(self.irc.sid, 'NOTICE %s :System time is %s on %s' % (source, timestring, self.irc.hostname()))
+        self._send_with_prefix(self.irc.sid, 'NOTICE %s :System time is %s on %s' % (source, timestring, self.irc.hostname()))
 
 Class = InspIRCdProtocol

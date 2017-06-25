@@ -109,7 +109,7 @@ class HybridProtocol(TS6Protocol):
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         self.irc.applyModes(uid, modes)
         self.irc.servers[server].users.add(uid)
-        self._send(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+        self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                 "* :{realname}".format(ts=ts, host=host,
                 nick=nick, ident=ident, uid=uid,
                 modes=raw_modes, ip=ip, realname=realname))
@@ -131,7 +131,7 @@ class HybridProtocol(TS6Protocol):
             self.irc.users[target].host = text
             # On Hybrid, it appears that host changing is actually just forcing umode
             # "+x <hostname>" on the target. -GLolol
-            self._send(self.irc.sid, 'SVSMODE %s %s +x %s' % (target, ts, text))
+            self._send_with_prefix(self.irc.sid, 'SVSMODE %s %s +x %s' % (target, ts, text))
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
@@ -144,7 +144,7 @@ class HybridProtocol(TS6Protocol):
         ts = self.irc.channels[target].ts
         servername = self.irc.servers[numeric].name
 
-        self._send(numeric, 'TBURST %s %s %s %s :%s' % (ts, target, int(time.time()), servername, text))
+        self._send_with_prefix(numeric, 'TBURST %s %s %s %s :%s' % (ts, target, int(time.time()), servername, text))
         self.irc.channels[target].topic = text
         self.irc.channels[target].topicset = True
 
