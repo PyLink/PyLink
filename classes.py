@@ -1130,11 +1130,11 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     _getUid = _get_UID
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
-    def schedule_ping(self):
+    def _schedule_ping(self):
         """Schedules periodic pings in a loop."""
         self.ping()
 
-        self.pingTimer = threading.Timer(self.pingfreq, self.schedule_ping)
+        self.pingTimer = threading.Timer(self.pingfreq, self._schedule_ping)
         self.pingTimer.daemon = True
         self.pingTimer.name = 'Ping timer loop for %s' % self.name
         self.pingTimer.start()
@@ -1248,7 +1248,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 if checks_ok:
 
                     self.queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
-                                                         target=self.process_queue, daemon=True)
+                                                         target=self._process_queue, daemon=True)
                     self.queue_thread.start()
 
                     self.sid = self.serverdata.get("sid")
@@ -1264,7 +1264,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                             or conf.conf['bot']['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)
-                    self.schedule_ping()
+                    self._schedule_ping()
                     log.info('(%s) Server ready; listening for data.', self.name)
                     self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
                     self._run_irc()
@@ -1374,7 +1374,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         else:
             self._send(data)
 
-    def process_queue(self):
+    def _process_queue(self):
         """Loop to process outgoing queue data."""
         while True:
             throttle_time = self.serverdata.get('throttle_time', 0.005)
