@@ -52,7 +52,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.sid = None
         self.serverdata = conf.conf['servers'][netname]
         self.botdata = conf.conf['bot']
-        self.protoname = None  # This is updated in init_vars()
+        self.protoname = self.__class__.__module__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = self.irc = self  # Backwards compat
 
         # Protocol stuff
@@ -110,8 +110,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
-        self.protoname = __name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
-
         self.encoding = self.serverdata.get('encoding') or 'utf-8'
 
         # Tracks the main PyLink client's UID.
