@@ -418,6 +418,61 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         log.debug('Removing client %s from self.servers[%s].users', numeric, sid)
         self.servers[sid].users.discard(numeric)
 
+    ### State checking functions
+    def nick_to_uid(self, nick):
+        """Looks up the UID of a user with the given nick, if one is present."""
+        nick = self.to_lower(nick)
+        for k, v in self.users.copy().items():
+            if self.to_lower(v.nick) == nick:
+                return k
+
+    def is_internal_client(self, numeric):
+        """
+        Returns whether the given client numeric (UID) is a PyLink client.
+        """
+        sid = self.get_server(numeric)
+        if sid and self.servers[sid].internal:
+            return True
+        return False
+
+    def is_internal_server(self, sid):
+        """Returns whether the given SID is an internal PyLink server."""
+        return (sid in self.servers and self.servers[sid].internal)
+
+    def get_server(self, numeric):
+        """Finds the SID of the server a user is on."""
+        userobj = self.users.get(numeric)
+        if userobj:
+            return userobj.server
+
+    def is_manipulatable_client(self, uid):
+        """
+        Returns whether the given user is marked as an internal, manipulatable
+        client. Usually, automatically spawned services clients should have this
+        set True to prevent interactions with opers (like mode changes) from
+        causing desyncs.
+        """
+        return self.is_internal_client(uid) and self.users[uid].manipulatable
+
+    def get_service_bot(self, uid):
+        """
+        Checks whether the given UID is a registered service bot. If True,
+        returns the cooresponding ServiceBot object.
+        """
+        userobj = self.users.get(uid)
+        if not userobj:
+            return False
+
+        # Look for the "service" attribute in the IrcUser object, if one exists.
+        try:
+            sname = userobj.service
+            # Warn if the service name we fetched isn't a registered service.
+            if sname not in world.services.keys():
+                log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
+                            "exist (%s)!", self.name, uid, userobj.nick, sname)
+            return world.services.get(sname)
+        except AttributeError:
+            return False
 
 class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def __init__(self, *args, **kwargs):
@@ -817,62 +872,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         log.debug('wrap_modes: returning %s for %s', strings, orig_modes)
         return strings
-
-    ### State checking functions
-    def nick_to_uid(self, nick):
-        """Looks up the UID of a user with the given nick, if one is present."""
-        nick = self.to_lower(nick)
-        for k, v in self.users.copy().items():
-            if self.to_lower(v.nick) == nick:
-                return k
-
-    def is_internal_client(self, numeric):
-        """
-        Returns whether the given client numeric (UID) is a PyLink client.
-        """
-        sid = self.get_server(numeric)
-        if sid and self.servers[sid].internal:
-            return True
-        return False
-
-    def is_internal_server(self, sid):
-        """Returns whether the given SID is an internal PyLink server."""
-        return (sid in self.servers and self.servers[sid].internal)
-
-    def get_server(self, numeric):
-        """Finds the SID of the server a user is on."""
-        userobj = self.users.get(numeric)
-        if userobj:
-            return userobj.server
-
-    def is_manipulatable_client(self, uid):
-        """
-        Returns whether the given user is marked as an internal, manipulatable
-        client. Usually, automatically spawned services clients should have this
-        set True to prevent interactions with opers (like mode changes) from
-        causing desyncs.
-        """
-        return self.is_internal_client(uid) and self.users[uid].manipulatable
-
-    def get_service_bot(self, uid):
-        """
-        Checks whether the given UID is a registered service bot. If True,
-        returns the cooresponding ServiceBot object.
-        """
-        userobj = self.users.get(uid)
-        if not userobj:
-            return False
-
-        # Look for the "service" attribute in the IrcUser object, if one exists.
-        try:
-            sname = userobj.service
-            # Warn if the service name we fetched isn't a registered service.
-            if sname not in world.services.keys():
-                log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
-                            "exist (%s)!", self.name, uid, userobj.nick, sname)
-            return world.services.get(sname)
-        except AttributeError:
-            return False
 
     def get_hostmask(self, user, realhost=False, ip=False):
         """
