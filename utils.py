@@ -627,6 +627,6 @@ class CamelCaseToSnakeCase():
         if normalized_attr == attr:
             # __getattr__ only fires if normal attribute fetching fails, so we can assume that
             # the attribute was tried already and failed.
-            raise AttributeError('%s object has no attribute of normalized name %r' % (__class__.__name__, attr))
+            raise AttributeError('%s object has no attribute of normalized name %r' % (self.__class__.__name__, attr))
 
         return getattr(self, normalized_attr)
