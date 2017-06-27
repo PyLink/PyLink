@@ -1294,6 +1294,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # HACK: Don't thread if we're running tests.
             self._connect()
         else:
+            if self.connection_thread and self.connection_thread.is_alive():
+                raise RuntimeError("Refusing to start multiple connection threads for network %r!" % self.name)
+
             self.connection_thread = threading.Thread(target=self._connect,
                                                       name="Listener for %s" %
                                                       self.name)
