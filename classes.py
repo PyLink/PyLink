@@ -71,8 +71,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
         # These options depend on self.serverdata from above to be set.
         self.encoding = None
-        self.pingfreq = self.serverdata.get('pingfreq') or 90
-        self.pingtimeout = self.pingfreq * 2
 
         self.connected = threading.Event()
         self.aborted = threading.Event()
@@ -118,14 +116,9 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.protoname = __name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
 
         self.encoding = self.serverdata.get('encoding') or 'utf-8'
-        self.pingfreq = self.serverdata.get('pingfreq') or 90
-        self.pingtimeout = self.pingfreq * 3
 
+        # Tracks the main PyLink client's UID.
         self.pseudoclient = None
-        self.lastping = time.time()
-
-        self.maxsendq = self.serverdata.get('maxsendq', 4096)
-        self.queue = queue.Queue(self.maxsendq)
 
         # Internal variable to set the place and caller of the last command (in PM
         # or in a channel), used by fantasy command support.
@@ -137,7 +130,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # now.
         self.servers = {}
         self.users = {}
-        self.channels = structures.KeyedDefaultdict(IrcChannel)
+        self.channels = structures.KeyedDefaultdict(Channel)
 
         # This sets the list of supported channel and user modes: the default
         # RFC1459 modes are implied. Named modes are used here to make
@@ -1132,6 +1125,17 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self.connection_thread = None
         self.queue = None
         self.pingTimer = None
+
+    def init_vars(self, *args, **kwargs):
+        super().init_vars(*args, **kwargs)
+
+        # Set IRC specific variables for ping checking and queuing
+        self.lastping = time.time()
+        self.pingfreq = self.serverdata.get('pingfreq') or 90
+        self.pingtimeout = self.pingfreq * 3
+
+        self.maxsendq = self.serverdata.get('maxsendq', 4096)
+        self.queue = queue.Queue(self.maxsendq)
 
     def _schedule_ping(self):
         """Schedules periodic pings in a loop."""
