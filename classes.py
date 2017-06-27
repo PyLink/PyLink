@@ -59,9 +59,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.casemapping = 'rfc1459'
         self.hook_map = {}
 
-        # Lock for updateTS to make sure only one thread can change the channel TS at one time.
-        self.ts_lock = threading.Lock()
-
         # Lists required conf keys for the server block.
         self.conf_keys = {'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass',
                           'recvpass'}
@@ -425,6 +422,11 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
 
 class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Lock for updateTS to make sure only one thread can change the channel TS at one time.
+        self._ts_lock = threading.Lock()
+
     def to_lower(self, text):
         """Returns a lowercase representation of text based on the IRC object's
         casemapping (rfc1459 or ascii)."""
@@ -1069,8 +1071,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 self.apply_modes(channel, modes)
 
         # Use a lock so only one thread can change a channel's TS at once: this prevents race
-        # conditions from desyncing the channel list.
-        with self.ts_lock:
+        # conditions that would otherwise desync channel modes.
+        with self._ts_lock:
             our_ts = self.channels[channel].ts
             assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
             assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
