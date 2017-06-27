@@ -74,13 +74,9 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.pingfreq = self.serverdata.get('pingfreq') or 90
         self.pingtimeout = self.pingfreq * 2
 
-        self.queue = None
-
         self.connected = threading.Event()
         self.aborted = threading.Event()
         self.reply_lock = threading.RLock()
-
-        self.pingTimer = None
 
         # Sets the multiplier for autoconnect delay (grows with time).
         self.autoconnect_active_multiplier = 1
@@ -1130,6 +1126,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     _getUid = _get_UID
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.connection_thread = None
+        self.queue = None
+        self.pingTimer = None
+
     def _schedule_ping(self):
         """Schedules periodic pings in a loop."""
         self.ping()
