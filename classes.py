@@ -1267,13 +1267,13 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                     self.schedule_ping()
                     log.info('(%s) Server ready; listening for data.', self.name)
                     self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
-                    self.run()
+                    self._run_irc()
                 else:  # Configuration error :(
                     log.error('(%s) A configuration error was encountered '
                               'trying to set up this connection. Please check'
                               ' your configuration file and try again.',
                               self.name)
-            # self.run() or the protocol module it called raised an exception, meaning we've disconnected!
+            # _run_irc() or the protocol module it called raised an exception, meaning we've disconnected!
             # Note: socket.error, ConnectionError, IOError, etc. are included in OSError since Python 3.3,
             # so we don't need to explicitly catch them here.
             # We also catch SystemExit here as a way to abort out connection threads properly, and stop the
@@ -1319,7 +1319,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self.pingTimer.cancel()
         self._post_disconnect()
 
-    def run(self):
+    def _run_irc(self):
         """Main IRC loop which listens for messages."""
         buf = b""
         data = b""
