@@ -403,7 +403,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         """
         return capab.lower() in self.protocol_caps
 
-    def remove_client(self, numeric):
+    def _remove_client(self, numeric):
         """Internal function to remove a client from our internal state."""
         for c, v in self.channels.copy().items():
             v.removeuser(numeric)

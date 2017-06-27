@@ -92,7 +92,7 @@ class IRCCommonProtocol(IRCNetwork):
                     affected_nicks[name].append(nick)
 
             log.debug('Removing client %s (%s)', user, nick)
-            self.removeClient(user)
+            self._remove_client(user)
 
         serverdata = self.servers[split_server]
         sname = serverdata.name
@@ -261,7 +261,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # ourselves.
         data = self.users.get(killed)
         if data:
-            self.removeClient(killed)
+            self._remove_client(killed)
 
         # TS6-style kills look something like this:
         # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
@@ -324,7 +324,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- :1SRAAGB4T QUIT :Quit: quit message goes here
         # P10:
         # <- ABAAB Q :Killed (GL_ (bangbang))
-        self.removeClient(numeric)
+        self._remove_client(numeric)
         return {'text': args[0]}
 
     def handle_time(self, numeric, command, args):

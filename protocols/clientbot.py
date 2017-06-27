@@ -271,7 +271,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def quit(self, source, reason):
         """STUB: Quits a client."""
         userdata = self.users[source]
-        self.removeClient(source)
+        self._remove_client(source)
         self.callHooks([source, 'CLIENTBOT_QUIT', {'text': reason, 'userdata': userdata}])
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):

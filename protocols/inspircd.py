@@ -227,11 +227,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         self._send_with_prefix(numeric, 'KILL %s :Killed (%s (%s))' % (target, sourcenick, reason))
 
-        # We only need to call removeClient here if the target is one of our
+        # We only need to call _remove_client here if the target is one of our
         # clients, since any remote servers will send a QUIT from
         # their target if the command succeeds.
         if self.isInternalClient(target):
-            self.removeClient(target)
+            self._remove_client(target)
 
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
@@ -799,7 +799,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # ourselves.
         data = self.users.get(killed)
         if data:
-            self.removeClient(killed)
+            self._remove_client(killed)
         return {'target': killed, 'text': args[1], 'userdata': data}
 
     def handle_sakick(self, source, command, args):

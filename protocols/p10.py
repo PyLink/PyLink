@@ -374,7 +374,7 @@ class P10Protocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client/server exists.')
 
         self._send_with_prefix(numeric, 'D %s :Killed (%s)' % (target, reason))
-        self.removeClient(target)
+        self._remove_client(target)
 
     def knock(self, numeric, target, text):
         raise NotImplementedError('KNOCK is not supported on P10.')
@@ -487,7 +487,7 @@ class P10Protocol(IRCS2SProtocol):
         """Quits a PyLink client."""
         if self.isInternalClient(numeric):
             self._send_with_prefix(numeric, "Q :%s" % reason)
-            self.removeClient(numeric)
+            self._remove_client(numeric)
         else:
             raise LookupError("No such PyLink client exists.")
 

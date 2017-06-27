@@ -183,7 +183,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
             killpath = self.servers[self.sid].name
 
         self._send_with_prefix(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
-        self.removeClient(target)
+        self._remove_client(target)
 
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
@@ -213,7 +213,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         """Quits a PyLink client."""
         if self.isInternalClient(numeric):
             self._send_with_prefix(numeric, "QUIT :%s" % reason)
-            self.removeClient(numeric)
+            self._remove_client(numeric)
         else:
             raise LookupError("No such PyLink client exists.")
 
