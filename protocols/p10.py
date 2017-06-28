@@ -586,7 +586,7 @@ class P10Protocol(IRCS2SProtocol):
                     if linenum:  # Implies "if linenum > 0"
                         # XXX: Ugh, this postprocessing sucks, but we have to make sure that mode prefixes are accounted
                         # for in the burst.
-                        wrapped_args = self.parseArgs(wrapped_msg.split(" "))
+                        wrapped_args = self.parse_args(wrapped_msg.split(" "))
                         wrapped_namelist = wrapped_args[-1].split(',')
                         log.debug('(%s) sjoin: wrapped args: %s (post-wrap fixing)', self.name,
                                   wrapped_args)

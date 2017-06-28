@@ -372,7 +372,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 tag = tag.replace(r'\:', ';')
                 tagdata[idx] = tag
 
-            results = self.parseCapabilities(tagdata, fallback=None)
+            results = self.parse_isupport(tagdata, fallback=None)
             log.debug('(%s) parsed message tags %s', self.name, results)
             return results
         return {}
@@ -387,14 +387,14 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             data = data[1:]
 
         try:
-            args = self.parsePrefixedArgs(data)
+            args = self.parse_prefixed_args(data)
             sender = args[0]
             command = args[1]
             args = args[2:]
 
         except IndexError:
             # Raw command without an explicit sender; assume it's being sent by our uplink.
-            args = self.parseArgs(data)
+            args = self.parse_args(data)
             idsource = sender = self.uplink
             command = args[0]
             args = args[1:]
@@ -528,7 +528,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             # Server: CAP * LS * :cap-notify server-time example.org/dummy-cap=dummyvalue example.org/second-dummy-cap
             # Server: CAP * LS :userhost-in-names sasl=EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN
             log.debug('(%s) Got new capabilities %s', self.name, args[-1])
-            self.ircv3_caps_available.update(self.parseCapabilities(args[-1], None))
+            self.ircv3_caps_available.update(self.parse_isupport(args[-1], None))
             if args[2] != '*':
                 self.requestNewCaps()
 
@@ -554,7 +554,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             # Note: CAP NEW allows capabilities with values (e.g. sasl=mech1,mech2), while CAP DEL
             # does not.
             log.debug('(%s) Got new capabilities %s', self.name, args[-1])
-            newcaps = self.parseCapabilities(args[-1], None)
+            newcaps = self.parse_isupport(args[-1], None)
             self.ircv3_caps_available.update(newcaps)
             self.requestNewCaps()
 
@@ -582,7 +582,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         Handles 005 / RPL_ISUPPORT.
         """
-        self.caps.update(self.parseCapabilities(args[1:-1]))
+        self.caps.update(self.parse_isupport(args[1:-1]))
         log.debug('(%s) handle_005: self.caps is %s', self.name, self.caps)
 
         if 'CHANMODES' in self.caps:
@@ -599,7 +599,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         log.debug('(%s) handle_005: casemapping set to %s', self.name, self.casemapping)
 
         if 'PREFIX' in self.caps:
-            self.prefixmodes = prefixmodes = self.parsePrefixes(self.caps['PREFIX'])
+            self.prefixmodes = prefixmodes = self.parse_isupport_prefixes(self.caps['PREFIX'])
             log.debug('(%s) handle_005: prefix modes set to %s', self.name, self.prefixmodes)
 
             # Autodetect common prefix mode names.

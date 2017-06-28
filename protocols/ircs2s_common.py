@@ -20,7 +20,7 @@ class IRCCommonProtocol(IRCNetwork):
         assert type(port) == int and 0 < port < 65535, "Invalid port %r for network %s" % (port, self.name)
 
     @staticmethod
-    def parseArgs(args):
+    def parse_args(args):
         """
         Parses a string or list of of RFC1459-style arguments, where ":" may
         be used for multi-word arguments that last until the end of a line.
@@ -41,10 +41,10 @@ class IRCCommonProtocol(IRCNetwork):
         return real_args
 
     @classmethod
-    def parsePrefixedArgs(cls, args):
-        """Similar to parseArgs(), but stripping leading colons from the first argument
+    def parse_prefixed_args(cls, args):
+        """Similar to parse_args(), but stripping leading colons from the first argument
         of a line (usually the sender field)."""
-        args = cls.parseArgs(args)
+        args = cls.parse_args(args)
         args[0] = args[0].split(':', 1)[1]
         return args
 
@@ -106,7 +106,7 @@ class IRCCommonProtocol(IRCNetwork):
                 'channeldata': old_channels}
 
     @staticmethod
-    def parseCapabilities(args, fallback=''):
+    def parse_isupport(args, fallback=''):
         """
         Parses a string of capabilities in the 005 / RPL_ISUPPORT format.
         """
@@ -127,7 +127,7 @@ class IRCCommonProtocol(IRCNetwork):
         return caps
 
     @staticmethod
-    def parsePrefixes(args):
+    def parse_isupport_prefixes(args):
         """
         Separates prefixes field like "(qaohv)~&@%+" into a dict mapping mode characters to mode
         prefixes.
@@ -159,7 +159,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         the SID of the uplink server.
         """
         data = data.split(" ")
-        args = self.parseArgs(data)
+        args = self.parse_args(data)
 
         sender = args[0]
         sender = sender.lstrip(':')

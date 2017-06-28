@@ -477,7 +477,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
 
             # First, turn the arguments into a dict
-            caps = self.parseCapabilities(args[-1])
+            caps = self.parse_isupport(args[-1])
             log.debug("(%s) capabilities list: %s", self.name, caps)
 
             # Check the protocol version
@@ -508,7 +508,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             # Separate the prefixes field (e.g. "(Yqaohv)!~&@%+") into a
             # dict mapping mode characters to mode prefixes.
-            self.prefixmodes = self.parsePrefixes(caps['PREFIX'])
+            self.prefixmodes = self.parse_isupport_prefixes(caps['PREFIX'])
             log.debug('(%s) self.prefixmodes set to %r', self.name,
                       self.prefixmodes)
 
