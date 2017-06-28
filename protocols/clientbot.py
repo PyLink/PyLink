@@ -79,11 +79,11 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         # Start a timer to call CAP END if registration freezes (e.g. if AUTHENTICATE for SASL is
         # never replied to).
-        def capEnd():
+        def _do_cap_end_wrapper():
             log.info('(%s) Skipping SASL due to timeout; are the IRCd and services configured '
                      'properly?', self.name)
-            self.capEnd()
-        self._cap_timer = threading.Timer(self.serverdata.get('sasl_timeout') or 15, capEnd)
+            self._do_cap_end()
+        self._cap_timer = threading.Timer(self.serverdata.get('sasl_timeout') or 15, _do_cap_end_wrapper)
         self._cap_timer.start()
 
         # This is a really gross hack to get the defined NICK/IDENT/HOST/GECOS.
@@ -356,7 +356,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         return idsource
 
-    def parseMessageTags(self, data):
+    def parse_message_tags(self, data):
         """
         Parses a message with IRC v3.2 message tags, as described at http://ircv3.net/specs/core/message-tags-3.2.html
         """
@@ -381,7 +381,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
         data = data.split(" ")
 
-        tags = self.parseMessageTags(data)
+        tags = self.parse_message_tags(data)
         if tags:
             # If we have tags, split off the first argument.
             data = data[1:]
@@ -426,7 +426,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 parsed_args['tags'] = tags  # Add message tags to this dict.
                 return [idsource, command, parsed_args]
 
-    def capEnd(self):
+    def _do_cap_end(self):
         """
         Abort SASL login by sending CAP END.
         """
@@ -434,7 +434,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         log.debug("(%s) Stopping CAP END timer.", self.name)
         self._cap_timer.cancel()
 
-    def saslAuth(self):
+    def _try_sasl_auth(self):
         """
         Starts an authentication attempt via SASL. This returns True if SASL
         is enabled and correctly configured, and False otherwise.
@@ -473,7 +473,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             return True
         return False
 
-    def sendAuthChunk(self, data):
+    def _send_auth_chunk(self, data):
         """Send Base64 encoded SASL authentication chunks."""
         enc_data = base64.b64encode(data).decode()
         self.send('AUTHENTICATE %s' % enc_data, queue=False)
@@ -493,7 +493,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 sasl_user = self.serverdata['sasl_username']
                 sasl_pass = self.serverdata['sasl_password']
                 authstring = '%s\0%s\0%s' % (sasl_user, sasl_user, sasl_pass)
-                self.sendAuthChunk(authstring.encode('utf-8'))
+                self._send_auth_chunk(authstring.encode('utf-8'))
             elif sasl_mech == 'EXTERNAL':
                 self.send('AUTHENTICATE +')
 
@@ -504,10 +504,10 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         logfunc = log.info if command == '903' else log.warning
         logfunc('(%s) %s', self.name, args[-1])
         if not self.has_eob:
-            self.capEnd()
+            self._do_cap_end()
     handle_903 = handle_902 = handle_905 = handle_906 = handle_907 = handle_904
 
-    def requestNewCaps(self):
+    def _request_ircv3_caps(self):
         # Filter the capabilities we want by the ones actually supported by the server.
         available_caps = {cap for cap in IRCV3_CAPABILITIES if cap in self.ircv3_caps_available}
         # And by the ones we don't already have.
@@ -530,7 +530,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.debug('(%s) Got new capabilities %s', self.name, args[-1])
             self.ircv3_caps_available.update(self.parse_isupport(args[-1], None))
             if args[2] != '*':
-                self.requestNewCaps()
+                self._request_ircv3_caps()
 
         elif subcmd == 'ACK':
             # Server: CAP * ACK :multi-prefix sasl
@@ -540,14 +540,14 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
             # Only send CAP END immediately if SASL is disabled. Otherwise, wait for the 90x responses
             # to do so.
-            if not self.saslAuth():
+            if not self._try_sasl_auth():
                 if not self.has_eob:
-                    self.capEnd()
+                    self._do_cap_end()
         elif subcmd == 'NAK':
             log.warning('(%s) Got NAK for IRCv3 capabilities %s, even though they were supposedly available',
                         self.name, args[-1])
             if not self.has_eob:
-                self.capEnd()
+                self._do_cap_end()
         elif subcmd == 'NEW':
             # :irc.example.com CAP modernclient NEW :batch
             # :irc.example.com CAP tester NEW :away-notify extended-join
@@ -556,12 +556,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.debug('(%s) Got new capabilities %s', self.name, args[-1])
             newcaps = self.parse_isupport(args[-1], None)
             self.ircv3_caps_available.update(newcaps)
-            self.requestNewCaps()
+            self._request_ircv3_caps()
 
             # Attempt SASL auth routines when sasl is added/removed, if doing so is enabled.
             if 'sasl' in newcaps and self.serverdata.get('sasl_reauth'):
                 log.debug('(%s) Attempting SASL reauth due to CAP NEW', self.name)
-                self.saslAuth()
+                self._try_sasl_auth()
 
         elif subcmd == 'DEL':
             # :irc.example.com CAP modernclient DEL :userhost-in-names multi-prefix away-notify
