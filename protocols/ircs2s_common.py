@@ -6,7 +6,7 @@ import time
 import re
 from collections import defaultdict
 
-from pylinkirc.classes import IRCNetwork
+from pylinkirc.classes import IRCNetwork, ProtocolError
 from pylinkirc.log import log
 from pylinkirc import utils
 

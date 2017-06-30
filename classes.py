@@ -27,6 +27,7 @@ from .log import *
 
 ### Exceptions
 
+# XXX: is this the right place to put this class?
 class ProtocolError(RuntimeError):
     pass
 
