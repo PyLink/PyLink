@@ -231,7 +231,7 @@ class ServiceBot():
         # which is handled by coreplugin.
         if irc is None:
             for irc in world.networkobjects.values():
-                irc.callHooks([None, 'PYLINK_NEW_SERVICE', {'name': self.name}])
+                irc.call_hooks([None, 'PYLINK_NEW_SERVICE', {'name': self.name}])
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
@@ -282,7 +282,7 @@ class ServiceBot():
                 else:
                     irc.proto.join(u, chan)
 
-                irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
+                irc.call_hooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
             else:
                 log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
 
@@ -324,10 +324,10 @@ class ServiceBot():
             if cmd and show_unknown_cmds and not cmd.startswith('\x01'):
                 # Ignore empty commands and invalid command errors from CTCPs.
                 self.reply(irc, 'Error: Unknown command %r.' % cmd)
-            log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.getHostmask(source))
+            log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.get_hostmask(source))
             return
 
-        log.info('(%s/%s) Calling command %r for %s', irc.name, self.name, cmd, irc.getHostmask(source))
+        log.info('(%s/%s) Calling command %r for %s', irc.name, self.name, cmd, irc.get_hostmask(source))
         for func in self.commands[cmd]:
             try:
                 func(irc, source, cmd_args)
