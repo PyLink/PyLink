@@ -129,25 +129,6 @@ def isHostmask(text):
     # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
     return hostmaskRe.match(text) and '#' not in text
 
-def parseModes(irc, target, args):
-    """Parses a modestring list into a list of (mode, argument) tuples.
-    ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
-
-    This method is deprecated. Use irc.parseModes() instead.
-    """
-    log.warning("(%s) utils.parseModes is deprecated. Use irc.parseModes() instead!", irc.name)
-    return irc.parseModes(target, args)
-
-def applyModes(irc, target, changedmodes):
-    """Takes a list of parsed IRC modes, and applies them on the given target.
-
-    The target can be either a channel or a user; this is handled automatically.
-
-    This method is deprecated. Use irc.applyModes() instead.
-    """
-    log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
-    return irc.applyModes(target, changedmodes)
-
 def expandpath(path):
     """
     Returns a path expanded with environment variables and home folders (~) expanded, in that order."""
