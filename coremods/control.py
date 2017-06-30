@@ -130,7 +130,11 @@ def _rehash():
         # Connect any new networks or disconnected networks if they aren't already.
         if (network not in world.networkobjects) or (not world.networkobjects[network].connection_thread.is_alive()):
             proto = utils.getProtocolModule(sdata['protocol'])
-            world.networkobjects[network] = classes.Irc(network, proto, new_conf)
+
+            # API note: 2.0.x style of starting network connections
+            world.networkobjects[network] = newirc = proto.Class(network)
+            newirc.connect()
+
     log.info('Finished reloading PyLink configuration.')
 
 if os.name == 'posix':
