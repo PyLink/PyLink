@@ -638,7 +638,7 @@ class TS6Protocol(TS6BaseProtocol):
         target = args[0]
         channel = self.toLower(args[1])
         try:
-            ts = args[3]
+            ts = args[2]
         except IndexError:
             ts = int(time.time())
         # We don't actually need to process this; it's just something plugins/hooks can use
