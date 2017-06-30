@@ -209,36 +209,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
             if parsed_args is not None:
                 return [sender, command, parsed_args]
 
-    def handle_privmsg(self, source, command, args):
-        """Handles incoming PRIVMSG/NOTICE."""
-        # TS6:
-        # <- :70MAAAAAA PRIVMSG #dev :afasfsa
-        # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
-        # P10:
-        # <- ABAAA P AyAAA :privmsg text
-        # <- ABAAA O AyAAA :notice text
-        target = self._get_UID(args[0])
-
-        # Coerse =#channel from Charybdis op moderated +z to @#channel.
-        if target.startswith('='):
-            target = '@' + target[1:]
-
-        # We use lowercase channels internally, but uppercase UIDs.
-        # Strip the target of leading prefix modes (for targets like @#channel)
-        # before checking whether it's actually a channel.
-
-        split_channel = target.split('#', 1)
-        if len(split_channel) >= 2 and utils.isChannel('#' + split_channel[1]):
-            # Note: don't mess with the case of the channel prefix, or ~#channel
-            # messages will break on RFC1459 casemapping networks (it becomes ^#channel
-            # instead).
-            target = '#'.join((split_channel[0], self.toLower(split_channel[1])))
-            log.debug('(%s) Normalizing channel target %s to %s', self.name, args[0], target)
-
-        return {'target': target, 'text': args[1]}
-
-    handle_notice = handle_privmsg
-
     def check_nick_collision(self, nick):
         """
         Nick collision checker.
@@ -250,6 +220,19 @@ class IRCS2SProtocol(IRCCommonProtocol):
             log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.name,
                      uid, nick)
             self.callHooks([self.sid, 'SAVE', {'target': uid}])
+
+    def handle_away(self, numeric, command, args):
+        """Handles incoming AWAY messages."""
+        # TS6:
+        # <- :6ELAAAAAB AWAY :Auto-away
+        # P10:
+        # <- ABAAA A :blah
+        # <- ABAAA A
+        try:
+            self.users[numeric].away = text = args[0]
+        except IndexError:  # User is unsetting away status
+            self.users[numeric].away = text = ''
+        return {'text': text}
 
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""
@@ -283,50 +266,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         return {'target': killed, 'text': killmsg, 'userdata': data}
 
-    def handle_squit(self, numeric, command, args):
-        """Handles incoming SQUITs."""
-        return self._squit(numeric, command, args)
-
-    def handle_away(self, numeric, command, args):
-        """Handles incoming AWAY messages."""
-        # TS6:
-        # <- :6ELAAAAAB AWAY :Auto-away
-        # P10:
-        # <- ABAAA A :blah
-        # <- ABAAA A
-        try:
-            self.users[numeric].away = text = args[0]
-        except IndexError:  # User is unsetting away status
-            self.users[numeric].away = text = ''
-        return {'text': text}
-
-    def handle_version(self, numeric, command, args):
-        """Handles requests for the PyLink server version."""
-        return {}  # See coremods/handlers.py for how this hook is used
-
-    def handle_whois(self, numeric, command, args):
-        """Handles incoming WHOIS commands.."""
-        # TS6:
-        # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
-        # P10:
-        # <- ABAAA W Ay :PyLink-devel
-
-        # First argument is the server that should reply to the WHOIS request
-        # or the server hosting the UID given. We can safely assume that any
-        # WHOIS commands received are for us, since we don't host any real servers
-        # to route it to.
-
-        return {'target': self._get_UID(args[-1])}
-
-    def handle_quit(self, numeric, command, args):
-        """Handles incoming QUIT commands."""
-        # TS6:
-        # <- :1SRAAGB4T QUIT :Quit: quit message goes here
-        # P10:
-        # <- ABAAB Q :Killed (GL_ (bangbang))
-        self._remove_client(numeric)
-        return {'text': args[0]}
-
     def handle_part(self, source, command, args):
         """Handles incoming PART commands."""
         channels = self.toLower(args[0]).split(',')
@@ -349,11 +288,72 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         return {'channels': channels, 'text': reason}
 
-    def handle_time(self, numeric, command, args):
-        """Handles incoming /TIME requests."""
-        return {'target': args[0]}
-
     def handle_pong(self, source, command, args):
         """Handles incoming PONG commands."""
         if source == self.uplink:
             self.lastping = time.time()
+
+    def handle_privmsg(self, source, command, args):
+        """Handles incoming PRIVMSG/NOTICE."""
+        # TS6:
+        # <- :70MAAAAAA PRIVMSG #dev :afasfsa
+        # <- :70MAAAAAA NOTICE 0ALAAAAAA :afasfsa
+        # P10:
+        # <- ABAAA P AyAAA :privmsg text
+        # <- ABAAA O AyAAA :notice text
+        target = self._get_UID(args[0])
+
+        # Coerse =#channel from Charybdis op moderated +z to @#channel.
+        if target.startswith('='):
+            target = '@' + target[1:]
+
+        # We use lowercase channels internally, but uppercase UIDs.
+        # Strip the target of leading prefix modes (for targets like @#channel)
+        # before checking whether it's actually a channel.
+
+        split_channel = target.split('#', 1)
+        if len(split_channel) >= 2 and utils.isChannel('#' + split_channel[1]):
+            # Note: don't mess with the case of the channel prefix, or ~#channel
+            # messages will break on RFC1459 casemapping networks (it becomes ^#channel
+            # instead).
+            target = '#'.join((split_channel[0], self.toLower(split_channel[1])))
+            log.debug('(%s) Normalizing channel target %s to %s', self.name, args[0], target)
+
+        return {'target': target, 'text': args[1]}
+
+    handle_notice = handle_privmsg
+
+    def handle_quit(self, numeric, command, args):
+        """Handles incoming QUIT commands."""
+        # TS6:
+        # <- :1SRAAGB4T QUIT :Quit: quit message goes here
+        # P10:
+        # <- ABAAB Q :Killed (GL_ (bangbang))
+        self._remove_client(numeric)
+        return {'text': args[0]}
+
+    def handle_squit(self, numeric, command, args):
+        """Handles incoming SQUITs."""
+        return self._squit(numeric, command, args)
+
+    def handle_time(self, numeric, command, args):
+        """Handles incoming /TIME requests."""
+        return {'target': args[0]}
+
+    def handle_whois(self, numeric, command, args):
+        """Handles incoming WHOIS commands.."""
+        # TS6:
+        # <- :42XAAAAAB WHOIS 5PYAAAAAA :pylink-devel
+        # P10:
+        # <- ABAAA W Ay :PyLink-devel
+
+        # First argument is the server that should reply to the WHOIS request
+        # or the server hosting the UID given. We can safely assume that any
+        # WHOIS commands received are for us, since we don't host any real servers
+        # to route it to.
+
+        return {'target': self._get_UID(args[-1])}
+
+    def handle_version(self, numeric, command, args):
+        """Handles requests for the PyLink server version."""
+        return {}  # See coremods/handlers.py for how this hook is used
