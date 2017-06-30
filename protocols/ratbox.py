@@ -18,6 +18,8 @@ class RatboxProtocol(TS6Protocol):
     def post_connect(self):
         """Initializes a connection to a server."""
 
+        super().post_connect()
+
         # Note: +r, +e, and +I support will be negotiated on link
         self.cmodes = {'op': 'o', 'secret': 's', 'private': 'p', 'noextmsg': 'n', 'moderated': 'm',
                        'inviteonly': 'i', 'topiclock': 't', 'limit': 'l', 'ban': 'b', 'voice': 'v',
@@ -68,14 +70,15 @@ class RatboxProtocol(TS6Protocol):
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         self.applyModes(uid, modes)
         self.servers[server].users.add(uid)
-        self._send(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
-                   ":{realname}".format(ts=ts, host=host,
-                    nick=nick, ident=ident, uid=uid,
-                   modes=raw_modes, ip=ip, realname=realname))
+
+        self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+                               ":{realname}".format(ts=ts, host=host,
+                               nick=nick, ident=ident, uid=uid,
+                               modes=raw_modes, ip=ip, realname=realname))
 
         if orig_realhost:
             # If real host is specified, send it using ENCAP REALHOST
-            self._send(uid, "ENCAP * REALHOST %s" % orig_realhost)
+            self._send_with_prefix(uid, "ENCAP * REALHOST %s" % orig_realhost)
 
         return u
 
