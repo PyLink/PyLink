@@ -105,7 +105,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
             forcetag_nicks = conf.conf.get('relay', {}).get('forcetag_nicks', [])
             log.debug('(%s) relay.normalize_nick: checking if globs %s match %s.', irc.name, forcetag_nicks, nick)
             for glob in forcetag_nicks:
-                if irc.matchHost(glob, nick):
+                if irc.match_host(glob, nick):
                     # User matched a nick to force tag nicks for. Tag them.
                     times_tagged = 1
                     break
@@ -117,7 +117,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     # Charybdis, IRCu, etc. don't allow / in nicks, and will SQUIT with a protocol
     # violation if it sees one. Or it might just ignore the client introduction and
     # cause bad desyncs.
-    protocol_allows_slashes = irc.hasCap('slash-in-nicks') or \
+    protocol_allows_slashes = irc.has_cap('slash-in-nicks') or \
         irc.serverdata.get('relay_force_slashes')
 
     if '/' not in separator or not protocol_allows_slashes:
@@ -153,7 +153,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
         if char not in allowed_chars:
             nick = nick.replace(char, fallback_separator)
 
-    while irc.nickToUid(nick) and irc.nickToUid(nick) != uid:
+    while irc.nick_to_uid(nick) and irc.nick_to_uid(nick) != uid:
         # The nick we want exists: Increase the separator length by 1 if the user was already
         # tagged, but couldn't be created due to a nick conflict. This can happen when someone
         # steals a relay user's nick.
@@ -176,11 +176,11 @@ def normalize_host(irc, host):
     log.debug('(%s) relay.normalize_host: IRCd=%s, host=%s', irc.name, irc.protoname, host)
 
     allowed_chars = string.ascii_letters + string.digits + '-.:'
-    if irc.hasCap('slash-in-hosts'):
+    if irc.has_cap('slash-in-hosts'):
         # UnrealIRCd and IRCd-Hybrid don't allow slashes in hostnames
         allowed_chars += '/'
 
-    if irc.hasCap('underscore-in-hosts'):
+    if irc.has_cap('underscore-in-hosts'):
         # Most IRCds allow _ in hostnames, but hybrid/charybdis/ratbox IRCds do not.
         allowed_chars += '_'
 
@@ -221,7 +221,7 @@ def spawn_relay_server(irc, remoteirc):
             suffix = suffix.strip('.')
             sid = irc.spawnServer('%s.%s' % (remoteirc.name, suffix),
                                         desc="PyLink Relay network - %s" %
-                                        (remoteirc.getFullNetworkName()), endburst_delay=3)
+                                        (remoteirc.get_full_network_name()), endburst_delay=3)
         except (RuntimeError, ValueError):  # Network not initialized yet, or a server name conflict.
             log.exception('(%s) Failed to spawn server for %r (possible jupe?):',
                           irc.name, remoteirc.name)
@@ -296,7 +296,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
         else:
             opertype = 'IRC Operator'
 
-        opertype += ' (on %s)' % irc.getFullNetworkName()
+        opertype += ' (on %s)' % irc.get_full_network_name()
 
         # Set hideoper on remote opers, to prevent inflating
         # /lusers and various /stats
@@ -351,7 +351,7 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0)
     # Wait until the network is working before trying to spawn anything.
     if irc.connected.wait(TCONDITION_TIMEOUT):
         # Don't spawn clones for registered service bots.
-        sbot = irc.getServiceBot(user)
+        sbot = irc.get_service_bot(user)
         if sbot:
             return sbot.uids.get(remoteirc.name)
 
@@ -538,8 +538,8 @@ def check_claim(irc, channel, sender, chanobj=None):
     return (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
         irc.name in db[relay]['claim'] or \
         any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
-        or irc.isInternalClient(sender) or \
-        irc.isInternalServer(sender)
+        or irc.is_internal_client(sender) or \
+        irc.is_internal_server(sender)
 
 def get_supported_umodes(irc, remoteirc, modes):
     """Given a list of user modes, filters out all of those not supported by the
@@ -648,7 +648,7 @@ def relay_joins(irc, channel, users, ts, burst=True):
 
                 # Fetch the known channel TS and all the prefix modes for each user. This ensures
                 # the different sides of the relay are merged properly.
-                if not irc.hasCap('has-ts'):
+                if not irc.has_cap('has-ts'):
                     # Special hack for clientbot: just use the remote's modes so mode changes
                     # take precendence. (TS is always outside the clientbot's control)
                     ts = remoteirc.channels[remotechan].ts
@@ -677,7 +677,7 @@ def relay_joins(irc, channel, users, ts, burst=True):
 
     for remoteirc, hookdata in joined_nets.items():
         # HACK: Announce this JOIN as a special hook on each network, for plugins like Automode.
-        remoteirc.callHooks([remoteirc.sid, 'PYLINK_RELAY_JOIN', hookdata])
+        remoteirc.call_hooks([remoteirc.sid, 'PYLINK_RELAY_JOIN', hookdata])
 
 def relay_part(irc, channel, user):
     """
@@ -783,7 +783,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
 
-                    if (not irc.hasCap('can-spawn-clients')) and irc.pseudoclient and arg == irc.pseudoclient.uid:
+                    if (not irc.has_cap('can-spawn-clients')) and irc.pseudoclient and arg == irc.pseudoclient.uid:
                         # Skip modesync on the main PyLink client.
                         log.debug("(%s) relay.get_supported_cmodes: filtering prefix change (%r, %r) on Clientbot relayer",
                                   irc.name, name, arg)
@@ -857,7 +857,7 @@ def handle_relay_whois(irc, source, command, args):
         setting = conf.conf.get('relay', {}).get(infoline, '').lower()
         if setting == 'all':
             return True
-        elif setting == 'opers' and irc.isOper(source, allowAuthed=False):
+        elif setting == 'opers' and irc.is_oper(source, allowAuthed=False):
             return True
         return False
 
@@ -867,7 +867,7 @@ def handle_relay_whois(irc, source, command, args):
         homenet, uid = origuser
         realirc = world.networkobjects[homenet]
         realuser = realirc.users[uid]
-        netname = realirc.getFullNetworkName()
+        netname = realirc.get_full_network_name()
 
         wreply(320, ":is a remote user connected via PyLink Relay. Home network: %s; "
                     "Home nick: %s" % (netname, realuser.nick))
@@ -876,9 +876,9 @@ def handle_relay_whois(irc, source, command, args):
             # Send account information if told to and the target is logged in.
             wreply(330, "%s :is logged in (on %s) as" % (realuser.services_account, netname))
 
-        if checkSendKey('whois_show_server') and realirc.hasCap('can-track-servers'):
+        if checkSendKey('whois_show_server') and realirc.has_cap('can-track-servers'):
             wreply(320, ":is actually connected via the following server:")
-            realserver = realirc.getServer(uid)
+            realserver = realirc.get_server(uid)
             realserver = realirc.servers[realserver]
             wreply(312, "%s :%s" % (realserver.name, realserver.desc))
 
@@ -888,7 +888,7 @@ def handle_operup(irc, numeric, command, args):
     """
     Handles setting oper types on relay clients during oper up.
     """
-    newtype = '%s (on %s)' % (args['text'], irc.getFullNetworkName())
+    newtype = '%s (on %s)' % (args['text'], irc.get_full_network_name())
     for netname, user in relayusers[(irc.name, numeric)].items():
         log.debug('(%s) relay.handle_opertype: setting OPERTYPE of %s/%s to %s',
                   irc.name, user, netname, newtype)
@@ -935,7 +935,7 @@ def handle_join(irc, numeric, command, args):
                     modes.append(('-%s' % modechar, user))
 
         if modes:
-            log.debug('(%s) relay.handle_join: reverting modes on BURST: %s', irc.name, irc.joinModes(modes))
+            log.debug('(%s) relay.handle_join: reverting modes on BURST: %s', irc.name, irc.join_modes(modes))
             irc.mode(irc.sid, channel, modes)
 
     relay_joins(irc, channel, users, ts, burst=False)
@@ -1017,11 +1017,11 @@ def handle_part(irc, numeric, command, args):
     if numeric == irc.pseudoclient.uid:
         # For clientbot: treat forced parts to the bot as clearchan, and attempt to rejoin only
         # if it affected a relay.
-        if not irc.hasCap('can-spawn-clients'):
+        if not irc.has_cap('can-spawn-clients'):
             for channel in [c for c in channels if get_relay((irc.name, c))]:
                 for user in irc.channels[channel].users:
-                    if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
-                        irc.callHooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
+                    if (not irc.is_internal_client(user)) and (not isRelayClient(irc, user)):
+                        irc.call_hooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
                                        'text': 'Clientbot was force parted (Reason: %s)' % text or 'None',
                                        'parse_as': 'KICK'}])
                 irc.join(irc.pseudoclient.uid, channel)
@@ -1045,7 +1045,7 @@ def handle_messages(irc, numeric, command, args):
     notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
     target = args['target']
     text = args['text']
-    if irc.isInternalClient(numeric) and irc.isInternalClient(target):
+    if irc.is_internal_client(numeric) and irc.is_internal_client(target):
         # Drop attempted PMs between internal clients (this shouldn't happen,
         # but whatever).
         return
@@ -1089,8 +1089,8 @@ def handle_messages(irc, numeric, command, args):
 
                 # Skip "from:" formatting for servers; it's messy with longer hostnames.
                 # Also skip this formatting for servicebot relaying.
-                if numeric not in irc.servers and not irc.getServiceBot(numeric):
-                    displayedname = irc.getFriendlyName(numeric)
+                if numeric not in irc.servers and not irc.get_service_bot(numeric):
+                    displayedname = irc.get_friendly_name(numeric)
                     real_text = '<%s/%s> %s' % (displayedname, irc.name, text)
                 else:
                     real_text = text
@@ -1149,7 +1149,7 @@ def handle_messages(irc, numeric, command, args):
             return
         remoteirc = world.networkobjects[homenet]
 
-        if (not remoteirc.hasCap('can-spawn-clients')) and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
+        if (not remoteirc.has_cap('can-spawn-clients')) and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
             irc.msg(numeric, 'Private messages to users connected via Clientbot have '
                     'been administratively disabled.', notice=True)
             return
@@ -1180,17 +1180,17 @@ def handle_kick(irc, source, command, args):
     relay = get_relay((irc.name, channel))
 
     # Special case for clientbot: treat kicks to the PyLink service bot as channel clear.
-    if (not irc.hasCap('can-spawn-clients')) and irc.pseudoclient and target == irc.pseudoclient.uid:
+    if (not irc.has_cap('can-spawn-clients')) and irc.pseudoclient and target == irc.pseudoclient.uid:
         for user in irc.channels[channel].users:
-            if (not irc.isInternalClient(user)) and (not isRelayClient(irc, user)):
-                reason = "Clientbot kicked by %s (Reason: %s)" % (irc.getFriendlyName(source), text)
-                irc.callHooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
+            if (not irc.is_internal_client(user)) and (not isRelayClient(irc, user)):
+                reason = "Clientbot kicked by %s (Reason: %s)" % (irc.get_friendly_name(source), text)
+                irc.call_hooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
                                'text': reason, 'parse_as': 'KICK'}])
 
         return
 
     # Don't relay kicks to protected service bots.
-    if relay is None or irc.getServiceBot(target):
+    if relay is None or irc.get_service_bot(target):
         return
 
     origuser = get_orig_user(irc, target)
@@ -1247,7 +1247,7 @@ def handle_kick(irc, source, command, args):
             # common channels with the target relay network.
             rsid = get_remote_sid(remoteirc, irc)
             log.debug('(%s) relay.handle_kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, rsid, kicker, irc.name)
-            if not irc.hasCap('can-spawn-clients'):
+            if not irc.has_cap('can-spawn-clients'):
                 # Special case for clientbot: no kick prefixes are needed.
                 text = args['text']
             else:
@@ -1328,7 +1328,7 @@ def handle_mode(irc, numeric, command, args):
                         rsid = rsid or remoteirc.sid
                         remoteirc.mode(rsid, remotechan, supported_modes)
             else:  # Mode change blocked by CLAIM.
-                reversed_modes = irc.reverseModes(target, modes, oldobj=oldchan)
+                reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
                 log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
                           irc.name, modes, reversed_modes)
                 if reversed_modes:
@@ -1468,7 +1468,7 @@ def handle_services_login(irc, numeric, command, args):
     """
     for netname, user in relayusers[(irc.name, numeric)].items():
         remoteirc = world.networkobjects[netname]
-        remoteirc.callHooks([user, 'PYLINK_RELAY_SERVICES_LOGIN', args])
+        remoteirc.call_hooks([user, 'PYLINK_RELAY_SERVICES_LOGIN', args])
 utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
 
 def handle_disconnect(irc, numeric, command, args):
@@ -1575,14 +1575,14 @@ def create(irc, source, args):
 
     Opens up the given channel over PyLink Relay."""
     try:
-        channel = irc.toLower(args[0])
+        channel = irc.to_lower(args[0])
     except IndexError:
         irc.error("Not enough arguments. Needs 1: channel.")
         return
     if not utils.isChannel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
-    if not irc.hasCap('can-host-relay'):
+    if not irc.has_cap('can-host-relay'):
         irc.error('Clientbot networks cannot be used to host a relay.')
         return
     if source not in irc.channels[channel].users:
@@ -1598,7 +1598,7 @@ def create(irc, source, args):
         irc.error('Channel %r is already part of a relay.' % channel)
         return
 
-    creator = irc.getHostmask(source)
+    creator = irc.get_hostmask(source)
     # Create the relay database entry with the (network name, channel name)
     # pair - this is just a dict with various keys.
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(),
@@ -1622,11 +1622,11 @@ def destroy(irc, source, args):
 
     Removes the given channel from the PyLink Relay, delinking all networks linked to it. If the home network is given and you are logged in as admin, this can also remove relay channels from other networks."""
     try:  # Two args were given: first one is network name, second is channel.
-        channel = irc.toLower(args[1])
+        channel = irc.to_lower(args[1])
         network = args[0]
     except IndexError:
         try:  # One argument was given; assume it's just the channel.
-            channel = irc.toLower(args[0])
+            channel = irc.to_lower(args[0])
             network = irc.name
         except IndexError:
             irc.error("Not enough arguments. Needs 1-2: channel, network (optional).")
@@ -1649,7 +1649,7 @@ def destroy(irc, source, args):
         del db[entry]
 
         log.info('(%s) relay: Channel %s destroyed by %s.', irc.name,
-                 channel, irc.getHostmask(source))
+                 channel, irc.get_hostmask(source))
         irc.reply('Done.')
     else:
         irc.error("No such channel %r exists. If you're trying to delink a channel from "
@@ -1703,8 +1703,8 @@ def link(irc, source, args):
     args = link_parser.parse_args(args)
 
     # Normalize channel case
-    channel = irc.toLower(args.channel)
-    localchan = irc.toLower(args.localchannel or args.channel)
+    channel = irc.to_lower(args.channel)
+    localchan = irc.to_lower(args.localchannel or args.channel)
     remotenet = args.remotenet
 
     for c in (channel, localchan):
@@ -1774,7 +1774,7 @@ def link(irc, source, args):
 
             our_ts = irc.channels[localchan].ts
             their_ts = world.networkobjects[remotenet].channels[channel].ts
-            if (our_ts < their_ts) and irc.hasCap('has-ts'):
+            if (our_ts < their_ts) and irc.has_cap('has-ts'):
                 log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
                           irc.name, localchan, remotenet, args.channel, our_ts, their_ts)
                 irc.error("The channel creation date (TS) on %s (%s) is lower than the target "
@@ -1785,7 +1785,7 @@ def link(irc, source, args):
 
         entry['links'].add((irc.name, localchan))
         log.info('(%s) relay: Channel %s linked to %s%s by %s.', irc.name,
-                 localchan, remotenet, args.channel, irc.getHostmask(source))
+                 localchan, remotenet, args.channel, irc.get_hostmask(source))
         initialize_channel(irc, localchan)
         irc.reply('Done.')
 link = utils.add_cmd(link, featured=True)
@@ -1796,7 +1796,7 @@ def delink(irc, source, args):
     Delinks the given channel from PyLink Relay. \x02network\x02 must and can only be specified if you are on the host network for the channel given, and allows you to pick which network to delink.
     To remove a relay channel entirely, use the 'destroy' command instead."""
     try:
-        channel = irc.toLower(args[0])
+        channel = irc.to_lower(args[0])
     except IndexError:
         irc.error("Not enough arguments. Needs 1-2: channel, remote netname (optional).")
         return
@@ -1829,7 +1829,7 @@ def delink(irc, source, args):
             db[entry]['links'].remove((irc.name, channel))
         irc.reply('Done.')
         log.info('(%s) relay: Channel %s delinked from %s%s by %s.', irc.name,
-                 channel, entry[0], entry[1], irc.getHostmask(source))
+                 channel, entry[0], entry[1], irc.get_hostmask(source))
     else:
         irc.error('No such relay %r.' % channel)
 delink = utils.add_cmd(delink, featured=True)
@@ -1880,7 +1880,7 @@ def linked(irc, source, args):
                 # Only show secret channels to opers or those in the channel, and tag them as
                 # [secret].
                 localchan = get_remote_channel(remoteirc, irc, channel)
-                if irc.isOper(source) or (localchan and source in irc.channels[localchan].users):
+                if irc.is_oper(source) or (localchan and source in irc.channels[localchan].users):
                     s += '\x02[secret]\x02 '
                 else:
                     continue
@@ -1896,7 +1896,7 @@ def linked(irc, source, args):
 
         irc.reply(s, private=True)
 
-        if irc.isOper(source):
+        if irc.is_oper(source):
             s = ''
 
             # If the caller is an oper, we can show the hostmasks of people
@@ -1927,7 +1927,7 @@ def linkacl(irc, source, args):
 
     try:
         cmd = args[0].lower()
-        channel = irc.toLower(args[1])
+        channel = irc.to_lower(args[1])
     except IndexError:
         irc.error(missingargs)
         return
@@ -1974,7 +1974,7 @@ def showuser(irc, source, args):
         # No errors here; showuser from the commands plugin already does this
         # for us.
         return
-    u = irc.nickToUid(target)
+    u = irc.nick_to_uid(target)
     if u:
         irc.reply("Showing relay information on user \x02%s\x02:" % irc.users[u].nick, private=True)
         try:
@@ -1997,7 +1997,7 @@ def showuser(irc, source, args):
             relay = get_relay((irc.name, ch))
             if relay:
                 relaychannels.append(''.join(relay))
-        if relaychannels and (irc.isOper(source) or u == source):
+        if relaychannels and (irc.is_oper(source) or u == source):
             irc.reply("\x02Relay channels\x02: %s" % ' '.join(relaychannels), private=True)
 
 @utils.add_cmd
@@ -2006,7 +2006,7 @@ def showchan(irc, source, args):
 
     Shows relay data about the given channel. This supplements the 'showchan' command in the 'commands' plugin, which provides more general information."""
     try:
-        channel = irc.toLower(args[0])
+        channel = irc.to_lower(args[0])
     except IndexError:
         return
     if channel not in irc.channels:
@@ -2017,7 +2017,7 @@ def showchan(irc, source, args):
     c = irc.channels[channel]
 
     # Only show verbose info if caller is oper or is in the target channel.
-    verbose = source in c.users or irc.isOper(source)
+    verbose = source in c.users or irc.is_oper(source)
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
@@ -2055,7 +2055,7 @@ def claim(irc, source, args):
     as well).
     """
     try:
-        channel = irc.toLower(args[0])
+        channel = irc.to_lower(args[0])
     except IndexError:
         irc.error("Not enough arguments. Needs 1-2: channel, list of networks (optional).")
         return

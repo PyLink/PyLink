@@ -41,10 +41,10 @@ def account(irc, host, uid):
                           homenet, realuid)
             return False
 
-    slogin = irc.toLower(userobj.services_account)
+    slogin = irc.to_lower(userobj.services_account)
 
     # Split the given exttarget host into parts, so we know how many to look for.
-    groups = list(map(irc.toLower, host.split(':')))
+    groups = list(map(irc.to_lower, host.split(':')))
     log.debug('(%s) exttargets.account: groups to match: %s', irc.name, groups)
 
     if len(groups) == 1:
@@ -74,10 +74,10 @@ def ircop(irc, host, uid):
 
     if len(groups) == 1:
         # 1st scenario.
-        return irc.isOper(uid, allowAuthed=False)
+        return irc.is_oper(uid, allowAuthed=False)
     else:
-        # 2nd scenario. Use matchHost (ircmatch) to match the opertype glob to the opertype.
-        return irc.matchHost(groups[1], irc.users[uid].opertype)
+        # 2nd scenario. Use match_host (ircmatch) to match the opertype glob to the opertype.
+        return irc.match_host(groups[1], irc.users[uid].opertype)
 
 @bind
 def server(irc, host, uid):
@@ -93,10 +93,10 @@ def server(irc, host, uid):
     log.debug('(%s) exttargets.server: groups to match: %s', irc.name, groups)
 
     if len(groups) >= 2:
-        sid = irc.getServer(uid)
+        sid = irc.get_server(uid)
         query = groups[1]
         # Return True if the SID matches the query or the server's name glob matches it.
-        return sid == query or irc.matchHost(query, irc.getFriendlyName(sid))
+        return sid == query or irc.match_host(query, irc.get_friendly_name(sid))
     # $server alone is invalid. Don't match anything.
     return False
 
@@ -134,8 +134,8 @@ def pylinkacc(irc, host, uid):
     $pylinkacc -> Returns True if the target is logged in to PyLink.
     $pylinkacc:accountname -> Returns True if the target's PyLink login matches the one given.
     """
-    login = irc.toLower(irc.users[uid].account)
-    groups = list(map(irc.toLower, host.split(':')))
+    login = irc.to_lower(irc.users[uid].account)
+    groups = list(map(irc.to_lower, host.split(':')))
     log.debug('(%s) exttargets.pylinkacc: groups to match: %s', irc.name, groups)
 
     if len(groups) == 1:
@@ -187,6 +187,6 @@ def exttarget_and(irc, host, uid):
     targets = targets[1:-1]
     targets = list(filter(None, targets.split('+')))
     log.debug('exttargets_and: using raw subtargets list %r (original query=%r)', targets, host)
-    # Wrap every subtarget into irc.matchHost and return True if all subtargets return True.
-    return all(map(lambda sub_exttarget: irc.matchHost(sub_exttarget, uid), targets))
+    # Wrap every subtarget into irc.match_host and return True if all subtargets return True.
+    return all(map(lambda sub_exttarget: irc.match_host(sub_exttarget, uid), targets))
 world.exttarget_handlers['and'] = exttarget_and

@@ -12,7 +12,7 @@ def handle_fantasy(irc, source, command, args):
     channel = args['target']
     orig_text = args['text']
 
-    if utils.isChannel(channel) and not irc.isInternalClient(source):
+    if utils.isChannel(channel) and not irc.is_internal_client(source):
         # The following conditions must be met for an incoming message for
         # fantasy to trigger:
         #   1) The message target is a channel.
@@ -42,7 +42,7 @@ def handle_fantasy(irc, source, command, args):
 
                 # If responding to nick is enabled, add variations of the current nick
                 # to the prefix list: "<nick>," and "<nick>:"
-                nick = irc.toLower(irc.users[servuid].nick)
+                nick = irc.to_lower(irc.users[servuid].nick)
 
                 nick_prefixes = [nick+',', nick+':']
                 if respondtonick:
@@ -52,7 +52,7 @@ def handle_fantasy(irc, source, command, args):
                     # No prefixes were set, so skip.
                     continue
 
-                lowered_text = irc.toLower(orig_text)
+                lowered_text = irc.to_lower(orig_text)
                 for prefix in filter(None, prefixes):  # Cycle through the prefixes list we finished with.
                      if lowered_text.startswith(prefix):
 

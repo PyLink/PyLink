@@ -45,7 +45,7 @@ def cb_relay_core(irc, source, command, args):
 
     if irc.pseudoclient and relay:
         try:
-            sourcename = irc.getFriendlyName(source)
+            sourcename = irc.get_friendly_name(source)
         except KeyError:  # User has left due to /quit
             sourcename = args['userdata'].nick
 
@@ -87,7 +87,7 @@ def cb_relay_core(irc, source, command, args):
         text_template = string.Template(text_template)
 
         if text_template:
-            if irc.getServiceBot(source):
+            if irc.get_service_bot(source):
                 # HACK: service bots are global and lack the relay state we look for.
                 # just pretend the message comes from the current network.
                 log.debug('(%s) relay_cb_core: Overriding network origin to local (source=%s)', irc.name, source)
@@ -131,7 +131,7 @@ def cb_relay_core(irc, source, command, args):
 
             if source in irc.users:
                 try:
-                    identhost = irc.getHostmask(source).split('!')[-1]
+                    identhost = irc.get_hostmask(source).split('!')[-1]
                 except KeyError:  # User got removed due to quit
                     identhost = '%s@%s' % (args['olduser'].ident, args['olduser'].host)
                 # This is specifically spaced so that ident@host is only shown for users that have
@@ -142,7 +142,7 @@ def cb_relay_core(irc, source, command, args):
 
             # $target_nick: Convert the target for kicks, etc. from a UID to a nick
             if args.get("target") in irc.users:
-                args["target_nick"] = irc.getFriendlyName(args['target'])
+                args["target_nick"] = irc.get_friendly_name(args['target'])
 
             args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
                          'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
@@ -204,7 +204,7 @@ def rpm(irc, source, args):
         return
 
     relay = world.plugins.get('relay')
-    if irc.hasCap('can-spawn-clients'):
+    if irc.has_cap('can-spawn-clients'):
         irc.error('This command is only supported on Clientbot networks. Try /msg %s <text>' % target)
         return
     elif relay is None:
@@ -218,7 +218,7 @@ def rpm(irc, source, args):
                   'administratively disabled.')
         return
 
-    uid = irc.nickToUid(target)
+    uid = irc.nick_to_uid(target)
     if not uid:
         irc.error('Unknown user %s.' % target)
         return
@@ -226,7 +226,7 @@ def rpm(irc, source, args):
         irc.error('%s is not a relay user.' % target)
         return
     else:
-        assert not irc.isInternalClient(source), "rpm is not allowed from PyLink bots"
+        assert not irc.is_internal_client(source), "rpm is not allowed from PyLink bots"
         # Send the message through relay by faking a hook for its handler.
         relay.handle_messages(irc, source, 'RELAY_CLIENTBOT_PRIVMSG', {'target': uid, 'text': text})
         irc.reply('Message sent.')

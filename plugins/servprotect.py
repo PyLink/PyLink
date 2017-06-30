@@ -18,7 +18,7 @@ def handle_kill(irc, numeric, command, args):
     automatically disconnects from the network.
     """
 
-    if (args['userdata'] and irc.isInternalServer(args['userdata'].server)) or irc.isInternalClient(args['target']):
+    if (args['userdata'] and irc.is_internal_server(args['userdata'].server)) or irc.is_internal_client(args['target']):
         if killcache.setdefault(irc.name, 1) >= length:
             log.error('(%s) servprotect: Too many kills received, aborting!', irc.name)
             irc.disconnect()
@@ -33,7 +33,7 @@ def handle_save(irc, numeric, command, args):
     Tracks SAVEs (nick collision) against PyLink clients. If too many are received,
     automatically disconnects from the network.
     """
-    if irc.isInternalClient(args['target']):
+    if irc.is_internal_client(args['target']):
         if savecache.setdefault(irc.name, 0) >= length:
             log.error('(%s) servprotect: Too many nick collisions, aborting!', irc.name)
             irc.disconnect()

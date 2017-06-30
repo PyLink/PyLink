@@ -14,7 +14,7 @@ def spawn_service(irc, source, command, args):
     # Service name
     name = args['name']
 
-    if name != 'pylink' and not irc.hasCap('can-spawn-clients'):
+    if name != 'pylink' and not irc.has_cap('can-spawn-clients'):
         log.debug("(%s) Not spawning service %s because the server doesn't support spawning clients",
                   irc.name, name)
         return
@@ -49,8 +49,8 @@ def spawn_service(irc, source, command, args):
 
     # Track the service's UIDs on each network.
     log.debug('(%s) spawn_service: Using nick %s for service %s', irc.name, nick, name)
-    u = irc.nickToUid(nick)
-    if u and irc.isInternalClient(u):  # If an internal client exists, reuse it.
+    u = irc.nick_to_uid(nick)
+    if u and irc.is_internal_client(u):  # If an internal client exists, reuse it.
         log.debug('(%s) spawn_service: Using existing client %s/%s', irc.name, u, nick)
         userobj = irc.users[u]
     else:
@@ -101,7 +101,7 @@ def handle_kill(irc, source, command, args):
     """Handle KILLs to PyLink service bots, respawning them as needed."""
     target = args['target']
     userdata = args.get('userdata')
-    sbot = irc.getServiceBot(target)
+    sbot = irc.get_service_bot(target)
     servicename = None
 
     if userdata and hasattr(userdata, 'service'):  # Look for the target's service name attribute
@@ -118,7 +118,7 @@ def handle_kick(irc, source, command, args):
     """Handle KICKs to the PyLink service bots, rejoining channels as needed."""
     kicked = args['target']
     channel = args['channel']
-    sbot = irc.getServiceBot(kicked)
+    sbot = irc.get_service_bot(kicked)
     if sbot:
         sbot.join(irc, channel)
 utils.add_hook(handle_kick, 'KICK')
@@ -128,7 +128,7 @@ def handle_commands(irc, source, command, args):
     target = args['target']
     text = args['text']
 
-    sbot = irc.getServiceBot(target)
+    sbot = irc.get_service_bot(target)
     if sbot:
         sbot.call_cmd(irc, source, text)
 

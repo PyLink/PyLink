@@ -18,12 +18,12 @@ def _login(irc, source, username):
     irc.users[source].account = username
     irc.reply('Successfully logged in as %s.' % username)
     log.info("(%s) Successful login to %r by %s",
-             irc.name, username, irc.getHostmask(source))
+             irc.name, username, irc.get_hostmask(source))
 
 def _loginfail(irc, source, username):
     """Internal function to process login failures."""
     irc.error('Incorrect credentials.')
-    log.warning("(%s) Failed login to %r from %s", irc.name, username, irc.getHostmask(source))
+    log.warning("(%s) Failed login to %r from %s", irc.name, username, irc.get_hostmask(source))
 
 @utils.add_cmd
 def identify(irc, source, args):
@@ -86,7 +86,7 @@ def load(irc, source, args):
     if name in world.plugins:
         irc.reply("Error: %r is already loaded." % name)
         return
-    log.info('(%s) Loading plugin %r for %s', irc.name, name, irc.getHostmask(source))
+    log.info('(%s) Loading plugin %r for %s', irc.name, name, irc.get_hostmask(source))
     try:
         world.plugins[name] = pl = utils.loadPlugin(name)
     except ImportError as e:
@@ -119,7 +119,7 @@ def unload(irc, source, args):
     modulename = utils.PLUGIN_PREFIX + name
 
     if name in world.plugins:
-        log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.getHostmask(source))
+        log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.get_hostmask(source))
         pl = world.plugins[name]
         log.debug('sys.getrefcount of plugin %s is %s', pl, sys.getrefcount(pl))
 

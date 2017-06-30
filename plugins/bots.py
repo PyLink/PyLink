@@ -33,21 +33,21 @@ def quit(irc, source, args):
     except IndexError:
         irc.error("Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
-    if irc.pseudoclient.uid == irc.nickToUid(nick):
+    if irc.pseudoclient.uid == irc.nick_to_uid(nick):
         irc.error("Cannot quit the main PyLink client!")
         return
 
-    u = irc.nickToUid(nick)
+    u = irc.nick_to_uid(nick)
 
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
 
-    if not irc.isManipulatableClient(u):
+    if not irc.is_manipulatable_client(u):
         irc.error("Cannot force quit a protected PyLink services client.")
         return
 
     irc.quit(u, quitmsg)
     irc.reply("Done.")
-    irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
+    irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
 def joinclient(irc, source, args):
     """[<target>] <channel1>[,<channel2>,<channel3>,...]
@@ -63,9 +63,9 @@ def joinclient(irc, source, args):
     try:
         # Check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the channels being joined.
-        u = irc.nickToUid(args[0])
+        u = irc.nick_to_uid(args[0])
 
-        if not irc.isInternalClient(u):  # First argument isn't one of our clients
+        if not irc.is_internal_client(u):  # First argument isn't one of our clients
             raise IndexError
 
         clist = args[1]
@@ -82,7 +82,7 @@ def joinclient(irc, source, args):
         irc.error("No valid channels given.")
         return
 
-    if not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
+    if not (irc.is_manipulatable_client(u) or irc.get_service_bot(u)):
         irc.error("Cannot force join a protected PyLink services client.")
         return
 
@@ -104,7 +104,7 @@ def joinclient(irc, source, args):
             irc.join(u, real_channel)
 
         # Call a join hook manually so other plugins like relay can understand it.
-        irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
+        irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
                                                      'modes': irc.channels[real_channel].modes,
                                                      'parse_as': 'JOIN'}])
     irc.reply("Done.")
@@ -128,7 +128,7 @@ def nick(irc, source, args):
         except IndexError:
             irc.error("Not enough arguments. Needs 1-2: nick (optional), newnick.")
             return
-    u = irc.nickToUid(nick)
+    u = irc.nick_to_uid(nick)
 
     if newnick in ('0', u):  # Allow /nick 0 to work
         newnick = u
@@ -137,14 +137,14 @@ def nick(irc, source, args):
         irc.error('Invalid nickname %r.' % newnick)
         return
 
-    elif not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
+    elif not (irc.is_manipulatable_client(u) or irc.get_service_bot(u)):
         irc.error("Cannot force nick changes for a protected PyLink services client.")
         return
 
     irc.nick(u, newnick)
     irc.reply("Done.")
     # Ditto above: manually send a NICK change hook payload to other plugins.
-    irc.callHooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
+    irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
 @utils.add_cmd
 def part(irc, source, args):
@@ -161,8 +161,8 @@ def part(irc, source, args):
 
         # First, check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the channels being parted.
-        u = irc.nickToUid(nick)
-        if not irc.isInternalClient(u):  # First argument isn't one of our clients
+        u = irc.nick_to_uid(nick)
+        if not irc.is_internal_client(u):  # First argument isn't one of our clients
             raise IndexError
 
     except IndexError:  # No nick was given; shift arguments one to the left.
@@ -180,7 +180,7 @@ def part(irc, source, args):
         irc.error("No valid channels given.")
         return
 
-    if not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
+    if not (irc.is_manipulatable_client(u) or irc.get_service_bot(u)):
         irc.error("Cannot force part a protected PyLink services client.")
         return
 
@@ -191,7 +191,7 @@ def part(irc, source, args):
         irc.part(u, channel, reason)
 
     irc.reply("Done.")
-    irc.callHooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
+    irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
 @utils.add_cmd
 def msg(irc, source, args):
@@ -208,8 +208,8 @@ def msg(irc, source, args):
 
         # First, check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the message TARGET.
-        sourceuid = irc.nickToUid(msgsource)
-        if not irc.isInternalClient(sourceuid):  # First argument isn't one of our clients
+        sourceuid = irc.nick_to_uid(msgsource)
+        if not irc.is_internal_client(sourceuid):  # First argument isn't one of our clients
             raise IndexError
 
         if not text:
@@ -229,7 +229,7 @@ def msg(irc, source, args):
 
     if not utils.isChannel(target):
         # Convert nick of the message target to a UID, if the target isn't a channel
-        real_target = irc.nickToUid(target)
+        real_target = irc.nick_to_uid(target)
         if real_target is None:  # Unknown target user, if target isn't a valid channel name
             irc.error('Unknown user %r.' % target)
             return
@@ -238,5 +238,5 @@ def msg(irc, source, args):
 
     irc.message(sourceuid, real_target, text)
     irc.reply("Done.")
-    irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
+    irc.call_hooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
 utils.add_cmd(msg, 'say')
