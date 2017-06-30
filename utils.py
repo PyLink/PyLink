@@ -624,9 +624,12 @@ class CamelCaseToSnakeCase():
                 char = '_' + char.lower()
             normalized_attr += char
 
+        classname = self.__class__.__name__
         if normalized_attr == attr:
             # __getattr__ only fires if normal attribute fetching fails, so we can assume that
             # the attribute was tried already and failed.
-            raise AttributeError('%s object has no attribute with normalized name %r' % (self.__class__.__name__, attr))
+            raise AttributeError('%s object has no attribute with normalized name %r' % (classname, attr))
 
-        return getattr(self, normalized_attr)
+        target = getattr(self, normalized_attr)
+        log.warning('%s.%s is deprecated, considering migrating to %s.%s!', classname, attr, classname, normalized_attr)
+        return target
