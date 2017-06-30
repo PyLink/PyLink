@@ -732,7 +732,7 @@ class UnrealProtocol(TS6BaseProtocol):
             # User mode change: pass those on to handle_umode2()
             self.handle_umode2(numeric, 'MODE', args[1:])
 
-    def checkCloakChange(self, uid, parsedmodes):
+    def _check_cloak_change(self, uid, parsedmodes):
         """
         Checks whether +x/-x was set in the mode query, and changes the
         hostname of the user given to or from their cloaked host if True.
@@ -776,7 +776,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.applyModes(target, parsedmodes)
 
         # If +x/-x is being set, update cloaked host info.
-        self.checkCloakChange(target, parsedmodes)
+        self._check_cloak_change(target, parsedmodes)
 
         return {'target': target, 'modes': parsedmodes}
 
@@ -865,7 +865,7 @@ class UnrealProtocol(TS6BaseProtocol):
             # If +o being set, call the CLIENT_OPERED internal hook.
             self.callHooks([numeric, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
-        self.checkCloakChange(numeric, parsedmodes)
+        self._check_cloak_change(numeric, parsedmodes)
 
         return {'target': numeric, 'modes': parsedmodes}
 
