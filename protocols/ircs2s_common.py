@@ -234,6 +234,27 @@ class IRCS2SProtocol(IRCCommonProtocol):
             self.users[numeric].away = text = ''
         return {'text': text}
 
+    def handle_invite(self, numeric, command, args):
+        """Handles incoming INVITEs."""
+        # TS6:
+        #  <- :70MAAAAAC INVITE 0ALAAAAAA #blah 12345
+        # P10:
+        #  <- ABAAA I PyLink-devel #services 1460948992
+        #  Note that the target is a nickname, not a numeric.
+
+        target = self._get_UID(args[0])
+        channel = self.toLower(args[1])
+
+        curtime = int(time.time())
+        try:
+            ts = int(args[2])
+        except IndexError:
+            ts = curtime
+
+        ts = ts or curtime  # Treat 0 timestamps (e.g. inspircd) as the current time.
+
+        return {'target': target, 'channel': channel, 'ts': ts}
+
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""
         killed = args[0]

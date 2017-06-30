@@ -1171,18 +1171,6 @@ class P10Protocol(IRCS2SProtocol):
         return {'channel': channel, 'setter': args[1], 'text': topic,
                 'oldtopic': oldtopic}
 
-    def handle_invite(self, source, command, args):
-        """Handles incoming INVITEs."""
-        # From P10 docs:
-        # 1 <target nick>
-        # 2 <channel>
-        # - note that the target is a nickname, not a numeric.
-        # <- ABAAA I PyLink-devel #services 1460948992
-        target = self._get_UID(args[0])
-        channel = self.toLower(args[1])
-
-        return {'target': target, 'channel': channel}
-
     def handle_clearmode(self, numeric, command, args):
         """Handles CLEARMODE, which is used to clear a channel's modes."""
         # <- ABAAA CM #test ovpsmikbl

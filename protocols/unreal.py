@@ -934,14 +934,6 @@ class UnrealProtocol(TS6BaseProtocol):
         self.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
 
-    def handle_invite(self, numeric, command, args):
-        """Handles incoming INVITEs."""
-        # <- :GL INVITE PyLink-devel :#a
-        target = self._get_UID(args[0])
-        channel = self.toLower(args[1])
-        # We don't actually need to process this; it's just something plugins/hooks can use
-        return {'target': target, 'channel': channel}
-
     def handle_kill(self, numeric, command, args):
         """Handles incoming KILLs."""
         # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)

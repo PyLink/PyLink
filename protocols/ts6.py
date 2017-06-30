@@ -632,18 +632,6 @@ class TS6Protocol(TS6BaseProtocol):
         self.channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
-    def handle_invite(self, numeric, command, args):
-        """Handles incoming INVITEs."""
-        # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 12345
-        target = args[0]
-        channel = self.toLower(args[1])
-        try:
-            ts = args[2]
-        except IndexError:
-            ts = int(time.time())
-        # We don't actually need to process this; it's just something plugins/hooks can use
-        return {'target': target, 'channel': channel, 'ts': ts}
-
     def handle_chghost(self, numeric, command, args):
         """Handles incoming CHGHOST commands."""
         target = self._get_UID(args[0])

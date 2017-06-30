@@ -673,14 +673,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
     # SVSTOPIC is used by InspIRCd module m_topiclock - its arguments are the same as FTOPIC
     handle_svstopic = handle_ftopic
 
-    def handle_invite(self, numeric, command, args):
-        """Handles incoming INVITEs."""
-        # <- :70MAAAAAC INVITE 0ALAAAAAA #blah 0
-        target = args[0]
-        channel = self.toLower(args[1])
-        # We don't actually need to process this; just send the hook so plugins can use it
-        return {'target': target, 'channel': channel}
-
     def handle_knock(self, numeric, command, args):
         """Handles channel KNOCKs."""
         # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
