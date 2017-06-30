@@ -353,25 +353,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
         return {'channel': channel, 'setter': numeric, 'text': topic,
                 'oldtopic': oldtopic}
 
-    def handle_part(self, source, command, args):
-        """Handles incoming PART commands."""
-        channels = self.toLower(args[0]).split(',')
-        for channel in channels:
-            # We should only get PART commands for channels that exist, right??
-            self.channels[channel].removeuser(source)
-            try:
-                self.users[source].channels.discard(channel)
-            except KeyError:
-                log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", self.name, channel, source)
-            try:
-                reason = args[1]
-            except IndexError:
-                reason = ''
-            # Clear empty non-permanent channels.
-            if not (self.channels[channel].users or ((self.cmodes.get('permanent'), None) in self.channels[channel].modes)):
-                del self.channels[channel]
-        return {'channels': channels, 'text': reason}
-
     def handle_svsnick(self, source, command, args):
         """Handles SVSNICK (forced nickname change attempts)."""
         # InspIRCd:

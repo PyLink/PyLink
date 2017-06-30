@@ -327,6 +327,28 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self._remove_client(numeric)
         return {'text': args[0]}
 
+    def handle_part(self, source, command, args):
+        """Handles incoming PART commands."""
+        channels = self.toLower(args[0]).split(',')
+
+        for channel in channels:
+            self.channels[channel].removeuser(source)
+            try:
+                self.users[source].channels.discard(channel)
+            except KeyError:
+                log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", self.name, channel, source)
+
+            try:
+                reason = args[1]
+            except IndexError:
+                reason = ''
+
+            # Clear empty non-permanent channels.
+            if not (self.channels[channel].users or ((self.cmodes.get('permanent'), None) in self.channels[channel].modes)):
+                del self.channels[channel]
+
+        return {'channels': channels, 'text': reason}
+
     def handle_time(self, numeric, command, args):
         """Handles incoming /TIME requests."""
         return {'target': args[0]}

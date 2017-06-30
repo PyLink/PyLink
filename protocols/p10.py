@@ -1144,32 +1144,6 @@ class P10Protocol(IRCS2SProtocol):
     # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
     handle_opmode = handle_mode
 
-    def handle_part(self, source, command, args):
-        """Handles user parts."""
-        # <- ABAAA L #test,#test2
-        # <- ABAAA L #test :test
-
-        channels = self.toLower(args[0]).split(',')
-        for channel in channels:
-            # We should only get PART commands for channels that exist, right??
-            self.channels[channel].removeuser(source)
-
-            try:
-                self.users[source].channels.discard(channel)
-            except KeyError:
-                log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?",
-                          self.name, channel, source)
-            try:
-                reason = args[1]
-            except IndexError:
-                reason = ''
-
-            # Clear empty non-permanent channels.
-            if not self.channels[channel].users:
-                del self.channels[channel]
-
-        return {'channels': channels, 'text': reason}
-
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
         # <- ABAAA K #TEST AyAAA :PyLink-devel
