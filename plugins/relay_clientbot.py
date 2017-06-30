@@ -1,8 +1,6 @@
 # relay_clientbot.py: Clientbot extensions for Relay
 import string
-import collections
 import time
-import hashlib
 
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
@@ -163,7 +161,7 @@ def cb_relay_core(irc, source, command, args):
                 if nicklist:
 
                     # Get channel-specific nick list if relevent.
-                    if type(nicklist) == collections.defaultdict:
+                    if isinstance(nicklist, dict):
                         nicklist = nicklist.get(target, [])
 
                     # Ignore if no nicks are affected on the channel.
