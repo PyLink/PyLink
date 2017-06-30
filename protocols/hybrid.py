@@ -96,7 +96,7 @@ class HybridProtocol(TS6Protocol):
         """
 
         server = server or self.sid
-        if not self.isInternalServer(server):
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         uid = self.uidgen[server].next_uid()
@@ -104,10 +104,10 @@ class HybridProtocol(TS6Protocol):
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
-        raw_modes = self.joinModes(modes)
+        raw_modes = self.join_modes(modes)
         u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
-        self.applyModes(uid, modes)
+        self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
         self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                 "* :{realname}".format(ts=ts, host=host,
@@ -138,7 +138,7 @@ class HybridProtocol(TS6Protocol):
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
-        if not self.isInternalServer(numeric):
+        if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')
 
         ts = self.channels[target].ts
@@ -179,25 +179,25 @@ class HybridProtocol(TS6Protocol):
 
         self.users[uid] = IrcUser(nick, ts, uid, numeric, ident, host, realname, host, ip)
 
-        parsedmodes = self.parseModes(uid, [modes])
+        parsedmodes = self.parse_modes(uid, [modes])
         log.debug('(%s) handle_uid: Applying modes %s for %s', self.name, parsedmodes, uid)
-        self.applyModes(uid, parsedmodes)
+        self.apply_modes(uid, parsedmodes)
         self.servers[numeric].users.add(uid)
 
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
-            self.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+            self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
 
         # Set the account name if present
         if account:
-            self.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+            self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_tburst(self, numeric, command, args):
         """Handles incoming topic burst (TBURST) commands."""
         # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         ts = args[2]
         setter = args[3]
         topic = args[-1]
@@ -221,7 +221,7 @@ class HybridProtocol(TS6Protocol):
         target = args[0]
         ts = args[1]
         modes = args[2:]
-        parsedmodes = self.parseModes(target, modes)
+        parsedmodes = self.parse_modes(target, modes)
 
         for modepair in parsedmodes:
             if modepair[0] == '+d':
@@ -241,7 +241,7 @@ class HybridProtocol(TS6Protocol):
 
                 # Send the login hook, and remove this mode from the mode
                 # list, as it shouldn't be parsed literally.
-                self.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+                self.call_hooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
                 parsedmodes.remove(modepair)
 
             elif modepair[0] == '+x':
@@ -253,13 +253,13 @@ class HybridProtocol(TS6Protocol):
                 self.users[target].host = host
 
                 # Propagate the hostmask change as a hook.
-                self.callHooks([numeric, 'CHGHOST',
+                self.call_hooks([numeric, 'CHGHOST',
                                    {'target': target, 'newhost': host}])
 
                 parsedmodes.remove(modepair)
 
         if parsedmodes:
-            self.applyModes(target, parsedmodes)
+            self.apply_modes(target, parsedmodes)
 
         return {'target': target, 'modes': parsedmodes}
 

@@ -38,7 +38,7 @@ class TS6Protocol(TS6BaseProtocol):
         """
         server = server or self.sid
 
-        if not self.isInternalServer(server):
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         uid = self.uidgen[server].next_uid()
@@ -49,11 +49,11 @@ class TS6Protocol(TS6BaseProtocol):
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
-        raw_modes = self.joinModes(modes)
+        raw_modes = self.join_modes(modes)
         u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
-        self.applyModes(uid, modes)
+        self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
         self._send_with_prefix(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
@@ -66,10 +66,10 @@ class TS6Protocol(TS6BaseProtocol):
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
-        channel = self.toLower(channel)
+        channel = self.to_lower(channel)
         # JOIN:
         # parameters: channelTS, channel, '+' (a plus sign)
-        if not self.isInternalClient(client):
+        if not self.is_internal_client(client):
             log.error('(%s) Error trying to join %r to %r (no such client exists)', self.name, client, channel)
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(client, "JOIN {ts} {channel} +".format(ts=self.channels[channel].ts, channel=channel))
@@ -96,7 +96,7 @@ class TS6Protocol(TS6BaseProtocol):
         # their status ('@+', '@', '+' or ''), for example:
         # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'. All users must be behind the source server
         # so it is not possible to use this message to force users to join a channel.
-        channel = self.toLower(channel)
+        channel = self.to_lower(channel)
         server = server or self.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.name, users)
@@ -149,7 +149,7 @@ class TS6Protocol(TS6BaseProtocol):
             namelist = ' '.join(namelist)
             self._send_with_prefix(server, "SJOIN {ts} {channel} {modes} :{users}".format(
                     ts=ts, users=namelist, channel=channel,
-                    modes=self.joinModes(regularmodes)))
+                    modes=self.join_modes(regularmodes)))
             self.channels[channel].users.update(uids)
 
         # Now, burst bans.
@@ -172,15 +172,15 @@ class TS6Protocol(TS6BaseProtocol):
         # c <- :0UYAAAAAA TMODE 0 #a +o 0T4AAAAAC
         # u <- :0UYAAAAAA MODE 0UYAAAAAA :-Facdefklnou
 
-        if (not self.isInternalClient(numeric)) and \
-                (not self.isInternalServer(numeric)):
+        if (not self.is_internal_client(numeric)) and \
+                (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        self.applyModes(target, modes)
+        self.apply_modes(target, modes)
         modes = list(modes)
 
         if utils.isChannel(target):
-            ts = ts or self.channels[self.toLower(target)].ts
+            ts = ts or self.channels[self.to_lower(target)].ts
             # TMODE:
             # parameters: channelTS, channel, cmode changes, opt. cmode parameters...
 
@@ -189,15 +189,15 @@ class TS6Protocol(TS6BaseProtocol):
             msgprefix = ':%s TMODE %s %s ' % (numeric, ts, target)
             bufsize = S2S_BUFSIZE - len(msgprefix)
 
-            for modestr in self.wrapModes(modes, bufsize, max_modes_per_msg=10):
+            for modestr in self.wrap_modes(modes, bufsize, max_modes_per_msg=10):
                 self.send(msgprefix + modestr)
         else:
-            joinedmodes = self.joinModes(modes)
+            joinedmodes = self.join_modes(modes)
             self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
 
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
-        if not self.isInternalServer(numeric):
+        if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')
         # TB
         # capab: TB
@@ -212,7 +212,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def invite(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
-        if not self.isInternalClient(numeric):
+        if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(numeric, 'INVITE %s %s %s' % (target, channel, self.channels[channel].ts))
 
@@ -222,7 +222,7 @@ class TS6Protocol(TS6BaseProtocol):
             log.debug('(%s) knock: Dropping KNOCK to %r since the IRCd '
                       'doesn\'t support it.', self.name, target)
             return
-        if not self.isInternalClient(numeric):
+        if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
         # No text value is supported here; drop it.
         self._send_with_prefix(numeric, 'KNOCK %s' % target)
@@ -233,10 +233,10 @@ class TS6Protocol(TS6BaseProtocol):
         if field == 'HOST':
             self.users[target].host = text
             self._send_with_prefix(self.sid, 'CHGHOST %s :%s' % (target, text))
-            if not self.isInternalClient(target):
+            if not self.is_internal_client(target):
                 # If the target isn't one of our clients, send hook payload
                 # for other plugins to listen to.
-                self.callHooks([self.sid, 'CHGHOST',
+                self.call_hooks([self.sid, 'CHGHOST',
                                    {'target': target, 'newhost': text}])
         else:
             raise NotImplementedError("Changing field %r of a client is "
@@ -406,7 +406,7 @@ class TS6Protocol(TS6BaseProtocol):
             destination = args[1]
         except IndexError:
             destination = self.sid
-        if self.isInternalServer(destination):
+        if self.is_internal_server(destination):
             self._send_with_prefix(destination, 'PONG %s %s' % (destination, source), queue=False)
 
             if destination == self.sid and not self.has_eob:
@@ -421,12 +421,12 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming SJOIN commands."""
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         chandata = self.channels[channel].deepcopy()
         userlist = args[-1].split()
 
         modestring = args[2:-1] or args[2]
-        parsedmodes = self.parseModes(channel, modestring)
+        parsedmodes = self.parse_modes(channel, modestring)
         namelist = []
 
         # Keep track of other modes that are added due to prefix modes being joined too.
@@ -484,7 +484,7 @@ class TS6Protocol(TS6BaseProtocol):
                 self.users[numeric].channels.discard(channel)
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
-            channel = self.toLower(args[1])
+            channel = self.to_lower(args[1])
             self.updateTS(numeric, channel, ts)
 
             self.users[numeric].channels.add(channel)
@@ -514,19 +514,19 @@ class TS6Protocol(TS6BaseProtocol):
 
         self.users[uid] = IrcUser(nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
-        parsedmodes = self.parseModes(uid, [modes])
+        parsedmodes = self.parse_modes(uid, [modes])
         log.debug('Applying modes %s for %s', parsedmodes, uid)
-        self.applyModes(uid, parsedmodes)
+        self.apply_modes(uid, parsedmodes)
         self.servers[numeric].users.add(uid)
 
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
             otype = 'Server Administrator' if ('+a', None) in parsedmodes else 'IRC Operator'
-            self.callHooks([uid, 'CLIENT_OPERED', {'text': otype}])
+            self.call_hooks([uid, 'CLIENT_OPERED', {'text': otype}])
 
         # Set the accountname if present
         if accountname != "*":
-            self.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+            self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -587,11 +587,11 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming TMODE commands (channel mode change)."""
         # <- :42XAAAAAB TMODE 1437450768 #test -c+lkC 3 agte4
         # <- :0UYAAAAAD TMODE 0 #a +h 0UYAAAAAD
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         oldobj = self.channels[channel].deepcopy()
         modes = args[2:]
-        changedmodes = self.parseModes(channel, modes)
-        self.applyModes(channel, changedmodes)
+        changedmodes = self.parse_modes(channel, modes)
+        self.apply_modes(channel, changedmodes)
         ts = int(args[0])
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
                 'channeldata': oldobj}
@@ -601,18 +601,18 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
         target = args[0]
         modestrings = args[1:]
-        changedmodes = self.parseModes(target, modestrings)
-        self.applyModes(target, changedmodes)
+        changedmodes = self.parse_modes(target, modestrings)
+        self.apply_modes(target, changedmodes)
         # Call the OPERED UP hook if +o is being set.
         if ('+o', None) in changedmodes:
             otype = 'Server Administrator' if ('a', None) in self.users[target].modes else 'IRC Operator'
-            self.callHooks([target, 'CLIENT_OPERED', {'text': otype}])
+            self.call_hooks([target, 'CLIENT_OPERED', {'text': otype}])
         return {'target': target, 'modes': changedmodes}
 
     def handle_tb(self, numeric, command, args):
         """Handles incoming topic burst (TB) commands."""
         # <- :42X TB #chat 1467427448 GL!~gl@127.0.0.1 :test
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         ts = args[1]
         setter = args[2]
         topic = args[-1]
@@ -624,7 +624,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles extended topic burst (ETB)."""
         # <- :00AAAAAAC ETB 0 #test 1470021157 GL :test | abcd
         # Same as TB, with extra TS and extensions arguments.
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         ts = args[2]
         setter = args[3]
         topic = args[-1]
@@ -642,13 +642,13 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming BMASK commands (ban propagation on burst)."""
         # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
         # This is used for propagating bans, not TMODE!
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         mode = args[2]
         ts = int(args[0])
         modes = []
         for ban in args[-1].split():
             modes.append(('+%s' % mode, ban))
-        self.applyModes(channel, modes)
+        self.apply_modes(channel, modes)
         return {'target': channel, 'modes': modes, 'ts': ts}
 
     def handle_472(self, numeric, command, args):
@@ -684,7 +684,7 @@ class TS6Protocol(TS6BaseProtocol):
             account = ''  # No account name means a logout
 
         uid = args[0]
-        self.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+        self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
     def handle_rsfnc(self, numeric, command, args):
         """

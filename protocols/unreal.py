@@ -66,7 +66,7 @@ class UnrealProtocol(TS6BaseProtocol):
         up to plugins to make sure they don't introduce anything invalid.
         """
         server = server or self.sid
-        if not self.isInternalServer(server):
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         # Unreal 4.0 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
@@ -81,10 +81,10 @@ class UnrealProtocol(TS6BaseProtocol):
         modes = set(modes)  # Ensure type safety
         modes |= {('+x', None), ('+t', None)}
 
-        raw_modes = self.joinModes(modes)
+        raw_modes = self.join_modes(modes)
         u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
-        self.applyModes(uid, modes)
+        self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
         # UnrealIRCd requires encoding the IP by first packing it into a binary format,
@@ -116,8 +116,8 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
-        channel = self.toLower(channel)
-        if not self.isInternalClient(client):
+        channel = self.to_lower(channel)
+        if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(client, "JOIN %s" % channel)
         self.channels[channel].users.add(client)
@@ -135,7 +135,7 @@ class UnrealProtocol(TS6BaseProtocol):
             sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
         # <- :001 SJOIN 1444361345 #test :*@+1JJAAAAAB %2JJAAAA4C 1JJAAAADS
-        channel = self.toLower(channel)
+        channel = self.to_lower(channel)
         server = server or self.sid
         assert users, "sjoin: No users sent?"
         if not server:
@@ -189,7 +189,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Modes are optional; add them if they exist
         if modes:
-            sjoin_prefix += " %s" % self.joinModes(simplemodes)
+            sjoin_prefix += " %s" % self.join_modes(simplemodes)
 
         sjoin_prefix += " :"
         # Wrap arguments to the max supported S2S line length to prevent cutoff
@@ -212,15 +212,15 @@ class UnrealProtocol(TS6BaseProtocol):
     def mode(self, numeric, target, modes, ts=None):
         """
         Sends mode changes from a PyLink client/server. The mode list should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
+        a list of (mode, arg) tuples, i.e. the format of utils.parse_modes() output.
         """
         # <- :unreal.midnight.vpn MODE #test +ntCo GL 1444361345
 
-        if (not self.isInternalClient(numeric)) and \
-                (not self.isInternalServer(numeric)):
+        if (not self.is_internal_client(numeric)) and \
+                (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        self.applyModes(target, modes)
+        self.apply_modes(target, modes)
 
         if utils.isChannel(target):
 
@@ -231,7 +231,7 @@ class UnrealProtocol(TS6BaseProtocol):
                     modes[idx] = (mode[0], self._expandPUID(mode[1]))
 
             # The MODE command is used for channel mode changes only
-            ts = ts or self.channels[self.toLower(target)].ts
+            ts = ts or self.channels[self.to_lower(target)].ts
 
             # 7 characters for "MODE", the space between MODE and the target, the space between the
             # target and mode list, and the space between the mode list and TS.
@@ -242,7 +242,7 @@ class UnrealProtocol(TS6BaseProtocol):
             bufsize -= len(target)
 
             # Subtract the prefix (":SID " for servers or ":SIDAAAAAA " for servers)
-            bufsize -= (5 if self.isInternalServer(numeric) else 11)
+            bufsize -= (5 if self.is_internal_server(numeric) else 11)
 
             # There is also an (undocumented) 15 args per line limit for MODE. The target, mode
             # characters, and TS take up three args, so we're left with 12 spaces for parameters.
@@ -251,24 +251,24 @@ class UnrealProtocol(TS6BaseProtocol):
             # * *** Warning! Possible desynch: MODE for channel #test ('+bbbbbbbbbbbb *!*@0.1 *!*@1.1 *!*@2.1 *!*@3.1 *!*@4.1 *!*@5.1 *!*@6.1 *!*@7.1 *!*@8.1 *!*@9.1 *!*@10.1 *!*@11.1') has fishy timestamp (12) (from pylink.local/pylink.local)
 
             # Thanks to kevin and Jobe for helping me debug this!
-            for modestring in self.wrapModes(modes, bufsize, max_modes_per_msg=12):
+            for modestring in self.wrap_modes(modes, bufsize, max_modes_per_msg=12):
                 self._send_with_prefix(numeric, 'MODE %s %s %s' % (target, modestring, ts))
         else:
             # For user modes, the only way to set modes (for non-U:Lined servers)
             # is through UMODE2, which sets the modes on the caller.
             # U:Lines can use SVSMODE/SVS2MODE, but I won't expect people to
             # U:Line a PyLink daemon...
-            if not self.isInternalClient(target):
+            if not self.is_internal_client(target):
                 raise ProtocolError('Cannot force mode change on external clients!')
 
             # XXX: I don't expect usermode changes to ever get cut off, but length
             # checks could be added just to be safe...
-            joinedmodes = self.joinModes(modes)
+            joinedmodes = self.join_modes(modes)
             self._send_with_prefix(target, 'UMODE2 %s' % joinedmodes)
 
     def topicBurst(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink server."""
-        if not self.isInternalServer(numeric):
+        if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')
         self._send_with_prefix(numeric, 'TOPIC %s :%s' % (target, text))
         self.channels[target].topic = text
@@ -282,7 +282,7 @@ class UnrealProtocol(TS6BaseProtocol):
             raise NotImplementedError("Changing field %r of a client is "
                                       "unsupported by this protocol." % field)
 
-        if self.isInternalClient(target):
+        if self.is_internal_client(target):
             # It is one of our clients, use SETIDENT/HOST/NAME.
             if field == 'IDENT':
                 self.users[target].ident = text
@@ -300,26 +300,26 @@ class UnrealProtocol(TS6BaseProtocol):
                 self._send_with_prefix(self.sid, 'CHGIDENT %s %s' % (target, text))
 
                 # Send hook payloads for other plugins to listen to.
-                self.callHooks([self.sid, 'CHGIDENT',
+                self.call_hooks([self.sid, 'CHGIDENT',
                                    {'target': target, 'newident': text}])
 
             elif field == 'HOST':
                 self.users[target].host = text
                 self._send_with_prefix(self.sid, 'CHGHOST %s %s' % (target, text))
 
-                self.callHooks([self.sid, 'CHGHOST',
+                self.call_hooks([self.sid, 'CHGHOST',
                                    {'target': target, 'newhost': text}])
 
             elif field in ('REALNAME', 'GECOS'):
                 self.users[target].realname = text
                 self._send_with_prefix(self.sid, 'CHGNAME %s :%s' % (target, text))
 
-                self.callHooks([self.sid, 'CHGNAME',
+                self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
 
     def invite(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
-        if not self.isInternalClient(numeric):
+        if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(numeric, 'INVITE %s %s' % (target, channel))
 
@@ -329,8 +329,8 @@ class UnrealProtocol(TS6BaseProtocol):
         # sent to all ops in a channel.
         # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by GL|!gl@hidden-1C620195 (test)
         assert utils.isChannel(target), "Can only knock on channels!"
-        sender = self.getServer(numeric)
-        s = '[Knock] by %s (%s)' % (self.getHostmask(numeric), text)
+        sender = self.get_server(numeric)
+        s = '[Knock] by %s (%s)' % (self.get_hostmask(numeric), text)
         self._send_with_prefix(sender, 'NOTICE @%s :%s' % (target, s))
 
     ### HANDLERS
@@ -422,8 +422,8 @@ class UnrealProtocol(TS6BaseProtocol):
         self.servers[numeric].users.add(uid)
 
         # Handle user modes
-        parsedmodes = self.parseModes(uid, [modestring])
-        self.applyModes(uid, parsedmodes)
+        parsedmodes = self.parse_modes(uid, [modestring])
+        self.apply_modes(uid, parsedmodes)
 
         # The cloaked (+x) host is completely separate from the displayed host
         # and real host in that it is ONLY shown if the user is +x (cloak mode
@@ -432,7 +432,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         if ('+o', None) in parsedmodes:
             # If +o being set, call the CLIENT_OPERED internal hook.
-            self.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+            self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
         if ('+x', None) not in parsedmodes:
             # If +x is not set, update to use the person's real host.
@@ -443,7 +443,7 @@ class UnrealProtocol(TS6BaseProtocol):
             accountname = nick
 
         if not accountname.isdigit():
-            self.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+            self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -564,7 +564,7 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             for channel in args[0].split(','):
                 # Normalize channel case.
-                channel = self.toLower(channel)
+                channel = self.to_lower(channel)
 
                 c = self.channels[channel]
 
@@ -572,14 +572,14 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.channels[channel].users.add(numeric)
                 # Call hooks manually, because one JOIN command in UnrealIRCd can
                 # have multiple channels...
-                self.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
+                self.call_hooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
                                                        c.modes, 'ts': c.ts}])
 
     def handle_sjoin(self, numeric, command, args):
         """Handles the UnrealIRCd SJOIN command."""
         # <- :001 SJOIN 1444361345 #test :001AAAAAA @001AAAAAB +001AAAAAC
         # <- :001 SJOIN 1483250129 #services +nt :+001OR9V02 @*~001DH6901 &*!*@test "*!*@blah.blah '*!*@yes.no
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         chandata = self.channels[channel].deepcopy()
         userlist = args[-1].split()
 
@@ -599,7 +599,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 # Strip extra spaces between the mode argument and the user list, if
                 # there are any. XXX: report this as a bug in unreal's s2s protocol?
                 modestring = [m for m in modestring if m]
-                parsedmodes = self.parseModes(channel, modestring)
+                parsedmodes = self.parse_modes(channel, modestring)
                 changedmodes = set(parsedmodes)
         except IndexError:
             pass
@@ -705,11 +705,11 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Also, we need to get rid of that extra space following the +f argument. :|
         if utils.isChannel(args[0]):
-            channel = self.toLower(args[0])
+            channel = self.to_lower(args[0])
             oldobj = self.channels[channel].deepcopy()
 
             modes = [arg for arg in args[1:] if arg]  # normalize whitespace
-            parsedmodes = self.parseModes(channel, modes)
+            parsedmodes = self.parse_modes(channel, modes)
 
             if parsedmodes:
                 if parsedmodes[0][0] == '+&':
@@ -720,7 +720,7 @@ class UnrealProtocol(TS6BaseProtocol):
                               self.name, modes, channel, self.channels[channel].ts)
                     return
 
-                self.applyModes(channel, parsedmodes)
+                self.apply_modes(channel, parsedmodes)
 
             if numeric in self.servers and args[-1].isdigit():
                 # Sender is a server AND last arg is number. Perform TS updates.
@@ -763,7 +763,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         if newhost != oldhost:
             # Only send a payload if the old and new hosts are different.
-            self.callHooks([uid, 'SETHOST',
+            self.call_hooks([uid, 'SETHOST',
                                {'target': uid, 'newhost': newhost}])
 
     def handle_svsmode(self, numeric, command, args):
@@ -772,8 +772,8 @@ class UnrealProtocol(TS6BaseProtocol):
         target = self._get_UID(args[0])
         modes = args[1:]
 
-        parsedmodes = self.parseModes(target, modes)
-        self.applyModes(target, parsedmodes)
+        parsedmodes = self.parse_modes(target, modes)
+        self.apply_modes(target, parsedmodes)
 
         # If +x/-x is being set, update cloaked host info.
         self._check_cloak_change(target, parsedmodes)
@@ -818,7 +818,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :NickServ SVS2MODE 001SALZ01 +r
 
         target = self._get_UID(args[0])
-        parsedmodes = self.parseModes(target, args[1:])
+        parsedmodes = self.parse_modes(target, args[1:])
 
         if ('+r', None) in parsedmodes:
             # Umode +r is being set (log in)
@@ -829,13 +829,13 @@ class UnrealProtocol(TS6BaseProtocol):
                 # If one doesn't exist, make it the same as the nick, but only if the account name
                 # wasn't set already.
                 if not self.users[target].services_account:
-                    account = self.getFriendlyName(target)
+                    account = self.get_friendly_name(target)
                 else:
                     return
             else:
                 if account.isdigit():
                     # If the +d argument is a number, ignore it and set the account name to the nick.
-                    account = self.getFriendlyName(target)
+                    account = self.get_friendly_name(target)
 
         elif ('-r', None) in parsedmodes:
             # Umode -r being set.
@@ -853,17 +853,17 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             return
 
-        self.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+        self.call_hooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
     def handle_umode2(self, numeric, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
         # <- :GL UMODE2 +W
-        parsedmodes = self.parseModes(numeric, args)
-        self.applyModes(numeric, parsedmodes)
+        parsedmodes = self.parse_modes(numeric, args)
+        self.apply_modes(numeric, parsedmodes)
 
         if ('+o', None) in parsedmodes:
             # If +o being set, call the CLIENT_OPERED internal hook.
-            self.callHooks([numeric, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+            self.call_hooks([numeric, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
         self._check_cloak_change(numeric, parsedmodes)
 
@@ -873,7 +873,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles the TOPIC command."""
         # <- GL TOPIC #services GL 1444699395 :weeee
         # <- TOPIC #services devel.relay 1452399682 :test
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         topic = args[-1]
         setter = args[1]
         ts = args[2]
@@ -898,7 +898,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
         # target.
-        self.applyModes(numeric, [('+x', None), ('+t', None)])
+        self.apply_modes(numeric, [('+x', None), ('+t', None)])
 
         return {'target': numeric, 'newhost': newhost}
 
@@ -923,7 +923,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
         # target.
-        self.applyModes(target, [('+x', None), ('+t', None)])
+        self.apply_modes(target, [('+x', None), ('+t', None)])
 
         return {'target': target, 'newhost': newhost}
 

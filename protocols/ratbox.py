@@ -54,21 +54,21 @@ class RatboxProtocol(TS6Protocol):
         # UID, gecos
 
         server = server or self.sid
-        if not self.isInternalServer(server):
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
-        raw_modes = self.joinModes(modes)
+        raw_modes = self.join_modes(modes)
 
         orig_realhost = realhost
         realhost = realhost or host
 
         u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
-        self.applyModes(uid, modes)
+        self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
         self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "

@@ -44,7 +44,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """
         server = server or self.sid
 
-        if not self.isInternalServer(server):
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         uid = self.uidgen[server].next_uid()
@@ -52,11 +52,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
-        raw_modes = self.joinModes(modes)
+        raw_modes = self.join_modes(modes)
         u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
-        self.applyModes(uid, modes)
+        self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
         self._send_with_prefix(server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
@@ -73,10 +73,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # InspIRCd doesn't distinguish between burst joins and regular joins,
         # so what we're actually doing here is sending FJOIN from the server,
         # on behalf of the clients that are joining.
-        channel = self.toLower(channel)
+        channel = self.to_lower(channel)
 
-        server = self.getServer(client)
-        if not self.isInternalServer(server):
+        server = self.get_server(client)
+        if not self.is_internal_server(server):
             log.error('(%s) Error trying to join %r to %r (no such client exists)', self.name, client, channel)
             raise LookupError('No such PyLink client exists.')
 
@@ -84,7 +84,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         modes = [m for m in self.channels[channel].modes if m[0] not in self.cmodes['*A']]
         self._send_with_prefix(server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
                 ts=self.channels[channel].ts, uid=client, channel=channel,
-                modes=self.joinModes(modes)))
+                modes=self.join_modes(modes)))
         self.channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
@@ -99,7 +99,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             sjoin('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])
             sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
-        channel = self.toLower(channel)
+        channel = self.to_lower(channel)
         server = server or self.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.name, users)
@@ -144,14 +144,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
         namelist = ' '.join(namelist)
         self._send_with_prefix(server, "FJOIN {channel} {ts} {modes} :{users}".format(
                 ts=ts, users=namelist, channel=channel,
-                modes=self.joinModes(modes)))
+                modes=self.join_modes(modes)))
         self.channels[channel].users.update(uids)
 
         if banmodes:
             # Burst ban modes if there are any.
             # <- :1ML FMODE #test 1461201525 +bb *!*@bad.user *!*@rly.bad.user
             self._send_with_prefix(server, "FMODE {channel} {ts} {modes} ".format(
-                ts=ts, channel=channel, modes=self.joinModes(banmodes)))
+                ts=ts, channel=channel, modes=self.join_modes(banmodes)))
 
         self.updateTS(server, channel, ts, changedmodes)
 
@@ -194,8 +194,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # -> :9PYAAAAAA FMODE #pylink 1433653951 +os 9PYAAAAAA
         # -> :9PYAAAAAA MODE 9PYAAAAAA -i+w
 
-        if (not self.isInternalClient(numeric)) and \
-                (not self.isInternalServer(numeric)):
+        if (not self.is_internal_client(numeric)) and \
+                (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
         log.debug('(%s) inspircd._send_with_prefixModes: received %r for mode list', self.name, modes)
@@ -203,18 +203,18 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
             self._operUp(target)
-        self.applyModes(target, modes)
-        joinedmodes = self.joinModes(modes)
+        self.apply_modes(target, modes)
+        joinedmodes = self.join_modes(modes)
         if utils.isChannel(target):
-            ts = ts or self.channels[self.toLower(target)].ts
+            ts = ts or self.channels[self.to_lower(target)].ts
             self._send_with_prefix(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
         else:
             self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
 
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
-        if (not self.isInternalClient(numeric)) and \
-                (not self.isInternalServer(numeric)):
+        if (not self.is_internal_client(numeric)) and \
+                (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
         # InspIRCd will show the raw kill message sent from our server as the quit message.
@@ -230,12 +230,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # We only need to call _remove_client here if the target is one of our
         # clients, since any remote servers will send a QUIT from
         # their target if the command succeeds.
-        if self.isInternalClient(target):
+        if self.is_internal_client(target):
             self._remove_client(target)
 
     def topicBurst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
-        if not self.isInternalServer(numeric):
+        if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')
         ts = int(time.time())
         servername = self.servers[numeric].name
@@ -245,13 +245,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def invite(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
-        if not self.isInternalClient(numeric):
+        if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(numeric, 'INVITE %s %s' % (target, channel))
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
-        if not self.isInternalClient(numeric):
+        if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
@@ -263,7 +263,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise NotImplementedError("Changing field %r of a client is "
                                       "unsupported by this protocol." % field)
 
-        if self.isInternalClient(target):
+        if self.is_internal_client(target):
             # It is one of our clients, use FIDENT/HOST/NAME.
             if field == 'IDENT':
                 self.users[target].ident = text
@@ -285,7 +285,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self._send_with_prefix(self.sid, 'CHGIDENT %s %s' % (target, text))
 
                 # Send hook payloads for other plugins to listen to.
-                self.callHooks([self.sid, 'CHGIDENT',
+                self.call_hooks([self.sid, 'CHGIDENT',
                                    {'target': target, 'newident': text}])
             elif field == 'HOST':
                 if 'm_chghost.so' not in self.modsupport:
@@ -295,7 +295,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self.users[target].host = text
                 self._send_with_prefix(self.sid, 'CHGHOST %s %s' % (target, text))
 
-                self.callHooks([self.sid, 'CHGHOST',
+                self.call_hooks([self.sid, 'CHGHOST',
                                    {'target': target, 'newhost': text}])
 
             elif field in ('REALNAME', 'GECOS'):
@@ -305,7 +305,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self.users[target].realname = text
                 self._send_with_prefix(self.sid, 'CHGNAME %s :%s' % (target, text))
 
-                self.callHooks([self.sid, 'CHGNAME',
+                self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
 
     def ping(self, source=None, target=None):
@@ -363,7 +363,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         for server in self.servers.values():
             if name == server.name:
                 raise ValueError('A server named %r already exists!' % name)
-        if not self.isInternalServer(uplink):
+        if not self.is_internal_server(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
@@ -523,19 +523,19 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming PING commands, so we don't time out."""
         # <- :70M PING 70M 0AL
         # -> :0AL PONG 0AL 70M
-        if self.isInternalServer(args[1]):
+        if self.is_internal_server(args[1]):
             self._send_with_prefix(args[1], 'PONG %s %s' % (args[1], source), queue=False)
 
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
         # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         chandata = self.channels[channel].deepcopy()
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
 
         modestring = args[2:-1] or args[2]
-        parsedmodes = self.parseModes(channel, modestring)
+        parsedmodes = self.parse_modes(channel, modestring)
         namelist = []
 
         # Keep track of other modes that are added due to prefix modes being joined too.
@@ -579,13 +579,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
         realname = args[-1]
         self.users[uid] = userobj = IrcUser(nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
-        parsedmodes = self.parseModes(uid, [args[8], args[9]])
-        self.applyModes(uid, parsedmodes)
+        parsedmodes = self.parse_modes(uid, [args[8], args[9]])
+        self.apply_modes(uid, parsedmodes)
 
         if (self.umodes.get('servprotect'), None) in userobj.modes:
             # Services are usually given a "Network Service" WHOIS, so
             # set that as the opertype.
-            self.callHooks([uid, 'CLIENT_OPERED', {'text': 'Network Service'}])
+            self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'Network Service'}])
 
         self.servers[numeric].users.add(uid)
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
@@ -620,11 +620,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_fmode(self, numeric, command, args):
         """Handles the FMODE command, used for channel mode changes."""
         # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         oldobj = self.channels[channel].deepcopy()
         modes = args[2:]
-        changedmodes = self.parseModes(channel, modes)
-        self.applyModes(channel, changedmodes)
+        changedmodes = self.parse_modes(channel, modes)
+        self.apply_modes(channel, changedmodes)
         ts = int(args[1])
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
                 'channeldata': oldobj}
@@ -636,8 +636,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
         target = args[0]
         modestrings = args[1:]
-        changedmodes = self.parseModes(target, modestrings)
-        self.applyModes(target, changedmodes)
+        changedmodes = self.parse_modes(target, modestrings)
+        self.apply_modes(target, changedmodes)
         return {'target': target, 'modes': changedmodes}
 
     def handle_idle(self, numeric, command, args):
@@ -662,7 +662,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_ftopic(self, numeric, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""
         # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         ts = args[1]
         setter = args[2]
         topic = args[-1]
@@ -676,7 +676,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_knock(self, numeric, command, args):
         """Handles channel KNOCKs."""
         # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         text = args[1]
         return {'channel': channel, 'text': text}
 
@@ -693,11 +693,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         # Set umode +o on the target.
         omode = [('+o', None)]
-        self.applyModes(target, omode)
+        self.apply_modes(target, omode)
 
         # Call the CLIENT_OPERED hook that protocols use. The MODE hook
         # payload is returned below.
-        self.callHooks([target, 'CLIENT_OPERED', {'text': opertype}])
+        self.call_hooks([target, 'CLIENT_OPERED', {'text': opertype}])
         return {'target': target, 'modes': omode}
 
     def handle_fident(self, numeric, command, args):
@@ -752,10 +752,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # SQUIT, in order to be consistent with other IRCds which make SQUITs
         # implicit.
         target = self._get_SID(args[0])
-        if self.isInternalServer(target):
+        if self.is_internal_server(target):
             # The target has to be one of our servers in order to work...
             uplink = self.servers[target].uplink
-            reason = 'Requested by %s' % self.getHostmask(numeric)
+            reason = 'Requested by %s' % self.get_hostmask(numeric)
             self._send_with_prefix(uplink, 'SQUIT %s :%s' % (target, reason))
             return self.handle_squit(numeric, 'SQUIT', [target, reason])
         else:
@@ -774,7 +774,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # <- :00A METADATA 1MLAAAJET accountname :tester
             # Sets the services login name of the client.
 
-            self.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': args[-1]}])
+            self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': args[-1]}])
 
     def handle_version(self, numeric, command, args):
         """
@@ -800,20 +800,20 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # ENCAP -> SAKICK args: ['#test', '0ALAAAAAB', 'test']
 
         target = args[1]
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         try:
             reason = args[2]
         except IndexError:
             # Kick reason is optional, strange...
-            reason = self.getFriendlyName(source)
+            reason = self.get_friendly_name(source)
 
-        if not self.isInternalClient(target):
+        if not self.is_internal_client(target):
             log.warning("(%s) Got SAKICK for client that not one of ours: %s", self.name, target)
             return
         else:
             # Like RSQUIT, SAKICK requires that the receiving server acknowledge that a kick has
             # happened. This comes from the server hosting the target client.
-            server = self.getServer(target)
+            server = self.get_server(target)
 
         self.kick(server, channel, target, reason)
         return {'channel': channel, 'target': target, 'text': reason}

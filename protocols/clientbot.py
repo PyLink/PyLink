@@ -113,7 +113,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                                           manipulatable=manipulatable, realhost=realhost, ip=ip)
         self.servers[server].users.add(uid)
 
-        self.applyModes(uid, modes)
+        self.apply_modes(uid, modes)
 
         return u
 
@@ -128,22 +128,22 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
     def away(self, source, text):
         """STUB: sets away messages for clients internally."""
-        log.debug('(%s) away: target is %s, internal client? %s', self.name, source, self.isInternalClient(source))
+        log.debug('(%s) away: target is %s, internal client? %s', self.name, source, self.is_internal_client(source))
 
         if self.users[source].away != text:
-            if not self.isInternalClient(source):
+            if not self.is_internal_client(source):
                 log.debug('(%s) away: sending AWAY hook from %s with text %r', self.name, source, text)
-                self.callHooks([source, 'AWAY', {'text': text}])
+                self.call_hooks([source, 'AWAY', {'text': text}])
 
             self.users[source].away = text
 
     def invite(self, client, target, channel):
         """Invites a user to a channel."""
-        self.send('INVITE %s %s' % (self.getFriendlyName(target), channel))
+        self.send('INVITE %s %s' % (self.get_friendly_name(target), channel))
 
     def join(self, client, channel):
         """STUB: Joins a user to a channel."""
-        channel = self.toLower(channel)
+        channel = self.to_lower(channel)
 
         # Only joins for the main PyLink client are actually forwarded. Others are ignored.
         # Note: we do not automatically add our main client to the channel state, as we
@@ -159,25 +159,25 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self.users[client].channels.add(channel)
 
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.name, client,
-                      self.getFriendlyName(client), channel)
-            self.callHooks([client, 'CLIENTBOT_JOIN', {'channel': channel}])
+                      self.get_friendly_name(client), channel)
+            self.call_hooks([client, 'CLIENTBOT_JOIN', {'channel': channel}])
 
     def kick(self, source, channel, target, reason=''):
         """Sends channel kicks."""
 
         log.debug('(%s) kick: checking if target %s (nick: %s) is an internal client? %s',
-                  self.name, target, self.getFriendlyName(target),
-                  self.isInternalClient(target))
-        if self.isInternalClient(target):
+                  self.name, target, self.get_friendly_name(target),
+                  self.is_internal_client(target))
+        if self.is_internal_client(target):
             # Target was one of our virtual clients. Just remove them from the state.
             self.handle_part(target, 'KICK', [channel, reason])
 
             # Send a KICK hook for message formatting.
-            self.callHooks([source, 'CLIENTBOT_KICK', {'channel': channel, 'target': target, 'text': reason}])
+            self.call_hooks([source, 'CLIENTBOT_KICK', {'channel': channel, 'target': target, 'text': reason}])
             return
 
         self.send('KICK %s %s :<%s> %s' % (channel, self._expandPUID(target),
-                      self.getFriendlyName(source), reason))
+                      self.get_friendly_name(source), reason))
 
         # Don't update our state here: wait for the IRCd to send an acknowledgement instead.
         # There is essentially a 3 second wait to do this, as we send NAMES with a delay
@@ -201,7 +201,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if self.pseudoclient and self.pseudoclient.uid == source:
             self.send('%s %s :%s' % (command, self._expandPUID(target), text))
         else:
-            self.callHooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
+            self.call_hooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
 
     def mode(self, source, channel, modes, ts=None):
         """Sends channel MODE changes."""
@@ -212,24 +212,24 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             # with IRCd MODE acknowledgements.
             # FIXME: More related safety checks should be added for this.
             log.debug('(%s) mode: re-parsing modes %s', self.name, modes)
-            joined_modes = self.joinModes(modes)
-            for modepair in self.parseModes(channel, joined_modes):
+            joined_modes = self.join_modes(modes)
+            for modepair in self.parse_modes(channel, joined_modes):
                 log.debug('(%s) mode: checking if %s a prefix mode: %s', self.name, modepair, self.prefixmodes)
                 if modepair[0][-1] in self.prefixmodes:
-                    if self.isInternalClient(modepair[1]):
+                    if self.is_internal_client(modepair[1]):
                         # Ignore prefix modes for virtual internal clients.
                         log.debug('(%s) mode: skipping virtual client prefixmode change %s', self.name, modepair)
                         continue
                     else:
                         # For other clients, change the mode argument to nick instead of PUID.
-                        nick = self.getFriendlyName(modepair[1])
+                        nick = self.get_friendly_name(modepair[1])
                         log.debug('(%s) mode: coersing mode %s argument to %s', self.name, modepair, nick)
                         modepair = (modepair[0], nick)
                 extmodes.append(modepair)
 
             log.debug('(%s) mode: filtered modes for %s: %s', self.name, channel, extmodes)
             if extmodes:
-                self.send('MODE %s %s' % (channel, self.joinModes(extmodes)))
+                self.send('MODE %s %s' % (channel, self.join_modes(extmodes)))
                 # Don't update the state here: the IRCd sill respond with a MODE reply if successful.
 
     def nick(self, source, newnick):
@@ -238,7 +238,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self.send('NICK :%s' % newnick)
             # No state update here: the IRCd will respond with a NICK acknowledgement if the change succeeds.
         else:
-            self.callHooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
+            self.call_hooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
             self.users[source].nick = newnick
 
     def notice(self, source, target, text):
@@ -251,7 +251,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Sends PING to the uplink.
         """
         if self.uplink:
-            self.send('PING %s' % self.getFriendlyName(self.uplink))
+            self.send('PING %s' % self.get_friendly_name(self.uplink))
 
             # Poll WHO periodically to figure out any ident/host/away status changes.
             for channel in self.pseudoclient.channels:
@@ -266,13 +266,13 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if self.pseudoclient and source == self.pseudoclient.uid:
             self.send('PART %s :%s' % (channel, reason))
         else:
-            self.callHooks([source, 'CLIENTBOT_PART', {'channel': channel, 'text': reason}])
+            self.call_hooks([source, 'CLIENTBOT_PART', {'channel': channel, 'text': reason}])
 
     def quit(self, source, reason):
         """STUB: Quits a client."""
         userdata = self.users[source]
         self._remove_client(source)
-        self.callHooks([source, 'CLIENTBOT_QUIT', {'text': reason, 'userdata': userdata}])
+        self.call_hooks([source, 'CLIENTBOT_QUIT', {'text': reason, 'userdata': userdata}])
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """STUB: bursts joins from a server."""
@@ -288,8 +288,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 self.users[user].channels.add(channel)
 
         self.channels[channel].users |= puids
-        nicks = {self.getFriendlyName(u) for u in puids}
-        self.callHooks([server, 'CLIENTBOT_SJOIN', {'channel': channel, 'nicks': nicks}])
+        nicks = {self.get_friendly_name(u) for u in puids}
+        self.call_hooks([server, 'CLIENTBOT_SJOIN', {'channel': channel, 'nicks': nicks}])
 
     def squit(self, source, target, text):
         """STUB: SQUITs a server."""
@@ -298,7 +298,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         squit_data = self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
 
         if squit_data.get('nicks'):
-            self.callHooks([source, 'CLIENTBOT_SQUIT', squit_data])
+            self.call_hooks([source, 'CLIENTBOT_SQUIT', squit_data])
 
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
@@ -315,20 +315,20 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         if field == 'IDENT' and u.ident != text:
             u.ident = text
-            if not self.isInternalClient(target):
+            if not self.is_internal_client(target):
                 # We're updating the host of an external client in our state, so send the appropriate
                 # hook payloads.
-                self.callHooks([self.sid, 'CHGIDENT',
+                self.call_hooks([self.sid, 'CHGIDENT',
                                    {'target': target, 'newident': text}])
         elif field == 'HOST' and u.host != text:
             u.host = text
-            if not self.isInternalClient(target):
-                self.callHooks([self.sid, 'CHGHOST',
+            if not self.is_internal_client(target):
+                self.call_hooks([self.sid, 'CHGHOST',
                                    {'target': target, 'newhost': text}])
         elif field in ('REALNAME', 'GECOS') and u.realname != text:
             u.realname = text
-            if not self.isInternalClient(target):
-                self.callHooks([self.sid, 'CHGNAME',
+            if not self.is_internal_client(target):
+                self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
         else:
             return  # Nothing changed
@@ -340,8 +340,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Limited (internal) nick collision checking is done here to prevent Clientbot users from
         being confused with virtual clients, and vice versa."""
         self._validateNick(nick)
-        idsource = self.nickToUid(nick)
-        is_internal = self.isInternalClient(idsource)
+        idsource = self.nick_to_uid(nick)
+        is_internal = self.is_internal_client(idsource)
 
         # If this sender isn't known or it is one of our virtual clients, spawn a new one.
         # This also takes care of any nick collisions caused by new, Clientbot users
@@ -349,7 +349,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if (not idsource) or (is_internal and self.pseudoclient and idsource != self.pseudoclient.uid):
             if idsource:
                 log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
-                self.callHooks([self.sid, 'CLIENTBOT_NICKCOLLIDE', {'target': idsource, 'parse_as': 'SAVE'}])
+                self.call_hooks([self.sid, 'CLIENTBOT_NICKCOLLIDE', {'target': idsource, 'parse_as': 'SAVE'}])
 
             idsource = self.spawnClient(nick, ident or 'unknown', host or 'unknown',
                                         server=self.uplink, realname=FALLBACK_REALNAME).uid
@@ -634,9 +634,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :charybdis.midnight.vpn 353 ice = #test :ice @GL
 
         # Mark "@"-type channels as secret automatically, per RFC2812.
-        channel = self.toLower(args[2])
+        channel = self.to_lower(args[2])
         if args[1] == '@':
-            self.applyModes(channel, [('+s', None)])
+            self.apply_modes(channel, [('+s', None)])
 
         names = set()
         modes = set()
@@ -667,7 +667,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         # Statekeeping: make sure the channel's user list is updated!
         self.channels[channel].users |= names
-        self.applyModes(channel, modes)
+        self.apply_modes(channel, modes)
 
         log.debug('(%s) handle_353: adding users %s to %s', self.name, names, channel)
         log.debug('(%s) handle_353: adding modes %s to %s', self.name, modes, channel)
@@ -705,7 +705,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         realname = args[-1].split(' ', 1)[-1]
 
         self._validateNick(nick)
-        uid = self.nickToUid(nick)
+        uid = self.nick_to_uid(nick)
 
         if uid is None:
             log.debug("(%s) Ignoring extraneous /WHO info for %s", self.name, nick)
@@ -732,15 +732,15 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         if self.serverdata.get('track_oper_statuses'):
             if '*' in status:  # Track IRCop status
-                if not self.isOper(uid, allowAuthed=False):
+                if not self.is_oper(uid, allowAuthed=False):
                     # Don't send duplicate oper ups if the target is already oper.
-                    self.applyModes(uid, [('+o', None)])
-                    self.callHooks([uid, 'MODE', {'target': uid, 'modes': {('+o', None)}}])
-                    self.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-            elif self.isOper(uid, allowAuthed=False) and not self.isInternalClient(uid):
+                    self.apply_modes(uid, [('+o', None)])
+                    self.call_hooks([uid, 'MODE', {'target': uid, 'modes': {('+o', None)}}])
+                    self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+            elif self.is_oper(uid, allowAuthed=False) and not self.is_internal_client(uid):
                 # Track deopers
-                self.applyModes(uid, [('-o', None)])
-                self.callHooks([uid, 'MODE', {'target': uid, 'modes': {('-o', None)}}])
+                self.apply_modes(uid, [('-o', None)])
+                self.call_hooks([uid, 'MODE', {'target': uid, 'modes': {('-o', None)}}])
 
         self.who_received.add(uid)
 
@@ -753,7 +753,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         users = self.who_received.copy()
         self.who_received.clear()
 
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         c = self.channels[channel]
         c.who_received = True
 
@@ -788,7 +788,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Handles incoming JOINs.
         """
         # <- :GL|!~GL@127.0.0.1 JOIN #whatever
-        channel = self.toLower(args[0])
+        channel = self.to_lower(args[0])
         self.join(source, channel)
 
         return {'channel': channel, 'users': [source], 'modes': self.channels[channel].modes}
@@ -798,8 +798,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Handles incoming KICKs.
         """
         # <- :GL!~gl@127.0.0.1 KICK #whatever GL| :xd
-        channel = self.toLower(args[0])
-        target = self.nickToUid(args[1])
+        channel = self.to_lower(args[0])
+        target = self.nick_to_uid(args[1])
 
         try:
             reason = args[2]
@@ -824,9 +824,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         except KeyError:
             pass
 
-        if (not self.isInternalClient(source)) and not self.isInternalServer(source):
+        if (not self.is_internal_client(source)) and not self.is_internal_server(source):
             # Don't repeat hooks if we're the kicker.
-            self.callHooks([source, 'KICK', {'channel': channel, 'target': target, 'text': reason}])
+            self.call_hooks([source, 'KICK', {'channel': channel, 'target': target, 'text': reason}])
 
         # Delete channels that we were kicked from, for better state keeping.
         if self.pseudoclient and target == self.pseudoclient.uid:
@@ -838,16 +838,16 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :ice MODE ice :+Zi
         target = args[0]
         if utils.isChannel(target):
-            target = self.toLower(target)
+            target = self.to_lower(target)
             oldobj = self.channels[target].deepcopy()
         else:
-            target = self.nickToUid(target)
+            target = self.nick_to_uid(target)
             oldobj = None
         modes = args[1:]
-        changedmodes = self.parseModes(target, modes)
-        self.applyModes(target, changedmodes)
+        changedmodes = self.parse_modes(target, modes)
+        self.apply_modes(target, changedmodes)
 
-        if self.isInternalClient(target):
+        if self.is_internal_client(target):
             log.debug('(%s) Suppressing MODE change hook for internal client %s', self.name, target)
             return
         if changedmodes:
@@ -862,15 +862,15 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # -> MODE #test
         # <- :midnight.vpn 324 GL #test +nt
         # <- :midnight.vpn 329 GL #test 1491773459
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         modes = args[2:]
         log.debug('(%s) Got RPL_CHANNELMODEIS (324) modes %s for %s', self.name, modes, channel)
-        changedmodes = self.parseModes(channel, modes)
-        self.applyModes(channel, changedmodes)
+        changedmodes = self.parse_modes(channel, modes)
+        self.apply_modes(channel, changedmodes)
 
     def handle_329(self, source, command, args):
         """Handles TS announcements via RPL_CREATIONTIME."""
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
         ts = int(args[2])
         self.channels[channel].ts = ts
 
@@ -900,7 +900,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Handles incoming PARTs.
         """
         # <- :GL|!~GL@127.0.0.1 PART #whatever
-        channels = list(map(self.toLower, args[0].split(',')))
+        channels = list(map(self.to_lower, args[0].split(',')))
         try:
             reason = args[1]
         except IndexError:
@@ -910,7 +910,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self.channels[channel].removeuser(source)
         self.users[source].channels -= set(channels)
 
-        self.callHooks([source, 'PART', {'channels': channels, 'text': reason}])
+        self.call_hooks([source, 'PART', {'channels': channels, 'text': reason}])
 
         # Clear channels that are empty, or that we're parting.
         for channel in channels:
@@ -936,15 +936,15 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :sender NOTICE somenick :afasfsa
         target = args[0]
 
-        if self.isInternalClient(source) or self.isInternalServer(source):
+        if self.is_internal_client(source) or self.is_internal_server(source):
             log.warning('(%s) Received %s to %s being routed the wrong way!', self.name, command, target)
             return
 
         # We use lowercase channels internally.
         if utils.isChannel(target):
-            target = self.toLower(target)
+            target = self.to_lower(target)
         else:
-            target = self.nickToUid(target)
+            target = self.nick_to_uid(target)
         if target:
             return {'target': target, 'text': args[1]}
     handle_notice = handle_privmsg

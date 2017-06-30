@@ -179,7 +179,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
             sender = self.uplink
             args.insert(0, sender)
 
-        if self.isInternalClient(sender) or self.isInternalServer(sender):
+        if self.is_internal_client(sender) or self.is_internal_server(sender):
             log.warning("(%s) Received command %s being routed the wrong way!", self.name, command)
             return
 
@@ -213,13 +213,13 @@ class IRCS2SProtocol(IRCCommonProtocol):
         """
         Nick collision checker.
         """
-        uid = self.nickToUid(nick)
+        uid = self.nick_to_uid(nick)
         # If there is a nick collision, we simply alert plugins. Relay will purposely try to
         # lose fights and tag nicks instead, while other plugins can choose how to handle this.
         if uid:
             log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.name,
                      uid, nick)
-            self.callHooks([self.sid, 'SAVE', {'target': uid}])
+            self.call_hooks([self.sid, 'SAVE', {'target': uid}])
 
     def handle_away(self, numeric, command, args):
         """Handles incoming AWAY messages."""
@@ -243,7 +243,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         #  Note that the target is a nickname, not a numeric.
 
         target = self._get_UID(args[0])
-        channel = self.toLower(args[1])
+        channel = self.to_lower(args[1])
 
         curtime = int(time.time())
         try:
@@ -274,7 +274,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         try:
             # Get the nick or server name of the caller.
-            killer = self.getFriendlyName(source)
+            killer = self.get_friendly_name(source)
         except KeyError:
             # Killer was... neither? We must have aliens or something. Fallback
             # to the given "UID".
@@ -289,7 +289,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
     def handle_part(self, source, command, args):
         """Handles incoming PART commands."""
-        channels = self.toLower(args[0]).split(',')
+        channels = self.to_lower(args[0]).split(',')
 
         for channel in channels:
             self.channels[channel].removeuser(source)
@@ -337,7 +337,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
             # Note: don't mess with the case of the channel prefix, or ~#channel
             # messages will break on RFC1459 casemapping networks (it becomes ^#channel
             # instead).
-            target = '#'.join((split_channel[0], self.toLower(split_channel[1])))
+            target = '#'.join((split_channel[0], self.to_lower(split_channel[1])))
             log.debug('(%s) Normalizing channel target %s to %s', self.name, args[0], target)
 
         return {'target': target, 'text': args[1]}
