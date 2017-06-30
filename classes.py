@@ -590,7 +590,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         The target can be either a channel or a user; this is handled automatically."""
         usermodes = not utils.isChannel(target)
-        log.debug('(%s) Using usermodes for this query? %s', self.name, usermodes)
 
         try:
             if usermodes:

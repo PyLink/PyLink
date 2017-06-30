@@ -186,7 +186,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         raw_command = args[1].upper()
         args = args[2:]
 
-        log.debug('(%s) Found message sender as %s', self.name, sender)
+        log.debug('(%s) Found message sender as %s, raw_command=%r, args=%r', self.name, sender, raw_command, args)
 
         # For P10, convert the command token into a regular command, if present.
         command = self.COMMAND_TOKENS.get(raw_command, raw_command)

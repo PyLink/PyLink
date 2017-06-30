@@ -480,7 +480,6 @@ def initialize_channel(irc, channel):
                 irc.topicBurst(irc.sid, channel, topic)
 
         # Send our users and channel modes to the other nets
-        log.debug('(%s) relay.initialize_channel: joining our (%s) users: %s', irc.name, remotenet, irc.channels[channel].users)
         relay_joins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
 
         if 'pylink' in world.services:
