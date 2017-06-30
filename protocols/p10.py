@@ -749,8 +749,8 @@ class P10Protocol(IRCS2SProtocol):
 
         # P10 cloaks aren't as simple as just replacing the displayed host with the one we're
         # sending. Check for cloak changes properly.
-        # Note: we don't need to send any hooks here, check_cloak_change does that for us.
-        self.check_cloak_change(target)
+        # Note: we don't need to send any hooks here, _check_cloak_change does that for us.
+        self._check_cloak_change(target)
 
     ### HANDLERS
 
@@ -878,7 +878,7 @@ class P10Protocol(IRCS2SProtocol):
                 if ('+o', None) in parsedmodes:
                     self.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
-            self.check_cloak_change(uid)
+            self._check_cloak_change(uid)
 
             return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
@@ -892,13 +892,13 @@ class P10Protocol(IRCS2SProtocol):
             # Update the nick TS.
             return {'newnick': newnick, 'oldnick': oldnick, 'ts': ts}
 
-    def check_cloak_change(self, uid):
+    def _check_cloak_change(self, uid):
         """Checks for cloak changes (ident and host) on the given UID."""
         uobj = self.users[uid]
         ident = uobj.ident
 
         modes = dict(uobj.modes)
-        log.debug('(%s) check_cloak_change: modes of %s are %s', self.name, uid, modes)
+        log.debug('(%s) _check_cloak_change: modes of %s are %s', self.name, uid, modes)
 
         if 'x' not in modes:  # +x isn't set, so cloaking is disabled.
             newhost = uobj.realhost
@@ -1138,7 +1138,7 @@ class P10Protocol(IRCS2SProtocol):
 
         if target in self.users:
             # Target was a user. Check for any cloak changes.
-            self.check_cloak_change(target)
+            self._check_cloak_change(target)
 
         return {'target': target, 'modes': changedmodes}
     # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
@@ -1239,7 +1239,7 @@ class P10Protocol(IRCS2SProtocol):
         self.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         # Check for any cloak changes now.
-        self.check_cloak_change(target)
+        self._check_cloak_change(target)
 
     def handle_fake(self, numeric, command, args):
         """Handles incoming FAKE hostmask changes."""
@@ -1249,8 +1249,8 @@ class P10Protocol(IRCS2SProtocol):
         # Assume a usermode +f change, and then update the cloak checking.
         self.applyModes(target, [('+f', text)])
 
-        self.check_cloak_change(target)
-        # We don't need to send any hooks here, check_cloak_change does that for us.
+        self._check_cloak_change(target)
+        # We don't need to send any hooks here, _check_cloak_change does that for us.
 
     def handle_svsnick(self, source, command, args):
         """Handles SVSNICK (forced nickname change attempts)."""
