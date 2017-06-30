@@ -7,18 +7,18 @@ import hashlib
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
 
-# TODO: document configurable styles in relay::clientbot_styles::COMMAND_NAME
+# Clientbot default styles:
 # These use template strings as documented @ https://docs.python.org/3/library/string.html#template-strings
-default_styles = {'MESSAGE': '\x02[$colored_netname]\x02 <$colored_sender> $text',
-                  'KICK': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has kicked $target_nick from $channel ($text)',
-                  'PART': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has left $channel ($text)',
-                  'JOIN': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has joined $channel',
-                  'NICK': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost is now known as $newnick',
-                  'QUIT': '\x02[$colored_netname]\x02 - $colored_sender$sender_identhost has quit ($text)',
-                  'ACTION': '\x02[$colored_netname]\x02 * $colored_sender $text',
-                  'NOTICE': '\x02[$colored_netname]\x02 - Notice from $colored_sender: $text',
-                  'SQUIT': '\x02[$colored_netname]\x02 - Netsplit lost users: $colored_nicks',
-                  'SJOIN': '\x02[$colored_netname]\x02 - Netjoin gained users: $colored_nicks',
+default_styles = {'MESSAGE': '\x02[$netname]\x02 <$colored_sender> $text',
+                  'KICK': '\x02[$netname]\x02 - $colored_sender$sender_identhost has kicked $target_nick from $channel ($text)',
+                  'PART': '\x02[$netname]\x02 - $colored_sender$sender_identhost has left $channel ($text)',
+                  'JOIN': '\x02[$netname]\x02 - $colored_sender$sender_identhost has joined $channel',
+                  'NICK': '\x02[$netname]\x02 - $colored_sender$sender_identhost is now known as $newnick',
+                  'QUIT': '\x02[$netname]\x02 - $colored_sender$sender_identhost has quit ($text)',
+                  'ACTION': '\x02[$netname]\x02 * $colored_sender $text',
+                  'NOTICE': '\x02[$netname]\x02 - Notice from $colored_sender: $text',
+                  'SQUIT': '\x02[$netname]\x02 - Netsplit lost users: $colored_nicks',
+                  'SJOIN': '\x02[$netname]\x02 - Netjoin gained users: $colored_nicks',
                   'PM': 'PM from $sender on $netname: $text',
                   'PNOTICE': '<$sender> $text',
                   }
