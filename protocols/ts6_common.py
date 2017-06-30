@@ -79,7 +79,7 @@ class TS6SIDGenerator():
         """
         Returns the next unused TS6 SID for the server.
         """
-        while ''.join(self.output) in self.servers:
+        while ''.join(self.output) in self.irc.servers:
             # Increment until the SID we have doesn't already exist.
             self.increment()
         sid = ''.join(self.output)
