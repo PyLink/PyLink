@@ -292,7 +292,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         channels = self.to_lower(args[0]).split(',')
 
         for channel in channels:
-            self.channels[channel].removeuser(source)
+            self.channels[channel].remove_user(source)
             try:
                 self.users[source].channels.discard(channel)
             except KeyError:

@@ -259,7 +259,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
     def part(self, source, channel, reason=''):
         """STUB: Parts a user from a channel."""
-        self.channels[channel].removeuser(source)
+        self.channels[channel].remove_user(source)
         self.users[source].channels.discard(channel)
 
         # Only parts for the main PyLink client are actually forwarded. Others are ignored.
@@ -818,7 +818,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 del self.kick_queue[channel]
 
         # Statekeeping: remove the target from the channel they were previously in.
-        self.channels[channel].removeuser(target)
+        self.channels[channel].remove_user(target)
         try:
             self.users[target].channels.remove(channel)
         except KeyError:
@@ -907,7 +907,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             reason = ''
 
         for channel in channels:
-            self.channels[channel].removeuser(source)
+            self.channels[channel].remove_user(source)
         self.users[source].channels -= set(channels)
 
         self.call_hooks([source, 'PART', {'channels': channels, 'text': reason}])
