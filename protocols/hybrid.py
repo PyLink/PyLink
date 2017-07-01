@@ -115,7 +115,7 @@ class HybridProtocol(TS6Protocol):
                 modes=raw_modes, ip=ip, realname=realname))
         return u
 
-    def updateClient(self, target, field, text):
+    def update_client(self, target, field, text):
         """Updates the ident, host, or realname of a PyLink client."""
         # https://github.com/ircd-hybrid/ircd-hybrid/blob/58323b8/modules/m_svsmode.c#L40-L103
         # parv[0] = command

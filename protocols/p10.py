@@ -705,7 +705,7 @@ class P10Protocol(IRCS2SProtocol):
         self.channels[target].topic = text
         self.channels[target].topicset = True
 
-    def updateClient(self, target, field, text):
+    def update_client(self, target, field, text):
         """Updates the ident or host of any connected client."""
         uobj = self.users[target]
 

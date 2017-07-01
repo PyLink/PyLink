@@ -274,7 +274,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.channels[target].topic = text
         self.channels[target].topicset = True
 
-    def updateClient(self, target, field, text):
+    def update_client(self, target, field, text):
         """Updates the ident, host, or realname of any connected client."""
         field = field.upper()
 

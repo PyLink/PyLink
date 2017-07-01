@@ -255,7 +255,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(numeric, 'ENCAP * KNOCK %s :%s' % (target, text))
 
-    def updateClient(self, target, field, text):
+    def update_client(self, target, field, text):
         """Updates the ident, host, or realname of any connected client."""
         field = field.upper()
 

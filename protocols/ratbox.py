@@ -82,8 +82,8 @@ class RatboxProtocol(TS6Protocol):
 
         return u
 
-    def updateClient(self, target, field, text):
-        """updateClient() stub for ratbox."""
+    def update_client(self, target, field, text):
+        """update_client() stub for ratbox."""
         raise NotImplementedError("User data changing is not supported on ircd-ratbox.")
 
     def handle_realhost(self, uid, command, args):

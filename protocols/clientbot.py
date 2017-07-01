@@ -305,10 +305,10 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         return
     kill = topic = topic_burst = knock = numeric = _stub
 
-    def updateClient(self, target, field, text):
+    def update_client(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""
         if target not in self.users:
-            log.warning("(%s) Unknown target %s for updateClient()", self.name, target)
+            log.warning("(%s) Unknown target %s for update_client()", self.name, target)
             return
 
         u = self.users[target]
@@ -711,9 +711,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.debug("(%s) Ignoring extraneous /WHO info for %s", self.name, nick)
             return
 
-        self.updateClient(uid, 'IDENT', ident)
-        self.updateClient(uid, 'HOST', host)
-        self.updateClient(uid, 'GECOS', realname)
+        self.update_client(uid, 'IDENT', ident)
+        self.update_client(uid, 'HOST', host)
+        self.update_client(uid, 'GECOS', realname)
 
         # The status given uses the following letters: <H|G>[*][@|+]
         # H means here (not marked /away)

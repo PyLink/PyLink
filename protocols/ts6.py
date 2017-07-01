@@ -227,7 +227,7 @@ class TS6Protocol(TS6BaseProtocol):
         # No text value is supported here; drop it.
         self._send_with_prefix(numeric, 'KNOCK %s' % target)
 
-    def updateClient(self, target, field, text):
+    def update_client(self, target, field, text):
         """Updates the hostname of any connected client."""
         field = field.upper()
         if field == 'HOST':
