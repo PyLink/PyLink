@@ -87,7 +87,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self._cap_timer.start()
 
         # This is a really gross hack to get the defined NICK/IDENT/HOST/GECOS.
-        # But this connection stuff is done before any of the spawnClient stuff in
+        # But this connection stuff is done before any of the spawn_client stuff in
         # services_support fires.
         self.conf_nick = self.serverdata.get('pylink_nick') or conf.conf["bot"].get("nick", "PyLink")
         f('NICK %s' % (self.conf_nick))
@@ -96,7 +96,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                               conf.conf["bot"].get("realname", "PyLink Clientbot")))
 
     # Note: clientbot clients are initialized with umode +i by default
-    def spawnClient(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
+    def spawn_client(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
             server=None, ip='0.0.0.0', realname='', ts=None, opertype=None,
             manipulatable=False):
         """
@@ -108,7 +108,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         ts = ts or int(time.time())
 
-        log.debug('(%s) spawnClient stub called, saving nick %s as PUID %s', self.name, nick, uid)
+        log.debug('(%s) spawn_client stub called, saving nick %s as PUID %s', self.name, nick, uid)
         u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
                                           manipulatable=manipulatable, realhost=realhost, ip=ip)
         self.servers[server].users.add(uid)
@@ -351,7 +351,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
                 self.call_hooks([self.sid, 'CLIENTBOT_NICKCOLLIDE', {'target': idsource, 'parse_as': 'SAVE'}])
 
-            idsource = self.spawnClient(nick, ident or 'unknown', host or 'unknown',
+            idsource = self.spawn_client(nick, ident or 'unknown', host or 'unknown',
                                         server=self.uplink, realname=FALLBACK_REALNAME).uid
 
         return idsource

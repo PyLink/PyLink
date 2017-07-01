@@ -56,7 +56,7 @@ class UnrealProtocol(TS6BaseProtocol):
         return uid
 
     ### OUTGOING COMMAND FUNCTIONS
-    def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
+    def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
         """
