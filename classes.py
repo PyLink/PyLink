@@ -170,10 +170,8 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # Set up channel logging for the network
         self.log_setup()
 
-    '''
     def __repr__(self):
-        return "<classes.Irc object for %r>" % self.name
-    '''
+        return "<%s object for network %r>" % (self.__class__.name, self.name)
 
     ### General utility functions
     def call_hooks(self, hook_args):
@@ -407,11 +405,10 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
     def _remove_client(self, numeric):
         """Internal function to remove a client from our internal state."""
         for c, v in self.channels.copy().items():
-            v.removeuser(numeric)
+            v.remove_user(numeric)
             # Clear empty non-permanent channels.
             if not (self.channels[c].users or ((self.cmodes.get('permanent'), None) in self.channels[c].modes)):
                 del self.channels[c]
-            assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
 
         sid = self.get_server(numeric)
         log.debug('Removing client %s from self.users', numeric)
@@ -464,7 +461,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         if not userobj:
             return False
 
-        # Look for the "service" attribute in the IrcUser object, if one exists.
+        # Look for the "service" attribute in the User object, if one exists.
         try:
             sname = userobj.service
             # Warn if the service name we fetched isn't a registered service.
@@ -627,9 +624,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                         log.debug('(%s) Final prefixmodes list: %s', self.name, pmodelist)
 
                 if real_mode[0] in self.prefixmodes:
-                    # Don't add prefix modes to IrcChannel.modes; they belong in the
+                    # Don't add prefix modes to Channel.modes; they belong in the
                     # prefixmodes mapping handled above.
-                    log.debug('(%s) Not adding mode %s to IrcChannel.modes because '
+                    log.debug('(%s) Not adding mode %s to Channel.modes because '
                               'it\'s a prefix mode.', self.name, str(mode))
                     continue
 
@@ -934,7 +931,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         Checks whether the given user has operator status on PyLink, raising
         NotAuthorizedError and logging the access denial if not.
         """
-        log.warning("(%s) Irc.check_authenticated() is deprecated as of PyLink 1.2 and may be "
+        log.warning("(%s) check_authenticated() is deprecated as of PyLink 1.2 and may be "
                     "removed in a future relase. Consider migrating to the PyLink Permissions API.",
                     self.name)
         lastfunc = inspect.stack()[1][3]
@@ -1265,9 +1262,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                     log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
                     host = self.hostname()
 
-                    self.servers[self.sid] = IrcServer(None, host, internal=True,
-                            desc=self.serverdata.get('serverdesc')
-                            or conf.conf['bot']['serverdesc'])
+                    self.servers[self.sid] = Server(None, host, internal=True,
+                                                    desc=self.serverdata.get('serverdesc')
+                                                    or conf.conf['bot']['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self._schedule_ping()
@@ -1437,7 +1434,7 @@ class User():
         self.manipulatable = manipulatable
 
     def __repr__(self):
-        return 'IrcUser(%s/%s)' % (self.uid, self.nick)
+        return 'User(%s/%s)' % (self.uid, self.nick)
 IrcUser = User
 
 class Server():
@@ -1457,7 +1454,7 @@ class Server():
         self.desc = desc
 
     def __repr__(self):
-        return 'IrcServer(%s)' % self.name
+        return 'Server(%s)' % self.name
 IrcServer = Server
 
 class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
@@ -1482,7 +1479,7 @@ class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
         self.deprecated_attributes = {'removeuser': 'Deprecated in 2.0; use remove_user() instead!'}
 
     def __repr__(self):
-        return 'IrcChannel(%s)' % self.name
+        return 'Channel(%s)' % self.name
 
     def remove_user(self, target):
         """Removes a user from a channel."""
@@ -1564,5 +1561,5 @@ class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
             if uid in modelist:
                 result.append(mode)
 
-        return sorted(result, key=self.sortPrefixes)
+        return sorted(result, key=self.sort_prefixes)
 IrcChannel = Channel
