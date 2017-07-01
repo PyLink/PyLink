@@ -4,7 +4,7 @@ import base64
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
-from pylinkirc.classes import Protocol, IrcUser, IrcServer, ProtocolError
+from pylinkirc.classes import Protocol, User, IrcServer, ProtocolError
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
@@ -109,7 +109,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         ts = ts or int(time.time())
 
         log.debug('(%s) spawn_client stub called, saving nick %s as PUID %s', self.name, nick, uid)
-        u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
                                           manipulatable=manipulatable, realhost=realhost, ip=ip)
         self.servers[server].users.add(uid)
 

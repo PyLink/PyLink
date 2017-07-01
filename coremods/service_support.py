@@ -58,7 +58,7 @@ def spawn_service(irc, source, command, args):
         userobj = irc.spawn_client(nick, ident, host, modes=modes, opertype="PyLink Service",
                                         manipulatable=sbot.manipulatable)
 
-    # Store the service name in the IrcUser object for easier access.
+    # Store the service name in the User object for easier access.
     userobj.service = name
 
     sbot.uids[irc.name] = u = userobj.uid

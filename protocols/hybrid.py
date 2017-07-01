@@ -105,7 +105,7 @@ class HybridProtocol(TS6Protocol):
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
@@ -177,7 +177,7 @@ class HybridProtocol(TS6Protocol):
                   'host=%s realname=%s ip=%s', self.name, nick, ts, uid,
                   ident, host, realname, ip)
 
-        self.users[uid] = IrcUser(nick, ts, uid, numeric, ident, host, realname, host, ip)
+        self.users[uid] = User(nick, ts, uid, numeric, ident, host, realname, host, ip)
 
         parsedmodes = self.parse_modes(uid, [modes])
         log.debug('(%s) handle_uid: Applying modes %s for %s', self.name, parsedmodes, uid)

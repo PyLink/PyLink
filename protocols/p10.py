@@ -275,10 +275,9 @@ class P10Protocol(IRCS2SProtocol):
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
 
-        # Initialize an IrcUser instance
-        u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
-                                          realhost=realhost, ip=ip, manipulatable=manipulatable,
-                                          opertype=opertype)
+        # Initialize an User instance
+        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+                                   realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
         # Fill in modes and add it to our users index
         self.apply_modes(uid, modes)
@@ -856,7 +855,7 @@ class P10Protocol(IRCS2SProtocol):
                       'host=%s realname=%s realhost=%s ip=%s', self.name, nick, ts, uid,
                       ident, host, realname, realhost, ip)
 
-            uobj = self.users[uid] = IrcUser(nick, ts, uid, source, ident, host, realname, realhost, ip)
+            uobj = self.users[uid] = User(nick, ts, uid, source, ident, host, realname, realhost, ip)
             self.servers[source].users.add(uid)
 
             # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L708

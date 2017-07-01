@@ -66,7 +66,7 @@ class RatboxProtocol(TS6Protocol):
         orig_realhost = realhost
         realhost = realhost or host
 
-        u = self.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
