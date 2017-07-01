@@ -582,7 +582,8 @@ class DeprecatedAttributesObject():
     def __getattribute__(self, attr):
         # Note: "self.deprecated_attributes" calls this too, so the != check is
         # needed to prevent a recursive loop!
-        if attr != 'deprecated_attributes' and attr in self.deprecated_attributes:
+        # Also ignore reserved names beginning with "__".
+        if attr != 'deprecated_attributes' and not attr.startswith('__') and attr in self.deprecated_attributes:
             log.warning('Attribute %s.%s is deprecated: %s' % (self.__class__.__name__, attr,
                         self.deprecated_attributes.get(attr)))
 
