@@ -1460,8 +1460,9 @@ class Server():
         return 'IrcServer(%s)' % self.name
 IrcServer = Server
 
-class Channel():
+class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
     """PyLink IRC channel class."""
+
     def __init__(self, name=None):
         # Initialize variables, such as the topic, user list, TS, who's opped, etc.
         self.users = set()
@@ -1478,52 +1479,55 @@ class Channel():
         # Saves the channel name (may be useful to plugins, etc.)
         self.name = name
 
+        self.deprecated_attributes = {'removeuser': 'Deprecated in 2.0; use remove_user() instead!'}
+
     def __repr__(self):
         return 'IrcChannel(%s)' % self.name
 
-    def removeuser(self, target):
+    def remove_user(self, target):
         """Removes a user from a channel."""
         for s in self.prefixmodes.values():
             s.discard(target)
         self.users.discard(target)
+    removeuser = remove_user
 
     def deepcopy(self):
         """Returns a deep copy of the channel object."""
         return deepcopy(self)
 
-    def isVoice(self, uid):
+    def is_voice(self, uid):
         """Returns whether the given user is voice in the channel."""
         return uid in self.prefixmodes['voice']
 
-    def isHalfop(self, uid):
+    def is_halfop(self, uid):
         """Returns whether the given user is halfop in the channel."""
         return uid in self.prefixmodes['halfop']
 
-    def isOp(self, uid):
+    def is_op(self, uid):
         """Returns whether the given user is op in the channel."""
         return uid in self.prefixmodes['op']
 
-    def isAdmin(self, uid):
+    def is_admin(self, uid):
         """Returns whether the given user is admin (&) in the channel."""
         return uid in self.prefixmodes['admin']
 
-    def isOwner(self, uid):
+    def is_owner(self, uid):
         """Returns whether the given user is owner (~) in the channel."""
         return uid in self.prefixmodes['owner']
 
-    def isVoicePlus(self, uid):
+    def is_voice_plus(self, uid):
         """Returns whether the given user is voice or above in the channel."""
         # If the user has any prefix mode, it has to be voice or greater.
         return bool(self.getPrefixModes(uid))
 
-    def isHalfopPlus(self, uid):
+    def is_halfop_plus(self, uid):
         """Returns whether the given user is halfop or above in the channel."""
         for mode in ('halfop', 'op', 'admin', 'owner'):
             if uid in self.prefixmodes[mode]:
                 return True
         return False
 
-    def isOpPlus(self, uid):
+    def is_op_plus(self, uid):
         """Returns whether the given user is op or above in the channel."""
         for mode in ('op', 'admin', 'owner'):
             if uid in self.prefixmodes[mode]:
@@ -1531,7 +1535,7 @@ class Channel():
         return False
 
     @staticmethod
-    def sortPrefixes(key):
+    def sort_prefixes(key):
         """
         Implements a sorted()-compatible sorter for prefix modes, giving each one a
         numeric value.
@@ -1542,7 +1546,7 @@ class Channel():
         # support them.
         return values.get(key, 1000)
 
-    def getPrefixModes(self, uid, prefixmodes=None):
+    def get_prefix_modes(self, uid, prefixmodes=None):
         """Returns a list of all named prefix modes the given user has in the channel.
 
         Optionally, a prefixmodes argument can be given to look at an earlier state of
