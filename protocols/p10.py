@@ -659,7 +659,7 @@ class P10Protocol(IRCS2SProtocol):
         self._send_with_prefix(uplink, 'SERVER %s 1 %s %s P10 %s]]] +h6 :%s' % \
                    (name, self.start_ts, int(time.time()), sid, desc))
 
-        self.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
+        self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
         return sid
 
     def squit(self, source, target, text='No reason given'):
@@ -829,7 +829,7 @@ class P10Protocol(IRCS2SProtocol):
         servername = args[0].lower()
         sid = args[5][:2]
         sdesc = args[-1]
-        self.servers[sid] = IrcServer(source, servername, desc=sdesc)
+        self.servers[sid] = Server(source, servername, desc=sdesc)
 
         if self.uplink is None:
             # If we haven't already found our uplink, this is probably it.

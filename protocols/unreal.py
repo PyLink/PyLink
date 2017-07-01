@@ -485,7 +485,7 @@ class UnrealProtocol(TS6BaseProtocol):
             if protover < self.min_proto_ver:
                 raise ProtocolError("Protocol version too old! (needs at least %s "
                                     "(Unreal 4.x), got %s)" % (self.min_proto_ver, protover))
-            self.servers[numeric] = IrcServer(None, sname, desc=sdesc)
+            self.servers[numeric] = Server(None, sname, desc=sdesc)
 
             # Set irc.connected to True, meaning that protocol negotiation passed.
             log.debug('(%s) self.connected set!', self.name)
@@ -495,7 +495,7 @@ class UnrealProtocol(TS6BaseProtocol):
             # <- :services.int SERVER a.bc 2 :(H) [GL] a
             servername = args[0].lower()
             sdesc = args[-1]
-            self.servers[servername] = IrcServer(numeric, servername, desc=sdesc)
+            self.servers[servername] = Server(numeric, servername, desc=sdesc)
             return {'name': servername, 'sid': None, 'text': sdesc}
 
     def handle_sid(self, numeric, command, args):
@@ -504,7 +504,7 @@ class UnrealProtocol(TS6BaseProtocol):
         sname = args[0].lower()
         sid = args[2]
         sdesc = args[-1]
-        self.servers[sid] = IrcServer(numeric, sname, desc=sdesc)
+        self.servers[sid] = Server(numeric, sname, desc=sdesc)
         return {'name': sname, 'sid': sid, 'text': sdesc}
 
     def handle_squit(self, numeric, command, args):

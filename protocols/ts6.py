@@ -364,7 +364,7 @@ class TS6Protocol(TS6BaseProtocol):
 
         # Server name and SID are sent in different messages, so we fill this
         # with dummy information until we get the actual sid.
-        self.servers[numeric] = IrcServer(None, '')
+        self.servers[numeric] = Server(None, '')
         self.uplink = numeric
 
     def handle_capab(self, numeric, command, args):
@@ -555,7 +555,7 @@ class TS6Protocol(TS6BaseProtocol):
         servername = args[0].lower()
         sid = args[2]
         sdesc = args[-1]
-        self.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
+        self.servers[sid] = Server(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': sid, 'text': sdesc}
 
     def handle_server(self, numeric, command, args):
@@ -580,7 +580,7 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :services.int SERVER a.bc 2 :(H) [GL] a
         servername = args[0].lower()
         sdesc = args[-1]
-        self.servers[servername] = IrcServer(numeric, servername, desc=sdesc)
+        self.servers[servername] = Server(numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': None, 'text': sdesc}
 
     def handle_tmode(self, numeric, command, args):

@@ -4,7 +4,7 @@ import base64
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
-from pylinkirc.classes import Protocol, User, IrcServer, ProtocolError
+from pylinkirc.classes import Protocol, User, Server, ProtocolError
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
@@ -123,7 +123,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         name = name.lower()
         sid = self.sidgen.next_sid(prefix=name)
-        self.servers[sid] = IrcServer(uplink, name, internal=internal)
+        self.servers[sid] = Server(uplink, name, internal=internal)
         return sid
 
     def away(self, source, text):

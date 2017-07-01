@@ -273,7 +273,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send_with_prefix(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
-        self.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
+        self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
         return sid
 
     def squit(self, source, target, text='No reason given'):

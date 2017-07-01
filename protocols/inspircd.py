@@ -368,7 +368,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send_with_prefix(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
-        self.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
+        self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
 
         def endburstf():
             # Delay ENDBURST by X seconds if requested.
@@ -604,7 +604,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                  raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
 
             sdesc = args[-1]
-            self.servers[numeric] = IrcServer(None, servername, desc=sdesc)
+            self.servers[numeric] = Server(None, servername, desc=sdesc)
             self.uplink = numeric
             return
 
@@ -613,7 +613,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         servername = args[0].lower()
         sid = args[3]
         sdesc = args[-1]
-        self.servers[sid] = IrcServer(numeric, servername, desc=sdesc)
+        self.servers[sid] = Server(numeric, servername, desc=sdesc)
 
         return {'name': servername, 'sid': args[3], 'text': sdesc}
 
