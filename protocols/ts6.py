@@ -195,7 +195,7 @@ class TS6Protocol(TS6BaseProtocol):
             joinedmodes = self.join_modes(modes)
             self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
 
-    def topicBurst(self, numeric, target, text):
+    def topic_burst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')
@@ -330,7 +330,7 @@ class TS6Protocol(TS6BaseProtocol):
         # KNOCK: support for /knock
         # SAVE: support for SAVE (forces user to UID in nick collision)
         # SERVICES: adds mode +r (only registered users can join a channel)
-        # TB: topic burst command; we send this in topicBurst
+        # TB: topic burst command; we send this in topic_burst
         # EUID: extended UID command, which includes real hostname + account data info,
         #       and allows sending CHGHOST without ENCAP.
         # RSFNC: states that we support RSFNC (forced nick changed attempts). XXX: With atheme services,

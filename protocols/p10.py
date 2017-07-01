@@ -689,7 +689,7 @@ class P10Protocol(IRCS2SProtocol):
         self.channels[target].topic = text
         self.channels[target].topicset = True
 
-    def topicBurst(self, numeric, target, text):
+    def topic_burst(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink server."""
         # <- AB T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
 

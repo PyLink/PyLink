@@ -68,7 +68,7 @@ class HybridProtocol(TS6Protocol):
         # CHW: Allow sending messages to @#channel and the like.
         # KNOCK: Support for /knock
         # SVS: Deal with extended NICK/UID messages that contain service IDs/stamps
-        # TBURST: Topic Burst command; we send this in topicBurst
+        # TBURST: Topic Burst command; we send this in topic_burst
         # DLN: DLINE command
         # UNDLN: UNDLINE command
         # KLN: KLINE command
@@ -135,7 +135,7 @@ class HybridProtocol(TS6Protocol):
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
-    def topicBurst(self, numeric, target, text):
+    def topic_burst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
         if not self.is_internal_server(numeric):

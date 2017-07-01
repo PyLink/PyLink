@@ -266,7 +266,7 @@ class UnrealProtocol(TS6BaseProtocol):
             joinedmodes = self.join_modes(modes)
             self._send_with_prefix(target, 'UMODE2 %s' % joinedmodes)
 
-    def topicBurst(self, numeric, target, text):
+    def topic_burst(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink server."""
         if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')

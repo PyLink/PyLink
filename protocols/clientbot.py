@@ -303,7 +303,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
         return
-    kill = topic = topicBurst = knock = numeric = _stub
+    kill = topic = topic_burst = knock = numeric = _stub
 
     def updateClient(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""
