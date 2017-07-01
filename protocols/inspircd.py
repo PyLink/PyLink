@@ -338,7 +338,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send_with_prefix(source, 'AWAY')
         self.users[source].away = text
 
-    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
         Spawns a server off a PyLink server. desc (server description)
         defaults to the one in the config. uplink defaults to the main PyLink

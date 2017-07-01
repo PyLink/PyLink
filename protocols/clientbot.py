@@ -117,7 +117,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         return u
 
-    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0, internal=True):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0, internal=True):
         """
         STUB: Pretends to spawn a new server with a subset of the given options.
         """
@@ -406,7 +406,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 # Sender is a server name. XXX: make this check more foolproof
                 idsource = self._get_SID(sender)
                 if idsource not in self.servers:
-                    idsource = self.spawnServer(sender, internal=False)
+                    idsource = self.spawn_server(sender, internal=False)
             else:
                 # Sender is a either a nick or a nick!user@host prefix. Split it into its relevant parts.
                 try:

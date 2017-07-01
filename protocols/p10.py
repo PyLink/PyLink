@@ -626,7 +626,7 @@ class P10Protocol(IRCS2SProtocol):
 
         self.updateTS(server, channel, ts, changedmodes)
 
-    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
         Spawns a server off a PyLink server. desc (server description)
         defaults to the one in the config. uplink defaults to the main PyLink
