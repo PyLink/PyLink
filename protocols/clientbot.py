@@ -761,7 +761,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         for user in users:
             # Fill in prefix modes of everyone when doing mock SJOIN.
             try:
-                for mode in c.getPrefixModes(user):
+                for mode in c.get_prefix_modes(user):
                     modechar = self.cmodes.get(mode)
                     log.debug('(%s) handle_315: adding mode %s +%s %s', self.name, mode, modechar, user)
                     if modechar:

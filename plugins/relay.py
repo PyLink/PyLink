@@ -206,7 +206,7 @@ def get_prefix_modes(irc, remoteirc, channel, user, mlist=None):
         # Note: reverse the order so prefix modes are bursted in their traditional order
         # (e.g. owner before op before halfop). TODO: SJOIN modes should probably be
         # consistently sorted IRCd-side.
-        for pmode in reversed(irc.channels[channel].getPrefixModes(user, prefixmodes=mlist)):
+        for pmode in reversed(irc.channels[channel].get_prefix_modes(user, prefixmodes=mlist)):
             if pmode in remoteirc.cmodes:
                 modes += remoteirc.cmodes[pmode]
     return modes
@@ -920,11 +920,11 @@ def handle_join(irc, numeric, command, args):
             # XXX: Find the diff of the new and old mode lists of the channel. Not pretty, but I'd
             # rather not change the 'users' format of SJOIN just for this. -GL
             try:
-                oldmodes = set(chandata.getPrefixModes(user))
+                oldmodes = set(chandata.get_prefix_modes(user))
             except KeyError:
                 # User was never in channel. Treat their mode list as empty.
                 oldmodes = set()
-            newmodes = set(current_chandata.getPrefixModes(user))
+            newmodes = set(current_chandata.get_prefix_modes(user))
             modediff = newmodes - oldmodes
             log.debug('(%s) relay.handle_join: mode diff for %s on %s: %s oldmodes=%s newmodes=%s',
                       irc.name, user, channel, modediff, oldmodes, newmodes)

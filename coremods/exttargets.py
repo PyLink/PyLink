@@ -123,7 +123,7 @@ def channel(irc, host, uid):
         return uid in irc.channels[channel].users
     elif len(groups) >= 3:
         # For things like #channel:op, check if the query is in the user's prefix modes.
-        return (uid in irc.channels[channel].users) and (groups[2].lower() in irc.channels[channel].getPrefixModes(uid))
+        return (uid in irc.channels[channel].users) and (groups[2].lower() in irc.channels[channel].get_prefix_modes(uid))
 
 @bind
 def pylinkacc(irc, host, uid):
