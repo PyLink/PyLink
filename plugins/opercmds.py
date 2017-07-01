@@ -70,7 +70,7 @@ def jupe(irc, source, args):
         irc.error("Invalid server name '%s'." % servername)
         return
 
-    sid = irc.spawnServer(servername, desc=desc)
+    sid = irc.spawn_server(servername, desc=desc)
 
     irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_SPAWNSERVER',
                    {'name': servername, 'sid': sid, 'text': desc}])

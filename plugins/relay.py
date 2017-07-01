@@ -219,7 +219,7 @@ def spawn_relay_server(irc, remoteirc):
             suffix = conf.conf.get('relay', {}).get('server_suffix', 'relay')
             # Strip any leading or trailing .'s
             suffix = suffix.strip('.')
-            sid = irc.spawnServer('%s.%s' % (remoteirc.name, suffix),
+            sid = irc.spawn_server('%s.%s' % (remoteirc.name, suffix),
                                         desc="PyLink Relay network - %s" %
                                         (remoteirc.get_full_network_name()), endburst_delay=3)
         except (RuntimeError, ValueError):  # Network not initialized yet, or a server name conflict.
@@ -326,7 +326,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
         realhost = None
         ip = '0.0.0.0'
 
-    u = remoteirc.spawnClient(nick, ident=ident, host=host, realname=realname, modes=modes,
+    u = remoteirc.spawn_client(nick, ident=ident, host=host, realname=realname, modes=modes,
                                     opertype=opertype, server=rsid, ip=ip, realhost=realhost).uid
     try:
         remoteirc.users[u].remote = (irc.name, user)
@@ -477,7 +477,7 @@ def initialize_channel(irc, channel):
             # Only update the topic if it's different from what we already have,
             # and topic bursting is complete.
             if remoteirc.channels[remotechan].topicset and topic != irc.channels[channel].topic:
-                irc.topicBurst(irc.sid, channel, topic)
+                irc.topic_burst(irc.sid, channel, topic)
 
         # Send our users and channel modes to the other nets
         relay_joins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
@@ -1291,7 +1291,7 @@ def handle_chgclient(irc, source, command, args):
                     newtext = normalize_host(remoteirc, text)
                 else:  # Don't overwrite the original text variable on every iteration.
                     newtext = text
-                remoteirc.updateClient(user, field, newtext)
+                remoteirc.update_client(user, field, newtext)
             except NotImplementedError:  # IRCd doesn't support changing the field we want
                 log.debug('(%s) relay.handle_chgclient: Ignoring changing field %r of %s on %s (for %s/%s);'
                           ' remote IRCd doesn\'t support it', irc.name, field,
@@ -1372,9 +1372,9 @@ def handle_topic(irc, numeric, command, args):
                 remoteirc.topic(remoteuser, remotechan, topic)
             else:
                 rsid = get_remote_sid(remoteirc, irc)
-                remoteirc.topicBurst(rsid, remotechan, topic)
+                remoteirc.topic_burst(rsid, remotechan, topic)
     elif oldtopic:  # Topic change blocked by claim.
-        irc.topicBurst(irc.sid, channel, oldtopic)
+        irc.topic_burst(irc.sid, channel, oldtopic)
 
 utils.add_hook(handle_topic, 'TOPIC')
 

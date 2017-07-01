@@ -18,7 +18,7 @@ def spawnclient(irc, source, args):
     except ValueError:
         irc.error("Not enough arguments. Needs 3: nick, user, host.")
         return
-    irc.spawnClient(nick, ident, host, manipulatable=True)
+    irc.spawn_client(nick, ident, host, manipulatable=True)
     irc.reply("Done.")
 
 @utils.add_cmd
