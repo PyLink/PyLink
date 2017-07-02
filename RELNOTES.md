@@ -1,3 +1,30 @@
+# PyLink 1.2-beta1
+The "Dynamo" release. This release includes all fixes from 1.1.2, plus the following:
+
+#### Feature changes
+- Added configurable encoding support via the `encoding` option in server config blocks ([#467](https://github.com/GLolol/PyLink/pull/467)).
+- **Certain configuration options were renamed / deprecated:**
+    - The `bot:` configuration block was renamed to `pylink:`, with the old name now deprecated.
+    - `logging:stdout` is now `logging:console` (the previous name was a misnomer since text actually went to `stderr`).
+    - The `bot:prefix` option is deprecated: you should instead define the `prefixes` setting in a separate config block for each service you wish to customize (e.g. set `automode:prefix` and `games:prefix`)
+- Added new `$and` and `$network` exttargets - see the new [exttargets documentation page](https://github.com/GLolol/PyLink/blob/1.2-beta1/docs/exttargets.md) for how to use them.
+- Hostmasks can now be negated in ban matching: e.g. `!*!*@localhost` now works. Previously, this negation was limited to exttargets only.
+- `relay_clientbot` no longer colours network names by default. It is still possible to restore the old behaviour by defining [custom clientbot styles](https://github.com/GLolol/PyLink/blob/1.2-beta1/docs/advanced-relay-config.md#custom-clientbot-styles).
+- `relay_clientbot` no longer uses dark blue as a random colour choice, as it is difficult to read on clients with dark backgrounds.
+
+#### Bug fixes
+- Fix service respawn on KILL not working at all - this was likely broken for a while but never noticed...
+- Fix kick-on-rejoin not working on P10 IRCds when `joinmodes` is set. (a.k.a. acknowledge incoming KICKs with a PART per [the P10 specification](https://github.com/evilnet/nefarious2/blob/ed12d64/doc/p10.txt#L611-L618))
+- servprotect: only track kills and saves to PyLink clients, not all kills on a network!
+- Fix `~#channel` prefix messages not working over relay on RFC1459-casemapping networks ([#464](https://github.com/GLolol/PyLink/issues/464)).
+- Show errors when trying to use `showchan` on a secret channel in the same way as actually non-existent channels. Previously this error response forced replies as a private notice, potentially leaking the existence of secret/private channels.
+- example-conf: fix reversed description for the password encryption setting.
+
+#### Internal changes
+- Portions of the IRC/relay stack were refactored to prevent various hangs on shutdown.
+- Performance improvements for outgoing message queuing: the queue system now blocks when no messages are in the queue instead of polling it multiple times a minute.
+- Logging fixes: startup warnings (e.g. from config deprecations) now log to files as well as the console.
+
 # PyLink 1.2-alpha1
 The "Darkness" release. This release includes all fixes from 1.1.2, plus the following summary of changes:
 
