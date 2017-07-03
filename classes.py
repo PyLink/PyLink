@@ -369,7 +369,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             return True
 
         else:
-            log.info('(%s) _run_autoconnect: Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
+            log.debug('(%s) _run_autoconnect: Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
             return
 
     def _pre_disconnect(self):
