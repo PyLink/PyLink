@@ -65,22 +65,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self._send_with_prefix(server, 'NICK %s 1 %s %s 1 %s :%s' % (nick, ident, host, self.join_modes(modes), realname))
         return userobj
 
-    ### Handlers
-
-    def handle_nick(self, source, command, args):
-        # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
-
-        nick = args[0]
-        ident = args[2]
-        host = args[3]
-        uid = self.uidgen.next_uid(prefix=nick)
-        realname = args[-1]
-
-        self.users[uid] = User(nick, int(time.time()), uid, source, ident=ident, host=host,
-                               realname=realname)
-        parsedmodes = self.parse_modes(uid, [args[5]])
-        self.apply_modes(uid, parsedmodes)
-        return
 
     def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         pass
@@ -123,6 +107,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.lastping = time.time()
 
     ### Handlers
+
     def handle_pass(self, source, command, args):
         """
         Handles phase one of the ngIRCd login process (password auth and version info).
