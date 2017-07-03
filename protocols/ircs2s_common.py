@@ -201,7 +201,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         elif sender_uid in self.users:
             # Sender is a user (converting from name to UID gave a valid result).
             sender = sender_uid
-        else:
+        elif not (args[0].startswith(':')):
             # No sender prefix; treat as coming from uplink IRCd.
             sender = self.uplink
             args.insert(0, sender)
