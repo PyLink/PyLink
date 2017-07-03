@@ -8,7 +8,6 @@ from pylinkirc.protocols.ircs2s_common import *
 from pylinkirc.classes import *
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
-COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
 IRCV3_CAPABILITIES = {'multi-prefix', 'sasl'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
@@ -25,7 +24,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # This is just a fallback. Actual casemapping is fetched by handle_005()
         self.casemapping = 'ascii'
 
-        self.caps = {}
+        self._caps = {}
         self.ircv3_caps = set()
         self.ircv3_caps_available = {}
 
@@ -42,9 +41,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # are essentially all fatal errors for connections.
         self.handle_463 = self.handle_464 = self.handle_465 = self.handle_error
 
+        self._use_builtin_005_handling = True
+
     def post_connect(self):
         """Initializes a connection to a server."""
         # (Re)initialize counter-based pseudo UID generators
+        super().post_connect()
         self.uidgen = utils.PUIDGenerator('PUID')
         self.sidgen = utils.PUIDGenerator('ClientbotInternalSID')
 
@@ -58,7 +60,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # Clear states from last connect
         self.who_received.clear()
         self.kick_queue.clear()
-        self.caps.clear()
+        self._caps.clear()
         self.ircv3_caps.clear()
         self.ircv3_caps_available.clear()
 
@@ -576,40 +578,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # enumerate our uplink
         self.uplink = source
 
-    def handle_005(self, source, command, args):
-        """
-        Handles 005 / RPL_ISUPPORT.
-        """
-        self.caps.update(self.parse_isupport(args[1:-1]))
-        log.debug('(%s) handle_005: self.caps is %s', self.name, self.caps)
-
-        if 'CHANMODES' in self.caps:
-            self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] = \
-                self.caps['CHANMODES'].split(',')
-        log.debug('(%s) handle_005: cmodes: %s', self.name, self.cmodes)
-
-        if 'USERMODES' in self.caps:
-            self.umodes['*A'], self.umodes['*B'], self.umodes['*C'], self.umodes['*D'] = \
-                self.caps['USERMODES'].split(',')
-        log.debug('(%s) handle_005: umodes: %s', self.name, self.umodes)
-
-        self.casemapping = self.caps.get('CASEMAPPING', self.casemapping)
-        log.debug('(%s) handle_005: casemapping set to %s', self.name, self.casemapping)
-
-        if 'PREFIX' in self.caps:
-            self.prefixmodes = prefixmodes = self.parse_isupport_prefixes(self.caps['PREFIX'])
-            log.debug('(%s) handle_005: prefix modes set to %s', self.name, self.prefixmodes)
-
-            # Autodetect common prefix mode names.
-            for char, modename in COMMON_PREFIXMODES:
-                # Don't overwrite existing named mode definitions.
-                if char in self.prefixmodes and modename not in self.cmodes:
-                    self.cmodes[modename] = char
-                    log.debug('(%s) handle_005: autodetecting mode %s (%s) as %s', self.name,
-                              char, self.prefixmodes[char], modename)
-
-        self.connected.set()
-
     def handle_376(self, source, command, args):
         """
         Handles end of MOTD numerics, used to start things like autoperform.
@@ -623,6 +591,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if not self.has_eob:
             self.has_eob = True
             return {'parse_as': 'ENDBURST'}
+        self.connected.set()
+
     handle_422 = handle_376
 
     def handle_353(self, source, command, args):

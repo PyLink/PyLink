@@ -22,20 +22,24 @@ class NgIRCdProtocol(IRCS2SProtocol):
         super().__init__(irc)
 
         self.conf_keys -= {'sid', 'sidrange'}
-        self.casemapping = 'rfc1459'
+        self.casemapping = 'ascii'  # This is the default; it's actually set on server negotiation
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
 
         self.uidgen = utils.PUIDGenerator("PUID")
+        self._caps = {}
+        self._use_builtin_005_handling = True
 
     ### Commands
 
     def post_connect(self):
-        self.send('PASS %s 0210-IRC+ PyLink|%s:LMoX' % (self.serverdata['sendpass'], __version__))
+        self.send('PASS %s 0210-IRC+ PyLink|%s:HLMoX' % (self.serverdata['sendpass'], __version__))
         self.send("SERVER %s 1 :%s" % (self.serverdata['hostname'],
                                        self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']));
         self.sid = self.serverdata['hostname']
+
+        self._caps.clear()
 
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',

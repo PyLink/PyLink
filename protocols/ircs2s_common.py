@@ -11,6 +11,18 @@ from pylinkirc.log import log
 from pylinkirc import utils
 
 class IRCCommonProtocol(IRCNetwork):
+
+    COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._caps = {}
+        self._use_builtin_005_handling = False  # Disabled by default for greater security
+
+    def post_connect(self):
+        self._caps.clear()
+
     def validate_server_conf(self):
         """Validates that the server block given contains the required keys."""
         for k in self.conf_keys:
@@ -162,6 +174,54 @@ class IRCCommonProtocol(IRCNetwork):
     def handle_error(self, numeric, command, args):
         """Handles ERROR messages - these mean that our uplink has disconnected us!"""
         raise ProtocolError('Received an ERROR, disconnecting!')
+
+    def handle_005(self, source, command, args):
+        """
+        Handles 005 / RPL_ISUPPORT. This is used by at least Clientbot and ngIRCd (for server negotiation).
+        """
+        # ngIRCd:
+        # <- :ngircd.midnight.local 005 pylink-devel.int NETWORK=ngircd-test :is my network name
+        # <- :ngircd.midnight.local 005 pylink-devel.int RFC2812 IRCD=ngIRCd CHARSET=UTF-8 CASEMAPPING=ascii PREFIX=(qaohv)~&@%+ CHANTYPES=#&+ CHANMODES=beI,k,l,imMnOPQRstVz CHANLIMIT=#&+:10 :are supported on this server
+        # <- :ngircd.midnight.local 005 pylink-devel.int CHANNELLEN=50 NICKLEN=21 TOPICLEN=490 AWAYLEN=127 KICKLEN=400 MODES=5 MAXLIST=beI:50 EXCEPTS=e INVEX=I PENALTY :are supported on this server
+
+        # Regular clientbot, connecting to InspIRCd:
+        # <- :millennium.overdrivenetworks.com 005 ice AWAYLEN=200 CALLERID=g CASEMAPPING=rfc1459 CHANMODES=IXbegw,k,FJLfjl,ACKMNOPQRSTUcimnprstz CHANNELLEN=64 CHANTYPES=# CHARSET=ascii ELIST=MU ESILENCE EXCEPTS=e EXTBAN=,ACNOQRSTUcmprsuz FNC INVEX=I :are supported by this server
+        # <- :millennium.overdrivenetworks.com 005 ice KICKLEN=255 MAP MAXBANS=60 MAXCHANNELS=30 MAXPARA=32 MAXTARGETS=20 MODES=20 NAMESX NETWORK=OVERdrive-IRC NICKLEN=21 OVERRIDE PREFIX=(Yqaohv)*~&@%+ SILENCE=32 :are supported by this server
+        # <- :millennium.overdrivenetworks.com 005 ice SSL=[::]:6697 STARTTLS STATUSMSG=*~&@%+ TOPICLEN=307 UHNAMES USERIP VBANLIST WALLCHOPS WALLVOICES WATCH=32 :are supported by this server
+
+        if not self._use_builtin_005_handling:
+            log.warning("(%s) Got spurious 005 message from %s: %r", self.name, source, args)
+            return
+
+        self._caps.update(self.parse_isupport(args[1:-1]))
+        log.debug('(%s) handle_005: self._caps is %s', self.name, self._caps)
+
+        if 'CHANMODES' in self._caps:
+            self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] = \
+                self._caps['CHANMODES'].split(',')
+        log.debug('(%s) handle_005: cmodes: %s', self.name, self.cmodes)
+
+        if 'USERMODES' in self._caps:
+            self.umodes['*A'], self.umodes['*B'], self.umodes['*C'], self.umodes['*D'] = \
+                self._caps['USERMODES'].split(',')
+        log.debug('(%s) handle_005: umodes: %s', self.name, self.umodes)
+
+        self.casemapping = self._caps.get('CASEMAPPING', self.casemapping)
+        log.debug('(%s) handle_005: casemapping set to %s', self.name, self.casemapping)
+
+        if 'PREFIX' in self._caps:
+            self.prefixmodes = prefixmodes = self.parse_isupport_prefixes(self._caps['PREFIX'])
+            log.debug('(%s) handle_005: prefix modes set to %s', self.name, self.prefixmodes)
+
+            # Autodetect common prefix mode names.
+            for char, modename in self.COMMON_PREFIXMODES:
+                # Don't overwrite existing named mode definitions.
+                if char in self.prefixmodes and modename not in self.cmodes:
+                    self.cmodes[modename] = char
+                    log.debug('(%s) handle_005: autodetecting mode %s (%s) as %s', self.name,
+                              char, self.prefixmodes[char], modename)
+
+        self.connected.set()
 
     def _send_with_prefix(self, source, msg, **kwargs):
         """Sends a RFC 459-style raw command from the given sender."""
