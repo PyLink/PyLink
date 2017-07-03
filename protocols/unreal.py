@@ -41,20 +41,6 @@ class UnrealProtocol(TS6BaseProtocol):
         # Some command aliases
         self.handle_svskill = self.handle_kill
 
-    def _expandPUID(self, uid):
-        """
-        Returns the outgoing nick for the given UID. For PUIDs (used to store UID-less
-        3.2 users), this will change the PUID given to the actual user's nick,
-        so that that the older IRCds can understand it.
-        """
-        if uid in self.users and '@' in uid:
-            # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
-            # Return this user's nick accordingly.
-            nick = self.users[uid].nick
-            log.debug('(%s) Mangling target PUID %s to nick %s', self.name, uid, nick)
-            return nick
-        return uid
-
     ### OUTGOING COMMAND FUNCTIONS
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',

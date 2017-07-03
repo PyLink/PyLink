@@ -42,16 +42,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # are essentially all fatal errors for connections.
         self.handle_463 = self.handle_464 = self.handle_465 = self.handle_error
 
-    def _expandPUID(self, uid):
-        """
-        Returns the real nick for the given PUID.
-        """
-        if uid in self.users:
-            nick = self.users[uid].nick
-            log.debug('(%s) Mangling target PUID %s to nick %s', self.name, uid, nick)
-            return nick
-        return uid
-
     def post_connect(self):
         """Initializes a connection to a server."""
         # (Re)initialize counter-based pseudo UID generators

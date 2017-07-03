@@ -167,6 +167,20 @@ class IRCCommonProtocol(IRCNetwork):
         """Sends a RFC 459-style raw command from the given sender."""
         self.send(':%s %s' % (source, msg), **kwargs)
 
+    def _expandPUID(self, uid):
+        """
+        Returns the nick for the given UID; this method helps support protocol modules that use
+        PUIDs internally but must send nicks in the server protocol.
+        """
+        # TODO: stop hardcoding @ as separator
+        if uid in self.users and '@' in uid:
+            # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
+            # Return this user's nick accordingly.
+            nick = self.users[uid].nick
+            log.debug('(%s) Mangling target PUID %s to nick %s', self.name, uid, nick)
+            return nick
+        return uid
+
 class IRCS2SProtocol(IRCCommonProtocol):
     COMMAND_TOKENS = {}
 
@@ -259,14 +273,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
             self._remove_client(numeric)
         else:
             raise LookupError("No such PyLink client exists.")
-
-
-    def _expandPUID(self, uid):
-        """
-        Returns the nick for the given UID; this method helps support protocol modules that use
-        PUIDs internally but must send nicks in the server protocol.
-        """
-        return uid
 
     def message(self, numeric, target, text):
         """Sends a PRIVMSG from a PyLink client."""
