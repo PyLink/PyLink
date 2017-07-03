@@ -346,7 +346,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         Limited (internal) nick collision checking is done here to prevent Clientbot users from
         being confused with virtual clients, and vice versa."""
-        self._validateNick(nick)
+        self._check_puid_collision(nick)
         idsource = self.nick_to_uid(nick)
         is_internal = self.is_internal_client(idsource)
 
@@ -690,7 +690,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             return {'channel': channel, 'users': names, 'modes': self.channels[channel].modes,
                     'parse_as': "JOIN"}
 
-    def _validateNick(self, nick):
+    def _check_puid_collision(self, nick):
         """
         Checks to make sure a nick doesn't clash with a PUID.
         """
@@ -711,7 +711,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # Hopcount and realname field are together. We only care about the latter.
         realname = args[-1].split(' ', 1)[-1]
 
-        self._validateNick(nick)
+        self._check_puid_collision(nick)
         uid = self.nick_to_uid(nick)
 
         if uid is None:
