@@ -223,7 +223,6 @@ class IRCCommonProtocol(IRCNetwork):
                     log.debug('(%s) handle_005: autodetecting mode %s (%s) as %s', self.name,
                               char, self.prefixmodes[char], modename)
 
-        self.connected.set()
 
     def _send_with_prefix(self, source, msg, **kwargs):
         """Sends a RFC 459-style raw command from the given sender."""
