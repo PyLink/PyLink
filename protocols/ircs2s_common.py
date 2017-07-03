@@ -147,6 +147,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self.protocol_caps = {'can-spawn-clients', 'has-ts', 'can-host-relay',
                               'can-track-servers'}
 
+        # Alias
+        self.handle_squit = self._squit
+
     def handle_events(self, data):
         """Event handler for RFC1459-like protocols.
 
@@ -352,10 +355,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- ABAAB Q :Killed (GL_ (bangbang))
         self._remove_client(numeric)
         return {'text': args[0]}
-
-    def handle_squit(self, numeric, command, args):
-        """Handles incoming SQUITs."""
-        return self._squit(numeric, command, args)
 
     def handle_time(self, numeric, command, args):
         """Handles incoming /TIME requests."""

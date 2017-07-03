@@ -506,15 +506,6 @@ class UnrealProtocol(TS6BaseProtocol):
         sdesc = args[-1]
         self.servers[sid] = Server(numeric, sname, desc=sdesc)
         return {'name': sname, 'sid': sid, 'text': sdesc}
-
-    def handle_squit(self, numeric, command, args):
-        """Handles the SQUIT command."""
-        # <- SQUIT services.int :Read error
-        # Convert the server name to a SID...
-        args[0] = self._get_SID(args[0])
-        # Then, use the SQUIT handler in TS6BaseProtocol as usual.
-        return super().handle_squit(numeric, 'SQUIT', args)
-
     def handle_protoctl(self, numeric, command, args):
         """Handles protocol negotiation."""
 
