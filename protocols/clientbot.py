@@ -411,9 +411,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             # pseudo-uids and pseudo-sids as we see prefixes.
             if ('!' not in sender) and '.' in sender:
                 # Sender is a server name. XXX: make this check more foolproof
-                idsource = self._get_SID(sender)
-                if idsource not in self.servers:
-                    idsource = self.spawn_server(sender, internal=False)
+                if sender not in self.servers:
+                    self.spawn_server(sender, internal=False)
+                idsource = sender
             else:
                 # Sender is a either a nick or a nick!user@host prefix. Split it into its relevant parts.
                 try:
