@@ -450,7 +450,7 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_pass(self, numeric, command, args):
         # <- PASS :abcdefg
         if args[0] != self.serverdata['recvpass']:
-            raise ProtocolError("Error: RECVPASS from uplink does not match configuration!")
+            raise ProtocolError("RECVPASS from uplink does not match configuration!")
 
     def handle_ping(self, numeric, command, args):
         if numeric == self.uplink:

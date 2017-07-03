@@ -980,7 +980,7 @@ class P10Protocol(IRCS2SProtocol):
         """Handles authentication with our uplink."""
         # <- PASS :testpass
         if args[0] != self.serverdata['recvpass']:
-            raise ProtocolError("Error: RECVPASS from uplink does not match configuration!")
+            raise ProtocolError("RECVPASS from uplink does not match configuration!")
 
     def handle_burst(self, source, command, args):
         """Handles the BURST command, used for bursting channels on link.

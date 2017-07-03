@@ -601,7 +601,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             if args[1] != self.serverdata['recvpass']:
                  # Check if recvpass is correct
-                 raise ProtocolError('Error: recvpass from uplink server %s does not match configuration!' % servername)
+                 raise ProtocolError('recvpass from uplink server %s does not match configuration!' % servername)
 
             sdesc = args[-1]
             self.servers[numeric] = Server(None, servername, desc=sdesc)
