@@ -168,5 +168,21 @@ class NgIRCdProtocol(IRCS2SProtocol):
                 # Return the endburst hook.
                 return {'parse_as': 'ENDBURST'}
 
+    def handle_376(self, source, command, args):
+        # 376 is used to denote end of server negotiation - we send our info back at this point.
+        # <- :ngircd.midnight.local 005 pylink-devel.int NETWORK=ngircd-test :is my network name
+        # <- :ngircd.midnight.local 005 pylink-devel.int RFC2812 IRCD=ngIRCd CHARSET=UTF-8 CASEMAPPING=ascii PREFIX=(qaohv)~&@%+ CHANTYPES=#&+ CHANMODES=beI,k,l,imMnOPQRstVz CHANLIMIT=#&+:10 :are supported on this server
+        # <- :ngircd.midnight.local 005 pylink-devel.int CHANNELLEN=50 NICKLEN=21 TOPICLEN=490 AWAYLEN=127 KICKLEN=400 MODES=5 MAXLIST=beI:50 EXCEPTS=e INVEX=I PENALTY :are supported on this server
+        def f(numeric, msg):
+            self._send_with_prefix(self.sid, '%s %s %s' % (numeric, self.uplink, msg))
+        f('005', 'NETWORK=%s :is my network name' % self.get_full_network_name())
+        f('005', 'RFC2812 IRCD=PyLink CHARSET=UTF-8 CASEMAPPING=%s PREFIX=%s CHANTYPES=# '
+          'CHANMODES=%s,%s,%s,%s :are supported on this server' % (self.casemapping, self._caps['PREFIX'],
+          self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D']))
+        f('005', 'CHANNELLEN NICKLEN=%s EXCEPTS=E INVEX=I' % self.maxnicklen)
+
+        # 376 (end of MOTD) marks the end of extended server negotiation per
+        # https://github.com/ngircd/ngircd/blob/master/doc/Protocol.txt#L103-L112
+        f('376', ":End of server negotiation, happy PyLink'ing!")
 
 Class = NgIRCdProtocol
