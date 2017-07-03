@@ -237,7 +237,7 @@ class IRCCommonProtocol(IRCNetwork):
         if 'NICKLEN' in newcaps:
             # Handle NICKLEN=number
             assert newcaps['NICKLEN'], "Got NICKLEN tag with no content?"
-            self.maxnicklen = newcaps['NICKLEN']
+            self.maxnicklen = int(newcaps['NICKLEN'])
             log.debug('(%s) handle_005: got %r for maxnicklen', self.name, self.maxnicklen)
 
         if 'DEAF' in newcaps:
