@@ -163,7 +163,7 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
 
 - **PYLINK_CUSTOM_WHOIS**: `{'target': UID1, 'server': SID1}`
     - This hook is called by `coremods/handlers.py` during its WHOIS handling process, to allow plugins to provide custom WHOIS information. The `target` field represents the target UID, while the `server` field represents the SID that should be replying to the WHOIS request. The source of the payload is the user using `/whois`.
-    - Plugins wishing to implement this should use the standard WHOIS numerics, using `irc.proto.numeric()` to reply to the source from the given server.
+    - Plugins wishing to implement this should use the standard WHOIS numerics, using `irc.numeric()` to reply to the source from the given server.
     - This hook replaces the pre-0.8.x fashion of defining custom WHOIS handlers, which was non-standard and poorly documented.
 
 ## Commands handled WITHOUT hooks

@@ -7,20 +7,21 @@ from pylinkirc.protocols.ts6 import *
 
 class RatboxProtocol(TS6Protocol):
 
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Don't require EUID for Ratbox
         self.required_caps.discard('EUID')
 
         self.hook_map['LOGIN'] = 'CLIENT_SERVICES_LOGIN'
         self.protocol_caps -= {'slash-in-hosts'}
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
-        super().connect()
+
+        super().post_connect()
 
         # Note: +r, +e, and +I support will be negotiated on link
-        self.irc.cmodes = {'op': 'o', 'secret': 's', 'private': 'p', 'noextmsg': 'n', 'moderated': 'm',
+        self.cmodes = {'op': 'o', 'secret': 's', 'private': 'p', 'noextmsg': 'n', 'moderated': 'm',
                        'inviteonly': 'i', 'topiclock': 't', 'limit': 'l', 'ban': 'b', 'voice': 'v',
                        'key': 'k', 'sslonly': 'S',
                        '*A': 'beI',
@@ -28,7 +29,7 @@ class RatboxProtocol(TS6Protocol):
                        '*C': 'l',
                        '*D': 'imnpstrS'}
 
-        self.irc.umodes = {
+        self.umodes = {
             'invisible': 'i', 'callerid': 'g', 'oper': 'o', 'admin': 'a', 'sno_botfloods': 'b',
             'sno_clientconnections': 'c', 'sno_extclientconnections': 'C', 'sno_debug': 'd',
             'sno_fullauthblock': 'f', 'sno_skill': 'k', 'locops': 'l',
@@ -39,7 +40,7 @@ class RatboxProtocol(TS6Protocol):
             '*A': '', '*B': '', '*C': '', '*D': 'igoabcCdfklrsuwxyzZD'
         }
 
-    def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
+    def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
         """
@@ -52,46 +53,47 @@ class RatboxProtocol(TS6Protocol):
         # parameters: nickname, hopcount, nickTS, umodes, username, visible hostname, IP address,
         # UID, gecos
 
-        server = server or self.irc.sid
-        if not self.irc.isInternalServer(server):
+        server = server or self.sid
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
-        raw_modes = self.irc.joinModes(modes)
+        raw_modes = self.join_modes(modes)
 
         orig_realhost = realhost
         realhost = realhost or host
 
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
-        self.irc.applyModes(uid, modes)
-        self.irc.servers[server].users.add(uid)
-        self._send(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
-                   ":{realname}".format(ts=ts, host=host,
-                    nick=nick, ident=ident, uid=uid,
-                   modes=raw_modes, ip=ip, realname=realname))
+        self.apply_modes(uid, modes)
+        self.servers[server].users.add(uid)
+
+        self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+                               ":{realname}".format(ts=ts, host=host,
+                               nick=nick, ident=ident, uid=uid,
+                               modes=raw_modes, ip=ip, realname=realname))
 
         if orig_realhost:
             # If real host is specified, send it using ENCAP REALHOST
-            self._send(uid, "ENCAP * REALHOST %s" % orig_realhost)
+            self._send_with_prefix(uid, "ENCAP * REALHOST %s" % orig_realhost)
 
         return u
 
-    def updateClient(self, target, field, text):
-        """updateClient() stub for ratbox."""
+    def update_client(self, target, field, text):
+        """update_client() stub for ratbox."""
         raise NotImplementedError("User data changing is not supported on ircd-ratbox.")
 
     def handle_realhost(self, uid, command, args):
         """Handles real host propagation."""
         log.debug('(%s) Got REALHOST %s for %s', args[0], uid)
-        self.irc.users[uid].realhost = args[0]
+        self.users[uid].realhost = args[0]
 
     def handle_login(self, uid, command, args):
         """Handles login propagation on burst."""
-        self.irc.users[uid].services_account = args[0]
+        self.users[uid].services_account = args[0]
         return {'text': args[0]}
 
 Class = RatboxProtocol

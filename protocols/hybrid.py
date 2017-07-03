@@ -5,10 +5,10 @@ from pylinkirc.log import log
 from pylinkirc.classes import *
 from pylinkirc.protocols.ts6 import *
 
+# This protocol module inherits from the TS6 protocol.
 class HybridProtocol(TS6Protocol):
-    def __init__(self, irc):
-        # This protocol module inherits from the TS6 protocol.
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.casemapping = 'ascii'
         self.caps = {}
@@ -16,11 +16,11 @@ class HybridProtocol(TS6Protocol):
         self.has_eob = False
         self.protocol_caps -= {'slash-in-hosts'}
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
-        ts = self.irc.start_ts
+        ts = self.start_ts
         self.has_eob = False
-        f = self.irc.send
+        f = self.send
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
         cmodes = {
@@ -37,7 +37,7 @@ class HybridProtocol(TS6Protocol):
             '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'cimnprstCMORS'
         }
 
-        self.irc.cmodes = cmodes
+        self.cmodes = cmodes
 
         umodes = {
             'oper': 'o', 'invisible': 'i', 'wallops': 'w', 'locops': 'l',
@@ -52,13 +52,13 @@ class HybridProtocol(TS6Protocol):
             '*A': '', '*B': '', '*C': '', '*D': 'DFGHRSWabcdefgijklnopqrsuwxy'
         }
 
-        self.irc.umodes = umodes
+        self.umodes = umodes
 
         # halfops is mandatory on Hybrid
-        self.irc.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}
+        self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
-        f('PASS %s TS 6 %s' % (self.irc.serverdata["sendpass"], self.irc.sid))
+        f('PASS %s TS 6 %s' % (self.serverdata["sendpass"], self.sid))
 
         # We request the following capabilities (for hybrid):
 
@@ -68,7 +68,7 @@ class HybridProtocol(TS6Protocol):
         # CHW: Allow sending messages to @#channel and the like.
         # KNOCK: Support for /knock
         # SVS: Deal with extended NICK/UID messages that contain service IDs/stamps
-        # TBURST: Topic Burst command; we send this in topicBurst
+        # TBURST: Topic Burst command; we send this in topic_burst
         # DLN: DLINE command
         # UNDLN: UNDLINE command
         # KLN: KLINE command
@@ -79,13 +79,13 @@ class HybridProtocol(TS6Protocol):
         # EOB: Supports EOB (end of burst) command
         f('CAPAB :TBURST DLN KNOCK UNDLN UNKLN KLN ENCAP IE EX HOPS CHW SVS CLUSTER EOB QS')
 
-        f('SERVER %s 0 :%s' % (self.irc.serverdata["hostname"],
-                               self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
+        f('SERVER %s 0 :%s' % (self.serverdata["hostname"],
+                               self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
 
         # send endburst now
-        self.irc.send(':%s EOB' % (self.irc.sid,))
+        self.send(':%s EOB' % (self.sid,))
 
-    def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
+    def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
         """
@@ -95,8 +95,8 @@ class HybridProtocol(TS6Protocol):
         up to plugins to make sure they don't introduce anything invalid.
         """
 
-        server = server or self.irc.sid
-        if not self.irc.isInternalServer(server):
+        server = server or self.sid
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         uid = self.uidgen[server].next_uid()
@@ -104,18 +104,18 @@ class HybridProtocol(TS6Protocol):
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
-        raw_modes = self.irc.joinModes(modes)
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        raw_modes = self.join_modes(modes)
+        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
-        self.irc.applyModes(uid, modes)
-        self.irc.servers[server].users.add(uid)
-        self._send(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+        self.apply_modes(uid, modes)
+        self.servers[server].users.add(uid)
+        self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
                 "* :{realname}".format(ts=ts, host=host,
                 nick=nick, ident=ident, uid=uid,
                 modes=raw_modes, ip=ip, realname=realname))
         return u
 
-    def updateClient(self, target, field, text):
+    def update_client(self, target, field, text):
         """Updates the ident, host, or realname of a PyLink client."""
         # https://github.com/ircd-hybrid/ircd-hybrid/blob/58323b8/modules/m_svsmode.c#L40-L103
         # parv[0] = command
@@ -125,28 +125,28 @@ class HybridProtocol(TS6Protocol):
         # parv[4] = optional argument (services account, vhost)
         field = field.upper()
 
-        ts = self.irc.users[target].ts
+        ts = self.users[target].ts
 
         if field == 'HOST':
-            self.irc.users[target].host = text
+            self.users[target].host = text
             # On Hybrid, it appears that host changing is actually just forcing umode
             # "+x <hostname>" on the target. -GLolol
-            self._send(self.irc.sid, 'SVSMODE %s %s +x %s' % (target, ts, text))
+            self._send_with_prefix(self.sid, 'SVSMODE %s %s +x %s' % (target, ts, text))
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
-    def topicBurst(self, numeric, target, text):
+    def topic_burst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
-        if not self.irc.isInternalServer(numeric):
+        if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')
 
-        ts = self.irc.channels[target].ts
-        servername = self.irc.servers[numeric].name
+        ts = self.channels[target].ts
+        servername = self.servers[numeric].name
 
-        self._send(numeric, 'TBURST %s %s %s %s :%s' % (ts, target, int(time.time()), servername, text))
-        self.irc.channels[target].topic = text
-        self.irc.channels[target].topicset = True
+        self._send_with_prefix(numeric, 'TBURST %s %s %s %s :%s' % (ts, target, int(time.time()), servername, text))
+        self.channels[target].topic = text
+        self.channels[target].topicset = True
 
     # command handlers
 
@@ -154,13 +154,13 @@ class HybridProtocol(TS6Protocol):
         # We only get a list of keywords here. Hybrid obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
         # <- CAPAB :UNDLN UNKLN KLN TBURST KNOCK ENCAP DLN IE EX HOPS CHW SVS CLUSTER EOB QS
-        self.irc.caps = caps = args[0].split()
+        self.caps = caps = args[0].split()
         for required_cap in ('EX', 'IE', 'SVS', 'EOB', 'HOPS', 'QS', 'TBURST', 'SVS'):
              if required_cap not in caps:
                  raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
 
-        log.debug('(%s) self.irc.connected set!', self.irc.name)
-        self.irc.connected.set()
+        log.debug('(%s) self.connected set!', self.name)
+        self.connected.set()
 
     def handle_uid(self, numeric, command, args):
         """
@@ -174,39 +174,39 @@ class HybridProtocol(TS6Protocol):
         if account == '*':
             account = None
         log.debug('(%s) handle_uid: got args nick=%s ts=%s uid=%s ident=%s '
-                  'host=%s realname=%s ip=%s', self.irc.name, nick, ts, uid,
+                  'host=%s realname=%s ip=%s', self.name, nick, ts, uid,
                   ident, host, realname, ip)
 
-        self.irc.users[uid] = IrcUser(nick, ts, uid, numeric, ident, host, realname, host, ip)
+        self.users[uid] = User(nick, ts, uid, numeric, ident, host, realname, host, ip)
 
-        parsedmodes = self.irc.parseModes(uid, [modes])
-        log.debug('(%s) handle_uid: Applying modes %s for %s', self.irc.name, parsedmodes, uid)
-        self.irc.applyModes(uid, parsedmodes)
-        self.irc.servers[numeric].users.add(uid)
+        parsedmodes = self.parse_modes(uid, [modes])
+        log.debug('(%s) handle_uid: Applying modes %s for %s', self.name, parsedmodes, uid)
+        self.apply_modes(uid, parsedmodes)
+        self.servers[numeric].users.add(uid)
 
         # Call the OPERED UP hook if +o is being added to the mode list.
         if ('+o', None) in parsedmodes:
-            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+            self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
 
         # Set the account name if present
         if account:
-            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+            self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip}
 
     def handle_tburst(self, numeric, command, args):
         """Handles incoming topic burst (TBURST) commands."""
         # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
-        channel = self.irc.toLower(args[1])
+        channel = self.to_lower(args[1])
         ts = args[2]
         setter = args[3]
         topic = args[-1]
-        self.irc.channels[channel].topic = topic
-        self.irc.channels[channel].topicset = True
+        self.channels[channel].topic = topic
+        self.channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     def handle_eob(self, numeric, command, args):
-        log.debug('(%s) end of burst received', self.irc.name)
+        log.debug('(%s) end of burst received', self.name)
         if not self.has_eob:  # Only call ENDBURST hooks if we haven't already.
             return {}
 
@@ -221,7 +221,7 @@ class HybridProtocol(TS6Protocol):
         target = args[0]
         ts = args[1]
         modes = args[2:]
-        parsedmodes = self.irc.parseModes(target, modes)
+        parsedmodes = self.parse_modes(target, modes)
 
         for modepair in parsedmodes:
             if modepair[0] == '+d':
@@ -241,7 +241,7 @@ class HybridProtocol(TS6Protocol):
 
                 # Send the login hook, and remove this mode from the mode
                 # list, as it shouldn't be parsed literally.
-                self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+                self.call_hooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
                 parsedmodes.remove(modepair)
 
             elif modepair[0] == '+x':
@@ -250,16 +250,16 @@ class HybridProtocol(TS6Protocol):
                 # to some.host, for example.
                 host = args[-1]
 
-                self.irc.users[target].host = host
+                self.users[target].host = host
 
                 # Propagate the hostmask change as a hook.
-                self.irc.callHooks([numeric, 'CHGHOST',
+                self.call_hooks([numeric, 'CHGHOST',
                                    {'target': target, 'newhost': host}])
 
                 parsedmodes.remove(modepair)
 
         if parsedmodes:
-            self.irc.applyModes(target, parsedmodes)
+            self.apply_modes(target, parsedmodes)
 
         return {'target': target, 'modes': parsedmodes}
 

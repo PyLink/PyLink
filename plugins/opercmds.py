@@ -27,10 +27,10 @@ def checkban(irc, source, args):
 
         results = 0
         for uid, userobj in irc.users.copy().items():
-            if irc.matchHost(banmask, uid):
+            if irc.match_host(banmask, uid):
                 if results < 50:  # XXX rather arbitrary limit
                     s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
-                        userobj.host, userobj.realname, irc.getFriendlyName(irc.getServer(uid)))
+                        userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
 
                     # Always reply in private to prevent information leaks.
                     irc.reply(s, private=True)
@@ -42,9 +42,9 @@ def checkban(irc, source, args):
             else:
                 irc.msg(source, "No results found.", notice=True)
     else:
-        # Target can be both a nick (of an online user) or a hostmask. irc.matchHost() handles this
+        # Target can be both a nick (of an online user) or a hostmask. irc.match_host() handles this
         # automatically.
-        if irc.matchHost(banmask, targetmask):
+        if irc.match_host(banmask, targetmask):
             irc.reply('Yes, \x02%s\x02 matches \x02%s\x02.' % (targetmask, banmask))
         else:
             irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (targetmask, banmask))
@@ -61,7 +61,7 @@ def jupe(irc, source, args):
     try:
         servername = args[0]
         reason = ' '.join(args[1:]) or "No reason given"
-        desc = "Juped by %s: [%s]" % (irc.getHostmask(source), reason)
+        desc = "Juped by %s: [%s]" % (irc.get_hostmask(source), reason)
     except IndexError:
         irc.error('Not enough arguments. Needs 1-2: servername, reason (optional).')
         return
@@ -70,9 +70,9 @@ def jupe(irc, source, args):
         irc.error("Invalid server name '%s'." % servername)
         return
 
-    sid = irc.proto.spawnServer(servername, desc=desc)
+    sid = irc.spawn_server(servername, desc=desc)
 
-    irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_SPAWNSERVER',
+    irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_SPAWNSERVER',
                    {'name': servername, 'sid': sid, 'text': desc}])
 
     irc.reply("Done.")
@@ -85,14 +85,14 @@ def kick(irc, source, args):
     Admin only. Kicks <user> from the specified channel."""
     permissions.checkPermissions(irc, source, ['opercmds.kick'])
     try:
-        channel = irc.toLower(args[0])
+        channel = irc.to_lower(args[0])
         target = args[1]
         reason = ' '.join(args[2:])
     except IndexError:
         irc.error("Not enough arguments. Needs 2-3: channel, target, reason (optional).")
         return
 
-    targetu = irc.nickToUid(target)
+    targetu = irc.nick_to_uid(target)
 
     if channel not in irc.channels:  # KICK only works on channels that exist.
         irc.error("Unknown channel %r." % channel)
@@ -104,9 +104,9 @@ def kick(irc, source, args):
         return
 
     sender = irc.pseudoclient.uid
-    irc.proto.kick(sender, channel, targetu, reason)
+    irc.kick(sender, channel, targetu, reason)
     irc.reply("Done.")
-    irc.callHooks([sender, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
+    irc.call_hooks([sender, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
                                         'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
@@ -124,7 +124,7 @@ def kill(irc, source, args):
 
     # Convert the source and target nicks to UIDs.
     sender = irc.pseudoclient.uid
-    targetu = irc.nickToUid(target)
+    targetu = irc.nick_to_uid(target)
     userdata = irc.users.get(targetu)
 
     if targetu not in irc.users:
@@ -132,13 +132,13 @@ def kill(irc, source, args):
         irc.error("No such nick '%s'." % target)
         return
 
-    irc.proto.kill(sender, targetu, reason)
+    irc.kill(sender, targetu, reason)
 
     # Format the kill reason properly in hooks.
-    reason = "Killed (%s (%s))" % (irc.getFriendlyName(sender), reason)
+    reason = "Killed (%s (%s))" % (irc.get_friendly_name(sender), reason)
 
     irc.reply("Done.")
-    irc.callHooks([sender, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
+    irc.call_hooks([sender, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
                                         'userdata': userdata, 'parse_as': 'KILL'}])
 
 @utils.add_cmd
@@ -164,7 +164,7 @@ def mode(irc, source, args):
         irc.error("No valid modes were given.")
         return
 
-    parsedmodes = irc.parseModes(target, modes)
+    parsedmodes = irc.parse_modes(target, modes)
 
     if not parsedmodes:
         # Modes were given but they failed to parse into anything meaningful.
@@ -173,10 +173,10 @@ def mode(irc, source, args):
         irc.error("No valid modes were given.")
         return
 
-    irc.proto.mode(irc.pseudoclient.uid, target, parsedmodes)
+    irc.mode(irc.pseudoclient.uid, target, parsedmodes)
 
     # Call the appropriate hooks for plugins like relay.
-    irc.callHooks([irc.pseudoclient.uid, 'OPERCMDS_MODEOVERRIDE',
+    irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MODEOVERRIDE',
                    {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
 
     irc.reply("Done.")
@@ -198,9 +198,9 @@ def topic(irc, source, args):
         irc.error("Unknown channel %r." % channel)
         return
 
-    irc.proto.topic(irc.pseudoclient.uid, channel, topic)
+    irc.topic(irc.pseudoclient.uid, channel, topic)
 
     irc.reply("Done.")
-    irc.callHooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
+    irc.call_hooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
                    {'channel': channel, 'text': topic, 'setter': source,
                     'parse_as': 'TOPIC'}])

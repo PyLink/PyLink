@@ -29,7 +29,7 @@ def status(irc, source, args):
         irc.reply('You are identified as \x02%s\x02.' % identified)
     else:
         irc.reply('You are not identified as anyone.')
-    irc.reply('Operator access: \x02%s\x02' % bool(irc.isOper(source)))
+    irc.reply('Operator access: \x02%s\x02' % bool(irc.is_oper(source)))
 
 _none = '\x1D(none)\x1D'
 @utils.add_cmd
@@ -43,10 +43,10 @@ def showuser(irc, source, args):
     except IndexError:
         irc.error("Not enough arguments. Needs 1: nick.")
         return
-    u = irc.nickToUid(target) or target
+    u = irc.nick_to_uid(target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
-    verbose = irc.isOper(source) or u == source
+    verbose = irc.is_oper(source) or u == source
     if u not in irc.users:
         irc.error('Unknown user %r.' % target)
         return
@@ -57,7 +57,7 @@ def showuser(irc, source, args):
     f('Showing information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
       userobj.host, userobj.realname))
 
-    sid = irc.getServer(u)
+    sid = irc.get_server(u)
     serverobj = irc.servers[sid]
     ts = userobj.ts
 
@@ -67,7 +67,7 @@ def showuser(irc, source, args):
 
     if verbose:  # Oper only data: user modes, channels on, account info, etc.
 
-        f('\x02User modes\x02: %s' % irc.joinModes(userobj.modes, sort=True))
+        f('\x02User modes\x02: %s' % irc.join_modes(userobj.modes, sort=True))
         f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
           (u, userobj.realhost, userobj.ip))
         channels = sorted(userobj.channels)
@@ -83,7 +83,7 @@ def showchan(irc, source, args):
     Shows information about <channel>."""
     permissions.checkPermissions(irc, source, ['commands.showchan'])
     try:
-        channel = irc.toLower(args[0])
+        channel = irc.to_lower(args[0])
     except IndexError:
         irc.error("Not enough arguments. Needs 1: channel.")
         return
@@ -95,7 +95,7 @@ def showchan(irc, source, args):
 
     c = irc.channels[channel]
     # Only show verbose info if caller is oper or is in the target channel.
-    verbose = source in c.users or irc.isOper(source)
+    verbose = source in c.users or irc.is_oper(source)
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
@@ -110,17 +110,17 @@ def showchan(irc, source, args):
 
     # Mark TS values as untrusted on Clientbot and others (where TS is read-only or not trackable)
     f('\x02Channel creation time\x02: %s (%s)%s' % (ctime(c.ts), c.ts,
-                                                    ' [UNTRUSTED]' if not irc.proto.hasCap('has-ts') else ''))
+                                                    ' [UNTRUSTED]' if not irc.has_cap('has-ts') else ''))
 
     # Show only modes that aren't list-style modes.
-    modes = irc.joinModes([m for m in c.modes if m[0] not in irc.cmodes['*A']], sort=True)
+    modes = irc.join_modes([m for m in c.modes if m[0] not in irc.cmodes['*A']], sort=True)
     f('\x02Channel modes\x02: %s' % modes)
     if verbose:
         nicklist = []
         # Iterate over the user list, sorted by nick.
         for user, nick in sorted(zip(c.users, nicks),
                                  key=lambda userpair: userpair[1].lower()):
-            for pmode in c.getPrefixModes(user):
+            for pmode in c.get_prefix_modes(user):
                 # Show prefix modes in order from highest to lowest.
                 nick = irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '') + nick
             nicklist.append(nick)
@@ -179,7 +179,7 @@ def logout(irc, source, args):
             irc.error("You are not logged in!")
             return
     else:
-        otheruid = irc.nickToUid(othernick)
+        otheruid = irc.nick_to_uid(othernick)
         if not otheruid:
             irc.error("Unknown user %s." % othernick)
             return

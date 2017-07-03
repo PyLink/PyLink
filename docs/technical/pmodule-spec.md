@@ -77,7 +77,7 @@ internals](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L474-L483)
 - **`sjoin`**`(self, server, channel, users, ts=None, modes=set())` - Sends an SJOIN for a group of users to a channel. The sender should always be a Server ID (SID). TS is
 optional, and defaults to the one we've stored in the channel state if not given. `users` is a list of `(prefix mode, UID)` pairs. Example uses:
     - `sjoin('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])`
-    - `sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])`
+    - `sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])`
 
 - **`spawnServer`**`(self, name, sid=None, uplink=None, desc=None)` - Spawns a server off another PyLink server. `desc` (server description) defaults to the one in the config. `uplink` defaults to the main PyLink server, and `sid` (the server ID) is automatically generated if not given. Sanity checks for server name and SID validity ARE done by the protocol module here.
 
@@ -105,7 +105,7 @@ A protocol module should also set the following variables in their protocol clas
 
 A protocol module manipulates the following attributes in the IRC object it is attached to:
 
-- `self.irc.cmodes` / `self.irc.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
+- `self.cmodes` / `self.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
     - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
         - A = Mode that adds or removes a nick or address to a list. Always has a parameter.
         - B = Mode that changes a setting and always has a parameter.
@@ -114,8 +114,8 @@ A protocol module manipulates the following attributes in the IRC object it is a
     - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L127-L152
     - An example of mode mapping hardcoding can be found here: https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/ts6.py#L259-L311
     - You can find a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
-- `self.irc.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
-    - Example: `self.irc.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
+- `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
+    - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 
 ### Topics
 
@@ -167,7 +167,7 @@ As an example, one protocol module that tweaks this is [`Clientbot`](https://git
 
 ## Changes
 * 2017-03-15 (1.2-dev)
-   - Corrected the location of `self.irc.cmodes/umodes/prefixmodes` attributes
+   - Corrected the location of `self.cmodes/umodes/prefixmodes` attributes
    - Mention `self.conf_keys` as a special variable for completeness
 * 2017-01-29 (1.2-dev)
    - NOTICE can now be sent from servers.

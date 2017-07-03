@@ -60,22 +60,22 @@ def checkPermissions(irc, uid, perms, also_show=[]):
     """
     # For old (< 1.1 login blocks):
     # If the user is logged in, they automatically have all permissions.
-    if irc.matchHost('$pylinkacc', uid) and conf.conf['login'].get('user'):
+    if irc.match_host('$pylinkacc', uid) and conf.conf['login'].get('user'):
         log.debug('permissions: overriding permissions check for old-style admin user %s',
-                  irc.getHostmask(uid))
+                  irc.get_hostmask(uid))
         return True
 
     # Iterate over all hostmask->permission list mappings.
     for host, permlist in permissions.copy().items():
         log.debug('permissions: permlist for %s: %s', host, permlist)
-        if irc.matchHost(host, uid):
+        if irc.match_host(host, uid):
             # Now, iterate over all the perms we are looking for.
             for perm in permlist:
-                # Use irc.matchHost to expand globs in an IRC-case insensitive and wildcard
+                # Use irc.match_host to expand globs in an IRC-case insensitive and wildcard
                 # friendly way. e.g. 'xyz.*.#Channel\' will match 'xyz.manage.#channel|' on IRCds
                 # using the RFC1459 casemapping.
                 log.debug('permissions: checking if %s glob matches anything in %s', perm, permlist)
-                if any(irc.matchHost(perm, p) for p in perms):
+                if any(irc.match_host(perm, p) for p in perms):
                     return True
     raise utils.NotAuthorizedError("You are missing one of the following permissions: %s" %
                                    (', '.join(perms+also_show)))

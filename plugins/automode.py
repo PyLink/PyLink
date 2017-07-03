@@ -58,7 +58,7 @@ def checkAccess(irc, uid, channel, command):
     # - automode.<command>.#channel: ability to <command> automode on the given channel.
     # - automode.savedb: ability to save the automode DB.
     log.debug('(%s) Automode: checking access for %s/%s for %s capability on %s', irc.name, uid,
-              irc.getHostmask(uid), command, channel)
+              irc.get_hostmask(uid), command, channel)
 
     baseperm = 'automode.%s' % command
     try:
@@ -99,7 +99,7 @@ def match(irc, channel, uids=None):
 
     for mask, modes in dbentry.items():
         for uid in uids:
-            if irc.matchHost(mask, uid):
+            if irc.match_host(mask, uid):
                 # User matched a mask. Filter the mode list given to only those that are valid
                 # prefix mode characters.
                 outgoing_modes += [('+'+mode, uid) for mode in modes if mode in irc.prefixmodes]
@@ -113,10 +113,10 @@ def match(irc, channel, uids=None):
     log.debug("(%s) automode: sending modes from modebot_uid %s",
               irc.name, modebot_uid)
 
-    irc.proto.mode(modebot_uid, channel, outgoing_modes)
+    irc.mode(modebot_uid, channel, outgoing_modes)
 
     # Create a hook payload to support plugins like relay.
-    irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
+    irc.call_hooks([modebot_uid, 'AUTOMODE_MODE',
                   {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
 
 def handle_join(irc, source, command, args):
@@ -124,7 +124,7 @@ def handle_join(irc, source, command, args):
     Automode JOIN listener. This sets modes accordingly if the person joining matches a mask in the
     ACL.
     """
-    channel = irc.toLower(args['channel'])
+    channel = irc.to_lower(args['channel'])
     match(irc, channel, args['users'])
 
 utils.add_hook(handle_join, 'JOIN')
@@ -153,7 +153,7 @@ def getChannelPair(irc, source, chanpair, perm=None):
     except ValueError:
         raise ValueError("Invalid channel pair %r" % chanpair)
     channel = '#' + channel
-    channel = irc.toLower(channel)
+    channel = irc.to_lower(channel)
 
     assert utils.isChannel(channel), "Invalid channel name %s." % channel
 
@@ -202,7 +202,7 @@ def setacc(irc, source, args):
 
     modes = modes.lstrip('+')  # remove extraneous leading +'s
     dbentry[mask] = modes
-    log.info('(%s) %s set modes +%s for %s on %s', ircobj.name, irc.getHostmask(source), modes, mask, channel)
+    log.info('(%s) %s set modes +%s for %s on %s', ircobj.name, irc.get_hostmask(source), modes, mask, channel)
     reply(irc, "Done. \x02%s\x02 now has modes \x02+%s\x02 in \x02%s\x02." % (mask, modes, channel))
 
     # Join the Automode bot to the channel if not explicitly told to.
@@ -233,7 +233,7 @@ def delacc(irc, source, args):
 
     if mask in dbentry:
         del dbentry[mask]
-        log.info('(%s) %s removed modes for %s on %s', ircobj.name, irc.getHostmask(source), mask, channel)
+        log.info('(%s) %s removed modes for %s on %s', ircobj.name, irc.get_hostmask(source), mask, channel)
         reply(irc, "Done. Removed the Automode access entry for \x02%s\x02 in \x02%s\x02." % (mask, channel))
     else:
         error(irc, "No Automode access entry for \x02%s\x02 exists in \x02%s\x02." % (mask, channel))
@@ -299,7 +299,7 @@ def syncacc(irc, source, args):
     else:
         ircobj, channel = getChannelPair(irc, source, chanpair, perm='sync')
 
-    log.info('(%s) %s synced modes on %s', ircobj.name, irc.getHostmask(source), channel)
+    log.info('(%s) %s synced modes on %s', ircobj.name, irc.get_hostmask(source), channel)
     match(ircobj, channel)
 
     reply(irc, 'Done.')
@@ -324,7 +324,7 @@ def clearacc(irc, source, args):
 
     if db.get(ircobj.name+channel):
         del db[ircobj.name+channel]
-        log.info('(%s) %s cleared modes on %s', ircobj.name, irc.getHostmask(source), channel)
+        log.info('(%s) %s cleared modes on %s', ircobj.name, irc.get_hostmask(source), channel)
         reply(irc, "Done. Removed all Automode access entries for \x02%s\x02." % channel)
     else:
         error(irc, "No Automode access entries exist for \x02%s\x02." % channel)

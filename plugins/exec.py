@@ -34,7 +34,7 @@ def _exec(irc, source, args, locals_dict=None):
         return
 
     log.info('(%s) Executing %r for %s', irc.name, args,
-             irc.getHostmask(source))
+             irc.get_hostmask(source))
     if locals_dict is None:
         locals_dict = locals()
     else:
@@ -86,7 +86,7 @@ def _eval(irc, source, args, locals_dict=None, pretty_print=False):
         locals_dict['args'] = args
 
     log.info('(%s) Evaluating %r for %s', irc.name, args,
-             irc.getHostmask(source))
+             irc.get_hostmask(source))
 
     result = eval(args, globals(), locals_dict)
 
@@ -150,7 +150,7 @@ def raw(irc, source, args):
         return
 
     log.debug('(%s) Sending raw text %r to IRC for %s', irc.name, args,
-              irc.getHostmask(source))
+              irc.get_hostmask(source))
     irc.send(args)
 
     irc.reply("Done.")
@@ -170,5 +170,5 @@ def inject(irc, source, args):
         return
 
     log.info('(%s) Injecting raw text %r into protocol module for %s', irc.name,
-             args, irc.getHostmask(source))
+             args, irc.get_hostmask(source))
     irc.reply(irc.runline(args))

@@ -129,25 +129,6 @@ def isHostmask(text):
     # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
     return hostmaskRe.match(text) and '#' not in text
 
-def parseModes(irc, target, args):
-    """Parses a modestring list into a list of (mode, argument) tuples.
-    ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
-
-    This method is deprecated. Use irc.parseModes() instead.
-    """
-    log.warning("(%s) utils.parseModes is deprecated. Use irc.parseModes() instead!", irc.name)
-    return irc.parseModes(target, args)
-
-def applyModes(irc, target, changedmodes):
-    """Takes a list of parsed IRC modes, and applies them on the given target.
-
-    The target can be either a channel or a user; this is handled automatically.
-
-    This method is deprecated. Use irc.applyModes() instead.
-    """
-    log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
-    return irc.applyModes(target, changedmodes)
-
 def expandpath(path):
     """
     Returns a path expanded with environment variables and home folders (~) expanded, in that order."""
@@ -250,7 +231,7 @@ class ServiceBot():
         # which is handled by coreplugin.
         if irc is None:
             for irc in world.networkobjects.values():
-                irc.callHooks([None, 'PYLINK_NEW_SERVICE', {'name': self.name}])
+                irc.call_hooks([None, 'PYLINK_NEW_SERVICE', {'name': self.name}])
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
@@ -301,7 +282,7 @@ class ServiceBot():
                 else:
                     irc.proto.join(u, chan)
 
-                irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
+                irc.call_hooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
             else:
                 log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
 
@@ -343,10 +324,10 @@ class ServiceBot():
             if cmd and show_unknown_cmds and not cmd.startswith('\x01'):
                 # Ignore empty commands and invalid command errors from CTCPs.
                 self.reply(irc, 'Error: Unknown command %r.' % cmd)
-            log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.getHostmask(source))
+            log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.get_hostmask(source))
             return
 
-        log.info('(%s/%s) Calling command %r for %s', irc.name, self.name, cmd, irc.getHostmask(source))
+        log.info('(%s/%s) Calling command %r for %s', irc.name, self.name, cmd, irc.get_hostmask(source))
         for func in self.commands[cmd]:
             try:
                 func(irc, source, cmd_args)
@@ -601,8 +582,36 @@ class DeprecatedAttributesObject():
     def __getattribute__(self, attr):
         # Note: "self.deprecated_attributes" calls this too, so the != check is
         # needed to prevent a recursive loop!
-        if attr != 'deprecated_attributes' and attr in self.deprecated_attributes:
+        # Also ignore reserved names beginning with "__".
+        if attr != 'deprecated_attributes' and not attr.startswith('__') and attr in self.deprecated_attributes:
             log.warning('Attribute %s.%s is deprecated: %s' % (self.__class__.__name__, attr,
                         self.deprecated_attributes.get(attr)))
 
         return object.__getattribute__(self, attr)
+
+class CamelCaseToSnakeCase():
+    """
+    Class which automatically converts missing attributes from camel case to snake case.
+    """
+
+    def __getattr__(self, attr):
+        """
+        Attribute fetching fallback function which normalizes camel case attributes to snake case.
+        """
+        assert isinstance(attr, str), "Requested attribute %r is not a string!" % attr
+
+        normalized_attr = ''  # Start off with the first letter, which is ignored when processing
+        for char in attr:
+            if char in string.ascii_uppercase:
+                char = '_' + char.lower()
+            normalized_attr += char
+
+        classname = self.__class__.__name__
+        if normalized_attr == attr:
+            # __getattr__ only fires if normal attribute fetching fails, so we can assume that
+            # the attribute was tried already and failed.
+            raise AttributeError('%s object has no attribute with normalized name %r' % (classname, attr))
+
+        target = getattr(self, normalized_attr)
+        log.warning('%s.%s is deprecated, considering migrating to %s.%s!', classname, attr, classname, normalized_attr)
+        return target

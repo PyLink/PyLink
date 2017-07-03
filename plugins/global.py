@@ -20,12 +20,12 @@ def g(irc, source, args):
     for name, ircd in world.networkobjects.items():
         if ircd.connected.is_set():  # Only attempt to send to connected networks
             for channel in ircd.pseudoclient.channels:
-                subst = {'sender': irc.getFriendlyName(source),
+                subst = {'sender': irc.get_friendly_name(source),
                          'network': irc.name,
-                         'fullnetwork': irc.getFullNetworkName(),
+                         'fullnetwork': irc.get_full_network_name(),
                          'current_channel': channel,
                          'current_network': ircd.name,
-                         'current_fullnetwork': ircd.getFullNetworkName(),
+                         'current_fullnetwork': ircd.get_full_network_name(),
                          'text': message}
 
                 # Disable relaying or other plugins handling the global message.
