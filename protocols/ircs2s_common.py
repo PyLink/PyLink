@@ -165,7 +165,7 @@ class IRCCommonProtocol(IRCNetwork):
 
     def _send_with_prefix(self, source, msg, **kwargs):
         """Sends a RFC 459-style raw command from the given sender."""
-        self.send(':%s %s' % (source, msg), **kwargs)
+        self.send(':%s %s' % (self._expandPUID(source), msg), **kwargs)
 
     def _expandPUID(self, uid):
         """
