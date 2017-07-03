@@ -1100,6 +1100,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def _get_SID(self, sname):
         """Returns the SID of a server with the given name, if present."""
         name = sname.lower()
+
+        if name in self.servers:
+            return name
+
         for k, v in self.servers.items():
             if v.name.lower() == name:
                 return k
@@ -1110,6 +1114,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def _get_UID(self, target):
         """Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
         in that it returns the original text instead of None, if no matching nick is found."""
+
+        if target in self.users:
+            return target
+
         target = self.nick_to_uid(target) or target
         return target
     _getUid = _get_UID
