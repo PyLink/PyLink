@@ -56,7 +56,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """Initializes a connection to a server."""
         # (Re)initialize counter-based pseudo UID generators
         self.uidgen = utils.PUIDGenerator('PUID')
-        self.sidgen = utils.PUIDGenerator('PSID')
+        self.sidgen = utils.PUIDGenerator('ClientbotInternalSID')
 
         self.has_eob = False
         ts = self.start_ts
@@ -123,7 +123,13 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         STUB: Pretends to spawn a new server with a subset of the given options.
         """
         name = name.lower()
-        sid = self.sidgen.next_sid(prefix=name)
+        if internal:
+            # Use a custom pseudo-SID format for internal servers to prevent any server name clashes
+            sid = self.sidgen.next_sid(prefix=name)
+        else:
+            # For others servers, just use the server name as the SID.
+            sid = name
+
         self.servers[sid] = Server(uplink, name, internal=internal)
         return sid
 
