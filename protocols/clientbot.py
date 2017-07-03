@@ -411,6 +411,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             # pseudo-uids and pseudo-sids as we see prefixes.
             if ('!' not in sender) and '.' in sender:
                 # Sender is a server name. XXX: make this check more foolproof
+                assert '@' not in sender, "Incoming server name %r clashes with a PUID!" % sender
                 if sender not in self.servers:
                     self.spawn_server(sender, internal=False)
                 idsource = sender
