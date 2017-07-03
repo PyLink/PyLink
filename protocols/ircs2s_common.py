@@ -193,24 +193,26 @@ class IRCCommonProtocol(IRCNetwork):
             log.warning("(%s) Got spurious 005 message from %s: %r", self.name, source, args)
             return
 
-        self._caps.update(self.parse_isupport(args[1:-1]))
+        newcaps = self.parse_isupport(args[1:-1])
+        self._caps.update(newcaps)
         log.debug('(%s) handle_005: self._caps is %s', self.name, self._caps)
 
-        if 'CHANMODES' in self._caps:
+        if 'CHANMODES' in newcaps:
             self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] = \
-                self._caps['CHANMODES'].split(',')
+                newcaps['CHANMODES'].split(',')
         log.debug('(%s) handle_005: cmodes: %s', self.name, self.cmodes)
 
-        if 'USERMODES' in self._caps:
+        if 'USERMODES' in newcaps:
             self.umodes['*A'], self.umodes['*B'], self.umodes['*C'], self.umodes['*D'] = \
-                self._caps['USERMODES'].split(',')
+                newcaps['USERMODES'].split(',')
         log.debug('(%s) handle_005: umodes: %s', self.name, self.umodes)
 
-        self.casemapping = self._caps.get('CASEMAPPING', self.casemapping)
-        log.debug('(%s) handle_005: casemapping set to %s', self.name, self.casemapping)
+        if 'CASEMAPPING' in newcaps:
+            self.casemapping = newcaps.get('CASEMAPPING', self.casemapping)
+            log.debug('(%s) handle_005: casemapping set to %s', self.name, self.casemapping)
 
-        if 'PREFIX' in self._caps:
-            self.prefixmodes = prefixmodes = self.parse_isupport_prefixes(self._caps['PREFIX'])
+        if 'PREFIX' in newcaps:
+            self.prefixmodes = prefixmodes = self.parse_isupport_prefixes(newcaps['PREFIX'])
             log.debug('(%s) handle_005: prefix modes set to %s', self.name, self.prefixmodes)
 
             # Autodetect common prefix mode names.
