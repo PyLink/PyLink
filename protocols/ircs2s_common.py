@@ -163,6 +163,10 @@ class IRCCommonProtocol(IRCNetwork):
         """Handles ERROR messages - these mean that our uplink has disconnected us!"""
         raise ProtocolError('Received an ERROR, disconnecting!')
 
+    def _send_with_prefix(self, source, msg, **kwargs):
+        """Sends a RFC 459-style raw command from the given sender."""
+        self.send(':%s %s' % (source, msg), **kwargs)
+
 class IRCS2SProtocol(IRCCommonProtocol):
     COMMAND_TOKENS = {}
 
@@ -235,6 +239,63 @@ class IRCS2SProtocol(IRCCommonProtocol):
             parsed_args = func(sender, command, args)
             if parsed_args is not None:
                 return [sender, command, parsed_args]
+
+    def part(self, client, channel, reason=None):
+        """Sends a part from a PyLink client."""
+        channel = self.to_lower(channel)
+        if not self.is_internal_client(client):
+            log.error('(%s) Error trying to part %r from %r (no such client exists)', self.name, client, channel)
+            raise LookupError('No such PyLink client exists.')
+        msg = "PART %s" % channel
+        if reason:
+            msg += " :%s" % reason
+        self._send_with_prefix(client, msg)
+        self.handle_part(client, 'PART', [channel])
+
+    def quit(self, numeric, reason):
+        """Quits a PyLink client."""
+        if self.is_internal_client(numeric):
+            self._send_with_prefix(numeric, "QUIT :%s" % reason)
+            self._remove_client(numeric)
+        else:
+            raise LookupError("No such PyLink client exists.")
+
+
+    def _expandPUID(self, uid):
+        """
+        Returns the nick for the given UID; this method helps support protocol modules that use
+        PUIDs internally but must send nicks in the server protocol.
+        """
+        return uid
+
+    def message(self, numeric, target, text):
+        """Sends a PRIVMSG from a PyLink client."""
+        if not self.is_internal_client(numeric):
+            raise LookupError('No such PyLink client exists.')
+
+        # Mangle message targets for IRCds that require it.
+        target = self._expandPUID(target)
+
+        self._send_with_prefix(numeric, 'PRIVMSG %s :%s' % (target, text))
+
+    def notice(self, numeric, target, text):
+        """Sends a NOTICE from a PyLink client or server."""
+        if (not self.is_internal_client(numeric)) and \
+                (not self.is_internal_server(numeric)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        # Mangle message targets for IRCds that require it.
+        target = self._expandPUID(target)
+
+        self._send_with_prefix(numeric, 'NOTICE %s :%s' % (target, text))
+
+    def topic(self, numeric, target, text):
+        """Sends a TOPIC change from a PyLink client."""
+        if not self.is_internal_client(numeric):
+            raise LookupError('No such PyLink client exists.')
+        self._send_with_prefix(numeric, 'TOPIC %s :%s' % (target, text))
+        self.channels[target].topic = text
+        self.channels[target].topicset = True
 
     def check_nick_collision(self, nick):
         """
