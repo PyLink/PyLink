@@ -223,6 +223,32 @@ class IRCCommonProtocol(IRCNetwork):
                     log.debug('(%s) handle_005: autodetecting mode %s (%s) as %s', self.name,
                               char, self.prefixmodes[char], modename)
 
+        # https://defs.ircdocs.horse/defs/isupport.html
+        if 'EXCEPTS' in newcaps:
+            # Handle EXCEPTS=e or EXCEPTS fields
+            self.cmodes['banexception'] = newcaps.get('EXCEPTS') or 'e'
+            log.debug('(%s) handle_005: got cmode banexception=%r', self.name, self.cmodes['banexception'])
+
+        if 'INVEX' in newcaps:
+            # Handle INVEX=I, INVEX fields
+            self.cmodes['invex'] = newcaps.get('INVEX') or 'I'
+            log.debug('(%s) handle_005: got cmode invex=%r', self.name, self.cmodes['invex'])
+
+        if 'NICKLEN' in newcaps:
+            # Handle NICKLEN=number
+            assert newcaps['NICKLEN'], "Got NICKLEN tag with no content?"
+            self.maxnicklen = newcaps['NICKLEN']
+            log.debug('(%s) handle_005: got %r for maxnicklen', self.name, self.maxnicklen)
+
+        if 'DEAF' in newcaps:
+            # Handle DEAF=D, DEAF fields
+            self.umodes['deaf'] = newcaps.get('DEAF') or 'D'
+            log.debug('(%s) handle_005: got umode deaf=%r', self.name, self.umodes['deaf'])
+
+        if 'CALLERID' in newcaps:
+            # Handle CALLERID=g, CALLERID fields
+            self.umodes['callerid'] = newcaps.get('CALLERID') or 'g'
+            log.debug('(%s) handle_005: got umode callerid=%r', self.name, self.umodes['callerid'])
 
     def _send_with_prefix(self, source, msg, **kwargs):
         """Sends a RFC 459-style raw command from the given sender."""
