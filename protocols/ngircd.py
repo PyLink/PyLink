@@ -150,10 +150,13 @@ class NgIRCdProtocol(IRCS2SProtocol):
         uid = self.uidgen.next_uid(prefix=nick)
         realname = args[-1]
 
-        self.users[uid] = User(nick, int(time.time()), uid, source, ident=ident, host=host,
-                               realname=realname)
+        ts = int(time.time())
+        self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname)
         parsedmodes = self.parse_modes(uid, [args[5]])
         self.apply_modes(uid, parsedmodes)
+
+        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
+                'parse_as': 'UID', 'ip': '0.0.0.0'}
 
     def handle_ping(self, source, command, args):
         if source == self.uplink:
