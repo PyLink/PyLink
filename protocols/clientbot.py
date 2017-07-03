@@ -4,7 +4,8 @@ import base64
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
-from pylinkirc.classes import Protocol, User, Server, ProtocolError
+from pylinkirc.protocols.ircs2s_common import *
+from pylinkirc.classes import *
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
