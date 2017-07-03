@@ -2081,7 +2081,10 @@ def claim(irc, source, args):
         irc.reply('Channel \x02%s\x02 is claimed by: %s' %
                 (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
     else:
-        claimed = set(nets.split(','))
+        if nets == '-' or not nets:
+            claimed = set()
+        else:
+            claimed = set(nets.split(','))
     db[relay]["claim"] = claimed
     irc.reply('CLAIM for channel \x02%s\x02 set to: %s' %
             (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
