@@ -23,6 +23,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         self.conf_keys -= {'sid', 'sidrange'}
         self.casemapping = 'ascii'  # This is the default; it's actually set on server negotiation
+        self.hook_map = {'NJOIN': 'JOIN'}
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
@@ -34,7 +35,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
     ### Commands
 
     def post_connect(self):
-        self.send('PASS %s 0210-IRC+ PyLink|%s:HLMoX' % (self.serverdata['sendpass'], __version__))
+        self.send('PASS %s 0210-IRC+ PyLink|%s:CHLMoX' % (self.serverdata['sendpass'], __version__))
         self.send("SERVER %s 1 :%s" % (self.serverdata['hostname'],
                                        self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']));
         self.sid = self.serverdata['hostname']
@@ -182,10 +183,66 @@ class NgIRCdProtocol(IRCS2SProtocol):
         f('005', 'RFC2812 IRCD=PyLink CHARSET=UTF-8 CASEMAPPING=%s PREFIX=%s CHANTYPES=# '
           'CHANMODES=%s,%s,%s,%s :are supported on this server' % (self.casemapping, self._caps['PREFIX'],
           self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D']))
-        f('005', 'CHANNELLEN NICKLEN=%s EXCEPTS=E INVEX=I' % self.maxnicklen)
+        f('005', 'CHANNELLEN NICKLEN=%s EXCEPTS=E INVEX=I :are supported on this server' % self.maxnicklen)
 
         # 376 (end of MOTD) marks the end of extended server negotiation per
         # https://github.com/ngircd/ngircd/blob/master/doc/Protocol.txt#L103-L112
         f('376', ":End of server negotiation, happy PyLink'ing!")
+
+    def handle_chaninfo(self, source, command, args):
+        # https://github.com/ngircd/ngircd/blob/722afc1b810cef74dbd2738d71866176fd974ec2/doc/Protocol.txt#L146-L159
+        # CHANINFO has 3 styles depending on the amount of information applicable to a channel:
+        #    CHANINFO <channel> +<modes>
+        #    CHANINFO <channel> +<modes> <topic>
+        #    CHANINFO <channel> +<modes> <key> <limit> <topic>
+        # If there is no key, the key is "*". If there is no limit, the limit is "0".
+
+        channel = self.to_lower(args[0])
+        # Get rid of +l and +k in the initial parsing; we handle that later by looking at the CHANINFO arguments
+        modes = self.parse_modes(channel, args[1].replace('l', '').replace('k', ''))
+
+        if len(args) >= 3:
+            topic = args[-1]
+            if topic:
+                log.debug('(%s) handle_chaninfo: setting topic for %s to %r', self.name, channel, topic)
+                self.channels[channel].topic = topic
+                self.channels[channel].topicset = True
+
+        if len(args) >= 5:
+            key = args[2]
+            limit = args[3]
+            if key != '*':
+                modes.append(('+k', key))
+            if limit != '0':
+                modes.append(('+l', limit))
+
+        self.apply_modes(channel, modes)
+
+    def handle_njoin(self, source, command, args):
+        # <- :ngircd.midnight.local NJOIN #test :tester,@%GL
+
+        channel = self.to_lower(args[0])
+        chandata = self.channels[channel].deepcopy()
+        namelist = []
+
+        # Reverse the modechar->modeprefix mapping for quicker lookup
+        prefixchars = {v: k for k, v in self.prefixmodes.items()}
+        for userpair in args[1].split(','):
+            # Some regex magic to split the prefix from the nick.
+            r = re.search(r'([%s]*)(.*)' % ''.join(self.prefixmodes.values()), userpair)
+            user = self._get_UID(r.group(2))
+            modeprefix = r.group(1)
+
+            if modeprefix:
+                modes = {('+%s' % prefixchars[mode], user) for mode in modeprefix}
+                self.apply_modes(channel, modes)
+            namelist.append(user)
+
+            # Final bits of state tracking. (I hate having to do this everywhere...)
+            self.users[user].channels.add(channel)
+            self.channels[channel].users.add(user)
+
+        return {'channel': channel, 'users': namelist, 'modes': [], 'channeldata': chandata}
+
 
 Class = NgIRCdProtocol
