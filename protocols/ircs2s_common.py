@@ -261,17 +261,23 @@ class IRCCommonProtocol(IRCNetwork):
 
     def _expandPUID(self, uid):
         """
-        Returns the nick for the given UID; this method helps support protocol modules that use
-        PUIDs internally but must send nicks in the server protocol.
+        Returns the nick or server name for the given UID/SID. This method helps support protocol
+        modules that use PUIDs internally, as they must convert them to talk with the uplink.
         """
         # TODO: stop hardcoding @ as separator
-        if uid in self.users and '@' in uid:
-            # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
-            # Return this user's nick accordingly.
-            nick = self.users[uid].nick
-            log.debug('(%s) Mangling target PUID %s to nick %s', self.name, uid, nick)
-            return nick
-        return uid
+        if '@' in uid:
+            if uid in self.users:
+                # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
+                # Return this user's nick accordingly.
+                nick = self.users[uid].nick
+                log.debug('(%s) Mangling target PUID %s to nick %s', self.name, uid, nick)
+                return nick
+            elif uid in self.servers:
+                # Ditto for servers
+                sname = self.servers[uid].name
+                log.debug('(%s) Mangling target PSID %s to server name %s', self.name, uid, sname)
+                return sname
+        return uid  # Regular UID, no change
 
 class IRCS2SProtocol(IRCCommonProtocol):
     COMMAND_TOKENS = {}
@@ -363,7 +369,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         This is mostly used by PyLink internals to check whether the remote link is up."""
         if self.sid:
-            self._send_with_prefix(self.sid, 'PING %s' % self.sid)
+            self._send_with_prefix(self.sid, 'PING %s' % self._expandPUID(self.sid))
 
     def quit(self, numeric, reason):
         """Quits a PyLink client."""
