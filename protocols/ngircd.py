@@ -112,6 +112,18 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
+    def nick(self, source, newnick):
+        """Changes the nick of a PyLink client."""
+        if not self.is_internal_client(source):
+            raise LookupError('No such PyLink client exists.')
+
+        self._send_with_prefix(source, 'NICK %s' % newnick)
+
+        self.users[source].nick = newnick
+
+        # Update the nick TS for consistency with other protocols (it isn't actually used in S2S)
+        self.users[source].ts = int(time.time())
+
     ### Handlers
 
     def handle_pass(self, source, command, args):
@@ -145,25 +157,36 @@ class NgIRCdProtocol(IRCS2SProtocol):
             return {'name': servername, 'sid': None, 'text': serverdesc}
 
     def handle_nick(self, source, command, args):
-        # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
-        nick = args[0]
-        assert source in self.servers, "Server %r tried to introduce nick %r but isn't in the servers index?" % (source, nick)
+        """
+        Handles the NICK command, used for server introductions and nick changes.
+        """
+        if len(args) >= 2:
+            # User introduction:
+            # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
+            nick = args[0]
+            assert source in self.servers, "Server %r tried to introduce nick %r but isn't in the servers index?" % (source, nick)
 
-        ident = args[2]
-        host = args[3]
-        uid = self.uidgen.next_uid(prefix=nick)
-        realname = args[-1]
+            ident = args[2]
+            host = args[3]
+            uid = self.uidgen.next_uid(prefix=nick)
+            realname = args[-1]
 
-        ts = int(time.time())
-        self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname)
-        parsedmodes = self.parse_modes(uid, [args[5]])
-        self.apply_modes(uid, parsedmodes)
+            ts = int(time.time())
+            self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname)
+            parsedmodes = self.parse_modes(uid, [args[5]])
+            self.apply_modes(uid, parsedmodes)
 
-        # Add the nick to the list of users on its server; this is used for SQUIT tracking
-        self.servers[source].users.add(uid)
+            # Add the nick to the list of users on its server; this is used for SQUIT tracking
+            self.servers[source].users.add(uid)
 
-        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
-                'parse_as': 'UID', 'ip': '0.0.0.0'}
+            return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
+                    'parse_as': 'UID', 'ip': '0.0.0.0'}
+        else:
+            # Nick changes:
+            # <- :GL NICK :GL_
+            oldnick = self.users[source].nick
+            newnick = self.users[source].nick = args[0]
+            return {'newnick': newnick, 'oldnick': oldnick}
 
     def handle_ping(self, source, command, args):
         if source == self.uplink:
