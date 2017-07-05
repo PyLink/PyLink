@@ -626,8 +626,7 @@ class P10Protocol(IRCS2SProtocol):
         server, and sid (the server ID) is automatically generated if not
         given.
 
-        Note: TS6 doesn't use a specific ENDBURST command, so the endburst_delay
-        option will be ignored if given.
+        Note: the endburst_delay is not implemented for P10 and will be ignored.
         """
         # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
         uplink = uplink or self.sid
