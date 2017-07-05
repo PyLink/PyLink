@@ -79,9 +79,9 @@ class PUIDGenerator():
     Pseudo UID Generator module, using a prefix and a simple counter.
     """
 
-    def __init__(self, prefix):
+    def __init__(self, prefix, start=0):
         self.prefix = prefix
-        self.counter = 0
+        self.counter = start
 
     def next_uid(self, prefix=''):
         """
