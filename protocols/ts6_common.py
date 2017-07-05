@@ -110,14 +110,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
     ### OUTGOING COMMANDS
 
-    def numeric(self, source, numeric, target, text):
-        """Sends raw numerics from a server to a remote client, used for WHOIS
-        replies."""
-        # Mangle the target for IRCds that require it.
-        target = self._expandPUID(target)
-
-        self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
-
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
 

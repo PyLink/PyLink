@@ -373,6 +373,13 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # handle_part() does that just fine.
         self.handle_part(target, 'KICK', [channel])
 
+    def numeric(self, source, numeric, target, text):
+        """Sends raw numerics from a server to a remote client. This is used for WHOIS replies."""
+        # Mangle the target for IRCds that require it.
+        target = self._expandPUID(target)
+
+        self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
+
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
         channel = self.to_lower(channel)
