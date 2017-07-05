@@ -41,6 +41,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.sid = self.serverdata['hostname']
 
         self._caps.clear()
+        self._server_token = 0
 
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
@@ -72,17 +73,17 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
 
     def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
-        '''
         """
         Spawns a server off a PyLink server.
 
         * desc (server description) defaults to the one in the config.
         * uplink defaults to the main PyLink server.
-        * SID is set equal to the server name for ngIRCd.
+        * SID is set equal to the server name for ngIRCd, as server UIDs are not used.
+
+        Endburst delay is not used on ngIRCd.
         """
-        # -> :0AL SID test.server 1 0XY :some silly pseudoserver
         uplink = uplink or self.sid
-        name = name.lower()
+        sid = name = name.lower()
 
         desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
@@ -95,16 +96,18 @@ class NgIRCdProtocol(IRCS2SProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
 
-
-        self._send_with_prefix(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
+        # https://tools.ietf.org/html/rfc2813#section-4.1.2
+        self._send_with_prefix(uplink, 'SERVER %s 1 %s :%s' % (sid, self._server_token, desc))
+        self._server_token += 1  # Increment the token
         self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
         return sid
-        '''
 
     def join(self, client, channel):
         channel = self.to_lower(channel)
+
         if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
+
         self._send_with_prefix(client, "JOIN %s" % channel)
         self.channels[channel].users.add(client)
         self.users[client].channels.add(channel)
@@ -125,13 +128,14 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
     def handle_server(self, source, command, args):
         """
-        Handles the SERVER command, used to introduce SID-less servers.
+        Handles the SERVER command.
         """
         # <- :ngircd.midnight.local SERVER ngircd.midnight.local 1 :ngIRCd dev server
         servername = args[0].lower()
         serverdesc = args[-1]
 
-        self.servers[servername] = Server(servername, servername, desc=serverdesc)
+        # The uplink should be set to None for the uplink; otherwise, set it equal to the sender server.
+        self.servers[servername] = Server(source if source != servername else None, servername, desc=serverdesc)
 
         if self.uplink is None:
             self.uplink = servername
@@ -246,5 +250,27 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         return {'channel': channel, 'users': namelist, 'modes': [], 'channeldata': chandata}
 
+    def handle_join(self, source, command, args):
+        # RFC 2813 is odd to say the least... https://tools.ietf.org/html/rfc2813#section-4.2.1
+        # Basically, we expect messages of the forms:
+        # <- :GL JOIN #test\x07o
+        # <- :GL JOIN #moretest
+        for chanpair in args[0].split(','):
+            # Normalize channel case.
+            try:
+                channel, status = chanpair.split('\x07', 1)
+                if status in 'ov':
+                    self.apply_modes(channel, [('+' + status, source)])
+            except ValueError:
+                channel = chanpair
+            channel = self.to_lower(channel)
+
+            c = self.channels[channel]
+
+            self.users[source].channels.add(channel)
+            self.channels[channel].users.add(source)
+
+            # Call hooks manually, because one JOIN command have multiple channels.
+            self.call_hooks([source, command, {'channel': channel, 'users': [source], 'modes': c.modes}])
 
 Class = NgIRCdProtocol
