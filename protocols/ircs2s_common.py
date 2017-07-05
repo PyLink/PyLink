@@ -518,18 +518,26 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # What we actually want is to format a pretty kill message, in the form
         # "Killed (killername (reason))".
 
-        try:
-            # Get the nick or server name of the caller.
-            killer = self.get_friendly_name(source)
-        except KeyError:
-            # Killer was... neither? We must have aliens or something. Fallback
-            # to the given "UID".
-            killer = source
+        if '!' in args[1].split(" ", 1)[0]:
+            try:
+                # Get the nick or server name of the caller.
+                killer = self.get_friendly_name(source)
+            except KeyError:
+                # Killer was... neither? We must have aliens or something. Fallback
+                # to the given "UID".
+                killer = source
 
-        # Get the reason, which is enclosed in brackets.
-        reason = ' '.join(args[1].split(" ")[1:])
+            # Get the reason, which is enclosed in brackets.
+            reason = ' '.join(args[1].split(" ")[1:])
 
-        killmsg = "Killed (%s %s)" % (killer, reason)
+            killmsg = "Killed (%s %s)" % (killer, reason)
+        else:
+            # We already have a preformatted kill, so just pass it on as is.
+            # InspIRCd:
+            # <- :1MLAAAAA1 KILL 0ALAAAAAC :Killed (GL (test))
+            # ngIRCd:
+            # <- :GL KILL PyLink-devel :KILLed by GL: ?
+            killmsg = args[1]
 
         return {'target': killed, 'text': killmsg, 'userdata': data}
 
