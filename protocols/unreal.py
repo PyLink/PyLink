@@ -908,16 +908,6 @@ class UnrealProtocol(TS6BaseProtocol):
         self.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
 
-    def handle_kill(self, numeric, command, args):
-        """Handles incoming KILLs."""
-        # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)
-        # Use ts6_common's handle_kill, but coerse UIDs to nicks first.
-
-        new_args = [self._get_UID(args[0])]
-        new_args.extend(args[1:])
-
-        return super().handle_kill(numeric, command, new_args)
-
     def handle_tsctl(self, source, command, args):
         """Handles /TSCTL alltime requests."""
         # <- :GL TSCTL alltime
