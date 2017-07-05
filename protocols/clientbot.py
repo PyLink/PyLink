@@ -891,13 +891,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         self.send('PONG :%s' % args[0], queue=False)
 
-    def handle_pong(self, source, command, args):
-        """
-        Handles incoming PONG.
-        """
-        if source == self.uplink:
-            self.lastping = time.time()
-
     def handle_privmsg(self, source, command, args):
         """Handles incoming PRIVMSG/NOTICE."""
         # <- :sender PRIVMSG #dev :afasfsa

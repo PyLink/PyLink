@@ -175,6 +175,11 @@ class IRCCommonProtocol(IRCNetwork):
         """Handles ERROR messages - these mean that our uplink has disconnected us!"""
         raise ProtocolError('Received an ERROR, disconnecting!')
 
+    def handle_pong(self, source, command, args):
+        """Handles incoming PONG commands."""
+        if source == self.uplink:
+            self.lastping = time.time()
+
     def handle_005(self, source, command, args):
         """
         Handles 005 / RPL_ISUPPORT. This is used by at least Clientbot and ngIRCd (for server negotiation).
@@ -489,11 +494,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
                 del self.channels[channel]
 
         return {'channels': channels, 'text': reason}
-
-    def handle_pong(self, source, command, args):
-        """Handles incoming PONG commands."""
-        if source == self.uplink:
-            self.lastping = time.time()
 
     def handle_privmsg(self, source, command, args):
         """Handles incoming PRIVMSG/NOTICE."""
