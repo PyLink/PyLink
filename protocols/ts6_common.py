@@ -214,13 +214,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
         self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
         return sid
 
-    def squit(self, source, target, text='No reason given'):
-        """SQUITs a PyLink server."""
-        # -> SQUIT 9PZ :blah, blah
-        log.debug('source=%s, target=%s', source, target)
-        self._send_with_prefix(source, 'SQUIT %s :%s' % (target, text))
-        self.handle_squit(source, 'SQUIT', [target, text])
-
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""

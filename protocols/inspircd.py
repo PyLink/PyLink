@@ -376,12 +376,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send_with_prefix(sid, 'ENDBURST')
         return sid
 
-    def squit(self, source, target, text='No reason given'):
-        """SQUITs a PyLink server."""
-        # -> :9PY SQUIT 9PZ :blah, blah
-        self._send_with_prefix(source, 'SQUIT %s :%s' % (target, text))
-        self.handle_squit(source, 'SQUIT', [target, text])
-
     ### Core / command handlers
 
     def post_connect(self):

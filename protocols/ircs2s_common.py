@@ -394,6 +394,13 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         self._send_with_prefix(numeric, 'NOTICE %s :%s' % (target, text))
 
+    def squit(self, source, target, text='No reason given'):
+        """SQUITs a PyLink server."""
+        # -> SQUIT 9PZ :blah, blah
+        log.debug('(%s) squit: source=%s, target=%s', self.name, source, target)
+        self._send_with_prefix(source, 'SQUIT %s :%s' % (target, text))
+        self.handle_squit(source, 'SQUIT', [target, text])
+
     def topic(self, numeric, target, text):
         """Sends a TOPIC change from a PyLink client."""
         if not self.is_internal_client(numeric):
