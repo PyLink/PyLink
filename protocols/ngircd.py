@@ -142,8 +142,9 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
     def handle_nick(self, source, command, args):
         # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
-
         nick = args[0]
+        assert source in self.servers, "Server %r tried to introduce nick %r but isn't in the servers index?" % (source, nick)
+
         ident = args[2]
         host = args[3]
         uid = self.uidgen.next_uid(prefix=nick)
@@ -153,6 +154,9 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname)
         parsedmodes = self.parse_modes(uid, [args[5]])
         self.apply_modes(uid, parsedmodes)
+
+        # Add the nick to the list of users on its server; this is used for SQUIT tracking
+        self.servers[source].users.add(uid)
 
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
                 'parse_as': 'UID', 'ip': '0.0.0.0'}
