@@ -499,7 +499,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""
-        killed = args[0]
+        killed = self._get_UID(args[0])
         # Depending on whether the IRCd sends explicit QUIT messages for
         # killed clients, the user may or may not have automatically been
         # removed from our user list.
