@@ -308,14 +308,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
 
-    def ping(self, source=None, target=None):
-        """Sends a PING to a target server. Periodic PINGs are sent to our uplink
-        automatically by the Irc() internals; plugins shouldn't have to use this."""
-        source = source or self.sid
-        target = target or self.uplink
-        if not (target is None or source is None):
-            self._send_with_prefix(source, 'PING %s %s' % (source, target))
-
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client."""
         # InspIRCd 2.0 syntax (undocumented):

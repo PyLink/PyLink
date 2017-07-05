@@ -242,17 +242,6 @@ class TS6Protocol(TS6BaseProtocol):
             raise NotImplementedError("Changing field %r of a client is "
                                       "unsupported by this protocol." % field)
 
-    def ping(self, source=None, target=None):
-        """Sends a PING to a target server. Periodic PINGs are sent to our uplink
-        automatically by the Irc() internals; plugins shouldn't have to use this."""
-        source = source or self.sid
-        if source is None:
-            return
-        if target is not None:
-            self._send_with_prefix(source, 'PING %s %s' % (source, target))
-        else:
-            self._send_with_prefix(source, 'PING %s' % source)
-
     ### Core / handlers
 
     def post_connect(self):

@@ -256,7 +256,7 @@ class IRCCommonProtocol(IRCNetwork):
             log.debug('(%s) handle_005: got umode callerid=%r', self.name, self.umodes['callerid'])
 
     def _send_with_prefix(self, source, msg, **kwargs):
-        """Sends a RFC 459-style raw command from the given sender."""
+        """Sends a RFC1459-style raw command from the given sender."""
         self.send(':%s %s' % (self._expandPUID(source), msg), **kwargs)
 
     def _expandPUID(self, uid):
@@ -357,6 +357,19 @@ class IRCS2SProtocol(IRCCommonProtocol):
             msg += " :%s" % reason
         self._send_with_prefix(client, msg)
         self.handle_part(client, 'PART', [channel])
+
+    def ping(self, source=None, target=None):
+        """Sends a PING to a target server.
+
+        This is mostly used by PyLink internals to check whether the remote link is up."""
+        source = source or self.sid
+        if source is None:  # Source hasn't been initialized yet; ignore this command
+            return
+
+        if target is not None:
+            self._send_with_prefix(source, 'PING %s %s' % (source, target))
+        else:
+            self._send_with_prefix(source, 'PING %s' % source)
 
     def quit(self, numeric, reason):
         """Quits a PyLink client."""
