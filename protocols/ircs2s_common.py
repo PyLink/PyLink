@@ -590,6 +590,19 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self._remove_client(numeric)
         return {'text': args[0]}
 
+    def handle_topic(self, numeric, command, args):
+        """Handles incoming TOPIC changes from clients."""
+        # <- :70MAAAAAA TOPIC #test :test
+        channel = self.to_lower(args[0])
+        topic = args[1]
+
+        oldtopic = self.channels[channel].topic
+        self.channels[channel].topic = topic
+        self.channels[channel].topicset = True
+
+        return {'channel': channel, 'setter': numeric, 'text': topic,
+                'oldtopic': oldtopic}
+
     def handle_time(self, numeric, command, args):
         """Handles incoming /TIME requests."""
         return {'target': args[0]}

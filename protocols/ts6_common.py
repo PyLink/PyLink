@@ -235,20 +235,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
         return {'target': user, 'ts': 100, 'oldnick': oldnick}
 
-    def handle_topic(self, numeric, command, args):
-        """Handles incoming TOPIC changes from clients. For topic bursts,
-        TB (TS6/charybdis) and FTOPIC (InspIRCd) are used instead."""
-        # <- :70MAAAAAA TOPIC #test :test
-        channel = self.to_lower(args[0])
-        topic = args[1]
-
-        oldtopic = self.channels[channel].topic
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
-
-        return {'channel': channel, 'setter': numeric, 'text': topic,
-                'oldtopic': oldtopic}
-
     def handle_svsnick(self, source, command, args):
         """Handles SVSNICK (forced nickname change attempts)."""
         # InspIRCd:
