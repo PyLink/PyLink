@@ -48,10 +48,6 @@ class IRCS2SProtocol(Protocol):
             sender = self.irc.uplink
             args.insert(0, sender)
 
-        if self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender):
-            log.warning("(%s) Received command %s being routed the wrong way!", self.irc.name, command)
-            return
-
         raw_command = args[1].upper()
         args = args[2:]
 
@@ -61,6 +57,10 @@ class IRCS2SProtocol(Protocol):
         command = self.COMMAND_TOKENS.get(raw_command, raw_command)
         if command != raw_command:
             log.debug('(%s) Translating token %s to command %s', self.irc.name, raw_command, command)
+
+        if self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender):
+            log.warning("(%s) Received command %s being routed the wrong way!", self.irc.name, command)
+            return
 
         if command == 'ENCAP':
             # Special case for TS6 encapsulated commands (ENCAP), in forms like this:
