@@ -27,8 +27,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
-
-        self.uidgen = utils.PUIDGenerator("PUID")
         self._caps = {}
         self._use_builtin_005_handling = True
 
@@ -36,12 +34,22 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
     def post_connect(self):
         self.send('PASS %s 0210-IRC+ PyLink|%s:CHLMoX' % (self.serverdata['sendpass'], __version__))
+
+        # Note: RFC 2813 mandates another server token value after the hopcount (1), but ngIRCd
+        # doesn't follow that behaviour per https://github.com/ngircd/ngircd/issues/224
         self.send("SERVER %s 1 :%s" % (self.serverdata['hostname'],
-                                       self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']));
-        self.sid = self.serverdata['hostname']
+                                       self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']))
+
+        self._uidgen = utils.PUIDGenerator('PUID')
+
+        # The first "SID" this generator should return is 2, because server token 1 is implied to be
+        # the main PyLink server. RFC2813 has no official definition of SIDs, but rather uses
+        # integer tokens in the SERVER and NICK (user introduction) commands to keep track of which
+        # user exists on which server. Why did they do it this way? Who knows!
+        self._sidgen = utils.PUIDGenerator('PSID', start=1)
+        self.sid = self._sidgen.next_sid(prefix=self.serverdata['hostname'])
 
         self._caps.clear()
-        self._server_token = 0
 
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
@@ -55,22 +63,24 @@ class NgIRCdProtocol(IRCS2SProtocol):
         Note 2: IP and realhost are ignored because ngIRCd does not send them.
         """
         server = server or self.sid
+        assert '@' in server, "Need PSID for spawn_client, not pure server name!"
         if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         realname = realname or conf.conf['bot']['realname']
 
-        uid = self.uidgen.next_uid(prefix=nick)
+        uid = self._uidgen.next_uid(prefix=nick)
         userobj = self.users[uid] = User(nick, ts or int(time.time()), uid, server, ident=ident, host=host, realname=realname,
                                          manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
+        # Grab our server token; this is used instead of server name to denote where the client is.
+        server_token = server.rsplit('@')[-1]
         # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
-        self._send_with_prefix(server, 'NICK %s 1 %s %s 1 %s :%s' % (nick, ident, host, self.join_modes(modes), realname))
+        self._send_with_prefix(server, 'NICK %s 1 %s %s %s %s :%s' % (nick, ident, host, server_token, self.join_modes(modes), realname))
         return userobj
-
 
     def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
         """
@@ -83,7 +93,9 @@ class NgIRCdProtocol(IRCS2SProtocol):
         Endburst delay is not used on ngIRCd.
         """
         uplink = uplink or self.sid
-        sid = name = name.lower()
+        assert uplink in self.servers, "Unknown uplink %r?" % uplink
+        name = name.lower()
+        sid = self._sidgen.next_sid(prefix=name)
 
         desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
@@ -97,8 +109,10 @@ class NgIRCdProtocol(IRCS2SProtocol):
             raise ValueError('Invalid server name %r' % name)
 
         # https://tools.ietf.org/html/rfc2813#section-4.1.2
-        self._send_with_prefix(uplink, 'SERVER %s 1 %s :%s' % (sid, self._server_token, desc))
-        self._server_token += 1  # Increment the token
+        # We need to store a server token to introduce clients on the right server. Since this is just
+        # a number, we can simply use the counter in our PSID generator for this.
+        server_token = sid.rsplit('@')[-1]
+        self._send_with_prefix(uplink, 'SERVER %s 1 %s :%s' % (name, server_token, desc))
         self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
         return sid
 
@@ -168,7 +182,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
             ident = args[2]
             host = args[3]
-            uid = self.uidgen.next_uid(prefix=nick)
+            uid = self._uidgen.next_uid(prefix=nick)
             realname = args[-1]
 
             ts = int(time.time())
@@ -190,8 +204,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
     def handle_ping(self, source, command, args):
         if source == self.uplink:
-            # Note: SID = server name here
-            self._send_with_prefix(self.sid, 'PONG %s :%s' % (self.sid, args[-1]), queue=False)
+            self._send_with_prefix(self.sid, 'PONG %s :%s' % (self._expandPUID(self.sid), args[-1]), queue=False)
 
             if not self.has_eob:
                 # Treat the first PING we receive as end of burst.
