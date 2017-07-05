@@ -118,27 +118,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
         self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
 
-    def kick(self, numeric, channel, target, reason=None):
-        """Sends kicks from a PyLink client/server."""
-
-        if (not self.is_internal_client(numeric)) and \
-                (not self.is_internal_server(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
-        channel = self.to_lower(channel)
-        if not reason:
-            reason = 'No reason given'
-
-        # Mangle kick targets for IRCds that require it.
-        real_target = self._expandPUID(target)
-
-        self._send_with_prefix(numeric, 'KICK %s %s :%s' % (channel, real_target, reason))
-
-        # We can pretend the target left by its own will; all we really care about
-        # is that the target gets removed from the channel userlist, and calling
-        # handle_part() does that just fine.
-        self.handle_part(target, 'KICK', [channel])
-
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
 
@@ -224,20 +203,6 @@ class TS6BaseProtocol(IRCS2SProtocol):
         self.users[source].away = text
 
     ### HANDLERS
-    def handle_kick(self, source, command, args):
-        """Handles incoming KICKs."""
-        # :70MAAAAAA KICK #test 70MAAAAAA :some reason
-        channel = self.to_lower(args[0])
-        kicked = self._get_UID(args[1])
-
-        try:
-            reason = args[2]
-        except IndexError:
-            reason = ''
-
-        log.debug('(%s) Removing kick target %s from %s', self.name, kicked, channel)
-        self.handle_part(kicked, 'KICK', [channel, reason])
-        return {'channel': channel, 'target': kicked, 'text': reason}
 
     def handle_nick(self, numeric, command, args):
         """Handles incoming NICK changes."""
