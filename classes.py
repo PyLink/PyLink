@@ -171,7 +171,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.log_setup()
 
     def __repr__(self):
-        return "<%s object for network %r>" % (self.__class__.name, self.name)
+        return "<%s object for network %r>" % (self.__class__.__name__, self.name)
 
     ### General utility functions
     def call_hooks(self, hook_args):
