@@ -428,13 +428,17 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self._send_with_prefix(source, 'SQUIT %s :%s' % (target, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
-    def topic(self, numeric, target, text):
-        """Sends a TOPIC change from a PyLink client."""
-        if not self.is_internal_client(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._send_with_prefix(numeric, 'TOPIC %s :%s' % (target, text))
+    def topic(self, source, target, text):
+        """Sends a TOPIC change from a PyLink client or server."""
+        if (not self.is_internal_client(source)) and (not self.is_internal_server(source)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        target = self.to_lower(target)
+
+        self._send_with_prefix(source, 'TOPIC %s :%s' % (target, text))
         self.channels[target].topic = text
         self.channels[target].topicset = True
+    topic_burst = topic
 
     def check_nick_collision(self, nick):
         """
