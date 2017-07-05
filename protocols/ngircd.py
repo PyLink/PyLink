@@ -72,7 +72,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
 
     def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
-        pass
         '''
         """
         Spawns a server off a PyLink server.
@@ -80,9 +79,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
         * desc (server description) defaults to the one in the config.
         * uplink defaults to the main PyLink server.
         * SID is set equal to the server name for ngIRCd.
-
-        Note: TS6 doesn't use a specific ENDBURST command, so the endburst_delay
-        option will be ignored if given.
         """
         # -> :0AL SID test.server 1 0XY :some silly pseudoserver
         uplink = uplink or self.sid
@@ -106,10 +102,12 @@ class NgIRCdProtocol(IRCS2SProtocol):
         '''
 
     def join(self, client, channel):
-        return
-
-    def ping(self, *args):
-        self.lastping = time.time()
+        channel = self.to_lower(channel)
+        if not self.is_internal_client(client):
+            raise LookupError('No such PyLink client exists.')
+        self._send_with_prefix(client, "JOIN %s" % channel)
+        self.channels[channel].users.add(client)
+        self.users[client].channels.add(channel)
 
     ### Handlers
 

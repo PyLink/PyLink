@@ -187,13 +187,10 @@ class UnrealProtocol(TS6BaseProtocol):
 
         self.updateTS(server, channel, ts, changedmodes)
 
-    def ping(self, source=None, target=None):
-        """Sends a PING to a target server. Periodic PINGs are sent to our uplink
-        automatically by the Irc() internals; plugins shouldn't have to use this."""
-        source = source or self.sid
-        target = target or self.uplink
-        if not (target is None or source is None):
-            self._send_with_prefix(source, 'PING %s %s' % (self.servers[source].name, self.servers[target].name))
+    def _ping_uplink(self):
+        """Sends a PING to the uplink."""
+        if self.sid and self.uplink:
+            self._send_with_prefix(self.sid, 'PING %s %s' % (self.get_friendly_name(self.sid), self.get_friendly_name(self.uplink)))
 
     def mode(self, numeric, target, modes, ts=None):
         """

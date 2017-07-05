@@ -332,7 +332,7 @@ class TS6Protocol(TS6BaseProtocol):
 
         # Finally, end all the initialization with a PING - that's Charybdis'
         # way of saying end-of-burst :)
-        self.ping()
+        self._ping_uplink()
 
     def handle_pass(self, numeric, command, args):
         """
@@ -399,7 +399,7 @@ class TS6Protocol(TS6BaseProtocol):
             self._send_with_prefix(destination, 'PONG %s %s' % (destination, source), queue=False)
 
             if destination == self.sid and not self.has_eob:
-                # Charybdis' idea of endburst is just sending a PING. No, really!
+                # Charybdis' endburst is just sending a PING to the other server.
                 # https://github.com/charybdis-ircd/charybdis/blob/dc336d1/modules/core/m_server.c#L484-L485
                 self.has_eob = True
 

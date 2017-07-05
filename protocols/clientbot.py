@@ -245,9 +245,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # Wrap around message(), which does all the text formatting for us.
         self.message(source, target, text, notice=True)
 
-    def ping(self, source=None, target=None):
+    def _ping_uplink(self):
         """
-        Sends PING to the uplink.
+        Sends a PING to the uplink.
         """
         if self.uplink:
             self.send('PING %s' % self.get_friendly_name(self.uplink))

@@ -1117,7 +1117,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
     def _schedule_ping(self):
         """Schedules periodic pings in a loop."""
-        self.ping()
+        self._ping_uplink()
 
         self.pingTimer = threading.Timer(self.pingfreq, self._schedule_ping)
         self.pingTimer.daemon = True

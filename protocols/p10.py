@@ -471,16 +471,10 @@ class P10Protocol(IRCS2SProtocol):
         self._send_with_prefix(client, msg)
         self.handle_part(client, 'PART', [channel])
 
-    def ping(self, source=None, target=None):
-        """Sends a PING to a target server. Periodic PINGs are sent to our uplink
-        automatically by the Irc() internals; plugins shouldn't have to use this."""
-        source = source or self.sid
-        if source is None:
-            return
-        if target is not None:
-            self._send_with_prefix(source, 'G %s %s' % (source, target))
-        else:
-            self._send_with_prefix(source, 'G %s' % source)
+    def _ping_uplink(self):
+        """Sends a PING to the uplink."""
+        if self.sid:
+            self._send_with_prefix(self.sid, 'G %s' % self.sid)
 
     def quit(self, numeric, reason):
         """Quits a PyLink client."""

@@ -358,18 +358,12 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self._send_with_prefix(client, msg)
         self.handle_part(client, 'PART', [channel])
 
-    def ping(self, source=None, target=None):
-        """Sends a PING to a target server.
+    def _ping_uplink(self):
+        """Sends a PING to the uplink.
 
         This is mostly used by PyLink internals to check whether the remote link is up."""
-        source = source or self.sid
-        if source is None:  # Source hasn't been initialized yet; ignore this command
-            return
-
-        if target is not None:
-            self._send_with_prefix(source, 'PING %s %s' % (source, target))
-        else:
-            self._send_with_prefix(source, 'PING %s' % source)
+        if self.sid:
+            self._send_with_prefix(self.sid, 'PING %s' % self.sid)
 
     def quit(self, numeric, reason):
         """Quits a PyLink client."""
