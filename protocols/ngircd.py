@@ -61,7 +61,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         realname = realname or conf.conf['bot']['realname']
 
         uid = self.uidgen.next_uid(prefix=nick)
-        userobj = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        userobj = self.users[uid] = User(nick, ts or int(time.time()), uid, server, ident=ident, host=host, realname=realname,
                                          manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
