@@ -309,4 +309,16 @@ class NgIRCdProtocol(IRCS2SProtocol):
             # Call hooks manually, because one JOIN command have multiple channels.
             self.call_hooks([source, command, {'channel': channel, 'users': [source], 'modes': c.modes}])
 
+    def handle_kill(self, source, command, args):
+        """Handles incoming KILLs."""
+
+        # ngIRCd sends QUIT after KILL for its own clients, so we shouldn't process this by itself
+        # unless we're the target.
+        killed = self._get_UID(args[0])
+        if self.is_internal_client(killed):
+            return super().handle_kill(source, command, args)
+        else:
+            log.debug("(%s) Ignoring KILL to %r as it isn't meant for us; we should see a QUIT soon",
+                      self.name, killed)
+
 Class = NgIRCdProtocol
