@@ -551,6 +551,19 @@ class IRCS2SProtocol(IRCCommonProtocol):
     def _check_cloak_change(self, uid):
         return
 
+    def _check_umode_away_change(self, uid):
+        # Handle away status changes based on umode +a
+        awaymode = self.umodes.get('away')
+        if uid in self.users and awaymode:
+            u = self.users[uid]
+            old_away_status = u.away
+
+            # Check whether the user is marked away, and send a hook update only if the status has changed.
+            away_status = (awaymode, None) in u.modes
+            if away_status != old_away_status:
+                # This sets a dummy away reason of "Away" because no actual text is provided.
+                self.call_hooks([uid, 'AWAY', {'text': 'Away'}])
+
     def handle_mode(self, source, command, args):
         """Handles mode changes."""
         # InspIRCd:
@@ -577,8 +590,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
             self.call_hooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
 
         if target in self.users:
-            # Target was a user. Check for any cloak changes.
+            # Target was a user. Check for any cloak and away status changes.
             self._check_cloak_change(target)
+            self._check_umode_away_change(target)
 
         return {'target': target, 'modes': changedmodes, 'channeldata': channeldata}
 

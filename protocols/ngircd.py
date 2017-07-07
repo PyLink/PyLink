@@ -128,6 +128,21 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
         return sid
 
+    def away(self, source, text):
+        """Sends an AWAY message from a PyLink client. If the text is empty, away status is unset."""
+        if not self.is_internal_client(source):
+            raise LookupError('No such PyLink client exists.')
+
+        # Away status is denoted on ngIRCd with umode +a.
+        modes = self.users[source].modes
+        if text and (('a', None) not in modes):
+            # Set umode +a if it isn't already set
+            self.mode(source, source, [('+a', None)])
+        elif ('a', None) in modes:
+            # Ditto, only unset the mode if it *was* set.
+            self.mode(source, source, [('-a', None)])
+        self.users[source].away = text
+
     def join(self, client, channel):
         channel = self.to_lower(channel)
 
@@ -324,6 +339,9 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
             # Add the nick to the list of users on its server; this is used for SQUIT tracking
             self.servers[source].users.add(uid)
+
+            # Check away status changes (TODO: implement cloak handling too)
+            self._check_umode_away_change(uid)
 
             return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
                     'parse_as': 'UID', 'ip': '0.0.0.0'}
