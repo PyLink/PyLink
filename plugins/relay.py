@@ -635,8 +635,6 @@ def relay_joins(irc, channel, users, ts, burst=True):
             # just skip it
             continue
 
-        log.debug('(%s) relay.relay_joins: got %r for users', irc.name, users)
-
         for user in users.copy():
             if isRelayClient(irc, user):
                 # Don't clone relay clients; that'll cause bad infinite loops.
