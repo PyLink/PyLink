@@ -37,14 +37,15 @@ def initialize_all(irc):
     # which would break connections.
     if world.started.wait(TCONDITION_TIMEOUT):
         for chanpair, entrydata in db.items():
-            # Iterate over all the channels stored in our relay links DB.
             network, channel = chanpair
 
-            # Initialize each relay channel on their home network, and on every linked one too.
-            initialize_channel(irc, channel)
+            # Initialize all channels that are relevant to the called network (i.e. channels either hosted there or a relay leaf channels)
+            if network == irc.name:
+                initialize_channel(irc, channel)
             for link in entrydata['links']:
                 network, channel = link
-                initialize_channel(irc, channel)
+                if network == irc.name:
+                    initialize_channel(irc, channel)
 
 def main(irc=None):
     """Main function, called during plugin loading at start."""
