@@ -567,9 +567,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
             # Check whether the user is marked away, and send a hook update only if the status has changed.
             away_status = (awaymode, None) in u.modes
-            if away_status != old_away_status:
+            if away_status != bool(old_away_status):
                 # This sets a dummy away reason of "Away" because no actual text is provided.
-                self.call_hooks([uid, 'AWAY', {'text': 'Away'}])
+                self.call_hooks([uid, 'AWAY', {'text': 'Away' if away_status else ''}])
 
     def handle_mode(self, source, command, args):
         """Handles mode changes."""
