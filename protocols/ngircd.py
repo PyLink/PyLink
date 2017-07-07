@@ -162,7 +162,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
                 self.send(msgprefix + modestr)
         else:
             joinedmodes = self.join_modes(modes)
-            self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
+            self._send_with_prefix(source, 'MODE %s %s' % (self._expandPUID(target), joinedmodes))
 
     def nick(self, source, newnick):
         """Changes the nick of a PyLink client."""
