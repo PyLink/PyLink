@@ -38,8 +38,9 @@ class UnrealProtocol(TS6BaseProtocol):
 
         self.needed_caps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3", "NICKIP", "UMODE2", "SJOIN"]
 
-        # Some command aliases
+        # Command aliases to handlers defined in parent modules
         self.handle_svskill = self.handle_kill
+        self.topic_burst = self.topic
 
     ### OUTGOING COMMAND FUNCTIONS
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -252,14 +253,6 @@ class UnrealProtocol(TS6BaseProtocol):
             # checks could be added just to be safe...
             joinedmodes = self.join_modes(modes)
             self._send_with_prefix(target, 'UMODE2 %s' % joinedmodes)
-
-    def topic_burst(self, numeric, target, text):
-        """Sends a TOPIC change from a PyLink server."""
-        if not self.is_internal_server(numeric):
-            raise LookupError('No such PyLink server exists.')
-        self._send_with_prefix(numeric, 'TOPIC %s :%s' % (target, text))
-        self.channels[target].topic = text
-        self.channels[target].topicset = True
 
     def update_client(self, target, field, text):
         """Updates the ident, host, or realname of any connected client."""

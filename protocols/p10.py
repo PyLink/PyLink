@@ -667,38 +667,22 @@ class P10Protocol(IRCS2SProtocol):
         self._send_with_prefix(source, 'SQ %s 0 :%s' % (targetname, text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
-    def topic(self, numeric, target, text):
-        """Sends a TOPIC change from a PyLink client."""
+    def topic(self, source, target, text):
+        """Sends a TOPIC change from a PyLink client or server."""
         # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
         # First timestamp is channel creation time, second is current time,
+        if (not self.is_internal_client(source)) and (not self.is_internal_server(source)):
+            raise LookupError('No such PyLink client/server exists.')
 
-        if not self.is_internal_client(numeric):
-            raise LookupError('No such PyLink client exists.')
-
-        sendername = self.get_hostmask(numeric)
-
-        creationts = self.channels[target].ts
-
-        self._send_with_prefix(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
-                   int(time.time()), text))
-        self.channels[target].topic = text
-        self.channels[target].topicset = True
-
-    def topic_burst(self, numeric, target, text):
-        """Sends a TOPIC change from a PyLink server."""
-        # <- AB T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
-
-        if not self.is_internal_server(numeric):
-            raise LookupError('No such PyLink server exists.')
-
-        sendername = self.servers[numeric].name
+        sendername = self.get_hostmask(source)
 
         creationts = self.channels[target].ts
 
-        self._send_with_prefix(numeric, 'T %s %s %s %s :%s' % (target, sendername, creationts,
+        self._send_with_prefix(source, 'T %s %s %s %s :%s' % (target, sendername, creationts,
                    int(time.time()), text))
         self.channels[target].topic = text
         self.channels[target].topicset = True
+    topic_burst = topic
 
     def update_client(self, target, field, text):
         """Updates the ident or host of any connected client."""
