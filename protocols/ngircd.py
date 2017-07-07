@@ -34,6 +34,9 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # ngIRCd has no TS tracking.
         self.protocol_caps.discard('has-ts')
 
+        # It is, however, flexible about nicks and hosts.
+        self.protocol_caps |= {'slash-in-hosts', 'slash-in-nicks', 'underscore-in-hosts'}
+
     ### Commands
 
     def post_connect(self):
