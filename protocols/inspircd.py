@@ -65,7 +65,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                                  modes=raw_modes, ip=ip, realname=realname,
                                                  realhost=realhost))
         if ('o', None) in modes or ('+o', None) in modes:
-            self._operUp(uid, opertype)
+            self._oper_up(uid, opertype)
         return u
 
     def join(self, client, channel):
@@ -155,7 +155,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         self.updateTS(server, channel, ts, changedmodes)
 
-    def _operUp(self, target, opertype=None):
+    def _oper_up(self, target, opertype=None):
         """Opers a client up (internal function specific to InspIRCd).
 
         This should be called whenever user mode +o is set on anyone, because
@@ -202,7 +202,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if ('+o', None) in modes and not utils.isChannel(target):
             # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
-            self._operUp(target)
+            self._oper_up(target)
         self.apply_modes(target, modes)
         joinedmodes = self.join_modes(modes)
         if utils.isChannel(target):
