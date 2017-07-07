@@ -674,7 +674,11 @@ class P10Protocol(IRCS2SProtocol):
         if (not self.is_internal_client(source)) and (not self.is_internal_server(source)):
             raise LookupError('No such PyLink client/server exists.')
 
-        sendername = self.get_hostmask(source)
+        if source in self.users:  # Expand the nick!user@host if the sender is a user
+            sendername = self.get_hostmask(source)
+        else:
+            # For servers, just show the server name.
+            sendername = self.get_friendly_name(source)
 
         creationts = self.channels[target].ts
 
