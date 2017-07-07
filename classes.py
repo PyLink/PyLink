@@ -1415,6 +1415,9 @@ class User():
         # For "serious" service clients, this should always be False.
         self.manipulatable = manipulatable
 
+        # Cloaked host for IRCds that use it
+        self.cloaked_host = None
+
     def __repr__(self):
         return 'User(%s/%s)' % (self.uid, self.nick)
 IrcUser = User

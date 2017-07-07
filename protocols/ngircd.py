@@ -87,7 +87,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         uid = self._uidgen.next_uid(prefix=nick)
         userobj = self.users[uid] = User(nick, ts or int(time.time()), uid, server, ident=ident, host=host, realname=realname,
-                                         manipulatable=manipulatable, opertype=opertype)
+                                         manipulatable=manipulatable, opertype=opertype, realhost=host)
 
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
@@ -324,6 +324,50 @@ class NgIRCdProtocol(IRCS2SProtocol):
             log.debug("(%s) Ignoring KILL to %r as it isn't meant for us; we should see a QUIT soon",
                       self.name, killed)
 
+    def _check_cloak_change(self, target):
+        u = self.users[target]
+        old_host = u.host
+
+        if ('x', None) in u.modes and u.cloaked_host:
+            u.host = u.cloaked_host
+        elif u.realhost:
+            u.host = u.realhost
+
+        # Something changed, so send a CHGHOST hook
+        if old_host != u.host:
+            self.call_hooks([target, 'CHGHOST', {'target': target, 'newhost': u.host}])
+
+    def handle_metadata(self, source, command, args):
+        """Handles various user metadata for ngIRCd (cloaked host, account name, etc.)"""
+        # <- :ngircd.midnight.local METADATA GL cloakhost :hidden-3a2a739e.ngircd.midnight.local
+        target = self._get_UID(args[0])
+
+        if target not in self.users:
+            log.warning("(%s) Ignoring METADATA to missing user %r?", self.name, target)
+            return
+
+        datatype = args[1]
+        u = self.users[target]
+
+        if datatype == 'cloakhost':  # Set cloaked host
+            u.cloaked_host = args[-1]
+            self._check_cloak_change(target)
+
+        elif datatype == 'host':  # Host changing. This actually sets the "real host" that ngIRCd stores
+            u.realhost = args[-1]
+            self._check_cloak_change(target)
+
+        elif datatype == 'user':  # Ident changing
+            u.ident = args[-1]
+            self.call_hooks([target, 'CHGIDENT', {'target': target, 'newident': args[-1]}])
+
+        elif datatype == 'info':  # Realname changing
+            u.realname = args[-1]
+            self.call_hooks([target, 'CHGNAME', {'target': target, 'newgecos': args[-1]}])
+
+        elif datatype == 'accountname':  # Services account
+            self.call_hooks([target, 'CLIENT_SERVICES_LOGIN', {'text': args[-1]}])
+
     def handle_nick(self, source, command, args):
         """
         Handles the NICK command, used for server introductions and nick changes.
@@ -340,15 +384,16 @@ class NgIRCdProtocol(IRCS2SProtocol):
             realname = args[-1]
 
             ts = int(time.time())
-            self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname)
+            self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname, realhost=host)
             parsedmodes = self.parse_modes(uid, [args[5]])
             self.apply_modes(uid, parsedmodes)
 
             # Add the nick to the list of users on its server; this is used for SQUIT tracking
             self.servers[source].users.add(uid)
 
-            # Check away status changes (TODO: implement cloak handling too)
+            # Check away status and cloaked host changes
             self._check_umode_away_change(uid)
+            self._check_cloak_change(uid)
 
             return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
                     'parse_as': 'UID', 'ip': '0.0.0.0'}
