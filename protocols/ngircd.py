@@ -153,6 +153,9 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
+    def knock(self, numeric, target, text):
+        raise NotImplementedError('KNOCK is not supported on ngIRCd.')
+
     def mode(self, source, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server. The TS option is not used on ngIRCd."""
 
