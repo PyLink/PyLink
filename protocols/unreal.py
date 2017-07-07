@@ -300,12 +300,6 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
 
-    def invite(self, numeric, target, channel):
-        """Sends an INVITE from a PyLink client.."""
-        if not self.is_internal_client(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._send_with_prefix(numeric, 'INVITE %s %s' % (target, channel))
-
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
         # KNOCKs in UnrealIRCd are actually just specially formatted NOTICEs,
