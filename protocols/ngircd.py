@@ -51,6 +51,18 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         self._caps.clear()
 
+        self.cmodes.update({
+            'banexception': 'e', 'invex': 'I', 'regmoderated': 'M', 'nonick': 'N',
+            'operonly': 'O', 'permanent': 'P', 'nokick': 'Q', 'registered': 'r',
+            'regonly': 'R', 'noinvite': 'V', 'sslonly': 'z'
+        })
+
+        self.umodes.update({
+            'away': 'a', 'deaf': 'b', 'bot': 'B', 'sno_clientconnections': 'c',
+            'deaf_commonchan': 'C', 'floodexempt': 'f', 'hidechans': 'I',
+            'servprotect': 'q', 'restricted': 'r', 'registered': 'R', 'cloak': 'x'
+        })
+
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
@@ -289,7 +301,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
         else:
             log.debug("(%s) Ignoring KILL to %r as it isn't meant for us; we should see a QUIT soon",
                       self.name, killed)
-
 
     def handle_nick(self, source, command, args):
         """
