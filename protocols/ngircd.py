@@ -241,6 +241,46 @@ class NgIRCdProtocol(IRCS2SProtocol):
             log.debug("(%s) sjoin: bursting modes %r for channel %r now", self.name, modes, channel)
             self.mode(server, channel, modes)
 
+    def update_client(self, target, field, text):
+        """Updates the ident, host, or realname of any connected client."""
+        field = field.upper()
+
+        if field not in ('IDENT', 'HOST', 'REALNAME', 'GECOS'):
+            raise NotImplementedError("Changing field %r of a client is "
+                                      "unsupported by this protocol." % field)
+
+        real_target = self._expandPUID(target)
+        if field == 'IDENT':
+            self.users[target].ident = text
+            self._send_with_prefix(self.sid, 'METADATA %s user :%s' % (real_target, text))
+
+            if not self.is_internal_client(target):
+                # If the target wasn't one of our clients, send a hook payload for other plugins to listen to.
+                self.call_hooks([self.sid, 'CHGIDENT', {'target': target, 'newident': text}])
+
+        elif field == 'HOST':
+            self.users[target].host = text
+
+            if self.is_internal_client(target):
+                # For our own clients, replace the real host.
+                self._send_with_prefix(self.sid, 'METADATA %s host :%s' % (real_target, text))
+            else:
+                # For others, update the cloaked host and force a umode +x.
+                self._send_with_prefix(self.sid, 'METADATA %s cloakhost :%s' % (real_target, text))
+
+                if ('x', None) not in self.users[target].modes:
+                    log.debug('(%s) Forcing umode +x on %r as part of cloak setting', self.name, target)
+                    self.mode(self.sid, target, [('+x', None)])
+
+                self.call_hooks([self.sid, 'CHGHOST', {'target': target, 'newhost': text}])
+
+        elif field in ('REALNAME', 'GECOS'):
+            self.users[target].realname = text
+            self._send_with_prefix(self.sid, 'METADATA %s info :%s' % (real_target, text))
+
+            if not self.is_internal_client(target):
+                self.call_hooks([self.sid, 'CHGNAME', {'target': target, 'newgecos': text}])
+
     ### Handlers
 
     def handle_376(self, source, command, args):
