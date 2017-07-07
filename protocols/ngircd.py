@@ -202,6 +202,11 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
             self.apply_modes(channel, (('+%s' % prefix, uid) for prefix in userpair[0]))
 
+        if modes:
+            # Burst modes separately if there are any.
+            log.debug("(%s) sjoin: bursting modes %r for channel %r now", self.name, modes, channel)
+            self.mode(server, channel, modes)
+
     ### Handlers
 
     def handle_pass(self, source, command, args):
