@@ -16,6 +16,7 @@ from copy import deepcopy
 import inspect
 import ipaddress
 import queue
+import functools
 
 try:
     import ircmatch
@@ -473,23 +474,28 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             return False
 
 class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Lock for updateTS to make sure only one thread can change the channel TS at one time.
         self._ts_lock = threading.Lock()
 
-    def to_lower(self, text):
-        """Returns a lowercase representation of text based on the IRC object's
-        casemapping (rfc1459 or ascii)."""
-        if self.casemapping == 'rfc1459':
+    @staticmethod
+    @functools.lru_cache(maxsize=2048)
+    def _to_lower_core(text, casemapping='rfc1459'):
+        if casemapping == 'rfc1459':
             text = text.replace('{', '[')
             text = text.replace('}', ']')
             text = text.replace('|', '\\')
             text = text.replace('~', '^')
         # Encode the text as bytes first, and then lowercase it so that only ASCII characters are
-        # changed. Unicode in channel names, etc. is case sensitive because IRC is just that old of
-        # a protocol!!!
+        # changed. Unicode in channel names, etc. *is* case sensitive!
         return text.encode().lower().decode()
+
+    def to_lower(self, text):
+        """Returns a lowercase representation of text based on the IRC object's
+        casemapping (rfc1459 or ascii)."""
+        return self._to_lower_core(text, casemapping=self.casemapping)
 
     def parse_modes(self, target, args):
         """Parses a modestring list into a list of (mode, argument) tuples.
