@@ -138,6 +138,44 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # Update the nick TS for consistency with other protocols (it isn't actually used in S2S)
         self.users[source].ts = int(time.time())
 
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
+        """Sends an SJOIN for a group of users to a channel.
+
+        The sender should always be a Server ID (SID). TS is optional, and defaults
+        to the one we've stored in the channel state if not given.
+        <users> is a list of (prefix mode, UID) pairs:
+
+        Example uses:
+            sjoin('100', '#test', [('', 'user0@0'), ('o', user1@1'), ('v', 'someone@2')])
+            sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
+        """
+        channel = self.to_lower(channel)
+
+        server = server or self.sid
+        if not server:
+            raise LookupError('No such PyLink client exists.')
+        log.debug('(%s) sjoin: got %r for users', self.name, users)
+
+        njoin_prefix = ':%s NJOIN %s :' % (self._expandPUID(self.sid), channel)
+        # Format the user list into strings such as @user1, +user2, user3, etc.
+        nicks_to_send = ['%s%s' % (''.join(self.prefixmodes[modechar] for modechar in userpair[0] if modechar in self.prefixmodes),
+                                   self._expandPUID(userpair[1])) for userpair in users]
+
+        # Use 13 args max per line: this is equal to the max of 15 minus the command name and target channel.
+        for message in utils.wrapArguments(njoin_prefix, nicks_to_send, S2S_BUFSIZE, separator=',', max_args_per_line=13):
+            self.send(message)
+
+        # Add the affected users to our state.
+        for userpair in users:
+            uid = userpair[1]
+            self.channels[channel].users.add(uid)
+            try:
+                self.users[uid].channels.add(channel)
+            except KeyError:  # Not initialized yet?
+                log.warning("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.name, channel, uid)
+
+            self.apply_modes(channel, (('+%s' % prefix, uid) for prefix in userpair[0]))
+
     ### Handlers
 
     def handle_pass(self, source, command, args):
