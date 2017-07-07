@@ -126,6 +126,32 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
+    def mode(self, source, target, modes, ts=None):
+        """Sends mode changes from a PyLink client/server. The TS option is not used on ngIRCd."""
+
+        if (not self.is_internal_client(source)) and \
+                (not self.is_internal_server(source)):
+            raise LookupError('No such PyLink client/server %r exists' % source)
+
+        self.apply_modes(target, modes)
+        modes = list(modes)
+
+        if utils.isChannel(target):
+            msgprefix = ':%s MODE %s ' % (self._expandPUID(source), target)
+            bufsize = S2S_BUFSIZE - len(msgprefix)
+
+            # Expand PUIDs when sending outgoing prefix modes.
+            for idx, mode in enumerate(modes):
+                if mode[0][-1] in self.prefixmodes:
+                    log.debug('(%s) mode: expanding PUID of mode %s', self.name, str(mode))
+                    modes[idx] = (mode[0], self._expandPUID(mode[1]))
+
+            for modestr in self.wrap_modes(modes, bufsize, max_modes_per_msg=12):
+                self.send(msgprefix + modestr)
+        else:
+            joinedmodes = self.join_modes(modes)
+            self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
+
     def nick(self, source, newnick):
         """Changes the nick of a PyLink client."""
         if not self.is_internal_client(source):
