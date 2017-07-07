@@ -27,8 +27,12 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
+
         self._caps = {}
         self._use_builtin_005_handling = True
+
+        # ngIRCd has no TS tracking.
+        self.protocol_caps.discard('has-ts')
 
     ### Commands
 
