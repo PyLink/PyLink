@@ -403,7 +403,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         """Sends a PING to the uplink.
 
         This is mostly used by PyLink internals to check whether the remote link is up."""
-        if self.sid:
+        if self.sid and self.connected.is_set():
             self._send_with_prefix(self.sid, 'PING %s' % self._expandPUID(self.sid))
 
     def quit(self, numeric, reason):
