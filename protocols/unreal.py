@@ -703,8 +703,8 @@ class UnrealProtocol(TS6BaseProtocol):
                     self.updateTS(numeric, channel, their_ts)
             return {'target': channel, 'modes': parsedmodes, 'channeldata': oldobj}
         else:
-            # User mode change: pass those on to handle_umode2()
-            self.handle_umode2(numeric, 'MODE', args[1:])
+            # User mode change: pass those on to IRCS2SProtocol's handle_mode()
+            super().handle_mode(numeric, 'MODE', args)
 
     def _check_cloak_change(self, uid, parsedmodes):
         """

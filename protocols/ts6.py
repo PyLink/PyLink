@@ -585,19 +585,6 @@ class TS6Protocol(TS6BaseProtocol):
         return {'target': channel, 'modes': changedmodes, 'ts': ts,
                 'channeldata': oldobj}
 
-    def handle_mode(self, numeric, command, args):
-        """Handles incoming user mode changes."""
-        # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
-        target = args[0]
-        modestrings = args[1:]
-        changedmodes = self.parse_modes(target, modestrings)
-        self.apply_modes(target, changedmodes)
-        # Call the OPERED UP hook if +o is being set.
-        if ('+o', None) in changedmodes:
-            otype = 'Server Administrator' if ('a', None) in self.users[target].modes else 'IRC Operator'
-            self.call_hooks([target, 'CLIENT_OPERED', {'text': otype}])
-        return {'target': target, 'modes': changedmodes}
-
     def handle_tb(self, numeric, command, args):
         """Handles incoming topic burst (TB) commands."""
         # <- :42X TB #chat 1467427448 GL!~gl@127.0.0.1 :test

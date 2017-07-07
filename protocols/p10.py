@@ -164,6 +164,9 @@ class P10Protocol(IRCS2SProtocol):
 
         self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
 
+        # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
+        self.handle_opmode = self.handle_mode
+
     def _send_with_prefix(self, source, text, **kwargs):
         self.send("%s %s" % (source, text), **kwargs)
 
@@ -1110,31 +1113,6 @@ class P10Protocol(IRCS2SProtocol):
         if source == self.uplink:
             self._send_with_prefix(self.sid, 'EA')
             return {}
-
-    def handle_mode(self, source, command, args):
-        """Handles mode changes."""
-        # <- ABAAA M GL -w
-        # <- ABAAA M #test +v ABAAB 1460747615
-        # <- ABAAA OM #test +h ABAAA
-        target = self._get_UID(args[0])
-        if utils.isChannel(target):
-            target = self.to_lower(target)
-
-        modestrings = args[1:]
-        changedmodes = self.parse_modes(target, modestrings)
-        self.apply_modes(target, changedmodes)
-
-        # Call the CLIENT_OPERED hook if +o is being set.
-        if ('+o', None) in changedmodes and target in self.users:
-            self.call_hooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-
-        if target in self.users:
-            # Target was a user. Check for any cloak changes.
-            self._check_cloak_change(target)
-
-        return {'target': target, 'modes': changedmodes}
-    # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
-    handle_opmode = handle_mode
 
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""

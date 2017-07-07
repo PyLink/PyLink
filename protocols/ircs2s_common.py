@@ -548,6 +548,40 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         return {'target': killed, 'text': killmsg, 'userdata': data}
 
+    def _check_cloak_change(self, uid):
+        return
+
+    def handle_mode(self, source, command, args):
+        """Handles mode changes."""
+        # InspIRCd:
+        # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
+
+        # P10:
+        # <- ABAAA M GL -w
+        # <- ABAAA M #test +v ABAAB 1460747615
+        # <- ABAAA OM #test +h ABAAA
+        target = self._get_UID(args[0])
+        if utils.isChannel(target):
+            target = self.to_lower(target)
+            channeldata = self.channels[target].deepcopy()
+        else:
+            channeldata = None
+
+        modestrings = args[1:]
+        changedmodes = self.parse_modes(target, modestrings)
+        self.apply_modes(target, changedmodes)
+
+        # Call the CLIENT_OPERED hook if +o is being set.
+        # TODO: handle umodes for admin, servprotect, etc. and set the oper type accordingly.
+        if ('+o', None) in changedmodes and target in self.users:
+            self.call_hooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+
+        if target in self.users:
+            # Target was a user. Check for any cloak changes.
+            self._check_cloak_change(target)
+
+        return {'target': target, 'modes': changedmodes, 'channeldata': channeldata}
+
     def handle_part(self, source, command, args):
         """Handles incoming PART commands."""
         channels = self.to_lower(args[0]).split(',')
