@@ -454,7 +454,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self.channels[target].topicset = True
     topic_burst = topic
 
-    def check_nick_collision(self, nick):
+    def _check_nick_collision(self, nick):
         """
         Nick collision checker.
         """
