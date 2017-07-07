@@ -185,7 +185,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client/server %r exists' % source)
 
         self.apply_modes(target, modes)
-        modes = list(modes)
+        modes = list(modes)  # Work around TypeError in the expand PUID section
 
         if utils.isChannel(target):
             msgprefix = ':%s MODE %s ' % (self._expandPUID(source), target)
@@ -434,6 +434,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
             # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
             nick = args[0]
             assert source in self.servers, "Server %r tried to introduce nick %r but isn't in the servers index?" % (source, nick)
+            self.check_nick_collision(nick)
 
             ident = args[2]
             host = args[3]
