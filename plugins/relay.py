@@ -238,8 +238,10 @@ def spawn_relay_server(irc, remoteirc):
 
         return sid
     else:
-        log.debug('(%s) skipping spawn_relay_server(%s, %s); the remote is not ready yet',
-                  irc.name, irc.name, remoteirc.name)
+        log.debug('(%s) skipping spawn_relay_server(%s, %s); the local server (%s) is not ready yet',
+                  irc.name, irc.name, remoteirc.name, irc.name)
+        log.debug('(%s) spawn_relay_server: current thread is %s',
+                  irc.name, threading.current_thread().name)
 
 def get_remote_sid(irc, remoteirc, spawn_if_missing=True):
     """Gets the remote server SID representing remoteirc on irc, spawning
@@ -382,8 +384,10 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0)
 
             return u
     else:
-        log.debug('(%s) skipping spawn_relay_user(%s, %s, %s, ...); the remote is not ready yet',
-                  irc.name, irc.name, remoteirc.name, user)
+        log.debug('(%s) skipping spawn_relay_user(%s, %s, %s, ...); the local server (%s) is not ready yet',
+                  irc.name, irc.name, remoteirc.name, user, irc.name)
+        log.debug('(%s) spawn_relay_user: current thread is %s',
+                  irc.name, threading.current_thread().name)
 
 def get_orig_user(irc, user, targetirc=None):
     """
