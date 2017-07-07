@@ -209,80 +209,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
     ### Handlers
 
-    def handle_pass(self, source, command, args):
-        """
-        Handles phase one of the ngIRCd login process (password auth and version info).
-        """
-        # PASS is step one of server introduction, and is used to send the server info and password.
-        # <- :ngircd.midnight.local PASS xyzpassword 0210-IRC+ ngIRCd|24~3-gbc728f92:CHLMSXZ PZ
-        recvpass = args[0]
-        if recvpass != self.serverdata['recvpass']:
-            raise ProtocolError("RECVPASS from uplink does not match configuration!")
-
-        assert 'IRC+' in args[1], "Linking to non-ngIRCd server using this protocol module is not supported"
-
-    def handle_server(self, source, command, args):
-        """
-        Handles the SERVER command.
-        """
-        # <- :ngircd.midnight.local SERVER ngircd.midnight.local 1 :ngIRCd dev server
-        servername = args[0].lower()
-        serverdesc = args[-1]
-
-        # The uplink should be set to None for the uplink; otherwise, set it equal to the sender server.
-        self.servers[servername] = Server(source if source != servername else None, servername, desc=serverdesc)
-
-        if self.uplink is None:
-            self.uplink = servername
-            log.debug('(%s) Got %s as uplink', self.name, servername)
-        else:
-            # Only send the SERVER hook if this isn't the initial connection.
-            return {'name': servername, 'sid': None, 'text': serverdesc}
-
-    def handle_nick(self, source, command, args):
-        """
-        Handles the NICK command, used for server introductions and nick changes.
-        """
-        if len(args) >= 2:
-            # User introduction:
-            # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
-            nick = args[0]
-            assert source in self.servers, "Server %r tried to introduce nick %r but isn't in the servers index?" % (source, nick)
-
-            ident = args[2]
-            host = args[3]
-            uid = self._uidgen.next_uid(prefix=nick)
-            realname = args[-1]
-
-            ts = int(time.time())
-            self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname)
-            parsedmodes = self.parse_modes(uid, [args[5]])
-            self.apply_modes(uid, parsedmodes)
-
-            # Add the nick to the list of users on its server; this is used for SQUIT tracking
-            self.servers[source].users.add(uid)
-
-            return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
-                    'parse_as': 'UID', 'ip': '0.0.0.0'}
-        else:
-            # Nick changes:
-            # <- :GL NICK :GL_
-            oldnick = self.users[source].nick
-            newnick = self.users[source].nick = args[0]
-            return {'newnick': newnick, 'oldnick': oldnick}
-
-    def handle_ping(self, source, command, args):
-        if source == self.uplink:
-            self._send_with_prefix(self.sid, 'PONG %s :%s' % (self._expandPUID(self.sid), args[-1]), queue=False)
-
-            if not self.has_eob:
-                # Treat the first PING we receive as end of burst.
-                self.has_eob = True
-                self.connected.set()
-
-                # Return the endburst hook.
-                return {'parse_as': 'ENDBURST'}
-
     def handle_376(self, source, command, args):
         # 376 is used to denote end of server negotiation - we send our info back at this point.
         # <- :ngircd.midnight.local 005 pylink-devel.int NETWORK=ngircd-test :is my network name
@@ -329,32 +255,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         self.apply_modes(channel, modes)
 
-    def handle_njoin(self, source, command, args):
-        # <- :ngircd.midnight.local NJOIN #test :tester,@%GL
-
-        channel = self.to_lower(args[0])
-        chandata = self.channels[channel].deepcopy()
-        namelist = []
-
-        # Reverse the modechar->modeprefix mapping for quicker lookup
-        prefixchars = {v: k for k, v in self.prefixmodes.items()}
-        for userpair in args[1].split(','):
-            # Some regex magic to split the prefix from the nick.
-            r = re.search(r'([%s]*)(.*)' % ''.join(self.prefixmodes.values()), userpair)
-            user = self._get_UID(r.group(2))
-            modeprefix = r.group(1)
-
-            if modeprefix:
-                modes = {('+%s' % prefixchars[mode], user) for mode in modeprefix}
-                self.apply_modes(channel, modes)
-            namelist.append(user)
-
-            # Final bits of state tracking. (I hate having to do this everywhere...)
-            self.users[user].channels.add(channel)
-            self.channels[channel].users.add(user)
-
-        return {'channel': channel, 'users': namelist, 'modes': [], 'channeldata': chandata}
-
     def handle_join(self, source, command, args):
         # RFC 2813 is odd to say the least... https://tools.ietf.org/html/rfc2813#section-4.2.1
         # Basically, we expect messages of the forms:
@@ -389,5 +289,106 @@ class NgIRCdProtocol(IRCS2SProtocol):
         else:
             log.debug("(%s) Ignoring KILL to %r as it isn't meant for us; we should see a QUIT soon",
                       self.name, killed)
+
+
+    def handle_nick(self, source, command, args):
+        """
+        Handles the NICK command, used for server introductions and nick changes.
+        """
+        if len(args) >= 2:
+            # User introduction:
+            # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
+            nick = args[0]
+            assert source in self.servers, "Server %r tried to introduce nick %r but isn't in the servers index?" % (source, nick)
+
+            ident = args[2]
+            host = args[3]
+            uid = self._uidgen.next_uid(prefix=nick)
+            realname = args[-1]
+
+            ts = int(time.time())
+            self.users[uid] = User(nick, ts, uid, source, ident=ident, host=host, realname=realname)
+            parsedmodes = self.parse_modes(uid, [args[5]])
+            self.apply_modes(uid, parsedmodes)
+
+            # Add the nick to the list of users on its server; this is used for SQUIT tracking
+            self.servers[source].users.add(uid)
+
+            return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': host, 'host': host, 'ident': ident,
+                    'parse_as': 'UID', 'ip': '0.0.0.0'}
+        else:
+            # Nick changes:
+            # <- :GL NICK :GL_
+            oldnick = self.users[source].nick
+            newnick = self.users[source].nick = args[0]
+            return {'newnick': newnick, 'oldnick': oldnick}
+
+    def handle_njoin(self, source, command, args):
+        # <- :ngircd.midnight.local NJOIN #test :tester,@%GL
+
+        channel = self.to_lower(args[0])
+        chandata = self.channels[channel].deepcopy()
+        namelist = []
+
+        # Reverse the modechar->modeprefix mapping for quicker lookup
+        prefixchars = {v: k for k, v in self.prefixmodes.items()}
+        for userpair in args[1].split(','):
+            # Some regex magic to split the prefix from the nick.
+            r = re.search(r'([%s]*)(.*)' % ''.join(self.prefixmodes.values()), userpair)
+            user = self._get_UID(r.group(2))
+            modeprefix = r.group(1)
+
+            if modeprefix:
+                modes = {('+%s' % prefixchars[mode], user) for mode in modeprefix}
+                self.apply_modes(channel, modes)
+            namelist.append(user)
+
+            # Final bits of state tracking. (I hate having to do this everywhere...)
+            self.users[user].channels.add(channel)
+            self.channels[channel].users.add(user)
+
+        return {'channel': channel, 'users': namelist, 'modes': [], 'channeldata': chandata}
+
+    def handle_pass(self, source, command, args):
+        """
+        Handles phase one of the ngIRCd login process (password auth and version info).
+        """
+        # PASS is step one of server introduction, and is used to send the server info and password.
+        # <- :ngircd.midnight.local PASS xyzpassword 0210-IRC+ ngIRCd|24~3-gbc728f92:CHLMSXZ PZ
+        recvpass = args[0]
+        if recvpass != self.serverdata['recvpass']:
+            raise ProtocolError("RECVPASS from uplink does not match configuration!")
+
+        assert 'IRC+' in args[1], "Linking to non-ngIRCd server using this protocol module is not supported"
+
+    def handle_ping(self, source, command, args):
+        if source == self.uplink:
+            self._send_with_prefix(self.sid, 'PONG %s :%s' % (self._expandPUID(self.sid), args[-1]), queue=False)
+
+            if not self.has_eob:
+                # Treat the first PING we receive as end of burst.
+                self.has_eob = True
+                self.connected.set()
+
+                # Return the endburst hook.
+                return {'parse_as': 'ENDBURST'}
+
+    def handle_server(self, source, command, args):
+        """
+        Handles the SERVER command.
+        """
+        # <- :ngircd.midnight.local SERVER ngircd.midnight.local 1 :ngIRCd dev server
+        servername = args[0].lower()
+        serverdesc = args[-1]
+
+        # The uplink should be set to None for the uplink; otherwise, set it equal to the sender server.
+        self.servers[servername] = Server(source if source != servername else None, servername, desc=serverdesc)
+
+        if self.uplink is None:
+            self.uplink = servername
+            log.debug('(%s) Got %s as uplink', self.name, servername)
+        else:
+            # Only send the SERVER hook if this isn't the initial connection.
+            return {'name': servername, 'sid': None, 'text': serverdesc}
 
 Class = NgIRCdProtocol
