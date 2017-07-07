@@ -160,6 +160,20 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
+    def kill(self, source, target, reason):
+        """Sends a kill from a PyLink client/server."""
+        if (not self.is_internal_client(source)) and \
+                (not self.is_internal_server(source)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        # Follow ngIRCd's formatting of the kill messages for the most part
+        self._send_with_prefix(source, 'KILL %s :KILLed by %s: %s' % (self._expandPUID(target),
+                               self.get_friendly_name(source), reason))
+
+        # Implicitly remove our own client if one was the target.
+        if self.is_internal_client(target):
+            self._remove_client(target)
+
     def knock(self, numeric, target, text):
         raise NotImplementedError('KNOCK is not supported on ngIRCd.')
 
