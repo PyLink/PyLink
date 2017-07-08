@@ -571,6 +571,19 @@ class IRCS2SProtocol(IRCCommonProtocol):
                 # This sets a dummy away reason of "Away" because no actual text is provided.
                 self.call_hooks([uid, 'AWAY', {'text': 'Away' if away_status else ''}])
 
+    def _check_oper_status_change(self, uid, modes):
+        if uid in self.users:
+            u = self.users[uid]
+            if 'admin' in self.umodes and (self.umodes['admin'], None) in u.modes:
+                opertype = 'Server Administrator'
+            elif 'servprotect' in self.umodes and (self.umodes['servprotect'], None) in u.modes:
+                opertype = 'Network Service'
+            else:
+                opertype = 'IRC Operator'
+
+            if ('+o', None) in modes:
+                self.call_hooks([uid, 'CLIENT_OPERED', {'text': opertype}])
+
     def handle_mode(self, source, command, args):
         """Handles mode changes."""
         # InspIRCd:
@@ -591,15 +604,11 @@ class IRCS2SProtocol(IRCCommonProtocol):
         changedmodes = self.parse_modes(target, modestrings)
         self.apply_modes(target, changedmodes)
 
-        # Call the CLIENT_OPERED hook if +o is being set.
-        # TODO: handle umodes for admin, servprotect, etc. and set the oper type accordingly.
-        if ('+o', None) in changedmodes and target in self.users:
-            self.call_hooks([target, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-
         if target in self.users:
             # Target was a user. Check for any cloak and away status changes.
             self._check_cloak_change(target)
             self._check_umode_away_change(target)
+            self._check_oper_status_change(target, changedmodes)
 
         return {'target': target, 'modes': changedmodes, 'channeldata': channeldata}
 

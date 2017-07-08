@@ -185,8 +185,7 @@ class HybridProtocol(TS6Protocol):
         self.servers[numeric].users.add(uid)
 
         # Call the OPERED UP hook if +o is being added to the mode list.
-        if ('+o', None) in parsedmodes:
-            self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC_Operator'}])
+        self._check_oper_status_change(uid, parsedmodes)
 
         # Set the account name if present
         if account:

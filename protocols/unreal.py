@@ -404,9 +404,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # enabled) but NOT +t (vHost set).
         self.users[uid].cloaked_host = args[9]
 
-        if ('+o', None) in parsedmodes:
-            # If +o being set, call the CLIENT_OPERED internal hook.
-            self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+        self._check_oper_status_change(uid, parsedmodes)
 
         if ('+x', None) not in parsedmodes:
             # If +x is not set, update to use the person's real host.
@@ -826,10 +824,7 @@ class UnrealProtocol(TS6BaseProtocol):
         parsedmodes = self.parse_modes(numeric, args)
         self.apply_modes(numeric, parsedmodes)
 
-        if ('+o', None) in parsedmodes:
-            # If +o being set, call the CLIENT_OPERED internal hook.
-            self.call_hooks([numeric, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-
+        self._check_oper_status_change(numeric, parsedmodes)
         self._check_cloak_change(numeric, parsedmodes)
 
         return {'target': numeric, 'modes': parsedmodes}

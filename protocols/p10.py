@@ -858,8 +858,7 @@ class P10Protocol(IRCS2SProtocol):
                         self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
                 # Call the OPERED UP hook if +o is being added to the mode list.
-                if ('+o', None) in parsedmodes:
-                    self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+                self._check_oper_status_change(uid, parsedmodes)
 
             self._check_cloak_change(uid)
 

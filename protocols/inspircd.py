@@ -562,10 +562,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         parsedmodes = self.parse_modes(uid, [args[8], args[9]])
         self.apply_modes(uid, parsedmodes)
 
-        if (self.umodes.get('servprotect'), None) in userobj.modes:
-            # Services are usually given a "Network Service" WHOIS, so
-            # set that as the opertype.
-            self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'Network Service'}])
+        self._check_oper_status_change(uid, parsedmodes)
 
         self.servers[numeric].users.add(uid)
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
