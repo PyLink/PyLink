@@ -1347,7 +1347,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
-        encoded_data = data.encode(self.encoding, 'replace') + b"\n"
+        encoded_data = data.encode(self.encoding, 'replace')[:510] + b"\n"
 
         log.debug("(%s) -> %s", self.name, data)
 
