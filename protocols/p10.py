@@ -12,8 +12,6 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
 
-S2S_BUFSIZE = 510
-
 class P10UIDGenerator(utils.IncrementalUIDGenerator):
      """Implements an incremental P10 UID Generator."""
 
@@ -416,7 +414,7 @@ class P10Protocol(IRCS2SProtocol):
 
             # Wrap modes: start with max bufsize and subtract the lengths of the source, target,
             # mode command, and whitespace.
-            bufsize = S2S_BUFSIZE - len(numeric) - 4 - len(target) - len(str(ts))
+            bufsize = self.S2S_BUFSIZE - len(numeric) - 4 - len(target) - len(str(ts))
 
             real_target = target
         else:
@@ -577,7 +575,7 @@ class P10Protocol(IRCS2SProtocol):
                 # Wrap all users and send them to prevent cutoff. Subtract 4 off the maximum
                 # buf size to account for user prefix data that may be re-added (e.g. ":ohv")
                 for linenum, wrapped_msg in \
-                        enumerate(utils.wrapArguments(msgprefix, namelist, S2S_BUFSIZE-1-len(self.prefixmodes),
+                        enumerate(utils.wrapArguments(msgprefix, namelist, self.S2S_BUFSIZE-1-len(self.prefixmodes),
                                                       separator=',')):
                     if linenum:  # Implies "if linenum > 0"
                         # XXX: Ugh, this postprocessing sucks, but we have to make sure that mode prefixes are accounted
@@ -612,12 +610,12 @@ class P10Protocol(IRCS2SProtocol):
         if bans or exempts:
             msgprefix += ':%'  # Ban string starts with a % if there is anything
             if bans:
-                for wrapped_msg in utils.wrapArguments(msgprefix, bans, S2S_BUFSIZE):
+                for wrapped_msg in utils.wrapArguments(msgprefix, bans, self.S2S_BUFSIZE):
                     self.send(wrapped_msg)
             if exempts:
                 # Now add exempts, which are separated from the ban list by a single argument "~".
                 msgprefix += ' ~ '
-                for wrapped_msg in utils.wrapArguments(msgprefix, exempts, S2S_BUFSIZE):
+                for wrapped_msg in utils.wrapArguments(msgprefix, exempts, self.S2S_BUFSIZE):
                     self.send(wrapped_msg)
 
         self.updateTS(server, channel, ts, changedmodes)

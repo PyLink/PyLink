@@ -10,8 +10,6 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
-S2S_BUFSIZE = 510
-
 class TS6Protocol(TS6BaseProtocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -162,7 +160,7 @@ class TS6Protocol(TS6BaseProtocol):
                 msgprefix = ':{sid} BMASK {ts} {channel} {bmode} :'.format(sid=server, ts=ts,
                                                                           channel=channel, bmode=bmode)
                 # Actually, we cut off at 17 arguments/line, since the prefix and command name don't count.
-                for msg in utils.wrapArguments(msgprefix, bans, S2S_BUFSIZE, max_args_per_line=17):
+                for msg in utils.wrapArguments(msgprefix, bans, self.S2S_BUFSIZE, max_args_per_line=17):
                     self.send(msg)
 
         self.updateTS(server, channel, ts, changedmodes)
@@ -187,7 +185,7 @@ class TS6Protocol(TS6BaseProtocol):
             # On output, at most ten cmode parameters should be sent; if there are more,
             # multiple TMODE messages should be sent.
             msgprefix = ':%s TMODE %s %s ' % (numeric, ts, target)
-            bufsize = S2S_BUFSIZE - len(msgprefix)
+            bufsize = self.S2S_BUFSIZE - len(msgprefix)
 
             for modestr in self.wrap_modes(modes, bufsize, max_modes_per_msg=10):
                 self.send(msgprefix + modestr)

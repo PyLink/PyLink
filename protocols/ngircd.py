@@ -15,8 +15,6 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
 
-S2S_BUFSIZE = 510
-
 class NgIRCdProtocol(IRCS2SProtocol):
     def __init__(self, irc):
         super().__init__(irc)
@@ -189,7 +187,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         if utils.isChannel(target):
             msgprefix = ':%s MODE %s ' % (self._expandPUID(source), target)
-            bufsize = S2S_BUFSIZE - len(msgprefix)
+            bufsize = self.S2S_BUFSIZE - len(msgprefix)
 
             # Expand PUIDs when sending outgoing prefix modes.
             for idx, mode in enumerate(modes):
@@ -239,7 +237,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
                                    self._expandPUID(userpair[1])) for userpair in users]
 
         # Use 13 args max per line: this is equal to the max of 15 minus the command name and target channel.
-        for message in utils.wrapArguments(njoin_prefix, nicks_to_send, S2S_BUFSIZE, separator=',', max_args_per_line=13):
+        for message in utils.wrapArguments(njoin_prefix, nicks_to_send, self.S2S_BUFSIZE, separator=',', max_args_per_line=13):
             self.send(message)
 
         # Add the affected users to our state.

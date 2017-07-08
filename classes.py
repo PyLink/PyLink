@@ -1103,6 +1103,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 _apply()
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
+    S2S_BUFSIZE = 510
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -1347,7 +1349,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
-        encoded_data = data.encode(self.encoding, 'replace')[:510] + b"\r\n"
+        encoded_data = data.encode(self.encoding, 'replace')[:self.S2S_BUFSIZE] + b"\r\n"
 
         log.debug("(%s) -> %s", self.name, data)
 

@@ -14,13 +14,13 @@ from pylinkirc.protocols.ts6_common import *
 
 SJOIN_PREFIXES = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+', 'b': '&', 'e': '"', 'I': "'"}
 
-# I'm not sure what the real limit is, but the text posted at
-# https://github.com/GLolol/PyLink/issues/378 suggests 427 characters.
-# https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
-# also help. (but why BUFSIZE-*80*?) -GL
-S2S_BUFSIZE = 427
-
 class UnrealProtocol(TS6BaseProtocol):
+    # I'm not sure what the real limit is, but the text posted at
+    # https://github.com/GLolol/PyLink/issues/378 suggests 427 characters.
+    # https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
+    # also help. (but why BUFSIZE-*80*?) -GL
+    S2S_BUFSIZE = 427
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.protocol_caps |= {'slash-in-nicks', 'underscore-in-hosts'}
@@ -181,7 +181,7 @@ class UnrealProtocol(TS6BaseProtocol):
         sjoin_prefix += " :"
         # Wrap arguments to the max supported S2S line length to prevent cutoff
         # (https://github.com/GLolol/PyLink/issues/378)
-        for line in utils.wrapArguments(sjoin_prefix, itemlist, S2S_BUFSIZE):
+        for line in utils.wrapArguments(sjoin_prefix, itemlist, self.S2S_BUFSIZE):
             self.send(line)
 
         self.channels[channel].users.update(uids)
@@ -223,7 +223,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
             # 7 characters for "MODE", the space between MODE and the target, the space between the
             # target and mode list, and the space between the mode list and TS.
-            bufsize = S2S_BUFSIZE - 7
+            bufsize = self.S2S_BUFSIZE - 7
 
             # Subtract the length of the TS and channel arguments
             bufsize -= len(str(ts))
