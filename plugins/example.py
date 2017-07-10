@@ -65,5 +65,5 @@ def randint(irc, source, args):
     irc.reply(str(n))
 
 # You can also bind a command function multiple times, and/or to different command names via a
-# second argument.
-utils.add_cmd(randint, "random")
+# second argument. The alias= argument marks it as an alias for the specified primary command.
+utils.add_cmd(randint, "random", alias="randint")
