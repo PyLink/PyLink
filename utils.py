@@ -456,8 +456,8 @@ class ServiceBot():
         except IndexError:
             plugin_filter = None
 
-        # Don't show CTCP handlers in the public command list.
-        cmds = sorted(cmd for cmd in self.commands.keys() if '\x01' not in cmd)
+        # Don't show CTCP handlers or aliases in the public command list.
+        cmds = sorted(cmd for cmd in self.commands.keys() if '\x01' not in cmd and cmd not in self.alias_cmds)
 
         if plugin_filter is not None:
             # Filter by plugin, if the option was given.
