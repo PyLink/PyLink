@@ -424,7 +424,14 @@ class ServiceBot():
                             _reply_format(next_line)
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)
-                    return
+                    
+                # Regardless of whether help text is available, mention aliases.
+                if not shortform:
+                    if command in self.alias_cmds:
+                        _reply('Alias for %s.' % self.alias_cmds[command])
+                    aliases = set(alias for alias, primary in self.alias_cmds.items() if primary == command)
+                    if aliases:
+                        _reply('Available aliases: %s' % ', '.join(aliases))
 
     def help(self, irc, source, args):
         """<command>
