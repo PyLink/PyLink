@@ -217,6 +217,9 @@ class ServiceBot():
         # List of command names to "feature"
         self.featured_cmds = set()
 
+        # Maps command aliases to the respective primary commands
+        self.alias_cmds = {}
+
         if default_help:
             self.add_cmd(self.help)
 
@@ -337,7 +340,7 @@ class ServiceBot():
                 log.exception('Unhandled exception caught in command %r', cmd)
                 self.reply(irc, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
-    def add_cmd(self, func, name=None, featured=False):
+    def add_cmd(self, func, name=None, featured=False, alias=None):
         """Binds an IRC command function to the given command name."""
         if name is None:
             name = func.__name__
@@ -346,6 +349,10 @@ class ServiceBot():
         # Mark as a featured command if requested to do so.
         if featured:
             self.featured_cmds.add(name)
+            
+        # If this is an alias, store primary command
+        if alias is not None:
+            self.alias_cmds[name] = alias
 
         self.commands[name].append(func)
         return func
