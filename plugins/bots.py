@@ -193,7 +193,6 @@ def part(irc, source, args):
     irc.reply("Done.")
     irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
-@utils.add_cmd
 def msg(irc, source, args):
     """[<source>] <target> <text>
 
@@ -239,4 +238,4 @@ def msg(irc, source, args):
     irc.message(sourceuid, real_target, text)
     irc.reply("Done.")
     irc.call_hooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
-utils.add_cmd(msg, 'say')
+utils.add_cmd(msg, aliases=('say',))

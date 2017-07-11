@@ -59,4 +59,3 @@ def greet(irc, source, args):
 # 2) Instead of using utils.add_cmd(function, 'name'), bind functions to your ServiceBot instance.
 #    You can also use the featured=True argument to display the command's syntax directly in 'list'.
 servicebot.add_cmd(greet, featured=True)
-servicebot.add_cmd(greet, 'g')

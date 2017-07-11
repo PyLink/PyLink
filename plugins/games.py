@@ -40,8 +40,7 @@ def dice(irc, source, args):
     s = 'You rolled %s: %s (total: %s)' % (args[0], ' '.join([str(x) for x in results]), sum(results))
     reply(irc, s)
 
-gameclient.add_cmd(dice, 'd')
-gameclient.add_cmd(dice, featured=True)
+gameclient.add_cmd(dice, aliases=('d'), featured=True)
 
 eightball_responses = ["It is certain.",
              "It is decidedly so.",
@@ -69,9 +68,7 @@ def eightball(irc, source, args):
     Asks the Magic 8-ball a question.
     """
     reply(irc, random.choice(eightball_responses))
-gameclient.add_cmd(eightball, featured=True)
-gameclient.add_cmd(eightball, '8ball')
-gameclient.add_cmd(eightball, '8b')
+gameclient.add_cmd(eightball, featured=True, aliases=('8ball', '8b'))
 
 def die(irc=None):
     utils.unregisterService('games')

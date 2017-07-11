@@ -31,7 +31,8 @@ utils.add_hook(hook_privmsg, 'PRIVMSG')
 
 # Example command function. @utils.add_cmd binds it to an IRC command of the same name,
 # but you can also use a different name by specifying a second 'name' argument (see below).
-@utils.add_cmd
+#@utils.add_cmd
+
 # irc: The IRC object where the command was called.
 # source: The UID/numeric of the calling user.
 # args: A list of command args (excluding the command name) that the command was called with.
@@ -64,6 +65,5 @@ def randint(irc, source, args):
     # it will send replies into the channel instead of in your PM.
     irc.reply(str(n))
 
-# You can also bind a command function multiple times, and/or to different command names via a
-# second argument.
-utils.add_cmd(randint, "random")
+# You can bind a command function to multiple names using the 'aliases' option.
+utils.add_cmd(randint, "random", aliases=("randint", "getrandint"))

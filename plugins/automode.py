@@ -208,9 +208,7 @@ def setacc(irc, source, args):
     # Join the Automode bot to the channel if not explicitly told to.
     modebot.join(ircobj, channel)
 
-modebot.add_cmd(setacc, 'setaccess')
-modebot.add_cmd(setacc, 'set')
-modebot.add_cmd(setacc, featured=True)
+modebot.add_cmd(setacc, aliases=('setaccess', 'set'), featured=True)
 
 def delacc(irc, source, args):
     """<channel/chanpair> <mask>
@@ -243,9 +241,7 @@ def delacc(irc, source, args):
         log.debug("Automode: purging empty channel pair %s/%s", ircobj.name, channel)
         del db[ircobj.name+channel]
 
-modebot.add_cmd(delacc, 'delaccess')
-modebot.add_cmd(delacc, 'del')
-modebot.add_cmd(delacc, featured=True)
+modebot.add_cmd(delacc, aliases=('delaccess', 'del'), featured=True)
 
 def listacc(irc, source, args):
     """<channel/chanpair>
@@ -273,8 +269,7 @@ def listacc(irc, source, args):
             reply(irc, "[%s] \x02%s\x02 has modes +\x02%s\x02" % (entrynum, mask, modes), private=True)
         reply(irc, "End of Automode entries list.", private=True)
 
-modebot.add_cmd(listacc, featured=True)
-modebot.add_cmd(listacc, 'listaccess')
+modebot.add_cmd(listacc, featured=True, aliases=('listacc',))
 
 def save(irc, source, args):
     """takes no arguments.
@@ -304,9 +299,7 @@ def syncacc(irc, source, args):
 
     reply(irc, 'Done.')
 
-modebot.add_cmd(syncacc, featured=True)
-modebot.add_cmd(syncacc, 'sync')
-modebot.add_cmd(syncacc, 'syncaccess')
+modebot.add_cmd(syncacc, featured=True, aliases=('sync', 'syncaccess'))
 
 def clearacc(irc, source, args):
     """<channel>
@@ -329,6 +322,4 @@ def clearacc(irc, source, args):
     else:
         error(irc, "No Automode access entries exist for \x02%s\x02." % channel)
 
-modebot.add_cmd(clearacc, 'clearaccess')
-modebot.add_cmd(clearacc, 'clear')
-modebot.add_cmd(clearacc, featured=True)
+modebot.add_cmd(clearacc, aliases=('clearaccess', 'clearacc'), featured=True)
