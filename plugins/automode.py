@@ -48,7 +48,7 @@ def die(irc=None):
     permissions.removeDefaultPermissions(default_permissions)
     utils.unregisterService('automode')
 
-def checkAccess(irc, uid, channel, command):
+def _check_automode_access(irc, uid, channel, command):
     """Checks the caller's access to Automode."""
     # Automode defines the following permissions, where <command> is either "manage", "list",
     # "sync", "clear", "remotemanage", "remotelist", "remotesync", "remoteclear":
@@ -142,7 +142,7 @@ def handle_services_login(irc, source, command, args):
 utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
 utils.add_hook(handle_services_login, 'PYLINK_RELAY_SERVICES_LOGIN')
 
-def getChannelPair(irc, source, chanpair, perm=None):
+def _get_channel_pair(irc, source, chanpair, perm=None):
     """
     Fetches the network and channel given a channel pair,
     also optionally checking the caller's permissions.
@@ -169,7 +169,7 @@ def getChannelPair(irc, source, chanpair, perm=None):
         if ircobj.name != irc.name:
             perm = 'remote' + perm
 
-        checkAccess(irc, source, channel, perm)
+        _check_automode_access(irc, source, channel, perm)
 
     return (ircobj, channel)
 
@@ -198,7 +198,7 @@ def setacc(irc, source, args):
         error(irc, "Invalid arguments given. Needs 3: channel, mask, mode list.")
         return
     else:
-        ircobj, channel = getChannelPair(irc, source, chanpair, perm='manage')
+        ircobj, channel = _get_channel_pair(irc, source, chanpair, perm='manage')
 
     # Database entries for any network+channel pair are automatically created using
     # defaultdict. Note: string keys are used here instead of tuples so they can be
@@ -226,7 +226,7 @@ def delacc(irc, source, args):
         error(irc, "Invalid arguments given. Needs 2: channel, mask")
         return
     else:
-        ircobj, channel = getChannelPair(irc, source, chanpair, perm='manage')
+        ircobj, channel = _get_channel_pair(irc, source, chanpair, perm='manage')
 
     dbentry = db.get(ircobj.name+channel)
 
@@ -258,7 +258,7 @@ def listacc(irc, source, args):
         error(irc, "Invalid arguments given. Needs 1: channel.")
         return
     else:
-        ircobj, channel = getChannelPair(irc, source, chanpair, perm='list')
+        ircobj, channel = _get_channel_pair(irc, source, chanpair, perm='list')
 
     dbentry = db.get(ircobj.name+channel)
     if not dbentry:
@@ -297,7 +297,7 @@ def syncacc(irc, source, args):
         error(irc, "Invalid arguments given. Needs 1: channel.")
         return
     else:
-        ircobj, channel = getChannelPair(irc, source, chanpair, perm='sync')
+        ircobj, channel = _get_channel_pair(irc, source, chanpair, perm='sync')
 
     log.info('(%s) %s synced modes on %s', ircobj.name, irc.get_hostmask(source), channel)
     match(ircobj, channel)
@@ -318,7 +318,7 @@ def clearacc(irc, source, args):
         error(irc, "Invalid arguments given. Needs 1: channel.")
         return
     else:
-        ircobj, channel = getChannelPair(irc, source, chanpair, perm='clear')
+        ircobj, channel = _get_channel_pair(irc, source, chanpair, perm='clear')
 
     if db.get(ircobj.name+channel):
         del db[ircobj.name+channel]
