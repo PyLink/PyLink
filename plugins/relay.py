@@ -617,7 +617,6 @@ def relay_joins(irc, channel, users, ts, burst=True):
     """
     Relays one or more users' joins from a channel to its relay links.
     """
-    joined_nets = {}
 
     if ts < 750000:
         current_ts = int(time.time())
@@ -669,20 +668,17 @@ def relay_joins(irc, channel, users, ts, burst=True):
             # Look at whether we should relay this join as a regular JOIN, or a SJOIN.
             # SJOIN will be used if either the amount of users to join is > 1, or there are modes
             # to be set on the joining user.
+            rsid = get_remote_sid(remoteirc, irc)
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 modes = get_supported_cmodes(irc, remoteirc, channel, irc.channels[channel].modes)
-                rsid = get_remote_sid(remoteirc, irc)
+
                 if rsid:
                     remoteirc.sjoin(rsid, remotechan, queued_users, ts=ts, modes=modes)
             else:
                 # A regular JOIN only needs the user and the channel. TS, source SID, etc., can all be omitted.
                 remoteirc.join(queued_users[0][1], remotechan)
 
-            joined_nets[remoteirc] = {'channel': remotechan, 'users': [u[-1] for u in queued_users]}
-
-    for remoteirc, hookdata in joined_nets.items():
-        # HACK: Announce this JOIN as a special hook on each network, for plugins like Automode.
-        remoteirc.call_hooks([remoteirc.sid, 'PYLINK_RELAY_JOIN', hookdata])
+            remoteirc.call_hooks([rsid, 'PYLINK_RELAY_JOIN', {'channel': remotechan, 'users': [u[-1] for u in queued_users]}])
 
 def relay_part(irc, channel, user):
     """
