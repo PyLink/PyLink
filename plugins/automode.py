@@ -274,7 +274,7 @@ def listacc(irc, source, args):
             reply(irc, "[%s] \x02%s\x02 has modes +\x02%s\x02" % (entrynum, mask, modes), private=True)
         reply(irc, "End of Automode entries list.", private=True)
 
-modebot.add_cmd(listacc, featured=True, aliases=('listacc',))
+modebot.add_cmd(listacc, featured=True, aliases=('listaccess',))
 
 def save(irc, source, args):
     """takes no arguments.
@@ -327,4 +327,4 @@ def clearacc(irc, source, args):
     else:
         error(irc, "No Automode access entries exist for \x02%s\x02." % channel)
 
-modebot.add_cmd(clearacc, aliases=('clearaccess', 'clearacc'), featured=True)
+modebot.add_cmd(clearacc, aliases=('clearaccess', 'clear'), featured=True)
