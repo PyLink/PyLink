@@ -340,7 +340,7 @@ class ServiceBot():
                 log.exception('Unhandled exception caught in command %r', cmd)
                 self.reply(irc, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
-    def add_cmd(self, func, name=None, featured=False, alias=None):
+    def add_cmd(self, func, name=None, featured=False, aliases=None):
         """Binds an IRC command function to the given command name."""
         if name is None:
             name = func.__name__
@@ -349,10 +349,12 @@ class ServiceBot():
         # Mark as a featured command if requested to do so.
         if featured:
             self.featured_cmds.add(name)
-            
-        # If this is an alias, store primary command
-        if alias is not None:
-            self.alias_cmds[name] = alias
+
+        # If this is an alias, store the primary command in the alias_cmds dict
+        if aliases is not None:
+            for alias in aliases:
+                self.add_cmd(func, name=alias)  # Bind the alias as well.
+                self.alias_cmds[alias] = name
 
         self.commands[name].append(func)
         return func
@@ -424,7 +426,7 @@ class ServiceBot():
                             _reply_format(next_line)
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)
-                    
+
                 # Regardless of whether help text is available, mention aliases.
                 if not shortform:
                     if command in self.alias_cmds:
