@@ -330,7 +330,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.init_vars()
 
         try:
-            self.validateServerConf()
+            self.validate_server_conf()
         except AssertionError as e:
             log.exception("(%s) Configuration error: %s", self.name, e)
             raise
