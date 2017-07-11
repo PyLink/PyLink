@@ -187,7 +187,7 @@ def setacc(irc, source, args):
 
     \x02SET #channel $account v
 
-    \x02SET othernet#channel $oper:Network?Administrator qo
+    \x02SET othernet#channel $ircop:Network?Administrator qo
 
     \x02SET #staffchan $channel:#mainchan:op o
     """
