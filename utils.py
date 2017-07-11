@@ -353,6 +353,10 @@ class ServiceBot():
         # If this is an alias, store the primary command in the alias_cmds dict
         if aliases is not None:
             for alias in aliases:
+                if name == alias:
+                    log.error('Refusing to alias command %r (in plugin %r) to itself!', name, func.__module__)
+                    continue
+
                 self.add_cmd(func, name=alias)  # Bind the alias as well.
                 self.alias_cmds[alias] = name
 
