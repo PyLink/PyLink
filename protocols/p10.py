@@ -365,6 +365,11 @@ class P10Protocol(IRCS2SProtocol):
         # handle_part() does that just fine.
         self.handle_part(target, 'KICK', [channel])
 
+        if self.is_internal_client(target):
+            # Send PART in response to acknowledge the KICK, per
+            # https://github.com/evilnet/nefarious2/blob/ed12d64/doc/p10.txt#L611-L616
+            self._send_with_prefix(target, 'L %s :%s' % (channel, reason))
+
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
         # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
