@@ -180,11 +180,16 @@ def setacc(irc, source, args):
 
     Channel pairs are also supported (for operations on remote channels), using the form "network#channel".
 
+
     Examples:
-    SET #channel *!*@localhost ohv
-    SET #channel $account v
-    SET othernet#channel $oper:Network?Administrator qo
-    SET #staffchan $channel:#mainchan:op o
+
+    \x02SET #channel *!*@localhost ohv
+
+    \x02SET #channel $account v
+
+    \x02SET othernet#channel $oper:Network?Administrator qo
+
+    \x02SET #staffchan $channel:#mainchan:op o
     """
 
     try:
