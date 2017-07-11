@@ -352,9 +352,9 @@ class P10Protocol(IRCS2SProtocol):
             reason = 'No reason given'
 
         cobj = self.channels[channel]
-        # HACK: prevent kick bounces by sending our kick through the server if
+        # Prevent kick bounces by sending our kick through the server if
         # the sender isn't op.
-        if numeric not in self.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
+        if numeric not in self.servers and (not cobj.is_halfop_plus(numeric)):
             reason = '(%s) %s' % (self.get_friendly_name(numeric), reason)
             numeric = self.get_server(numeric)
 
@@ -407,9 +407,9 @@ class P10Protocol(IRCS2SProtocol):
             cobj = self.channels[self.to_lower(target)]
             ts = ts or cobj.ts
 
-            # HACK: prevent mode bounces by sending our mode through the server if
+            # Prevent mode bounces by sending our mode through the server if
             # the sender isn't op.
-            if numeric not in self.servers and (not cobj.isOp(numeric)) and (not cobj.isHalfop(numeric)):
+            if (numeric not in self.servers) and (not cobj.is_halfop_plus(numeric)):
                 numeric = self.get_server(numeric)
 
             # Wrap modes: start with max bufsize and subtract the lengths of the source, target,
