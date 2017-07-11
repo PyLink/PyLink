@@ -430,10 +430,12 @@ class ServiceBot():
                 # Regardless of whether help text is available, mention aliases.
                 if not shortform:
                     if command in self.alias_cmds:
-                        _reply('Alias for %s.' % self.alias_cmds[command])
+                        _reply(' ')
+                        _reply('This command is an alias for \x02%s\x02.' % self.alias_cmds[command])
                     aliases = set(alias for alias, primary in self.alias_cmds.items() if primary == command)
                     if aliases:
-                        _reply('Available aliases: %s' % ', '.join(aliases))
+                        _reply(' ')
+                        _reply('Available aliases: \x02%s\x02' % ', '.join(aliases))
 
     def help(self, irc, source, args):
         """<command>
