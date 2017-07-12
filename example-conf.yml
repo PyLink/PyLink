@@ -214,6 +214,10 @@ servers:
         # This setting is EXPERIMENTAL as of PyLink 1.2.x.
         #encoding: utf-8
 
+        # InspIRCd specific option: determines whether we should display WHOIS extensions by overriding
+        # InspIRCd's default WHOIS formatting. This defaults to true for consistency with PyLink 1.x.
+        #force_whois_extensions: true
+
     ts6net:
         ip: ::1
 

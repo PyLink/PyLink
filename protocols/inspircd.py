@@ -613,6 +613,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :70MAAAAAA IDLE 1MLAAAAIG
         # -> :1MLAAAAIG IDLE 70MAAAAAA 1433036797 319
 
+        if self.serverdata.get('force_whois_extensions', True):
+            return {'target': args[0], 'parse_as': 'WHOIS'}
+
         # Allow hiding the startup time if set to do so (if both idle and signon time is 0, InspIRCd omits
         # showing this line).
         target = args[0]
