@@ -75,7 +75,7 @@ def handle_whois(irc, source, command, args):
             # 3) +H is set, but whois_use_hideoper is disabled in config
             isHideOper = (irc.umodes.get('hideoper'), None) in user.modes
             if (not isHideOper) or (isHideOper and source_is_oper) or \
-                    (isHideOper and not conf.conf['bot'].get('whois_use_hideoper', True)):
+                    (isHideOper and not conf.conf['pylink'].get('whois_use_hideoper', True)):
                 # Let's be gramatically correct. (If the opertype starts with a vowel,
                 # write "an Operator" instead of "a Operator")
                 n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
@@ -103,7 +103,7 @@ def handle_whois(irc, source, command, args):
 
         # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
         # caller is marked a bot and the whois_show_extensions_to_bots option is False
-        if (source_is_bot and conf.conf['bot'].get('whois_show_extensions_to_bots')) or (not source_is_bot):
+        if (source_is_bot and conf.conf['pylink'].get('whois_show_extensions_to_bots')) or (not source_is_bot):
             irc.call_hooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
         else:
             log.debug('(%s) coremods.handlers.handle_whois: skipping custom whois handlers because '
