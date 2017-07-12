@@ -17,11 +17,12 @@ pylink:
 
     # Sets the fantasy command prefix for the main PyLink bot. To configure fantasy prefixes for
     # other service bots, add or modify the "prefix:" option in the configuration section of each
-    # plugin.
+    # plugin. (see the "games:" block for an example)
     # Note: prior to PyLink 1.2, defining a prefix here made it global for all service bots. This
     # was removed because it called all bots in a channel at once (even if they have conflicting
-    # commands), which usually led to one successful reply and a string of "Command not found"
+    # commands), which usually leads to one successful reply and a string of "Command not found"
     # errors.
+    # Note 2: this option REPLACES the deprecated "prefixes:" option from PyLink 1.1 and earlier.
     prefix: "&"
 
     # Determines whether PyLink service bots will respond to commands prefixed with their nick
@@ -29,35 +30,11 @@ pylink:
     # it was renamed for consistency. This defaults to false.
     #respond_to_nick: true
 
-    # Custom prefixes for other service bots if they are loaded. Note: this is DEPRECATED
-    # since PyLink 1.2 in favour of adding prefixes into each plugin's configuration block
-    # itself (see the "prefix:" option in the "games:" block for an example).
-    #prefixes:
-    #    games: "@"
-
-    # Determines whether hideoper modes should be respected in WHOIS replies.
-    # Defaults to true if not specified.
-    #whois_use_hideoper: true
-
-    # Determines whether extended WHOIS replies should be sent to users marked as a
-    # bot (usually with umode +B). For better security (i.e. with bots that track services
-    # accounts for authentication), it is recommended to leave this off.
-    #whois_show_extensions_to_bots: false
-
-    # Determines whether PyLink should return its time of initial connection when replying to WHOIS
-    # for service bots. This defaults to true if not set.
-    #whois_show_startup_time: true
-
     # Determines whether PyLink service clients should protect themselves from
     # kicks, kills, etc. using IRCd-side servprotect modes. For this to work
     # properly, this usually requires that PyLink be U-Lined. This defaults to
     # False.
     #protect_services: false
-
-    # Determines how long plugins should wait (in seconds) before flushing their
-    # databases to disk. Defaults to 300 seconds. Changes here require a reload
-    # of all database-enabled plugins to take effect.
-    #save_delay: 300
 
     # Determines whether services should default to sending command responses as private notices,
     # even if the command was called in a channel. This defaults to False.
@@ -75,6 +52,24 @@ pylink:
 
     # Determines whether we should show unknown command errors for service bots. Defaults to True.
     #show_unknown_commands: true
+
+    # Determines whether hideoper modes should be respected in WHOIS replies.
+    # Defaults to true if not specified.
+    #whois_use_hideoper: true
+
+    # Determines whether extended WHOIS replies should be sent to users marked as a
+    # bot (usually with umode +B). For better security (i.e. with bots that track services
+    # accounts for authentication), it is recommended to leave this off.
+    #whois_show_extensions_to_bots: false
+
+    # Determines whether PyLink should return its time of initial connection when replying to WHOIS
+    # for service bots. This defaults to true if not set.
+    #whois_show_startup_time: true
+
+    # Determines how long plugins should wait (in seconds) before flushing their
+    # databases to disk. Defaults to 300 seconds. Changes here require a reload
+    # of all database-enabled plugins to take effect.
+    #save_delay: 300
 
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
