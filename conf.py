@@ -62,7 +62,7 @@ def _log(level, text, *args, logger=None, **kwargs):
 
 def validateConf(conf, logger=None):
     """Validates a parsed configuration dict."""
-    validate(type(conf) == dict,
+    validate(isinstance(conf, dict),
             "Invalid configuration given: should be type dict, not %s."
             % type(conf).__name__)
 
@@ -88,13 +88,13 @@ def validateConf(conf, logger=None):
         _log(logging.WARNING, "The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. "
              "Please switch to the new 'login:accounts' format as outlined in the example config.", logger=logger)
 
-    old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
+    old_login_valid = isinstance(conf['login'].get('password'), str) and isinstance(conf['login'].get('user'), str)
     newlogins = conf['login'].get('accounts', {})
 
     validate(old_login_valid or newlogins, "No accounts were set, aborting!")
     for account, block in newlogins.items():
-        validate(type(account) == str, "Bad username format %s" % account)
-        validate(type(block.get('password')) == str, "Bad password %s for account %s" % (block.get('password'), account))
+        validate(isinstance(account, str), "Bad username format %s" % account)
+        validate(isinstance(block.get('password'), str), "Bad password %s for account %s" % (block.get('password'), account))
 
     validate(conf['login'].get('password') != "changeme", "You have not set the login details correctly!")
 

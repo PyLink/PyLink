@@ -31,7 +31,7 @@ class IRCCommonProtocol(IRCNetwork):
                      % (k, self.name))
 
         port = self.serverdata['port']
-        conf.validate(type(port) == int and 0 < port < 65535,
+        conf.validate(isinstance(port, int) and 0 < port < 65535,
                  "Invalid port %r for network %s"
                  % (port, self.name))
 
