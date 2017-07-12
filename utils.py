@@ -243,13 +243,13 @@ class ServiceBot():
         Joins the given service bot to the given channel(s).
         """
 
-        if type(irc) == str:
+        if isinstance(irc, str):
             netname = irc
         else:
             netname = irc.name
 
         # Ensure type safety: pluralize strings if only one channel was given, then convert to set.
-        if type(channels) == str:
+        if isinstance(channels, str):
             channels = [channels]
         channels = set(channels)
 

@@ -151,7 +151,7 @@ class IRCCommonProtocol(IRCNetwork):
         Parses a string of capabilities in the 005 / RPL_ISUPPORT format.
         """
 
-        if type(args) == str:
+        if isinstance(args, str):
             args = args.split(' ')
 
         caps = {}
