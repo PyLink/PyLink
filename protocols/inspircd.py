@@ -615,10 +615,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         # Allow hiding the startup time if set to do so (if both idle and signon time is 0, InspIRCd omits
         # showing this line).
-        start_time = self.start_ts if conf.conf['pylink'].get('whois_show_startup_time', True) else 0
+        target = args[0]
+        start_time = self.start_ts if (conf.conf['pylink'].get('whois_show_startup_time', True) and
+                                       self.get_service_bot(target)) else 0
 
         # First arg = source, second = signon time, third = idle time
-        self._send_with_prefix(args[0], 'IDLE %s %s 0' % (source, start_time))
+        self._send_with_prefix(target, 'IDLE %s %s 0' % (source, start_time))
 
     def handle_ftopic(self, numeric, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""
