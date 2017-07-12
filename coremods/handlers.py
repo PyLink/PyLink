@@ -76,11 +76,19 @@ def handle_whois(irc, source, command, args):
             isHideOper = (irc.umodes.get('hideoper'), None) in user.modes
             if (not isHideOper) or (isHideOper and source_is_oper) or \
                     (isHideOper and not conf.conf['pylink'].get('whois_use_hideoper', True)):
+                opertype = user.opertype
+
                 # Let's be gramatically correct. (If the opertype starts with a vowel,
                 # write "an Operator" instead of "a Operator")
-                n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
+                n = 'n' if opertype[0].lower() in 'aeiou' else ''
 
-                f(313, source, "%s :is a%s %s" % (nick, n, user.opertype))
+                # Remove the "(on $network)" bit in relay oper types if the target network is the
+                # same - this prevents duplicate text such as "GL/ovd is a Network Administrator
+                # (on OVERdrive-IRC) on OVERdrive-IRC" from showing.
+                # XXX: does this post-processing really belong here?
+                opertype = opertype.replace(' (on %s)' % irc.get_full_network_name(), '')
+
+                f(313, source, "%s :is a%s %s" % (nick, n, opertype))
 
         # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
         # Only show this to opers!
