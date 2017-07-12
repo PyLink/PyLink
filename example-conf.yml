@@ -37,12 +37,12 @@ pylink:
 
     # Determines whether hideoper modes should be respected in WHOIS replies.
     # Defaults to true if not specified.
-    whois_use_hideoper: true
+    #whois_use_hideoper: true
 
     # Determines whether extended WHOIS replies should be sent to users marked as a
     # bot (usually with umode +B). For better security (i.e. with bots that track services
     # accounts for authentication), it is recommended to leave this off.
-    whois_show_extensions_to_bots: false
+    #whois_show_extensions_to_bots: false
 
     # Determines whether PyLink should return its time of initial connection when replying to WHOIS
     # for service bots. This defaults to true if not set.
@@ -52,12 +52,12 @@ pylink:
     # kicks, kills, etc. using IRCd-side servprotect modes. For this to work
     # properly, this usually requires that PyLink be U-Lined. This defaults to
     # False.
-    protect_services: false
+    #protect_services: false
 
     # Determines how long plugins should wait (in seconds) before flushing their
     # databases to disk. Defaults to 300 seconds. Changes here require a reload
     # of all database-enabled plugins to take effect.
-    save_delay: 300
+    #save_delay: 300
 
     # Determines whether services should default to sending command responses as private notices,
     # even if the command was called in a channel. This defaults to False.
@@ -150,8 +150,8 @@ servers:
         # Comment out or remove these keys if you don't want service bots# to join any channels by
         # default.
         channels: ["#pylink"]
-        pylink_channels: ["#services"]
-        automode_channels: ["#chat"]
+        #pylink_channels: ["#services"]
+        #automode_channels: ["#chat"]
 
         # Sets the protocol module to use for this network - see the README for a
         # list of supported IRCds.
@@ -171,7 +171,7 @@ servers:
         # Sets the ping frequency in seconds (i.e. how long we should wait between
         # sending pings to our uplink). When more than two consecutive pings are missed,
         # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
-        pingfreq: 90
+        #pingfreq: 90
 
         # If enabled, this opts this network out of relay IP sharing: this network
         # will not have its users' IPs sent across the relay, and it will not see any
@@ -271,7 +271,6 @@ servers:
         sid: "2PY"
         netname: "This should match your UnrealIRCd config"
         sidrange: "8##"
-        channels: []
         protocol: "unreal"
         autoconnect: 5
 
@@ -320,7 +319,7 @@ servers:
 
         # With this key set to 'generic', neither of these host changing features are enabled
         # and a baseline RFC1459 mode set is used. This configuration is not officially supported.
-        #p10_ircd: nefarious
+        p10_ircd: nefarious
 
         # Determines whether account-based cloaks should be used (someone.users.yournet.org
         # format). This should match your IRCd configuration:
@@ -366,7 +365,7 @@ servers:
 
         # Once again, you can override the nick and ident of service bots on specific networks using
         # the "servicename_nick" and "servicename_ident" options.
-        pylink_nick: pybot
+        #pylink_nick: pybot
         #pylink_ident: pybot
 
         # SSL options. Certfile and keyfile are optional, but can be used for CertFP/SASL external
@@ -407,7 +406,8 @@ servers:
         # Determines whether oper statuses should be tracked on this Clientbot network. This
         # defaults to False for the best security, since oper status may allow more access to the
         # entire PyLink service than what's desired, even when PyLink is only connected as a bot.
-        track_oper_statuses: false
+        # This defaults to false if not specified.
+        #track_oper_statuses: false
 
         # Determines whether messages from unknown clients (servers, clients not sharing in a -n
         # channel, etc.) should be forwarded via the PyLink server. If this is disabled, these
