@@ -126,7 +126,12 @@ servers:
 
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet.local"
-
+        
+        # Sets the suffix that relay subservers that this network should use.
+        # If not specified per network, falls back to the value at
+        # relay:server_suffix or "relay" if that is not set.
+        #server_suffix: "relay.yournet.net"
+        
         # SID - required for TS6 and TS6-like servers. This must be three characters:
         # the first char must be a digit [0-9], and the remaining two chars may
         # be either uppercase letters [A-Z] or digits.
@@ -631,7 +636,7 @@ relay:
     allow_clientbot_pms: false
 
     # Sets the suffix that relay subservers should use. Defaults to "relay" (as in net1.relay,
-    # net2.relay, etc.) if not specified.
+    # net2.relay, etc.) if not specified. This can also be set per-network.
     #server_suffix: "relay.yournet.net"
 
     # Sets whether Clientbot mode sync will be enabled. Valid options:
