@@ -253,12 +253,14 @@ servers:
         protocol: "unreal"
         autoconnect: 10
 
-        # You can also define network-specific nicks and idents for various service
-        # bots, using the configuration options "servicename_nick" and "servicename_ident".
+        # You can also define network-specific nicks, idents, and hosts for various service
+        # bots, using the configuration options "servicename_nick", etc.
         #pylink_nick: MagicServ
         #pylink_ident: magicserv
+        #pylink_host: pylink.mynet.net
         #games_nick: MagicGames
         #games_ident: magicgames
+        #games_host: games.mynet.net
 
     nefarious:
         ip: somenet.ddns.local
@@ -738,6 +740,10 @@ automode:
 games:
     # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.
     nick: Games
+
+    # Ident and host can also be specified here, but they may be overriden per-network.
+    #ident: games
+    #host: play.games
 
     # Defines a fantasy prefix for the Games bot.
     prefix: "./"
