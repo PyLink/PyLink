@@ -127,7 +127,7 @@ servers:
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet.local"
         
-        # Sets the suffix that relay subservers for this network should use.
+        # Sets the suffix that relay subservers that this network should use.
         # If not specified per network, falls back to the value at
         # relay:server_suffix or "relay" if that is not set.
         #server_suffix: "relay.yournet.net"
