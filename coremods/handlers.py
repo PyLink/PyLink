@@ -22,8 +22,8 @@ def handle_whois(irc, source, command, args):
         f(401, source, "%s :No such nick/channel" % nick)
     else:
         nick = user.nick
-        sourceis_oper = ('o', None) in irc.users[source].modes
-        sourceisBot = (irc.umodes.get('bot'), None) in irc.users[source].modes
+        source_is_oper = ('o', None) in irc.users[source].modes
+        source_is_bot = (irc.umodes.get('bot'), None) in irc.users[source].modes
 
         # Get the full network name.
         netname = irc.serverdata.get('netname', irc.name)
@@ -35,7 +35,7 @@ def handle_whois(irc, source, command, args):
         # 319: RPL_WHOISCHANNELS; Show public channels of the target, respecting
         # hidechans umodes for non-oper callers.
         isHideChans = (irc.umodes.get('hidechans'), None) in user.modes
-        if (not isHideChans) or (isHideChans and sourceis_oper):
+        if (not isHideChans) or (isHideChans and source_is_oper):
             public_chans = []
             for chan in user.channels:
                 c = irc.channels[chan]
@@ -44,7 +44,7 @@ def handle_whois(irc, source, command, args):
 
                 if ((irc.cmodes.get('secret'), None) in c.modes or \
                     (irc.cmodes.get('private'), None) in c.modes) \
-                    and not (sourceis_oper or source in c.users):
+                    and not (source_is_oper or source in c.users):
                         continue
 
                 # Show the highest prefix mode like a regular IRCd does, if there are any.
@@ -74,7 +74,7 @@ def handle_whois(irc, source, command, args):
             # 2) +H is set, but the caller is oper
             # 3) +H is set, but whois_use_hideoper is disabled in config
             isHideOper = (irc.umodes.get('hideoper'), None) in user.modes
-            if (not isHideOper) or (isHideOper and sourceis_oper) or \
+            if (not isHideOper) or (isHideOper and source_is_oper) or \
                     (isHideOper and not conf.conf['bot'].get('whois_use_hideoper', True)):
                 # Let's be gramatically correct. (If the opertype starts with a vowel,
                 # write "an Operator" instead of "a Operator")
@@ -84,7 +84,7 @@ def handle_whois(irc, source, command, args):
 
         # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
         # Only show this to opers!
-        if sourceis_oper:
+        if source_is_oper:
             f(378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
             f(379, source, '%s :is using modes %s' % (nick, irc.join_modes(user.modes, sort=True)))
 
@@ -100,7 +100,7 @@ def handle_whois(irc, source, command, args):
 
         # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
         # caller is marked a bot and the whois_show_extensions_to_bots option is False
-        if (sourceisBot and conf.conf['bot'].get('whois_show_extensions_to_bots')) or (not sourceisBot):
+        if (source_is_bot and conf.conf['bot'].get('whois_show_extensions_to_bots')) or (not source_is_bot):
             irc.call_hooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
         else:
             log.debug('(%s) coremods.handlers.handle_whois: skipping custom whois handlers because '
