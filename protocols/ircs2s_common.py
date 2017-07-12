@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from pylinkirc.classes import IRCNetwork, ProtocolError
 from pylinkirc.log import log
-from pylinkirc import utils
+from pylinkirc import utils, conf
 
 class IRCCommonProtocol(IRCNetwork):
 
@@ -26,10 +26,14 @@ class IRCCommonProtocol(IRCNetwork):
     def validate_server_conf(self):
         """Validates that the server block given contains the required keys."""
         for k in self.conf_keys:
-            assert k in self.serverdata, "Missing option %r in server block for network %s." % (k, self.name)
+            conf.validate(k in self.serverdata,
+                     "Missing option %r in server block for network %s."
+                     % (k, self.name))
 
         port = self.serverdata['port']
-        assert type(port) == int and 0 < port < 65535, "Invalid port %r for network %s" % (port, self.name)
+        conf.validate(type(port) == int and 0 < port < 65535,
+                 "Invalid port %r for network %s"
+                 % (port, self.name))
 
     # TODO: these wrappers really need to be standardized
     def _get_SID(self, sname):
