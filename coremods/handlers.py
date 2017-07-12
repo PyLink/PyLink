@@ -99,7 +99,8 @@ def handle_whois(irc, source, command, args):
             f(335, source, "%s :is a bot" % nick)
 
         # :charybdis.midnight.vpn 317 GL GL 1946 1499867833 :seconds idle, signon time
-        f(317, source, "%s 0 %s :seconds idle (placeholder), signon time" % (nick, irc.start_ts))
+        if conf.conf['pylink'].get('whois_show_startup_time', True):
+            f(317, source, "%s 0 %s :seconds idle (placeholder), signon time" % (nick, irc.start_ts))
 
         # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
         # caller is marked a bot and the whois_show_extensions_to_bots option is False

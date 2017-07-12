@@ -44,6 +44,10 @@ pylink:
     # accounts for authentication), it is recommended to leave this off.
     whois_show_extensions_to_bots: false
 
+    # Determines whether PyLink should return the daemon startup time in WHOIS. This defaults
+    # to true if not set.
+    #whois_show_startup_time: true
+
     # Determines whether PyLink service clients should protect themselves from
     # kicks, kills, etc. using IRCd-side servprotect modes. For this to work
     # properly, this usually requires that PyLink be U-Lined. This defaults to
