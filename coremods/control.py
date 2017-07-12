@@ -118,11 +118,11 @@ def _rehash():
             ircobj.autoconnect_active_multiplier = 1
 
             # Clear the IRC object's channel loggers and replace them with
-            # new ones by re-running logSetup().
+            # new ones by re-running log_setup().
             while ircobj.loghandlers:
                 log.removeHandler(ircobj.loghandlers.pop())
 
-            ircobj.logSetup()
+            ircobj.log_setup()
 
     utils.resetModuleDirs()
 
