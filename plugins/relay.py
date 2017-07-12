@@ -218,7 +218,8 @@ def spawn_relay_server(irc, remoteirc):
         try:
             # ENDBURST is delayed by 3 secs on supported IRCds to prevent
             # triggering join-flood protection and the like.
-            suffix = conf.conf.get('relay', {}).get('server_suffix', 'relay')
+            suffix = irc.serverdata.get('server_suffix', conf.conf.get('relay', {}).get('server_suffix', 'relay'))
+
             # Strip any leading or trailing .'s
             suffix = suffix.strip('.')
             sid = irc.spawn_server('%s.%s' % (remoteirc.name, suffix),
