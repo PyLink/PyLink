@@ -861,7 +861,7 @@ def handle_relay_whois(irc, source, command, args):
         text = '%s %s' % (targetuser.nick, text)
         irc.numeric(server, num, source, text)
 
-    def checkSendKey(infoline):
+    def _check_send_key(infoline):
         """
         Returns whether we should send the given info line in WHOIS. This validates the
         corresponding configuration option for being either "all" or "opers"."""
@@ -883,11 +883,11 @@ def handle_relay_whois(irc, source, command, args):
         wreply(320, ":is a remote user connected via PyLink Relay. Home network: %s; "
                     "Home nick: %s" % (netname, realuser.nick))
 
-        if checkSendKey('whois_show_accounts') and realuser.services_account:
+        if _check_send_key('whois_show_accounts') and realuser.services_account:
             # Send account information if told to and the target is logged in.
             wreply(330, "%s :is logged in (on %s) as" % (realuser.services_account, netname))
 
-        if checkSendKey('whois_show_server') and realirc.has_cap('can-track-servers'):
+        if _check_send_key('whois_show_server') and realirc.has_cap('can-track-servers'):
             wreply(320, ":is actually connected via the following server:")
             realserver = realirc.get_server(uid)
             realserver = realirc.servers[realserver]
