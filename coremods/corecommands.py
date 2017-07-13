@@ -67,7 +67,7 @@ def shutdown(irc, source, args):
     log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
              u.ident, u.host)
 
-    control._shutdown(irc)
+    control._shutdown(irc=irc)
 
 @utils.add_cmd
 def load(irc, source, args):
