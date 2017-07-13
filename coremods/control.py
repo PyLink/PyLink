@@ -25,11 +25,12 @@ def _print_remaining_threads():
 
 def _remove_pid():
     # Remove our pid file.
-    log.info("Removing our pid file.")
+    pidfile = "%s.pid" % conf.confname
+    log.info("Removing PID file %r.", pidfile)
     try:
-        os.remove("%s.pid" % conf.confname)
+        os.remove(pidfile)
     except OSError:
-        log.exception("Failed to remove PID, ignoring...")
+        log.exception("Failed to remove PID file %r, ignoring..." % pidfile)
 
 def _kill_plugins(irc=None):
     log.info("Shutting down plugins.")
