@@ -122,7 +122,6 @@ def loadConf(filename, errors_fatal=True, logger=None):
             conf = validateConf(conf, logger=logger)
     except Exception as e:
         print('ERROR: Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e), file=sys.stderr)
-        print('       Users upgrading from users < 0.9-alpha1 should note that the default configuration has been renamed to *pylink.yml*, not *config.yml*', file=sys.stderr)
 
         if errors_fatal:
             sys.exit(1)
