@@ -131,6 +131,7 @@ def handle_commands(irc, source, command, args):
     sbot = irc.get_service_bot(target)
     if sbot:
         sbot.call_cmd(irc, source, text)
+
 utils.add_hook(handle_commands, 'PRIVMSG')
 
 def handle_ctcp(irc, source, command, args):
@@ -150,7 +151,7 @@ def handle_ctcp(irc, source, command, args):
 
     # Call the handlers
     sbot.call_ctcp(irc, source, cmd, cmd_args)
-    
+
 utils.add_hook(handle_ctcp, 'PRIVMSG')
 
 # Register the main PyLink service. All command definitions MUST go after this!

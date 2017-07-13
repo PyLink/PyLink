@@ -97,9 +97,14 @@ def add_cmd(func, name=None, **kwargs):
     world.services['pylink'].add_cmd(func, name=name, **kwargs)
     return func
     
-def add_ctcp(func, name=None, **kwargs):
-    """Adds a handler for the given CTCP command."""
-    world.services['pylink'].add_ctcp(func, name=name, **kwargs)
+def add_ctcp(func, name=None, is_global=True, **kwargs):
+    """
+    Adds a handler for the given CTCP command.
+    
+    By default, the handler is expanded to all PyLink service bots. Instead
+    use the add_ctcp() method directly to limit the handler to a specific service bot.
+    """
+    world.services['pylink'].add_ctcp(func, name=name, is_global=is_global, **kwargs)
     return func
 
 def add_hook(func, command):
@@ -385,24 +390,41 @@ class ServiceBot():
         irc.called_in = source
         irc.called_by = source
     
-        # Unknown command
-        if cmd not in self.ctcp_commands:
+        funcs = None
+        need_global = False
+        if cmd in self.ctcp_commands:
+            # Try our own handler first
+            funcs = self.ctcp_commands[cmd]
+        elif cmd in world.services['pylink'].ctcp_commands:
+            # Fall back to global handler on PyLink service
+            funcs = world.services['pylink'].ctcp_commands[cmd]
+            need_global = True
+        else:
             log.info('(%s/%s) Received unknown CTCP command %r from %s', irc.name, self.name, cmd, irc.get_hostmask(source))
             return
-            
+                
         # Run handlers
         log.info('(%s/%s) Handling CTCP %r for %s', irc.name, self.name, cmd, irc.get_hostmask(source))
-        for func in self.ctcp_commands[cmd]:
+        for func in funcs:
             try:
-                func(irc, source, args)
+                if need_global:
+                    # Ensure this has global attribute if it was borrowed from PyLink service
+                    func.is_global
+                func(irc, source, self.uids.get(irc.name), args)
+                return True
+            except AttributeError:
+                log.info('(%s/%s) CTCP command %r from %s is not global; ignored', irc.name, self.name, cmd, irc.get_hostmask(source))
+                continue
             except Exception as e:
                 log.exception('Unhandled exception caught in CTCP %r', cmd)
 
-    def add_ctcp(self, func, name=None):
+    def add_ctcp(self, func, name=None, is_global=False):
         """Adds a handler for the given CTCP command."""
         if name is None:
             name = func.__name__
         name = name.lower()
+        if is_global:
+            func.is_global = True
         self.ctcp_commands[name].append(func)
         return func
 

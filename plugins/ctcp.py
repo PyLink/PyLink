@@ -6,23 +6,23 @@ from pylinkirc import utils
 from pylinkirc.log import log
 
 @utils.add_ctcp
-def version(irc, source, args):
+def version(irc, source, target, args):
     """
     Handles CTCP version requests.
     """
-    irc.msg(source, '\x01VERSION %s\x01' % irc.version(), notice=True)
+    irc.msg(source, '\x01VERSION %s\x01' % irc.version(), notice=True, source=target)
 
 @utils.add_ctcp
-def ping(irc, source, args):
+def ping(irc, source, target, args):
     """
     Handles CTCP ping requests.
     """
     # CTCP PING 23152511
     pingarg = ' '.join(args)
-    irc.msg(source, '\x01PING %s\x01' % pingarg, notice=True)
+    irc.msg(source, '\x01PING %s\x01' % pingarg, notice=True, source=target)
 
 @utils.add_ctcp
-def easter(irc, source, args):
+def easter(irc, source, target, args):
     """
     Secret easter egg.
     """
@@ -43,7 +43,7 @@ def easter(irc, source, args):
                  "Hey, can you keep a secret? \x031,1 %s" % " " * random.randint(1,20),
                 ]
 
-    irc.msg(source, '\x01EASTER %s\x01' % random.choice(responses), notice=True)
+    irc.msg(source, '\x01EASTER %s\x01' % random.choice(responses), notice=True, source=target)
     
 utils.add_ctcp(easter, 'about')
 utils.add_ctcp(easter, 'pylink')
