@@ -375,6 +375,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             return
 
     def _pre_disconnect(self):
+        self.aborted.set()
         self.was_successful = self.connected.is_set()
         log.debug('(%s) _pre_disconnect: got %s for was_successful state', self.name, self.was_successful)
 
@@ -386,8 +387,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             log.removeHandler(self.loghandlers.pop())
 
     def _post_disconnect(self):
-        log.debug('(%s) _post_disconnect: Setting self.aborted to True.', self.name)
-        self.aborted.set()
 
         # Internal hook signifying that a network has disconnected.
         self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
