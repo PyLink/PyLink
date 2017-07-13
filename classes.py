@@ -332,8 +332,8 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
         try:
             self.validate_server_conf()
-        except AssertionError as e:
-            log.exception("(%s) Configuration error: %s", self.name, e)
+        except Exception as e:
+            log.error("(%s) Configuration error: %s", self.name, e)
             raise
 
     def _run_autoconnect(self):
