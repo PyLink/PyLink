@@ -239,21 +239,20 @@ servers:
 
         # Note: /'s in nicks are automatically converted to |'s for TS6
         # networks (charybdis, etc.), since they don't allow "/" in nicks.
-        separator: "|"
+        #separator: "|"
 
         # The following options are specific to TS6 servers:
         # Toggles owner (+y), admin (+a), and halfop (+h) support for
-        # shadowircd/elemental-ircd.
-        # This defaults to off for the best compatibility.
-        use_owner: false
-        use_admin: false
-        use_halfop: false
+        # shadowircd/elemental-ircd/chatircd. These default to off for the best compatibility.
+        #use_owner: false
+        #use_admin: false
+        #use_halfop: false
 
-        # Toggles support of shadowircd/elemental-ircd specific channel modes:
-        # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
-        # +K (no repeat messages), +d (no nick changes), and user modes:
-        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides WHOIS channel list)
-        use_elemental_modes: false
+        # Sets the IRCd (channel/user mode set) to target - currently supported values include
+        # 'chatircd', 'charybdis', and 'elemental' (elemental-ircd). This option defaults to
+        # 'charybdis' if not set, and replaces the "use_elemental_modes" option from PyLink 1.2
+        # and earlier.
+        #ircd: charybdis
 
     unrealnet:
         ip: 1.2.3.4
