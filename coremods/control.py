@@ -74,13 +74,13 @@ def shutdown(irc=None):
 
     # Done.
 
-def sigterm_handler(signo, stack_frame):
+def _sigterm_handler(signo, stack_frame):
     """Handles SIGTERM and SIGINT gracefully by shutting down the PyLink daemon."""
     log.info("Shutting down on signal %s." % signo)
     shutdown()
 
-signal.signal(signal.SIGTERM, sigterm_handler)
-signal.signal(signal.SIGINT, sigterm_handler)
+signal.signal(signal.SIGTERM, _sigterm_handler)
+signal.signal(signal.SIGINT, _sigterm_handler)
 
 def rehash():
     """Rehashes the PyLink daemon."""
@@ -139,10 +139,10 @@ def rehash():
 
 if os.name == 'posix':
     # Only register SIGHUP/SIGUSR1 on *nix.
-    def sigusr1_handler(_signo, _stack_frame):
+    def _sigusr1_handler(_signo, _stack_frame):
         """Handles SIGUSR1 by rehashing the PyLink daemon."""
         log.info("SIGUSR1 received, reloading config.")
         rehash()
 
-    signal.signal(signal.SIGUSR1, sigusr1_handler)
-    signal.signal(signal.SIGHUP, sigterm_handler)
+    signal.signal(signal.SIGUSR1, _sigusr1_handler)
+    signal.signal(signal.SIGHUP, _sigterm_handler)
