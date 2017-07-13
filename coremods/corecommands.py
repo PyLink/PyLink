@@ -59,14 +59,8 @@ def shutdown(irc, source, args):
     """takes no arguments.
 
     Exits PyLink by disconnecting all networks."""
-
     permissions.checkPermissions(irc, source, ['core.shutdown'])
-
-    u = irc.users[source]
-
-    log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
-             u.ident, u.host)
-
+    log.info('(%s) SHUTDOWN requested by %s, exiting...', irc.name, irc.get_hostmask(source))
     control.shutdown(irc=irc)
 
 @utils.add_cmd
