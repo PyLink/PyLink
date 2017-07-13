@@ -25,6 +25,7 @@ except ImportError:
 
 from . import world, utils, structures, conf, __version__
 from .log import *
+from .coremods import control
 
 ### Exceptions
 
@@ -1134,6 +1135,14 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
         log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
+    def _log_connection_error(self, *args, **kwargs):
+        # Log connection errors to ERROR unless were shutting down (in which case,
+        # the given text goes to DEBUG).
+        if self.aborted.is_set() or control.tried_shutdown:
+            log.debug(*args, **kwargs)
+        else:
+            log.error(*args, **kwargs)
+
     def _connect(self):
         """
         Runs the connect loop for the IRC object. This is usually called by
@@ -1272,7 +1281,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # We also catch SystemExit here as a way to abort out connection threads properly, and stop the
             # IRC connection from freezing instead.
             except (OSError, RuntimeError, SystemExit) as e:
-                log.exception('(%s) Disconnected from IRC:', self.name)
+                self._log_connection_error('(%s) Disconnected from IRC:', self.name, exc_info=True)
 
             self.disconnect()
             if not self._run_autoconnect():
@@ -1332,10 +1341,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             buf += data
             if not data:
-                log.error('(%s) No data received, disconnecting!', self.name)
+                self._log_connection_error('(%s) No data received, disconnecting!', self.name)
                 return
             elif (time.time() - self.lastping) > self.pingtimeout:
-                log.error('(%s) Connection timed out.', self.name)
+                self._log_connection_error('(%s) Connection timed out.', self.name)
                 return
 
             while b'\n' in buf:
