@@ -96,6 +96,11 @@ def add_cmd(func, name=None, **kwargs):
     """Binds an IRC command function to the given command name."""
     world.services['pylink'].add_cmd(func, name=name, **kwargs)
     return func
+    
+def add_ctcp(func, name=None, **kwargs):
+    """Adds a handler for the given CTCP command."""
+    world.services['pylink'].add_ctcp(func, name=name, **kwargs)
+    return func
 
 def add_hook(func, command):
     """Binds a hook function to the given command name."""
@@ -202,6 +207,9 @@ class ServiceBot():
         # plugins are actually allowed to bind to one function name; this just causes
         # them to be called in the order that they are bound.
         self.commands = collections.defaultdict(list)
+        
+        # Same for CTCP handlers
+        self.ctcp_commands = collections.defaultdict(list)
 
         # This tracks the UIDs of the service bot on different networks, as they are
         # spawned.
@@ -314,18 +322,24 @@ class ServiceBot():
         """
         irc.called_in = called_in or source
         irc.called_by = source
-
+        
+        # Extract command and args
         cmd_args = text.strip().split(' ')
         cmd = cmd_args[0].lower()
         cmd_args = cmd_args[1:]
+        
+        # Ignore CTCPs here
+        if '\x01' in cmd:
+            return
+        
         if cmd not in self.commands:
             # XXX: we really need abstraction for this kind of config fetching...
             show_unknown_cmds = irc.serverdata.get('%s_show_unknown_commands' % self.name,
                                                    conf.conf.get(self.name, {}).get('show_unknown_commands',
                                                    conf.conf['pylink'].get('show_unknown_commands', True)))
 
-            if cmd and show_unknown_cmds and not cmd.startswith('\x01'):
-                # Ignore empty commands and invalid command errors from CTCPs.
+            if cmd and show_unknown_cmds:
+                # Ignore empty commands.
                 self.reply(irc, 'Error: Unknown command %r.' % cmd)
             log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.get_hostmask(source))
             return
@@ -361,6 +375,35 @@ class ServiceBot():
                 self.alias_cmds[alias] = name
 
         self.commands[name].append(func)
+        return func
+
+    def call_ctcp(self, irc, source, cmd, args):
+        """
+        Calls a PyLink bot CTCP handler. source is the caller's UID, cmd is
+        the CTCP command, and args is a list of space-separated arguments.
+        """
+        irc.called_in = source
+        irc.called_by = source
+    
+        # Unknown command
+        if cmd not in self.ctcp_commands:
+            log.info('(%s/%s) Received unknown CTCP command %r from %s', irc.name, self.name, cmd, irc.get_hostmask(source))
+            return
+            
+        # Run handlers
+        log.info('(%s/%s) Handling CTCP %r for %s', irc.name, self.name, cmd, irc.get_hostmask(source))
+        for func in self.ctcp_commands[cmd]:
+            try:
+                func(irc, source, args)
+            except Exception as e:
+                log.exception('Unhandled exception caught in CTCP %r', cmd)
+
+    def add_ctcp(self, func, name=None):
+        """Adds a handler for the given CTCP command."""
+        if name is None:
+            name = func.__name__
+        name = name.lower()
+        self.ctcp_commands[name].append(func)
         return func
 
     def _show_command_help(self, irc, command, private=False, shortform=False):
@@ -471,8 +514,8 @@ class ServiceBot():
         except IndexError:
             plugin_filter = None
 
-        # Don't show CTCP handlers or aliases in the public command list.
-        cmds = sorted(cmd for cmd in self.commands.keys() if '\x01' not in cmd and cmd not in self.alias_cmds)
+        # Don't show aliases in the public command list.
+        cmds = sorted(cmd for cmd in self.commands.keys() if cmd not in self.alias_cmds)
 
         if plugin_filter is not None:
             # Filter by plugin, if the option was given.
