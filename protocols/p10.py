@@ -695,7 +695,7 @@ class P10Protocol(IRCS2SProtocol):
         """Updates the ident or host of any connected client."""
         uobj = self.users[target]
 
-        ircd = self.serverdata.get('p10_ircd', 'nefarious').lower()
+        ircd = self.serverdata.get('ircd', self.serverdata.get('p10_ircd', 'nefarious')).lower()
 
         if self.is_internal_client(target):
             # Host changing via SETHOST is only supported on nefarious and snircd.

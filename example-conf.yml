@@ -318,7 +318,8 @@ servers:
 
         # With this key set to 'generic', neither of these host changing features are enabled
         # and a baseline RFC1459 mode set is used. This configuration is not officially supported.
-        p10_ircd: nefarious
+        # This option was previously named "p10_ircd" in PyLink 1.2, but that name is now deprecated.
+        ircd: nefarious
 
         # Determines whether account-based cloaks should be used (someone.users.yournet.org
         # format). This should match your IRCd configuration:
