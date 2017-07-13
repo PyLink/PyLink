@@ -190,7 +190,6 @@ def rehash(irc, source, args):
     try:
         control.rehash()
     except Exception as e:  # Something went wrong, abort.
-        log.exception("Error REHASHing config: ")
         irc.reply("Error loading configuration file: %s: %s" % (type(e).__name__, e))
         return
     else:
