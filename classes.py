@@ -1340,7 +1340,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             buf += data
             if not data:
-                self._log_connection_error('(%s) No data received, disconnecting!', self.name)
+                self._log_connection_error('(%s) Connection lost, disconnecting.', self.name)
                 return
             elif (time.time() - self.lastping) > self.pingtimeout:
                 self._log_connection_error('(%s) Connection timed out.', self.name)
