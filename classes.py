@@ -1111,6 +1111,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self.connection_thread = None
         self.queue = None
         self.pingTimer = None
+        self.socket = None
 
     def init_vars(self, *args, **kwargs):
         super().init_vars(*args, **kwargs)
@@ -1304,13 +1305,14 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """Handle disconnects from the remote server."""
         self._pre_disconnect()
 
-        try:
-            log.debug('(%s) disconnect: Shutting down socket.', self.name)
-            self.socket.shutdown(socket.SHUT_RDWR)
-        except Exception as e:  # Socket timed out during creation; ignore
-            log.debug('(%s) error on socket shutdown: %s: %s', self.name, type(e).__name__, e)
+        if self.socket is not None:
+            try:
+                log.debug('(%s) disconnect: Shutting down socket.', self.name)
+                self.socket.shutdown(socket.SHUT_RDWR)
+            except Exception as e:  # Socket timed out during creation; ignore
+                log.debug('(%s) error on socket shutdown: %s: %s', self.name, type(e).__name__, e)
 
-        self.socket.close()
+            self.socket.close()
 
         # Stop the queue thread.
         if self.queue:
