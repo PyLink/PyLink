@@ -59,15 +59,9 @@ def shutdown(irc, source, args):
     """takes no arguments.
 
     Exits PyLink by disconnecting all networks."""
-
     permissions.checkPermissions(irc, source, ['core.shutdown'])
-
-    u = irc.users[source]
-
-    log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
-             u.ident, u.host)
-
-    control._shutdown(irc)
+    log.info('(%s) SHUTDOWN requested by %s, exiting...', irc.name, irc.get_hostmask(source))
+    control.shutdown(irc=irc)
 
 @utils.add_cmd
 def load(irc, source, args):
@@ -194,9 +188,8 @@ def rehash(irc, source, args):
     Note: plugins must be manually reloaded."""
     permissions.checkPermissions(irc, source, ['core.rehash'])
     try:
-        control._rehash()
+        control.rehash()
     except Exception as e:  # Something went wrong, abort.
-        log.exception("Error REHASHing config: ")
         irc.reply("Error loading configuration file: %s: %s" % (type(e).__name__, e))
         return
     else:
@@ -208,4 +201,4 @@ def clearqueue(irc, source, args):
 
     Clears the outgoing text queue for the current connection."""
     permissions.checkPermissions(irc, source, ['core.clearqueue'])
-    irc.queue.queue.clear()
+    irc._queue.queue.clear()

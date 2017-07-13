@@ -26,6 +26,7 @@ class IRCCommonProtocol(IRCNetwork):
     def validate_server_conf(self):
         """Validates that the server block given contains the required keys."""
         for k in self.conf_keys:
+            log.debug('(%s) Checking presence of conf key %r', self.name, k)
             conf.validate(k in self.serverdata,
                      "Missing option %r in server block for network %s."
                      % (k, self.name))

@@ -27,6 +27,7 @@ def disconnect(irc, source, args):
         irc.error('No such network "%s" (case sensitive).' % netname)
         return
     irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
+    log.info('Disconnecting network %r per %s', netname, irc.get_hostmask(source))
 
     control.remove_network(network)
 

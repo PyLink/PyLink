@@ -25,6 +25,7 @@ except ImportError:
 
 from . import world, utils, structures, conf, __version__
 from .log import *
+from .coremods import control
 
 ### Exceptions
 
@@ -38,11 +39,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
     """Base IRC object for PyLink."""
 
     def __init__(self, netname):
-        """
-        Initializes an IRC object. This takes 3 variables: the network name
-        (a string), the name of the protocol module to use for this connection,
-        and a configuration object.
-        """
         self.deprecated_attributes = {
             'conf': 'Deprecated since 1.2; consider switching to conf.conf',
             'botdata': "Deprecated since 1.2; consider switching to conf.conf['bot']",
@@ -331,8 +327,8 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
         try:
             self.validate_server_conf()
-        except AssertionError as e:
-            log.exception("(%s) Configuration error: %s", self.name, e)
+        except Exception as e:
+            log.error("(%s) Configuration error: %s", self.name, e)
             raise
 
     def _run_autoconnect(self):
@@ -374,6 +370,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             return
 
     def _pre_disconnect(self):
+        self.aborted.set()
         self.was_successful = self.connected.is_set()
         log.debug('(%s) _pre_disconnect: got %s for was_successful state', self.name, self.was_successful)
 
@@ -385,8 +382,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             log.removeHandler(self.loghandlers.pop())
 
     def _post_disconnect(self):
-        log.debug('(%s) _post_disconnect: Setting self.aborted to True.', self.name)
-        self.aborted.set()
 
         # Internal hook signifying that a network has disconnected.
         self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
@@ -1108,9 +1103,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.connection_thread = None
-        self.queue = None
-        self.pingTimer = None
+        self._connection_thread = None
+        self._queue = None
+        self._ping_timer = None
+        self._socket = None
 
     def init_vars(self, *args, **kwargs):
         super().init_vars(*args, **kwargs)
@@ -1121,18 +1117,26 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self.pingtimeout = self.pingfreq * 3
 
         self.maxsendq = self.serverdata.get('maxsendq', 4096)
-        self.queue = queue.Queue(self.maxsendq)
+        self._queue = queue.Queue(self.maxsendq)
 
     def _schedule_ping(self):
         """Schedules periodic pings in a loop."""
         self._ping_uplink()
 
-        self.pingTimer = threading.Timer(self.pingfreq, self._schedule_ping)
-        self.pingTimer.daemon = True
-        self.pingTimer.name = 'Ping timer loop for %s' % self.name
-        self.pingTimer.start()
+        self._ping_timer = threading.Timer(self.pingfreq, self._schedule_ping)
+        self._ping_timer.daemon = True
+        self._ping_timer.name = 'Ping timer loop for %s' % self.name
+        self._ping_timer.start()
 
         log.debug('(%s) Ping scheduled at %s', self.name, time.time())
+
+    def _log_connection_error(self, *args, **kwargs):
+        # Log connection errors to ERROR unless were shutting down (in which case,
+        # the given text goes to DEBUG).
+        if self.aborted.is_set() or control.tried_shutdown:
+            log.debug(*args, **kwargs)
+        else:
+            log.error(*args, **kwargs)
 
     def _connect(self):
         """
@@ -1150,17 +1154,17 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
 
                 # Creat the socket.
-                self.socket = socket.socket(stype)
-                self.socket.setblocking(0)
+                self._socket = socket.socket(stype)
+                self._socket.setblocking(0)
 
                 # Set the socket bind if applicable.
                 if 'bindhost' in self.serverdata:
-                    self.socket.bind((self.serverdata['bindhost'], 0))
+                    self._socket.bind((self.serverdata['bindhost'], 0))
 
                 # Set the connection timeouts. Initial connection timeout is a
                 # lot smaller than the timeout after we've connected; this is
                 # intentional.
-                self.socket.settimeout(self.pingfreq)
+                self._socket.settimeout(self.pingfreq)
 
                 # Resolve hostnames if it's not an IP address already.
                 old_ip = ip
@@ -1191,18 +1195,18 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                                            self.name)
                              checks_ok = False
 
-                    self.socket = context.wrap_socket(self.socket)
+                    self._socket = context.wrap_socket(self._socket)
 
                 log.info("Connecting to network %r on %s:%s", self.name, ip, port)
-                self.socket.connect((ip, port))
-                self.socket.settimeout(self.pingtimeout)
+                self._socket.connect((ip, port))
+                self._socket.settimeout(self.pingtimeout)
 
                 # If SSL was enabled, optionally verify the certificate
                 # fingerprint for some added security. I don't bother to check
                 # the entire certificate for validity, since most IRC networks
                 # self-sign their certificates anyways.
                 if self.ssl and checks_ok:
-                    peercert = self.socket.getpeercert(binary_form=True)
+                    peercert = self._socket.getpeercert(binary_form=True)
 
                     # Hash type is configurable using the ssl_fingerprint_type
                     # value, and defaults to sha256.
@@ -1240,9 +1244,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
                 if checks_ok:
 
-                    self.queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
+                    self._queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
                                                          target=self._process_queue, daemon=True)
-                    self.queue_thread.start()
+                    self._queue_thread.start()
 
                     self.sid = self.serverdata.get("sid")
                     # All our checks passed, get the protocol module to connect and run the listen
@@ -1272,7 +1276,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # We also catch SystemExit here as a way to abort out connection threads properly, and stop the
             # IRC connection from freezing instead.
             except (OSError, RuntimeError, SystemExit) as e:
-                log.exception('(%s) Disconnected from IRC:', self.name)
+                self._log_connection_error('(%s) Disconnected from IRC:', self.name, exc_info=True)
 
             self.disconnect()
             if not self._run_autoconnect():
@@ -1284,35 +1288,36 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # HACK: Don't thread if we're running tests.
             self._connect()
         else:
-            if self.connection_thread and self.connection_thread.is_alive():
+            if self._connection_thread and self._connection_thread.is_alive():
                 raise RuntimeError("Refusing to start multiple connection threads for network %r!" % self.name)
 
-            self.connection_thread = threading.Thread(target=self._connect,
+            self._connection_thread = threading.Thread(target=self._connect,
                                                       name="Listener for %s" %
                                                       self.name)
-            self.connection_thread.start()
+            self._connection_thread.start()
 
     def disconnect(self):
         """Handle disconnects from the remote server."""
         self._pre_disconnect()
 
-        try:
-            log.debug('(%s) disconnect: Shutting down socket.', self.name)
-            self.socket.shutdown(socket.SHUT_RDWR)
-        except Exception as e:  # Socket timed out during creation; ignore
-            log.debug('(%s) error on socket shutdown: %s: %s', self.name, type(e).__name__, e)
+        if self._socket is not None:
+            try:
+                log.debug('(%s) disconnect: Shutting down socket.', self.name)
+                self._socket.shutdown(socket.SHUT_RDWR)
+            except Exception as e:  # Socket timed out during creation; ignore
+                log.debug('(%s) error on socket shutdown: %s: %s', self.name, type(e).__name__, e)
 
-        self.socket.close()
+            self._socket.close()
 
         # Stop the queue thread.
-        if self.queue:
+        if self._queue:
             # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
-            self.queue.queue.appendleft(None)
+            self._queue.queue.appendleft(None)
 
         # Stop the ping timer.
-        if self.pingTimer:
+        if self._ping_timer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
-            self.pingTimer.cancel()
+            self._ping_timer.cancel()
         self._post_disconnect()
 
     def _run_irc(self):
@@ -1322,7 +1327,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         while not self.aborted.is_set():
 
             try:
-                data = self.socket.recv(2048)
+                data = self._socket.recv(2048)
             except OSError:
                 # Suppress socket read warnings from lingering recv() calls if
                 # we've been told to shutdown.
@@ -1332,10 +1337,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             buf += data
             if not data:
-                log.error('(%s) No data received, disconnecting!', self.name)
+                self._log_connection_error('(%s) Connection lost, disconnecting.', self.name)
                 return
             elif (time.time() - self.lastping) > self.pingtimeout:
-                log.error('(%s) Connection timed out.', self.name)
+                self._log_connection_error('(%s) Connection timed out.', self.name)
                 return
 
             while b'\n' in buf:
@@ -1354,7 +1359,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         log.debug("(%s) -> %s", self.name, data)
 
         try:
-            self.socket.send(encoded_data)
+            self._socket.send(encoded_data)
         except (OSError, AttributeError):
             log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, data)
 
@@ -1366,7 +1371,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         if queue:
             # XXX: we don't really know how to handle blocking queues yet, so
             # it's better to not expose that yet.
-            self.queue.put_nowait(data)
+            self._queue.put_nowait(data)
         else:
             self._send(data)
 
@@ -1375,7 +1380,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         while True:
             throttle_time = self.serverdata.get('throttle_time', 0.005)
             if not self.aborted.wait(throttle_time):
-                data = self.queue.get()
+                data = self._queue.get()
                 if data is None:
                     log.debug('(%s) Stopping queue thread due to getting None as item', self.name)
                     break

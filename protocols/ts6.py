@@ -11,6 +11,8 @@ from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
 class TS6Protocol(TS6BaseProtocol):
+
+    SUPPORTED_IRCDS = ('charybdis', 'elemental', 'chatircd')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.protocol_caps |= {'slash-in-hosts'}
@@ -258,7 +260,7 @@ class TS6Protocol(TS6BaseProtocol):
                         'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
                         'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
                         'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                        'g', 'opmoderated': 'z', 'noctcp': 'C',
+                        'g', 'opmoderated': 'z', 'noctcp': 'C', 'ssl': 'Z',
                          # charybdis-specific modes provided by EXTENSIONS
                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
                         'nonotice': 'T',
@@ -287,21 +289,36 @@ class TS6Protocol(TS6BaseProtocol):
                         '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'}
         self.umodes = chary_umodes
 
+        # Find the target IRCd and update the mode dictionaries as applicable.
+        target_ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes') else 'charybdis')
+        target_ircd = target_ircd.lower()
+
+        if target_ircd not in self.SUPPORTED_IRCDS:
+            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
+            target_ircd = 'charybdis'
+
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
         # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
         # +K (no repeat messages), +d (no nick changes), and user modes:
-        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides channel list)
-        if self.serverdata.get('use_elemental_modes'):
+        # +B (bot), +C (blocks CTCP), +V (no invites), +I (hides channel list)
+        if target_ircd == 'elemental':
             elemental_cmodes = {'hiddenbans': 'u', 'nokick': 'E',
                                 'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd',
                                 'blockcaps': 'G'}
             self.cmodes.update(elemental_cmodes)
             self.cmodes['*D'] += ''.join(elemental_cmodes.values())
 
-            elemental_umodes = {'noctcp': 'C', 'deaf': 'D', 'bot': 'B', 'noinvite': 'V',
-                                'hidechans': 'I'}
+            elemental_umodes = {'noctcp': 'C', 'bot': 'B', 'noinvite': 'V', 'hidechans': 'I'}
             self.umodes.update(elemental_umodes)
             self.umodes['*D'] += ''.join(elemental_umodes.values())
+        elif target_ircd == 'chatircd':
+            chatircd_cmodes = {'netadminonly': 'N'}
+            self.cmodes.update(chatircd_cmodes)
+            self.cmodes['*D'] += ''.join(chatircd_cmodes.values())
+
+            chatircd_umodes = {'netadmin': 'n', 'bot': 'B', 'callerid_sslonly': 't'}
+            self.umodes.update(chatircd_umodes)
+            self.umodes['*D'] += ''.join(chatircd_umodes.values())
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
         f('PASS %s TS 6 %s' % (self.serverdata["sendpass"], self.sid))
