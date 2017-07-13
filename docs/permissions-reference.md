@@ -77,6 +77,7 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `opercmds.kill` - Allows access to the `kill` command.
 - `opercmds.mode` - Allows access to the `mode` command.
 - `opercmds.topic` - Allows access to the `topic` command.
+- `opercmds.chghost` - Allows access to the `chghost`, `chgident`, and `chgname` commands.
 
 ## Relay
 - `relay.claim` - Allows access to the `claim` command.

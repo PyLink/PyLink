@@ -204,3 +204,42 @@ def topic(irc, source, args):
     irc.call_hooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
                    {'channel': channel, 'text': topic, 'setter': source,
                     'parse_as': 'TOPIC'}])
+
+@utils.add_cmd
+def chghost(irc, source, args):
+    """<user> <new host>
+
+    Admin only. Changes the visible host of the target user."""
+    chgfield(irc, source, args, 'host')
+
+@utils.add_cmd
+def chgident(irc, source, args):
+    """<user> <new ident>
+
+    Admin only. Changes the ident of the target user."""
+    chgfield(irc, source, args, 'ident')
+    
+@utils.add_cmd
+def chgname(irc, source, args):
+    """<user> <new GECOS>
+
+    Admin only. Changes the GECOS (realname) of the target user."""
+    chgfield(irc, source, args, 'GECOS')
+
+def chgfield(irc, source, args, field):
+    permissions.checkPermissions(irc, source, ['opercmds.chghost'])
+    try:
+        target = args[0]
+        new = args[1]
+    except IndexError:
+        irc.error("Not enough arguments. Needs 2: target, new %s." % field)
+        return
+    
+    # Find the user
+    targetu = irc.nick_to_uid(target)
+    if targetu not in irc.users:
+        irc.error("No such nick '%s'." % target)
+        return
+        
+    irc.update_client(targetu, field.upper(), new)
+    irc.reply("Done.")
