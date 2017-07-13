@@ -258,7 +258,7 @@ class TS6Protocol(TS6BaseProtocol):
                         'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
                         'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
                         'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                        'g', 'opmoderated': 'z', 'noctcp': 'C',
+                        'g', 'opmoderated': 'z', 'noctcp': 'C', 'ssl': 'Z',
                          # charybdis-specific modes provided by EXTENSIONS
                         'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
                         'nonotice': 'T',
@@ -290,7 +290,7 @@ class TS6Protocol(TS6BaseProtocol):
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
         # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
         # +K (no repeat messages), +d (no nick changes), and user modes:
-        # +B (bot), +C (blocks CTCP), +D (deaf), +V (no invites), +I (hides channel list)
+        # +B (bot), +C (blocks CTCP), +V (no invites), +I (hides channel list)
         if self.serverdata.get('use_elemental_modes'):
             elemental_cmodes = {'hiddenbans': 'u', 'nokick': 'E',
                                 'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd',
@@ -298,8 +298,7 @@ class TS6Protocol(TS6BaseProtocol):
             self.cmodes.update(elemental_cmodes)
             self.cmodes['*D'] += ''.join(elemental_cmodes.values())
 
-            elemental_umodes = {'noctcp': 'C', 'deaf': 'D', 'bot': 'B', 'noinvite': 'V',
-                                'hidechans': 'I'}
+            elemental_umodes = {'noctcp': 'C', 'bot': 'B', 'noinvite': 'V', 'hidechans': 'I'}
             self.umodes.update(elemental_umodes)
             self.umodes['*D'] += ''.join(elemental_umodes.values())
 
