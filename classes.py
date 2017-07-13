@@ -39,11 +39,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
     """Base IRC object for PyLink."""
 
     def __init__(self, netname):
-        """
-        Initializes an IRC object. This takes 3 variables: the network name
-        (a string), the name of the protocol module to use for this connection,
-        and a configuration object.
-        """
         self.deprecated_attributes = {
             'conf': 'Deprecated since 1.2; consider switching to conf.conf',
             'botdata': "Deprecated since 1.2; consider switching to conf.conf['bot']",
