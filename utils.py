@@ -406,14 +406,17 @@ class ServiceBot():
         # Run handlers
         log.info('(%s/%s) Handling CTCP %r for %s', irc.name, self.name, cmd, irc.get_hostmask(source))
         for func in funcs:
+            
+            # Ensure this has global attribute if it was borrowed from PyLink service
+            if need_global:
+                try:
+                    func.is_global
+                except AttributeError:
+                    log.info('(%s/%s) CTCP command %r from %s is not global; ignored', irc.name, self.name, cmd, irc.get_hostmask(source))
+                    continue
+                    
+            # Run handler
             try:
-                # Ensure this has global attribute if it was borrowed from PyLink service
-                if need_global:
-                    try:
-                        func.is_global
-                    except AttributeError:
-                        log.info('(%s/%s) CTCP command %r from %s is not global; ignored', irc.name, self.name, cmd, irc.get_hostmask(source))
-                        continue
                 func(irc, source, self.uids.get(irc.name), args)
             except Exception as e:
                 log.exception('Unhandled exception caught in CTCP %r', cmd)
