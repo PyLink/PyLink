@@ -21,7 +21,7 @@ def remove_network(ircobj):
     del world.networkobjects[ircobj.name]
 
 def _print_remaining_threads():
-    log.debug('_shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
+    log.debug('shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
 
 def _remove_pid():
     # Remove our pid file.
@@ -47,7 +47,7 @@ def _kill_plugins(irc=None):
 atexit.register(_remove_pid)
 atexit.register(_kill_plugins)
 
-def _shutdown(irc=None):
+def shutdown(irc=None):
     """Shuts down the Pylink daemon."""
     global tried_shutdown
     if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
@@ -77,12 +77,12 @@ def _shutdown(irc=None):
 def sigterm_handler(signo, stack_frame):
     """Handles SIGTERM and SIGINT gracefully by shutting down the PyLink daemon."""
     log.info("Shutting down on signal %s." % signo)
-    _shutdown()
+    shutdown()
 
 signal.signal(signal.SIGTERM, sigterm_handler)
 signal.signal(signal.SIGINT, sigterm_handler)
 
-def _rehash():
+def rehash():
     """Rehashes the PyLink daemon."""
     log.info('Reloading PyLink configuration...')
     old_conf = conf.conf.copy()
@@ -142,7 +142,7 @@ if os.name == 'posix':
     def sigusr1_handler(_signo, _stack_frame):
         """Handles SIGUSR1 by rehashing the PyLink daemon."""
         log.info("SIGUSR1 received, reloading config.")
-        _rehash()
+        rehash()
 
     signal.signal(signal.SIGUSR1, sigusr1_handler)
     signal.signal(signal.SIGHUP, sigterm_handler)

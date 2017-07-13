@@ -67,7 +67,7 @@ def shutdown(irc, source, args):
     log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
              u.ident, u.host)
 
-    control._shutdown(irc=irc)
+    control.shutdown(irc=irc)
 
 @utils.add_cmd
 def load(irc, source, args):
@@ -194,7 +194,7 @@ def rehash(irc, source, args):
     Note: plugins must be manually reloaded."""
     permissions.checkPermissions(irc, source, ['core.rehash'])
     try:
-        control._rehash()
+        control.rehash()
     except Exception as e:  # Something went wrong, abort.
         log.exception("Error REHASHing config: ")
         irc.reply("Error loading configuration file: %s: %s" % (type(e).__name__, e))
