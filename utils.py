@@ -139,9 +139,9 @@ def resetModuleDirs():
     (Re)sets custom protocol module and plugin directories to the ones specified in the config.
     """
     # Note: This assumes that the first element of the package path is the default one.
-    plugins.__path__ = [plugins.__path__[0]] + [expandpath(path) for path in conf.conf['bot'].get('plugin_dirs', [])]
+    plugins.__path__ = [plugins.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('plugin_dirs', [])]
     log.debug('resetModuleDirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
-    protocols.__path__ = [protocols.__path__[0]] + [expandpath(path) for path in conf.conf['bot'].get('protocol_dirs', [])]
+    protocols.__path__ = [protocols.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('protocol_dirs', [])]
     log.debug('resetModuleDirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
 
 def loadPlugin(name):
@@ -518,7 +518,7 @@ def registerService(name, *args, **kwargs):
 
     # Allow disabling service spawning either globally or by service.
     elif name != 'pylink' and not (conf.conf.get(name, {}).get('spawn_service',
-            conf.conf['bot'].get('spawn_services', True))):
+            conf.conf['pylink'].get('spawn_services', True))):
         return world.services['pylink']
 
     world.services[name] = sbot = ServiceBot(name, *args, **kwargs)
