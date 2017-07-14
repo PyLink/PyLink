@@ -69,14 +69,14 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
         self.connected = threading.Event()
         self.aborted = threading.Event()
-        self.reply_lock = threading.RLock()
+        self._reply_lock = threading.RLock()
 
         # Sets the multiplier for autoconnect delay (grows with time).
         self.autoconnect_active_multiplier = 1
 
         self.was_successful = False
 
-        self.init_vars()
+        self._init_vars()
 
     def log_setup(self):
         """
@@ -103,7 +103,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
                 self.loghandlers.append(handler)
                 log.addHandler(handler)
 
-    def init_vars(self):
+    def _init_vars(self):
         """
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
@@ -270,7 +270,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         This function wraps around _reply() and can be monkey-patched in a thread-safe manner
         to temporarily redirect plugin output to another target.
         """
-        with self.reply_lock:
+        with self._reply_lock:
             self._reply(*args, **kwargs)
 
     def error(self, text, **kwargs):
@@ -323,7 +323,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
     def _pre_connect(self):
         self.aborted.clear()
-        self.init_vars()
+        self._init_vars()
 
         try:
             self.validate_server_conf()
@@ -386,8 +386,8 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # Internal hook signifying that a network has disconnected.
         self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
 
-        log.debug('(%s) _post_disconnect: Clearing state via init_vars().', self.name)
-        self.init_vars()
+        log.debug('(%s) _post_disconnect: Clearing state via _init_vars().', self.name)
+        self._init_vars()
 
     def validate_server_conf(self):
         return
@@ -1108,8 +1108,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._ping_timer = None
         self._socket = None
 
-    def init_vars(self, *args, **kwargs):
-        super().init_vars(*args, **kwargs)
+    def _init_vars(self, *args, **kwargs):
+        super()._init_vars(*args, **kwargs)
 
         # Set IRC specific variables for ping checking and queuing
         self.lastping = time.time()
