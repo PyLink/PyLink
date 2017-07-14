@@ -32,7 +32,7 @@ class IRCCommonProtocol(IRCNetwork):
                      % (k, self.name))
 
         port = self.serverdata['port']
-        conf.validate(type(port) == int and 0 < port < 65535,
+        conf.validate(isinstance(port, int) and 0 < port < 65535,
                  "Invalid port %r for network %s"
                  % (port, self.name))
 
@@ -152,7 +152,7 @@ class IRCCommonProtocol(IRCNetwork):
         Parses a string of capabilities in the 005 / RPL_ISUPPORT format.
         """
 
-        if type(args) == str:
+        if isinstance(args, str):
             args = args.split(' ')
 
         caps = {}

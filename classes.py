@@ -502,7 +502,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # C = Mode that changes a setting and only has a parameter when set.
         # D = Mode that changes a setting and never has a parameter.
 
-        if type(args) == str:
+        if isinstance(args, str):
             # If the modestring was given as a string, split it into a list.
             args = args.split()
 
@@ -692,9 +692,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
              => {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
             {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
         """
-        origtype = type(modes)
+        origstring = isinstance(modes, str)
+        
         # If the query is a string, we have to parse it first.
-        if origtype == str:
+        if origstring:
             modes = self.parse_modes(target, modes.split(" "))
         # Get the current mode list first.
         if utils.isChannel(target):
@@ -750,7 +751,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             newmodes.append(mpair)
 
         log.debug('(%s) reverse_modes: new modes: %s', self.name, newmodes)
-        if origtype == str:
+        if origstring:
             # If the original query is a string, send it back as a string.
             return self.join_modes(newmodes)
         else:
@@ -1069,8 +1070,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # conditions that would otherwise desync channel modes.
         with self._ts_lock:
             our_ts = self.channels[channel].ts
-            assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
-            assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
+            assert isinstance(our_ts, int), "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
+            assert isinstance(their_ts, int), "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
             # Check if we're the mode sender based on the UID / SID given.
             our_mode = self.is_internal_client(sender) or self.is_internal_server(sender)
