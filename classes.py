@@ -41,7 +41,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
     def __init__(self, netname):
         self.deprecated_attributes = {
             'conf': 'Deprecated since 1.2; consider switching to conf.conf',
-            'botdata': "Deprecated since 1.2; consider switching to conf.conf['bot']",
+            'botdata': "Deprecated since 1.2; consider switching to conf.conf['pylink']",
         }
 
         self.loghandlers = []
@@ -49,7 +49,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.conf = conf.conf
         self.sid = None
         self.serverdata = conf.conf['servers'][netname]
-        self.botdata = conf.conf['bot']
+        self.botdata = conf.conf['pylink']
         self.protoname = self.__class__.__module__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = self.irc = self  # Backwards compat
 
@@ -248,7 +248,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         """
         if private is None:
             # Allow using private replies as the default, if no explicit setting was given.
-            private = conf.conf['bot'].get("prefer_private_replies")
+            private = conf.conf['pylink'].get("prefer_private_replies")
 
         # Private reply is enabled, or the caller was originally a PM
         if private or (self.called_in in self.users):
@@ -693,7 +693,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
         """
         origstring = isinstance(modes, str)
-        
+
         # If the query is a string, we have to parse it first.
         if origstring:
             modes = self.parse_modes(target, modes.split(" "))
@@ -1259,7 +1259,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
                     self.servers[self.sid] = Server(None, host, internal=True,
                                                     desc=self.serverdata.get('serverdesc')
-                                                    or conf.conf['bot']['serverdesc'])
+                                                    or conf.conf['pylink']['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self._schedule_ping()
