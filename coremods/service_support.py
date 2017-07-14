@@ -35,15 +35,15 @@ def spawn_service(irc, source, command, args):
     # Determine host the same way as above, except fall back to server hostname.
     host = irc.serverdata.get("%s_host" % name) or sbconf.get('host') or irc.hostname()
 
-    # Determine realname the same way as above, except fall back to pylink:realname.
-    realname = irc.serverdata.get("%s_realname" % name) or sbconf.get('realname') or conf.conf['bot']['realname']
-    
+    # Determine realname the same way as above, except fall back to pylink:realname (and if that fails, the service name).
+    realname = irc.serverdata.get("%s_realname" % name) or sbconf.get('realname') or conf.conf['pylink'].get('realname') or name
+
     # Spawning service clients with these umodes where supported. servprotect usage is a
     # configuration option.
     preferred_modes = ['oper', 'hideoper', 'hidechans', 'invisible', 'bot']
     modes = []
 
-    if conf.conf['bot'].get('protect_services'):
+    if conf.conf['pylink'].get('protect_services'):
         preferred_modes.append('servprotect')
 
     for mode in preferred_modes:
