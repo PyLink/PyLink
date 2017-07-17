@@ -86,6 +86,7 @@ Unofficial Ubuntu packages for PyLink are available via two PPAs for Ubuntu 14.0
 These IRCds (in alphabetical order) are frequently tested and well supported. If any issues occur, please file a bug on the issue tracker.
 
 * [charybdis](https://github.com/charybdis-ircd/charybdis) (3.5+) - module `ts6`
+    - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
     - For vHost setting to work, `m_chghost.so` must be loaded.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
@@ -99,12 +100,15 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
+    - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
-    - Note: for host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
+    - For host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
+    - For KLINE support to work, a `shared{}` block should also be added for PyLink on all servers.
 * [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ratbox`
-    - Host changing is not supported on ircd-ratbox.
+    - Host changing is not supported.
     - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is a cloaked relay client: if you're paranoid about this, turn off Relay IP forwarding by setting the `relay_no_ips` option in the ratbox network's `server:` block.
+    - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [IRCu](http://coder-com.undernet.org/) (u2.10.12.16+) - module `p10`
     - Host changing is not supported.
 * [juno-ircd](https://github.com/cooper/yiria) (11.x / janet) - module `ts6` (see [configuration example](https://github.com/cooper/juno/blob/master/doc/ts6.md#pylink))
