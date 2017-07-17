@@ -227,6 +227,20 @@ class TS6Protocol(TS6BaseProtocol):
         # No text value is supported here; drop it.
         self._send_with_prefix(numeric, 'KNOCK %s' % target)
 
+    def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
+        """
+        Sets a server ban.
+        """
+        # source: user
+        # parameters: target server mask, duration, user mask, host mask, reason
+        assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
+
+        if not source in self.users:
+            log.debug('(%s) Forcing KLINE sender to %s as TS6 does not allow KLINEs from servers', self.name, self.pseudoclient.uid)
+            source = self.pseudoclient.uid
+
+        self._send_with_prefix(source, 'ENCAP * KLINE %s %s %s :%s' % (duration, user, host, reason))
+
     def update_client(self, target, field, text):
         """Updates the hostname of any connected client."""
         field = field.upper()
@@ -340,7 +354,8 @@ class TS6Protocol(TS6BaseProtocol):
         # RSFNC: states that we support RSFNC (forced nick changed attempts). XXX: With atheme services,
         #        does this actually do anything?
         # EOPMOD: supports ETB (extended TOPIC burst) and =#channel messages for opmoderated +z
-        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC EOPMOD SAVETS_100')
+        # KLN: supports remote KLINEs
+        f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC EOPMOD SAVETS_100 KLN')
 
         f('SERVER %s 0 :%s' % (self.serverdata["hostname"],
                                self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
