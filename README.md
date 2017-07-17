@@ -99,6 +99,7 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 
 Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
+* [ChatIRCd](http://www.chatlounge.net/software) (1.2.x / git master) - module `ts6`
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
