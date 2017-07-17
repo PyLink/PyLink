@@ -373,6 +373,19 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send_with_prefix(sid, 'ENDBURST')
         return sid
 
+    def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
+        """
+        Sets a server ban.
+        """
+        # <- :70M ADDLINE G *@10.9.8.7 midnight.local 1433704565 0 :gib reason pls kthx
+
+        assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
+
+        # Per https://wiki.inspircd.org/InspIRCd_Spanning_Tree_1.2/ADDLINE, the setter argument can
+        # be a max of 64 characters
+        self._send_with_prefix(source, 'ADDLINE G %s@%s %s %s %s :%s' % (user, host, self.get_friendly_name(source)[:64],
+                                                                         int(time.time()), duration, reason))
+
     ### Core / command handlers
 
     def post_connect(self):
