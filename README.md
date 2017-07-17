@@ -114,6 +114,8 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - Host changing is not supported.
 * [juno-ircd](https://github.com/cooper/yiria) (11.x / janet) - module `ts6` (see [configuration example](https://github.com/cooper/juno/blob/master/doc/ts6.md#pylink))
 * [ngIRCd](https://ngircd.barton.de/) (24+) - module `ngircd`
+    - For GLINEs to propagate, the `AllowRemoteOper` option must be enabled in ngIRCd.
+    - `+` (modeless) channels are not supported, and should be disabled for PyLink to function correctly.
 * [snircd](https://development.quakenet.org/) (1.3.x+) - module `p10`
     - Outbound host changing (i.e. for the `changehost` plugin) is not supported on P10 variants other than Nefarious.
 
