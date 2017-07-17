@@ -113,7 +113,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [IRCu](http://coder-com.undernet.org/) (u2.10.12.16+) - module `p10`
     - Host changing is not supported.
 * [juno-ircd](https://github.com/cooper/yiria) (11.x / janet) - module `ts6` (see [configuration example](https://github.com/cooper/juno/blob/master/doc/ts6.md#pylink))
-* [ngIRCd](https://ngircd.barton.de/) (24+) - module `ngircd` **[experimental]!**
+* [ngIRCd](https://ngircd.barton.de/) (24+) - module `ngircd`
 * [snircd](https://development.quakenet.org/) (1.3.x+) - module `p10`
     - Outbound host changing (i.e. for the `changehost` plugin) is not supported on P10 variants other than Nefarious.
 
