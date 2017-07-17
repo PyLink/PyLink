@@ -1355,7 +1355,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
-        encoded_data = data.encode(self.encoding, 'replace')[:self.S2S_BUFSIZE] + b"\r\n"
+        encoded_data = data.encode(self.encoding, 'replace')
+        if self.S2S_BUFSIZE > 0:  # Apply message cutoff as needed
+            encoded_data = encoded_data[:self.S2S_BUFSIZE]
+        encoded_data += b"\r\n"
 
         log.debug("(%s) -> %s", self.name, data)
 

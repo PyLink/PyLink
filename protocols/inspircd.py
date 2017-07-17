@@ -11,6 +11,9 @@ from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
 class InspIRCdProtocol(TS6BaseProtocol):
+
+    S2S_BUFSIZE = 0  # InspIRCd allows infinitely long S2S messages, so set bufsize to infinite
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
