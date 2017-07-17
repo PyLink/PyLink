@@ -123,12 +123,13 @@ def loadConf(filename, errors_fatal=True, logger=None):
     except Exception as e:
         e = 'Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e)
 
-        if errors_fatal:
-            sys.exit(1)
-        elif logger:  # Prefer using the Python logger when available
+        if logger:  # Prefer using the Python logger when available
             logger.exception(e)
         else:  # Otherwise, fall back to a print() call.
             print('ERROR: %s' % e, file=sys.stderr)
+
+        if errors_fatal:
+            sys.exit(1)
 
         raise
     else:
