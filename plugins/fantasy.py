@@ -67,7 +67,8 @@ def handle_fantasy(irc, source, command, args):
                             continue
 
                         # Finally, call the bot command and loop to the next bot.
-                        sbot.call_cmd(irc, source, text, called_in=channel)
+                        split = text.split(' ')
+                        sbot.call_cmd(irc, source, split[0], split[1:], called_in=channel)
                         continue
 
 utils.add_hook(handle_fantasy, 'PRIVMSG')
