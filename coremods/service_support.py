@@ -132,31 +132,25 @@ def handle_commands(irc, source, command, args):
     target = args['target']
     text = args['text']
 
+    # Not a service bot target
     sbot = irc.get_service_bot(target)
-    if sbot:
-        sbot.call_cmd(irc, source, text)
-
-utils.add_hook(handle_commands, 'PRIVMSG')
-
-def handle_ctcp(irc, source, command, args):
-    """Handle CTCPs sent to the PyLink service bots."""
-    target = args['target']
-    text = args['text']
-
-    # Not a service bot target, or not a CTCP
-    sbot = irc.get_service_bot(target)
-    if not sbot or not text.startswith('\x01'):
+    if not sbot:
         return
     
     # Extract command and arguments
+    is_ctcp = text.startswith('\x01')
     cmd_args = text.strip(' \x01').split(' ')
     cmd = cmd_args[0].lower()
     cmd_args = cmd_args[1:]
+        
+    if is_ctcp:
+        # Handle CTCP
+        sbot.call_ctcp(irc, source, cmd, cmd_args)
+    else:
+        # Handle command
+        sbot.call_cmd(irc, source, cmd, cmd_args)
 
-    # Call the handlers
-    sbot.call_ctcp(irc, source, cmd, cmd_args)
-
-utils.add_hook(handle_ctcp, 'PRIVMSG')
+utils.add_hook(handle_commands, 'PRIVMSG')
 
 # Register the main PyLink service. All command definitions MUST go after this!
 # TODO: be more specific, and possibly allow plugins to modify this to mention

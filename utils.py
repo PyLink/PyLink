@@ -101,10 +101,12 @@ def add_ctcp(func, name=None, is_global=True, **kwargs):
     """
     Adds a handler for the given CTCP command.
     
-    By default, the handler is expanded to all PyLink service bots. Instead
-    use the add_ctcp() method directly to limit the handler to a specific service bot.
+    By default, the handler is expanded to all PyLink service bots. Specify
+    is_global=False or use the ServiceBot add_ctcp() method directly to limit
+    the handler to a specific service bot.
     """
-    world.services['pylink'].add_ctcp(func, name=name, is_global=is_global, **kwargs)
+    func.is_global = is_global
+    world.services['pylink'].add_ctcp(func, name=name, **kwargs)
     return func
 
 def add_hook(func, command):
@@ -320,22 +322,13 @@ class ServiceBot():
 
         irc.error(text, notice=notice, source=servuid, private=private)
 
-    def call_cmd(self, irc, source, text, called_in=None):
+    def call_cmd(self, irc, source, cmd, cmd_args, called_in=None):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
         """
         irc.called_in = called_in or source
         irc.called_by = source
-        
-        # Extract command and args
-        cmd_args = text.strip().split(' ')
-        cmd = cmd_args[0].lower()
-        cmd_args = cmd_args[1:]
-        
-        # Ignore CTCPs here
-        if '\x01' in cmd:
-            return
         
         if cmd not in self.commands:
             # XXX: we really need abstraction for this kind of config fetching...
@@ -408,26 +401,22 @@ class ServiceBot():
         for func in funcs:
             
             # Ensure this has global attribute if it was borrowed from PyLink service
-            if need_global:
-                try:
-                    func.is_global
-                except AttributeError:
-                    log.info('(%s/%s) CTCP command %r from %s is not global; ignored', irc.name, self.name, cmd, irc.get_hostmask(source))
-                    continue
+            if need_global and not func.is_global:
+                log.debug('(%s/%s) CTCP command %r from %s is not global; ignored', irc.name, self.name, cmd, irc.get_hostmask(source))
+                continue
                     
             # Run handler
             try:
                 func(irc, source, self.uids.get(irc.name), args)
             except Exception as e:
-                log.exception('Unhandled exception caught in CTCP %r', cmd)
+                log.exception('Unhandled exception caught in CTCP command %r', cmd)
+                self.reply(irc, 'Uncaught exception in CTCP command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
-    def add_ctcp(self, func, name=None, is_global=False):
+    def add_ctcp(self, func, name=None):
         """Adds a handler for the given CTCP command."""
         if name is None:
             name = func.__name__
         name = name.lower()
-        if is_global:
-            func.is_global = True
         self.ctcp_commands[name].append(func)
         return func
 
