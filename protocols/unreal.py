@@ -254,6 +254,26 @@ class UnrealProtocol(TS6BaseProtocol):
             joinedmodes = self.join_modes(modes)
             self._send_with_prefix(target, 'UMODE2 %s' % joinedmodes)
 
+    def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
+        """
+        Sets a server ban.
+        """
+        # Permanent:
+        # <- :unreal.midnight.vpn TKL + G ident host.net james!james@localhost 0 1500303745 :no reason
+        # Temporary:
+        # <- :unreal.midnight.vpn TKL + G * everyone james!james@localhost 1500303702 1500303672 :who needs reasons, do people even read them?
+        assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
+
+        if source in self.users:
+            # GLINEs are always forwarded from the server as far as I can tell.
+            real_source = self.get_server(source)
+        else:
+            real_source = source
+
+        setter = self.get_hostmask(source) if source in self.users else self.get_friendly_name(source)
+        currtime = int(time.time())
+        self._send_with_prefix(real_source, 'TKL + G %s %s %s %s %s :%s' % (user, host, setter, currtime+duration if duration != 0 else 0, currtime, reason))
+
     def update_client(self, target, field, text):
         """Updates the ident, host, or realname of any connected client."""
         field = field.upper()

@@ -127,7 +127,7 @@ def remote(irc, source, args):
 
     old_reply = remoteirc._reply
 
-    with remoteirc.reply_lock:
+    with remoteirc._reply_lock:
         try:  # Remotely call the command (use the PyLink client as a dummy user).
             # Override the remote irc.reply() to send replies HERE.
             log.debug('(%s) networks.remote: overriding reply() of IRC object %s', irc.name, netname)

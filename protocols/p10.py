@@ -60,6 +60,8 @@ class P10SIDGenerator():
         self.currentnum += 1
         return sid
 
+GLINE_MAX_EXPIRE = 604800
+
 class P10Protocol(IRCS2SProtocol):
     COMMAND_TOKENS = {
         'AC': 'ACCOUNT',
@@ -489,6 +491,24 @@ class P10Protocol(IRCS2SProtocol):
             self._remove_client(numeric)
         else:
             raise LookupError("No such PyLink client exists.")
+
+    def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
+        """
+        Sets a server ban.
+        """
+        assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
+
+        # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L535
+        # <- ABAAA GL * +test@test.host 30 1500300185 1500300215 :haha, you're banned now!!!!1
+        currtime = int(time.time())
+
+        if duration == 0 or duration > GLINE_MAX_EXPIRE:
+            # IRCu and Nefarious set 7 weeks (604800 secs) as the max GLINE length - look for the
+            # GLINE_MAX_EXPIRE definition
+            log.debug('(%s) Lowering GLINE duration on %s@%s from %s to %s', self.name, user, host, duration, GLINE_MAX_EXPIRE)
+            duration = GLINE_MAX_EXPIRE
+
+        self._send_with_prefix(source, 'GL * +%s@%s %s %s %s :%s' % (user, host, duration, currtime, currtime+duration, reason))
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.

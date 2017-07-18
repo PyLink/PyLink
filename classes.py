@@ -41,7 +41,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
     def __init__(self, netname):
         self.deprecated_attributes = {
             'conf': 'Deprecated since 1.2; consider switching to conf.conf',
-            'botdata': "Deprecated since 1.2; consider switching to conf.conf['bot']",
+            'botdata': "Deprecated since 1.2; consider switching to conf.conf['pylink']",
         }
 
         self.loghandlers = []
@@ -49,7 +49,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.conf = conf.conf
         self.sid = None
         self.serverdata = conf.conf['servers'][netname]
-        self.botdata = conf.conf['bot']
+        self.botdata = conf.conf['pylink']
         self.protoname = self.__class__.__module__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = self.irc = self  # Backwards compat
 
@@ -69,14 +69,14 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
         self.connected = threading.Event()
         self.aborted = threading.Event()
-        self.reply_lock = threading.RLock()
+        self._reply_lock = threading.RLock()
 
         # Sets the multiplier for autoconnect delay (grows with time).
         self.autoconnect_active_multiplier = 1
 
         self.was_successful = False
 
-        self.init_vars()
+        self._init_vars()
 
     def log_setup(self):
         """
@@ -103,7 +103,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
                 self.loghandlers.append(handler)
                 log.addHandler(handler)
 
-    def init_vars(self):
+    def _init_vars(self):
         """
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
@@ -248,7 +248,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         """
         if private is None:
             # Allow using private replies as the default, if no explicit setting was given.
-            private = conf.conf['bot'].get("prefer_private_replies")
+            private = conf.conf['pylink'].get("prefer_private_replies")
 
         # Private reply is enabled, or the caller was originally a PM
         if private or (self.called_in in self.users):
@@ -270,7 +270,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         This function wraps around _reply() and can be monkey-patched in a thread-safe manner
         to temporarily redirect plugin output to another target.
         """
-        with self.reply_lock:
+        with self._reply_lock:
             self._reply(*args, **kwargs)
 
     def error(self, text, **kwargs):
@@ -323,7 +323,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
 
     def _pre_connect(self):
         self.aborted.clear()
-        self.init_vars()
+        self._init_vars()
 
         try:
             self.validate_server_conf()
@@ -386,8 +386,8 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # Internal hook signifying that a network has disconnected.
         self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
 
-        log.debug('(%s) _post_disconnect: Clearing state via init_vars().', self.name)
-        self.init_vars()
+        log.debug('(%s) _post_disconnect: Clearing state via _init_vars().', self.name)
+        self._init_vars()
 
     def validate_server_conf(self):
         return
@@ -502,7 +502,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # C = Mode that changes a setting and only has a parameter when set.
         # D = Mode that changes a setting and never has a parameter.
 
-        if type(args) == str:
+        if isinstance(args, str):
             # If the modestring was given as a string, split it into a list.
             args = args.split()
 
@@ -692,9 +692,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
              => {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
             {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
         """
-        origtype = type(modes)
+        origstring = isinstance(modes, str)
+
         # If the query is a string, we have to parse it first.
-        if origtype == str:
+        if origstring:
             modes = self.parse_modes(target, modes.split(" "))
         # Get the current mode list first.
         if utils.isChannel(target):
@@ -750,7 +751,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             newmodes.append(mpair)
 
         log.debug('(%s) reverse_modes: new modes: %s', self.name, newmodes)
-        if origtype == str:
+        if origstring:
             # If the original query is a string, send it back as a string.
             return self.join_modes(newmodes)
         else:
@@ -1069,8 +1070,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # conditions that would otherwise desync channel modes.
         with self._ts_lock:
             our_ts = self.channels[channel].ts
-            assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
-            assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
+            assert isinstance(our_ts, int), "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
+            assert isinstance(their_ts, int), "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
             # Check if we're the mode sender based on the UID / SID given.
             our_mode = self.is_internal_client(sender) or self.is_internal_server(sender)
@@ -1108,8 +1109,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._ping_timer = None
         self._socket = None
 
-    def init_vars(self, *args, **kwargs):
-        super().init_vars(*args, **kwargs)
+    def _init_vars(self, *args, **kwargs):
+        super()._init_vars(*args, **kwargs)
 
         # Set IRC specific variables for ping checking and queuing
         self.lastping = time.time()
@@ -1258,7 +1259,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
                     self.servers[self.sid] = Server(None, host, internal=True,
                                                     desc=self.serverdata.get('serverdesc')
-                                                    or conf.conf['bot']['serverdesc'])
+                                                    or conf.conf['pylink']['serverdesc'])
 
                     log.info('(%s) Starting ping schedulers....', self.name)
                     self._schedule_ping()
@@ -1354,7 +1355,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
-        encoded_data = data.encode(self.encoding, 'replace')[:self.S2S_BUFSIZE] + b"\r\n"
+        encoded_data = data.encode(self.encoding, 'replace')
+        if self.S2S_BUFSIZE > 0:  # Apply message cutoff as needed
+            encoded_data = encoded_data[:self.S2S_BUFSIZE]
+        encoded_data += b"\r\n"
 
         log.debug("(%s) -> %s", self.name, data)
 

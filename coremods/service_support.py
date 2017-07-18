@@ -28,18 +28,22 @@ def spawn_service(irc, source, command, args):
     # 3) The preferred nick/ident combination defined by the plugin (sbot.nick / sbot.ident)
     # 4) The literal service name.
     # settings, and then falling back to the literal service name.
-    nick = irc.serverdata.get("%s_nick" % name) or conf.conf.get(name, {}).get('nick') or sbot.nick or name
-    ident = irc.serverdata.get("%s_ident" % name) or conf.conf.get(name, {}).get('ident') or sbot.ident or name
+    sbconf = conf.conf.get(name, {})
+    nick = irc.serverdata.get("%s_nick" % name) or sbconf.get('nick') or sbot.nick or name
+    ident = irc.serverdata.get("%s_ident" % name) or sbconf.get('ident') or sbot.ident or name
 
-    # TODO: make this configurable?
-    host = irc.hostname()
+    # Determine host the same way as above, except fall back to server hostname.
+    host = irc.serverdata.get("%s_host" % name) or sbconf.get('host') or irc.hostname()
+
+    # Determine realname the same way as above, except fall back to pylink:realname (and if that fails, the service name).
+    realname = irc.serverdata.get("%s_realname" % name) or sbconf.get('realname') or conf.conf['pylink'].get('realname') or name
 
     # Spawning service clients with these umodes where supported. servprotect usage is a
     # configuration option.
     preferred_modes = ['oper', 'hideoper', 'hidechans', 'invisible', 'bot']
     modes = []
 
-    if conf.conf['bot'].get('protect_services'):
+    if conf.conf['pylink'].get('protect_services'):
         preferred_modes.append('servprotect')
 
     for mode in preferred_modes:
@@ -56,7 +60,7 @@ def spawn_service(irc, source, command, args):
     else:
         log.debug('(%s) spawn_service: Spawning new client %s', irc.name, nick)
         userobj = irc.spawn_client(nick, ident, host, modes=modes, opertype="PyLink Service",
-                                        manipulatable=sbot.manipulatable)
+                                        realname=realname, manipulatable=sbot.manipulatable)
 
     # Store the service name in the User object for easier access.
     userobj.service = name

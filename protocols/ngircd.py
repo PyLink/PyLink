@@ -256,6 +256,14 @@ class NgIRCdProtocol(IRCS2SProtocol):
             log.debug("(%s) sjoin: bursting modes %r for channel %r now", self.name, modes, channel)
             self.mode(server, channel, modes)
 
+    def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
+        """
+        Sets a server ban.
+        """
+        # <- :GL GLINE *!*@bad.user 3d :test
+        assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
+        self._send_with_prefix(source, 'GLINE *!%s@%s %s :%s' % (user, host, duration, reason))
+
     def update_client(self, target, field, text):
         """Updates the ident, host, or realname of any connected client."""
         field = field.upper()

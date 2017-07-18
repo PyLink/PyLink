@@ -135,6 +135,20 @@ class HybridProtocol(TS6Protocol):
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
+    def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
+        """
+        Sets a server ban.
+        """
+        # source: user
+        # parameters: target server mask, duration, user mask, host mask, reason
+        assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
+
+        if not source in self.users:
+            log.debug('(%s) Forcing KLINE sender to %s as TS6 does not allow KLINEs from servers', self.name, self.pseudoclient.uid)
+            source = self.pseudoclient.uid
+
+        self._send_with_prefix(source, 'KLINE * %s %s %s :%s' % (duration, user, host, reason))
+
     def topic_burst(self, numeric, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
         # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
