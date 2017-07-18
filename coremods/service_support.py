@@ -136,19 +136,16 @@ def handle_commands(irc, source, command, args):
     sbot = irc.get_service_bot(target)
     if not sbot:
         return
-    
-    # Extract command and arguments
-    is_ctcp = text.startswith('\x01')
-    cmd_args = text.strip(' \x01').split(' ')
-    cmd = cmd_args[0].lower()
-    cmd_args = cmd_args[1:]
         
-    if is_ctcp:
+    if text.startswith('\x01'):
         # Handle CTCP
+        cmd_args = text.strip(' \x01').split(' ')
+        cmd = cmd_args[0].lower()
+        cmd_args = cmd_args[1:]
         sbot.call_ctcp(irc, source, cmd, cmd_args)
     else:
         # Handle command
-        sbot.call_cmd(irc, source, cmd, cmd_args)
+        sbot.call_cmd(irc, source, text)
 
 utils.add_hook(handle_commands, 'PRIVMSG')
 

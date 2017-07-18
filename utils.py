@@ -322,13 +322,18 @@ class ServiceBot():
 
         irc.error(text, notice=notice, source=servuid, private=private)
 
-    def call_cmd(self, irc, source, cmd, cmd_args, called_in=None):
+    def call_cmd(self, irc, source, text, called_in=None):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
         """
         irc.called_in = called_in or source
         irc.called_by = source
+    
+        # Extract command and arguments
+        cmd_args = text.strip().split(' ')
+        cmd = cmd_args[0].lower()
+        cmd_args = cmd_args[1:]
         
         if cmd not in self.commands:
             # XXX: we really need abstraction for this kind of config fetching...
