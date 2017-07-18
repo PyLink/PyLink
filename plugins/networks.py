@@ -133,7 +133,7 @@ def remote(irc, source, args):
             log.debug('(%s) networks.remote: overriding reply() of IRC object %s', irc.name, netname)
             remoteirc._reply = types.MethodType(_remote_reply, remoteirc)
             world.services[args.service].call_cmd(remoteirc, remoteirc.pseudoclient.uid,
-                                                  args.command[0], args.command[1:])
+                                                  ' '.join(args.command))
         finally:
             # Restore the original remoteirc.reply()
             log.debug('(%s) networks.remote: restoring reply() of IRC object %s', irc.name, netname)
