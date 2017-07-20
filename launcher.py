@@ -37,14 +37,14 @@ def main():
 
     # Write and check for an existing PID file unless specifically told not to.
     if not args.no_pid:
-        config = conf.confname
-        if os.path.exists("%s.pid" % config):
-            log.error("PID file exists; aborting! If PyLink didn't shut down cleanly last time it "
-                      "was run, or you're upgrading from PyLink < 1.1-dev, delete %s.pid and try "
-                      "again." % config)
+        pidfile = '%s.pid' % conf.confname
+        if os.path.exists(pidfile):
+            log.error("PID file exists %r; aborting! If PyLink didn't shut down cleanly last time it "
+                      "ran, or you're upgrading from PyLink < 1.1-dev, delete %r and start the "
+                      "server again." % (pidfile, pidfile))
             sys.exit(1)
 
-        with open('%s.pid' % conf.confname, 'w') as f:
+        with open(pidfile, 'w') as f:
             f.write(str(os.getpid()))
         world._should_remove_pid = True
 
