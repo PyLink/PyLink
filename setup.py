@@ -97,5 +97,9 @@ setup(
     package_dir = {'pylinkirc': '.'},
 
     # Executable scripts
-    scripts=["pylink", "pylink-mkpasswd"],
+    scripts=["pylink-mkpasswd"],
+
+    entry_points = {
+        'console_scripts': ['pylink=pylinkirc.launcher:main'],
+    }
 )
