@@ -24,13 +24,16 @@ def _print_remaining_threads():
     log.debug('_shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
 
 def _remove_pid():
-    # Remove our pid file.
     pidfile = "%s.pid" % conf.confname
-    log.info("Removing PID file %r.", pidfile)
-    try:
-        os.remove(pidfile)
-    except OSError:
-        log.exception("Failed to remove PID file %r, ignoring..." % pidfile)
+    if world._should_remove_pid:
+        # Remove our pid file.
+        log.info("Removing PID file %r.", pidfile)
+        try:
+            os.remove(pidfile)
+        except OSError:
+            log.exception("Failed to remove PID file %r, ignoring..." % pidfile)
+    else:
+        log.debug('Not removing PID file %s as world._should_remove_pid is False.' % pidfile)
 
 def _kill_plugins(irc=None):
     log.info("Shutting down plugins.")
