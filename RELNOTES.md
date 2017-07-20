@@ -1,3 +1,35 @@
+# PyLink 1.2.0-rc1
+
+The "Droplet" release. Changes since 1.2-beta1:
+
+#### Bug fixes
+- relay: fix channel claim disabling (i.e. "`CLAIM #channel -`" was broken since 1.2-alpha1)
+- IRCS2SProtocol: fix `UnboundLocalError` in "message coming from wrong wrong way" error
+- ts6: fix parsing of the `INVITE` command's `ts` argument
+- automode: fix formatting and examples in `setacc` help text
+- p10: fix rejoin-on-kick relaying by also acknowledging kicks sent from PyLink to its clients with a PART
+
+### Major changes since 1.1.x
+- Added support for snircd, ircu, and other (generic) P10 variants. The target IRCd can be chosen using the new server-specific `p10_ircd` option; see the example config for details (#330).
+- **The `nefarious` protocol module was renamed to `p10`**, as it is no longer Nefarious-specific. You should update your configuration to use the new name!
+- **Certain configuration options were renamed / deprecated:**
+    - The `bot:` configuration block was renamed to `pylink:`, with the old name now deprecated.
+    - `logging:stdout` is now `logging:console` (the previous name was a misnomer since text actually went to `stderr`).
+    - The `bot:prefix` option is deprecated: you should instead define the `prefixes` setting in a separate config block for each service you wish to customize (e.g. set `automode:prefix` and `games:prefix`)
+- **Using new-style accounts exclusively (i.e. specifying things under `login:accounts`) now requires a `permissions:` block for PyLink to start** (#413).
+- New `stats` (uptime info) and `global` (global announcement) plugins.
+- Plugins and protocol modules can now be loaded from any directory, using the new `plugin_dirs` and `protocol_dirs` options. (#350)
+    - The `pylink-contribdl` utility was dropped as it is now it obsolete.
+- Relay message formatting became more flexible, and messages from servers (e.g. spurious invite announcements) can now be dropped: look for the `relay_weird_senders` and `accept_weird_senders` options.
+- Relay now forbids linking to channels where the home network is down, which previously caused errors due to unreliable target TS (#419). This, along with the regular TS check, can be overridden with a new `link --force` option.
+- The `remote` command now routes replies back to the caller network, and supports service bots that aren't the main PyLink bot via a `--service` option.
+- Service bot spawning can now be disabled via the global `spawn_services` and per-service `spawn_service` options; doing so will merge the relevant commands into the main PyLink bot.
+- Added a `pylink::show_unknown_commands` option to optionally disable "unknown command" errors. This option can also be overridden per-server and per-service (#441).
+- Added a `pylink::prefer_private_replies` option to default to private command replies (#409).
+- Relay can now announce to leaf channels when the home network disconnects; see the `relay::disconnect_announcement` option (#421).
+
+For a full list of changes since 1.1.x, consult the changelogs for the 1.2.x beta and alpha releases below.
+
 # PyLink 1.2-beta1
 The "Dynamo" release. This release includes all fixes from 1.1.2, plus the following:
 
@@ -73,6 +105,7 @@ The "Darkness" release. This release includes all fixes from 1.1.2, plus the fol
 - The `bot:` config block is renamed to `pylink:`. Existing configurations will still work, as the `bot` and `pylink` blocks are always merged together (#343).
 - Added better documentation for generic options available to all service bots (`nick`, `ident`, `prefix` for fantasy, etc.)
 - `Irc.botdata`, `Irc.conf`, `Irc.checkAuthenticated()` have been deprecated: use `conf.conf['pylink']`, `conf.conf`, and the permissions API respectively instead!
+
 # PyLink 1.1.2
 
 The "Calamari" release.
