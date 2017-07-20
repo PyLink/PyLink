@@ -50,6 +50,7 @@ def main():
     if not args.no_pid:
         with open('%s.pid' % conf.confname, 'w') as f:
             f.write(str(os.getpid()))
+        world._should_remove_pid = True
 
     # Import plugins first globally, because they can listen for events
     # that happen before the connection phase.
