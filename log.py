@@ -89,12 +89,12 @@ if files:
     for filename, config in files.items():
         makeFileLogger(filename, config.get('loglevel'))
 
-log.debug("log: Emptying log_queue")
+log.debug("log: Emptying _log_queue")
 # Process and empty the log queue
-while world.log_queue:
-    level, text = world.log_queue.popleft()
+while world._log_queue:
+    level, text = world._log_queue.popleft()
     log.log(level, text)
-log.debug("log: Emptied log_queue")
+log.debug("log: Emptied _log_queue")
 
 class PyLinkChannelLogger(logging.Handler):
     """

@@ -58,7 +58,7 @@ def _log(level, text, *args, logger=None, **kwargs):
     if logger:
         logger.log(level, text, *args, **kwargs)
     else:
-        world.log_queue.append((level, text))
+        world._log_queue.append((level, text))
 
 def validateConf(conf, logger=None):
     """Validates a parsed configuration dict."""
