@@ -13,7 +13,6 @@ def main():
     parser = argparse.ArgumentParser(description='Starts an instance of PyLink IRC Services.')
     parser.add_argument('config', help='specifies the path to the config file (defaults to pylink.yml)', nargs='?', default='pylink.yml')
     parser.add_argument("-v", "--version", help="displays the program version and exits", action='store_true')
-    parser.add_argument("-c", "--check-pid", help="enables PID file checking", action='store_true')
     parser.add_argument("-n", "--no-pid", help="skips generating PID files", action='store_true')
     args = parser.parse_args()
 
@@ -36,9 +35,8 @@ def main():
     elif os.name == 'posix':
         sys.stdout.write("\x1b]2;PyLink %s\x07" % __version__)
 
-    # Check for a pid file. This stops instance overlap and user mistakes, which are especially an
-    # issue for clientbot...
-    if args.check_pid:
+    # Write and check for an existing PID file unless specifically told not to.
+    if not args.no_pid:
         config = conf.confname
         if os.path.exists("%s.pid" % config):
             log.error("PID file exists; aborting! If PyLink didn't shut down cleanly last time it "
@@ -46,8 +44,6 @@ def main():
                       "again." % config)
             sys.exit(1)
 
-    # Write a PID file unless specifically told not to.
-    if not args.no_pid:
         with open('%s.pid' % conf.confname, 'w') as f:
             f.write(str(os.getpid()))
         world._should_remove_pid = True
