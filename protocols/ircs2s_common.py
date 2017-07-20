@@ -579,10 +579,12 @@ class IRCS2SProtocol(IRCCommonProtocol):
     def _check_oper_status_change(self, uid, modes):
         if uid in self.users:
             u = self.users[uid]
-            if 'admin' in self.umodes and (self.umodes['admin'], None) in u.modes:
-                opertype = 'Server Administrator'
-            elif 'servprotect' in self.umodes and (self.umodes['servprotect'], None) in u.modes:
+            if 'servprotect' in self.umodes and (self.umodes['servprotect'], None) in u.modes:
                 opertype = 'Network Service'
+            elif 'netadmin' in self.umodes and (self.umodes['netadmin'], None) in u.modes:
+                opertype = 'Network Administrator'
+            elif 'admin' in self.umodes and (self.umodes['admin'], None) in u.modes:
+                opertype = 'Server Administrator'
             else:
                 opertype = 'IRC Operator'
 
