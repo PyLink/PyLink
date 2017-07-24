@@ -9,6 +9,7 @@
 env/
 build/
 __pycache__/
+.idea/
 *.py[cod]
 *.bak
 *~
