@@ -5,13 +5,16 @@ from pylinkirc import utils
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
-@utils.add_cmd
+checkban_parser = utils.IRCParser()
+checkban_parser.add_argument('banmask')
+checkban_parser.add_argument('-c', '--channel', action='store', default=False)
 def checkban(irc, source, args):
-    """<banmask (nick!user@host or user@host)> [<nick or hostmask to check>]
+    """<banmask (nick!user@host or user@host)> [<nick or hostmask to check> -c/--channel #channel] 
 
     Oper only. If a nick or hostmask is given, return whether the given banmask will match it. Otherwise, returns a list of connected users that would be affected by such a ban, up to 50 results."""
     permissions.checkPermissions(irc, source, ['opercmds.checkban'])
-
+    
+    options = checkban_parser.parse_args(args)
     try:
         banmask = args[0]
     except IndexError:
@@ -26,21 +29,40 @@ def checkban(irc, source, args):
         irc.msg(source, "Checking for hosts that match \x02%s\x02:" % banmask, notice=True)
 
         results = 0
-        for uid, userobj in irc.users.copy().items():
-            if irc.match_host(banmask, uid):
-                if results < 50:  # XXX rather arbitrary limit
-                    s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
-                        userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
-
-                    # Always reply in private to prevent information leaks.
-                    irc.reply(s, private=True)
-                results += 1
+        if options.channel:
+            if options.channel.startswith('#'):
+                for uid, userobj in irc.channels[options.channel].items():
+                    if irc.match_host(banmask, uid):
+                        if results < 50:  # XXX rather arbitrary limit
+                            s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
+                                userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
+                            
+                            # Always reply in private to prevent information leaks.
+                            irc.reply(s, private=True)
+                        results += 1
+                    else:
+                        if results:
+                            irc.msg(source, "\x02%s\x02 out of \x02%s\x02 results shown for \x02%s\x02." %
+                                    (min([results, 50]), results, options.channel), notice=True)
+                        else:
+                            irc.msg(source, "No results found via \x02%s\x02." % (options.channel), notice=True)
         else:
-            if results:
-                irc.msg(source, "\x02%s\x02 out of \x02%s\x02 results shown." %
-                        (min([results, 50]), results), notice=True)
-            else:
-                irc.msg(source, "No results found.", notice=True)
+            for uid, userobj in irc.users.copy().items():
+                if irc.match_host(banmask, uid):
+                    if results < 50:  # XXX rather arbitrary limit
+                        s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
+                            userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
+
+                        # Always reply in private to prevent information leaks.
+                        irc.reply(s, private=True)
+                    results += 1
+                else:
+                    if results:
+                        irc.msg(source, "\x02%s\x02 out of \x02%s\x02 results shown." %
+                                (min([results, 50]), results), notice=True)
+                    else:
+                        irc.msg(source, "No results found.", notice=True)
+        
     else:
         # Target can be both a nick (of an online user) or a hostmask. irc.match_host() handles this
         # automatically.
@@ -48,7 +70,8 @@ def checkban(irc, source, args):
             irc.reply('Yes, \x02%s\x02 matches \x02%s\x02.' % (targetmask, banmask))
         else:
             irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (targetmask, banmask))
-
+utils.add_cmd(checkban, "checkban")
+            
 @utils.add_cmd
 def jupe(irc, source, args):
     """<server> [<reason>]
