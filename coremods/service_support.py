@@ -113,7 +113,8 @@ def handle_kill(irc, source, command, args):
     elif sbot:  # Or their service bot instance
         servicename = sbot.name
     if servicename:
-        log.debug('(%s) services_support: respawning service %s after KILL.', irc.name, servicename)
+        log.info('(%s) Received kill to service %s (%s) from %s.', irc.name, servicename,
+                 userdata.nick if userdata else irc.users[target].nick, irc.get_hostmask(source))
         spawn_service(irc, source, command, {'name': servicename})
 
 utils.add_hook(handle_kill, 'KILL')
