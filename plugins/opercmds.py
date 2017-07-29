@@ -67,7 +67,7 @@ def jupe(irc, source, args):
         return
 
     if not utils.isServerName(servername):
-        irc.error("Invalid server name '%s'." % servername)
+        irc.error("Invalid server name %r." % servername)
         return
 
     sid = irc.spawn_server(servername, desc=desc)
@@ -100,7 +100,7 @@ def kick(irc, source, args):
 
     if not targetu:
         # Whatever we were told to kick doesn't exist!
-        irc.error("No such target nick '%s'." % target)
+        irc.error("No such target nick %r." % target)
         return
 
     sender = irc.pseudoclient.uid
@@ -129,7 +129,7 @@ def kill(irc, source, args):
 
     if targetu not in irc.users:
         # Whatever we were told to kick doesn't exist!
-        irc.error("No such nick '%s'." % target)
+        irc.error("No such nick %r." % target)
         return
 
     irc.kill(sender, targetu, reason)
@@ -157,7 +157,7 @@ def mode(irc, source, args):
         return
 
     if target not in irc.channels:
-        irc.error("Unknown channel '%s'." % target)
+        irc.error("Unknown channel %r." % target)
         return
     elif not modes:
         # No modes were given before parsing (i.e. mode list was blank).
@@ -218,7 +218,7 @@ def chgident(irc, source, args):
 
     Admin only. Changes the ident of the target user."""
     chgfield(irc, source, args, 'ident')
-    
+
 @utils.add_cmd
 def chgname(irc, source, args):
     """<user> <new name>
@@ -234,13 +234,13 @@ def chgfield(irc, source, args, human_field, internal_field=None):
     except IndexError:
         irc.error("Not enough arguments. Needs 2: target, new %s." % human_field)
         return
-    
+
     # Find the user
     targetu = irc.nick_to_uid(target)
     if targetu not in irc.users:
         irc.error("No such nick %r." % target)
         return
-        
+
     internal_field = internal_field or human_field.upper()
     irc.update_client(targetu, internal_field, new)
     irc.reply("Done.")
