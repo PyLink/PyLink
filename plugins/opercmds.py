@@ -5,29 +5,40 @@ from pylinkirc import utils
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
+checkban_parser = utils.IRCParser()
+checkban_parser.add_argument('banmask')
+checkban_parser.add_argument('target', nargs='?', default='')
+checkban_parser.add_argument('--channel', default='')
+
 @utils.add_cmd
 def checkban(irc, source, args):
-    """<banmask (nick!user@host or user@host)> [<nick or hostmask to check>]
+    """<banmask> [<target nick or hostmask>] [--channel #channel]
 
-    Oper only. If a nick or hostmask is given, return whether the given banmask will match it. Otherwise, returns a list of connected users that would be affected by such a ban, up to 50 results."""
+    CHECKBAN provides a ban checker command based on nick!user@host masks, user@host masks, and
+    PyLink extended targets.
+
+    If a target nick or hostmask is given, return whether the given banmask will match it.
+    Otherwise, returns a list of connected users that would be affected by such a ban, up to 50
+    results.
+
+    If the --channel argument is given without a target mask, the returned results will only
+    include users in the given channel."""
     permissions.checkPermissions(irc, source, ['opercmds.checkban'])
 
-    try:
-        banmask = args[0]
-    except IndexError:
-        irc.error("Not enough arguments. Needs 1-2: banmask, nick or hostmask to check (optional).")
-        return
-
-    try:
-        targetmask = args[1]
-    except IndexError:
-        # No hostmask was given, return a list of affected users.
-
-        irc.msg(source, "Checking for hosts that match \x02%s\x02:" % banmask, notice=True)
+    args = checkban_parser.parse_args(args)
+    if not args.target:
+        # No hostmask was given, return a list of matched users.
 
         results = 0
+
+        # Process the --channel argument if it exists. This is just a lazy wrapper around the
+        # $and and $channel exttargets, but it's mostly to convenience users.
+        if args.channel:
+            args.banmask = "$and:(%s+$channel:%s)" % (args.banmask, args.channel)
+
+        irc.msg(source, "Checking for hosts that match \x02%s\x02:" % args.banmask, notice=True)
         for uid, userobj in irc.users.copy().items():
-            if irc.match_host(banmask, uid):
+            if irc.match_host(args.banmask, uid):
                 if results < 50:  # XXX rather arbitrary limit
                     s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
                         userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
@@ -44,10 +55,10 @@ def checkban(irc, source, args):
     else:
         # Target can be both a nick (of an online user) or a hostmask. irc.match_host() handles this
         # automatically.
-        if irc.match_host(banmask, targetmask):
-            irc.reply('Yes, \x02%s\x02 matches \x02%s\x02.' % (targetmask, banmask))
+        if irc.match_host(args.banmask, args.target):
+            irc.reply('Yes, \x02%s\x02 matches \x02%s\x02.' % (args.target, args.banmask))
         else:
-            irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (targetmask, banmask))
+            irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (args.target, args.banmask))
 
 @utils.add_cmd
 def jupe(irc, source, args):
