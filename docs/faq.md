@@ -10,7 +10,7 @@ You are missing dependencies - re-read https://github.com/GLolol/PyLink/blob/mas
 
 You must use **spaces** and not tabs to indent your configuration file! (`\t` is the escaped code for a tab, which is disallowed by YAML)
 
-## Linking / connection issues
+## Linking / Connection issues
 
 ### PyLink won't connect to my network!
 
@@ -22,7 +22,7 @@ As a general guide, you should check the following before asking for support:
         2) Is the target network's IRCd actually binding to the port you're trying to use? If there is a port conflict with another program, the IRCd may fail to bind but *still start* on other ports that are free.
         3) Is the target port firewalled on the target machine?
         4) Is there a working connection between the source and target servers? Use ping to test this, as sometimes routing issues between providers can cause servers to become unreachable.
-            - If your servers are purposely blocking ping, it's up to you to find another solution to test this! 😬
+            - If your servers are purposely blocking ping, it's up to you to find another way to test this! 😬
 
     - If so:
         1) Check for recvpass/sendpass/server hostname/IP mismatches - usually the IRCd will tell you if you're running into one of these, provided you have the right server notices enabled (consult your IRCd documentation for how to do this).
