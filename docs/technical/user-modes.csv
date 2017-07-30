@@ -32,7 +32,6 @@ registered,,r,,,r,r,r,,r,r,R
 restricted,,,,,,,,,,,r
 servprotect,,k,S,S,S,,k,S,k,k,q
 showwhois,,W,,,W,,W,,,,
-sno_admin_requests,,,,,,y,,y,,,
 sno_badclientconnections,,,,,,u,,u,,,
 sno_botfloods,,,,,,b,,b,,,
 sno_clientconnections,,,,,,c,,c,,,c
@@ -42,8 +41,9 @@ sno_fullauthblock,,,,,,f,,f,,,
 sno_nickchange,,,,,,n,,,,,
 sno_rejectedclients,,,,,,j,,r,,,
 sno_remoteclientconnections,,,,,,F,,,,,
-sno_server_connects,,,,,,e,,x,,,
+sno_serverconnects,,,,,,e,,x,,,
 sno_skill,,,,,,k,,k,,,
+sno_stats,,,,,,y,,y,,,
 snomask,s,s,s,s,s,s,s,s,,,s
 ssl,,,,,z,S,z,,,,
 stripcolor,,S,,,,,,,,,
