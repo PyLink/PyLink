@@ -1,20 +1,22 @@
 # PyLink FAQ
 
+## Startup errors
+
 ### I get errors like "ImportError: No module named 'yaml'" when I start PyLink
 
 You are missing dependencies - re-read https://github.com/GLolol/PyLink/blob/master/README.md#installation
 
 ### I get errors like "yaml.scanner.ScannerError: while scanning for the next token, found character '\t' that cannot start any token"
 
-You must use SPACES and not tabs in your configuration! (`\t` is the escaped code for a tab, which is disallowed by YAML)
+You must use **spaces** and not tabs to indent your configuration file! (`\t` is the escaped code for a tab, which is disallowed by YAML)
+
+## Linking / connection issues
 
 ### I turned autoconnect for PyLink on, and now I'm getting errors!
 
 PyLink does not support inbound connections - much like regular services such as Atheme or Anope, it only connects outwards *to* IRCds. (If you don't understand what this means, it means you should turn autoconnect OFF for PyLink)
 
-### Clientbot doesn't relay both ways!
-
-Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c/example-conf.yml#L303-L306
+## Relay issues
 
 ### Does everyone need to install PyLink Relay for it to work?
 
@@ -37,3 +39,7 @@ PyLink provides, in no particular order:
 First, check whether the SQUIT message includes the nick that triggered the netsplit. If this nick includes any characters not allowed in regular IRC, such as the slash ("/"), or is otherwise an invalid nick (e.g. beginning with a hyphen or number), this likely indicates a bug in PyLink Relay. These problems should be reported on the issue tracker!
 
 However, if the nick mentioned is legal on IRC, this issue is likely caused by a max nick length misconfiguration: i.e. the relay server is introducing nicks too long for the target network. This can be fixed by setting the `maxnicklen` option in the affected network's PyLink `server:` block to the same value as that network's `005` `NICKLEN` (that is, the `NICKLEN=<num>` value in `/raw version`).
+
+### Clientbot doesn't relay both ways!
+
+Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c/example-conf.yml#L303-L306
