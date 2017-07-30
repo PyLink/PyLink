@@ -12,10 +12,6 @@ You must use SPACES and not tabs in your configuration! (`\t` is the escaped cod
 
 PyLink does not support inbound connections - much like regular services such as Atheme or Anope, it only connects outwards *to* IRCds. (If you don't understand what this means, it means you should turn autoconnect OFF for PyLink)
 
-### Does PyLink support Clientbot relay like Janus?
-
-Yes. However, Clientbot support is in alpha stages as of PyLink 0.10 and is far from complete: [Clientbot TODO](https://github.com/GLolol/PyLink/issues?q=is%3Aissue+is%3Aopen+label%3Aprotocols%2Fclientbot).
-
 ### Clientbot doesn't relay both ways!
 
 Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c/example-conf.yml#L303-L306
