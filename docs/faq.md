@@ -16,17 +16,17 @@ You must use **spaces** and not tabs to indent your configuration file! (`\t` is
 
 As a general guide, you should check the following before asking for support:
 
-1) Is the target network's IRCd showing failed connection attempts?
-- If not:
-    1) Is PyLink connecting to the right port (i.e. one the IRCd is listening on?)
-    2) Is the target network's IRCd actually binding to the port you're trying to use? If there is a port conflict with another program, the IRCd may fail to bind but *still start* on other ports that are free.
-	3) Is the target port firewalled on the target machine?
-	4) Is there a working connection between the source and target servers? Use ping to test this, as sometimes routing issues between providers can cause servers to become unreachable.
-		- If your servers are purposely blocking ping, it's up to you to find another solution to test this! 😬
+- Is the target network's IRCd showing failed connection attempts?
+    - If not:
+        1) Is PyLink connecting to the right port (i.e. one the IRCd is listening on?)
+        2) Is the target network's IRCd actually binding to the port you're trying to use? If there is a port conflict with another program, the IRCd may fail to bind but *still start* on other ports that are free.
+        3) Is the target port firewalled on the target machine?
+        4) Is there a working connection between the source and target servers? Use ping to test this, as sometimes routing issues between providers can cause servers to become unreachable.
+            - If your servers are purposely blocking ping, it's up to you to find another solution to test this! 😬
 
-- If so:
-	1) Check for recvpass/sendpass/server hostname/IP mismatches - usually the IRCd will tell you if you're running into one of these, provided you have the right server notices enabled (consult your IRCd documentation for how to do this).
-	2) Make sure you're not connecting with SSL on a non-SSL port, or vice versa.
+    - If so:
+        1) Check for recvpass/sendpass/server hostname/IP mismatches - usually the IRCd will tell you if you're running into one of these, provided you have the right server notices enabled (consult your IRCd documentation for how to do this).
+        2) Make sure you're not connecting with SSL on a non-SSL port, or vice versa.
 
 If these steps haven't helped you so far, it doesn't hurt to ask for help. :)
 
