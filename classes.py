@@ -147,7 +147,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
                        '*A': 'b',
                        '*B': 'k',
                        '*C': 'l',
-                       '*D': 'imnpstr'}
+                       '*D': 'imnpst'}
         self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
                        'oper': 'o',
                        '*A': '', '*B': '', '*C': '', '*D': 'iosw'}
