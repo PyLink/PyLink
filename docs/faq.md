@@ -35,3 +35,9 @@ In no particular order:
 - Proper protocol negotiation leading to fewer DoS possibilities:
     - Better support for channel modes such as +fjMOR, etc.
     - Configurable nick length limits for relayed users.
+
+### My IRCd SQUITs the relay server with errors like "Bad nickname introduced"!
+
+First, check whether the SQUIT message includes the nick that triggered the netsplit. If this nick includes any characters not allowed in regular IRC, such as the slash ("/"), or is otherwise an invalid nick (e.g. beginning with a hyphen or number), this likely indicates a bug in PyLink Relay. These problems should be reported on the issue tracker!
+
+However, if the nick mentioned is legal on IRC, this issue is likely caused by a max nick length misconfiguration: i.e. the relay server is introducing nicks too long for the target network. This can be fixed by setting the `maxnicklen` option in the affected network's PyLink `server:` block to the same value as that network's `005` `NICKLEN` (that is, the `NICKLEN=<num>` value in `/raw version`).
