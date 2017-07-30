@@ -30,6 +30,10 @@ As a general guide, you should check the following before asking for support:
 
 If these steps haven't helped you so far, it doesn't hurt to ask for help. :)
 
+### My networks keep disconnecting with SSL errors!
+
+See https://github.com/GLolol/PyLink/issues/463 - this seems to be caused by a regression in OpenSSL 1.0.2, which ships with distros such as Ubuntu 16.04 LTS. Unfortunately, the only workarounds so far are to either disable SSL/TLS, or wrap a plain IRC connection in an external service (stunnel, OpenVPN, etc.)
+
 ### I turned autoconnect for PyLink on, and now I'm getting errors!
 
 PyLink does not support inbound connections - much like regular services such as Atheme or Anope, it only connects outwards *to* IRCds. (If you don't understand what this means, it means you should turn autoconnect **off** for PyLink)
