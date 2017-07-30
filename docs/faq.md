@@ -22,15 +22,15 @@ Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c
 
 InterJanus-style links between PyLink daemons are not supported yet; see https://github.com/GLolol/PyLink/issues/99 for any progress regarding that.
 
-### What are PyLink Relay's benefits over Janus?
+### What are PyLink's advantages over Janus?
 
-In no particular order:
+PyLink provides, in no particular order:
 - More complete support for modern IRCds (UnrealIRCd 4.x, InspIRCd 2.0, charybdis 4, Nefarious IRCu, etc.).
-- PyLink is built upon a flexible, maintainable codebase.
-- Cross platform (*nix, Windows, and probably others too).
-- Proper protocol negotiation leading to fewer DoS possibilities:
+- A flexible, maintainable codebase extensible beyond Relay.
+- Cross platform functionality (*nix, Windows, and probably others too).
+- Proper protocol negotiation leading to fewer SQUIT/DoS possibilities:
     - Better support for channel modes such as +fjMOR, etc.
-    - Configurable nick length limits for relayed users.
+    - Proper support for nick length limits with relayed users.
 
 ### My IRCd SQUITs the relay server with errors like "Bad nickname introduced"!
 
