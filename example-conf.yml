@@ -415,14 +415,8 @@ plugins:
     # Networks plugin: Allows you to manage connections to networks while PyLink is running.
     - networks
 
-    # Ctcp plugin: handles basic CTCP replies (VERSION, etc).
+    # Ctcp plugin: handles basic CTCP replies (VERSION, etc) towards service bots.
     - ctcp
-
-    # Oper commands plugin: Provides a handful of network management commands. (KILL, JUPE, etc.)
-    #- opercmds
-
-    # Bots plugin: Allows you to manipulate PyLink service bots on networks.
-    #- bots
 
     # Relay plugin: Transparent server-side relay between channels (like Janus). See
     # the relay: block below for configuration.
@@ -437,18 +431,18 @@ plugins:
     # with the PyLink service's nick or configurable prefix characters.
     #- fantasy
 
-    # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on
-    # matching users as they connect. This requires the changehost: block to be
-    # configured correctly below.
-    #- changehost
+    # Oper commands plugin: Provides a handful of network management commands. (KILL, JUPE, etc.)
+    #- opercmds
 
     # Automode plugin: allows assigning channel access to specific hostmasks or
     # exttargets. See https://github.com/GLolol/PyLink/blob/master/docs/automode.md
     # for a usage guide.
     #- automode
 
-    # Servermaps plugin: displays network /map's from the PyLink server's perspective.
-    #- servermaps
+    # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on
+    # matching users as they connect. This requires the changehost: block to be
+    # configured correctly below.
+    #- changehost
 
     # Servprotect plugin: disconnects from networks if too many kills or nick collisions to
     # PyLink clients are received.
@@ -457,6 +451,12 @@ plugins:
     # Global plugin: Janus-style global plugin; announces messages to all channels the PyLink
     # client is in.
     #- global
+
+    # Bots plugin: Allows you to manipulate PyLink service bots on networks.
+    #- bots
+
+    # Servermaps plugin: displays network /map's from the PyLink server's perspective.
+    #- servermaps
 
 logging:
     # This configuration block defines targets that PyLink should log commands,
