@@ -459,18 +459,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self.channels[target].topicset = True
     topic_burst = topic
 
-    def _check_nick_collision(self, nick):
-        """
-        Nick collision checker.
-        """
-        uid = self.nick_to_uid(nick)
-        # If there is a nick collision, we simply alert plugins. Relay will purposely try to
-        # lose fights and tag nicks instead, while other plugins can choose how to handle this.
-        if uid:
-            log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.name,
-                     uid, nick)
-            self.call_hooks([self.sid, 'SAVE', {'target': uid}])
-
     def handle_away(self, numeric, command, args):
         """Handles incoming AWAY messages."""
         # TS6:

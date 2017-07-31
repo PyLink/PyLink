@@ -1077,6 +1077,18 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 _clear()
                 _apply()
 
+    def _check_nick_collision(self, nick):
+        """
+        Nick collision checker.
+        """
+        uid = self.nick_to_uid(nick)
+        # If there is a nick collision, we simply alert plugins. Relay will purposely try to
+        # lose fights and tag nicks instead, while other plugins can choose how to handle this.
+        if uid:
+            log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.name,
+                     uid, nick)
+            self.call_hooks([self.sid, 'SAVE', {'target': uid}])
+
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
 
