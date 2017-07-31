@@ -171,4 +171,4 @@ def inject(irc, source, args):
 
     log.info('(%s) Injecting raw text %r into protocol module for %s', irc.name,
              args, irc.get_hostmask(source))
-    irc.reply(irc.runline(args))
+    irc.reply(irc.parse_irc_command(args))

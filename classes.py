@@ -300,27 +300,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         """
         return self.serverdata.get('netname', self.name)
 
-    def parse_protocol_command(self, line):
-        """Sends a command to the protocol module."""
-        log.debug("(%s) <- %s", self.name, line)
-        try:
-            hook_args = self.handle_events(line)
-        except Exception:
-            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
-            log.error('(%s) The offending line was: <- %s', self.name, line)
-            self.aborted.set()
-            return
-        # Only call our hooks if there's data to process. Handlers that support
-        # hooks will return a dict of parsed arguments, which can be passed on
-        # to plugins and the like. For example, the JOIN handler will return
-        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
-        # 'UID3']}, etc.
-        if hook_args is not None:
-            self.call_hooks(hook_args)
-
-        return hook_args
-    runline = parse_protocol_command
-
     def _pre_connect(self):
         self.aborted.clear()
         self._init_vars()
@@ -1321,6 +1300,29 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self._ping_timer.cancel()
         self._post_disconnect()
 
+    def handle_events(self, line):
+        raise NotImplementedError
+
+    def parse_irc_command(self, line):
+        """Sends a command to the protocol module."""
+        log.debug("(%s) <- %s", self.name, line)
+        try:
+            hook_args = self.handle_events(line)
+        except Exception:
+            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
+            log.error('(%s) The offending line was: <- %s', self.name, line)
+            self.aborted.set()
+            return
+        # Only call our hooks if there's data to process. Handlers that support
+        # hooks will return a dict of parsed arguments, which can be passed on
+        # to plugins and the like. For example, the JOIN handler will return
+        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
+        # 'UID3']}, etc.
+        if hook_args is not None:
+            self.call_hooks(hook_args)
+
+        return hook_args
+
     def _run_irc(self):
         """Main IRC loop which listens for messages."""
         buf = b""
@@ -1348,7 +1350,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 line, buf = buf.split(b'\n', 1)
                 line = line.strip(b'\r')
                 line = line.decode(self.encoding, "replace")
-                self.runline(line)
+                self.parse_irc_command(line)
 
     def _send(self, data):
         """Sends raw text to the uplink server."""
