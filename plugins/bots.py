@@ -33,11 +33,12 @@ def quit(irc, source, args):
     except IndexError:
         irc.error("Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
-    if irc.pseudoclient.uid == irc.nick_to_uid(nick):
-        irc.error("Cannot quit the main PyLink client!")
-        return
 
     u = irc.nick_to_uid(nick)
+
+    if irc.pseudoclient.uid == u:
+        irc.error("Cannot quit the main PyLink client!")
+        return
 
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
 
