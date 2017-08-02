@@ -1,18 +1,30 @@
 """
 opercmds.py: Provides a subset of network management commands.
 """
+import argparse
+
 from pylinkirc import utils
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
+
+# Having a hard limit here is sensible because otherwise it can flood the client or server off.
+CHECKBAN_MAX_RESULTS = 200
+
+def _checkban_positiveint(value):
+    value = int(value)
+    if value <= 0 or value > CHECKBAN_MAX_RESULTS:
+         raise argparse.ArgumentTypeError("%s is not a positive integer between 1 and %s." % (value, CHECKBAN_MAX_RESULTS))
+    return value
 
 checkban_parser = utils.IRCParser()
 checkban_parser.add_argument('banmask')
 checkban_parser.add_argument('target', nargs='?', default='')
 checkban_parser.add_argument('--channel', default='')
+checkban_parser.add_argument('--maxresults', type=_checkban_positiveint, default=50)
 
 @utils.add_cmd
 def checkban(irc, source, args):
-    """<banmask> [<target nick or hostmask>] [--channel #channel]
+    """<banmask> [<target nick or hostmask>] [--channel #channel] [--maxresults <num>]
 
     CHECKBAN provides a ban checker command based on nick!user@host masks, user@host masks, and
     PyLink extended targets.
@@ -22,7 +34,9 @@ def checkban(irc, source, args):
     results.
 
     If the --channel argument is given without a target mask, the returned results will only
-    include users in the given channel."""
+    include users in the given channel.
+
+    The --maxresults option configures how many responses will be shown."""
     permissions.checkPermissions(irc, source, ['opercmds.checkban'])
 
     args = checkban_parser.parse_args(args)
@@ -39,7 +53,7 @@ def checkban(irc, source, args):
         irc.msg(source, "Checking for hosts that match \x02%s\x02:" % args.banmask, notice=True)
         for uid, userobj in irc.users.copy().items():
             if irc.match_host(args.banmask, uid):
-                if results < 50:  # XXX rather arbitrary limit
+                if results < args.maxresults:
                     s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
                         userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
 
@@ -49,7 +63,7 @@ def checkban(irc, source, args):
         else:
             if results:
                 irc.msg(source, "\x02%s\x02 out of \x02%s\x02 results shown." %
-                        (min([results, 50]), results), notice=True)
+                        (min([results, args.maxresults]), results), notice=True)
             else:
                 irc.msg(source, "No results found.", notice=True)
     else:
