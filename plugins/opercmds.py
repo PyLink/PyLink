@@ -29,9 +29,8 @@ def checkban(irc, source, args):
     CHECKBAN provides a ban checker command based on nick!user@host masks, user@host masks, and
     PyLink extended targets.
 
-    If a target nick or hostmask is given, return whether the given banmask will match it.
-    Otherwise, returns a list of connected users that would be affected by such a ban, up to 50
-    results.
+    If a target nick or hostmask is given, this command returns whether the given banmask will match it.
+    Otherwise, it will display a list of connected users matching the banmask.
 
     If the --channel argument is given without a target mask, the returned results will only
     include users in the given channel.
