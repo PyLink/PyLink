@@ -77,9 +77,8 @@ def checkban(irc, source, args):
 def jupe(irc, source, args):
     """<server> [<reason>]
 
-    Admin only, jupes the given server."""
+    Jupes the given server."""
 
-    # Check that the caller is either opered or logged in as admin.
     permissions.checkPermissions(irc, source, ['opercmds.jupe'])
 
     try:
@@ -106,7 +105,7 @@ def jupe(irc, source, args):
 def kick(irc, source, args):
     """<channel> <user> [<reason>]
 
-    Admin only. Kicks <user> from the specified channel."""
+    Kicks <user> from the specified channel."""
     permissions.checkPermissions(irc, source, ['opercmds.kick'])
     try:
         channel = irc.to_lower(args[0])
@@ -137,7 +136,7 @@ def kick(irc, source, args):
 def kill(irc, source, args):
     """<target> [<reason>]
 
-    Admin only. Kills the given target."""
+    Kills the given target."""
     permissions.checkPermissions(irc, source, ['opercmds.kill'])
     try:
         target = args[0]
@@ -169,9 +168,8 @@ def kill(irc, source, args):
 def mode(irc, source, args):
     """<channel> <modes>
 
-    Oper-only, sets modes <modes> on the target channel."""
+    Sets the given modes on the target channel."""
 
-    # Check that the caller is either opered or logged in as admin.
     permissions.checkPermissions(irc, source, ['opercmds.mode'])
 
     try:
@@ -209,7 +207,7 @@ def mode(irc, source, args):
 def topic(irc, source, args):
     """<channel> <topic>
 
-    Admin only. Updates the topic in a channel."""
+    Changes the topic in a channel."""
     permissions.checkPermissions(irc, source, ['opercmds.topic'])
     try:
         channel = args[0]
@@ -233,21 +231,21 @@ def topic(irc, source, args):
 def chghost(irc, source, args):
     """<user> <new host>
 
-    Admin only. Changes the visible host of the target user."""
+    Changes the visible host of the target user."""
     chgfield(irc, source, args, 'host')
 
 @utils.add_cmd
 def chgident(irc, source, args):
     """<user> <new ident>
 
-    Admin only. Changes the ident of the target user."""
+    Changes the ident of the target user."""
     chgfield(irc, source, args, 'ident')
 
 @utils.add_cmd
 def chgname(irc, source, args):
     """<user> <new name>
 
-    Admin only. Changes the GECOS (realname) of the target user."""
+    Changes the GECOS (realname) of the target user."""
     chgfield(irc, source, args, 'name', 'GECOS')
 
 def chgfield(irc, source, args, human_field, internal_field=None):
