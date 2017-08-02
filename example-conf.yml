@@ -173,11 +173,6 @@ servers:
         # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
         #pingfreq: 90
 
-        # If enabled, this opts this network out of relay IP sharing: this network
-        # will not have its users' IPs sent across the relay, and it will not see any
-        # IPs of other networks' users.
-        #relay_no_ips: true
-
         # Sets the max nick length for the network. It is important that this is
         # set correctly, or PyLink might introduce a nick that is too long and
         # cause netsplits! This defaults to 30 if not set.
@@ -213,6 +208,15 @@ servers:
         # to apply.
         # This setting is EXPERIMENTAL as of PyLink 1.2.x.
         #encoding: utf-8
+
+        # If enabled, this opts this network out of relay IP sharing: this network
+        # will not have its users' IPs sent across the relay, and it will not see any
+        # IPs of other networks' users.
+        #relay_no_ips: true
+
+        # Determines whether relay will tag nicks on this network. This overrides the relay::tag_nicks
+        # option on a per network-basis.
+        #relay_tag_nicks: true
 
         # InspIRCd specific option: determines whether we should display WHOIS extensions by overriding
         # InspIRCd's default WHOIS formatting. This defaults to true for consistency with PyLink 1.x.
