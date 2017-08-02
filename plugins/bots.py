@@ -12,7 +12,7 @@ def spawnclient(irc, source, args):
 
     Spawns the specified client on the PyLink server.
     Note: this doesn't check the validity of any fields you give it!"""
-    permissions.checkPermissions(irc, source, ['bots.spawnclient'])
+    permissions.check_permissions(irc, source, ['bots.spawnclient'])
     try:
         nick, ident, host = args[:3]
     except ValueError:
@@ -26,7 +26,7 @@ def quit(irc, source, args):
     """<target> [<reason>]
 
     Quits the PyLink client with nick <target>, if one exists."""
-    permissions.checkPermissions(irc, source, ['bots.quit'])
+    permissions.check_permissions(irc, source, ['bots.quit'])
 
     try:
         nick = args[0]
@@ -59,7 +59,7 @@ def joinclient(irc, source, args):
     For the channel arguments, prefixes can also be specified to join the given client with
     (e.g. @#channel will join the client with op, while ~@#channel will join it with +qo.
     """
-    permissions.checkPermissions(irc, source, ['bots.joinclient'])
+    permissions.check_permissions(irc, source, ['bots.joinclient'])
 
     try:
         # Check if the first argument is an existing PyLink client. If it is not,
@@ -117,7 +117,7 @@ def nick(irc, source, args):
 
     Changes the nick of <target>, a PyLink client, to <newnick>. If <target> is not given, it defaults to the main PyLink client."""
 
-    permissions.checkPermissions(irc, source, ['bots.nick'])
+    permissions.check_permissions(irc, source, ['bots.nick'])
 
     try:
         nick = args[0]
@@ -152,7 +152,7 @@ def part(irc, source, args):
     """[<target>] <channel1>,[<channel2>],... [<reason>]
 
     Parts <target>, the nick of a PyLink client, from a comma-separated list of channels. If <target> is not given, it defaults to the main PyLink client."""
-    permissions.checkPermissions(irc, source, ['bots.part'])
+    permissions.check_permissions(irc, source, ['bots.part'])
 
     try:
         nick = args[0]
@@ -198,7 +198,7 @@ def msg(irc, source, args):
     """[<source>] <target> <text>
 
     Sends message <text> from <source>, where <source> is the nick of a PyLink client. If <source> is not given, it defaults to the main PyLink client."""
-    permissions.checkPermissions(irc, source, ['bots.msg'])
+    permissions.check_permissions(irc, source, ['bots.msg'])
 
     # Because we want the source nick to be optional, this argument parsing gets a bit tricky.
     try:

@@ -59,7 +59,7 @@ def shutdown(irc, source, args):
     """takes no arguments.
 
     Exits PyLink by disconnecting all networks."""
-    permissions.checkPermissions(irc, source, ['core.shutdown'])
+    permissions.check_permissions(irc, source, ['core.shutdown'])
     log.info('(%s) SHUTDOWN requested by %s, exiting...', irc.name, irc.get_hostmask(source))
     control.shutdown(irc=irc)
 
@@ -70,7 +70,7 @@ def load(irc, source, args):
     Loads a plugin from the plugin folder."""
     # Note: reload capability is acceptable here, because all it actually does is call
     # load after unload.
-    permissions.checkPermissions(irc, source, ['core.load', 'core.reload'])
+    permissions.check_permissions(irc, source, ['core.load', 'core.reload'])
 
     try:
         name = args[0]
@@ -100,7 +100,7 @@ def unload(irc, source, args):
     """<plugin name>.
 
     Unloads a currently loaded plugin."""
-    permissions.checkPermissions(irc, source, ['core.unload', 'core.reload'])
+    permissions.check_permissions(irc, source, ['core.unload', 'core.reload'])
 
     try:
         name = args[0]
@@ -186,7 +186,7 @@ def rehash(irc, source, args):
     Reloads the configuration file for PyLink, (dis)connecting added/removed networks.
 
     Note: plugins must be manually reloaded."""
-    permissions.checkPermissions(irc, source, ['core.rehash'])
+    permissions.check_permissions(irc, source, ['core.rehash'])
     try:
         control.rehash()
     except Exception as e:  # Something went wrong, abort.
@@ -200,5 +200,5 @@ def clearqueue(irc, source, args):
     """takes no arguments.
 
     Clears the outgoing text queue for the current connection."""
-    permissions.checkPermissions(irc, source, ['core.clearqueue'])
+    permissions.check_permissions(irc, source, ['core.clearqueue'])
     irc._queue.queue.clear()

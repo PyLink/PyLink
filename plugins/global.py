@@ -13,7 +13,7 @@ def g(irc, source, args):
 
     Sends out a Instance-wide notice.
     """
-    permissions.checkPermissions(irc, source, ["global.global"])
+    permissions.check_permissions(irc, source, ["global.global"])
     message = " ".join(args)
     template = string.Template(conf.conf.get('global', {}).get("format", DEFAULT_FORMAT))
 

@@ -126,7 +126,7 @@ def applyhosts(irc, sender, args):
 
     Applies all configured hosts for users on the given network, or the current network if none is specified."""
 
-    permissions.checkPermissions(irc, sender, ['changehost.applyhosts'])
+    permissions.check_permissions(irc, sender, ['changehost.applyhosts'])
 
     try:  # Try to get network from the command line.
         network = world.networkobjects[args[0]]

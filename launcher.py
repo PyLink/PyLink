@@ -84,4 +84,4 @@ def main():
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
 
-    coremods.permissions.resetPermissions()  # XXX we should probably move this to run on import
+    coremods.permissions.reset_permissions()  # XXX we should probably move this to run on import

@@ -33,7 +33,7 @@ def main(irc=None):
     datastore.load()
 
     # Register our permissions.
-    permissions.addDefaultPermissions(default_permissions)
+    permissions.add_default_permissions(default_permissions)
 
     # Queue joins to all channels where Automode has entries.
     for entry in db:
@@ -45,7 +45,7 @@ def main(irc=None):
 def die(irc=None):
     """Saves the Automode database and quit."""
     datastore.die()
-    permissions.removeDefaultPermissions(default_permissions)
+    permissions.remove_default_permissions(default_permissions)
     utils.unregisterService('automode')
 
 def _check_automode_access(irc, uid, channel, command):
@@ -64,12 +64,12 @@ def _check_automode_access(irc, uid, channel, command):
     try:
         # First, check the catch all and channel permissions.
         perms = [baseperm, baseperm+'.*', '%s.%s' % (baseperm, channel)]
-        return permissions.checkPermissions(irc, uid, perms)
+        return permissions.check_permissions(irc, uid, perms)
     except utils.NotAuthorizedError:
         if not command.startswith('remote'):
             # Relay-based ACL checking only works with local calls.
             log.debug('(%s) Automode: falling back to automode.%s.relay_owned', irc.name, command)
-            permissions.checkPermissions(irc, uid, [baseperm+'.relay_owned'], also_show=perms)
+            permissions.check_permissions(irc, uid, [baseperm+'.relay_owned'], also_show=perms)
 
             relay = world.plugins.get('relay')
             if relay is None:
@@ -280,7 +280,7 @@ def save(irc, source, args):
     """takes no arguments.
 
     Saves the Automode database to disk."""
-    permissions.checkPermissions(irc, source, ['automode.savedb'])
+    permissions.check_permissions(irc, source, ['automode.savedb'])
     datastore.save()
     reply(irc, 'Done.')
 

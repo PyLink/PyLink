@@ -36,7 +36,7 @@ def checkban(irc, source, args):
     include users in the given channel.
 
     The --maxresults option configures how many responses will be shown."""
-    permissions.checkPermissions(irc, source, ['opercmds.checkban'])
+    permissions.check_permissions(irc, source, ['opercmds.checkban'])
 
     args = checkban_parser.parse_args(args)
     if not args.target:
@@ -79,7 +79,7 @@ def jupe(irc, source, args):
 
     Jupes the given server."""
 
-    permissions.checkPermissions(irc, source, ['opercmds.jupe'])
+    permissions.check_permissions(irc, source, ['opercmds.jupe'])
 
     try:
         servername = args[0]
@@ -106,7 +106,7 @@ def kick(irc, source, args):
     """<channel> <user> [<reason>]
 
     Kicks <user> from the specified channel."""
-    permissions.checkPermissions(irc, source, ['opercmds.kick'])
+    permissions.check_permissions(irc, source, ['opercmds.kick'])
     try:
         channel = irc.to_lower(args[0])
         target = args[1]
@@ -137,7 +137,7 @@ def kill(irc, source, args):
     """<target> [<reason>]
 
     Kills the given target."""
-    permissions.checkPermissions(irc, source, ['opercmds.kill'])
+    permissions.check_permissions(irc, source, ['opercmds.kill'])
     try:
         target = args[0]
         reason = ' '.join(args[1:])
@@ -170,7 +170,7 @@ def mode(irc, source, args):
 
     Sets the given modes on the target channel."""
 
-    permissions.checkPermissions(irc, source, ['opercmds.mode'])
+    permissions.check_permissions(irc, source, ['opercmds.mode'])
 
     try:
         target, modes = args[0], args[1:]
@@ -208,7 +208,7 @@ def topic(irc, source, args):
     """<channel> <topic>
 
     Changes the topic in a channel."""
-    permissions.checkPermissions(irc, source, ['opercmds.topic'])
+    permissions.check_permissions(irc, source, ['opercmds.topic'])
     try:
         channel = args[0]
         topic = ' '.join(args[1:])
@@ -249,7 +249,7 @@ def chgname(irc, source, args):
     chgfield(irc, source, args, 'name', 'GECOS')
 
 def chgfield(irc, source, args, human_field, internal_field=None):
-    permissions.checkPermissions(irc, source, ['opercmds.chg' + human_field])
+    permissions.check_permissions(irc, source, ['opercmds.chg' + human_field])
     try:
         target = args[0]
         new = args[1]

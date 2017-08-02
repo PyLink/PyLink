@@ -32,7 +32,7 @@ def uptime(irc, source, args):
 
     Returns the uptime for PyLink and the given network's connection (or the current network if not specified).
     The --all argument can also be given to show the uptime for all networks."""
-    permissions.checkPermissions(irc, source, ['stats.uptime'])
+    permissions.check_permissions(irc, source, ['stats.uptime'])
 
     try:
         network = args[0]

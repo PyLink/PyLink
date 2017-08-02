@@ -52,7 +52,7 @@ def main(irc=None):
     log.debug('relay.main: loading links database')
     datastore.load()
 
-    permissions.addDefaultPermissions(default_permissions)
+    permissions.add_default_permissions(default_permissions)
 
     if irc is not None:
         # irc is defined when the plugin is reloaded. Otherwise, it means that we've just started the
@@ -79,7 +79,7 @@ def die(irc=None):
     relayusers.clear()
 
     # 3) Unload our permissions.
-    permissions.removeDefaultPermissions(default_permissions)
+    permissions.remove_default_permissions(default_permissions)
 
     # 4) Save the database and quit.
     datastore.die()
@@ -1626,7 +1626,7 @@ def create(irc, source, args):
         irc.error('You must be in %r to complete this operation.' % channel)
         return
 
-    permissions.checkPermissions(irc, source, ['relay.create'])
+    permissions.check_permissions(irc, source, ['relay.create'])
 
     # Check to see whether the channel requested is already part of a different
     # relay.
@@ -1676,9 +1676,9 @@ def destroy(irc, source, args):
     # Check for different permissions based on whether we're destroying a local channel or
     # a remote one.
     if network == irc.name:
-        permissions.checkPermissions(irc, source, ['relay.destroy'])
+        permissions.check_permissions(irc, source, ['relay.destroy'])
     else:
-        permissions.checkPermissions(irc, source, ['relay.destroy.remote'])
+        permissions.check_permissions(irc, source, ['relay.destroy.remote'])
 
     entry = (network, channel)
     if entry in db:
@@ -1699,7 +1699,7 @@ def purge(irc, source, args):
     """<network>
 
     Destroys all links relating to the target network."""
-    permissions.checkPermissions(irc, source, ['relay.purge'])
+    permissions.check_permissions(irc, source, ['relay.purge'])
     try:
         network = args[0]
     except IndexError:
@@ -1771,7 +1771,7 @@ def link(irc, source, args):
             irc.error('You must be in %r to complete this operation.' % localchan)
             return
 
-    permissions.checkPermissions(irc, source, ['relay.link'])
+    permissions.check_permissions(irc, source, ['relay.link'])
 
     if remotenet not in world.networkobjects:
         irc.error('No network named %r exists.' % remotenet)
@@ -1798,7 +1798,7 @@ def link(irc, source, args):
                 return
 
         if args.force:
-            permissions.checkPermissions(irc, source, ['relay.link.force'])
+            permissions.check_permissions(irc, source, ['relay.link.force'])
             log.info("(%s) relay: Forcing link %s%s -> %s%s", irc.name, irc.name, localchan, remotenet,
                      args.channel)
         else:
@@ -1842,7 +1842,7 @@ def delink(irc, source, args):
     except IndexError:
         remotenet = None
 
-    permissions.checkPermissions(irc, source, ['relay.delink'])
+    permissions.check_permissions(irc, source, ['relay.delink'])
 
     if not utils.isChannel(channel):
         irc.error('Invalid channel %r.' % channel)
@@ -1876,7 +1876,7 @@ def linked(irc, source, args):
 
     Returns a list of channels shared across PyLink Relay. If \x02network\x02 is given, filters output to channels linked to the given network."""
 
-    permissions.checkPermissions(irc, source, ['relay.linked'])
+    permissions.check_permissions(irc, source, ['relay.linked'])
 
     # Only show remote networks that are marked as connected.
     remote_networks = [netname for netname, ircobj in world.networkobjects.copy().items()
@@ -1976,12 +1976,12 @@ def linkacl(irc, source, args):
         irc.error('No such relay %r exists.' % channel)
         return
     if cmd == 'list':
-        permissions.checkPermissions(irc, source, ['relay.linkacl.view'])
+        permissions.check_permissions(irc, source, ['relay.linkacl.view'])
         s = 'Blocked networks for \x02%s\x02: \x02%s\x02' % (channel, ', '.join(db[relay]['blocked_nets']) or '(empty)')
         irc.reply(s)
         return
 
-    permissions.checkPermissions(irc, source, ['relay.linkacl'])
+    permissions.check_permissions(irc, source, ['relay.linkacl'])
     try:
         remotenet = args[2]
     except IndexError:
@@ -2072,7 +2072,7 @@ def save(irc, source, args):
     """takes no arguments.
 
     Saves the relay database to disk."""
-    permissions.checkPermissions(irc, source, ['relay.savedb'])
+    permissions.check_permissions(irc, source, ['relay.savedb'])
     datastore.save()
     irc.reply('Done.')
 
@@ -2097,7 +2097,7 @@ def claim(irc, source, args):
         irc.error("Not enough arguments. Needs 1-2: channel, list of networks (optional).")
         return
 
-    permissions.checkPermissions(irc, source, ['relay.claim'])
+    permissions.check_permissions(irc, source, ['relay.claim'])
 
     # We override get_relay() here to limit the search to the current network.
     relay = (irc.name, channel)

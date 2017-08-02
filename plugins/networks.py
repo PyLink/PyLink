@@ -16,7 +16,7 @@ def disconnect(irc, source, args):
     Disconnects the network <network>. When all networks are disconnected, PyLink will automatically exit.
 
     To reconnect a network disconnected using this command, use REHASH to reload the networks list."""
-    permissions.checkPermissions(irc, source, ['networks.disconnect'])
+    permissions.check_permissions(irc, source, ['networks.disconnect'])
     try:
         netname = args[0]
         network = world.networkobjects[netname]
@@ -37,7 +37,7 @@ def autoconnect(irc, source, args):
 
     Sets the autoconnect time for <network> to <seconds>.
     You can disable autoconnect for a network by setting <seconds> to a negative value."""
-    permissions.checkPermissions(irc, source, ['networks.autoconnect'])
+    permissions.check_permissions(irc, source, ['networks.autoconnect'])
     try:
         netname = args[0]
         seconds = float(args[1])
@@ -64,7 +64,7 @@ def remote(irc, source, args):
 
     Runs <command> on the remote network <network>. Plugin responses sent using irc.reply() are
     supported and returned here, but others are dropped due to protocol limitations."""
-    permissions.checkPermissions(irc, source, ['networks.remote'])
+    permissions.check_permissions(irc, source, ['networks.remote'])
 
     args = remote_parser.parse_args(args)
     netname = args.network
@@ -151,7 +151,7 @@ def reloadproto(irc, source, args):
     """<protocol module name>
 
     Reloads the given protocol module without restart. You will have to manually disconnect and reconnect any network using the module for changes to apply."""
-    permissions.checkPermissions(irc, source, ['networks.reloadproto'])
+    permissions.check_permissions(irc, source, ['networks.reloadproto'])
     try:
         name = args[0]
     except IndexError:

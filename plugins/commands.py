@@ -12,18 +12,18 @@ default_permissions = {"*!*@*": ['commands.status', 'commands.showuser', 'comman
 def main(irc=None):
     """Commands plugin main function, called on plugin load."""
     # Register our permissions.
-    permissions.addDefaultPermissions(default_permissions)
+    permissions.add_default_permissions(default_permissions)
 
 def die(irc=None):
     """Commands plugin die function, called on plugin unload."""
-    permissions.removeDefaultPermissions(default_permissions)
+    permissions.remove_default_permissions(default_permissions)
 
 @utils.add_cmd
 def status(irc, source, args):
     """takes no arguments.
 
     Returns your current PyLink login status."""
-    permissions.checkPermissions(irc, source, ['commands.status'])
+    permissions.check_permissions(irc, source, ['commands.status'])
     identified = irc.users[source].account
     if identified:
         irc.reply('You are identified as \x02%s\x02.' % identified)
@@ -37,7 +37,7 @@ def showuser(irc, source, args):
     """<user>
 
     Shows information about <user>."""
-    permissions.checkPermissions(irc, source, ['commands.showuser'])
+    permissions.check_permissions(irc, source, ['commands.showuser'])
     try:
         target = args[0]
     except IndexError:
@@ -81,7 +81,7 @@ def showchan(irc, source, args):
     """<channel>
 
     Shows information about <channel>."""
-    permissions.checkPermissions(irc, source, ['commands.showchan'])
+    permissions.check_permissions(irc, source, ['commands.showchan'])
     try:
         channel = irc.to_lower(args[0])
     except IndexError:
@@ -142,7 +142,7 @@ def echo(irc, source, args):
     """<text>
 
     Echoes the text given."""
-    permissions.checkPermissions(irc, source, ['commands.echo'])
+    permissions.check_permissions(irc, source, ['commands.echo'])
     irc.reply(' '.join(args))
 
 def _check_logout_access(irc, source, target, perms):
@@ -154,7 +154,7 @@ def _check_logout_access(irc, source, target, perms):
     assert source in irc.users, "Unknown source user"
     assert target in irc.users, "Unknown target user"
     try:
-        permissions.checkPermissions(irc, source, perms)
+        permissions.check_permissions(irc, source, perms)
     except utils.NotAuthorizedError:
         if irc.users[source].account and (irc.users[source].account == irc.users[target].account):
             return True
@@ -200,7 +200,7 @@ def loglevel(irc, source, args):
 
     Sets the log level to the given <level>. <level> must be either DEBUG, INFO, WARNING, ERROR, or CRITICAL.
     If no log level is given, shows the current one."""
-    permissions.checkPermissions(irc, source, ['commands.loglevel'])
+    permissions.check_permissions(irc, source, ['commands.loglevel'])
     try:
         level = args[0].upper()
         try:
