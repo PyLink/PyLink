@@ -126,12 +126,7 @@ servers:
 
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet.local"
-        
-        # Sets the suffix that relay subservers that this network should use.
-        # If not specified per network, falls back to the value at
-        # relay:server_suffix or "relay" if that is not set.
-        #server_suffix: "relay.yournet.net"
-        
+
         # SID - required for TS6 and TS6-like servers. This must be three characters:
         # the first char must be a digit [0-9], and the remaining two chars may
         # be either uppercase letters [A-Z] or digits.
@@ -178,10 +173,6 @@ servers:
         # cause netsplits! This defaults to 30 if not set.
         maxnicklen: 30
 
-        # Determines the maximum size of the network's outgoing data queue (sendq), in message lines.
-        # This defaults to 4096 if not set.
-        #maxsendq: 4096
-
         # Toggles SSL for this network. Defaults to False if not specified.
         #ssl: true
 
@@ -214,9 +205,18 @@ servers:
         # IPs of other networks' users.
         #relay_no_ips: true
 
+        # Sets the suffix that relay subservers that this network should use.
+        # If not specified per network, falls back to the value at
+        # relay:server_suffix or "relay" if that is not set.
+        #server_suffix: "relay.yournet.net"
+
         # Determines whether relay will tag nicks on this network. This overrides the relay::tag_nicks
         # option on a per network-basis.
         #relay_tag_nicks: true
+
+        # Determines the maximum size of the network's outgoing data queue (sendq), in message lines.
+        # This defaults to 4096 if not set.
+        #maxsendq: 4096
 
         # InspIRCd specific option: determines whether we should display WHOIS extensions by overriding
         # InspIRCd's default WHOIS formatting. This defaults to true for consistency with PyLink 1.x.
