@@ -10,7 +10,7 @@ from pylinkirc.coremods import permissions
 def spawnclient(irc, source, args):
     """<nick> <ident> <host>
 
-    Admin-only. Spawns the specified client on the PyLink server.
+    Spawns the specified client on the PyLink server.
     Note: this doesn't check the validity of any fields you give it!"""
     permissions.checkPermissions(irc, source, ['bots.spawnclient'])
     try:
@@ -25,7 +25,7 @@ def spawnclient(irc, source, args):
 def quit(irc, source, args):
     """<target> [<reason>]
 
-    Admin-only. Quits the PyLink client with nick <target>, if one exists."""
+    Quits the PyLink client with nick <target>, if one exists."""
     permissions.checkPermissions(irc, source, ['bots.quit'])
 
     try:
@@ -53,7 +53,7 @@ def quit(irc, source, args):
 def joinclient(irc, source, args):
     """[<target>] <channel1>[,<channel2>,<channel3>,...]
 
-    Admin-only. Joins <target>, the nick of a PyLink client, to a comma-separated list of channels.
+    Joins <target>, the nick of a PyLink client, to a comma-separated list of channels.
     If <target> is not given, it defaults to the main PyLink client.
 
     For the channel arguments, prefixes can also be specified to join the given client with
@@ -115,7 +115,7 @@ utils.add_cmd(joinclient, name='join')
 def nick(irc, source, args):
     """[<target>] <newnick>
 
-    Admin-only. Changes the nick of <target>, a PyLink client, to <newnick>. If <target> is not given, it defaults to the main PyLink client."""
+    Changes the nick of <target>, a PyLink client, to <newnick>. If <target> is not given, it defaults to the main PyLink client."""
 
     permissions.checkPermissions(irc, source, ['bots.nick'])
 
@@ -151,7 +151,7 @@ def nick(irc, source, args):
 def part(irc, source, args):
     """[<target>] <channel1>,[<channel2>],... [<reason>]
 
-    Admin-only. Parts <target>, the nick of a PyLink client, from a comma-separated list of channels. If <target> is not given, it defaults to the main PyLink client."""
+    Parts <target>, the nick of a PyLink client, from a comma-separated list of channels. If <target> is not given, it defaults to the main PyLink client."""
     permissions.checkPermissions(irc, source, ['bots.part'])
 
     try:
@@ -197,7 +197,7 @@ def part(irc, source, args):
 def msg(irc, source, args):
     """[<source>] <target> <text>
 
-    Admin-only. Sends message <text> from <source>, where <source> is the nick of a PyLink client. If <source> is not given, it defaults to the main PyLink client."""
+    Sends message <text> from <source>, where <source> is the nick of a PyLink client. If <source> is not given, it defaults to the main PyLink client."""
     permissions.checkPermissions(irc, source, ['bots.msg'])
 
     # Because we want the source nick to be optional, this argument parsing gets a bit tricky.
