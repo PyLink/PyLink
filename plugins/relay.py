@@ -100,7 +100,10 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
 
     # Figure out whether we tag nicks or not.
     if times_tagged == 0:
-        if conf.conf.get('relay', {}).get('tag_nicks', True):
+        # Check the following options in order, before falling back to True:
+        #  1) servers::<netname>::relay_tag_nicks
+        #  2) relay::tag_nicks
+        if irc.serverdata.get('relay_tag_nicks', conf.conf.get('relay', {}).get('tag_nicks', True)):
             times_tagged = 1
         else:
             forcetag_nicks = conf.conf.get('relay', {}).get('forcetag_nicks', [])
