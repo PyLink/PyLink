@@ -49,7 +49,7 @@ def checkban(irc, source, args):
         if args.channel:
             args.banmask = "$and:(%s+$channel:%s)" % (args.banmask, args.channel)
 
-        irc.msg(source, "Checking for hosts that match \x02%s\x02:" % args.banmask, notice=True)
+        irc.reply("Checking for hosts that match \x02%s\x02:" % args.banmask, private=True)
         for uid, userobj in irc.users.copy().items():
             if irc.match_host(args.banmask, uid):
                 if results < args.maxresults:
@@ -61,10 +61,10 @@ def checkban(irc, source, args):
                 results += 1
         else:
             if results:
-                irc.msg(source, "\x02%s\x02 out of \x02%s\x02 results shown." %
-                        (min([results, args.maxresults]), results), notice=True)
+                irc.reply("\x02%s\x02 out of \x02%s\x02 results shown." %
+                          (min([results, args.maxresults]), results), private=True)
             else:
-                irc.msg(source, "No results found.", notice=True)
+                irc.reply("No results found.", private=True)
     else:
         # Target can be both a nick (of an online user) or a hostmask. irc.match_host() handles this
         # automatically.
