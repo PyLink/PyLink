@@ -689,7 +689,6 @@ relay:
     # resets the cache.
     #age: 10
 
-
 automode:
     # The following options in this block are common to all plugins that spawn service bots (games,
     # automode, etc.):
@@ -726,7 +725,7 @@ automode:
 games:
     # Sets the nick of the Games service, if you're using it. This defaults to "games" if not defined.
     nick: Games
-    
+
     # Ident, host, and realname can also be specified here, but they may be overriden per-network.
     #ident: games
     #host: play.games
@@ -740,7 +739,7 @@ stats:
     # Defaults to "%a, %d %b %Y %H:%M:%S +0000" (the RFC 2812 standard) if not specified.
     time_format: "%c"
 
-global:
+#global:
     # Sets the text format for the global plugin, if it is loaded. This uses a template string as
     # documented at https://docs.python.org/3/library/string.html#template-strings, with the
     # following substitutions:
