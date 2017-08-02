@@ -676,7 +676,6 @@ relay:
     # resets the cache.
     #age: 10
 
-
 automode:
     # The following options in this block are common to all plugins that spawn service bots (games,
     # automode, etc.):
@@ -722,7 +721,7 @@ stats:
     # Defaults to "%a, %d %b %Y %H:%M:%S +0000" (the RFC 2812 standard) if not specified.
     time_format: "%c"
 
-global:
+#global:
     # Sets the text format for the global plugin, if it is loaded. This uses a template string as
     # documented at https://docs.python.org/3/library/string.html#template-strings, with the
     # following substitutions:
