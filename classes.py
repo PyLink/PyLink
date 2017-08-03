@@ -390,6 +390,9 @@ class Irc(utils.DeprecatedAttributesObject):
         log.debug('(%s) disconnect: Clearing self.connected state.', self.name)
         self.connected.clear()
 
+        log.debug('(%s) disconnect: Setting self.aborted to True.', self.name)
+        self.aborted.set()
+
         log.debug('(%s) Removing channel logging handlers due to disconnect.', self.name)
         while self.loghandlers:
             log.removeHandler(self.loghandlers.pop())
@@ -411,9 +414,6 @@ class Irc(utils.DeprecatedAttributesObject):
         if self.pingTimer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
             self.pingTimer.cancel()
-
-        log.debug('(%s) disconnect: Setting self.aborted to True.', self.name)
-        self.aborted.set()
 
         # Internal hook signifying that a network has disconnected.
         self.callHooks([None, 'PYLINK_DISCONNECT', {'was_successful': was_successful}])
