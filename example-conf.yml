@@ -17,11 +17,12 @@ pylink:
 
     # Sets the fantasy command prefix for the main PyLink bot. To configure fantasy prefixes for
     # other service bots, add or modify the "prefix:" option in the configuration section of each
-    # plugin.
+    # plugin. (see the "games:" block for an example)
     # Note: prior to PyLink 1.2, defining a prefix here made it global for all service bots. This
     # was removed because it called all bots in a channel at once (even if they have conflicting
-    # commands), which usually led to one successful reply and a string of "Command not found"
+    # commands), which usually leads to one successful reply and a string of "Command not found"
     # errors.
+    # Note 2: this option REPLACES the deprecated "prefixes:" option from PyLink 1.1 and earlier.
     prefix: "&"
 
     # Determines whether PyLink service bots will respond to commands prefixed with their nick
@@ -29,31 +30,11 @@ pylink:
     # it was renamed for consistency. This defaults to false.
     #respond_to_nick: true
 
-    # Custom prefixes for other service bots if they are loaded. Note: this is DEPRECATED
-    # since PyLink 1.2 in favour of adding prefixes into each plugin's configuration block
-    # itself (see the "prefix:" option in the "games:" block for an example).
-    #prefixes:
-    #    games: "@"
-
-    # Determines whether hideoper modes should be respected in WHOIS replies.
-    # Defaults to true if not specified.
-    whois_use_hideoper: true
-
-    # Determines whether extended WHOIS replies should be sent to users marked as a
-    # bot (usually with umode +B). For better security (i.e. with bots that track services
-    # accounts for authentication), it is recommended to leave this off.
-    whois_show_extensions_to_bots: false
-
     # Determines whether PyLink service clients should protect themselves from
     # kicks, kills, etc. using IRCd-side servprotect modes. For this to work
     # properly, this usually requires that PyLink be U-Lined. This defaults to
     # False.
-    protect_services: false
-
-    # Determines how long plugins should wait (in seconds) before flushing their
-    # databases to disk. Defaults to 300 seconds. Changes here require a reload
-    # of all database-enabled plugins to take effect.
-    save_delay: 300
+    #protect_services: false
 
     # Determines whether services should default to sending command responses as private notices,
     # even if the command was called in a channel. This defaults to False.
@@ -71,6 +52,24 @@ pylink:
 
     # Determines whether we should show unknown command errors for service bots. Defaults to True.
     #show_unknown_commands: true
+
+    # Determines whether hideoper modes should be respected in WHOIS replies.
+    # Defaults to true if not specified.
+    #whois_use_hideoper: true
+
+    # Determines whether extended WHOIS replies should be sent to users marked as a
+    # bot (usually with umode +B). For better security (i.e. with bots that track services
+    # accounts for authentication), it is recommended to leave this off.
+    #whois_show_extensions_to_bots: false
+
+    # Determines whether PyLink should return its time of initial connection when replying to WHOIS
+    # for service bots. This defaults to true if not set.
+    #whois_show_startup_time: true
+
+    # Determines how long plugins should wait (in seconds) before flushing their
+    # databases to disk. Defaults to 300 seconds. Changes here require a reload
+    # of all database-enabled plugins to take effect.
+    #save_delay: 300
 
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
@@ -146,8 +145,8 @@ servers:
         # Comment out or remove these keys if you don't want service bots# to join any channels by
         # default.
         channels: ["#pylink"]
-        pylink_channels: ["#services"]
-        automode_channels: ["#chat"]
+        #pylink_channels: ["#services"]
+        #automode_channels: ["#chat"]
 
         # Sets the protocol module to use for this network - see the README for a
         # list of supported IRCds.
@@ -167,7 +166,7 @@ servers:
         # Sets the ping frequency in seconds (i.e. how long we should wait between
         # sending pings to our uplink). When more than two consecutive pings are missed,
         # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
-        pingfreq: 90
+        #pingfreq: 90
 
         # If enabled, this opts this network out of relay IP sharing: this network
         # will not have its users' IPs sent across the relay, and it will not see any
@@ -263,7 +262,6 @@ servers:
         sid: "2PY"
         netname: "This should match your UnrealIRCd config"
         sidrange: "8##"
-        channels: []
         protocol: "unreal"
         autoconnect: 5
 
@@ -312,7 +310,7 @@ servers:
 
         # With this key set to 'generic', neither of these host changing features are enabled
         # and a baseline RFC1459 mode set is used. This configuration is not officially supported.
-        #p10_ircd: nefarious
+        p10_ircd: nefarious
 
         # Determines whether account-based cloaks should be used (someone.users.yournet.org
         # format). This should match your IRCd configuration:
@@ -358,7 +356,7 @@ servers:
 
         # Once again, you can override the nick and ident of service bots on specific networks using
         # the "servicename_nick" and "servicename_ident" options.
-        pylink_nick: pybot
+        #pylink_nick: pybot
         #pylink_ident: pybot
 
         # SSL options. Certfile and keyfile are optional, but can be used for CertFP/SASL external
@@ -399,7 +397,8 @@ servers:
         # Determines whether oper statuses should be tracked on this Clientbot network. This
         # defaults to False for the best security, since oper status may allow more access to the
         # entire PyLink service than what's desired, even when PyLink is only connected as a bot.
-        track_oper_statuses: false
+        # This defaults to false if not specified.
+        #track_oper_statuses: false
 
         # Determines whether messages from unknown clients (servers, clients not sharing in a -n
         # channel, etc.) should be forwarded via the PyLink server. If this is disabled, these
@@ -416,14 +415,8 @@ plugins:
     # Networks plugin: Allows you to manage connections to networks while PyLink is running.
     - networks
 
-    # Ctcp plugin: handles basic CTCP replies (VERSION, etc).
+    # Ctcp plugin: handles basic CTCP replies (VERSION, etc) towards service bots.
     - ctcp
-
-    # Oper commands plugin: Provides a handful of network management commands. (KILL, JUPE, etc.)
-    #- opercmds
-
-    # Bots plugin: Allows you to manipulate PyLink service bots on networks.
-    #- bots
 
     # Relay plugin: Transparent server-side relay between channels (like Janus). See
     # the relay: block below for configuration.
@@ -438,18 +431,18 @@ plugins:
     # with the PyLink service's nick or configurable prefix characters.
     #- fantasy
 
-    # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on
-    # matching users as they connect. This requires the changehost: block to be
-    # configured correctly below.
-    #- changehost
+    # Oper commands plugin: Provides a handful of network management commands. (KILL, JUPE, etc.)
+    #- opercmds
 
     # Automode plugin: allows assigning channel access to specific hostmasks or
     # exttargets. See https://github.com/GLolol/PyLink/blob/master/docs/automode.md
     # for a usage guide.
     #- automode
 
-    # Servermaps plugin: displays network /map's from the PyLink server's perspective.
-    #- servermaps
+    # Changehost plugin: Automatically changes the hostmask (i.e. sets vHosts) on
+    # matching users as they connect. This requires the changehost: block to be
+    # configured correctly below.
+    #- changehost
 
     # Servprotect plugin: disconnects from networks if too many kills or nick collisions to
     # PyLink clients are received.
@@ -458,6 +451,12 @@ plugins:
     # Global plugin: Janus-style global plugin; announces messages to all channels the PyLink
     # client is in.
     #- global
+
+    # Bots plugin: Allows you to manipulate PyLink service bots on networks.
+    #- bots
+
+    # Servermaps plugin: displays network /map's from the PyLink server's perspective.
+    #- servermaps
 
 logging:
     # This configuration block defines targets that PyLink should log commands,
