@@ -152,6 +152,9 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
                        'oper': 'o',
                        '*A': '', '*B': '', '*C': '', '*D': 'iosw'}
 
+        # Acting extbans such as +b m:n!u@h on InspIRCd
+        self.extbans_acting = {}
+
         # This max nick length starts off as the config value, but may be
         # overwritten later by the protocol module if such information is
         # received. It defaults to 30.

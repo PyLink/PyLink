@@ -410,6 +410,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send_with_prefix(self.sid, 'VERSION :%s' % self.version())
         self._send_with_prefix(self.sid, 'ENDBURST')
 
+        # Extban definitions
+        self.extbans_acting = {'quiet': 'm:'}
+
     def handle_capab(self, source, command, args):
         """
         Handles the CAPAB command, used for capability negotiation with our
