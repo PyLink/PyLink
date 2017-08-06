@@ -773,15 +773,12 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
         # Iterate over every mode see whether the remote IRCd supports
         # this mode, and what its mode char for it is (if it is different).
         for name, m in irc.cmodes.items():
-            supported_char = None
             if name.startswith('*'):
                 # XXX: Okay, we need a better place to store modetypes.
                 continue
 
             if modechar == m:
-
                 supported_char = remoteirc.cmodes.get(name)
-
                 if supported_char is None:
                     break
 
@@ -827,9 +824,6 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                                   irc.name, name, arg, remoteirc.name)
                         break
 
-                supported_char = remoteirc.cmodes.get(name)
-
-            if supported_char:
                 final_modepair = (prefix+supported_char, arg)
                 if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
                     # Don't add bans that don't match n!u@h syntax!
@@ -845,6 +839,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                     break
 
                 supported_modes.append(final_modepair)
+                break
 
     log.debug('(%s) relay.get_supported_cmodes: final modelist (sending to %s%s) is %s', irc.name, remoteirc.name, remotechan, supported_modes)
     return supported_modes
