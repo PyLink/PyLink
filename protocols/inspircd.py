@@ -411,7 +411,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send_with_prefix(self.sid, 'ENDBURST')
 
         # Extban definitions
-        self.extbans_acting = {'quiet': 'm:'}
+        self.extbans_acting = {'quiet': 'm:', 'ban_nonick': 'n:'}
 
     def handle_capab(self, source, command, args):
         """

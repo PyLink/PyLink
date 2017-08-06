@@ -375,7 +375,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self._send_with_prefix(self.sid, 'EOS')
 
         # Extban definitions
-        self.extbans_acting = {'quiet': '~q:'}
+        self.extbans_acting = {'quiet': '~q:', 'ban_nonick': '~n:'}
 
     def handle_eos(self, numeric, command, args):
         """EOS is used to denote end of burst."""
