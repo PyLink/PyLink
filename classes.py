@@ -68,7 +68,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.encoding = None
 
         self.connected = threading.Event()
-        self.aborted = threading.Event()
+        self._aborted = threading.Event()
         self._reply_lock = threading.RLock()
 
         # Sets the multiplier for autoconnect delay (grows with time).
@@ -304,7 +304,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         return self.serverdata.get('netname', self.name)
 
     def _pre_connect(self):
-        self.aborted.clear()
+        self._aborted.clear()
         self._init_vars()
 
         try:
@@ -333,11 +333,11 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             autoconnect = min(autoconnect, autoconnect_max)
 
             log.info('(%s) _run_autoconnect: Going to auto-reconnect in %s seconds.', self.name, autoconnect)
-            # Continue when either self.aborted is set or the autoconnect time passes.
+            # Continue when either self._aborted is set or the autoconnect time passes.
             # Compared to time.sleep(), this allows us to stop connections quicker if we
             # break while while for autoconnect.
-            self.aborted.clear()
-            self.aborted.wait(autoconnect)
+            self._aborted.clear()
+            self._aborted.wait(autoconnect)
 
             # Store in the local state what the autoconnect multiplier currently is.
             self.autoconnect_active_multiplier *= autoconnect_multiplier
@@ -352,7 +352,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             return
 
     def _pre_disconnect(self):
-        self.aborted.set()
+        self._aborted.set()
         self.was_successful = self.connected.is_set()
         log.debug('(%s) _pre_disconnect: got %s for was_successful state', self.name, self.was_successful)
 
@@ -1128,7 +1128,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def _log_connection_error(self, *args, **kwargs):
         # Log connection errors to ERROR unless were shutting down (in which case,
         # the given text goes to DEBUG).
-        if self.aborted.is_set() or control.tried_shutdown:
+        if self._aborted.is_set() or control.tried_shutdown:
             log.debug(*args, **kwargs)
         else:
             log.error(*args, **kwargs)
@@ -1342,14 +1342,14 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """Main IRC loop which listens for messages."""
         buf = b""
         data = b""
-        while not self.aborted.is_set():
+        while not self._aborted.is_set():
 
             try:
                 data = self._socket.recv(2048)
             except OSError:
                 # Suppress socket read warnings from lingering recv() calls if
                 # we've been told to shutdown.
-                if self.aborted.is_set():
+                if self._aborted.is_set():
                     return
                 raise
 
@@ -1386,8 +1386,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
-        if self.aborted.is_set():
-            log.debug('(%s) refusing to queue data %r as self.aborted is set', self.name, data)
+        if self._aborted.is_set():
+            log.debug('(%s) refusing to queue data %r as self._aborted is set', self.name, data)
             return
         if queue:
             # XXX: we don't really know how to handle blocking queues yet, so
@@ -1400,7 +1400,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """Loop to process outgoing queue data."""
         while True:
             throttle_time = self.serverdata.get('throttle_time', 0.005)
-            if not self.aborted.wait(throttle_time):
+            if not self._aborted.wait(throttle_time):
                 data = self._queue.get()
                 if data is None:
                     log.debug('(%s) Stopping queue thread due to getting None as item', self.name)

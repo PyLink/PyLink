@@ -361,7 +361,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         def endburstf():
             # Delay ENDBURST by X seconds if requested.
-            if self.aborted.wait(endburst_delay):
+            if self._aborted.wait(endburst_delay):
                 # We managed to catch the abort flag before sending ENDBURST, so break
                 log.debug('(%s) stopping endburstf() for %s as aborted was set', self.name, sid)
                 return
