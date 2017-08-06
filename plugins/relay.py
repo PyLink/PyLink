@@ -779,6 +779,18 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                 continue
 
             if modechar == m:
+                if name not in whitelist:
+                    log.debug("(%s) relay.get_supported_cmodes: skipping mode (%r, %r) because "
+                              "it isn't a whitelisted (safe) mode for relay.",
+                              irc.name, modechar, arg)
+                    break
+
+                elif name in ('ban', 'banexception', 'invex', 'quiet') and not utils.isHostmask(arg):
+                    # Don't add bans that don't match n!u@h syntax!
+                    log.debug("(%s) relay.get_supported_cmodes: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
+                              irc.name, modechar, arg)
+                    break
+
                 supported_char = remoteirc.cmodes.get(name)
 
                 # The mode we requested is an extban.
@@ -791,12 +803,6 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                               irc.name, prefix, modechar, old_arg, prefix, supported_char, arg, remoteirc.name)
                 elif supported_char is None:
                     continue
-
-                if name not in whitelist:
-                    log.debug("(%s) relay.get_supported_cmodes: skipping mode (%r, %r) because "
-                              "it isn't a whitelisted (safe) mode for relay.",
-                              irc.name, modechar, arg)
-                    break
 
                 if modechar in irc.prefixmodes:
                     # This is a prefix mode (e.g. +o). We must coerse the argument
@@ -836,7 +842,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
 
                 # Expand extbans known on the local IRCd to modes on the remote, if any exist.
                 for extban_name, extban_prefix in irc.extbans_acting.items():
-                    log.debug('(%s) relay.get_supported_cmodes: checking for extban that needs expansion'
+                    log.debug('(%s) relay.get_supported_cmodes: checking for extban that needs expansion: '
                               'name=%s, extban_name=%s, arg=%s, extban_prefix=%s', irc.name, name, extban_name, arg,
                               extban_prefix)
                     if name == 'ban' and arg.startswith(extban_prefix):
@@ -863,11 +869,6 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                 if mode_parse_aborted:
                     break
                 final_modepair = (prefix+supported_char, arg)
-                if name in ('ban', 'banexception', 'invex', 'quiet') and not utils.isHostmask(arg):
-                    # Don't add bans that don't match n!u@h syntax!
-                    log.debug("(%s) relay.get_supported_cmodes: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
-                              irc.name, modechar, arg)
-                    break
 
                 # Don't set modes that are already set, to prevent floods on TS6
                 # where the same mode can be set infinite times.
