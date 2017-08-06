@@ -1405,6 +1405,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 if data is None:
                     log.debug('(%s) Stopping queue thread due to getting None as item', self.name)
                     break
+                elif self not in world.networkobjects.values():
+                    log.debug('(%s) Stopping stale queue thread; no longer matches world.networkobjects', self.name)
+                    break
                 elif data:
                     self._send(data)
             else:
