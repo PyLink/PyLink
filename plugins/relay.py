@@ -728,7 +728,7 @@ whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
                       'blockcolor', 'halfop', 'invex', 'inviteonly', 'key',
                       'limit', 'moderated', 'noctcp', 'noextmsg', 'nokick',
                       'noknock', 'nonick', 'nonotice', 'op', 'operonly',
-                      'opmoderated', 'owner', 'private', 'regonly',
+                      'opmoderated', 'owner', 'private', 'quiet', 'regonly',
                       'regmoderated', 'secret', 'sslonly', 'adminonly',
                       'stripcolor', 'topiclock', 'voice', 'flood',
                       'flood_unreal', 'joinflood', 'freetarget',
@@ -773,14 +773,24 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
         # Iterate over every mode see whether the remote IRCd supports
         # this mode, and what its mode char for it is (if it is different).
         for name, m in irc.cmodes.items():
+            mode_parse_aborted = False
             if name.startswith('*'):
                 # XXX: Okay, we need a better place to store modetypes.
                 continue
 
             if modechar == m:
                 supported_char = remoteirc.cmodes.get(name)
-                if supported_char is None:
-                    break
+
+                # The mode we requested is an extban.
+                if name in remoteirc.extbans_acting:
+                    # We make the assumption that acting extbans can only be used with +b...
+                    old_arg = arg
+                    supported_char = remoteirc.cmodes['ban']
+                    arg = remoteirc.extbans_acting[name] + arg  # Add the extban prefix
+                    log.debug('(%s) relay.get_supported_cmodes: folding mode %s%s %s to %s%s %s for %s',
+                              irc.name, prefix, modechar, old_arg, prefix, supported_char, arg, remoteirc.name)
+                elif supported_char is None:
+                    continue
 
                 if name not in whitelist:
                     log.debug("(%s) relay.get_supported_cmodes: skipping mode (%r, %r) because "
@@ -824,8 +834,36 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                                   irc.name, name, arg, remoteirc.name)
                         break
 
+                # Expand extbans known on the local IRCd to modes on the remote, if any exist.
+                for extban_name, extban_prefix in irc.extbans_acting.items():
+                    log.debug('(%s) relay.get_supported_cmodes: checking for extban that needs expansion'
+                              'name=%s, extban_name=%s, arg=%s, extban_prefix=%s', irc.name, name, extban_name, arg,
+                              extban_prefix)
+                    if name == 'ban' and arg.startswith(extban_prefix):
+                        orig_supported_char, old_arg = supported_char, arg
+
+                        if extban_name in remoteirc.cmodes:
+                            # This extban is a mode on the target network.
+                            supported_char = remoteirc.cmodes[extban_name]
+                            arg = arg[len(extban_prefix):]  # Strip off the extban prefix
+                        elif extban_name in remoteirc.extbans_acting:
+                            # It is also an extban on the target network.
+                            arg = remoteirc.extbans_acting[extban_name] + arg[len(extban_prefix):]
+                        else:
+                            log.debug('(%s) relay.get_supported_cmodes: blocking extban %s%s %s expansion as target %s doesn\'t support it',
+                                      irc.name, prefix, supported_char, arg, remoteirc.name)
+                            mode_parse_aborted = True  # XXX: nested loops are ugly...
+
+                        if not mode_parse_aborted:
+                            log.debug('(%s) relay.get_supported_cmodes: expanding extban %s%s %s to %s%s %s for %s',
+                                      irc.name, prefix, orig_supported_char, old_arg, prefix,
+                                      supported_char, arg, remoteirc.name)
+                        break
+
+                if mode_parse_aborted:
+                    break
                 final_modepair = (prefix+supported_char, arg)
-                if name in ('ban', 'banexception', 'invex') and not utils.isHostmask(arg):
+                if name in ('ban', 'banexception', 'invex', 'quiet') and not utils.isHostmask(arg):
                     # Don't add bans that don't match n!u@h syntax!
                     log.debug("(%s) relay.get_supported_cmodes: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
                               irc.name, modechar, arg)
