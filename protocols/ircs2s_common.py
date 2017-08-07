@@ -609,7 +609,11 @@ class IRCS2SProtocol(IRCCommonProtocol):
         """Handles incoming PART commands."""
         channels = self.to_lower(args[0]).split(',')
 
-        for channel in channels:
+        for channel in channels.copy():
+            if source not in channel:
+                # Ignore channels the user isn't on, and remove them from any hook payloads.
+                channels.remove(channel)
+
             self.channels[channel].remove_user(source)
             try:
                 self.users[source].channels.discard(channel)
@@ -625,7 +629,8 @@ class IRCS2SProtocol(IRCCommonProtocol):
             if not (self.channels[channel].users or ((self.cmodes.get('permanent'), None) in self.channels[channel].modes)):
                 del self.channels[channel]
 
-        return {'channels': channels, 'text': reason}
+        if channels:
+            return {'channels': channels, 'text': reason}
 
     def handle_privmsg(self, source, command, args):
         """Handles incoming PRIVMSG/NOTICE."""
