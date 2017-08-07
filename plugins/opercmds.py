@@ -205,6 +205,8 @@ def masskill(irc, source, args, use_regex=False):
     results = killed = 0
 
     userlist_func = irc.match_all_re if use_regex else irc.match_all
+
+    seen_users = set()
     for uid in userlist_func(args.banmask):
 
         userobj = irc.users[uid]
@@ -228,7 +230,9 @@ def masskill(irc, source, args, use_regex=False):
                     except:
                         log.exception('(%s) Failed to send process massban hook; some kickbans may have not '
                                       'been sent to plugins / relay networks!', irc.name)
-                    killed += 1
+
+                    if uid not in seen_users:  # Don't count users multiple times on different channels
+                        killed += 1
                 else:
                     irc.reply("Not kicking \x02%s\x02 from \x02%s\x02 because you don't have CLAIM access. If this is "
                               "another network's channel, ask someone to op you or use the --force-kb option." % (userobj.nick, channel))
@@ -248,6 +252,7 @@ def masskill(irc, source, args, use_regex=False):
                                   'been sent to plugins / relay networks!', irc.name)
             killed += 1
         results += 1
+        seen_users.add(uid)
     else:
         irc.reply('Masskilled %s/%s users.' % (killed, results))
 utils.add_cmd(masskill, aliases=('mkill',))
