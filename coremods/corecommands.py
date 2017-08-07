@@ -15,6 +15,15 @@ from pylinkirc.log import log
 
 def _login(irc, source, username):
     """Internal function to process logins."""
+
+    logindata = conf.conf['login'].get('accounts', {}).get(username, {})
+    network_filter = logindata.get('networks')
+
+    if network_filter and irc.name not in network_filter:
+        irc.error("You are not authorized to log in to %r on this network." % username)
+        log.warning("(%s) Failed login to %r from %s (wrong network: networks filter says %r but we got %r)", irc.name, username, irc.get_hostmask(source), ', '.join(network_filter), irc.name)
+        return
+
     irc.users[source].account = username
     irc.reply('Successfully logged in as %s.' % username)
     log.info("(%s) Successful login to %r by %s",
