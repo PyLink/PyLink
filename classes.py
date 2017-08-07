@@ -19,6 +19,7 @@ import queue
 import functools
 import collections
 import string
+import re
 
 try:
     import ircmatch
@@ -1073,6 +1074,16 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         for uid, userobj in self.users.copy().items():
             if self.match_host(banmask, uid) and uid in self.users:
+                yield uid
+
+    def match_all_re(self, re_mask, channel=None):
+        """
+        Returns all users whose "nick!user@host [gecos]" mask matches the given regular expression. Users can also be filtered by channel.
+        """
+        regexp = re.compile(re_mask)
+        for uid, userobj in self.users.copy().items():
+            target = '%s [%s]' % (self.get_hostmask(uid), userobj.realname)
+            if regexp.fullmatch(target) and ((not channel) or channel in userobj.channels):
                 yield uid
 
     def make_channel_ban(self, uid, ban_type='ban'):

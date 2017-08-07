@@ -22,8 +22,7 @@ checkban_parser.add_argument('target', nargs='?', default='')
 checkban_parser.add_argument('--channel', default='')
 checkban_parser.add_argument('--maxresults', type=_checkban_positiveint, default=50)
 
-@utils.add_cmd
-def checkban(irc, source, args):
+def checkban(irc, source, args, use_regex=False):
     """<banmask> [<target nick or hostmask>] [--channel #channel] [--maxresults <num>]
 
     CHECKBAN provides a ban checker command based on nick!user@host masks, user@host masks, and
@@ -43,8 +42,9 @@ def checkban(irc, source, args):
         # No hostmask was given, return a list of matched users.
         results = 0
 
+        userlist_func = irc.match_all_re if use_regex else irc.match_all
         irc.reply("Checking for hosts that match \x02%s\x02:" % args.banmask, private=True)
-        for uid in irc.match_all(args.banmask, channel=args.channel):
+        for uid in userlist_func(args.banmask, channel=args.channel):
             if results < args.maxresults:
                 userobj = irc.users[uid]
                 s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
@@ -66,6 +66,25 @@ def checkban(irc, source, args):
             irc.reply('Yes, \x02%s\x02 matches \x02%s\x02.' % (args.target, args.banmask))
         else:
             irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (args.target, args.banmask))
+utils.add_cmd(checkban, aliases=('cban',))
+
+def checkbanre(irc, source, args):
+    """<regular expression> [<target nick or hostmask>] [--channel #channel] [--maxresults <num>]
+
+    CHECKBANRE provides a ban checker command based on regular expressions matched against
+    users' "nick!user@host [gecos]" mask.
+
+    If a target nick or hostmask is given, this command returns whether the given banmask will match it.
+    Otherwise, it will display a list of connected users matching the banmask.
+
+    If the --channel argument is given without a target mask, the returned results will only
+    include users in the given channel.
+
+    The --maxresults option configures how many responses will be shown."""
+    permissions.check_permissions(irc, source, ['opercmds.checkban.re'])
+    return checkban(irc, source, args, use_regex=True)
+
+utils.add_cmd(checkbanre, aliases=('crban',))
 
 massban_parser = utils.IRCParser()
 massban_parser.add_argument('channel')
@@ -74,7 +93,7 @@ massban_parser.add_argument('banmask')
 massban_parser.add_argument('reason', nargs='*', default="Banned")
 massban_parser.add_argument('--quiet', '-q', action='store_true')
 
-def massban(irc, source, args):
+def massban(irc, source, args, use_regex=False):
     """<channel> <banmask / exttarget> [<kick reason>] [--quiet/-q]
 
     Applies (i.e. kicks affected users) the given PyLink banmask on the specified channel.
@@ -91,7 +110,8 @@ def massban(irc, source, args):
 
     results = 0
 
-    for uid in irc.match_all(args.banmask, channel=args.channel):
+    userlist_func = irc.match_all_re if use_regex else irc.match_all
+    for uid in userlist_func(args.banmask, channel=args.channel):
         # Remove the target's access before banning them.
         bans = [('-%s' % irc.cmodes[prefix], uid) for prefix in irc.channels[args.channel].get_prefix_modes(uid) if prefix in irc.cmodes]
 
@@ -122,6 +142,24 @@ def massban(irc, source, args):
     else:
         irc.reply('Banned %s users on %r.' % (results, args.channel))
 utils.add_cmd(massban, aliases=('mban',))
+
+def massbanre(irc, source, args):
+    """<channel> <regular expression> [<kick reason>] [--quiet/-q]
+
+    Bans users on the specified channel whose "nick!user@host [gecos]" mask matches the given Python-style regular expression.
+    (https://docs.python.org/3/library/re.html#regular-expression-syntax describes supported syntax)
+
+    The --quiet option can also be given to mass-mute the given user on networks where this is supported
+    (currently ts6, unreal, and inspircd). No kicks will be sent in this case.
+
+    \x02Be careful when using this command, as it is easy to make mistakes with regex. Use 'checkbanre'
+    to check your bans first!\x02
+
+    """
+    permissions.check_permissions(irc, source, ['opercmds.massban.re'])
+    return massban(irc, source, args, use_regex=True)
+
+utils.add_cmd(massbanre, aliases=('rban',))
 
 @utils.add_cmd
 def jupe(irc, source, args):
