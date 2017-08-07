@@ -3,7 +3,7 @@ opercmds.py: Provides a subset of network management commands.
 """
 import argparse
 
-from pylinkirc import utils
+from pylinkirc import utils, world
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
@@ -160,6 +160,74 @@ def massbanre(irc, source, args):
     return massban(irc, source, args, use_regex=True)
 
 utils.add_cmd(massbanre, aliases=('rban',))
+
+masskill_parser = utils.IRCParser()
+masskill_parser.add_argument('banmask')
+# Regarding default ban reason: it's a good idea not to leave in the caller to prevent retaliation...
+masskill_parser.add_argument('reason', nargs='*', default="User banned")
+masskill_parser.add_argument('--akill', '-ak', action='store_true')
+masskill_parser.add_argument('--force-kb', '-f', action='store_true')
+
+def masskill(irc, source, args, use_regex=False):
+    """<banmask / exttarget> [<kill/ban reason>] [--akill/ak] [--force-kb]
+
+    Kills all users matching the given PyLink banmask.
+
+    The --akill option can also be given to convert kills to akills, which expire after 7 days.
+
+    For relay users, attempts to kill are forwarded as a kickban to every channel where the calling user
+    meets claim requirements (i.e. this is true if you are opped, if your network is in claim list, etc.;
+    see "help CLAIM" for more specific rules). This can also be extended to all shared channels
+    the user is in using the --force-kb option; and we hope this feature is used for good :)"""
+    permissions.check_permissions(irc, source, ['opercmds.masskill'])
+
+    args = masskill_parser.parse_args(args)
+
+    results = 0
+
+    userlist_func = irc.match_all_re if use_regex else irc.match_all
+    for uid in userlist_func(args.banmask):
+
+        userobj = irc.users[uid]
+
+        relay = world.plugins.get('relay')
+        if relay and hasattr(userobj, 'remote'):
+            # For relay users, forward kill attempts as kickban because we don't want networks k-lining each others' users.
+            bans = [irc.make_channel_ban(uid)]
+            for channel in userobj.channels.copy():  # Look in which channels the user appears to be in locally
+
+                if (args.force_kb or relay.check_claim(irc, channel, source)):
+                    irc.mode(irc.pseudoclient.uid, channel, bans)
+                    irc.kick(irc.pseudoclient.uid, channel, uid, args.reason)
+
+                    # XXX: code duplication with massban.
+                    try:
+                        irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKILL_BAN',
+                                        {'target': channel, 'modes': bans, 'parse_as': 'MODE'}])
+                        irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKILL_KICK',
+                                        {'channel': channel, 'target': uid, 'text': args.reason, 'parse_as': 'KICK'}])
+                    except:
+                        log.exception('(%s) Failed to send process massban hook; some kickbans may have not '
+                                      'been sent to plugins / relay networks!', irc.name)
+        else:
+            if args.akill:  # TODO: configurable length via strings such as "2w3d5h6m3s" - though month and minute clash this way?
+                if not (userobj.realhost or userobj.ip):
+                    irc.reply("Skipping akill on %s because PyLink doesn't know the real host." % irc.get_hostmask(uid))
+                    continue
+                irc.set_server_ban(irc.pseudoclient.uid, 604800, host=userobj.realhost or userobj.ip or userobj.host, reason=args.reason)
+            else:
+                irc.kill(irc.pseudoclient.uid, uid, args.reason)
+                try:
+                    irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKILL',
+                                    {'target': uid, 'parse_as': 'KILL', 'userdata': userobj, 'text': args.reason}])
+                except:
+                    log.exception('(%s) Failed to send process massban hook; some kickbans may have not '
+                                  'been sent to plugins / relay networks!', irc.name)
+
+        results += 1
+    else:
+        irc.reply('Masskilled %s users.' % results)
+utils.add_cmd(masskill, aliases=('mkill',))
 
 @utils.add_cmd
 def jupe(irc, source, args):
