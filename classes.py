@@ -18,6 +18,7 @@ import ipaddress
 import queue
 import functools
 import collections
+import string
 
 try:
     import ircmatch
@@ -1073,6 +1074,31 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         for uid, userobj in self.users.copy().items():
             if self.match_host(banmask, uid) and uid in self.users:
                 yield uid
+
+    def make_channel_ban(self, uid, ban_type='ban'):
+        """Creates a hostmask-based ban for the given user.
+
+        Ban exceptions, invite exceptions quiets, and extbans are also supported by setting ban_type
+        to the appropriate PyLink named mode (e.g. "ban", "banexception", "invex", "quiet", "ban_nonick")."""
+        assert uid in self.users, "Unknown user %s" % uid
+
+        # FIXME: verify that this is a valid mask.
+        # XXX: support slicing hosts so things like *!ident@*.isp.net are possible. This is actually
+        #      more annoying to do than it appears because of vHosts using /, IPv6 addresses
+        #      (cloaked and uncloaked), etc.
+        ban_style = self.serverdata.get('ban_style') or conf.conf['pylink'].get('ban_style') or \
+            '*!*@$host'
+
+        template = string.Template(ban_style)
+        banhost = template.safe_substitute(ban_style, **self.users[uid].__dict__)
+        assert utils.isHostmask(banhost), "Ban mask %r is not a valid hostmask!" % banhost
+
+        if ban_type in self.cmodes:
+            return ('+%s' % self.cmodes[ban_type], banhost)
+        elif ban_type in self.extbans_acting:  # Handle extbans, which are generally "+b prefix:banmask"
+            return ('+%s' % self.cmodes['ban'], self.extbans_acting[ban_type]+banhost)
+        else:
+            raise ValueError("ban_type %r is not available on IRCd %r" % (ban_type, self.protoname))
 
     def updateTS(self, sender, channel, their_ts, modes=None):
         """

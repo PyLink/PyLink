@@ -67,6 +67,62 @@ def checkban(irc, source, args):
         else:
             irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (args.target, args.banmask))
 
+massban_parser = utils.IRCParser()
+massban_parser.add_argument('channel')
+massban_parser.add_argument('banmask')
+# Regarding default ban reason: it's a good idea not to leave in the caller to prevent retaliation...
+massban_parser.add_argument('reason', nargs='*', default="Banned")
+massban_parser.add_argument('--quiet', '-q', action='store_true')
+
+def massban(irc, source, args):
+    """<channel> <banmask / exttarget> [<kick reason>] [--quiet/-q]
+
+    Applies (i.e. kicks affected users) the given PyLink banmask on the specified channel.
+
+    The --quiet option can also be given to mass-mute the given user on networks where this is supported
+    (currently ts6, unreal, and inspircd). No kicks will be sent in this case."""
+    permissions.check_permissions(irc, source, ['opercmds.massban'])
+
+    args = massban_parser.parse_args(args)
+
+    if args.channel not in irc.channels:
+        irc.error("Unknown channel %r" % args.channel)
+        return
+
+    results = 0
+
+    for uid in irc.match_all(args.banmask, channel=args.channel):
+        # Remove the target's access before banning them.
+        bans = [('-%s' % irc.cmodes[prefix], uid) for prefix in irc.channels[args.channel].get_prefix_modes(uid) if prefix in irc.cmodes]
+
+        # Then, add the actual ban.
+        bans += [irc.make_channel_ban(uid, ban_type='quiet' if args.quiet else 'ban')]
+        irc.mode(irc.pseudoclient.uid, args.channel, bans)
+
+        try:
+            irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSBAN',
+                            {'target': args.channel, 'modes': bans, 'parse_as': 'MODE'}])
+        except:
+            log.exception('(%s) Failed to send process massban hook; some bans may have not '
+                          'been sent to plugins / relay networks!', irc.name)
+
+        if not args.quiet:
+            irc.kick(irc.pseudoclient.uid, args.channel, uid, args.reason)
+
+            # XXX: this better not be blocking...
+            try:
+                irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKICK',
+                                {'channel': args.channel, 'target': uid, 'text': args.reason, 'parse_as': 'KICK'}])
+
+            except:
+                log.exception('(%s) Failed to send process massban hook; some kicks may have not '
+                              'been sent to plugins / relay networks!', irc.name)
+
+        results += 1
+    else:
+        irc.reply('Banned %s users on %r.' % (results, args.channel))
+utils.add_cmd(massban, aliases=('mban',))
+
 @utils.add_cmd
 def jupe(irc, source, args):
     """<server> [<reason>]
