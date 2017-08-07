@@ -25,14 +25,13 @@ def _loginfail(irc, source, username):
     irc.error('Incorrect credentials.')
     log.warning("(%s) Failed login to %r from %s", irc.name, username, irc.get_hostmask(source))
 
-@utils.add_cmd
 def identify(irc, source, args):
     """<username> <password>
 
     Logs in to PyLink using the configured administrator account."""
     if utils.isChannel(irc.called_in):
         irc.reply('Error: This command must be sent in private. '
-                '(Would you really type a password inside a channel?)')
+                  '(Would you really type a password inside a channel?)')
         return
     try:
         username, password = args[0], args[1]
@@ -52,7 +51,7 @@ def identify(irc, source, args):
     else:
         # Username not found.
         _loginfail(irc, source, username)
-
+utils.add_cmd(identify, aliases=('login', 'id'))
 
 @utils.add_cmd
 def shutdown(irc, source, args):
