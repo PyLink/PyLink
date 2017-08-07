@@ -190,3 +190,15 @@ def exttarget_and(irc, host, uid):
     # Wrap every subtarget into irc.match_host and return True if all subtargets return True.
     return all(map(lambda sub_exttarget: irc.match_host(sub_exttarget, uid), targets))
 world.exttarget_handlers['and'] = exttarget_and
+
+@bind
+def realname(irc, host, uid):
+    """
+    $realname exttarget handler. This takes one argument: a glob, which is compared case-insensitively to the user's real name.
+
+    Examples:
+    $realname:*James*: matches anyone with "James" in their real name.
+    """
+    groups = host.split(':')
+    if len(groups) >= 2:
+        return irc.match_host(groups[1], irc.users[uid].realname)
