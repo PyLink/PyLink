@@ -1054,6 +1054,17 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             result = not result
         return result
 
+    def match_all(self, banmask, channel=None):
+        """
+        Returns all users matching the target hostmask/exttarget. Users can also be filtered by channel.
+        """
+        if channel:
+            banmask = "$and:(%s+$channel:%s)" % (banmask, channel)
+
+        for uid, userobj in self.users.copy().items():
+            if self.match_host(banmask, uid) and uid in self.users:
+                yield uid
+
     def updateTS(self, sender, channel, their_ts, modes=None):
         """
         Merges modes of a channel given the remote TS and a list of modes.
