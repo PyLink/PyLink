@@ -223,6 +223,12 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
     def validate_server_conf(self):
         return
 
+    def connect(self):
+        raise NotImplementedError
+
+    def disconnect(self):
+        raise NotImplementedError
+
     ## General utility functions
     def call_hooks(self, hook_args):
         """Calls a hook function with the given hook args."""
