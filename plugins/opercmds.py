@@ -180,17 +180,20 @@ masskill_parser.add_argument('--akill', '-ak', action='store_true')
 masskill_parser.add_argument('--force-kb', '-f', action='store_true')
 
 def masskill(irc, source, args, use_regex=False):
-    """<banmask / exttarget> [<kill/ban reason>] [--akill/ak] [--force-kb]
+    """<banmask / exttarget> [<kill/ban reason>] [--akill/ak] [--force-kb/-f]
 
     Kills all users matching the given PyLink banmask.
 
     The --akill option can also be given to convert kills to akills, which expire after 7 days.
 
     For relay users, attempts to kill are forwarded as a kickban to every channel where the calling user
-    meets claim requirements (i.e. this is true if you are opped, if your network is in claim list, etc.;
+    meets claim requirements to set a ban (i.e. this is true if you are opped, if your network is in claim list, etc.;
     see "help CLAIM" for more specific rules). This can also be extended to all shared channels
-    the user is in using the --force-kb option; and we hope this feature is used for good :)"""
+    the user is in using the --force-kb option (we hope this feature is only used for good)."""
     permissions.check_permissions(irc, source, ['opercmds.masskill'])
+
+    if args.force_kb:
+        permissions.check_permissions(irc, source, ['opercmds.masskill.force'])
 
     args = masskill_parser.parse_args(args)
     reason = ' '.join(args.reason)
@@ -224,7 +227,7 @@ def masskill(irc, source, args, use_regex=False):
                     killed += 1
                 else:
                     irc.reply("Not kicking \x02%s\x02 from \x02%s\x02 because you don't have CLAIM access. If this is "
-                              "another network's channel, ask them to op you first!" % (userobj.nick, channel))
+                              "another network's channel, ask someone to op you or use the --force-kb option." % (userobj.nick, channel))
         else:
             if args.akill:  # TODO: configurable length via strings such as "2w3d5h6m3s" - though month and minute clash this way?
                 if not (userobj.realhost or userobj.ip):
