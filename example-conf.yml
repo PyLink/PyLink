@@ -101,7 +101,7 @@ permissions:
 
     # Replace ABC123 with your PyLink account name (configured above)
     # in order to give yourself admin access.
-    "$pylinkacc:ABC123":
+    "ABC123":
         - "*"
 
 servers:

@@ -1016,6 +1016,17 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
             # Prepare a list of hosts to check against.
             if target in self.users:
+
+                if not utils.isHostmask(glob):
+                    for specialchar in '$:()':
+                        # XXX: we should probably add proper rules on what's a valid account name
+                        if specialchar in glob:
+                            break
+                    else:
+                        # Implicitly convert matches for *sane* account names to "$pylinkacc:accountname".
+                        log.debug('(%s) Using target $pylinkacc:%s instead of raw string %r', self.name, glob, glob)
+                        glob = '$pylinkacc:' + glob
+
                 if glob.startswith('$'):
                     # Exttargets start with $. Skip regular ban matching and find the matching ban handler.
                     glob = glob.lstrip('$')
