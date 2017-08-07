@@ -143,6 +143,9 @@ def echo(irc, source, args):
 
     Echoes the text given."""
     permissions.check_permissions(irc, source, ['commands.echo'])
+    if not args:
+        irc.error('No text to send!')
+        return
     irc.reply(' '.join(args))
 
 def _check_logout_access(irc, source, target, perms):
