@@ -17,6 +17,7 @@ import inspect
 import ipaddress
 import queue
 import functools
+import collections
 
 try:
     import ircmatch
@@ -34,6 +35,40 @@ class ProtocolError(RuntimeError):
     pass
 
 ### Internal classes (users, servers, channels)
+
+class ChannelState(collections.abc.MutableMapping):
+    """
+    A dictionary storing channels case insensitively. Channel objects are initialized on access.
+    """
+    def __init__(self, irc):
+        self._data = {}
+        self._irc = irc
+
+    def _keymangle(self, key):
+        """Converts the given key to lowercase."""
+        return self._irc.to_lower(key)
+
+    def __getitem__(self, key):
+        key = self._keymangle(key)
+
+        if key not in self._data:
+            log.debug('(%s) ChannelState: creating new channel %s in memory', self._irc.name, key)
+            self._data[key] = newchan = Channel(key)
+            return newchan
+
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[self._keymangle(key)] = value
+
+    def __delitem__(self, key):
+        del self._data[self._keymangle(key)]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
 
 class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
@@ -123,7 +158,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # now.
         self.servers = {}
         self.users = {}
-        self.channels = structures.KeyedDefaultdict(Channel)
+        self.channels = ChannelState(self)
 
         # This sets the list of supported channel and user modes: the default
         # RFC1459 modes are implied. Named modes are used here to make
