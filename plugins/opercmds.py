@@ -189,7 +189,10 @@ def masskill(irc, source, args, use_regex=False):
     For relay users, attempts to kill are forwarded as a kickban to every channel where the calling user
     meets claim requirements to set a ban (i.e. this is true if you are opped, if your network is in claim list, etc.;
     see "help CLAIM" for more specific rules). This can also be extended to all shared channels
-    the user is in using the --force-kb option (we hope this feature is only used for good)."""
+    the user is in using the --force-kb option (we hope this feature is only used for good).
+
+    To properly kill abusers on another network, combine this command with the 'remote' command in the
+    'networks' plugin and adjust your banmasks accordingly."""
     permissions.check_permissions(irc, source, ['opercmds.masskill'])
 
     if args.force_kb:
