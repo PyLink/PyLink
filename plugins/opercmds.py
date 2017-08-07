@@ -217,8 +217,8 @@ def kick(irc, source, args):
     sender = irc.pseudoclient.uid
     irc.kick(sender, channel, targetu, reason)
     irc.reply("Done.")
-    irc.call_hooks([sender, 'CHANCMDS_KICK', {'channel': channel, 'target': targetu,
-                                        'text': reason, 'parse_as': 'KICK'}])
+    irc.call_hooks([sender, 'OPERCMDS_KICK', {'channel': channel, 'target': targetu,
+                                              'text': reason, 'parse_as': 'KICK'}])
 
 @utils.add_cmd
 def kill(irc, source, args):
@@ -249,8 +249,8 @@ def kill(irc, source, args):
     reason = "Killed (%s (%s))" % (irc.get_friendly_name(sender), reason)
 
     irc.reply("Done.")
-    irc.call_hooks([sender, 'CHANCMDS_KILL', {'target': targetu, 'text': reason,
-                                        'userdata': userdata, 'parse_as': 'KILL'}])
+    irc.call_hooks([sender, 'OPERCMDS_KILL', {'target': targetu, 'text': reason,
+                                              'userdata': userdata, 'parse_as': 'KILL'}])
 
 @utils.add_cmd
 def mode(irc, source, args):
@@ -286,7 +286,7 @@ def mode(irc, source, args):
     irc.mode(irc.pseudoclient.uid, target, parsedmodes)
 
     # Call the appropriate hooks for plugins like relay.
-    irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MODEOVERRIDE',
+    irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MODE',
                    {'target': target, 'modes': parsedmodes, 'parse_as': 'MODE'}])
 
     irc.reply("Done.")
@@ -311,7 +311,7 @@ def topic(irc, source, args):
     irc.topic(irc.pseudoclient.uid, channel, topic)
 
     irc.reply("Done.")
-    irc.call_hooks([irc.pseudoclient.uid, 'CHANCMDS_TOPIC',
+    irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_TOPIC',
                    {'channel': channel, 'text': topic, 'setter': source,
                     'parse_as': 'TOPIC'}])
 
