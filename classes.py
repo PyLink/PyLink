@@ -70,6 +70,12 @@ class ChannelState(collections.abc.MutableMapping):
     def __len__(self):
         return len(self._data)
 
+    def copy(self, *args, **kwargs):
+        return self._data.copy(*args, **kwargs)
+
+    def __contains__(self, key):
+        return self._data.__contains__(self._keymangle(key))
+
 class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
 
