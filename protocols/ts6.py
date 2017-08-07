@@ -66,7 +66,6 @@ class TS6Protocol(TS6BaseProtocol):
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
-        channel = self.to_lower(channel)
         # JOIN:
         # parameters: channelTS, channel, '+' (a plus sign)
         if not self.is_internal_client(client):
@@ -96,7 +95,6 @@ class TS6Protocol(TS6BaseProtocol):
         # their status ('@+', '@', '+' or ''), for example:
         # '@+1JJAAAAAB +2JJAAAA4C 1JJAAAADS'. All users must be behind the source server
         # so it is not possible to use this message to force users to join a channel.
-        channel = self.to_lower(channel)
         server = server or self.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.name, users)

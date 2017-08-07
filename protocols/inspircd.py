@@ -76,7 +76,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # InspIRCd doesn't distinguish between burst joins and regular joins,
         # so what we're actually doing here is sending FJOIN from the server,
         # on behalf of the clients that are joining.
-        channel = self.to_lower(channel)
 
         server = self.get_server(client)
         if not self.is_internal_server(server):
@@ -102,7 +101,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
             sjoin('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])
             sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
-        channel = self.to_lower(channel)
         server = server or self.sid
         assert users, "sjoin: No users sent?"
         log.debug('(%s) sjoin: got %r for users', self.name, users)

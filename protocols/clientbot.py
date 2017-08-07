@@ -142,7 +142,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
     def join(self, client, channel):
         """STUB: Joins a user to a channel."""
-        channel = self.to_lower(channel)
 
         # Only joins for the main PyLink client are actually forwarded. Others are ignored.
         # Note: we do not automatically add our main client to the channel state, as we

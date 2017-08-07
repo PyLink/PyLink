@@ -371,7 +371,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
                 (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        channel = self.to_lower(channel)
         if not reason:
             reason = 'No reason given'
 
@@ -394,7 +393,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
-        channel = self.to_lower(channel)
         if not self.is_internal_client(client):
             log.error('(%s) Error trying to part %r from %r (no such client exists)', self.name, client, channel)
             raise LookupError('No such PyLink client exists.')

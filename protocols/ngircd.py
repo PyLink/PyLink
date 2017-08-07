@@ -149,7 +149,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.users[source].away = text
 
     def join(self, client, channel):
-        channel = self.to_lower(channel)
 
         if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
@@ -224,7 +223,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
             sjoin('100', '#test', [('', 'user0@0'), ('o', user1@1'), ('v', 'someone@2')])
             sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
-        channel = self.to_lower(channel)
 
         server = server or self.sid
         if not server:
@@ -365,7 +363,6 @@ class NgIRCdProtocol(IRCS2SProtocol):
                     self.apply_modes(channel, [('+' + status, source)])
             except ValueError:
                 channel = chanpair
-            channel = self.to_lower(channel)
 
             c = self.channels[channel]
 

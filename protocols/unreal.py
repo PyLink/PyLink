@@ -103,7 +103,6 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
-        channel = self.to_lower(channel)
         if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(client, "JOIN %s" % channel)
@@ -122,7 +121,6 @@ class UnrealProtocol(TS6BaseProtocol):
             sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
         # <- :001 SJOIN 1444361345 #test :*@+1JJAAAAAB %2JJAAAA4C 1JJAAAADS
-        channel = self.to_lower(channel)
         server = server or self.sid
         assert users, "sjoin: No users sent?"
         if not server:
@@ -549,11 +547,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         else:
             for channel in args[0].split(','):
-                # Normalize channel case.
-                channel = self.to_lower(channel)
-
                 c = self.channels[channel]
-
                 self.users[numeric].channels.add(channel)
                 self.channels[channel].users.add(numeric)
                 # Call hooks manually, because one JOIN command in UnrealIRCd can
