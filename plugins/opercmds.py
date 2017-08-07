@@ -92,21 +92,31 @@ massban_parser.add_argument('banmask')
 # Regarding default ban reason: it's a good idea not to leave in the caller to prevent retaliation...
 massban_parser.add_argument('reason', nargs='*', default=["User banned"])
 massban_parser.add_argument('--quiet', '-q', action='store_true')
+massban_parser.add_argument('--force', '-f', action='store_true')
 
 def massban(irc, source, args, use_regex=False):
-    """<channel> <banmask / exttarget> [<kick reason>] [--quiet/-q]
+    """<channel> <banmask / exttarget> [<kick reason>] [--quiet/-q] [--force/-f]
 
     Applies (i.e. kicks affected users) the given PyLink banmask on the specified channel.
 
     The --quiet option can also be given to mass-mute the given user on networks where this is supported
-    (currently ts6, unreal, and inspircd). No kicks will be sent in this case."""
+    (currently ts6, unreal, and inspircd). No kicks will be sent in this case.
+
+    Relay CLAIM checking is used on Relay channels if it is enabled; use the --force option
+    to override this if needed."""
     permissions.check_permissions(irc, source, ['opercmds.massban'])
 
     args = massban_parser.parse_args(args)
     reason = ' '.join(args.reason)
 
+    if args.force:
+        permissions.check_permissions(irc, source, ['opercmds.massban.force'])
+
     if args.channel not in irc.channels:
-        irc.error("Unknown channel %r" % args.channel)
+        irc.error("Unknown channel %r." % args.channel)
+        return
+    elif 'relay' in world.plugins and (not world.plugins['relay'].check_claim(irc, args.channel, source)) and (not args.force):
+        irc.error("You do not have access to set bans in %s. Ask someone to op you or use the --force option." % args.channel)
         return
 
     results = 0
