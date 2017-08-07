@@ -92,6 +92,9 @@ login:
             # (plain text) for backwards compatibility.
             encrypted: true
 
+            # Optional: allows limiting this login to users from certain networks only (case sensitive).
+            #networks: ["network1", "network2"]
+
 permissions:
     # Permissions are described in more detail in example-permissions.yml, if you want to
     # customize permissions further.
