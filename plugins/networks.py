@@ -57,7 +57,7 @@ def autoconnect(irc, source, args):
 remote_parser = utils.IRCParser()
 remote_parser.add_argument('network')
 remote_parser.add_argument('--service', type=str, default='pylink')
-remote_parser.add_argument('command', nargs=utils.IRCParser.REMAINDER)
+remote_parser.add_argument('command', nargs='+')
 @utils.add_cmd
 def remote(irc, source, args):
     """<network> [--service <service name>] <command>
@@ -68,10 +68,6 @@ def remote(irc, source, args):
 
     args = remote_parser.parse_args(args)
     netname = args.network
-
-    if not args.command:
-        irc.error("No command specified!")
-        return
 
     # XXX: things like 'remote network1 remote network2 echo hi' will crash PyLink if the source network is network1...
     global REMOTE_IN_USE
