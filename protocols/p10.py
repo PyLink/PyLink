@@ -327,7 +327,6 @@ class P10Protocol(IRCS2SProtocol):
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # <- ABAAB J #test3 1460744371
-        channel = self.to_lower(channel)
         ts = self.channels[channel].ts
 
         if not self.is_internal_client(client):
@@ -349,7 +348,6 @@ class P10Protocol(IRCS2SProtocol):
                 (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        channel = self.to_lower(channel)
         if not reason:
             reason = 'No reason given'
 
@@ -468,7 +466,6 @@ class P10Protocol(IRCS2SProtocol):
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
-        channel = self.to_lower(channel)
 
         if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
@@ -522,7 +519,6 @@ class P10Protocol(IRCS2SProtocol):
             sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
         # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host ~ *!*@bad.host
-        channel = self.to_lower(channel)
         server = server or self.sid
 
         assert users, "sjoin: No users sent?"
