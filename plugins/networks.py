@@ -64,10 +64,21 @@ def remote(irc, source, args):
 
     Runs <command> on the remote network <network>. Plugin responses sent using irc.reply() are
     supported and returned here, but others are dropped due to protocol limitations."""
-    permissions.check_permissions(irc, source, ['networks.remote'])
-
     args = remote_parser.parse_args(args)
     netname = args.network
+
+    permissions.check_permissions(irc, source, [
+        # Quite a few permissions are allowed. 'networks.remote' is the global permission,
+        'networks.remote',
+        # networks.remote.<network> allows running any command on a specific network,
+        'networks.remote.%s' % netname,
+        # networks.remote.<network>.<service> allows running any command on the given service on a
+        # specific network,
+        'networks.remote.%s.%s' % (netname, args.service),
+        # and networks.remote.<network>.<service>.<command> narrows this further into which command
+        # can be used.
+        'networks.remote.%s.%s.%s' % (netname, args.service, args.command[0])
+    ])
 
     # XXX: things like 'remote network1 remote network2 echo hi' will crash PyLink if the source network is network1...
     global REMOTE_IN_USE
