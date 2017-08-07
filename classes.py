@@ -219,7 +219,11 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
     def __repr__(self):
         return "<%s object for network %r>" % (self.__class__.__name__, self.name)
 
-    ### General utility functions
+    ## Stubs
+    def validate_server_conf(self):
+        return
+
+    ## General utility functions
     def call_hooks(self, hook_args):
         """Calls a hook function with the given hook args."""
         numeric, command, parsed_args = hook_args
@@ -327,7 +331,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # This is a stub to alias error to reply
         self.reply("Error: %s" % text, **kwargs)
 
-    ### Configuration-based lookup functions.
+    ## Configuration-based lookup functions.
     def version(self):
         """
         Returns a detailed version string including the PyLink daemon version,
@@ -349,6 +353,14 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         """
         return self.serverdata.get('netname', self.name)
 
+
+    def has_cap(self, capab):
+        """
+        Returns whether this protocol module instance has the requested capability.
+        """
+        return capab.lower() in self.protocol_caps
+
+    ## Shared helper functions
     def _pre_connect(self):
         self._aborted.clear()
         self._init_vars()
@@ -417,15 +429,6 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         log.debug('(%s) _post_disconnect: Clearing state via _init_vars().', self.name)
         self._init_vars()
 
-    def validate_server_conf(self):
-        return
-
-    def has_cap(self, capab):
-        """
-        Returns whether this protocol module instance has the requested capability.
-        """
-        return capab.lower() in self.protocol_caps
-
     def _remove_client(self, numeric):
         """Internal function to remove a client from our internal state."""
         for c, v in self.channels.copy().items():
@@ -440,7 +443,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         log.debug('Removing client %s from self.servers[%s].users', numeric, sid)
         self.servers[sid].users.discard(numeric)
 
-    ### State checking functions
+    ## State checking functions
     def nick_to_uid(self, nick):
         """Looks up the UID of a user with the given nick, if one is present."""
         nick = self.to_lower(nick)
