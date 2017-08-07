@@ -90,7 +90,7 @@ massban_parser = utils.IRCParser()
 massban_parser.add_argument('channel')
 massban_parser.add_argument('banmask')
 # Regarding default ban reason: it's a good idea not to leave in the caller to prevent retaliation...
-massban_parser.add_argument('reason', nargs='*', default="Banned")
+massban_parser.add_argument('reason', nargs='*', default=["User banned"])
 massban_parser.add_argument('--quiet', '-q', action='store_true')
 
 def massban(irc, source, args, use_regex=False):
@@ -103,6 +103,7 @@ def massban(irc, source, args, use_regex=False):
     permissions.check_permissions(irc, source, ['opercmds.massban'])
 
     args = massban_parser.parse_args(args)
+    reason = ' '.join(args.reason)
 
     if args.channel not in irc.channels:
         irc.error("Unknown channel %r" % args.channel)
@@ -127,12 +128,12 @@ def massban(irc, source, args, use_regex=False):
                           'been sent to plugins / relay networks!', irc.name)
 
         if not args.quiet:
-            irc.kick(irc.pseudoclient.uid, args.channel, uid, args.reason)
+            irc.kick(irc.pseudoclient.uid, args.channel, uid, reason)
 
             # XXX: this better not be blocking...
             try:
                 irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKICK',
-                                {'channel': args.channel, 'target': uid, 'text': args.reason, 'parse_as': 'KICK'}])
+                                {'channel': args.channel, 'target': uid, 'text': reason, 'parse_as': 'KICK'}])
 
             except:
                 log.exception('(%s) Failed to send process massban hook; some kicks may have not '
@@ -164,7 +165,7 @@ utils.add_cmd(massbanre, aliases=('rban',))
 masskill_parser = utils.IRCParser()
 masskill_parser.add_argument('banmask')
 # Regarding default ban reason: it's a good idea not to leave in the caller to prevent retaliation...
-masskill_parser.add_argument('reason', nargs='*', default="User banned")
+masskill_parser.add_argument('reason', nargs='*', default=["User banned"], type=str)
 masskill_parser.add_argument('--akill', '-ak', action='store_true')
 masskill_parser.add_argument('--force-kb', '-f', action='store_true')
 
@@ -182,6 +183,7 @@ def masskill(irc, source, args, use_regex=False):
     permissions.check_permissions(irc, source, ['opercmds.masskill'])
 
     args = masskill_parser.parse_args(args)
+    reason = ' '.join(args.reason)
 
     results = 0
 
@@ -198,14 +200,14 @@ def masskill(irc, source, args, use_regex=False):
 
                 if (args.force_kb or relay.check_claim(irc, channel, source)):
                     irc.mode(irc.pseudoclient.uid, channel, bans)
-                    irc.kick(irc.pseudoclient.uid, channel, uid, args.reason)
+                    irc.kick(irc.pseudoclient.uid, channel, uid, reason)
 
                     # XXX: code duplication with massban.
                     try:
                         irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKILL_BAN',
                                         {'target': channel, 'modes': bans, 'parse_as': 'MODE'}])
                         irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKILL_KICK',
-                                        {'channel': channel, 'target': uid, 'text': args.reason, 'parse_as': 'KICK'}])
+                                        {'channel': channel, 'target': uid, 'text': reason, 'parse_as': 'KICK'}])
                     except:
                         log.exception('(%s) Failed to send process massban hook; some kickbans may have not '
                                       'been sent to plugins / relay networks!', irc.name)
@@ -214,12 +216,12 @@ def masskill(irc, source, args, use_regex=False):
                 if not (userobj.realhost or userobj.ip):
                     irc.reply("Skipping akill on %s because PyLink doesn't know the real host." % irc.get_hostmask(uid))
                     continue
-                irc.set_server_ban(irc.pseudoclient.uid, 604800, host=userobj.realhost or userobj.ip or userobj.host, reason=args.reason)
+                irc.set_server_ban(irc.pseudoclient.uid, 604800, host=userobj.realhost or userobj.ip or userobj.host, reason=reason)
             else:
-                irc.kill(irc.pseudoclient.uid, uid, args.reason)
+                irc.kill(irc.pseudoclient.uid, uid, reason)
                 try:
                     irc.call_hooks([irc.pseudoclient.uid, 'OPERCMDS_MASSKILL',
-                                    {'target': uid, 'parse_as': 'KILL', 'userdata': userobj, 'text': args.reason}])
+                                    {'target': uid, 'parse_as': 'KILL', 'userdata': userobj, 'text': reason}])
                 except:
                     log.exception('(%s) Failed to send process massban hook; some kickbans may have not '
                                   'been sent to plugins / relay networks!', irc.name)
