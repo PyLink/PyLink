@@ -195,10 +195,11 @@ def masskill(irc, source, args, use_regex=False):
     'networks' plugin and adjust your banmasks accordingly."""
     permissions.check_permissions(irc, source, ['opercmds.masskill'])
 
+    args = masskill_parser.parse_args(args)
+
     if args.force_kb:
         permissions.check_permissions(irc, source, ['opercmds.masskill.force'])
 
-    args = masskill_parser.parse_args(args)
     reason = ' '.join(args.reason)
 
     results = killed = 0
