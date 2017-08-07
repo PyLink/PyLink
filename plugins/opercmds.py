@@ -252,6 +252,28 @@ def masskill(irc, source, args, use_regex=False):
         irc.reply('Masskilled %s/%s users.' % (killed, results))
 utils.add_cmd(masskill, aliases=('mkill',))
 
+def masskillre(irc, source, args):
+    """<regular expression> [<kill/ban reason>] [--akill/ak] [--force-kb/-f]
+
+    Kills all users whose "nick!user@host [gecos]" mask matches the given Python-style regular expression.
+    (https://docs.python.org/3/library/re.html#regular-expression-syntax describes supported syntax)
+
+    The --akill option can also be given to convert kills to akills that expire after 7 days.
+
+    For relay users, attempts to kill are forwarded as a kickban to every channel where the calling user
+    meets claim requirements to set a ban (i.e. this is true if you are opped, if your network is in claim list, etc.;
+    see "help CLAIM" for more specific rules). This can also be extended to all shared channels
+    the user is in using the --force-kb option (we hope this feature is only used for good).
+
+    \x02Be careful when using this command, as it is easy to make mistakes with regex. Use 'checkbanre'
+    to check your bans first!\x02
+
+    """
+    permissions.check_permissions(irc, source, ['opercmds.masskill.re'])
+    return masskill(irc, source, args, use_regex=True)
+
+utils.add_cmd(masskillre, aliases=('rkill',))
+
 @utils.add_cmd
 def jupe(irc, source, args):
     """<server> [<reason>]
@@ -278,7 +300,6 @@ def jupe(irc, source, args):
                    {'name': servername, 'sid': sid, 'text': desc}])
 
     irc.reply("Done.")
-
 
 @utils.add_cmd
 def kick(irc, source, args):
