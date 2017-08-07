@@ -41,24 +41,18 @@ def checkban(irc, source, args):
     args = checkban_parser.parse_args(args)
     if not args.target:
         # No hostmask was given, return a list of matched users.
-
         results = 0
 
-        # Process the --channel argument if it exists. This is just a lazy wrapper around the
-        # $and and $channel exttargets, but it's mostly to convenience users.
-        if args.channel:
-            args.banmask = "$and:(%s+$channel:%s)" % (args.banmask, args.channel)
-
         irc.reply("Checking for hosts that match \x02%s\x02:" % args.banmask, private=True)
-        for uid, userobj in irc.users.copy().items():
-            if irc.match_host(args.banmask, uid):
-                if results < args.maxresults:
-                    s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
-                        userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
+        for uid in irc.match_all(args.banmask, channel=args.channel):
+            if results < args.maxresults:
+                userobj = irc.users[uid]
+                s = "\x02%s\x02 (%s@%s) [%s] {\x02%s\x02}" % (userobj.nick, userobj.ident,
+                    userobj.host, userobj.realname, irc.get_friendly_name(irc.get_server(uid)))
 
-                    # Always reply in private to prevent information leaks.
-                    irc.reply(s, private=True)
-                results += 1
+                # Always reply in private to prevent information leaks.
+                irc.reply(s, private=True)
+            results += 1
         else:
             if results:
                 irc.reply("\x02%s\x02 out of \x02%s\x02 results shown." %
