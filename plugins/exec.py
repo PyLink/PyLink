@@ -180,8 +180,7 @@ def threadinfo(irc, source, args):
     Lists all threads currently present in this PyLink instance."""
     permissions.check_permissions(irc, source, ['exec.threadinfo'])
 
-    for t in sorted(threading.enumerate(), key=lambda t: t.name):
-
+    for t in sorted(threading.enumerate(), key=lambda t: t.name.lower()):
         name = t.name
         # Unnamed threads are something we want to avoid throughout PyLink.
         if name.startswith('Thread-'):
