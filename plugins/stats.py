@@ -77,7 +77,7 @@ def handle_stats(irc, source, command, args):
     u - shows uptime
     """
 
-    stats_type = args['stats_type'][0]  # stats_type shouldn't be more than 1 char anyways
+    stats_type = args['stats_type'][0].lower()  # stats_type shouldn't be more than 1 char anyways
 
     perms = ['stats.%s' % stats_type]
 
