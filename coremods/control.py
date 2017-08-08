@@ -7,7 +7,7 @@ import threading
 import sys
 import atexit
 
-from pylinkirc import world, utils, conf, classes
+from pylinkirc import world, utils, conf  # Do not import classes, it'll import loop
 from pylinkirc.log import log, makeFileLogger, stopFileLoggers, getConsoleLogLevel
 from . import permissions
 
