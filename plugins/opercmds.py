@@ -130,6 +130,9 @@ def massban(irc, source, args, use_regex=False):
         if irc.is_oper(uid) and not args.include_opers:
             irc.reply('Skipping banning \x02%s\x02 because they are opered.' % irc.users[uid].nick)
             continue
+        elif irc.get_service_bot(uid):
+            irc.reply('Skipping banning \x02%s\x02 because it is a service client.' % irc.users[uid].nick)
+            continue
 
         # Remove the target's access before banning them.
         bans = [('-%s' % irc.cmodes[prefix], uid) for prefix in irc.channels[args.channel].get_prefix_modes(uid) if prefix in irc.cmodes]
@@ -227,6 +230,9 @@ def masskill(irc, source, args, use_regex=False):
 
         if irc.is_oper(uid) and not args.include_opers:
             irc.reply('Skipping killing \x02%s\x02 because they are opered.' % userobj.nick)
+            continue
+        elif irc.get_service_bot(uid):
+            irc.reply('Skipping killing \x02%s\x02 because it is a service client.' % userobj.nick)
             continue
 
         relay = world.plugins.get('relay')
