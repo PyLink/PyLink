@@ -366,7 +366,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send_with_prefix(sid, 'ENDBURST')
 
         if endburst_delay:
-            threading.Thread(target=endburstf, name="protocols/inspircd delayed ENDBURST thread for %s@%s" % (sid, self.name)).start()
+            t = threading.Thread(target=endburstf, name="protocols/inspircd delayed ENDBURST thread for %s@%s" % (sid, self.name))
+            t.daemon = True
+            t.start()
         else:  # Else, send burst immediately
             self._send_with_prefix(sid, 'ENDBURST')
         return sid
