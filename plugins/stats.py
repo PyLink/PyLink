@@ -69,4 +69,63 @@ def uptime(irc, source, args):
                   )
                  )
 
+def handle_stats(irc, source, command, args):
+    """/STATS handler. Currently supports the following:
 
+    c - link blocks
+    o - oper blocks (accounts)
+    u - shows uptime
+    """
+
+    stats_type = args['stats_type'][0]  # stats_type shouldn't be more than 1 char anyways
+
+    perms = ['stats.%s' % stats_type]
+
+    if stats_type == 'u':
+        perms.append('stats.uptime')  # Consistency
+
+    try:
+        permissions.check_permissions(irc, source, perms)
+    except utils.NotAuthorizedError as e:
+        irc.msg(source, 'Error: %s' % e)  # Note, no irc.error() because this is not a command, but a handler
+        return
+
+    log.info('(%s) STATS %s requested by %s', irc.name, stats_type, irc.get_hostmask(source))
+
+    def _num(num, text):
+        irc.numeric(args['target'], num, source, text)
+
+    if stats_type == 'c':
+        # 213/RPL_STATSCLINE: "C <host> * <name> <port> <class>"
+        for netname, serverdata in sorted(conf.conf['servers'].items()):
+            # We're cramming as much as we can into the class field...
+            _num(213, "C %s * %s %s protocol:%s__ssl:%s__encoding:%s" %
+                 (serverdata.get('ip', '0.0.0.0'),
+                  netname,
+                  serverdata.get('port', 0),
+                  serverdata['protocol'],
+                  bool(serverdata.get('ssl')),
+                  serverdata.get('encoding', 'utf-8'))
+                 )
+    elif stats_type == 'o':
+        # 243/RPL_STATSOLINE: "O <hostmask> * <nick> [:<info>]"
+        # New style accounts only!
+        for accountname, accountdata in conf.conf['login'].get('accounts', {}).items():
+            info = []
+            if accountdata.get('require_oper'):
+                info.append('require_oper')
+
+            _num(243, "O %s * %s :network_filter:%s require_oper:%s" %
+                 (' '.join(accountdata.get('hosts', [])) or '*@*',
+                  accountname,
+                  ','.join(accountdata.get('networks', [])) or '*',
+                  bool(accountdata.get('require_oper'))
+                 )
+                )
+
+    elif stats_type == 'u':
+        # 242/RPL_STATSUPTIME: ":Server Up <days> days <hours>:<minutes>:<seconds>"
+        _num(242, ':Server Up %s' % timediff(world.start_ts, int(time.time())))
+
+    _num(219, "%s :End of /STATS report" % stats_type)
+utils.add_hook(handle_stats, 'STATS')

@@ -668,6 +668,13 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self._remove_client(numeric)
         return {'text': args[0]}
 
+    def handle_stats(self, numeric, command, args):
+        """Handles the IRC STATS command."""
+        # IRCds are mostly consistent with this syntax, with the caller being the source,
+        # the stats type as arg 0, and the target server (SID or hostname) as arg 1
+        # <- :42XAAAAAB STATS c :7PY
+        return {'stats_type': args[0], 'target': self._get_SID(args[1])}
+
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients."""
         # <- :70MAAAAAA TOPIC #test :test
