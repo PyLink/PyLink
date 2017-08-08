@@ -111,10 +111,6 @@ def handle_stats(irc, source, command, args):
         # 243/RPL_STATSOLINE: "O <hostmask> * <nick> [:<info>]"
         # New style accounts only!
         for accountname, accountdata in conf.conf['login'].get('accounts', {}).items():
-            info = []
-            if accountdata.get('require_oper'):
-                info.append('require_oper')
-
             _num(243, "O %s * %s :network_filter:%s require_oper:%s" %
                  (' '.join(accountdata.get('hosts', [])) or '*@*',
                   accountname,
