@@ -152,6 +152,8 @@ def massban(irc, source, args, use_regex=False):
         results += 1
     else:
         irc.reply('Banned %s users on %r.' % (results, args.channel))
+        log.info('(%s) Ran massban%s for %s on %s (%s user(s) removed)', irc.name, 're' if use_regex else '',
+                 irc.get_hostmask(source), args.channel, results)
 utils.add_cmd(massban, aliases=('mban',))
 
 def massbanre(irc, source, args):
@@ -254,6 +256,8 @@ def masskill(irc, source, args, use_regex=False):
         results += 1
         seen_users.add(uid)
     else:
+        log.info('(%s) Ran masskill%s for %s (%s/%s user(s) removed)', irc.name, 're' if use_regex else '',
+                 irc.get_hostmask(source), killed, results)
         irc.reply('Masskilled %s/%s users.' % (killed, results))
 utils.add_cmd(masskill, aliases=('mkill',))
 
