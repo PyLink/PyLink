@@ -329,7 +329,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         #    CHANINFO <channel> +<modes> <key> <limit> <topic>
         # If there is no key, the key is "*". If there is no limit, the limit is "0".
 
-        channel = self.to_lower(args[0])
+        channel = args[0]
         # Get rid of +l and +k in the initial parsing; we handle that later by looking at the CHANINFO arguments
         modes = self.parse_modes(channel, args[1].replace('l', '').replace('k', ''))
 
@@ -468,7 +468,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
     def handle_njoin(self, source, command, args):
         # <- :ngircd.midnight.local NJOIN #test :tester,@%GL
 
-        channel = self.to_lower(args[0])
+        channel = args[0]
         chandata = self.channels[channel].deepcopy()
         namelist = []
 

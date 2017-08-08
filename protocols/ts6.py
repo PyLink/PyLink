@@ -178,7 +178,7 @@ class TS6Protocol(TS6BaseProtocol):
         modes = list(modes)
 
         if utils.isChannel(target):
-            ts = ts or self.channels[self.to_lower(target)].ts
+            ts = ts or self.channels[target].ts
             # TMODE:
             # parameters: channelTS, channel, cmode changes, opt. cmode parameters...
 
@@ -438,7 +438,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming SJOIN commands."""
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
-        channel = self.to_lower(args[1])
+        channel = args[1]
         chandata = self.channels[channel].deepcopy()
         userlist = args[-1].split()
 
@@ -501,7 +501,7 @@ class TS6Protocol(TS6BaseProtocol):
                 self.users[numeric].channels.discard(channel)
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
-            channel = self.to_lower(args[1])
+            channel = args[1]
             self.updateTS(numeric, channel, ts)
 
             self.users[numeric].channels.add(channel)
@@ -602,7 +602,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming TMODE commands (channel mode change)."""
         # <- :42XAAAAAB TMODE 1437450768 #test -c+lkC 3 agte4
         # <- :0UYAAAAAD TMODE 0 #a +h 0UYAAAAAD
-        channel = self.to_lower(args[1])
+        channel = args[1]
         oldobj = self.channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = self.parse_modes(channel, modes)
@@ -614,7 +614,7 @@ class TS6Protocol(TS6BaseProtocol):
     def handle_tb(self, numeric, command, args):
         """Handles incoming topic burst (TB) commands."""
         # <- :42X TB #chat 1467427448 GL!~gl@127.0.0.1 :test
-        channel = self.to_lower(args[0])
+        channel = args[0]
         ts = args[1]
         setter = args[2]
         topic = args[-1]
@@ -626,7 +626,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles extended topic burst (ETB)."""
         # <- :00AAAAAAC ETB 0 #test 1470021157 GL :test | abcd
         # Same as TB, with extra TS and extensions arguments.
-        channel = self.to_lower(args[1])
+        channel = args[1]
         ts = args[2]
         setter = args[3]
         topic = args[-1]
@@ -644,7 +644,7 @@ class TS6Protocol(TS6BaseProtocol):
         """Handles incoming BMASK commands (ban propagation on burst)."""
         # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
         # This is used for propagating bans, not TMODE!
-        channel = self.to_lower(args[1])
+        channel = args[1]
         mode = args[2]
         ts = int(args[0])
         modes = []

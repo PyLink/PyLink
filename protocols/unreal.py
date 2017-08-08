@@ -217,7 +217,7 @@ class UnrealProtocol(TS6BaseProtocol):
                     modes[idx] = (mode[0], self._expandPUID(mode[1]))
 
             # The MODE command is used for channel mode changes only
-            ts = ts or self.channels[self.to_lower(target)].ts
+            ts = ts or self.channels[target].ts
 
             # 7 characters for "MODE", the space between MODE and the target, the space between the
             # target and mode list, and the space between the mode list and TS.
@@ -559,7 +559,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles the UnrealIRCd SJOIN command."""
         # <- :001 SJOIN 1444361345 #test :001AAAAAA @001AAAAAB +001AAAAAC
         # <- :001 SJOIN 1483250129 #services +nt :+001OR9V02 @*~001DH6901 &*!*@test "*!*@blah.blah '*!*@yes.no
-        channel = self.to_lower(args[1])
+        channel = args[1]
         chandata = self.channels[channel].deepcopy()
         userlist = args[-1].split()
 
@@ -685,7 +685,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Also, we need to get rid of that extra space following the +f argument. :|
         if utils.isChannel(args[0]):
-            channel = self.to_lower(args[0])
+            channel = args[0]
             oldobj = self.channels[channel].deepcopy()
 
             modes = [arg for arg in args[1:] if arg]  # normalize whitespace
@@ -850,7 +850,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles the TOPIC command."""
         # <- GL TOPIC #services GL 1444699395 :weeee
         # <- TOPIC #services devel.relay 1452399682 :test
-        channel = self.to_lower(args[0])
+        channel = args[0]
         topic = args[-1]
         setter = args[1]
         ts = args[2]

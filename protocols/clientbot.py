@@ -601,7 +601,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :charybdis.midnight.vpn 353 ice = #test :ice @GL
 
         # Mark "@"-type channels as secret automatically, per RFC2812.
-        channel = self.to_lower(args[2])
+        channel = args[2]
         if args[1] == '@':
             self.apply_modes(channel, [('+s', None)])
 
@@ -720,7 +720,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         users = self.who_received.copy()
         self.who_received.clear()
 
-        channel = self.to_lower(args[1])
+        channel = args[1]
         c = self.channels[channel]
         c.who_received = True
 
@@ -755,7 +755,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Handles incoming JOINs.
         """
         # <- :GL|!~GL@127.0.0.1 JOIN #whatever
-        channel = self.to_lower(args[0])
+        channel = args[0]
         self.join(source, channel)
 
         return {'channel': channel, 'users': [source], 'modes': self.channels[channel].modes}
@@ -765,7 +765,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Handles incoming KICKs.
         """
         # <- :GL!~gl@127.0.0.1 KICK #whatever GL| :xd
-        channel = self.to_lower(args[0])
+        channel = args[0]
         target = self.nick_to_uid(args[1])
 
         try:
@@ -805,7 +805,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :ice MODE ice :+Zi
         target = args[0]
         if utils.isChannel(target):
-            target = self.to_lower(target)
             oldobj = self.channels[target].deepcopy()
         else:
             target = self.nick_to_uid(target)
@@ -829,7 +828,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # -> MODE #test
         # <- :midnight.vpn 324 GL #test +nt
         # <- :midnight.vpn 329 GL #test 1491773459
-        channel = self.to_lower(args[1])
+        channel = args[1]
         modes = args[2:]
         log.debug('(%s) Got RPL_CHANNELMODEIS (324) modes %s for %s', self.name, modes, channel)
         changedmodes = self.parse_modes(channel, modes)
@@ -837,7 +836,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
     def handle_329(self, source, command, args):
         """Handles TS announcements via RPL_CREATIONTIME."""
-        channel = self.to_lower(args[1])
+        channel = args[1]
         ts = int(args[2])
         self.channels[channel].ts = ts
 
@@ -900,11 +899,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.warning('(%s) Received %s to %s being routed the wrong way!', self.name, command, target)
             return
 
-        # We use lowercase channels internally.
-        if utils.isChannel(target):
-            target = self.to_lower(target)
-        else:
+        if not utils.isChannel(target):
             target = self.nick_to_uid(target)
+
         if target:
             return {'target': target, 'text': args[1]}
     handle_notice = handle_privmsg

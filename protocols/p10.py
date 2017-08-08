@@ -409,7 +409,7 @@ class P10Protocol(IRCS2SProtocol):
         is_cmode = utils.isChannel(target)
         if is_cmode:
             # Channel mode changes have a trailing TS. User mode changes do not.
-            cobj = self.channels[self.to_lower(target)]
+            cobj = self.channels[target]
             ts = ts or cobj.ts
 
             # Prevent mode bounces by sending our mode through the server if
@@ -1003,7 +1003,7 @@ class P10Protocol(IRCS2SProtocol):
             # No useful data was sent, ignore.
             return
 
-        channel = self.to_lower(args[0])
+        channel = args[0]
         chandata = self.channels[channel].deepcopy()
 
         bans = []
@@ -1101,7 +1101,7 @@ class P10Protocol(IRCS2SProtocol):
 
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
-            channel = self.to_lower(args[0])
+            channel = args[0]
             if ts:  # Only update TS if one was sent.
                 self.updateTS(source, channel, ts)
 
@@ -1123,7 +1123,7 @@ class P10Protocol(IRCS2SProtocol):
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
         # <- ABAAA K #TEST AyAAA :PyLink-devel
-        channel = self.to_lower(args[0])
+        channel = args[0]
         kicked = args[1]
 
         self.handle_part(kicked, 'KICK', [channel, args[2]])
@@ -1137,7 +1137,7 @@ class P10Protocol(IRCS2SProtocol):
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""
         # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
-        channel = self.to_lower(args[0])
+        channel = args[0]
         topic = args[-1]
 
         oldtopic = self.channels[channel].topic
@@ -1150,7 +1150,7 @@ class P10Protocol(IRCS2SProtocol):
     def handle_clearmode(self, numeric, command, args):
         """Handles CLEARMODE, which is used to clear a channel's modes."""
         # <- ABAAA CM #test ovpsmikbl
-        channel = self.to_lower(args[0])
+        channel = args[0]
         modes = args[1]
 
         # Enumerate a list of our existing modes, including prefix modes.

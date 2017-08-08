@@ -207,7 +207,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.apply_modes(target, modes)
         joinedmodes = self.join_modes(modes)
         if utils.isChannel(target):
-            ts = ts or self.channels[self.to_lower(target)].ts
+            ts = ts or self.channels[target].ts
             self._send_with_prefix(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
         else:
             self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
@@ -526,7 +526,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
         # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
-        channel = self.to_lower(args[0])
+        channel = args[0]
         chandata = self.channels[channel].deepcopy()
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
@@ -614,7 +614,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_fmode(self, numeric, command, args):
         """Handles the FMODE command, used for channel mode changes."""
         # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
-        channel = self.to_lower(args[0])
+        channel = args[0]
         oldobj = self.channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = self.parse_modes(channel, modes)
@@ -645,7 +645,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_ftopic(self, numeric, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""
         # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
-        channel = self.to_lower(args[0])
+        channel = args[0]
         ts = args[1]
         setter = args[2]
         topic = args[-1]
@@ -659,7 +659,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_knock(self, numeric, command, args):
         """Handles channel KNOCKs."""
         # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
-        channel = self.to_lower(args[0])
+        channel = args[0]
         text = args[1]
         return {'channel': channel, 'text': text}
 
@@ -770,7 +770,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # ENCAP -> SAKICK args: ['#test', '0ALAAAAAB', 'test']
 
         target = args[1]
-        channel = self.to_lower(args[0])
+        channel = args[0]
         try:
             reason = args[2]
         except IndexError:

@@ -450,8 +450,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
         if (not self.is_internal_client(source)) and (not self.is_internal_server(source)):
             raise LookupError('No such PyLink client/server exists.')
 
-        target = self.to_lower(target)
-
         self._send_with_prefix(source, 'TOPIC %s :%s' % (target, text))
         self.channels[target].topic = text
         self.channels[target].topicset = True
@@ -479,7 +477,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         #  Note that the target is a nickname, not a numeric.
 
         target = self._get_UID(args[0])
-        channel = self.to_lower(args[1])
+        channel = args[1]
 
         curtime = int(time.time())
         try:
@@ -494,7 +492,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""
         # :70MAAAAAA KICK #test 70MAAAAAA :some reason
-        channel = self.to_lower(args[0])
+        channel = args[0]
         kicked = self._get_UID(args[1])
 
         try:
@@ -588,7 +586,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- ABAAA OM #test +h ABAAA
         target = self._get_UID(args[0])
         if utils.isChannel(target):
-            target = self.to_lower(target)
             channeldata = self.channels[target].deepcopy()
         else:
             channeldata = None
@@ -607,7 +604,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
     def handle_part(self, source, command, args):
         """Handles incoming PART commands."""
-        channels = self.to_lower(args[0]).split(',')
+        channels = args[0].split(',')
 
         for channel in channels.copy():
             if source not in channel:
@@ -655,7 +652,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
             # Note: don't mess with the case of the channel prefix, or ~#channel
             # messages will break on RFC1459 casemapping networks (it becomes ^#channel
             # instead).
-            target = '#'.join((split_channel[0], self.to_lower(split_channel[1])))
+            target = '#'.join((split_channel[0], split_channel[1]))
             log.debug('(%s) Normalizing channel target %s to %s', self.name, args[0], target)
 
         return {'target': target, 'text': args[1]}
@@ -674,7 +671,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
     def handle_topic(self, numeric, command, args):
         """Handles incoming TOPIC changes from clients."""
         # <- :70MAAAAAA TOPIC #test :test
-        channel = self.to_lower(args[0])
+        channel = args[0]
         topic = args[1]
 
         oldtopic = self.channels[channel].topic

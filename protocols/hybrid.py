@@ -210,7 +210,7 @@ class HybridProtocol(TS6Protocol):
     def handle_tburst(self, numeric, command, args):
         """Handles incoming topic burst (TBURST) commands."""
         # <- :0UY TBURST 1459308205 #testchan 1459309379 dan!~d@localhost :sdf
-        channel = self.to_lower(args[1])
+        channel = args[1]
         ts = args[2]
         setter = args[3]
         topic = args[-1]
