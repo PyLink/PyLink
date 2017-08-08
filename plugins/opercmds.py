@@ -93,14 +93,17 @@ massban_parser.add_argument('banmask')
 massban_parser.add_argument('reason', nargs='*', default=["User banned"])
 massban_parser.add_argument('--quiet', '-q', action='store_true')
 massban_parser.add_argument('--force', '-f', action='store_true')
+massban_parser.add_argument('--include-opers', '-o', action='store_true')
 
 def massban(irc, source, args, use_regex=False):
-    """<channel> <banmask / exttarget> [<kick reason>] [--quiet/-q] [--force/-f]
+    """<channel> <banmask / exttarget> [<kick reason>] [--quiet/-q] [--force/-f] [--include-opers/-o]
 
     Applies (i.e. kicks affected users) the given PyLink banmask on the specified channel.
 
     The --quiet option can also be given to mass-mute the given user on networks where this is supported
     (currently ts6, unreal, and inspircd). No kicks will be sent in this case.
+
+    By default, this command will ignore opers. This behaviour can be suppressed using the --include-opers option.
 
     Relay CLAIM checking is used on Relay channels if it is enabled; use the --force option
     to override this if needed."""
@@ -123,6 +126,11 @@ def massban(irc, source, args, use_regex=False):
 
     userlist_func = irc.match_all_re if use_regex else irc.match_all
     for uid in userlist_func(args.banmask, channel=args.channel):
+
+        if irc.is_oper(uid) and not args.include_opers:
+            irc.reply('Skipping banning \x02%s\x02 because they are opered.' % irc.users[uid].nick)
+            continue
+
         # Remove the target's access before banning them.
         bans = [('-%s' % irc.cmodes[prefix], uid) for prefix in irc.channels[args.channel].get_prefix_modes(uid) if prefix in irc.cmodes]
 
@@ -157,13 +165,15 @@ def massban(irc, source, args, use_regex=False):
 utils.add_cmd(massban, aliases=('mban',))
 
 def massbanre(irc, source, args):
-    """<channel> <regular expression> [<kick reason>] [--quiet/-q]
+    """<channel> <regular expression> [<kick reason>] [--quiet/-q] [--include-opers/-o]
 
     Bans users on the specified channel whose "nick!user@host [gecos]" mask matches the given Python-style regular expression.
     (https://docs.python.org/3/library/re.html#regular-expression-syntax describes supported syntax)
 
     The --quiet option can also be given to mass-mute the given user on networks where this is supported
     (currently ts6, unreal, and inspircd). No kicks will be sent in this case.
+
+    By default, this command will ignore opers. This behaviour can be suppressed using the --include-opers option.
 
     \x02Be careful when using this command, as it is easy to make mistakes with regex. Use 'checkbanre'
     to check your bans first!\x02
@@ -180,9 +190,10 @@ masskill_parser.add_argument('banmask')
 masskill_parser.add_argument('reason', nargs='*', default=["User banned"], type=str)
 masskill_parser.add_argument('--akill', '-ak', action='store_true')
 masskill_parser.add_argument('--force-kb', '-f', action='store_true')
+masskill_parser.add_argument('--include-opers', '-o', action='store_true')
 
 def masskill(irc, source, args, use_regex=False):
-    """<banmask / exttarget> [<kill/ban reason>] [--akill/ak] [--force-kb/-f]
+    """<banmask / exttarget> [<kill/ban reason>] [--akill/ak] [--force-kb/-f] [--include-opers/-o]
 
     Kills all users matching the given PyLink banmask.
 
@@ -192,6 +203,8 @@ def masskill(irc, source, args, use_regex=False):
     meets claim requirements to set a ban (i.e. this is true if you are opped, if your network is in claim list, etc.;
     see "help CLAIM" for more specific rules). This can also be extended to all shared channels
     the user is in using the --force-kb option (we hope this feature is only used for good).
+
+    By default, this command will ignore opers. This behaviour can be suppressed using the --include-opers option.
 
     To properly kill abusers on another network, combine this command with the 'remote' command in the
     'networks' plugin and adjust your banmasks accordingly."""
@@ -210,8 +223,11 @@ def masskill(irc, source, args, use_regex=False):
 
     seen_users = set()
     for uid in userlist_func(args.banmask):
-
         userobj = irc.users[uid]
+
+        if irc.is_oper(uid) and not args.include_opers:
+            irc.reply('Skipping killing \x02%s\x02 because they are opered.' % userobj.nick)
+            continue
 
         relay = world.plugins.get('relay')
         if relay and hasattr(userobj, 'remote'):
@@ -262,7 +278,7 @@ def masskill(irc, source, args, use_regex=False):
 utils.add_cmd(masskill, aliases=('mkill',))
 
 def masskillre(irc, source, args):
-    """<regular expression> [<kill/ban reason>] [--akill/ak] [--force-kb/-f]
+    """<regular expression> [<kill/ban reason>] [--akill/ak] [--force-kb/-f] [--include-opers/-o]
 
     Kills all users whose "nick!user@host [gecos]" mask matches the given Python-style regular expression.
     (https://docs.python.org/3/library/re.html#regular-expression-syntax describes supported syntax)
@@ -273,6 +289,8 @@ def masskillre(irc, source, args):
     meets claim requirements to set a ban (i.e. this is true if you are opped, if your network is in claim list, etc.;
     see "help CLAIM" for more specific rules). This can also be extended to all shared channels
     the user is in using the --force-kb option (we hope this feature is only used for good).
+
+    By default, this command will ignore opers. This behaviour can be suppressed using the --include-opers option.
 
     \x02Be careful when using this command, as it is easy to make mistakes with regex. Use 'checkbanre'
     to check your bans first!\x02
