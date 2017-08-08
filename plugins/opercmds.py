@@ -341,7 +341,7 @@ def kick(irc, source, args):
     Kicks <user> from the specified channel."""
     permissions.check_permissions(irc, source, ['opercmds.kick'])
     try:
-        channel = irc.to_lower(args[0])
+        channel = args[0]
         target = args[1]
         reason = ' '.join(args[2:])
     except IndexError:

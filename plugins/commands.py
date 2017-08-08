@@ -83,7 +83,7 @@ def showchan(irc, source, args):
     Shows information about <channel>."""
     permissions.check_permissions(irc, source, ['commands.showchan'])
     try:
-        channel = irc.to_lower(args[0])
+        channel = args[0]
     except IndexError:
         irc.error("Not enough arguments. Needs 1: channel.")
         return
