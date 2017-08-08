@@ -90,7 +90,7 @@ def handle_stats(irc, source, command, args):
         irc.msg(source, 'Error: %s' % e)  # Note, no irc.error() because this is not a command, but a handler
         return
 
-    log.info('(%s) STATS %s requested by %s', irc.name, stats_type, irc.get_hostmask(source))
+    log.info('(%s) /STATS %s requested by %s', irc.name, stats_type, irc.get_hostmask(source))
 
     def _num(num, text):
         irc.numeric(args['target'], num, source, text)
@@ -123,5 +123,7 @@ def handle_stats(irc, source, command, args):
         # 242/RPL_STATSUPTIME: ":Server Up <days> days <hours>:<minutes>:<seconds>"
         _num(242, ':Server Up %s' % timediff(world.start_ts, int(time.time())))
 
+    else:
+        log.info('(%s) Unknown /STATS type %r requested by %s', irc.name, stats_type, irc.get_hostmask(source))
     _num(219, "%s :End of /STATS report" % stats_type)
 utils.add_hook(handle_stats, 'STATS')
