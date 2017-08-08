@@ -2,6 +2,7 @@
 exec.py: Provides commands for executing raw code and debugging PyLink.
 """
 import pprint
+import threading
 
 from pylinkirc import utils, world
 from pylinkirc.log import log
@@ -9,7 +10,6 @@ from pylinkirc.coremods import permissions
 
 # These imports are not strictly necessary, but make the following modules
 # easier to access through eval and exec.
-import threading
 import re
 import time
 import pylinkirc
@@ -172,3 +172,24 @@ def inject(irc, source, args):
     log.info('(%s) Injecting raw text %r into protocol module for %s', irc.name,
              args, irc.get_hostmask(source))
     irc.reply(irc.parse_irc_command(args))
+
+@utils.add_cmd
+def threadinfo(irc, source, args):
+    """takes no arguments.
+
+    Lists all threads currently present in this PyLink instance."""
+    permissions.check_permissions(irc, source, ['exec.threadinfo'])
+
+    for t in sorted(threading.enumerate(), key=lambda t: t.name):
+
+        name = t.name
+        # Unnamed threads are something we want to avoid throughout PyLink.
+        if name.startswith('Thread-'):
+            name = '\x0305%s\x03' % t.name
+        # Also VERY bad: remaining threads for networks not in the networks index anymore!
+        elif name.startswith(('Listener for', 'Ping timer loop for', 'Queue thread for')) and name.rsplit(" ", 1)[-1] not in world.networkobjects:
+            name = '\x0304%s\x03' % t.name
+
+        irc.reply('\x02%s\x02[%s]: daemon=%s; alive=%s' % (name, t.ident, t.daemon, t.is_alive()), private=True)
+
+    irc.reply("Total of %s threads." % threading.active_count())
