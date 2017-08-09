@@ -607,7 +607,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         channels = args[0].split(',')
 
         for channel in channels.copy():
-            if source not in channel:
+            if channel not in self.channels or source not in self.channels[channel].users:
                 # Ignore channels the user isn't on, and remove them from any hook payloads.
                 channels.remove(channel)
 
