@@ -184,13 +184,13 @@ def setacc(irc, source, args):
 
     Examples:
 
-    \x02SET #channel *!*@localhost ohv
+    \x02SETACC #channel *!*@localhost ohv
 
-    \x02SET #channel $account v
+    \x02SETACC #channel $account v
 
-    \x02SET othernet#channel $ircop:Network?Administrator qo
+    \x02SETACC othernet#channel $ircop:Network?Administrator qo
 
-    \x02SET #staffchan $channel:#mainchan:op o
+    \x02SETACC #staffchan $channel:#mainchan:op o
     """
 
     try:
