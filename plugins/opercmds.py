@@ -180,7 +180,6 @@ def massbanre(irc, source, args):
 
     \x02Be careful when using this command, as it is easy to make mistakes with regex. Use 'checkbanre'
     to check your bans first!\x02
-
     """
     permissions.check_permissions(irc, source, ['opercmds.massban.re'])
     return massban(irc, source, args, use_regex=True)
