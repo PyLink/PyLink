@@ -522,8 +522,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming PING commands, so we don't time out."""
         # <- :70M PING 70M 0AL
         # -> :0AL PONG 0AL 70M
-        if self.is_internal_server(args[1]):
+        if len(args) >= 2:
             self._send_with_prefix(args[1], 'PONG %s %s' % (args[1], source), queue=False)
+        else:
+            self._send_with_prefix(self.sid, 'PONG %s' % source, queue=False)
 
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
