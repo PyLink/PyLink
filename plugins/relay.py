@@ -533,7 +533,8 @@ def check_claim(irc, channel, sender, chanobj=None):
     2) The originating network is the one that created the relay.
     3) The CLAIM list for the relay in question is empty.
     4) The originating network is in the CLAIM list for the relay in question.
-    5) The sender is halfop or above in the channel.
+    5) The sender is halfop or above in the channel but NOT a U-line
+       (this is because we allow u-lines to override with ops to prevent mode floods).
     6) The sender is a PyLink client/server (checks are suppressed in this case).
     """
     relay = get_relay((irc.name, channel))
@@ -548,7 +549,8 @@ def check_claim(irc, channel, sender, chanobj=None):
     # XXX: stop hardcoding modes to check for and support mlist in isHalfopPlus and friends
     return (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
         irc.name in db[relay]['claim'] or \
-        any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')]) \
+        (any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')])
+         and not _is_uline(irc, sender)) \
         or irc.is_internal_client(sender) or \
         irc.is_internal_server(sender)
 
@@ -980,7 +982,9 @@ def handle_join(irc, numeric, command, args):
                       irc.name, user, channel, modediff, oldmodes, newmodes)
             for modename in modediff:
                 modechar = irc.cmodes.get(modename)
-                if modechar:
+                # Special case for U-lined servers: allow them to join with ops,
+                # but don't forward this mode change on.
+                if modechar and not _is_uline(irc, numeric):
                     modes.append(('-%s' % modechar, user))
 
         if modes:
@@ -1364,6 +1368,9 @@ def handle_chgclient(irc, source, command, args):
 for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
     utils.add_hook(handle_chgclient, c)
 
+def _is_uline(irc, client):
+    return irc.get_friendly_name(irc.get_server(client)) in irc.serverdata.get('ulines', [])
+
 def handle_mode(irc, numeric, command, args):
     def _handle_mode_loop(irc, remoteirc, numeric, command, args):
         target = args['target']
@@ -1387,9 +1394,24 @@ def handle_mode(irc, numeric, command, args):
                         remoteirc.mode(rsid, remotechan, supported_modes)
             else:  # Mode change blocked by CLAIM.
                 reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
-                log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
-                          irc.name, modes, reversed_modes)
+
+                if _is_uline(irc, numeric):
+                    # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
+                    # attempts to op u-lined clients (trying to change status for others
+                    # SHOULD be reverted).
+                    # This is for compatibility with Anope's DEFCON for the most part, as well as
+                    # silly people who try to register a channel multiple times via relay.
+                    reversed_modes = [modepair for modepair in reversed_modes if
+                                      # Mode is a prefix mode but target isn't ulined, revert
+                                      ((modepair[0][-1] in irc.prefixmodes and not
+                                        _is_uline(irc, modepair[1]))
+                                      # Tried to set a list mode, revert
+                                       or modepair[0][-1] in irc.cmodes['*A'])
+                                     ]
+
                 if reversed_modes:
+                    log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
+                              irc.name, modes, reversed_modes)
                     irc.mode(irc.sid, target, reversed_modes)
                 return
 

@@ -228,6 +228,11 @@ servers:
         # This defaults to 4096 if not set.
         #maxsendq: 4096
 
+        # Defines a list of "U-lined" servers that should be given special treatment when overriding
+        # modes. Relay uses this as a list of servers to IGNORE some mode changes from on a claimed
+        # channel (versus bouncing the mode back, which may be floody).
+        #ulines: ["services.example.conf"]
+
         # InspIRCd specific option: determines whether we should display WHOIS extensions by overriding
         # InspIRCd's default WHOIS formatting. This defaults to true for consistency with PyLink 1.x.
         #force_whois_extensions: true
