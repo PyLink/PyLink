@@ -524,7 +524,7 @@ class TS6Protocol(TS6BaseProtocol):
         self._check_nick_collision(nick)
         ts, modes, ident, host, ip, uid, realhost, accountname, realname = args[2:11]
         if realhost == '*':
-            realhost = None
+            realhost = host
 
         log.debug('(%s) handle_euid got args: nick=%s ts=%s uid=%s ident=%s '
                   'host=%s realname=%s realhost=%s ip=%s', self.name, nick, ts, uid,
