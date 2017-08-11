@@ -905,7 +905,6 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :GL TSCTL alltime
 
         if args[0] == 'alltime':
-            # XXX: We override notice() here because that abstraction doesn't allow messages from servers.
             self._send_with_prefix(self.sid, 'NOTICE %s :*** Server=%s time()=%d' % (source, self.hostname(), time.time()))
 
 Class = UnrealProtocol
