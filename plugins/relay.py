@@ -726,20 +726,59 @@ def relay_part(irc, *args, **kwargs):
 
     iterate_all(irc, _relay_part_loop, extra_args=args, kwargs=kwargs)
 
-whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
-                      'blockcolor', 'halfop', 'invex', 'inviteonly', 'key',
-                      'limit', 'moderated', 'noctcp', 'noextmsg', 'nokick',
-                      'noknock', 'nonick', 'nonotice', 'op', 'operonly',
-                      'opmoderated', 'owner', 'private', 'quiet', 'regonly',
-                      'regmoderated', 'secret', 'sslonly', 'adminonly',
-                      'stripcolor', 'topiclock', 'voice', 'flood',
-                      'flood_unreal', 'joinflood', 'freetarget',
-                      'noforwards', 'noinvite'}
-whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
-                      'regdeaf', 'stripcolor', 'noctcp', 'wallops',
-                      'hideidle'}
-clientbot_whitelisted_cmodes = {'admin', 'ban', 'banexception',
-                                'halfop', 'invex', 'op', 'owner', 'voice'}
+whitelisted_cmodes = {
+     'admin',
+     'adminonly',
+     'allowinvite',
+     'autoop',
+     'ban',
+     'banexception',
+     'blockcolor',
+     'flood',
+     'flood_unreal',
+     'freetarget',
+     'halfop',
+     'invex',
+     'inviteonly',
+     'joinflood',
+     'key',
+     'limit',
+     'moderated',
+     'noctcp',
+     'noextmsg',
+     'noforwards',
+     'noinvite',
+     'nokick',
+     'noknock',
+     'nonick',
+     'nonotice',
+     'op',
+     'operonly',
+     'opmoderated',
+     'owner',
+     'private',
+     'quiet',
+     'regmoderated',
+     'regonly',
+     'secret',
+     'sslonly',
+     'stripcolor',
+     'topiclock',
+     'voice'
+}
+whitelisted_umodes = {
+     'bot',
+     'hidechans',
+     'hideidle',
+     'hideoper',
+     'invisible',
+     'noctcp',
+     'oper',
+     'regdeaf',
+     'stripcolor',
+     'wallops'
+}
+clientbot_whitelisted_cmodes = {'admin', 'ban', 'banexception', 'halfop', 'invex', 'op', 'owner', 'voice'}
 modesync_options = ('none', 'half', 'full')
 def get_supported_cmodes(irc, remoteirc, channel, modes):
     """
