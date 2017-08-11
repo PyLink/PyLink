@@ -564,15 +564,6 @@ class TS6Protocol(TS6BaseProtocol):
 
         return self.handle_euid(numeric, command, euid_args)
 
-    def handle_sid(self, numeric, command, args):
-        """Handles incoming server introductions."""
-        # parameters: server name, hopcount, sid, server description
-        servername = args[0].lower()
-        sid = args[2]
-        sdesc = args[-1]
-        self.servers[sid] = Server(numeric, servername, desc=sdesc)
-        return {'name': servername, 'sid': sid, 'text': sdesc}
-
     def handle_server(self, numeric, command, args):
         """
         Handles 1) incoming legacy (no SID) server introductions,

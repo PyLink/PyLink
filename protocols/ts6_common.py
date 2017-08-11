@@ -227,6 +227,16 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
         return {'target': user, 'ts': 100, 'oldnick': oldnick}
 
+    def handle_sid(self, numeric, command, args):
+        """Handles the SID command, used for introducing remote servers by our uplink."""
+        # <- SID services.int 2 00A :Shaltúre IRC Services
+        # parameters: server name, hopcount, sid, server description
+        sname = args[0].lower()
+        sid = args[2]
+        sdesc = args[-1]
+        self.servers[sid] = Server(numeric, sname, desc=sdesc)
+        return {'name': sname, 'sid': sid, 'text': sdesc}
+
     def handle_svsnick(self, source, command, args):
         """Handles SVSNICK (forced nickname change attempts)."""
         # InspIRCd:
