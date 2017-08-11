@@ -27,16 +27,18 @@ class HybridProtocol(TS6Protocol):
         f = self.send
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
+        # Note: according to hybrid source code, +p is paranoia, noknock,
+        # AND rfc1459-style private, though the last isn't documented.
         cmodes = {
             # TS6 generic modes:
             'op': 'o', 'halfop': 'h', 'voice': 'v', 'ban': 'b', 'key': 'k',
             'limit': 'l', 'moderated': 'm', 'noextmsg': 'n',
-            'secret': 's', 'topiclock': 't',
+            'secret': 's', 'topiclock': 't', 'private': 'p',
             # hybrid-specific modes:
             'blockcolor': 'c', 'inviteonly': 'i', 'noctcp': 'C',
             'regmoderated': 'M', 'operonly': 'O', 'regonly': 'R',
             'sslonly': 'S', 'banexception': 'e', 'noknock': 'p',
-            'registered': 'r', 'invex': 'I',
+            'registered': 'r', 'invex': 'I', 'paranoia': 'p',
             # Now, map all the ABCD type modes:
             '*A': 'beI', '*B': 'k', '*C': 'l', '*D': 'cimnprstCMORS'
         }
