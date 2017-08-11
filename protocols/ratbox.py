@@ -22,7 +22,7 @@ class RatboxProtocol(TS6Protocol):
         # Note: +r, +e, and +I support will be negotiated on link
         self.irc.cmodes = {'op': 'o', 'secret': 's', 'private': 'p', 'noextmsg': 'n', 'moderated': 'm',
                        'inviteonly': 'i', 'topiclock': 't', 'limit': 'l', 'ban': 'b', 'voice': 'v',
-                       'key': 'k', 'sslonly': 'S',
+                       'key': 'k', 'sslonly': 'S', 'noknock': 'p',
                        '*A': 'beI',
                        '*B': 'k',
                        '*C': 'l',

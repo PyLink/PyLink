@@ -267,6 +267,7 @@ class TS6Protocol(TS6BaseProtocol):
                         'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
                         'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
                         'secret': 's', 'topiclock': 't', 'inviteonly': 'i',
+                        'private': 'p',
                          # charybdis-specific modes:
                         'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
                         'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
