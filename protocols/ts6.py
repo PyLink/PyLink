@@ -18,12 +18,17 @@ class TS6Protocol(TS6BaseProtocol):
         self.protocol_caps |= {'slash-in-hosts'}
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
-                         'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC'}
+                         'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC', 'USERMODE': 'MODE'}
 
         # Track whether we've received end-of-burst from the uplink.
         self.has_eob = False
 
         self.required_caps = {'EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
+
+        # From ChatIRCd: https://github.com/ChatLounge/ChatIRCd/blob/master/doc/technical/ChatIRCd-extra.txt
+        # Our command handler rewrites ENCAP so that this is the exact same syntax as MODE.
+        # <- :101AAAAAB ENCAP test.hub2 USERMODE 111AAAAAB :+Qw
+        self.handle_usermode = self.handle_mode
 
     ### OUTGOING COMMANDS
 
