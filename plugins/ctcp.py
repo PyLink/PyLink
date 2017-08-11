@@ -5,25 +5,24 @@ import datetime
 from pylinkirc import utils
 from pylinkirc.log import log
 
-def handle_ctcpversion(irc, source, args):
+@utils.add_ctcp
+def version(irc, source, target, args):
     """
     Handles CTCP version requests.
     """
-    irc.msg(source, '\x01VERSION %s\x01' % irc.version(), notice=True)
+    irc.msg(source, '\x01VERSION %s\x01' % irc.version(), notice=True, source=target)
 
-utils.add_cmd(handle_ctcpversion, '\x01version')
-utils.add_cmd(handle_ctcpversion, '\x01version\x01')
-
-def handle_ctcpping(irc, source, args):
+@utils.add_ctcp
+def ping(irc, source, target, args):
     """
     Handles CTCP ping requests.
     """
     # CTCP PING 23152511
-    pingarg = ' '.join(args).strip('\x01')
-    irc.msg(source, '\x01PING %s\x01' % pingarg, notice=True)
-utils.add_cmd(handle_ctcpping, '\x01ping')
+    pingarg = ' '.join(args)
+    irc.msg(source, '\x01PING %s\x01' % pingarg, notice=True, source=target)
 
-def handle_ctcpeaster(irc, source, args):
+@utils.add_ctcp
+def easter(irc, source, target, args):
     """
     Secret easter egg.
     """
@@ -44,11 +43,7 @@ def handle_ctcpeaster(irc, source, args):
                  "Hey, can you keep a secret? \x031,1 %s" % " " * random.randint(1,20),
                 ]
 
-    irc.msg(source, '\x01EASTER %s\x01' % random.choice(responses), notice=True)
-
-utils.add_cmd(handle_ctcpeaster, '\x01easter')
-utils.add_cmd(handle_ctcpeaster, '\x01easter\x01')
-utils.add_cmd(handle_ctcpeaster, '\x01about')
-utils.add_cmd(handle_ctcpeaster, '\x01about\x01')
-utils.add_cmd(handle_ctcpeaster, '\x01pylink')
-utils.add_cmd(handle_ctcpeaster, '\x01pylink\x01')
+    irc.msg(source, '\x01EASTER %s\x01' % random.choice(responses), notice=True, source=target)
+    
+utils.add_ctcp(easter, 'about')
+utils.add_ctcp(easter, 'pylink')
