@@ -744,6 +744,7 @@ whitelisted_cmodes = {
      'key',
      'limit',
      'moderated',
+     'nickflood',
      'noctcp',
      'noextmsg',
      'noforwards',
