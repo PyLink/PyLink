@@ -698,8 +698,9 @@ class UnrealProtocol(TS6BaseProtocol):
                     self.updateTS(numeric, channel, their_ts)
             return {'target': channel, 'modes': parsedmodes, 'channeldata': oldobj}
         else:
-            # User mode change: pass those on to IRCS2SProtocol's handle_mode()
-            super().handle_mode(numeric, 'MODE', args)
+            # User mode change
+            target = self._get_UID(args[0])
+            return self._handle_umode(target, self.parse_modes(target, args[1:]))
 
     def _check_cloak_change(self, uid, parsedmodes):
         """
@@ -739,25 +740,17 @@ class UnrealProtocol(TS6BaseProtocol):
         """Handles SVSMODE, used by services for setting user modes on others."""
         # <- :source SVSMODE target +usermodes
         target = self._get_UID(args[0])
-        modes = args[1:]
 
-        parsedmodes = self.parse_modes(target, modes)
-        self.apply_modes(target, parsedmodes)
-
-        # If +x/-x is being set, update cloaked host info.
-        self._check_cloak_change(target, parsedmodes)
-
-        return {'target': target, 'modes': parsedmodes}
+        return self._handle_umode(target, self.parse_modes(target, args[1:]))
 
     def handle_svs2mode(self, sender, command, args):
         """
         Handles SVS2MODE, which sets services login information on the given target.
         """
-        # Once again this syntax is inconsistent and poorly documented. +d sets a
-        # "services stamp" that some services packages use as an account name field,
-        # while others simply use for tracking the login time? In a nutshell: check
-        # for the +d argument: if it's an integer, ignore it and set accountname to
-        # the user's nick. Otherwise, treat the parameter as a nick.
+        # In a nutshell: check for the +d argument: if it's an integer, ignore
+        # it and set the user's account name to their nick. Otherwise, treat the
+        # parameter as the new account name (this is known as logging in AS some account,
+        # which is supported by atheme and Anope 2.x).
 
         # Logging in (with account info, atheme):
         # <- :NickServ SVS2MODE GL +rd GL
@@ -823,17 +816,27 @@ class UnrealProtocol(TS6BaseProtocol):
             return
 
         self.call_hooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+        # The internal mode +d used for services stamps clashes with the DEAF mode, so don't parse it as
+        # an actual mode mode parsing.
+        return self._handle_umode(target, [mode for mode in parsedmodes if mode[0][-1] != 'd'])
 
-    def handle_umode2(self, numeric, command, args):
+    def _handle_umode(self, target, parsedmodes):
+        """Internal helper function to parse umode changes."""
+        if not parsedmodes:
+            return
+
+        self.apply_modes(target, parsedmodes)
+
+        self._check_oper_status_change(target, parsedmodes)
+        self._check_cloak_change(target, parsedmodes)
+
+        return {'target': target, 'modes': parsedmodes}
+
+    def handle_umode2(self, source, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
         # <- :GL UMODE2 +W
-        parsedmodes = self.parse_modes(numeric, args)
-        self.apply_modes(numeric, parsedmodes)
-
-        self._check_oper_status_change(numeric, parsedmodes)
-        self._check_cloak_change(numeric, parsedmodes)
-
-        return {'target': numeric, 'modes': parsedmodes}
+        target = self._get_UID(source)
+        return self._handle_umode(target, self.parse_modes(target, args))
 
     def handle_topic(self, numeric, command, args):
         """Handles the TOPIC command."""
