@@ -13,6 +13,7 @@ __pycache__/
 *.py[cod]
 *.bak
 *~
+*#
 *.save*
 *.db
 *.pid

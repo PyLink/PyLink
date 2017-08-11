@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<meta name=viewport content="width=device-width, initial-scale=1">
+
+<head>
+<title>Supported User Modes for PyLink</title>
+<style>
+
+html {
+    background-color: white;
+}
+
+.note {
+    color: #555555;
+}
+
+/* (╮°-°)╮┳━┳ */
+table, th, td {
+    border: 1px solid black;
+}
+
+td, th {
+    text-align: center;
+    padding: 3px;
+}
+
+td:first-child, th[scope="row"] {
+    text-align: left;
+}
+
+/* Table cells */
+.tablecell-yes {
+    background-color: #A7F2A5
+}
+
+.tablecell-no {
+    background-color: #F08496
+}
+
+.tablecell-na {
+    background-color: #F0F0F0
+}
+
+.tablecell-planned, .tablecell-yes2 {
+    background-color: #92E8DF
+}
+
+.tablecell-partial {
+    background-color: #EDE8A4
+}
+
+.tablecell-special {
+    background-color: #DCB1FC
+}
+
+.tablecell-caveats {
+    background-color: #F0C884
+}
+
+.tablecell-caveats2 {
+    background-color: #ED9A80
+}
+
+.tablecell-no-padding {
+    padding: initial;
+}
+</style>
+
+</head>
+
+<body>
+<table><tr>
+<th scope="col">User Mode / IRCd</th>
+<th scope="col">RFC 1459</th>
+<th scope="col">InspIRCd</th>
+<th scope="col">charybdis</th>
+<th scope="col">Elemental-IRCd</th>
+<th scope="col">ChatIRCd</th>
+<th scope="col">UnrealIRCd</th>
+<th scope="col">Nefarious</th>
+<th scope="col">snircd</th>
+<th scope="col">IRCu</th>
+<th scope="col">IRCd-Hybrid</th>
+<th scope="col">ircd-ratbox</th>
+<th scope="col">ngIRCd</th>
+</tr>
+<tr>
+<th scope="row">admin</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+a</td><td class="tablecell-yes">+a</td><td class="tablecell-yes">+a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+a</td><td class="tablecell-yes">+a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">away</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+a</td></tr>
+<tr>
+<th scope="row">bot</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+B</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+B</td><td class="tablecell-yes">+B</td><td class="tablecell-yes">+B</td><td class="tablecell-yes">+B</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+B</td></tr>
+<tr>
+<th scope="row">callerid</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">callerid_sslonly</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+t</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">cloak</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-yes">+x</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+x</td></tr>
+<tr>
+<th scope="row">cloak_fakehost</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+f</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">cloak_hashedhost</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+C</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">cloak_hashedip</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+c</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">cloak_sethost</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+h</td><td class="tablecell-yes">+h</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">deaf</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+d</td><td class="tablecell-yes">+D</td><td class="tablecell-yes">+D</td><td class="tablecell-yes">+D</td><td class="tablecell-yes">+d</td><td class="tablecell-yes">+d</td><td class="tablecell-yes">+d</td><td class="tablecell-yes">+d</td><td class="tablecell-yes">+D</td><td class="tablecell-yes">+D</td><td class="tablecell-yes">+b</td></tr>
+<tr>
+<th scope="row">deaf_commonchan</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+c</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+q</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+G</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+C</td></tr>
+<tr>
+<th scope="row">debug</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+d</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">filter</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+G</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">floodexempt</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+f</td></tr>
+<tr>
+<th scope="row">helpop</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+h</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">hidechans</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+I</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+I</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+p</td><td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+p</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+I</td></tr>
+<tr>
+<th scope="row">hideidle</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+I</td><td class="tablecell-yes">+I</td><td class="tablecell-yes">+I</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+q</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">hideoper</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+H</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+H</td><td class="tablecell-yes">+H</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+H</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">invisible</th>
+<td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td></tr>
+<tr>
+<th scope="row">locops</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+O</td><td class="tablecell-yes">+O</td><td class="tablecell-yes">+O</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">netadmin</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+N</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">noctcp</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+C</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+T</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">noforward</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+Q</td><td class="tablecell-yes">+Q</td><td class="tablecell-yes">+Q</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+L</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">noinvite</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+V</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">oper</th>
+<td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td></tr>
+<tr>
+<th scope="row">operwall</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+z</td><td class="tablecell-yes">+z</td><td class="tablecell-yes">+z</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+z</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">override</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+p</td><td class="tablecell-yes">+p</td><td class="tablecell-yes">+p</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+X</td><td class="tablecell-yes">+X</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">privdeaf</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+D</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">protected</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+q</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">regdeaf</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+R</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">registered</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+r</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+R</td></tr>
+<tr>
+<th scope="row">restricted</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+r</td></tr>
+<tr>
+<th scope="row">servprotect</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+S</td><td class="tablecell-yes">+S</td><td class="tablecell-yes">+S</td><td class="tablecell-yes">+S</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+S</td><td class="tablecell-yes">+q</td></tr>
+<tr>
+<th scope="row">showwhois</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+W</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+W</td><td class="tablecell-yes">+W</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_badclientconnections</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+u</td><td class="tablecell-yes">+u</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_botfloods</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_clientconnections</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+c</td><td class="tablecell-yes">+c</td><td class="tablecell-yes">+c</td></tr>
+<tr>
+<th scope="row">sno_debug</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+d</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_extclientconnections</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+C</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_fullauthblock</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+f</td><td class="tablecell-yes">+f</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_nickchange</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+n</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_rejectedclients</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+j</td><td class="tablecell-yes">+r</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_remoteclientconnections</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+F</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_serverconnects</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+e</td><td class="tablecell-yes">+x</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_skill</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">sno_stats</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+y</td><td class="tablecell-yes">+y</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">snomask</th>
+<td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td></tr>
+<tr>
+<th scope="row">ssl</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+z</td><td class="tablecell-yes">+z</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+S</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">stripcolor</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+S</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">vhost</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+t</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">wallops</th>
+<td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td><td class="tablecell-yes">+w</td></tr>
+<tr>
+<th scope="row">webirc</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+W</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+
+
+</table>
+</body>
+</html>
