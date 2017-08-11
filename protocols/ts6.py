@@ -584,10 +584,7 @@ class TS6Protocol(TS6BaseProtocol):
             return
 
         # <- :services.int SERVER a.bc 2 :(H) [GL] a
-        servername = args[0].lower()
-        sdesc = args[-1]
-        self.servers[servername] = Server(numeric, servername, desc=sdesc)
-        return {'name': servername, 'sid': None, 'text': sdesc}
+        return super().handle_server(numeric, command, args)
 
     def handle_tmode(self, numeric, command, args):
         """Handles incoming TMODE commands (channel mode change)."""

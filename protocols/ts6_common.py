@@ -227,6 +227,14 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
         return {'target': user, 'ts': 100, 'oldnick': oldnick}
 
+    def handle_server(self, numeric, command, args):
+        """Handles the SERVER command, used for introducing older (TS5) servers."""
+        # <- :services.int SERVER a.bc 2 :(H) [GL] test jupe
+        servername = args[0].lower()
+        sdesc = args[-1]
+        self.servers[servername] = Server(numeric, servername, desc=sdesc)
+        return {'name': servername, 'sid': None, 'text': sdesc}
+
     def handle_sid(self, numeric, command, args):
         """Handles the SID command, used for introducing remote servers by our uplink."""
         # <- SID services.int 2 00A :Shaltúre IRC Services

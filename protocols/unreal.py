@@ -486,10 +486,7 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             # Legacy (non-SID) servers can still be introduced using the SERVER command.
             # <- :services.int SERVER a.bc 2 :(H) [GL] a
-            servername = args[0].lower()
-            sdesc = args[-1]
-            self.servers[servername] = Server(numeric, servername, desc=sdesc)
-            return {'name': servername, 'sid': None, 'text': sdesc}
+            return super().handle_server(numeric, command, args)
 
     def handle_protoctl(self, numeric, command, args):
         """Handles protocol negotiation."""
