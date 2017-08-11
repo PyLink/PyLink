@@ -86,14 +86,4 @@ class RatboxProtocol(TS6Protocol):
         """update_client() stub for ratbox."""
         raise NotImplementedError("User data changing is not supported on ircd-ratbox.")
 
-    def handle_realhost(self, uid, command, args):
-        """Handles real host propagation."""
-        log.debug('(%s) Got REALHOST %s for %s', args[0], uid)
-        self.users[uid].realhost = args[0]
-
-    def handle_login(self, uid, command, args):
-        """Handles login propagation on burst."""
-        self.users[uid].services_account = args[0]
-        return {'text': args[0]}
-
 Class = RatboxProtocol

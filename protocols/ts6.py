@@ -688,4 +688,14 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :00A ENCAP somenet.relay RSFNC 801AAAAAB Guest75038 1468299643 :1468299675
         return {'target': args[0], 'newnick': args[1]}
 
+    def handle_realhost(self, uid, command, args):
+        """Handles real host propagation."""
+        log.debug('(%s) Got REALHOST %s for %s', args[0], uid)
+        self.users[uid].realhost = args[0]
+
+    def handle_login(self, uid, command, args):
+        """Handles login propagation on burst."""
+        self.users[uid].services_account = args[0]
+        return {'text': args[0]}
+
 Class = TS6Protocol
