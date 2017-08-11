@@ -1,3 +1,10 @@
+"""
+clientbot.py: Clientbot (regular IRC bot) protocol module for PyLink.
+"""
+
+# Here be dragons. There are lots of hacks and stubs in this module to recreate the same sort of state
+# that a regular server would have (e.g. spawning virtual users for things like Relay).
+
 import time
 import threading
 import base64

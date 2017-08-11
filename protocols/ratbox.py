@@ -1,3 +1,7 @@
+"""
+ratbox.py: ircd-ratbox protocol module for PyLink.
+"""
+
 import time
 
 from pylinkirc import utils, conf

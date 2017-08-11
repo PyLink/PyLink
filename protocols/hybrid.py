@@ -1,3 +1,7 @@
+"""
+hybrid.py: IRCD-Hybrid protocol module for PyLink.
+"""
+
 import time
 
 from pylinkirc import utils, conf
