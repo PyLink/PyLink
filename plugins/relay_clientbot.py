@@ -17,6 +17,7 @@ default_styles = {'MESSAGE': '\x02[$netname]\x02 <$colored_sender> $text',
                   'NOTICE': '\x02[$netname]\x02 - Notice from $colored_sender: $text',
                   'SQUIT': '\x02[$netname]\x02 - Netsplit lost users: $colored_nicks',
                   'SJOIN': '\x02[$netname]\x02 - Netjoin gained users: $colored_nicks',
+                  'MODE': '\x02[$netname]\x02 - $colored_sender$sender_identhost sets mode $modes on $channel',
                   'PM': 'PM from $sender on $netname: $text',
                   'PNOTICE': '<$sender> $text',
                   }
@@ -141,6 +142,10 @@ def cb_relay_core(irc, source, command, args):
             if args.get("target") in irc.users:
                 args["target_nick"] = irc.get_friendly_name(args['target'])
 
+            # Join up modes from their list form
+            if args.get('modes'):
+                args['modes'] = irc.join_modes(args['modes'])
+
             args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
                          'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
             if 'channel' in args:
@@ -185,6 +190,7 @@ utils.add_hook(cb_relay_core, 'CLIENTBOT_QUIT')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_NICK')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_SJOIN')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_SQUIT')
+utils.add_hook(cb_relay_core, 'RELAY_RAW_MODE')
 
 @utils.add_cmd
 def rpm(irc, source, args):

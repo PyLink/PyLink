@@ -1415,6 +1415,7 @@ def handle_mode(irc, numeric, command, args):
     def _handle_mode_loop(irc, remoteirc, numeric, command, args):
         target = args['target']
         modes = args['modes']
+
         if utils.isChannel(target):
             # Use the old state of the channel to check for CLAIM access.
             oldchan = args.get('channeldata')
@@ -1422,16 +1423,32 @@ def handle_mode(irc, numeric, command, args):
             if check_claim(irc, target, numeric, chanobj=oldchan):
                 remotechan = get_remote_channel(irc, remoteirc, target)
                 supported_modes = get_supported_cmodes(irc, remoteirc, target, modes)
+
+                # Check if the sender is a user with a relay client; otherwise relay the mode
+                # from the corresponding server.
+                remotesender = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False) or \
+                    get_remote_sid(remoteirc, irc) or remoteirc.sid
+
+                friendly_modes = []
+                for modepair in modes:
+                    if modepair[0][-1] in irc.prefixmodes:
+                        orig_user = get_orig_user(irc, modepair[1])
+                        if orig_user and orig_user[0] == remoteirc.name:
+                            # Don't display prefix mode changes for someone on the target clientbot
+                            # link; this will either be relayed via modesync or ignored.
+                            continue
+
+                        # Convert UIDs to nicks when relaying this to clientbot.
+                        modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
+                    friendly_modes.append(modepair)
+
+                if friendly_modes:
+                    # Call hooks, this is used for clientbot relay.
+                    remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': target, 'modes': friendly_modes}])
+
                 if supported_modes:
-                    # Check if the sender is a user with a relay client; otherwise relay the mode
-                    # from the corresponding server.
-                    u = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
-                    if u:
-                        remoteirc.mode(u, remotechan, supported_modes)
-                    else:
-                        rsid = get_remote_sid(remoteirc, irc)
-                        rsid = rsid or remoteirc.sid
-                        remoteirc.mode(rsid, remotechan, supported_modes)
+                    remoteirc.mode(remotesender, remotechan, supported_modes)
+
             else:  # Mode change blocked by CLAIM.
                 reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
 
