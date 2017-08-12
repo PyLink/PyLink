@@ -1,5 +1,5 @@
 Channel Mode / IRCd,RFC 1459,InspIRCd,charybdis,Elemental-IRCd,ChatIRCd,UnrealIRCd,Nefarious,snircd,IRCu,ircd-ratbox,IRCd-Hybrid,ngIRCd
-admin,,"a (m_customprefix, m_chanprotect)",,a (when enabled),,a,,,,,,a
+admin,,"a (m_customprefix, m_chanprotect)",,a (when enabled),a (when enabled),a,,,,,,a
 adminonly,,,A (ext/chm_adminonly),A (ext/chm_adminonly.so),A (ext/chm_adminonly),,a,,,,,
 allowinvite,,A (m_allowinvite),g,g,g,,,,,,,
 autoop,,w (m_autoop),,,,,,,,,,
@@ -14,7 +14,7 @@ flood,,f (m_messageflood),,,,,,,,,,
 flood_unreal,,,,,,f,,,,,,
 freetarget,,,F,F,F,,,,,,,
 had_delayjoin,,,,,,,d,d,d,,,
-halfop,,"h (m_customprefix, m_halfop)",,h (when enabled),,h,,,,,h,h
+halfop,,"h (m_customprefix, m_halfop)",,h (when enabled),h (when enabled),h,,,,,h,h
 hiddenbans,,,,u,,,,,,,,
 hidequits,,,,,,,Q,u,,,,
 history,,H (m_chanhistory),,,,,,,,,,
@@ -44,7 +44,7 @@ operonly,,O (m_operchans),O (ext/chm_operonly),O (ext/chm_operonly.so),O (ext/ch
 oplevel_apass,,,,,,,A,A,A,,,
 oplevel_upass,,,,,,,U,U,U,,,
 opmoderated,,U (extras/m_opmoderated),z,z,z,,,,,,,
-owner,,"q (m_customprefix, m_chanprotect)",,y (when enabled),,q,,,,,,q
+owner,,"q (m_customprefix, m_chanprotect)",,y (when enabled),y (when enabled),q,,,,,,q
 paranoia,,,,,,,,,,,p*,
 permanent,,P (m_permchannels),P,P,P,P,z,,,,,P
 private,p,p,p*,p*,p*,p,p,p,p,p*,p*,p
