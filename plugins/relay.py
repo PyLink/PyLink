@@ -835,7 +835,11 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
 
                 supported_char = remoteirc.cmodes.get(name)
 
-                # The mode we requested is an extban.
+                # The mode we requested is an extban on the target network.
+                # Basically there are 3 possibilities when handling extban-like modes:
+                # 1) Both target & source both use a chmode (e.g. ts6 +q). In these cases, the mode is just forwarded as-is.
+                # 2) Forwarding from chmode to extban - this is the case being handled here.
+                # 3) Forwarding from extban to extban (see below)
                 if name in remoteirc.extbans_acting:
                     # We make the assumption that acting extbans can only be used with +b...
                     old_arg = arg
@@ -882,22 +886,28 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                                   irc.name, name, arg, remoteirc.name)
                         break
 
-                # Expand extbans known on the local IRCd to modes on the remote, if any exist.
+                # Extban case 3: forwarding extban -> extban or mode
+                # First, we expand extbans from the local IRCd into a named mode and argument pair. Then, we
+                # can figure out how to relay it.
                 for extban_name, extban_prefix in irc.extbans_acting.items():
                     log.debug('(%s) relay.get_supported_cmodes: checking for extban that needs expansion: '
                               'name=%s, extban_name=%s, arg=%s, extban_prefix=%s', irc.name, name, extban_name, arg,
                               extban_prefix)
+                    # Acting extbans are only supported with +b (e.g. +b m:n!u@h)
                     if name == 'ban' and arg.startswith(extban_prefix):
                         orig_supported_char, old_arg = supported_char, arg
 
                         if extban_name in remoteirc.cmodes:
-                            # This extban is a mode on the target network.
+                            # This extban is a mode on the target network. Chop off the extban prefix and set
+                            # the mode character to the target's mode for it.
                             supported_char = remoteirc.cmodes[extban_name]
-                            arg = arg[len(extban_prefix):]  # Strip off the extban prefix
+                            arg = arg[len(extban_prefix):]
                         elif extban_name in remoteirc.extbans_acting:
-                            # It is also an extban on the target network.
+                            # This is also an extban on the target network. We broke up the extban already,
+                            # so rewrite it into a new mode by joining the prefix and data together.
                             arg = remoteirc.extbans_acting[extban_name] + arg[len(extban_prefix):]
                         else:
+                            # This mode/extban isn't supported, so ignore it.
                             log.debug('(%s) relay.get_supported_cmodes: blocking extban %s%s %s expansion as target %s doesn\'t support it',
                                       irc.name, prefix, supported_char, arg, remoteirc.name)
                             mode_parse_aborted = True  # XXX: nested loops are ugly...
@@ -906,7 +916,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                             log.debug('(%s) relay.get_supported_cmodes: expanding extban %s%s %s to %s%s %s for %s',
                                       irc.name, prefix, orig_supported_char, old_arg, prefix,
                                       supported_char, arg, remoteirc.name)
-                        break
+                        break  # Only one extban per mode pair, so break.
 
                 if mode_parse_aborted:
                     break
