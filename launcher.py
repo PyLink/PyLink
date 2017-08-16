@@ -5,6 +5,8 @@ PyLink IRC Services launcher.
 
 import os
 import sys
+import signal
+import time
 from pylinkirc import world, conf, __version__, real_version
 
 try:
@@ -20,17 +22,81 @@ def main():
     parser.add_argument("-v", "--version", help="displays the program version and exits", action='store_true')
     parser.add_argument("-c", "--check-pid", help="no-op; kept for compatiblity with PyLink 1.x", action='store_true')
     parser.add_argument("-n", "--no-pid", help="skips generating and checking PID files", action='store_true')
+    parser.add_argument("-r", "--restart", help="restarts the PyLink instance with the given config file", action='store_true')
+    parser.add_argument("-s", "--stop", help="stops the PyLink instance with the given config file", action='store_true')
     args = parser.parse_args()
 
     if args.version:  # Display version and exit
         print('PyLink %s (in VCS: %s)' % (__version__, real_version))
         sys.exit()
+    elif args.no_pid and (args.restart or args.stop):
+        print('ERROR: --no-pid cannot be combined with --restart or --stop')
+        sys.exit(1)
 
     # FIXME: we can't pass logging on to conf until we set up the config...
     conf.loadConf(args.config)
 
     from pylinkirc.log import log
     from pylinkirc import classes, utils, coremods
+
+    # Write and check for an existing PID file unless specifically told not to.
+    if not args.no_pid:
+        pidfile = '%s.pid' % conf.confname
+        has_pid = False
+        pid = None
+        if os.path.exists(pidfile):
+
+            has_pid = True
+            if psutil is not None and os.name == 'posix':
+                # FIXME: Haven't tested this on other platforms, so not turning it on by default.
+                with open(pidfile) as f:
+                    try:
+                        pid = int(f.read())
+                        proc = psutil.Process(pid)
+                    except psutil.NoSuchProcess:  # Process doesn't exist!
+                        has_pid = False
+                        log.info("Ignoring stale PID %s from PID file %r: no such process exists.", pid, pidfile)
+                    else:
+                        # This PID got reused for something that isn't us?
+                        if not any('pylink' in arg.lower() for arg in proc.cmdline()):
+                            log.info("Ignoring stale PID %s from PID file %r: process command line %r is not us", pid, pidfile, proc.cmdline())
+                            has_pid = False
+
+        if has_pid:
+            if args.stop or args.restart:  # Handle --stop and --restart options
+                os.kill(pid, signal.SIGTERM)
+
+                log.info("Waiting for PyLink instance %s (config %r) to stop...", pid, args.config)
+                while os.path.exists(pidfile):
+                    # XXX: this is ugly, but os.waitpid() only works on non-child processes on Windows
+                    time.sleep(0.2)
+                log.info("Successfully killed PID %s for config %r.", pid, args.config)
+
+                if args.stop:
+                    sys.exit()
+            else:
+                log.error("PID file %r exists; aborting!", pidfile)
+
+                if psutil is None:
+                    log.error("If PyLink didn't shut down cleanly last time it ran, or you're upgrading "
+                              "from PyLink < 1.1-dev, delete %r and start the server again.", pidfile)
+                    if os.name == 'posix':
+                        log.error("Alternatively, you can install psutil for Python 3 (pip3 install psutil), "
+                                  "which will allow this launcher to detect stale PID files and ignore them.")
+                sys.exit(1)
+        elif args.stop or args.restart:
+            # --stop and --restart should take care of stale PIDs.
+            if pid:
+                world._should_remove_pid = True
+                log.error('Cannot stop PyLink: no process with PID %s exists.', pid)
+            else:
+                log.error('Cannot stop PyLink: PID file %r does not exist.', pidfile)
+            sys.exit(1)
+
+        with open(pidfile, 'w') as f:
+            f.write(str(os.getpid()))
+        world._should_remove_pid = True
+
     log.info('PyLink %s starting...', __version__)
 
     # Set terminal window title. See https://bbs.archlinux.org/viewtopic.php?id=85567
@@ -41,47 +107,10 @@ def main():
     elif os.name == 'posix':
         sys.stdout.write("\x1b]2;PyLink %s\x07" % __version__)
 
-    # Write and check for an existing PID file unless specifically told not to.
-    if not args.no_pid:
-        pidfile = '%s.pid' % conf.confname
-        if os.path.exists(pidfile):
-
-            has_stale_pid = False
-            if psutil is not None and os.name == 'posix':
-                # FIXME: Haven't tested this on other platforms, so not turning it on by default.
-                with open(pidfile) as f:
-                    try:
-                        pid = int(f.read())
-                        proc = psutil.Process(pid)
-                    except psutil.NoSuchProcess:  # Process doesn't exist!
-                        has_stale_pid = True
-                        log.info("Ignoring stale PID %s from PID file %r: no such process exists.", pid, pidfile)
-                    else:
-                        # This PID got reused for something that isn't us?
-                        if not any('pylink' in arg.lower() for arg in proc.cmdline()):
-                            log.info("Ignoring stale PID %s from PID file %r: process command line %r is not us", pid, pidfile, proc.cmdline())
-                            has_stale_pid = True
-
-            if not has_stale_pid:
-                log.error("PID file exists %r; aborting!", pidfile)
-                if psutil is None:
-                    log.error("If PyLink didn't shut down cleanly last time it ran, or you're upgrading "
-                              "from PyLink < 1.1-dev, delete %r and start the server again.", pidfile)
-                    if os.name == 'posix':
-                        log.error("Alternatively, you can install psutil for Python 3 (pip3 install psutil), "
-                                  "which will allow this launcher to detect stale PID files and ignore them.")
-                sys.exit(1)
-
-        with open(pidfile, 'w') as f:
-            f.write(str(os.getpid()))
-        world._should_remove_pid = True
-
-    # Import plugins first globally, because they can listen for events
-    # that happen before the connection phase.
+    # Load configured plugins
     to_load = conf.conf['plugins']
     utils.resetModuleDirs()
-    # Here, we override the module lookup and import the plugins
-    # dynamically depending on which were configured.
+
     for plugin in to_load:
         try:
             world.plugins[plugin] = pl = utils.loadPlugin(plugin)
@@ -94,7 +123,6 @@ def main():
 
     # Initialize all the networks one by one
     for network, sdata in conf.conf['servers'].items():
-
         try:
             protoname = sdata['protocol']
         except (KeyError, TypeError):
