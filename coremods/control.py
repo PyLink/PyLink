@@ -36,6 +36,10 @@ def _remove_pid():
         log.debug('Not removing PID file %s as world._should_remove_pid is False.' % pidfile)
 
 def _kill_plugins(irc=None):
+    if not world.plugins:
+        # No plugins were loaded or we were in a pre-initialized state, ignore.
+        return
+
     log.info("Shutting down plugins.")
     for name, plugin in world.plugins.items():
         # Before closing connections, tell all plugins to shutdown cleanly first.
