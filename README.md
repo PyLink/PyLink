@@ -27,11 +27,16 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 ## Installation
 
+### Pre-requisites
+* CPython 3.4 or above (other intepreters are untested and unsupported)
+* A Unix-like operating system: PyLink is actively developed on Linux only, so we cannot guarantee that things will work properly on other systems.
+
+If you are a developer and want to help make PyLink more portable, patches are highly appreciated. Talk to us!
+
 ### Installing from source
 
 1) First, make sure the following dependencies are met:
 
-    * Python 3.4+
     * Setuptools (`pip3 install setuptools`)
     * PyYAML (`pip3 install pyyaml`)
     * ircmatch (`pip3 install ircmatch`)

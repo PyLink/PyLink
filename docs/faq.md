@@ -51,7 +51,6 @@ InterJanus-style links between PyLink daemons are not supported yet; see https:/
 PyLink provides, in no particular order:
 - More complete support for modern IRCds (UnrealIRCd 4.x, InspIRCd 2.0, charybdis 4, Nefarious IRCu, etc.).
 - A flexible, maintainable codebase extensible beyond Relay.
-- Cross platform functionality (*nix, Windows, and probably others too).
 - Proper protocol negotiation leading to fewer SQUIT/DoS possibilities:
     - Better support for channel modes such as +fjMOR, etc.
     - Proper support for nick length limits with relayed users.
