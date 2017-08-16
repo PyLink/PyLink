@@ -83,3 +83,6 @@ def check_permissions(irc, uid, perms, also_show=[]):
     raise utils.NotAuthorizedError("You are missing one of the following permissions: %s" %
                                    (', '.join(perms+also_show)))
 checkPermissions = check_permissions
+
+# Reset our permissions list on startup.
+reset_permissions()
