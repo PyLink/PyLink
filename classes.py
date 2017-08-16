@@ -1063,7 +1063,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                             # If the CIDR matches, hack around the host matcher by pretending that
                             # the lookup target was the IP and not the CIDR range!
                             glob = '@'.join((header, real_ip))
-                            log.debug('(%s) Found matching CIDR %s for %s, replacing target host with IP %s', self.name,
+                            log.debug('(%s) Found matching CIDR %s for %s, replacing target glob with IP %s', self.name,
                                       cidrtarget, target, real_ip)
                     except ValueError:
                         pass
