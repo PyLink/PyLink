@@ -24,13 +24,19 @@ def main():
     parser.add_argument("-n", "--no-pid", help="skips generating and checking PID files", action='store_true')
     parser.add_argument("-r", "--restart", help="restarts the PyLink instance with the given config file", action='store_true')
     parser.add_argument("-s", "--stop", help="stops the PyLink instance with the given config file", action='store_true')
+    parser.add_argument("-R", "--rehash", help="rehashes the PyLink instance with the given config file", action='store_true')
     args = parser.parse_args()
 
     if args.version:  # Display version and exit
         print('PyLink %s (in VCS: %s)' % (__version__, real_version))
         sys.exit()
-    elif args.no_pid and (args.restart or args.stop):
+
+    # XXX: repetitive
+    elif args.no_pid and (args.restart or args.stop or args.rehash):
         print('ERROR: --no-pid cannot be combined with --restart or --stop')
+        sys.exit(1)
+    elif args.rehash and os.name != 'posix':
+        print('ERROR: Rehashing via the command line is not supported outside Unix.')
         sys.exit(1)
 
     # FIXME: we can't pass logging on to conf until we set up the config...
@@ -63,7 +69,11 @@ def main():
                             has_pid = False
 
         if has_pid:
-            if args.stop or args.restart:  # Handle --stop and --restart options
+            if args.rehash:
+                os.kill(pid, signal.SIGUSR1)
+                log.info('OK, rehashed PyLink instance %s (config %r)', pid, args.config)
+                sys.exit()
+            elif args.stop or args.restart:  # Handle --stop and --restart options
                 os.kill(pid, signal.SIGTERM)
 
                 log.info("Waiting for PyLink instance %s (config %r) to stop...", pid, args.config)
@@ -84,13 +94,13 @@ def main():
                         log.error("Alternatively, you can install psutil for Python 3 (pip3 install psutil), "
                                   "which will allow this launcher to detect stale PID files and ignore them.")
                 sys.exit(1)
-        elif args.stop or args.restart:
+        elif args.stop or args.restart or args.rehash:  # XXX: also repetitive
             # --stop and --restart should take care of stale PIDs.
             if pid:
                 world._should_remove_pid = True
-                log.error('Cannot stop PyLink: no process with PID %s exists.', pid)
+                log.error('Cannot stop/rehash PyLink: no process with PID %s exists.', pid)
             else:
-                log.error('Cannot stop PyLink: PID file %r does not exist.', pidfile)
+                log.error('Cannot stop/rehash PyLink: PID file %r does not exist.', pidfile)
             sys.exit(1)
 
         with open(pidfile, 'w') as f:
