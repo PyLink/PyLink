@@ -7,6 +7,11 @@ import os
 import sys
 from pylinkirc import world, conf, __version__, real_version
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 def main():
     import argparse
 
@@ -40,10 +45,32 @@ def main():
     if not args.no_pid:
         pidfile = '%s.pid' % conf.confname
         if os.path.exists(pidfile):
-            log.error("PID file exists %r; aborting! If PyLink didn't shut down cleanly last time it "
-                      "ran, or you're upgrading from PyLink < 1.1-dev, delete %r and start the "
-                      "server again." % (pidfile, pidfile))
-            sys.exit(1)
+
+            has_stale_pid = False
+            if psutil is not None and os.name == 'posix':
+                # FIXME: Haven't tested this on other platforms, so not turning it on by default.
+                with open(pidfile) as f:
+                    try:
+                        pid = int(f.read())
+                        proc = psutil.Process(pid)
+                    except psutil.NoSuchProcess:  # Process doesn't exist!
+                        has_stale_pid = True
+                        log.info("Ignoring stale PID %s from PID file %r: no such process exists.", pid, pidfile)
+                    else:
+                        # This PID got reused for something that isn't us?
+                        if not any('pylink' in arg.lower() for arg in proc.cmdline()):
+                            log.info("Ignoring stale PID %s from PID file %r: process command line %r is not us", pid, pidfile, proc.cmdline())
+                            has_stale_pid = True
+
+            if not has_stale_pid:
+                log.error("PID file exists %r; aborting!", pidfile)
+                if psutil is None:
+                    log.error("If PyLink didn't shut down cleanly last time it ran, or you're upgrading "
+                              "from PyLink < 1.1-dev, delete %r and start the server again.", pidfile)
+                    if os.name == 'posix':
+                        log.error("Alternatively, you can install psutil for Python 3 (pip3 install psutil), "
+                                  "which will allow this launcher to detect stale PID files and ignore them.")
+                sys.exit(1)
 
         with open(pidfile, 'w') as f:
             f.write(str(os.getpid()))

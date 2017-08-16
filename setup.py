@@ -79,6 +79,7 @@ setup(
 
     extras_require={
         'password-hashing': ['passlib'],
+        'cron-support': ['psutil'],
         'servprotect': ['expiringdict>=1.1.4'],
     },
 
