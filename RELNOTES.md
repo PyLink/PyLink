@@ -1,10 +1,28 @@
+# PyLink 1.2.0
+The "Dragons" release. Changes since 1.2.0-rc1:
+
+#### Feature changes
+- Make relay nick tagging configurable per-network; backported from 2.0-dev (#494)
+
+#### Bug fixes
+
+- Fix extraneous removal of PID files even when `-n/--no-check-pid` was set or if the PID file already existed on launch (PyLink would quit and delete the old PID file in these cases)
+- servprotect: bump default threshold up to 10 hits/10 seconds, as the old limit was too prone to false positives
+- Fix extraneous queue threads not being stopped when a network disconnects (0d5afd2)
+- Fix relay errors on disconnect due to race conditions in network handling (a0a295f)
+
+#### Misc changes
+- Updated example config and FAQ.
+
+For a summary of major changes since 1.1.x, see the changelog for 1.2.0-rc1.
+
 # PyLink 1.2.0-rc1
 
 The "Droplet" release. Changes since 1.2-beta1:
 
 #### Bug fixes
 - relay: fix channel claim disabling (i.e. "`CLAIM #channel -`" was broken since 1.2-alpha1)
-- IRCS2SProtocol: fix `UnboundLocalError` in "message coming from wrong wrong way" error
+- IRCS2SProtocol: fix `UnboundLocalError` in "message coming from wrong way" error
 - ts6: fix parsing of the `INVITE` command's `ts` argument
 - automode: fix formatting and examples in `setacc` help text
 - p10: fix rejoin-on-kick relaying by also acknowledging kicks sent from PyLink to its clients with a PART
@@ -569,7 +587,7 @@ Tagged as **0.9-beta1** by [GLolol](https://github.com/GLolol) on 2016-07-14T02:
 - protocols/unreal: fix server name of the uplink server not being saved (#268)
 - Channel prefixes are now sorted in WHOIS output (i.e. no more wrong `@~#channel`), and only the highest prefix shown
 - Fixed issues in internal channel mode tracking (c1cd6f4 58d71b0)
-- WHOIS requests to the PyLink server for clients that aren't PyLink bots now work (syntax: `/raw whois pylink.server somenick`). "No such nick" errors are also sent when the target is missing, instead of raising warnings. 
+- WHOIS requests to the PyLink server for clients that aren't PyLink bots now work (syntax: `/raw whois pylink.server somenick`). "No such nick" errors are also sent when the target is missing, instead of raising warnings.
     - These WHOIS responses were previously sent from the wrong source (the server that the client was on, instead of the PyLink server), causing them to be ignored if they were going the wrong way.
 - Automode now treat channels case insensitively in `delacc`.
 - `ascii` and `rfc1459` case mappings now treat Unicode case sensitively, in the same way an IRCd would.
@@ -596,7 +614,7 @@ Tagged as **0.9-alpha1** by [GLolol](https://github.com/GLolol) on 2016-07-09T07
 - Relay can now handle messages sent by users not in a target channel (e.g. for channels marked `-n`)
 - Relay subserver spawning is now always on - the `spawn_servers` option is removed
 - Relay can now optionally show netsplits from remote networks, using a `show_netsplits` option in the `relay:` block
-- The `channels` configuration option in `server:` blocks is now optional, and defaults to no channels if not specified 
+- The `channels` configuration option in `server:` blocks is now optional, and defaults to no channels if not specified
 - The `maxnicklen` configuration option is also now optional, with a default value of 30 characters.
 - `--version`, `--no-pid`, and `--help` are now implemented by PyLink's command line script
 - Test cases were dropped - they were broken and poorly maintained.
@@ -680,7 +698,7 @@ Tagged as **0.8-alpha1** by [GLolol](https://github.com/GLolol) on 2016-04-23T03
 - Track user IPs of UnrealIRCd 3.2 users (#196)
 - SIGHUP now rehashes PyLink on supported platforms (#179)
 - Improved mode support for Charybdis (#203)
-- Fix disconnect logic during ping timeouts 
+- Fix disconnect logic during ping timeouts
 
 [Full diff](https://github.com/GLolol/PyLink/compare/0.7.2-dev...0.8-alpha1)
 
@@ -1009,14 +1027,14 @@ Tagged as **0.3.1-dev** by [GLolol](https://github.com/GLolol) on 2015-09-03T06:
 
 Bugfix release + LINKACL support for relay. [Commits since 0.3.0-dev](https://github.com/GLolol/PyLink/compare/0.3.0-dev...0.3.1-dev):
 
-043fccf4470bfbc8041056f5dbb694be079a45a5 Fix previous commit (Closes #100) 
+043fccf4470bfbc8041056f5dbb694be079a45a5 Fix previous commit (Closes #100)
 708d94916477f53ddc79a90c4ff321f636c01348 relay: join remote users before sending ours
-8d44830d5c5b12abd6764038d7e9983998acdfc6 relay.handle_kill: prevent yet another RuntimeError 
-6d6606900e2df60eb8055da0e4452a560c7510b5 relay: coerse "/" to "|" in nicks if "/" isn't present in the separator 
-c8e7b72065b2686c9691b276989ee948023ffe4d protocols: lowercase channel names in PRIVMSG handling 
-37eecd7d69cec794186024bf715a8ba55902d0e8 pr/inspircd: use OPERTYPE to oper up clients correctly, and handle the metadata accordingly 9f0f4cb1246c95335f42a24f7c5016175e6fba66 relay: burst the right set of modes 
-7620cd7433d9dc53dda1bdb06f6a9c673757f1f6 pr/inspircd: fix compatibility with channel mode +q (~) 
-3523f8f7663e618829dccfbec6eccfaf0ec87cc5 LINKACL support 
+8d44830d5c5b12abd6764038d7e9983998acdfc6 relay.handle_kill: prevent yet another RuntimeError
+6d6606900e2df60eb8055da0e4452a560c7510b5 relay: coerse "/" to "|" in nicks if "/" isn't present in the separator
+c8e7b72065b2686c9691b276989ee948023ffe4d protocols: lowercase channel names in PRIVMSG handling
+37eecd7d69cec794186024bf715a8ba55902d0e8 pr/inspircd: use OPERTYPE to oper up clients correctly, and handle the metadata accordingly 9f0f4cb1246c95335f42a24f7c5016175e6fba66 relay: burst the right set of modes
+7620cd7433d9dc53dda1bdb06f6a9c673757f1f6 pr/inspircd: fix compatibility with channel mode +q (~)
+3523f8f7663e618829dccfbec6eccfaf0ec87cc5 LINKACL support
 51389b96e26224aab262b7b090032d0b745e9590 relay: LINKACL command (Closes #88)
 
 # [PyLink 0.2.5-dev](https://github.com/GLolol/PyLink/releases/tag/0.2.5-dev)
@@ -1054,7 +1072,7 @@ Full diff: https://github.com/GLolol/PyLink/compare/0.2.2-dev...0.2.3-dev
 # [PyLink 0.2.2-dev](https://github.com/GLolol/PyLink/releases/tag/0.2.2-dev)
 Tagged as **0.2.2-dev** by [GLolol](https://github.com/GLolol) on 2015-07-24T18:09:44Z
 
-The "please don't break again :( " release. 
+The "please don't break again :( " release.
 
 - Added `WHOIS` handling support for TS6 IRCds.
 - ts6: fix handling of `SID`, `CHGHOST`, and `SQUIT` commands.
@@ -1109,7 +1127,7 @@ Tagged as **0.1.5-dev** by [GLolol](https://github.com/GLolol) on 2015-07-18T20:
 - Send PING to our uplink periodically, and quit if we don't get a response (#42, #57)
     - New server `pingfreq` option is introduced to set the time between PINGs.
 - relay: Only spawn clients if they share a channel, and quit them when they leave all shared channels (cf32461)
-- Support autoreconnecting to networks! A new `autoconnect` server setting is added to set autoconnect delay. 
+- Support autoreconnecting to networks! A new `autoconnect` server setting is added to set autoconnect delay.
 - New `PYLINK_DISCONNECT` hook to keep track of network disconnections (3f6f78b)
 - relay: add a `LINKED` command (#65, bbcd70b)
 - commands: add a `HELP` command (#8, 6508cb3 4553eda)
