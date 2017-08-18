@@ -428,9 +428,12 @@ def get_orig_user(irc, user, targetirc=None):
         else:
             return remoteuser
 
-def get_relay(chanpair):
-    """Finds the matching relay entry name for the given (network name, channel)
+def get_relay(irc, channel):
+    """Finds the matching relay entry name for the given network, channel
     pair, if one exists."""
+
+    chanpair = (irc.name, irc.to_lower(channel))
+
     if chanpair in db:  # This chanpair is a shared channel; others link to it
         return chanpair
     # This chanpair is linked *to* a remote channel
@@ -441,11 +444,11 @@ def get_relay(chanpair):
 def get_remote_channel(irc, remoteirc, channel):
     """Returns the linked channel name for the given channel on remoteirc,
     if one exists."""
-    query = (irc.name, channel)
     remotenetname = remoteirc.name
-    chanpair = get_relay(query)
+    chanpair = get_relay(irc, channel)
     if chanpair is None:
         return
+
     if chanpair[0] == remotenetname:
         return chanpair[1]
     else:
@@ -457,7 +460,7 @@ def initialize_channel(irc, channel):
     """Initializes a relay channel (merge local/remote users, set modes, etc.)."""
     # We're initializing a relay that already exists. This can be done at
     # ENDBURST, or on the LINK command.
-    relay = get_relay((irc.name, channel))
+    relay = get_relay(irc, channel)
     log.debug('(%s) relay.initialize_channel being called on %s', irc.name, channel)
     log.debug('(%s) relay.initialize_channel: relay pair found to be %s', irc.name, relay)
     queued_users = []
@@ -507,7 +510,7 @@ def remove_channel(irc, channel):
         if irc.pseudoclient:
             irc.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
 
-    relay = get_relay((irc.name, channel))
+    relay = get_relay(irc, channel)
     if relay:
         for user in irc.channels[channel].users.copy():
             if not is_relay_client(irc, user):
@@ -537,7 +540,7 @@ def check_claim(irc, channel, sender, chanobj=None):
        (this is because we allow u-lines to override with ops to prevent mode floods).
     6) The sender is a PyLink client/server (checks are suppressed in this case).
     """
-    relay = get_relay((irc.name, channel))
+    relay = get_relay(irc, channel)
     try:
         mlist = chanobj.prefixmodes
     except AttributeError:
@@ -999,7 +1002,7 @@ utils.add_hook(handle_operup, 'CLIENT_OPERED')
 
 def handle_join(irc, numeric, command, args):
     channel = args['channel']
-    if not get_relay((irc.name, channel)):
+    if not get_relay(irc, channel):
         # No relay here, return.
         return
     ts = args['ts']
@@ -1122,7 +1125,7 @@ def handle_part(irc, numeric, command, args):
         # For clientbot: treat forced parts to the bot as clearchan, and attempt to rejoin only
         # if it affected a relay.
         if not irc.has_cap('can-spawn-clients'):
-            for channel in [c for c in channels if get_relay((irc.name, c))]:
+            for channel in [c for c in channels if get_relay(irc, c)]:
                 for user in irc.channels[channel].users:
                     if (not irc.is_internal_client(user)) and (not is_relay_client(irc, user)):
                         irc.call_hooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
@@ -1158,7 +1161,7 @@ def handle_messages(irc, numeric, command, args):
                   irc.name, numeric, target)
         return
 
-    relay = get_relay((irc.name, target))
+    relay = get_relay(irc, target)
     remoteusers = relayusers[(irc.name, numeric)]
 
     # HACK: Don't break on sending to @#channel or similar. TODO: This should really
@@ -1281,7 +1284,7 @@ def handle_kick(irc, source, command, args):
     target = args['target']
     text = args['text']
     kicker = source
-    relay = get_relay((irc.name, channel))
+    relay = get_relay(irc, channel)
 
     # Special case for clientbot: treat kicks to the PyLink service bot as channel clear.
     if (not irc.has_cap('can-spawn-clients')) and irc.pseudoclient and target == irc.pseudoclient.uid:
@@ -1753,7 +1756,7 @@ def create(irc, source, args):
 
     # Check to see whether the channel requested is already part of a different
     # relay.
-    localentry = get_relay((irc.name, channel))
+    localentry = get_relay(irc, channel)
     if localentry:
         irc.error('Channel %r is already part of a relay.' % channel)
         return
@@ -1899,7 +1902,7 @@ def link(irc, source, args):
     if remotenet not in world.networkobjects:
         irc.error('No network named %r exists.' % remotenet)
         return
-    localentry = get_relay((irc.name, localchan))
+    localentry = get_relay(irc, localchan)
 
     if localentry:
         irc.error('Channel %r is already part of a relay.' % localchan)
@@ -1970,7 +1973,7 @@ def delink(irc, source, args):
     if not utils.isChannel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
-    entry = get_relay((irc.name, channel))
+    entry = get_relay(irc, channel)
     if entry:
         if entry[0] == irc.name:  # We own this channel.
             if not remotenet:
@@ -2094,7 +2097,7 @@ def linkacl(irc, source, args):
     if not utils.isChannel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
-    relay = get_relay((irc.name, channel))
+    relay = get_relay(irc, channel)
     if not relay:
         irc.error('No such relay %r exists.' % channel)
         return
@@ -2154,7 +2157,7 @@ def showuser(irc, source, args):
                 irc.reply("\x02Relay nicks\x02: %s" % ', '.join(nicks), private=True)
         relaychannels = []
         for ch in irc.users[u].channels:
-            relay = get_relay((irc.name, ch))
+            relay = get_relay(irc, ch)
             if relay:
                 relaychannels.append(''.join(relay))
         if relaychannels and (irc.is_oper(source) or u == source):
@@ -2184,7 +2187,7 @@ def showchan(irc, source, args):
         return
 
     else:
-        relayentry = get_relay((irc.name, channel))
+        relayentry = get_relay(irc, channel)
         if relayentry:
             relays = ['\x02%s\x02' % ''.join(relayentry)]
             relays += [''.join(link) for link in db[relayentry]['links']]

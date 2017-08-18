@@ -121,7 +121,7 @@ def cb_relay_core(irc, source, command, args):
                     # No user data given. This was probably some other global event such as SQUIT.
                     userdata = irc.pseudoclient
 
-                targets = [channel for channel in userdata.channels if relay.get_relay((irc.name, channel))]
+                targets = [channel for channel in userdata.channels if relay.get_relay(irc, channel)]
             else:
                 # Pluralize the channel so that we can iterate over it.
                 targets = [target]
