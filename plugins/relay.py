@@ -1435,6 +1435,8 @@ def handle_mode(irc, numeric, command, args):
 
             if check_claim(irc, target, numeric, chanobj=oldchan):
                 remotechan = get_remote_channel(irc, remoteirc, target)
+                if not remotechan:
+                    return
                 supported_modes = get_supported_cmodes(irc, remoteirc, target, modes)
 
                 # Check if the sender is a user with a relay client; otherwise relay the mode
@@ -1457,7 +1459,7 @@ def handle_mode(irc, numeric, command, args):
 
                 if friendly_modes:
                     # Call hooks, this is used for clientbot relay.
-                    remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': target, 'modes': friendly_modes}])
+                    remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': remotechan, 'modes': friendly_modes}])
 
                 if supported_modes:
                     remoteirc.mode(remotesender, remotechan, supported_modes)
