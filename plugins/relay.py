@@ -1444,22 +1444,23 @@ def handle_mode(irc, numeric, command, args):
                 remotesender = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False) or \
                     get_remote_sid(remoteirc, irc) or remoteirc.sid
 
-                friendly_modes = []
-                for modepair in modes:
-                    if modepair[0][-1] in irc.prefixmodes:
-                        orig_user = get_orig_user(irc, modepair[1])
-                        if orig_user and orig_user[0] == remoteirc.name:
-                            # Don't display prefix mode changes for someone on the target clientbot
-                            # link; this will either be relayed via modesync or ignored.
-                            continue
+                if not remoteirc.has_cap('can-spawn-clients'):
+                    friendly_modes = []
+                    for modepair in modes:
+                        if modepair[0][-1] in irc.prefixmodes:
+                            orig_user = get_orig_user(irc, modepair[1])
+                            if orig_user and orig_user[0] == remoteirc.name:
+                                # Don't display prefix mode changes for someone on the target clientbot
+                                # link; this will either be relayed via modesync or ignored.
+                                continue
 
-                        # Convert UIDs to nicks when relaying this to clientbot.
-                        modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
-                    friendly_modes.append(modepair)
+                            # Convert UIDs to nicks when relaying this to clientbot.
+                            modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
+                        friendly_modes.append(modepair)
 
-                if friendly_modes:
-                    # Call hooks, this is used for clientbot relay.
-                    remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': remotechan, 'modes': friendly_modes}])
+                    if friendly_modes:
+                        # Call hooks, this is used for clientbot relay.
+                        remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': remotechan, 'modes': friendly_modes}])
 
                 if supported_modes:
                     remoteirc.mode(remotesender, remotechan, supported_modes)
