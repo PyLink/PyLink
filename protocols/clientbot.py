@@ -17,7 +17,7 @@ from pylinkirc.classes import *
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 
 # IRCv3 capabilities to request when available
-IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names'}
+IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names', 'chghost'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
@@ -859,6 +859,24 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         channel = args[1]
         ts = int(args[2])
         self.channels[channel].ts = ts
+
+    def handle_chghost(self, source, command, args):
+        """Handles the IRCv3 CHGHOST command."""
+        # <- :nick!user@host CHGHOST ident new.host
+
+        ident = self.users[source].ident
+        host = self.users[source].host
+
+        self.users[source].ident = newident = args[0]
+        self.users[source].host = newhost = args[1]
+
+        if ident != newident:
+            self.call_hooks([source, 'CHGIDENT',
+                             {'target': source, 'newident': newident}])
+
+        if host != newhost:
+            self.call_hooks([source, 'CHGHOST',
+                             {'target': source, 'newhost': newhost}])
 
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""
