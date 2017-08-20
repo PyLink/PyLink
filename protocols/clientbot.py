@@ -3,7 +3,8 @@ clientbot.py: Clientbot (regular IRC bot) protocol module for PyLink.
 """
 
 # Here be dragons. There are lots of hacks and stubs in this module to recreate the same sort of state
-# that a regular server would have (e.g. spawning virtual users for things like Relay).
+# that a regular server would have (e.g. spawning virtual users for things like Relay). Somehow it
+# works on most networks though!
 
 import time
 import threading
@@ -17,7 +18,8 @@ from pylinkirc.classes import *
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 
 # IRCv3 capabilities to request when available
-IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names', 'chghost', 'account-notify'}
+IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names', 'chghost', 'account-notify',
+                      'account-tag'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
@@ -426,6 +428,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                     nick = sender  # Treat the sender prefix we received as a nick.
                 idsource = self._get_UID(nick, ident, host)
 
+        if idsource in self.users:
+            # Handle IRCv3.2 account-tag.
+            account_tag = tags.get('account')
+            if account_tag is not None and account_tag != self.users[idsource].services_account:
+                self.call_hooks([idsource, 'CLIENT_SERVICES_LOGIN', {'text': account_tag}])
+
         try:
             func = getattr(self, 'handle_'+command.lower())
         except AttributeError:  # unhandled command
@@ -783,7 +791,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if account == '*':  # Logout
             account = ''
 
-        return {'text': account}
+        if account != self.users[source].services_account:
+            return {'text': account}
 
     def handle_join(self, source, command, args):
         """
