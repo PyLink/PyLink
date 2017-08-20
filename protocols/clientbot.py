@@ -623,8 +623,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             nick = name.lstrip(prefixes)
 
             # Get the PUID for the given nick. If one doesn't exist, spawn
-            # a new virtual user. TODO: wait for WHO responses for each nick before
-            # spawning in order to get a real ident/host.
+            # a new virtual user.
             idsource = self._get_UID(nick)
 
             # Queue these virtual users to be joined if they're not already in the channel,
@@ -648,15 +647,13 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         log.debug('(%s) handle_353: adding users %s to %s', self.name, names, channel)
         log.debug('(%s) handle_353: adding modes %s to %s', self.name, modes, channel)
 
-        # Unless /WHO has already been received for the given channel, we generally send the hook
-        # for JOIN after /who data is received, to enumerate the ident, host, and real names of
-        # users.
-        if names and hasattr(self.channels[channel], 'who_received'):
-            # /WHO *HAS* already been received. Send JOIN hooks here because we use this to keep
-            # track of any failed KICK attempts sent by the relay bot.
-            log.debug('(%s) handle_353: sending JOIN hook because /WHO was already received for %s',
-                      self.name, channel)
-            return {'channel': channel, 'users': names, 'modes': self.channels[channel].modes,
+        # Send JOIN hook payloads only for users that we know the ident@host of already.
+        # We also use this to track whether kicks are successful, rejoining the target in the next /names lookup
+        # if it wasn't.
+        fully_synced_names = [uid for uid in names if hasattr(self.users[uid], '_clientbot_identhost_received')]
+        if fully_synced_names:
+            log.debug('(%s) handle_353: sending JOIN hook for %s: %s', self.name, channel, fully_synced_names)
+            return {'channel': channel, 'users': fully_synced_names, 'modes': self.channels[channel].modes,
                     'parse_as': "JOIN"}
 
     def _check_puid_collision(self, nick):
@@ -690,6 +687,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self.update_client(uid, 'IDENT', ident)
         self.update_client(uid, 'HOST', host)
         self.update_client(uid, 'GECOS', realname)
+        self.users[uid]._clientbot_identhost_received = True
 
         # The status given uses the following letters: <H|G>[*][@|+]
         # H means here (not marked /away)
@@ -731,7 +729,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         channel = args[1]
         c = self.channels[channel]
-        c.who_received = True
 
         modes = set(c.modes)
         for user in users:
