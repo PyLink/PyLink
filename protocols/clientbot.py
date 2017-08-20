@@ -17,7 +17,7 @@ from pylinkirc.classes import *
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 
 # IRCv3 capabilities to request when available
-IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names', 'chghost'}
+IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names', 'chghost', 'account-notify'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
@@ -51,6 +51,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self.handle_463 = self.handle_464 = self.handle_465 = self.handle_error
 
         self._use_builtin_005_handling = True
+
+        self.hook_map = {'ACCOUNT': 'CLIENT_SERVICES_LOGIN'}
 
     def post_connect(self):
         """Initializes a connection to a server."""
@@ -769,6 +771,19 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self.serverdata['pylink_nick'] = self.conf_nick
         self.send('NICK %s' % self.conf_nick)
     handle_432 = handle_437 = handle_433
+
+    def handle_account(self, source, command, args):
+        """
+        Handles IRCv3 account-notify messages.
+        """
+        # <- :nick!user@host ACCOUNT accountname
+        # <- :nick!user@host ACCOUNT *
+
+        account = args[0]
+        if account == '*':  # Logout
+            account = ''
+
+        return {'text': account}
 
     def handle_join(self, source, command, args):
         """
