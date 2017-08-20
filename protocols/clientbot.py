@@ -17,7 +17,7 @@ from pylinkirc.classes import *
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 
 # IRCv3 capabilities to request when available
-IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify'}
+IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
@@ -622,9 +622,15 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         for name in args[-1].split():
             nick = name.lstrip(prefixes)
 
+            # Handle userhost-in-names where available.
+            if 'userhost-in-names' in self.ircv3_caps:
+                nick, ident, host = utils.splitHostmask(nick)
+            else:
+                ident = host = None
+
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user.
-            idsource = self._get_UID(nick)
+            idsource = self._get_UID(nick, ident=ident, host=host)
 
             # Queue these virtual users to be joined if they're not already in the channel,
             # or we're waiting for a kick acknowledgment for them.
@@ -632,6 +638,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                     self.kick_queue.get(channel, ([],))[0]):
                 names.add(idsource)
             self.users[idsource].channels.add(channel)
+            if host:
+                self.users[idsource]._clientbot_identhost_received = True
 
             # Process prefix modes
             for char in name:
@@ -652,7 +660,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # if it wasn't.
         fully_synced_names = [uid for uid in names if hasattr(self.users[uid], '_clientbot_identhost_received')]
         if fully_synced_names:
-            log.debug('(%s) handle_353: sending JOIN hook for %s: %s', self.name, channel, fully_synced_names)
+            log.debug('(%s) handle_353: sending pre-WHO JOIN hook for %s: %s', self.name, channel, fully_synced_names)
             return {'channel': channel, 'users': fully_synced_names, 'modes': self.channels[channel].modes,
                     'parse_as': "JOIN"}
 
@@ -731,7 +739,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         c = self.channels[channel]
 
         modes = set(c.modes)
-        for user in users:
+        for user in users.copy():
+            if user in c.users and 'userhost-in-names' in self.ircv3_caps:
+                log.debug("(%s) handle_315: Skipping ENDOFWHO -> JOIN for %s on %s, they're already there", self.name, user, channel)
+                users.remove(user)
+                continue
+
             # Fill in prefix modes of everyone when doing mock SJOIN.
             try:
                 for mode in c.get_prefix_modes(user):
@@ -743,8 +756,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 log.debug("(%s) Ignoring KeyError (%s) from WHO response; it's probably someone we "
                           "don't share any channels with", self.name, e)
 
-        return {'channel': channel, 'users': users, 'modes': modes,
-                'parse_as': "JOIN"}
+        if users:
+            return {'channel': channel, 'users': users, 'modes': modes,
+                    'parse_as': "JOIN"}
 
     def handle_433(self, source, command, args):
         # <- :millennium.overdrivenetworks.com 433 * ice :Nickname is already in use.
