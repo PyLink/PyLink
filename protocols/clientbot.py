@@ -15,7 +15,9 @@ from pylinkirc.protocols.ircs2s_common import *
 from pylinkirc.classes import *
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
-IRCV3_CAPABILITIES = {'multi-prefix', 'sasl'}
+
+# IRCv3 capabilities to request when available
+IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):

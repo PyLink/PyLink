@@ -176,6 +176,23 @@ class IRCCommonProtocol(IRCNetwork):
         prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', args)
         return dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
 
+    def handle_away(self, source, command, args):
+        """Handles incoming AWAY messages."""
+        # TS6:
+        # <- :6ELAAAAAB AWAY :Auto-away
+        # <- :6ELAAAAAB AWAY
+        # P10:
+        # <- ABAAA A :blah
+        # <- ABAAA A
+        if source not in self.users:
+            return
+
+        try:
+            self.users[source].away = text = args[0]
+        except IndexError:  # User is unsetting away status
+            self.users[source].away = text = ''
+        return {'text': text}
+
     def handle_error(self, numeric, command, args):
         """Handles ERROR messages - these mean that our uplink has disconnected us!"""
         raise ProtocolError('Received an ERROR, disconnecting!')
@@ -454,19 +471,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
         self.channels[target].topic = text
         self.channels[target].topicset = True
     topic_burst = topic
-
-    def handle_away(self, numeric, command, args):
-        """Handles incoming AWAY messages."""
-        # TS6:
-        # <- :6ELAAAAAB AWAY :Auto-away
-        # P10:
-        # <- ABAAA A :blah
-        # <- ABAAA A
-        try:
-            self.users[numeric].away = text = args[0]
-        except IndexError:  # User is unsetting away status
-            self.users[numeric].away = text = ''
-        return {'text': text}
 
     def handle_invite(self, numeric, command, args):
         """Handles incoming INVITEs."""
