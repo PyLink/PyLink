@@ -162,7 +162,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if self.pseudoclient and client == self.pseudoclient.uid:
             self.send('JOIN %s' % channel)
             self.send('MODE %s' % channel)
-            self.send('WHO %s' % channel)
+            self._send_who(channel)
         else:
             self.channels[channel].users.add(client)
             self.users[client].channels.add(channel)
@@ -264,7 +264,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
             # Poll WHO periodically to figure out any ident/host/away status changes.
             for channel in self.pseudoclient.channels:
-                self.send('WHO %s' % channel)
+                self._send_who(channel)
 
     def part(self, source, channel, reason=''):
         """STUB: Parts a user from a channel."""
@@ -679,19 +679,35 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if nick in self.users or nick in self.servers:
             raise ProtocolError("Got bad nick %s from IRC which clashes with a PUID. Is someone trying to spoof users?" % nick)
 
+    def _send_who(self, channel):
+        """Sends /WHO to a channel, with WHOX args if that is supported."""
+        # Note: %% = escaped %
+        # %cuhsnfdr is the default; adding 'a' to it sends the account name.
+        # 'd' is omitted because we don't really care about hop count.
+        if 'WHOX' in self._caps:
+            self.send('WHO %s %%cuhsnfar' % channel)
+        else:
+            self.send('WHO %s' % channel)
+
     def handle_352(self, source, command, args):
         """
         Handles 352 / RPL_WHOREPLY.
         """
-        # parameter count:               0   1     2       3         4                      5   6  7
+        # parameter count:               0   1     2       3         4                      5   6  7(-1)
         # <- :charybdis.midnight.vpn 352 ice #test ~pylink 127.0.0.1 charybdis.midnight.vpn ice H+ :0 PyLink
         # <- :charybdis.midnight.vpn 352 ice #test ~gl 127.0.0.1 charybdis.midnight.vpn GL H*@ :0 realname
+        # with WHO %cuhsnfar (WHOX) - note, hopcount and realname are separate!
+        #                                0   1     2   3         4                      5  6  7   8(-1)
+        # <- :charybdis.midnight.vpn 354 ice #test ~gl localhost charybdis.midnight.vpn GL H*@ GL :realname
         ident = args[2]
         host = args[3]
         nick = args[5]
         status = args[6]
-        # Hopcount and realname field are together. We only care about the latter.
-        realname = args[-1].split(' ', 1)[-1]
+
+        # Hopcount and realname field are together in regular WHO. We only care about the latter.
+        realname = args[-1]
+        if command == '352':
+            realname = realname.split(' ', 1)[-1]
 
         self._check_puid_collision(nick)
         uid = self.nick_to_uid(nick)
@@ -720,6 +736,15 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         else:
             log.warning('(%s) handle_352: got wrong string %s for away status', self.name, status[0])
 
+        if command == '354' and len(args) >= 9:  # WHOX account
+            account = args[8]
+            log.debug('(%s) handle_354: got account %r for %s', self.name, account, uid)
+
+            if account == '*':  # Indicates no account
+                account = ''
+            if account != self.users[uid].services_account:
+                self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+
         if self.serverdata.get('track_oper_statuses'):
             if '*' in status:  # Track IRCop status
                 if not self.is_oper(uid, allowAuthed=False):
@@ -733,6 +758,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 self.call_hooks([uid, 'MODE', {'target': uid, 'modes': {('-o', None)}}])
 
         self.who_received.add(uid)
+    handle_354 = handle_352  # 354 = RPL_WHOSPCRPL, used by WHOX
 
     def handle_315(self, source, command, args):
         """
