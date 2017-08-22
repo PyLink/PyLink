@@ -4,7 +4,7 @@ exec.py: Provides commands for executing raw code and debugging PyLink.
 import pprint
 import threading
 
-from pylinkirc import utils, world
+from pylinkirc import *
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
