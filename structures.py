@@ -25,6 +25,55 @@ class KeyedDefaultdict(collections.defaultdict):
             value = self[key] = self.default_factory(key)
             return value
 
+class CaseInsensitiveDict(collections.abc.MutableMapping):
+    """
+    A dictionary storing items case insensitively.
+    """
+    def __init__(self):
+        self._data = {}
+
+    def _keymangle(self, key):
+        """Converts the given key to lowercase."""
+        return key.lower()
+
+    def __getitem__(self, key):
+        key = self._keymangle(key)
+
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[self._keymangle(key)] = value
+
+    def __delitem__(self, key):
+        del self._data[self._keymangle(key)]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def copy(self, *args, **kwargs):
+        return self._data.copy(*args, **kwargs)
+
+    def __contains__(self, key):
+        return self._data.__contains__(self._keymangle(key))
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, self._data)
+
+class IRCCaseInsensitiveDict(CaseInsensitiveDict):
+    """
+    A dictionary storing channels case insensitively. Channel objects are initialized on access.
+    """
+    def __init__(self, irc):
+        super().__init__()
+        self._irc = irc
+
+    def _keymangle(self, key):
+        """Converts the given key to lowercase."""
+        return self._irc.to_lower(key)
+
 class DataStore:
     """
     Generic database class. Plugins should use a subclass of this such as JSONDataStore or

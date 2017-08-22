@@ -17,7 +17,6 @@ import inspect
 import ipaddress
 import queue
 import functools
-import collections
 import string
 import re
 
@@ -38,18 +37,10 @@ class ProtocolError(RuntimeError):
 
 ### Internal classes (users, servers, channels)
 
-class ChannelState(collections.abc.MutableMapping):
+class ChannelState(structures.IRCCaseInsensitiveDict):
     """
     A dictionary storing channels case insensitively. Channel objects are initialized on access.
     """
-    def __init__(self, irc):
-        self._data = {}
-        self._irc = irc
-
-    def _keymangle(self, key):
-        """Converts the given key to lowercase."""
-        return self._irc.to_lower(key)
-
     def __getitem__(self, key):
         key = self._keymangle(key)
 
@@ -59,27 +50,6 @@ class ChannelState(collections.abc.MutableMapping):
             return newchan
 
         return self._data[key]
-
-    def __setitem__(self, key, value):
-        self._data[self._keymangle(key)] = value
-
-    def __delitem__(self, key):
-        del self._data[self._keymangle(key)]
-
-    def __iter__(self):
-        return iter(self._data)
-
-    def __len__(self):
-        return len(self._data)
-
-    def copy(self, *args, **kwargs):
-        return self._data.copy(*args, **kwargs)
-
-    def __contains__(self, key):
-        return self._data.__contains__(self._keymangle(key))
-
-    def __repr__(self):
-        return "ChannelState(%s)" % self._data.keys()
 
 class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
