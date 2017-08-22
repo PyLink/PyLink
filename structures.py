@@ -5,6 +5,7 @@ This module contains custom data structures that may be useful in various situat
 """
 
 import collections
+import collections.abc
 import json
 import pickle
 import os
