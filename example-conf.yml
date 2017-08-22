@@ -391,6 +391,11 @@ servers:
         #pylink_nick: pybot
         #pylink_ident: pybot
 
+        # You can also define alternate fallback nicks on Clientbot. These will be used in order
+        # if successive nicks are unavailable, falling back to the default nick plus an increasing
+        # number of underscores.
+        #pylink_altnicks: ["pybot`", "pybot-"]
+
         # SSL options. Certfile and keyfile are optional, but can be used for CertFP/SASL external
         # if supported.
         ssl: true
