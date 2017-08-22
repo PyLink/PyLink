@@ -741,7 +741,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.warning('(%s) handle_352: got wrong string %s for away status', self.name, status[0])
 
         if command == '354' and len(args) >= 9:  # WHOX account
-            account = args[8]
+            account = args[7]
             log.debug('(%s) handle_354: got account %r for %s', self.name, account, uid)
 
             if account == '*':  # Indicates no account
