@@ -33,6 +33,11 @@ class InvalidArgumentsError(TypeError):
     Exception raised (by IRCParser and potentially others) when a bot command is given invalid arguments.
     """
 
+class ProtocolError(RuntimeError):
+    """
+    Exception raised when a network protocol violation is encountered in some way.
+    """
+
 class IncrementalUIDGenerator():
     """
     Incremental UID Generator module, adapted from InspIRCd source:

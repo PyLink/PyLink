@@ -28,12 +28,7 @@ except ImportError:
 from . import world, utils, structures, conf, __version__
 from .log import *
 from .coremods import control
-
-### Exceptions
-
-# XXX: is this the right place to put this class?
-class ProtocolError(RuntimeError):
-    pass
+from .utils import ProtocolError  # Compatibility with PyLink 1.x
 
 ### Internal classes (users, servers, channels)
 
