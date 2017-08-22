@@ -22,34 +22,36 @@ def spawn_service(irc, source, command, args):
     # Get the ServiceBot object.
     sbot = world.services[name]
 
-    nick = sbot.get_nick(irc)
-    ident = sbot.get_ident(irc)
-    host = sbot.get_host(irc)
-    realname = sbot.get_realname(irc)
-
-    # Spawning service clients with these umodes where supported. servprotect usage is a
-    # configuration option.
-    preferred_modes = ['oper', 'hideoper', 'hidechans', 'invisible', 'bot']
-    modes = []
-
-    if conf.conf['pylink'].get('protect_services'):
-        preferred_modes.append('servprotect')
-
-    for mode in preferred_modes:
-        mode = irc.umodes.get(mode)
-        if mode:
-            modes.append((mode, None))
-
-    # Track the service's UIDs on each network.
-    log.debug('(%s) spawn_service: Using nick %s for service %s', irc.name, nick, name)
-    u = irc.nick_to_uid(nick)
-    if u and irc.is_internal_client(u):  # If an internal client exists, reuse it.
-        log.debug('(%s) spawn_service: Using existing client %s/%s', irc.name, u, nick)
-        userobj = irc.users[u]
+    if name == 'pylink' and irc.pseudoclient:
+        # irc.pseudoclient already exists, for protocols like clientbot
+        log.debug('(%s) spawn_service: Using existing nick %r for service %r', irc.name, irc.pseudoclient.nick, name)
+        userobj = irc.pseudoclient
+        userobj.opertype = "PyLink Service"
+        userobj.manipulatable = sbot.manipulatable
     else:
-        log.debug('(%s) spawn_service: Spawning new client %s', irc.name, nick)
+        # No client exists, spawn a new one
+        nick = sbot.get_nick(irc)
+        ident = sbot.get_ident(irc)
+        host = sbot.get_host(irc)
+        realname = sbot.get_realname(irc)
+
+        # Spawning service clients with these umodes where supported. servprotect usage is a
+        # configuration option.
+        preferred_modes = ['oper', 'hideoper', 'hidechans', 'invisible', 'bot']
+        modes = []
+
+        if conf.conf['pylink'].get('protect_services'):
+            preferred_modes.append('servprotect')
+
+        for mode in preferred_modes:
+            mode = irc.umodes.get(mode)
+            if mode:
+                modes.append((mode, None))
+
+        # Track the service's UIDs on each network.
+        log.debug('(%s) spawn_service: Spawning new client %s for service %s', irc.name, nick, name)
         userobj = irc.spawn_client(nick, ident, host, modes=modes, opertype="PyLink Service",
-                                        realname=realname, manipulatable=sbot.manipulatable)
+                                   realname=realname, manipulatable=sbot.manipulatable)
 
     # Store the service name in the User object for easier access.
     userobj.service = name
@@ -58,7 +60,7 @@ def spawn_service(irc, source, command, args):
 
     # Special case: if this is the main PyLink client being spawned,
     # assign this as irc.pseudoclient.
-    if name == 'pylink':
+    if name == 'pylink' and not irc.pseudoclient:
         log.debug('(%s) spawn_service: irc.pseudoclient set to UID %s', irc.name, u)
         irc.pseudoclient = userobj
 

@@ -53,6 +53,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self.handle_463 = self.handle_464 = self.handle_465 = self.handle_error
 
         self._use_builtin_005_handling = True
+        self._nick_fails = 0
 
         self.hook_map = {'ACCOUNT': 'CLIENT_SERVICES_LOGIN'}
 
@@ -92,14 +93,19 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self._cap_timer = threading.Timer(self.serverdata.get('sasl_timeout') or 15, _do_cap_end_wrapper)
         self._cap_timer.start()
 
-        # This is a really gross hack to get the defined NICK/IDENT/HOST/GECOS.
-        # But this connection stuff is done before any of the spawn_client stuff in
-        # services_support fires.
-        self.conf_nick = self.serverdata.get('pylink_nick') or conf.conf["bot"].get("nick", "PyLink")
-        f('NICK %s' % (self.conf_nick))
-        ident = self.serverdata.get('pylink_ident') or conf.conf["bot"].get("ident", "pylink")
-        f('USER %s 8 * :%s' % (ident, # TODO: per net realnames or hostnames aren't implemented yet.
-                              conf.conf["bot"].get("realname", "PyLink Clientbot")))
+        # Log in to IRC and set our irc.pseudoclient object.
+        sbot = world.services['pylink']
+        self._nick_fails = 0
+
+        nick = sbot.get_nick(self)
+        ident = sbot.get_ident(self)
+        realname = sbot.get_realname(self)
+
+        f('NICK %s' % nick)
+        f('USER %s 8 * :%s' % (ident, realname))
+        self.pseudoclient = User(nick, int(time.time()), self.uidgen.next_uid(prefix='@ClientbotInternal'), self.sid,
+                                 ident=ident, realname=realname)
+        self.users[self.pseudoclient.uid] = self.pseudoclient
 
     # Note: clientbot clients are initialized with umode +i by default
     def spawn_client(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
@@ -116,7 +122,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         log.debug('(%s) spawn_client stub called, saving nick %s as PUID %s', self.name, nick, uid)
         u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
-                                          manipulatable=manipulatable, realhost=realhost, ip=ip)
+                                   manipulatable=manipulatable, realhost=realhost, ip=ip)
         self.servers[server].users.add(uid)
 
         self.apply_modes(uid, modes)
@@ -794,12 +800,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
     def handle_433(self, source, command, args):
         # <- :millennium.overdrivenetworks.com 433 * ice :Nickname is already in use.
-        # HACK: I don't like modifying the config entries raw, but this is difficult because
-        # irc.pseudoclient doesn't exist as an attribute until we get run the ENDBURST stuff
-        # in service_support (this is mapped to 005 here).
-        self.conf_nick += '_'
-        self.serverdata['pylink_nick'] = self.conf_nick
-        self.send('NICK %s' % self.conf_nick)
+
+        self._nick_fails += 1
+        newnick = self.pseudoclient.nick = world.services['pylink'].get_nick(self, fails=self._nick_fails)
+        log.debug('(%s) _nick_fails = %s, trying new nick %r', self.name, self._nick_fails, newnick)
+
+        self.send('NICK %s' % newnick)
     handle_432 = handle_437 = handle_433
 
     def handle_account(self, source, command, args):
@@ -937,17 +943,15 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """Handles NICK changes."""
         # <- :GL|!~GL@127.0.0.1 NICK :GL_
 
-        if not self.pseudoclient:
+        if not self.connected.is_set():
             # We haven't properly logged on yet, so any initial NICK should be treated as a forced
-            # nick change for US. For example, this clause is used to handle forced nick changes
+            # nick change for us. For example, this clause is used to handle forced nick changes
             # sent by ZNC, when the login nick and the actual IRC nick of the bouncer differ.
-
-            # HACK: change the nick config entry so services_support knows what our main
-            # pseudoclient is called.
-            oldnick = self.serverdata['pylink_nick']
-            self.serverdata['pylink_nick'] = self.conf_nick = args[0]
-            log.debug('(%s) Pre-auth FNC: Forcing configured nick to %s from %s', self.name, args[0], oldnick)
+            self.pseudoclient.nick = args[0]
+            log.debug('(%s) Pre-auth FNC: Changing our nick to %s', self.name, args[0])
             return
+        elif source == self.pseudoclient.uid:
+            self._nick_fails = 0  # Our last nick change succeeded.
 
         oldnick = self.users[source].nick
         self.users[source].nick = args[0]
