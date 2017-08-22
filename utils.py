@@ -364,16 +364,48 @@ class ServiceBot():
         self.commands[name].append(func)
         return func
 
-    def get_nick(self, irc):
+    def get_nick(self, irc, fails=0):
         """
-        Returns the preferred nick for this service bot on the given network. The following fields are checked in the given order:
+        If the 'fails' argument is set to zero, this method returns the preferred nick for this
+        service bot on the given network. The following fields are checked in the given order:
         # 1) Network specific nick settings for this service (servers:<netname>:servicename_nick)
         # 2) Global settings for this service (servicename:nick)
         # 3) The service's hardcoded default nick.
         # 4) The literal service name.
+
+        If the 'fails' argument is set to a non-zero value, a list of *alternate* (fallback) nicks
+        will be fetched from these fields in this order:
+        # 1) Network specific altnick settings for this service (servers:<netname>:servicename_altnicks)
+        # 2) Global altnick settings for this service (servicename:altnicks)
+
+        If such an alternate nicks list exists, an alternate nick will be chosen based on the value
+        of the 'fails' argument:
+        - If nick fetching fails once, return the 1st alternate nick from the list,
+        - If nick fetching fails twice, return the 2nd alternate nick from the list, ...
+
+        Otherwise, if the alternate nicks list doesn't exist, or if there is no corresponding value
+        for the current 'fails' value, the preferred nick plus the 'fails' number of underscores (_)
+        will be used instead.
+        - fails=1 => preferred_nick_
+        - fails=2 => preferred_nick__
+
+        If the resulting nick is too long for the given network, ProtocolError will be raised.
         """
         sbconf = conf.conf.get(self.name, {})
-        return irc.serverdata.get("%s_nick" % self.name) or sbconf.get('nick') or self.default_nick or self.name
+        nick = irc.serverdata.get("%s_nick" % self.name) or sbconf.get('nick') or self.default_nick or self.name
+
+        if fails >= 1:
+            altnicks = irc.serverdata.get("%s_altnicks" % self.name) or sbconf.get('altnicks') or []
+            try:
+                nick = altnicks[fails-1]
+            except IndexError:
+                nick += ('_' * fails)
+
+        if irc.maxnicklen > 0 and len(nick) > irc.maxnicklen:
+            raise ProtocolError("Nick %r too long for network (maxnicklen=%s)" % (nick, irc.maxnicklen))
+
+        assert nick
+        return nick
 
     def get_ident(self, irc):
         """
