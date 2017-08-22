@@ -104,7 +104,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         f('NICK %s' % nick)
         f('USER %s 8 * :%s' % (ident, realname))
         self.pseudoclient = User(nick, int(time.time()), self.uidgen.next_uid(prefix='@ClientbotInternal'), self.sid,
-                                 ident=ident, realname=realname)
+                                 ident=ident, realname=realname, host='pylink.int')
         self.users[self.pseudoclient.uid] = self.pseudoclient
 
     # Note: clientbot clients are initialized with umode +i by default
