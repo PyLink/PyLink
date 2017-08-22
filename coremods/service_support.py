@@ -22,21 +22,10 @@ def spawn_service(irc, source, command, args):
     # Get the ServiceBot object.
     sbot = world.services[name]
 
-    # Look up the nick or ident in the following order:
-    # 1) Network specific nick/ident settings for this service (servers::irc.name::servicename_nick)
-    # 2) Global settings for this service (servicename::nick)
-    # 3) The preferred nick/ident combination defined by the plugin (sbot.nick / sbot.ident)
-    # 4) The literal service name.
-    # settings, and then falling back to the literal service name.
-    sbconf = conf.conf.get(name, {})
-    nick = irc.serverdata.get("%s_nick" % name) or sbconf.get('nick') or sbot.nick or name
-    ident = irc.serverdata.get("%s_ident" % name) or sbconf.get('ident') or sbot.ident or name
-
-    # Determine host the same way as above, except fall back to server hostname.
-    host = irc.serverdata.get("%s_host" % name) or sbconf.get('host') or irc.hostname()
-
-    # Determine realname the same way as above, except fall back to pylink:realname (and if that fails, the service name).
-    realname = irc.serverdata.get("%s_realname" % name) or sbconf.get('realname') or conf.conf['pylink'].get('realname') or name
+    nick = sbot.get_nick(irc)
+    ident = sbot.get_ident(irc)
+    host = sbot.get_host(irc)
+    realname = sbot.get_realname(irc)
 
     # Spawning service clients with these umodes where supported. servprotect usage is a
     # configuration option.
@@ -143,4 +132,4 @@ utils.add_hook(handle_commands, 'PRIVMSG')
 # TODO: be more specific, and possibly allow plugins to modify this to mention
 # their features?
 mydesc = "\x02PyLink\x02 provides extended network services for IRC."
-utils.registerService('pylink', desc=mydesc, manipulatable=True)
+utils.registerService('pylink', default_nick="PyLink", desc=mydesc, manipulatable=True)

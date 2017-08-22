@@ -24,7 +24,7 @@ myservice = utils.registerService("myservice", desc=desc)
 - **`name`** - defines the service name (mandatory)
 - `default_help` - Determines whether the default HELP command should be used for the service. Defaults to True.
 - `default_list` - Determines whether the default LIST command should be used for the service. Defaults to True.
-- `nick`, `ident` - Sets the default nick and ident for the service bot. If not given, these simply default to the service name.
+- `default_nick` - Sets the default nick this service should use if the user doesn't provide it. Defaults to the same as the service name.
 - `manipulatable` - Determines whether the bot is marked manipulatable. Only manipulatable clients can be force joined, etc. using PyLink commands. Defaults to False.
 - `desc` - Sets the command description of the service. This is shown in the default HELP command if enabled.
 

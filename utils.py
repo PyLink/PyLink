@@ -183,17 +183,13 @@ class ServiceBot():
     PyLink IRC Service class.
     """
 
-    def __init__(self, name, default_help=True, default_list=True,
-                 nick=None, ident=None, manipulatable=False, desc=None):
-        # Service name
+    def __init__(self, name, default_help=True, default_list=True, manipulatable=False, default_nick=None, desc=None):
+        # Service name and default nick
         self.name = name
+        self.default_nick = default_nick
 
         # TODO: validate nick, ident, etc. on runtime as well
         assert isNick(name), "Invalid service name %r" % name
-
-        # Nick/ident to take. Defaults to the same as the service name if not given.
-        self.nick = nick
-        self.ident = ident
 
         # Tracks whether the bot should be manipulatable by the 'bots' plugin and other commands.
         self.manipulatable = manipulatable
@@ -362,6 +358,49 @@ class ServiceBot():
 
         self.commands[name].append(func)
         return func
+
+    def get_nick(self, irc):
+        """
+        Returns the preferred nick for this service bot on the given network. The following fields are checked in the given order:
+        # 1) Network specific nick settings for this service (servers:<netname>:servicename_nick)
+        # 2) Global settings for this service (servicename:nick)
+        # 3) The service's hardcoded default nick.
+        # 4) The literal service name.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        return irc.serverdata.get("%s_nick" % self.name) or sbconf.get('nick') or self.default_nick or self.name
+
+    def get_ident(self, irc):
+        """
+        Returns the preferred ident for this service bot on the given network. The following fields are checked in the given order:
+        # 1) Network specific ident settings for this service (servers:<netname>:servicename_ident)
+        # 2) Global settings for this service (servicename:ident)
+        # 3) The service's hardcoded default nick.
+        # 4) The literal service name.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        return irc.serverdata.get("%s_ident" % self.name) or sbconf.get('ident') or self.default_nick or self.name
+
+    def get_host(self, irc):
+        """
+        Returns the preferred hostname for this service bot on the given network. The following fields are checked in the given order:
+        # 1) Network specific hostname settings for this service (servers:<netname>:servicename_host)
+        # 2) Global settings for this service (servicename:host)
+        # 3) The PyLink server hostname.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        return irc.serverdata.get("%s_host" % self.name) or sbconf.get('host') or irc.hostname()
+
+    def get_realname(self, irc):
+        """
+        Returns the preferred real name for this service bot on the given network. The following fields are checked in the given order:
+        # 1) Network specific realname settings for this service (servers:<netname>:servicename_realname)
+        # 2) Global settings for this service (servicename:realname)
+        # 3) The globally configured real name (pylink:realname).
+        # 4) The literal service name.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        return irc.serverdata.get("%s_realname" % self.name) or sbconf.get('realname') or conf.conf['pylink'].get('realname') or self.name
 
     def _show_command_help(self, irc, command, private=False, shortform=False):
         """
