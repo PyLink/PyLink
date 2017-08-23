@@ -393,7 +393,7 @@ def kill(irc, source, args):
     reason = "Killed (%s (%s))" % (irc.get_friendly_name(sender), reason)
 
     irc.reply("Done.")
-    irc.call_hooks([sender, 'OPERCMDS_KILL', {'target': targetu, 'text': reason,
+    irc.call_hooks([source, 'OPERCMDS_KILL', {'target': targetu, 'text': reason,
                                               'userdata': userdata, 'parse_as': 'KILL'}])
 
 @utils.add_cmd
