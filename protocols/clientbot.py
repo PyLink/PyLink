@@ -527,13 +527,28 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             elif sasl_mech == 'EXTERNAL':
                 self.send('AUTHENTICATE +')
 
+    def handle_900(self, source, command, args):
+        """
+        Handles SASL RPL_LOGGEDIN numerics.
+        """
+        # <- :charybdis.midnight.vpn 900 ice ice!pylink@localhost ice :You are now logged in as ice
+        # <- :server 900 <nick> <nick>!<ident>@<host> <account> :You are now logged in as <user>
+
+        self.pseudoclient.services_account = args[2]
+        log.info('(%s) SASL authentication successful: now logged in as %s', self.name, args[2])
+
+        # Note: we don't send a hook here yet; is doing so for the bot this early in login
+        # really necessary?
+
     def handle_904(self, source, command, args):
         """
         Handles SASL authentication status reports.
         """
-        logfunc = log.info if command == '903' else log.warning
+        # <- :charybdis.midnight.vpn 903 ice :SASL authentication successful
+        logfunc = log.debug if command == '903' else log.warning
         logfunc('(%s) %s', self.name, args[-1])
         if not self.has_eob:
+            # End the pre-login CAP stuff regardless of whether SASL was successful.
             self._do_cap_end()
     handle_903 = handle_902 = handle_905 = handle_906 = handle_907 = handle_904
 
