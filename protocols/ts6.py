@@ -307,6 +307,11 @@ class TS6Protocol(TS6BaseProtocol):
                         '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'}
         self.umodes = chary_umodes
 
+        # Charybdis extbans
+        self.extbans_matching = {'ban_all_registered': '$a', 'ban_inchannel': '$c:', 'ban_account': '$a:',
+                                 'ban_all_opers': '$o', 'ban_realname': '$r:', 'ban_server': '$s:',
+                                 'ban_banshare': '$j:', 'ban_extgecos': '$x:', 'ban_all_ssl': '$z'}
+
         # Find the target IRCd and update the mode dictionaries as applicable.
         target_ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes') else 'charybdis')
         target_ircd = target_ircd.lower()

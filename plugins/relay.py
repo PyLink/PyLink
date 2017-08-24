@@ -830,24 +830,19 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                               irc.name, modechar, arg)
                     break
 
-                elif name in ('ban', 'banexception', 'invex', 'quiet') and not utils.isHostmask(arg):
-                    # Don't add bans that don't match n!u@h syntax!
-                    log.debug("(%s) relay.get_supported_cmodes: skipping mode (%r, %r) because it doesn't match nick!user@host syntax.",
-                              irc.name, modechar, arg)
-                    break
-
                 supported_char = remoteirc.cmodes.get(name)
 
-                # The mode we requested is an extban on the target network.
-                # Basically there are 3 possibilities when handling extban-like modes:
+                # The mode we requested is an acting extban on the target network.
+                # Basically there are 3 possibilities when handling these extban-like modes:
                 # 1) Both target & source both use a chmode (e.g. ts6 +q). In these cases, the mode is just forwarded as-is.
                 # 2) Forwarding from chmode to extban - this is the case being handled here.
                 # 3) Forwarding from extban to extban (see below)
+                pending_acting_extban_prefix = None
                 if name in remoteirc.extbans_acting:
                     # We make the assumption that acting extbans can only be used with +b...
                     old_arg = arg
                     supported_char = remoteirc.cmodes['ban']
-                    arg = remoteirc.extbans_acting[name] + arg  # Add the extban prefix
+                    pending_acting_extban_prefix = name  # Save the extban prefix for joining later
                     log.debug('(%s) relay.get_supported_cmodes: folding mode %s%s %s to %s%s %s for %s',
                               irc.name, prefix, modechar, old_arg, prefix, supported_char, arg, remoteirc.name)
                 elif supported_char is None:
@@ -888,38 +883,81 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                         log.debug("(%s) relay.get_supported_cmodes: skipping setting %s on %s/%s because it appears to be already set.",
                                   irc.name, name, arg, remoteirc.name)
                         break
+                elif arg:
+                    # Acting extban case 3: forwarding extban -> extban or mode
+                    # First, we expand extbans from the local IRCd into a named mode and argument pair. Then, we
+                    # can figure out how to relay it.
+                    for extban_name, extban_prefix in irc.extbans_acting.items():
+                        log.debug('(%s) relay.get_supported_cmodes: checking for extban that needs expansion: '
+                                  'name=%s, extban_name=%s, arg=%s, extban_prefix=%s', irc.name, name, extban_name, arg,
+                                  extban_prefix)
+                        # Acting extbans are only supported with +b (e.g. +b m:n!u@h)
+                        if name == 'ban' and arg.startswith(extban_prefix):
+                            orig_supported_char, old_arg = supported_char, arg
 
-                # Extban case 3: forwarding extban -> extban or mode
-                # First, we expand extbans from the local IRCd into a named mode and argument pair. Then, we
-                # can figure out how to relay it.
-                for extban_name, extban_prefix in irc.extbans_acting.items():
-                    log.debug('(%s) relay.get_supported_cmodes: checking for extban that needs expansion: '
-                              'name=%s, extban_name=%s, arg=%s, extban_prefix=%s', irc.name, name, extban_name, arg,
-                              extban_prefix)
-                    # Acting extbans are only supported with +b (e.g. +b m:n!u@h)
-                    if name == 'ban' and arg.startswith(extban_prefix):
-                        orig_supported_char, old_arg = supported_char, arg
+                            if extban_name in remoteirc.cmodes:
+                                # This extban is a mode on the target network. Chop off the extban prefix and set
+                                # the mode character to the target's mode for it.
+                                supported_char = remoteirc.cmodes[extban_name]
+                                arg = arg[len(extban_prefix):]
+                            elif extban_name in remoteirc.extbans_acting:
+                                # This is also an extban on the target network.
+                                # Just chop off the local prefix now; we rewrite it later after processing
+                                # any matching extbans.
+                                pending_acting_extban_prefix = extban_name
+                                arg = arg[len(extban_prefix):]
+                            else:
+                                # This mode/extban isn't supported, so ignore it.
+                                log.debug('(%s) relay.get_supported_cmodes: blocking extban %s%s %s expansion as target %s doesn\'t support it',
+                                          irc.name, prefix, supported_char, arg, remoteirc.name)
+                                mode_parse_aborted = True  # XXX: nested loops are ugly...
 
-                        if extban_name in remoteirc.cmodes:
-                            # This extban is a mode on the target network. Chop off the extban prefix and set
-                            # the mode character to the target's mode for it.
-                            supported_char = remoteirc.cmodes[extban_name]
-                            arg = arg[len(extban_prefix):]
-                        elif extban_name in remoteirc.extbans_acting:
-                            # This is also an extban on the target network. We broke up the extban already,
-                            # so rewrite it into a new mode by joining the prefix and data together.
-                            arg = remoteirc.extbans_acting[extban_name] + arg[len(extban_prefix):]
-                        else:
-                            # This mode/extban isn't supported, so ignore it.
-                            log.debug('(%s) relay.get_supported_cmodes: blocking extban %s%s %s expansion as target %s doesn\'t support it',
-                                      irc.name, prefix, supported_char, arg, remoteirc.name)
-                            mode_parse_aborted = True  # XXX: nested loops are ugly...
+                            if not mode_parse_aborted:
+                                log.debug('(%s) relay.get_supported_cmodes: expanding extban %s%s %s to %s%s %s for %s',
+                                          irc.name, prefix, orig_supported_char, old_arg, prefix,
+                                          supported_char, arg, remoteirc.name)
+                            break  # Only one extban per mode pair, so break.
 
-                        if not mode_parse_aborted:
-                            log.debug('(%s) relay.get_supported_cmodes: expanding extban %s%s %s to %s%s %s for %s',
-                                      irc.name, prefix, orig_supported_char, old_arg, prefix,
-                                      supported_char, arg, remoteirc.name)
-                        break  # Only one extban per mode pair, so break.
+                    # Handle matching extbans such as Charybdis $a, UnrealIRCd ~a, InspIRCd R:, etc.
+                    for extban_name, extban_prefix in irc.extbans_matching.items():
+                        # For matching extbans, we check for the following:
+                        # 1) arg == extban, for extbans like Charybdis $o and $a that are valid without an argument.
+                        # 2) arg starting with extban, the most general case.
+                        # Extbans with and without args have different mode names to prevent ambiguity and
+                        # allow proper forwarding.
+                        old_arg = arg
+                        if arg == extban_prefix:
+                            # This is a matching extban with no arg (case 1).
+                            if extban_name in remoteirc.extbans_matching:
+                                # Replace the ban with the remote's version entirely.
+                                arg = remoteirc.extbans_matching[extban_name]
+                                log.debug('(%s) relay.get_supported_cmodes: mangling mode %s%s %s to %s%s %s for %s',
+                                          irc.name, prefix, modechar, old_arg, prefix, supported_char, arg, remoteirc.name)
+                                break
+                            else:
+                                # Unsupported, don't forward it.
+                                mode_parse_aborted = True
+                        elif arg.startswith(extban_prefix):
+                            # This is a full extban with a prefix and some data.
+                            if extban_name in remoteirc.extbans_matching:
+                                # Chop off our prefix and apply the remote's.
+                                arg = arg[len(extban_prefix):]
+                                arg = remoteirc.extbans_matching[extban_name] + arg
+                                log.debug('(%s) relay.get_supported_cmodes: mangling mode %s%s %s to %s%s %s for %s',
+                                          irc.name, prefix, modechar, old_arg, prefix, supported_char, arg, remoteirc.name)
+                                break
+                            else:
+                                mode_parse_aborted = True
+                    else:
+                        if name in ('ban', 'banexception', 'invex', 'quiet') and not utils.isHostmask(arg):
+                            # Don't add unsupported bans that don't match n!u@h syntax.
+                            log.debug("(%s) relay.get_supported_cmodes: skipping unsupported extban/mode (%r, %r) because it doesn't match nick!user@host.",
+                                      irc.name, modechar, arg)
+                            break
+
+                    # We broke up an acting extban earlier. Now, rewrite it into a new mode by joining the prefix and data together.
+                    if pending_acting_extban_prefix:
+                        arg = remoteirc.extbans_acting[pending_acting_extban_prefix] + arg
 
                 if mode_parse_aborted:
                     break

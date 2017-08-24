@@ -412,6 +412,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         # Extban definitions
         self.extbans_acting = {'quiet': 'm:', 'ban_nonick': 'n:'}
+        self.extbans_matching = {'ban_inchannel': 'j:', 'ban_realname': 'r:', 'ban_server': 's:',
+                                 'ban_certfp': 'z:', 'ban_opertype': 'O:', 'ban_account': 'R:'}
 
     def handle_capab(self, source, command, args):
         """
