@@ -837,12 +837,12 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                 # 1) Both target & source both use a chmode (e.g. ts6 +q). In these cases, the mode is just forwarded as-is.
                 # 2) Forwarding from chmode to extban - this is the case being handled here.
                 # 3) Forwarding from extban to extban (see below)
-                pending_acting_extban_prefix = None
+                pending_extban_prefixes = []
                 if name in remoteirc.extbans_acting:
                     # We make the assumption that acting extbans can only be used with +b...
                     old_arg = arg
                     supported_char = remoteirc.cmodes['ban']
-                    pending_acting_extban_prefix = name  # Save the extban prefix for joining later
+                    pending_extban_prefixes.append(name)  # Save the extban prefix for joining later
                     log.debug('(%s) relay.get_supported_cmodes: folding mode %s%s %s to %s%s %s for %s',
                               irc.name, prefix, modechar, old_arg, prefix, supported_char, arg, remoteirc.name)
                 elif supported_char is None:
@@ -904,7 +904,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                                 # This is also an extban on the target network.
                                 # Just chop off the local prefix now; we rewrite it later after processing
                                 # any matching extbans.
-                                pending_acting_extban_prefix = extban_name
+                                pending_extban_prefixes.append(extban_name)
                                 arg = arg[len(extban_prefix):]
                             else:
                                 # This mode/extban isn't supported, so ignore it.
@@ -956,8 +956,8 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                             break
 
                     # We broke up an acting extban earlier. Now, rewrite it into a new mode by joining the prefix and data together.
-                    if pending_acting_extban_prefix:
-                        arg = remoteirc.extbans_acting[pending_acting_extban_prefix] + arg
+                    while pending_extban_prefixes:
+                        arg = remoteirc.extbans_acting[pending_extban_prefixes.pop()] + arg
 
                 if mode_parse_aborted:
                     break
