@@ -390,6 +390,18 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             return results
         return {}
 
+    def _set_account_name(self, uid, account):
+        """
+        Updates the user's account metadata.
+        """
+        if account is None:  # Ignore when account=None
+            return
+        elif account == '*':  # This indicates logout
+            account = ''
+
+        if account != self.users[uid].services_account:
+            self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+
     def handle_events(self, data):
         """Event handler for the RFC1459/2812 (clientbot) protocol."""
         data = data.split(" ")
@@ -432,9 +444,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         if idsource in self.users:
             # Handle IRCv3.2 account-tag.
-            account_tag = tags.get('account')
-            if account_tag is not None and account_tag != self.users[idsource].services_account:
-                self.call_hooks([idsource, 'CLIENT_SERVICES_LOGIN', {'text': account_tag}])
+            self._set_account_name(idsource, tags.get('account'))
 
         try:
             func = getattr(self, 'handle_'+command.lower())
@@ -744,10 +754,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             account = args[7]
             log.debug('(%s) handle_354: got account %r for %s', self.name, account, uid)
 
-            if account == '*':  # Indicates no account
-                account = ''
-            if account != self.users[uid].services_account:
-                self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+            self._set_account_name(uid, account)
 
         if self.serverdata.get('track_oper_statuses'):
             if '*' in status:  # Track IRCop status
@@ -815,12 +822,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :nick!user@host ACCOUNT accountname
         # <- :nick!user@host ACCOUNT *
 
-        account = args[0]
-        if account == '*':  # Logout
-            account = ''
-
-        if account != self.users[source].services_account:
-            return {'text': account}
+        self._set_account_name(source, args[0])
 
     def handle_join(self, source, command, args):
         """
