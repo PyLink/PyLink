@@ -828,18 +828,17 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         # <- :GL|!~GL@127.0.0.1 JOIN #whatever
         channel = args[0]
+        self.channels[channel].users.add(source)
+        self.users[source].channels.add(channel)
 
         # Only fetch modes, TS, and user hosts once we're actually in the channel.
         # The IRCd will send us a JOIN with our nick!user@host if our JOIN succeeded.
         if self.pseudoclient and source == self.pseudoclient.uid:
             self.send('MODE %s' % channel)
             self._send_who(channel)
-
-        self.channels[channel].users.add(source)
-        self.users[source].channels.add(channel)
-
-        self.call_hooks([source, 'CLIENTBOT_JOIN', {'channel': channel}])
-        return {'channel': channel, 'users': [source], 'modes': self.channels[channel].modes}
+        else:
+            self.call_hooks([source, 'CLIENTBOT_JOIN', {'channel': channel}])
+            return {'channel': channel, 'users': [source], 'modes': self.channels[channel].modes}
 
     def handle_kick(self, source, command, args):
         """
