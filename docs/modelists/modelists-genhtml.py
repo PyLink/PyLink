@@ -11,12 +11,37 @@ os.chdir(os.path.dirname(__file__))
 
 FILES = {
     'user-modes.csv': 'Supported User Modes for PyLink',
-    'channel-modes.csv': 'Supported Channel Modes for PyLink'
+    'channel-modes.csv': 'Supported Channel Modes for PyLink',
+    'extbans.csv': 'Support Extbans for PyLink Relay',
 }
 
 def _write(outf, text):
     print(text, end='')
     outf.write(text)
+
+def _format(articlename, text):
+    # More formatting
+    if text:
+        if 'modes' in articlename:
+            text = '+' + text
+        try:
+            text, note = text.split(' ', 1)
+        except ValueError:
+            if text.endswith('*'):
+                text = '<td class="tablecell-yes2">%s</td>' % text
+            elif 'extbans' in articlename:
+                if text.endswith(':'):
+                    text = '<td class="tablecell-yes">%s<span class="note">data</span></td>' % text
+                else:  # Arg-less extban
+                    text = '<td class="tablecell-yes2">%s</td>' % text
+            else:
+                text = '<td class="tablecell-yes">%s</td>' % text
+        else:
+            text = '%s<br><span class="note">%s</span>' % (text, note)
+            text = '<td class="tablecell-special">%s</td>' % text
+    else:
+        text = '<td class="tablecell-na note">n/a</td>'
+    return text
 
 for fname, title in FILES.items():
     outfname = os.path.splitext(fname)[0] + '.html'
@@ -119,23 +144,7 @@ td:first-child, th[scope="row"] {
                     elif colidx == 0:
                         text = '<th scope="row">%s</th>\n' % coltext
                     else:
-                        # More formatting
-                        if coltext:
-                            coltext = '+' + coltext
-
-                            try:
-                                coltext, note = coltext.split(' ', 1)
-                            except ValueError:
-                                if coltext.endswith('*'):
-                                    text = '<td class="tablecell-yes2">%s</td>' % coltext
-                                else:
-                                    text = '<td class="tablecell-yes">%s</td>' % coltext
-                            else:
-                                coltext = '%s<br><span class="note">%s</span>' % (coltext, note)
-                                text = '<td class="tablecell-special">%s</td>' % coltext
-                        else:
-                            text = '<td class="tablecell-na note">n/a</td>'
-
+                        text = _format(fname, coltext)
                     _write(outf, text)
 
                 _write(outf, "</tr>\n")

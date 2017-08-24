@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<meta name=viewport content="width=device-width, initial-scale=1">
+
+<head>
+<title>Support Extbans for PyLink Relay</title>
+<style>
+
+html {
+    background-color: white;
+}
+
+.note {
+    color: #555555;
+}
+
+/* (╮°-°)╮┳━┳ */
+table, th, td {
+    border: 1px solid black;
+}
+
+td, th {
+    text-align: center;
+    padding: 3px;
+}
+
+td:first-child, th[scope="row"] {
+    text-align: left;
+}
+
+/* Table cells */
+.tablecell-yes {
+    background-color: #A7F2A5
+}
+
+.tablecell-no {
+    background-color: #F08496
+}
+
+.tablecell-na {
+    background-color: #F0F0F0
+}
+
+.tablecell-planned, .tablecell-yes2 {
+    background-color: #92E8DF
+}
+
+.tablecell-partial {
+    background-color: #EDE8A4
+}
+
+.tablecell-special {
+    background-color: #DCB1FC
+}
+
+.tablecell-caveats {
+    background-color: #F0C884
+}
+
+.tablecell-caveats2 {
+    background-color: #ED9A80
+}
+
+.tablecell-no-padding {
+    padding: initial;
+}
+</style>
+
+</head>
+
+<body>
+<table><tr>
+<th scope="col">Extban / IRCd</th>
+<th scope="col">charybdis</th>
+<th scope="col">InspIRCd</th>
+<th scope="col">UnrealIRCd</th>
+</tr>
+<tr>
+<th scope="row">ban_account</th>
+<td class="tablecell-yes">$a:<span class="note">data</span></td><td class="tablecell-yes">R:<span class="note">data</span></td><td class="tablecell-yes">~a:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_account_legacy</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">~R:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_all_opers</th>
+<td class="tablecell-yes2">$o</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_all_registered</th>
+<td class="tablecell-yes2">$a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_all_ssl</th>
+<td class="tablecell-yes2">$z</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_banshare</th>
+<td class="tablecell-yes">$j:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_blockcaps</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">B:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_blockcolor</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">c:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_certfp</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">z:<span class="note">data</span></td><td class="tablecell-yes">~S:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_extgecos</th>
+<td class="tablecell-yes">$x:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_inchannel</th>
+<td class="tablecell-yes">$c:<span class="note">data</span></td><td class="tablecell-yes">j:<span class="note">data</span></td><td class="tablecell-yes">~c:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_invites</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">A:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_noctcp</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">C:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_nojoins</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">~j:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_nokicks</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">Q:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_nonick</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">N:<span class="note">data</span></td><td class="tablecell-yes">~n:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_nonotice</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">T:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_account</th>
+<td class="tablecell-yes">$~a:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_banshare</th>
+<td class="tablecell-yes">$~j:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_extgecos</th>
+<td class="tablecell-yes">$~x:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_inchannel</th>
+<td class="tablecell-yes">$~c:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_opers</th>
+<td class="tablecell-yes2">$~o</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_realname</th>
+<td class="tablecell-yes">$~r:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_server</th>
+<td class="tablecell-yes">$~s:<span class="note">data</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_not_ssl</th>
+<td class="tablecell-yes2">$~z</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_opertype</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">O:<span class="note">data</span></td><td class="tablecell-yes">~O:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_partmsgs</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">p:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_realname</th>
+<td class="tablecell-yes">$r:<span class="note">data</span></td><td class="tablecell-yes">r:<span class="note">data</span></td><td class="tablecell-yes">~r:<span class="note">data</span></td></tr>
+<tr>
+<th scope="row">ban_server</th>
+<td class="tablecell-yes">$s:<span class="note">data</span></td><td class="tablecell-yes">s:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_stripcolor</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">S:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban_unregistered_matching</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">U:<span class="note">data</span></td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">quiet</th>
+<td class="tablecell-special">+q<br><span class="note">(cmode)</span></td><td class="tablecell-yes">m:<span class="note">data</span></td><td class="tablecell-yes">~q:<span class="note">data</span></td></tr>
+
+
+</table>
+</body>
+</html>
