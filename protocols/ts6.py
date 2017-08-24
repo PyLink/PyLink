@@ -343,6 +343,14 @@ class TS6Protocol(TS6BaseProtocol):
             self.umodes.update(chatircd_umodes)
             self.umodes['*D'] += ''.join(chatircd_umodes.values())
 
+        # Add definitions for all the inverted versions of the extbans.
+        for k, v in self.extbans_matching.copy().items():
+            if k == 'ban_all_registered':
+                newk = 'ban_unregistered'
+            else:
+                newk = k.replace('_all_', '_').replace('ban_', 'ban_not_')
+            self.extbans_matching[newk] = '$~' + v[1:]
+
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
         f('PASS %s TS 6 %s' % (self.serverdata["sendpass"], self.sid))
 
