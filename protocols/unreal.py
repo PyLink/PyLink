@@ -374,7 +374,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Extban definitions
         self.extbans_acting = {'quiet': '~q:', 'ban_nonick': '~n:', 'ban_nojoins': '~j:'}
-        self.extbans_matching = {'ban_account': '~a:', 'ban_inchannel': '~c:', 'ban_opertype': '~o:',
+        self.extbans_matching = {'ban_account': '~a:', 'ban_inchannel': '~c:', 'ban_opertype': '~O:',
                                  'ban_realname': '~r:', 'ban_account_legacy': '~R:', 'ban_certfp': '~S:'}
 
     def handle_eos(self, numeric, command, args):
