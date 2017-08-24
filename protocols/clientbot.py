@@ -19,7 +19,7 @@ FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 
 # IRCv3 capabilities to request when available
 IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names', 'chghost', 'account-notify',
-                      'account-tag'}
+                      'account-tag', 'extended-join'}
 
 class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
@@ -843,10 +843,19 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         Handles incoming JOINs, as well as JOIN acknowledgements for us.
         """
+        # Classic format:
         # <- :GL|!~GL@127.0.0.1 JOIN #whatever
+        # With extended-join:
+        # <- :GL|!~GL@127.0.0.1 JOIN #whatever accountname :realname
         channel = args[0]
         self.channels[channel].users.add(source)
         self.users[source].channels.add(channel)
+
+        if len(args) >= 3:
+            self._set_account_name(source, args[1])
+            # Hmm, because _get_UID only looks at the sender prefix, it doesn't
+            # have a way to process the realname info from JOIN yet...
+            self.update_client(source, 'GECOS', args[2])
 
         # Only fetch modes, TS, and user hosts once we're actually in the channel.
         # The IRCd will send us a JOIN with our nick!user@host if our JOIN succeeded.
