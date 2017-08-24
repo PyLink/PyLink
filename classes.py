@@ -166,7 +166,7 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         # Acting extbans such as +b m:n!u@h on InspIRCd
         self.extbans_acting = {}
         # Matching extbans such as R:account on InspIRCd and $a:account on TS6.
-        self. extbans_matching = {}
+        self.extbans_matching = {}
 
         # This max nick length starts off as the config value, but may be
         # overwritten later by the protocol module if such information is

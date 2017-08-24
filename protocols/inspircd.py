@@ -411,9 +411,15 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send_with_prefix(self.sid, 'ENDBURST')
 
         # Extban definitions
-        self.extbans_acting = {'quiet': 'm:', 'ban_nonick': 'n:'}
+        self.extbans_acting = {'quiet': 'm:', 'ban_nonick': 'N:', 'ban_blockcolor': 'c:',
+                               'ban_partmsgs': 'p:', 'ban_invites': 'A:', 'ban_blockcaps': 'B:',
+                               'ban_noctcp': 'C:', 'ban_nokicks': 'Q:', 'ban_stripcolor': 'S:',
+                               'ban_nonotice': 'T:'}
         self.extbans_matching = {'ban_inchannel': 'j:', 'ban_realname': 'r:', 'ban_server': 's:',
-                                 'ban_certfp': 'z:', 'ban_opertype': 'O:', 'ban_account': 'R:'}
+                                 'ban_certfp': 'z:', 'ban_opertype': 'O:', 'ban_account': 'R:',
+                                 # Note: InspIRCd /helpop refers to this as an acting extban, but
+                                 # it actually behaves as a matching one...
+                                 'ban_unregistered_matching': 'U:'}
 
     def handle_capab(self, source, command, args):
         """
