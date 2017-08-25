@@ -199,13 +199,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        log.debug('(%s) inspircd._send_with_prefixModes: received %r for mode list', self.name, modes)
         if ('+o', None) in modes and not utils.isChannel(target):
             # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
             self._oper_up(target)
+
         self.apply_modes(target, modes)
         joinedmodes = self.join_modes(modes)
+
         if utils.isChannel(target):
             ts = ts or self._channels[target].ts
             self._send_with_prefix(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
