@@ -322,23 +322,23 @@ class P10Protocol(IRCS2SProtocol):
 
         nick = self.users[target].nick
 
-        self._send_with_prefix(numeric, 'I %s %s %s' % (nick, channel, self.channels[channel].ts))
+        self._send_with_prefix(numeric, 'I %s %s %s' % (nick, channel, self._channels[channel].ts))
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # <- ABAAB J #test3 1460744371
-        ts = self.channels[channel].ts
+        ts = self._channels[channel].ts
 
         if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
 
-        if not self.channels[channel].users:
+        if not self._channels[channel].users:
             # Empty channels should be created with the CREATE command.
             self._send_with_prefix(client, "C {channel} {ts}".format(ts=ts, channel=channel))
         else:
             self._send_with_prefix(client, "J {channel} {ts}".format(ts=ts, channel=channel))
 
-        self.channels[channel].users.add(client)
+        self._channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
     def kick(self, numeric, channel, target, reason=None):
@@ -351,7 +351,7 @@ class P10Protocol(IRCS2SProtocol):
         if not reason:
             reason = 'No reason given'
 
-        cobj = self.channels[channel]
+        cobj = self._channels[channel]
         # Prevent kick bounces by sending our kick through the server if
         # the sender isn't op.
         if numeric not in self.servers and (not cobj.is_halfop_plus(numeric)):
@@ -409,7 +409,7 @@ class P10Protocol(IRCS2SProtocol):
         is_cmode = utils.isChannel(target)
         if is_cmode:
             # Channel mode changes have a trailing TS. User mode changes do not.
-            cobj = self.channels[target]
+            cobj = self._channels[target]
             ts = ts or cobj.ts
 
             # Prevent mode bounces by sending our mode through the server if
@@ -530,8 +530,8 @@ class P10Protocol(IRCS2SProtocol):
         # <- AB B #test 1460742014 +tnl 10 ABAAB,ABAAA:o :%*!*@other.bad.host *!*@bad.host
         # <- AB B #test2 1460743539 +l 10 ABAAA:vo :%*!*@bad.host
         # <- AB B #test 1460747615 ABAAA:o :% ~ *!*@test.host
-        modes = modes or self.channels[channel].modes
-        orig_ts = self.channels[channel].ts
+        modes = modes or self._channels[channel].modes
+        orig_ts = self._channels[channel].ts
         ts = ts or orig_ts
 
         bans = []
@@ -541,7 +541,7 @@ class P10Protocol(IRCS2SProtocol):
             modechar = mode[0][-1]
             # Store bans and exempts in separate lists for processing, but don't reset bans that have already been set.
             if modechar in self.cmodes['*A']:
-                if (modechar, mode[1]) not in self.channels[channel].modes:
+                if (modechar, mode[1]) not in self._channels[channel].modes:
                     if modechar == 'b':
                         bans.append(mode[1])
                     elif modechar == 'e':
@@ -624,7 +624,7 @@ class P10Protocol(IRCS2SProtocol):
 
                     self.send(wrapped_msg)
 
-        self.channels[channel].users.update(changedusers)
+        self._channels[channel].users.update(changedusers)
 
         # Technically we can send bans together with the above user introductions, but
         # it's easier to line wrap them separately.
@@ -699,12 +699,12 @@ class P10Protocol(IRCS2SProtocol):
             # For servers, just show the server name.
             sendername = self.get_friendly_name(source)
 
-        creationts = self.channels[target].ts
+        creationts = self._channels[target].ts
 
         self._send_with_prefix(source, 'T %s %s %s %s :%s' % (target, sendername, creationts,
                    int(time.time()), text))
-        self.channels[target].topic = text
-        self.channels[target].topicset = True
+        self._channels[target].topic = text
+        self._channels[target].topicset = True
     topic_burst = topic
 
     def update_client(self, target, field, text):
@@ -1004,7 +1004,7 @@ class P10Protocol(IRCS2SProtocol):
             return
 
         channel = args[0]
-        chandata = self.channels[channel].deepcopy()
+        chandata = self._channels[channel].deepcopy()
 
         bans = []
         if args[-1].startswith('%'):
@@ -1068,11 +1068,11 @@ class P10Protocol(IRCS2SProtocol):
                 # Only save mode changes if the remote has lower TS than us.
                 changedmodes |= {('+%s' % mode, user) for mode in prefixes}
 
-                self.channels[channel].users.add(user)
+                self._channels[channel].users.add(user)
 
         # Statekeeping with timestamps
         their_ts = int(args[1])
-        our_ts = self.channels[channel].ts
+        our_ts = self._channels[channel].ts
         self.updateTS(source, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
@@ -1096,7 +1096,7 @@ class P10Protocol(IRCS2SProtocol):
                       self.name, source, oldchans)
 
             for channel in oldchans:
-                self.channels[channel].users.discard(source)
+                self._channels[channel].users.discard(source)
                 self.users[source].channels.discard(channel)
 
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
@@ -1106,10 +1106,10 @@ class P10Protocol(IRCS2SProtocol):
                 self.updateTS(source, channel, ts)
 
             self.users[source].channels.add(channel)
-            self.channels[channel].users.add(source)
+            self._channels[channel].users.add(source)
 
         return {'channel': channel, 'users': [source], 'modes':
-                self.channels[channel].modes, 'ts': ts or int(time.time())}
+                self._channels[channel].modes, 'ts': ts or int(time.time())}
 
     handle_create = handle_join
     def handle_end_of_burst(self, source, command, args):
@@ -1140,9 +1140,9 @@ class P10Protocol(IRCS2SProtocol):
         channel = args[0]
         topic = args[-1]
 
-        oldtopic = self.channels[channel].topic
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
+        oldtopic = self._channels[channel].topic
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
 
         return {'channel': channel, 'setter': args[1], 'text': topic,
                 'oldtopic': oldtopic}
@@ -1154,14 +1154,14 @@ class P10Protocol(IRCS2SProtocol):
         modes = args[1]
 
         # Enumerate a list of our existing modes, including prefix modes.
-        existing = list(self.channels[channel].modes)
-        for pmode, userlist in self.channels[channel].prefixmodes.items():
+        existing = list(self._channels[channel].modes)
+        for pmode, userlist in self._channels[channel].prefixmodes.items():
             # Expand the prefix modes lists to individual ('o', 'UID') mode pairs.
             modechar = self.cmodes.get(pmode)
             existing += [(modechar, user) for user in userlist]
 
         # Back up the channel state.
-        oldobj = self.channels[channel].deepcopy()
+        oldobj = self._channels[channel].deepcopy()
 
         changedmodes = []
 

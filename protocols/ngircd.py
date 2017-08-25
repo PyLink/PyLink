@@ -154,7 +154,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client exists.')
 
         self._send_with_prefix(client, "JOIN %s" % channel)
-        self.channels[channel].users.add(client)
+        self._channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
     def kill(self, source, target, reason):
@@ -241,7 +241,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # Add the affected users to our state.
         for userpair in users:
             uid = userpair[1]
-            self.channels[channel].users.add(uid)
+            self._channels[channel].users.add(uid)
             try:
                 self.users[uid].channels.add(channel)
             except KeyError:  # Not initialized yet?
@@ -337,8 +337,8 @@ class NgIRCdProtocol(IRCS2SProtocol):
             topic = args[-1]
             if topic:
                 log.debug('(%s) handle_chaninfo: setting topic for %s to %r', self.name, channel, topic)
-                self.channels[channel].topic = topic
-                self.channels[channel].topicset = True
+                self._channels[channel].topic = topic
+                self._channels[channel].topicset = True
 
         if len(args) >= 5:
             key = args[2]
@@ -364,10 +364,10 @@ class NgIRCdProtocol(IRCS2SProtocol):
             except ValueError:
                 channel = chanpair
 
-            c = self.channels[channel]
+            c = self._channels[channel]
 
             self.users[source].channels.add(channel)
-            self.channels[channel].users.add(source)
+            self._channels[channel].users.add(source)
 
             # Call hooks manually, because one JOIN command have multiple channels.
             self.call_hooks([source, command, {'channel': channel, 'users': [source], 'modes': c.modes}])
@@ -469,7 +469,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # <- :ngircd.midnight.local NJOIN #test :tester,@%GL
 
         channel = args[0]
-        chandata = self.channels[channel].deepcopy()
+        chandata = self._channels[channel].deepcopy()
         namelist = []
 
         # Reverse the modechar->modeprefix mapping for quicker lookup
@@ -487,7 +487,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
             # Final bits of state tracking. (I hate having to do this everywhere...)
             self.users[user].channels.add(channel)
-            self.channels[channel].users.add(user)
+            self._channels[channel].users.add(user)
 
         return {'channel': channel, 'users': namelist, 'modes': [], 'channeldata': chandata}
 

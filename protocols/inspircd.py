@@ -83,11 +83,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client exists.')
 
         # Strip out list-modes, they shouldn't be ever sent in FJOIN.
-        modes = [m for m in self.channels[channel].modes if m[0] not in self.cmodes['*A']]
+        modes = [m for m in self._channels[channel].modes if m[0] not in self.cmodes['*A']]
         self._send_with_prefix(server, "FJOIN {channel} {ts} {modes} :,{uid}".format(
-                ts=self.channels[channel].ts, uid=client, channel=channel,
+                ts=self._channels[channel].ts, uid=client, channel=channel,
                 modes=self.join_modes(modes)))
-        self.channels[channel].users.add(client)
+        self._channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
@@ -109,8 +109,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise LookupError('No such PyLink client exists.')
 
         # Strip out list-modes, they shouldn't ever be sent in FJOIN (protocol rules).
-        modes = modes or self.channels[channel].modes
-        orig_ts = self.channels[channel].ts
+        modes = modes or self._channels[channel].modes
+        orig_ts = self._channels[channel].ts
         ts = ts or orig_ts
 
         banmodes = []
@@ -120,7 +120,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             if modechar in self.cmodes['*A']:
                 # Track bans separately (they are sent as a normal FMODE instead of in FJOIN.
                 # However, don't reset bans that have already been set.
-                if (modechar, mode[1]) not in self.channels[channel].modes:
+                if (modechar, mode[1]) not in self._channels[channel].modes:
                     banmodes.append(mode)
             else:
                 regularmodes.append(mode)
@@ -146,7 +146,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send_with_prefix(server, "FJOIN {channel} {ts} {modes} :{users}".format(
                 ts=ts, users=namelist, channel=channel,
                 modes=self.join_modes(modes)))
-        self.channels[channel].users.update(uids)
+        self._channels[channel].users.update(uids)
 
         if banmodes:
             # Burst ban modes if there are any.
@@ -207,7 +207,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.apply_modes(target, modes)
         joinedmodes = self.join_modes(modes)
         if utils.isChannel(target):
-            ts = ts or self.channels[target].ts
+            ts = ts or self._channels[target].ts
             self._send_with_prefix(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
         else:
             self._send_with_prefix(numeric, 'MODE %s %s' % (target, joinedmodes))
@@ -241,8 +241,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         ts = int(time.time())
         servername = self.servers[numeric].name
         self._send_with_prefix(numeric, 'FTOPIC %s %s %s :%s' % (target, ts, servername, text))
-        self.channels[target].topic = text
-        self.channels[target].topicset = True
+        self._channels[target].topic = text
+        self._channels[target].topicset = True
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
@@ -539,7 +539,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
         # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
         channel = args[0]
-        chandata = self.channels[channel].deepcopy()
+        chandata = self._channels[channel].deepcopy()
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
         userlist = args[-1].split()
 
@@ -565,7 +565,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # Only save mode changes if the remote has lower TS than us.
             changedmodes |= {('+%s' % mode, user) for mode in modeprefix}
 
-            self.channels[channel].users.add(user)
+            self._channels[channel].users.add(user)
 
         # Statekeeping with timestamps. Note: some service packages (Anope 1.8) send a trailing
         # 'd' after the timestamp, which we should strip out to prevent int() from erroring.
@@ -574,7 +574,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :3AX FJOIN #monitor 1485462109d + :,3AXAAAAAK
         their_ts = int(''.join(char for char in args[1] if char.isdigit()))
 
-        our_ts = self.channels[channel].ts
+        our_ts = self._channels[channel].ts
         self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
@@ -627,7 +627,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles the FMODE command, used for channel mode changes."""
         # <- :70MAAAAAA FMODE #chat 1433653462 +hhT 70MAAAAAA 70MAAAAAD
         channel = args[0]
-        oldobj = self.channels[channel].deepcopy()
+        oldobj = self._channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = self.parse_modes(channel, modes)
         self.apply_modes(channel, changedmodes)
@@ -661,8 +661,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         ts = args[1]
         setter = args[2]
         topic = args[-1]
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     # SVSTOPIC is used by InspIRCd module m_topiclock - its arguments are the same as FTOPIC

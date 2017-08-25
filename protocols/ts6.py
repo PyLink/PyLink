@@ -76,8 +76,8 @@ class TS6Protocol(TS6BaseProtocol):
         if not self.is_internal_client(client):
             log.error('(%s) Error trying to join %r to %r (no such client exists)', self.name, client, channel)
             raise LookupError('No such PyLink client exists.')
-        self._send_with_prefix(client, "JOIN {ts} {channel} +".format(ts=self.channels[channel].ts, channel=channel))
-        self.channels[channel].users.add(client)
+        self._send_with_prefix(client, "JOIN {ts} {channel} +".format(ts=self._channels[channel].ts, channel=channel))
+        self._channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
@@ -106,8 +106,8 @@ class TS6Protocol(TS6BaseProtocol):
         if not server:
             raise LookupError('No such PyLink client exists.')
 
-        modes = set(modes or self.channels[channel].modes)
-        orig_ts = self.channels[channel].ts
+        modes = set(modes or self._channels[channel].modes)
+        orig_ts = self._channels[channel].ts
         ts = ts or orig_ts
 
         # Get all the ban modes in a separate list. These are bursted using a separate BMASK
@@ -119,7 +119,7 @@ class TS6Protocol(TS6BaseProtocol):
             modechar = mode[0][-1]
             if modechar in self.cmodes['*A']:
                 # Mode character is one of 'beIq'
-                if (modechar, mode[1]) in self.channels[channel].modes:
+                if (modechar, mode[1]) in self._channels[channel].modes:
                     # Don't reset modes that are already set.
                     continue
 
@@ -153,7 +153,7 @@ class TS6Protocol(TS6BaseProtocol):
             self._send_with_prefix(server, "SJOIN {ts} {channel} {modes} :{users}".format(
                     ts=ts, users=namelist, channel=channel,
                     modes=self.join_modes(regularmodes)))
-            self.channels[channel].users.update(uids)
+            self._channels[channel].users.update(uids)
 
         # Now, burst bans.
         # <- :42X BMASK 1424222769 #dev b :*!test@*.isp.net *!badident@*
@@ -183,7 +183,7 @@ class TS6Protocol(TS6BaseProtocol):
         modes = list(modes)
 
         if utils.isChannel(target):
-            ts = ts or self.channels[target].ts
+            ts = ts or self._channels[target].ts
             # TMODE:
             # parameters: channelTS, channel, cmode changes, opt. cmode parameters...
 
@@ -207,17 +207,17 @@ class TS6Protocol(TS6BaseProtocol):
         # source: server
         # propagation: broadcast
         # parameters: channel, topicTS, opt. topic setter, topic
-        ts = self.channels[target].ts
+        ts = self._channels[target].ts
         servername = self.servers[numeric].name
         self._send_with_prefix(numeric, 'TB %s %s %s :%s' % (target, ts, servername, text))
-        self.channels[target].topic = text
-        self.channels[target].topicset = True
+        self._channels[target].topic = text
+        self._channels[target].topicset = True
 
     def invite(self, numeric, target, channel):
         """Sends an INVITE from a PyLink client.."""
         if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
-        self._send_with_prefix(numeric, 'INVITE %s %s %s' % (target, channel, self.channels[channel].ts))
+        self._send_with_prefix(numeric, 'INVITE %s %s %s' % (target, channel, self._channels[channel].ts))
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
@@ -458,7 +458,7 @@ class TS6Protocol(TS6BaseProtocol):
         # parameters: channelTS, channel, simple modes, opt. mode parameters..., nicklist
         # <- :0UY SJOIN 1451041566 #channel +nt :@0UYAAAAAB
         channel = args[1]
-        chandata = self.channels[channel].deepcopy()
+        chandata = self._channels[channel].deepcopy()
         userlist = args[-1].split()
 
         modestring = args[2:-1] or args[2]
@@ -495,11 +495,11 @@ class TS6Protocol(TS6BaseProtocol):
 
             # Only save mode changes if the remote has lower TS than us.
             changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
-            self.channels[channel].users.add(user)
+            self._channels[channel].users.add(user)
 
         # Statekeeping with timestamps
         their_ts = int(args[0])
-        our_ts = self.channels[channel].ts
+        our_ts = self._channels[channel].ts
         self.updateTS(servernumeric, channel, their_ts, changedmodes)
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
@@ -516,7 +516,7 @@ class TS6Protocol(TS6BaseProtocol):
             log.debug('(%s) Got /join 0 from %r, channel list is %r',
                       self.name, numeric, oldchans)
             for channel in oldchans:
-                self.channels[channel].users.discard(numeric)
+                self._channels[channel].users.discard(numeric)
                 self.users[numeric].channels.discard(channel)
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
         else:
@@ -524,12 +524,12 @@ class TS6Protocol(TS6BaseProtocol):
             self.updateTS(numeric, channel, ts)
 
             self.users[numeric].channels.add(channel)
-            self.channels[channel].users.add(numeric)
+            self._channels[channel].users.add(numeric)
 
         # We send users and modes here because SJOIN and JOIN both use one hook,
         # for simplicity's sake (with plugins).
         return {'channel': channel, 'users': [numeric], 'modes':
-                self.channels[channel].modes, 'ts': ts}
+                self._channels[channel].modes, 'ts': ts}
 
     def handle_euid(self, numeric, command, args):
         """Handles incoming EUID commands (user introduction)."""
@@ -610,7 +610,7 @@ class TS6Protocol(TS6BaseProtocol):
         # <- :42XAAAAAB TMODE 1437450768 #test -c+lkC 3 agte4
         # <- :0UYAAAAAD TMODE 0 #a +h 0UYAAAAAD
         channel = args[1]
-        oldobj = self.channels[channel].deepcopy()
+        oldobj = self._channels[channel].deepcopy()
         modes = args[2:]
         changedmodes = self.parse_modes(channel, modes)
         self.apply_modes(channel, changedmodes)
@@ -625,8 +625,8 @@ class TS6Protocol(TS6BaseProtocol):
         ts = args[1]
         setter = args[2]
         topic = args[-1]
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     def handle_etb(self, numeric, command, args):
@@ -637,8 +637,8 @@ class TS6Protocol(TS6BaseProtocol):
         ts = args[2]
         setter = args[3]
         topic = args[-1]
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     def handle_chghost(self, numeric, command, args):

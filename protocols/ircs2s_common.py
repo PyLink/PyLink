@@ -110,7 +110,7 @@ class IRCCommonProtocol(IRCNetwork):
 
         # Prevent RuntimeError: dictionary changed size during iteration
         old_servers = self.servers.copy()
-        old_channels = self.channels.copy()
+        old_channels = self._channels.copy()
 
         # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
         # remove them and all their users too.
@@ -468,8 +468,8 @@ class IRCS2SProtocol(IRCCommonProtocol):
             raise LookupError('No such PyLink client/server exists.')
 
         self._send_with_prefix(source, 'TOPIC %s :%s' % (target, text))
-        self.channels[target].topic = text
-        self.channels[target].topicset = True
+        self._channels[target].topic = text
+        self._channels[target].topicset = True
     topic_burst = topic
 
     def handle_invite(self, numeric, command, args):
@@ -590,7 +590,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- ABAAA OM #test +h ABAAA
         target = self._get_UID(args[0])
         if utils.isChannel(target):
-            channeldata = self.channels[target].deepcopy()
+            channeldata = self._channels[target].deepcopy()
         else:
             channeldata = None
 
@@ -611,11 +611,11 @@ class IRCS2SProtocol(IRCCommonProtocol):
         channels = args[0].split(',')
 
         for channel in channels.copy():
-            if channel not in self.channels or source not in self.channels[channel].users:
+            if channel not in self._channels or source not in self._channels[channel].users:
                 # Ignore channels the user isn't on, and remove them from any hook payloads.
                 channels.remove(channel)
 
-            self.channels[channel].remove_user(source)
+            self._channels[channel].remove_user(source)
             try:
                 self.users[source].channels.discard(channel)
             except KeyError:
@@ -627,8 +627,8 @@ class IRCS2SProtocol(IRCCommonProtocol):
                 reason = ''
 
             # Clear empty non-permanent channels.
-            if not (self.channels[channel].users or ((self.cmodes.get('permanent'), None) in self.channels[channel].modes)):
-                del self.channels[channel]
+            if not (self._channels[channel].users or ((self.cmodes.get('permanent'), None) in self._channels[channel].modes)):
+                del self._channels[channel]
 
         if channels:
             return {'channels': channels, 'text': reason}
@@ -685,9 +685,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
         channel = args[0]
         topic = args[1]
 
-        oldtopic = self.channels[channel].topic
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
+        oldtopic = self._channels[channel].topic
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
 
         return {'channel': channel, 'setter': numeric, 'text': topic,
                 'oldtopic': oldtopic}

@@ -106,7 +106,7 @@ class UnrealProtocol(TS6BaseProtocol):
         if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
         self._send_with_prefix(client, "JOIN %s" % channel)
-        self.channels[channel].users.add(client)
+        self._channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
@@ -126,8 +126,8 @@ class UnrealProtocol(TS6BaseProtocol):
         if not server:
             raise LookupError('No such PyLink server exists.')
 
-        changedmodes = set(modes or self.channels[channel].modes)
-        orig_ts = self.channels[channel].ts
+        changedmodes = set(modes or self._channels[channel].modes)
+        orig_ts = self._channels[channel].ts
         ts = ts or orig_ts
         uids = []
         itemlist = []
@@ -158,7 +158,7 @@ class UnrealProtocol(TS6BaseProtocol):
             if modepair[0][-1] in self.cmodes['*A']:
                 # Bans, exempts, invex get expanded to forms like "&*!*@some.host" in SJOIN.
 
-                if (modepair[0][-1], modepair[1]) in self.channels[channel].modes:
+                if (modepair[0][-1], modepair[1]) in self._channels[channel].modes:
                     # Mode is already set; skip it.
                     continue
 
@@ -182,7 +182,7 @@ class UnrealProtocol(TS6BaseProtocol):
         for line in utils.wrapArguments(sjoin_prefix, itemlist, self.S2S_BUFSIZE):
             self.send(line)
 
-        self.channels[channel].users.update(uids)
+        self._channels[channel].users.update(uids)
 
         self.updateTS(server, channel, ts, changedmodes)
 
@@ -217,7 +217,7 @@ class UnrealProtocol(TS6BaseProtocol):
                     modes[idx] = (mode[0], self._expandPUID(mode[1]))
 
             # The MODE command is used for channel mode changes only
-            ts = ts or self.channels[target].ts
+            ts = ts or self._channels[target].ts
 
             # 7 characters for "MODE", the space between MODE and the target, the space between the
             # target and mode list, and the space between the mode list and TS.
@@ -532,15 +532,15 @@ class UnrealProtocol(TS6BaseProtocol):
             log.debug('(%s) Got /join 0 from %r, channel list is %r',
                       self.name, numeric, oldchans)
             for ch in oldchans:
-                self.channels[ch].users.discard(numeric)
+                self._channels[ch].users.discard(numeric)
                 self.users[numeric].channels.discard(ch)
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
 
         else:
             for channel in args[0].split(','):
-                c = self.channels[channel]
+                c = self._channels[channel]
                 self.users[numeric].channels.add(channel)
-                self.channels[channel].users.add(numeric)
+                self._channels[channel].users.add(numeric)
                 # Call hooks manually, because one JOIN command in UnrealIRCd can
                 # have multiple channels...
                 self.call_hooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
@@ -551,7 +551,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :001 SJOIN 1444361345 #test :001AAAAAA @001AAAAAB +001AAAAAC
         # <- :001 SJOIN 1483250129 #services +nt :+001OR9V02 @*~001DH6901 &*!*@test "*!*@blah.blah '*!*@yes.no
         channel = args[1]
-        chandata = self.channels[channel].deepcopy()
+        chandata = self._channels[channel].deepcopy()
         userlist = args[-1].split()
 
         namelist = []
@@ -614,9 +614,9 @@ class UnrealProtocol(TS6BaseProtocol):
                 # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
                 changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
 
-                self.channels[channel].users.add(user)
+                self._channels[channel].users.add(user)
 
-        our_ts = self.channels[channel].ts
+        our_ts = self._channels[channel].ts
         their_ts = int(args[0])
         self.updateTS(numeric, channel, their_ts, changedmodes)
 
@@ -677,7 +677,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # Also, we need to get rid of that extra space following the +f argument. :|
         if utils.isChannel(args[0]):
             channel = args[0]
-            oldobj = self.channels[channel].deepcopy()
+            oldobj = self._channels[channel].deepcopy()
 
             modes = [arg for arg in args[1:] if arg]  # normalize whitespace
             parsedmodes = self.parse_modes(channel, modes)
@@ -688,7 +688,7 @@ class UnrealProtocol(TS6BaseProtocol):
                     # attempt to set modes by us was rejected for some reason (usually due to
                     # timestamps). Drop the mode change to prevent mode floods.
                     log.debug("(%s) Received mode bounce %s in channel %s! Our TS: %s",
-                              self.name, modes, channel, self.channels[channel].ts)
+                              self.name, modes, channel, self._channels[channel].ts)
                     return
 
                 self.apply_modes(channel, parsedmodes)
@@ -849,9 +849,9 @@ class UnrealProtocol(TS6BaseProtocol):
         setter = args[1]
         ts = args[2]
 
-        oldtopic = self.channels[channel].topic
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
+        oldtopic = self._channels[channel].topic
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
 
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic,
                 'oldtopic': oldtopic}

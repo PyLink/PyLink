@@ -168,7 +168,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if self.pseudoclient and client == self.pseudoclient.uid:
             self.send('JOIN %s' % channel)
         else:
-            self.channels[channel].users.add(client)
+            self._channels[channel].users.add(client)
             self.users[client].channels.add(channel)
 
             log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.name, client,
@@ -272,7 +272,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
     def part(self, source, channel, reason=''):
         """STUB: Parts a user from a channel."""
-        self.channels[channel].remove_user(source)
+        self._channels[channel].remove_user(source)
         self.users[source].channels.discard(channel)
 
         # Only parts for the main PyLink client are actually forwarded. Others are ignored.
@@ -300,7 +300,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 # Otherwise, track the state for our virtual clients.
                 self.users[user].channels.add(channel)
 
-        self.channels[channel].users |= puids
+        self._channels[channel].users |= puids
         nicks = {self.get_friendly_name(u) for u in puids}
         self.call_hooks([server, 'CLIENTBOT_SJOIN', {'channel': channel, 'nicks': nicks}])
 
@@ -671,7 +671,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
             # Queue these virtual users to be joined if they're not already in the channel,
             # or we're waiting for a kick acknowledgment for them.
-            if (idsource not in self.channels[channel].users) or (idsource in \
+            if (idsource not in self._channels[channel].users) or (idsource in \
                     self.kick_queue.get(channel, ([],))[0]):
                 names.add(idsource)
             self.users[idsource].channels.add(channel)
@@ -686,7 +686,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                     break
 
         # Statekeeping: make sure the channel's user list is updated!
-        self.channels[channel].users |= names
+        self._channels[channel].users |= names
         self.apply_modes(channel, modes)
 
         log.debug('(%s) handle_353: adding users %s to %s', self.name, names, channel)
@@ -698,7 +698,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         fully_synced_names = [uid for uid in names if hasattr(self.users[uid], '_clientbot_identhost_received')]
         if fully_synced_names:
             log.debug('(%s) handle_353: sending pre-WHO JOIN hook for %s: %s', self.name, channel, fully_synced_names)
-            return {'channel': channel, 'users': fully_synced_names, 'modes': self.channels[channel].modes,
+            return {'channel': channel, 'users': fully_synced_names, 'modes': self._channels[channel].modes,
                     'parse_as': "JOIN"}
 
     def _check_puid_collision(self, nick):
@@ -796,7 +796,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self.who_received.clear()
 
         channel = args[1]
-        c = self.channels[channel]
+        c = self._channels[channel]
 
         modes = set(c.modes)
         for user in users.copy():
@@ -848,7 +848,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # With extended-join:
         # <- :GL|!~GL@127.0.0.1 JOIN #whatever accountname :realname
         channel = args[0]
-        self.channels[channel].users.add(source)
+        self._channels[channel].users.add(source)
         self.users[source].channels.add(channel)
 
         if len(args) >= 3:
@@ -864,7 +864,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self._send_who(channel)
         else:
             self.call_hooks([source, 'CLIENTBOT_JOIN', {'channel': channel}])
-            return {'channel': channel, 'users': [source], 'modes': self.channels[channel].modes}
+            return {'channel': channel, 'users': [source], 'modes': self._channels[channel].modes}
 
     def handle_kick(self, source, command, args):
         """
@@ -891,7 +891,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 del self.kick_queue[channel]
 
         # Statekeeping: remove the target from the channel they were previously in.
-        self.channels[channel].remove_user(target)
+        self._channels[channel].remove_user(target)
         try:
             self.users[target].channels.remove(channel)
         except KeyError:
@@ -903,7 +903,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         # Delete channels that we were kicked from, for better state keeping.
         if self.pseudoclient and target == self.pseudoclient.uid:
-            del self.channels[channel]
+            del self._channels[channel]
 
     def handle_mode(self, source, command, args):
         """Handles MODE changes."""
@@ -911,7 +911,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :ice MODE ice :+Zi
         target = args[0]
         if utils.isChannel(target):
-            oldobj = self.channels[target].deepcopy()
+            oldobj = self._channels[target].deepcopy()
         else:
             target = self.nick_to_uid(target)
             oldobj = None
@@ -944,7 +944,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """Handles TS announcements via RPL_CREATIONTIME."""
         channel = args[1]
         ts = int(args[2])
-        self.channels[channel].ts = ts
+        self._channels[channel].ts = ts
 
     def handle_chghost(self, source, command, args):
         """Handles the IRCv3 CHGHOST command."""
@@ -995,15 +995,15 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             reason = ''
 
         for channel in channels:
-            self.channels[channel].remove_user(source)
+            self._channels[channel].remove_user(source)
         self.users[source].channels -= set(channels)
 
         self.call_hooks([source, 'PART', {'channels': channels, 'text': reason}])
 
         # Clear channels that are empty, or that we're parting.
         for channel in channels:
-            if (self.pseudoclient and source == self.pseudoclient.uid) or not self.channels[channel].users:
-                del self.channels[channel]
+            if (self.pseudoclient and source == self.pseudoclient.uid) or not self._channels[channel].users:
+                del self._channels[channel]
 
     def handle_ping(self, source, command, args):
         """

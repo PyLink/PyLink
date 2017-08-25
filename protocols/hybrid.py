@@ -162,12 +162,12 @@ class HybridProtocol(TS6Protocol):
         if not self.is_internal_server(numeric):
             raise LookupError('No such PyLink server exists.')
 
-        ts = self.channels[target].ts
+        ts = self._channels[target].ts
         servername = self.servers[numeric].name
 
         self._send_with_prefix(numeric, 'TBURST %s %s %s %s :%s' % (ts, target, int(time.time()), servername, text))
-        self.channels[target].topic = text
-        self.channels[target].topicset = True
+        self._channels[target].topic = text
+        self._channels[target].topicset = True
 
     # command handlers
 
@@ -221,8 +221,8 @@ class HybridProtocol(TS6Protocol):
         ts = args[2]
         setter = args[3]
         topic = args[-1]
-        self.channels[channel].topic = topic
-        self.channels[channel].topicset = True
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
     def handle_eob(self, numeric, command, args):

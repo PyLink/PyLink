@@ -130,11 +130,16 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
         self.called_in = None
 
         # Intialize the server, channel, and user indexes to be populated by
-        # our protocol module. For the server index, we can add ourselves right
-        # now.
+        # our protocol module.
         self.servers = {}
         self.users = {}
-        self.channels = ChannelState(self)
+
+        # Two versions of the channels index exist in PyLink 2.0, and they are joined together
+        # - irc._channels which implicitly creates channels on access (mostly used
+        #   in protocol modules)
+        # - irc.channels which does not (recommended for use by plugins)
+        self._channels = ChannelState(self)
+        self.channels = structures.IRCCaseInsensitiveDict(self, data=self._channels._data)
 
         # This sets the list of supported channel and user modes: the default
         # RFC1459 modes are implied. Named modes are used here to make
@@ -531,7 +536,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             log.debug('(%s) Using self.cmodes for this query: %s', self.name, self.cmodes)
 
             supported_modes = self.cmodes
-            oldmodes = self.channels[target].modes
+            oldmodes = self._channels[target].modes
         res = []
         for mode in modestring:
             if mode in '+-':
@@ -601,7 +606,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 old_modelist = self.users[target].modes
                 supported_modes = self.umodes
             else:
-                old_modelist = self.channels[target].modes
+                old_modelist = self._channels[target].modes
                 supported_modes = self.cmodes
         except KeyError:
             log.warning('(%s) Possible desync? Mode target %s is unknown.', self.name, target)
@@ -621,7 +626,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 # if the IRCd supports this mode and it is the one being set, add/remove
                 # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
                 # for ops).
-                for pmode, pmodelist in self.channels[target].prefixmodes.items():
+                for pmode, pmodelist in self._channels[target].prefixmodes.items():
                     if pmode in self.cmodes and real_mode[0] == self.cmodes[pmode]:
                         log.debug('(%s) Initial prefixmodes list: %s', self.name, pmodelist)
                         if mode[0][0] == '+':
@@ -668,7 +673,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             if usermodes:
                 self.users[target].modes = modelist
             else:
-                self.channels[target].modes = modelist
+                self._channels[target].modes = modelist
         except KeyError:
             log.warning("(%s) Invalid MODE target %s (usermodes=%s)", self.name, target, usermodes)
 
@@ -706,7 +711,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             modes = self.parse_modes(target, modes.split(" "))
         # Get the current mode list first.
         if utils.isChannel(target):
-            c = oldobj or self.channels[target]
+            c = oldobj or self._channels[target]
             oldmodes = c.modes.copy()
             possible_modes = self.cmodes.copy()
             # For channels, this also includes the list of prefix modes.
@@ -1116,8 +1121,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         def _clear():
             log.debug("(%s) Clearing local modes from channel %s due to TS change", self.name,
                       channel)
-            self.channels[channel].modes.clear()
-            for p in self.channels[channel].prefixmodes.values():
+            self._channels[channel].modes.clear()
+            for p in self._channels[channel].prefixmodes.values():
                 for user in p.copy():
                     if not self.is_internal_client(user):
                         p.discard(user)
@@ -1131,7 +1136,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # Use a lock so only one thread can change a channel's TS at once: this prevents race
         # conditions that would otherwise desync channel modes.
         with self._ts_lock:
-            our_ts = self.channels[channel].ts
+            our_ts = self._channels[channel].ts
             assert isinstance(our_ts, int), "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
             assert isinstance(their_ts, int), "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
@@ -1153,7 +1158,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 else:
                     log.debug('(%s) Resetting channel TS of %s from %s to %s (remote has lower TS)',
                               self.name, channel, our_ts, their_ts)
-                    self.channels[channel].ts = their_ts
+                    self._channels[channel].ts = their_ts
 
                 # Remote TS was lower and we're receiving modes. Clear the modelist and apply theirs.
 
