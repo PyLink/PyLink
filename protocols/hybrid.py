@@ -60,6 +60,7 @@ class HybridProtocol(TS6Protocol):
         }
 
         self.umodes = umodes
+        self.extbans_matching.clear()
 
         # halfops is mandatory on Hybrid
         self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}

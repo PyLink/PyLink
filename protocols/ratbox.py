@@ -44,6 +44,8 @@ class RatboxProtocol(TS6Protocol):
             '*A': '', '*B': '', '*C': '', '*D': 'igoabcCdfklrsuwxyzZD'
         }
 
+        self.extbans_matching.clear()
+
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None,
             manipulatable=False):
