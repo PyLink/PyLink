@@ -30,8 +30,12 @@ class CaseInsensitiveDict(collections.abc.MutableMapping):
     """
     A dictionary storing items case insensitively.
     """
-    def __init__(self):
-        self._data = {}
+    def __init__(self, *, data=None):
+        if data is not None:
+            assert isinstance(data, dict)
+            self._data = data
+        else:
+            self._data = {}
 
     def _keymangle(self, key):
         """Converts the given key to lowercase."""
@@ -67,8 +71,8 @@ class IRCCaseInsensitiveDict(CaseInsensitiveDict):
     """
     A dictionary storing channels case insensitively. Channel objects are initialized on access.
     """
-    def __init__(self, irc):
-        super().__init__()
+    def __init__(self, irc, *, data=None):
+        super().__init__(data=data)
         self._irc = irc
 
     def _keymangle(self, key):
