@@ -26,7 +26,39 @@ class KeyedDefaultdict(collections.defaultdict):
             value = self[key] = self.default_factory(key)
             return value
 
-class CaseInsensitiveDict(collections.abc.MutableMapping):
+class CaseInsensitiveFixedSet(collections.abc.Set):
+    """
+    Implements a fixed set storing items case-insensitively.
+    """
+
+    def __init__(self, *, data=None):
+        if data is not None:
+            assert isinstance(data, set)
+            self._data = data
+        else:
+            self._data = set()
+
+    @staticmethod
+    def _keymangle(key):
+        """Converts the given key to lowercase."""
+        return key.lower()
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __contains__(self, key):
+        return self._data.__contains__(self._keymangle(key))
+
+    def copy(self, *args, **kwargs):
+        return self._data.copy(*args, **kwargs)
+
+class CaseInsensitiveDict(collections.abc.MutableMapping, CaseInsensitiveFixedSet):
     """
     A dictionary storing items case insensitively.
     """
@@ -36,10 +68,6 @@ class CaseInsensitiveDict(collections.abc.MutableMapping):
             self._data = data
         else:
             self._data = {}
-
-    def _keymangle(self, key):
-        """Converts the given key to lowercase."""
-        return key.lower()
 
     def __getitem__(self, key):
         key = self._keymangle(key)
@@ -52,24 +80,32 @@ class CaseInsensitiveDict(collections.abc.MutableMapping):
     def __delitem__(self, key):
         del self._data[self._keymangle(key)]
 
-    def __iter__(self):
-        return iter(self._data)
-
-    def __len__(self):
-        return len(self._data)
-
-    def copy(self, *args, **kwargs):
-        return self._data.copy(*args, **kwargs)
-
-    def __contains__(self, key):
-        return self._data.__contains__(self._keymangle(key))
-
-    def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, self._data)
-
 class IRCCaseInsensitiveDict(CaseInsensitiveDict):
     """
-    A dictionary storing channels case insensitively. Channel objects are initialized on access.
+    A dictionary storing items case insensitively, using IRC case mappings.
+    """
+    def __init__(self, irc, *, data=None):
+        super().__init__(data=data)
+        self._irc = irc
+
+    def _keymangle(self, key):
+        """Converts the given key to lowercase."""
+        return self._irc.to_lower(key)
+
+class CaseInsensitiveSet(collections.abc.MutableSet, CaseInsensitiveFixedSet):
+    """
+    A mutable set storing items case insensitively.
+    """
+
+    def add(self, key):
+        self._data.add(self._keymangle(key))
+
+    def discard(self, key):
+        self._data.discard(self._keymangle(key))
+
+class IRCCaseInsensitiveSet(CaseInsensitiveSet):
+    """
+    A set storing items case insensitively, using IRC case mappings.
     """
     def __init__(self, irc, *, data=None):
         super().__init__(data=data)
