@@ -118,6 +118,10 @@ def channel(irc, host, uid):
     except IndexError:  # No channel given, abort.
         return False
 
+    if channel not in irc.channels:
+        # Channel doesn't even exist...
+        return False
+
     if len(groups) == 2:
         # Just #channel was given as query
         return uid in irc.channels[channel].users
