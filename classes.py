@@ -1502,7 +1502,7 @@ Irc = IRCNetwork
 
 class User():
     """PyLink IRC user class."""
-    def __init__(self, nick, ts, uid, server, ident='null', host='null',
+    def __init__(self, irc, nick, ts, uid, server, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
                  ip='0.0.0.0', manipulatable=False, opertype='IRC Operator'):
         self.nick = nick
@@ -1515,6 +1515,7 @@ class User():
         self.realname = realname
         self.modes = set()  # Tracks user modes
         self.server = server
+        self.irc = irc
 
         # Tracks PyLink identification status
         self.account = ''
@@ -1526,7 +1527,7 @@ class User():
         self.services_account = ''
 
         # Tracks channels the user is in
-        self.channels = set()
+        self.channels = structures.IRCCaseInsensitiveSet(self.irc)
 
         # Tracks away message status
         self.away = ''

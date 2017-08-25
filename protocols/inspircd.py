@@ -56,7 +56,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
@@ -587,7 +587,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
         self._check_nick_collision(nick)
         realname = args[-1]
-        self.users[uid] = userobj = User(nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.users[uid] = userobj = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
         parsedmodes = self.parse_modes(uid, [args[8], args[9]])
         self.apply_modes(uid, parsedmodes)

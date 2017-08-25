@@ -103,7 +103,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         f('NICK %s' % nick)
         f('USER %s 8 * :%s' % (ident, realname))
-        self.pseudoclient = User(nick, int(time.time()), self.uidgen.next_uid(prefix='@ClientbotInternal'), self.sid,
+        self.pseudoclient = User(self, nick, int(time.time()), self.uidgen.next_uid(prefix='@ClientbotInternal'), self.sid,
                                  ident=ident, realname=realname, host=self.hostname())
         self.users[self.pseudoclient.uid] = self.pseudoclient
 
@@ -121,7 +121,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         ts = ts or int(time.time())
 
         log.debug('(%s) spawn_client stub called, saving nick %s as PUID %s', self.name, nick, uid)
-        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
                                    manipulatable=manipulatable, realhost=realhost, ip=ip)
         self.servers[server].users.add(uid)
 

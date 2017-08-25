@@ -55,7 +55,7 @@ class TS6Protocol(TS6BaseProtocol):
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
@@ -548,7 +548,7 @@ class TS6Protocol(TS6BaseProtocol):
         if ip == '0':  # IP was invalid; something used for services.
             ip = '0.0.0.0'
 
-        self.users[uid] = User(nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.users[uid] = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
         parsedmodes = self.parse_modes(uid, [modes])
         log.debug('Applying modes %s for %s', parsedmodes, uid)
