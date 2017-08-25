@@ -56,7 +56,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
@@ -356,7 +356,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send_with_prefix(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
-        self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
+        self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
 
         def endburstf():
             # Delay ENDBURST by X seconds if requested.
@@ -587,7 +587,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
         self._check_nick_collision(nick)
         realname = args[-1]
-        self.users[uid] = userobj = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.users[uid] = userobj = User(self,  nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
         parsedmodes = self.parse_modes(uid, [args[8], args[9]])
         self.apply_modes(uid, parsedmodes)
@@ -611,7 +611,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                  raise ProtocolError('recvpass from uplink server %s does not match configuration!' % servername)
 
             sdesc = args[-1]
-            self.servers[numeric] = Server(None, servername, desc=sdesc)
+            self.servers[numeric] = Server(self, None, servername, desc=sdesc)
             self.uplink = numeric
             return
 
@@ -620,7 +620,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         servername = args[0].lower()
         sid = args[3]
         sdesc = args[-1]
-        self.servers[sid] = Server(numeric, servername, desc=sdesc)
+        self.servers[sid] = Server(self, numeric, servername, desc=sdesc)
 
         return {'name': servername, 'sid': args[3], 'text': sdesc}
 

@@ -69,7 +69,7 @@ class UnrealProtocol(TS6BaseProtocol):
         modes |= {('+x', None), ('+t', None)}
 
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
@@ -415,7 +415,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         realname = args[-1]
 
-        self.users[uid] = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.users[uid] = User(self,  nick, ts, uid, numeric, ident, host, realname, realhost, ip)
         self.servers[numeric].users.add(uid)
 
         # Handle user modes
@@ -480,7 +480,7 @@ class UnrealProtocol(TS6BaseProtocol):
             if protover < self.min_proto_ver:
                 raise ProtocolError("Protocol version too old! (needs at least %s "
                                     "(Unreal 4.x), got %s)" % (self.min_proto_ver, protover))
-            self.servers[numeric] = Server(None, sname, desc=sdesc)
+            self.servers[numeric] = Server(self, None, sname, desc=sdesc)
 
             # Set irc.connected to True, meaning that protocol negotiation passed.
             log.debug('(%s) self.connected set!', self.name)

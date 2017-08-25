@@ -182,7 +182,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         if not utils.isServerName(name):
             raise ValueError('Invalid server name %r' % name)
         self._send_with_prefix(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
-        self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
+        self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
         return sid
 
     def away(self, source, text):
@@ -232,7 +232,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # <- :services.int SERVER a.bc 2 :(H) [GL] test jupe
         servername = args[0].lower()
         sdesc = args[-1]
-        self.servers[servername] = Server(numeric, servername, desc=sdesc)
+        self.servers[servername] = Server(self, numeric, servername, desc=sdesc)
         return {'name': servername, 'sid': None, 'text': sdesc}
 
     def handle_sid(self, numeric, command, args):
@@ -242,7 +242,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         sname = args[0].lower()
         sid = args[2]
         sdesc = args[-1]
-        self.servers[sid] = Server(numeric, sname, desc=sdesc)
+        self.servers[sid] = Server(self, numeric, sname, desc=sdesc)
         return {'name': sname, 'sid': sid, 'text': sdesc}
 
     def handle_svsnick(self, source, command, args):

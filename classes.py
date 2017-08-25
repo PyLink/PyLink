@@ -12,7 +12,7 @@ import time
 import socket
 import ssl
 import hashlib
-from copy import deepcopy
+from copy import copy, deepcopy
 import inspect
 import ipaddress
 import queue
@@ -41,7 +41,7 @@ class ChannelState(structures.IRCCaseInsensitiveDict):
 
         if key not in self._data:
             log.debug('(%s) ChannelState: creating new channel %s in memory', self._irc.name, key)
-            self._data[key] = newchan = Channel(key)
+            self._data[key] = newchan = Channel(self._irc, key)
             return newchan
 
         return self._data[key]
@@ -1336,7 +1336,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                     log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
                     host = self.hostname()
 
-                    self.servers[self.sid] = Server(None, host, internal=True,
+                    self.servers[self.sid] = Server(self, None, host, internal=True,
                                                     desc=self.serverdata.get('serverdesc')
                                                     or conf.conf['pylink']['serverdesc'])
 
@@ -1515,7 +1515,7 @@ class User():
         self.realname = realname
         self.modes = set()  # Tracks user modes
         self.server = server
-        self.irc = irc
+        self._irc = irc
 
         # Tracks PyLink identification status
         self.account = ''
@@ -1527,7 +1527,7 @@ class User():
         self.services_account = ''
 
         # Tracks channels the user is in
-        self.channels = structures.IRCCaseInsensitiveSet(self.irc)
+        self.channels = structures.IRCCaseInsensitiveSet(self._irc)
 
         # Tracks away message status
         self.away = ''
@@ -1554,21 +1554,23 @@ class Server():
     internal: Whether the server is an internal PyLink server.
     """
 
-    def __init__(self, uplink, name, internal=False, desc="(None given)"):
+    def __init__(self, irc, uplink, name, internal=False, desc="(None given)"):
         self.uplink = uplink
         self.users = set()
         self.internal = internal
         self.name = name.lower()
         self.desc = desc
+        self._irc = irc
 
     def __repr__(self):
         return 'Server(%s)' % self.name
+
 IrcServer = Server
 
 class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
     """PyLink IRC channel class."""
 
-    def __init__(self, name=None):
+    def __init__(self, irc, name=None):
         # Initialize variables, such as the topic, user list, TS, who's opped, etc.
         self.users = set()
         self.modes = set()
@@ -1576,6 +1578,7 @@ class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
         self.ts = int(time.time())
         self.prefixmodes = {'op': set(), 'halfop': set(), 'voice': set(),
                             'owner': set(), 'admin': set()}
+        self._irc = irc
 
         # Determines whether a topic has been set here or not. Protocol modules
         # should set this.
@@ -1596,8 +1599,20 @@ class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
         self.users.discard(target)
     removeuser = remove_user
 
-    def deepcopy(self):
+    def __deepcopy__(self, memo):
         """Returns a deep copy of the channel object."""
+        # XXX: we can't pickle IRCNetwork, so just return a reference of it.
+        channel_copy = copy(self)
+        # For everything else, create a copy.
+        for attr, val in self.__dict__.items():
+            if not isinstance(val, PyLinkNetworkCore):
+                setattr(channel_copy, attr, deepcopy(val))
+
+        memo[id(self)] = channel_copy
+
+        return channel_copy
+
+    def deepcopy(self):
         return deepcopy(self)
 
     def is_voice(self, uid):

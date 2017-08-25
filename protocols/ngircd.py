@@ -87,7 +87,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         realname = realname or conf.conf['bot']['realname']
 
         uid = self._uidgen.next_uid(prefix=nick)
-        userobj = self.users[uid] = User(self, nick, ts or int(time.time()), uid, server, ident=ident, host=host, realname=realname,
+        userobj = self.users[uid] = User(self,  nick, ts or int(time.time()), uid, server, ident=ident, host=host, realname=realname,
                                          manipulatable=manipulatable, opertype=opertype, realhost=host)
 
         self.apply_modes(uid, modes)
@@ -130,7 +130,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # a number, we can simply use the counter in our PSID generator for this.
         server_token = sid.rsplit('@')[-1]
         self._send_with_prefix(uplink, 'SERVER %s 1 %s :%s' % (name, server_token, desc))
-        self.servers[sid] = Server(uplink, name, internal=True, desc=desc)
+        self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
         return sid
 
     def away(self, source, text):
@@ -445,7 +445,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
             realname = args[-1]
 
             ts = int(time.time())
-            self.users[uid] = User(self, nick, ts, uid, source, ident=ident, host=host, realname=realname, realhost=host)
+            self.users[uid] = User(self,  nick, ts, uid, source, ident=ident, host=host, realname=realname, realhost=host)
             parsedmodes = self.parse_modes(uid, [args[5]])
             self.apply_modes(uid, parsedmodes)
 
@@ -524,7 +524,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         serverdesc = args[-1]
 
         # The uplink should be set to None for the uplink; otherwise, set it equal to the sender server.
-        self.servers[servername] = Server(source if source != servername else None, servername, desc=serverdesc)
+        self.servers[servername] = Server(self, source if source != servername else None, servername, desc=serverdesc)
 
         if self.uplink is None:
             self.uplink = servername
