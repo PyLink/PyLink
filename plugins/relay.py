@@ -480,22 +480,23 @@ def initialize_channel(irc, channel):
                 # Remote network doesn't have an IRC object; e.g. it was removed
                 # from the config. Skip this.
                 continue
-            rc = remoteirc.channels[remotechan]
 
             if not (remoteirc.connected.is_set() and get_remote_channel(remoteirc, irc, remotechan)):
                 continue  # Remote network isn't connected.
 
-            # Join their (remote) users and set their modes.
-            relay_joins(remoteirc, remotechan, rc.users, rc.ts)
-            topic = remoteirc.channels[remotechan].topic
+            # Join their (remote) users and set their modes, if applicable.
+            if remotechan in remoteirc.channels:
+                rc = remoteirc.channels[remotechan]
+                relay_joins(remoteirc, remotechan, rc.users, rc.ts)
 
-            # Only update the topic if it's different from what we already have,
-            # and topic bursting is complete.
-            if remoteirc.channels[remotechan].topicset and topic != irc.channels[channel].topic:
-                irc.topic_burst(irc.sid, channel, topic)
+                # Only update the topic if it's different from what we already have,
+                # and topic bursting is complete.
+                if rc.topicset and rc.topic != irc.channels[channel].topic:
+                    irc.topic_burst(irc.sid, channel, rc.topic)
 
         # Send our users and channel modes to the other nets
-        relay_joins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
+        if channel in irc.channels:
+            relay_joins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
 
         if 'pylink' in world.services:
             world.services['pylink'].join(irc, channel)
@@ -511,7 +512,7 @@ def remove_channel(irc, channel):
             irc.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
 
     relay = get_relay(irc, channel)
-    if relay:
+    if relay and channel in irc.channels:
         for user in irc.channels[channel].users.copy():
             if not is_relay_client(irc, user):
                 relay_part(irc, channel, user)
@@ -666,7 +667,7 @@ def relay_joins(irc, channel, users, ts, **kwargs):
             if not u:
                 continue
 
-            if u not in remoteirc.channels[remotechan].users:
+            if (remotechan not in remoteirc.channels) or u not in remoteirc.channels[remotechan].users:
                 # Note: only join users if they aren't already joined. This prevents op floods
                 # on charybdis from repeated SJOINs sent for one user.
 
@@ -874,7 +875,10 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                     log.debug("(%s) relay.get_supported_cmodes: argument found as (%r, %r) "
                               "for network %r.",
                               irc.name, modechar, arg, remoteirc.name)
-                    oplist = remoteirc.channels[remotechan].prefixmodes[name]
+
+                    oplist = []
+                    if remotechan in remoteirc.channels:
+                        oplist = remoteirc.channels[remotechan].prefixmodes[name]
 
                     log.debug("(%s) relay.get_supported_cmodes: list of %ss on %r is: %s",
                               irc.name, name, remotechan, oplist)
@@ -966,7 +970,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
 
                 # Don't set modes that are already set, to prevent floods on TS6
                 # where the same mode can be set infinite times.
-                if prefix == '+' and final_modepair in remoteirc.channels[remotechan].modes:
+                if prefix == '+' and (remotechan not in remoteirc.channels or final_modepair in remoteirc.channels[remotechan].modes):
                     log.debug("(%s) relay.get_supported_cmodes: skipping setting mode (%r, %r) on %s%s because it appears to be already set.",
                               irc.name, supported_char, arg, remoteirc.name, remotechan)
                     break
@@ -1561,7 +1565,8 @@ def handle_topic(irc, numeric, command, args):
             remotechan = get_remote_channel(irc, remoteirc, channel)
 
             # Don't send if the remote topic is the same as ours.
-            if remotechan is None or topic == remoteirc.channels[remotechan].topic:
+            if remotechan is None or remotechan not in remoteirc.channels or \
+                    topic == remoteirc.channels[remotechan].topic:
                 return
 
             # This might originate from a server too.
@@ -1790,7 +1795,7 @@ def create(irc, source, args):
     if not irc.has_cap('can-host-relay'):
         irc.error('Clientbot networks cannot be used to host a relay.')
         return
-    if source not in irc.channels[channel].users:
+    if channel not in irc.channels or source not in irc.channels[channel].users:
         irc.error('You must be in %r to complete this operation.' % channel)
         return
 
@@ -1921,7 +1926,7 @@ def link(irc, source, args):
         irc.error('Cannot link two channels on the same network.')
         return
 
-    if source not in irc.channels[localchan].users:
+    if localchan not in irc.channels or source not in irc.channels[localchan].users:
         # Caller is not in the requested channel.
         log.debug('(%s) Source not in channel %s; protoname=%s', irc.name, localchan, irc.protoname)
         if irc.protoname == 'clientbot':
@@ -1978,6 +1983,10 @@ def link(irc, source, args):
                 return
 
             our_ts = irc.channels[localchan].ts
+            if channel not in world.networkobjects[remotenet].channels:
+                irc.error("Unknown target channel %r." % channel)
+                return
+
             their_ts = world.networkobjects[remotenet].channels[channel].ts
             if (our_ts < their_ts) and irc.has_cap('has-ts'):
                 log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
