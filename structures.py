@@ -10,9 +10,12 @@ import json
 import pickle
 import os
 import threading
+from copy import copy, deepcopy
 
 from .log import log
 from . import conf
+
+_BLACKLISTED_COPY_TYPES = []
 
 class KeyedDefaultdict(collections.defaultdict):
     """
@@ -26,7 +29,34 @@ class KeyedDefaultdict(collections.defaultdict):
             value = self[key] = self.default_factory(key)
             return value
 
-class CaseInsensitiveFixedSet(collections.abc.Set):
+class CopyWrapper():
+    """
+    Base container class implementing copy methods.
+    """
+
+    def copy(self):
+        """Returns a shallow copy of this object instance."""
+        return copy(self)
+
+    def __deepcopy__(self, memo):
+        """Returns a deep copy of the channel object."""
+        newobj = copy(self)
+        log.debug('CopyWrapper: _BLACKLISTED_COPY_TYPES = %s', _BLACKLISTED_COPY_TYPES)
+        for attr, val in self.__dict__.items():
+            # We can't pickle IRCNetwork, so just return a reference of it.
+            if not isinstance(val, tuple(_BLACKLISTED_COPY_TYPES)):
+                log.debug('CopyWrapper: copying attr %r', attr)
+                setattr(newobj, attr, deepcopy(val))
+
+        memo[id(self)] = newobj
+
+        return newobj
+
+    def deepcopy(self):
+        """Returns a deep copy of this object instance."""
+        return deepcopy(self)
+
+class CaseInsensitiveFixedSet(collections.abc.Set, CopyWrapper):
     """
     Implements a fixed set storing items case-insensitively.
     """
@@ -55,8 +85,8 @@ class CaseInsensitiveFixedSet(collections.abc.Set):
     def __contains__(self, key):
         return self._data.__contains__(self._keymangle(key))
 
-    def copy(self, *args, **kwargs):
-        return self._data.copy(*args, **kwargs)
+    def __copy__(self):
+        return self.__class__(data=self._data.copy())
 
 class CaseInsensitiveDict(collections.abc.MutableMapping, CaseInsensitiveFixedSet):
     """
@@ -92,6 +122,9 @@ class IRCCaseInsensitiveDict(CaseInsensitiveDict):
         """Converts the given key to lowercase."""
         return self._irc.to_lower(key)
 
+    def __copy__(self):
+        return self.__class__(self._irc, data=self._data.copy())
+
 class CaseInsensitiveSet(collections.abc.MutableSet, CaseInsensitiveFixedSet):
     """
     A mutable set storing items case insensitively.
@@ -114,6 +147,9 @@ class IRCCaseInsensitiveSet(CaseInsensitiveSet):
     def _keymangle(self, key):
         """Converts the given key to lowercase."""
         return self._irc.to_lower(key)
+
+    def __copy__(self):
+        return self.__class__(self._irc, data=self._data.copy())
 
 class DataStore:
     """

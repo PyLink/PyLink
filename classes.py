@@ -12,7 +12,6 @@ import time
 import socket
 import ssl
 import hashlib
-from copy import copy, deepcopy
 import inspect
 import ipaddress
 import queue
@@ -479,6 +478,8 @@ class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnake
             return world.services.get(sname)
         except AttributeError:
             return False
+
+structures._BLACKLISTED_COPY_TYPES.append(PyLinkNetworkCore)
 
 class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
@@ -1567,7 +1568,7 @@ class Server():
 
 IrcServer = Server
 
-class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
+class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase, structures.CopyWrapper):
     """PyLink IRC channel class."""
 
     def __init__(self, irc, name=None):
@@ -1598,22 +1599,6 @@ class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
             s.discard(target)
         self.users.discard(target)
     removeuser = remove_user
-
-    def __deepcopy__(self, memo):
-        """Returns a deep copy of the channel object."""
-        # XXX: we can't pickle IRCNetwork, so just return a reference of it.
-        channel_copy = copy(self)
-        # For everything else, create a copy.
-        for attr, val in self.__dict__.items():
-            if not isinstance(val, PyLinkNetworkCore):
-                setattr(channel_copy, attr, deepcopy(val))
-
-        memo[id(self)] = channel_copy
-
-        return channel_copy
-
-    def deepcopy(self):
-        return deepcopy(self)
 
     def is_voice(self, uid):
         """Returns whether the given user is voice in the channel."""
