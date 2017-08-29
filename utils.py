@@ -85,40 +85,45 @@ def isHostmask(text):
     log.warning('utils.isHostmask() is deprecated since PyLink 2.0, use irc.is_hostmask() instead.')
     return _proto_utils_class.is_hostmask(text)
 
-def expandpath(path):
+def expand_path(path):
     """
     Returns a path expanded with environment variables and home folders (~) expanded, in that order."""
     return os.path.expanduser(os.path.expandvars(path))
+expandpath = expand_path  # Consistency with os.path
 
-def resetModuleDirs():
+def reset_module_dirs():
     """
     (Re)sets custom protocol module and plugin directories to the ones specified in the config.
     """
     # Note: This assumes that the first element of the package path is the default one.
     plugins.__path__ = [plugins.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('plugin_dirs', [])]
-    log.debug('resetModuleDirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
+    log.debug('reset_module_dirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
     protocols.__path__ = [protocols.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('protocol_dirs', [])]
-    log.debug('resetModuleDirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
+    log.debug('reset_module_dirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
+resetModuleDirs = reset_module_dirs
 
-def loadPlugin(name):
+def load_plugin(name):
     """
     Imports and returns the requested plugin.
     """
     return importlib.import_module(PLUGIN_PREFIX + name)
+loadPlugin = load_plugin
 
-def getProtocolModule(name):
+def get_protocol_module(name):
     """
     Imports and returns the protocol module requested.
     """
     return importlib.import_module(PROTOCOL_PREFIX + name)
+getProtocolModule = get_protocol_module
 
-def splitHostmask(mask):
+def split_hostmask(mask):
     """
     Returns a nick!user@host hostmask split into three fields: nick, user, and host.
     """
     nick, identhost = mask.split('!', 1)
     ident, host = identhost.split('@', 1)
     return [nick, ident, host]
+splitHostmask = split_hostmask
 
 class ServiceBot():
     """
@@ -520,7 +525,7 @@ class ServiceBot():
                     self._show_command_help(irc, cmd, private=True, shortform=True)
             self.reply(irc, 'End of command listing.', private=True)
 
-def registerService(name, *args, **kwargs):
+def register_service(name, *args, **kwargs):
     """Registers a service bot."""
     name = name.lower()
     if name in world.services:
@@ -534,8 +539,9 @@ def registerService(name, *args, **kwargs):
     world.services[name] = sbot = ServiceBot(name, *args, **kwargs)
     sbot.spawn()
     return sbot
+registerService = register_service
 
-def unregisterService(name):
+def unregister_service(name):
     """Unregisters an existing service bot."""
     name = name.lower()
 
@@ -554,8 +560,9 @@ def unregisterService(name):
         ircobj.proto.quit(uid, "Service unloaded.")
 
     del world.services[name]
+unregisterService = unregister_service
 
-def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
+def wrap_arguments(prefix, args, length, separator=' ', max_args_per_line=0):
     """
     Takes a static prefix and a list of arguments, and returns a list of strings
     with the arguments wrapped across multiple lines. This is useful for breaking up
@@ -563,7 +570,7 @@ def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
     """
     strings = []
 
-    assert args, "wrapArguments: no arguments given"
+    assert args, "wrap_arguments: no arguments given"
 
     buf = prefix
 
@@ -571,7 +578,7 @@ def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
 
     while args:
         assert len(prefix+args[0]) <= length, \
-            "wrapArguments: Argument %r is too long for the given length %s" % (args[0], length)
+            "wrap_arguments: Argument %r is too long for the given length %s" % (args[0], length)
 
         # Add arguments until our buffer is up to the length limit.
         if (len(buf + args[0]) + 1) <= length and ((not max_args_per_line) or len(buf.split(' ')) < max_args_per_line):
@@ -586,6 +593,7 @@ def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
         strings.append(buf)
 
     return strings
+wrapArguments = wrap_arguments
 
 class IRCParser(argparse.ArgumentParser):
     """
