@@ -45,7 +45,7 @@ class ChannelState(structures.IRCCaseInsensitiveDict):
 
         return self._data[key]
 
-class PyLinkNetworkCore(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase):
+class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
 
     def __init__(self, netname):
@@ -1568,7 +1568,7 @@ class Server():
 
 IrcServer = Server
 
-class Channel(utils.DeprecatedAttributesObject, utils.CamelCaseToSnakeCase, structures.CopyWrapper):
+class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnakeCase, structures.CopyWrapper):
     """PyLink IRC channel class."""
 
     def __init__(self, irc, name=None):
