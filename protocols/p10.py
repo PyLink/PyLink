@@ -406,7 +406,7 @@ class P10Protocol(IRCS2SProtocol):
         # https://github.com/evilnet/nefarious2/blob/4e2dcb1/doc/p10.txt#L146
         # One line can have a max of 15 parameters. Excluding the target and the first part of the
         # modestring, this means we can send a max of 13 modes with arguments per line.
-        is_cmode = utils.isChannel(target)
+        is_cmode = self.is_channel(target)
         if is_cmode:
             # Channel mode changes have a trailing TS. User mode changes do not.
             cobj = self._channels[target]
@@ -668,7 +668,7 @@ class P10Protocol(IRCS2SProtocol):
 
         if not self.is_internal_server(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
-        if not utils.isServerName(name):
+        if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
 
         self._send_with_prefix(uplink, 'SERVER %s 1 %s %s P10 %s]]] +h6 :%s' % \

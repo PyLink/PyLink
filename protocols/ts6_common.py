@@ -179,7 +179,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
                 raise ValueError('A server named %r already exists!' % name)
         if not self.is_internal_server(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
-        if not utils.isServerName(name):
+        if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
         self._send_with_prefix(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)

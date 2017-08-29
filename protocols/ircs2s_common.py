@@ -630,7 +630,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- ABAAA M #test +v ABAAB 1460747615
         # <- ABAAA OM #test +h ABAAA
         target = self._get_UID(args[0])
-        if utils.isChannel(target):
+        if self.is_channel(target):
             channeldata = self._channels[target].deepcopy()
         else:
             channeldata = None
@@ -693,7 +693,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # before checking whether it's actually a channel.
 
         split_channel = target.split('#', 1)
-        if len(split_channel) >= 2 and utils.isChannel('#' + split_channel[1]):
+        if len(split_channel) >= 2 and self.is_channel('#' + split_channel[1]):
             # Note: don't mess with the case of the channel prefix, or ~#channel
             # messages will break on RFC1459 casemapping networks (it becomes ^#channel
             # instead).

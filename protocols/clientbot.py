@@ -218,7 +218,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
     def mode(self, source, channel, modes, ts=None):
         """Sends channel MODE changes."""
-        if utils.isChannel(channel):
+        if self.is_channel(channel):
             extmodes = []
             # Re-parse all channel modes locally to eliminate anything invalid, such as unbanning
             # things that were never banned. This prevents the bot from getting caught in a loop
@@ -910,7 +910,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # <- :GL!~gl@127.0.0.1 MODE #dev +v ice
         # <- :ice MODE ice :+Zi
         target = args[0]
-        if utils.isChannel(target):
+        if self.is_channel(target):
             oldobj = self._channels[target].deepcopy()
         else:
             target = self.nick_to_uid(target)
@@ -1021,7 +1021,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.warning('(%s) Received %s to %s being routed the wrong way!', self.name, command, target)
             return
 
-        if not utils.isChannel(target):
+        if not self.is_channel(target):
             target = self.nick_to_uid(target)
 
         if target:

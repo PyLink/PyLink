@@ -122,7 +122,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         if not self.is_internal_server(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
 
-        if not utils.isServerName(name):
+        if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
 
         # https://tools.ietf.org/html/rfc2813#section-4.1.2
@@ -184,7 +184,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.apply_modes(target, modes)
         modes = list(modes)  # Work around TypeError in the expand PUID section
 
-        if utils.isChannel(target):
+        if self.is_channel(target):
             msgprefix = ':%s MODE %s ' % (self._expandPUID(source), target)
             bufsize = self.S2S_BUFSIZE - len(msgprefix)
 

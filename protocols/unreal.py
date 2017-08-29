@@ -204,7 +204,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         self.apply_modes(target, modes)
 
-        if utils.isChannel(target):
+        if self.is_channel(target):
 
             # Fix assignment TypeError in the expandPUID bit (sets can't be
             # assigned to by index).
@@ -320,7 +320,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # KNOCKs in UnrealIRCd are actually just specially formatted NOTICEs,
         # sent to all ops in a channel.
         # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by GL|!gl@hidden-1C620195 (test)
-        assert utils.isChannel(target), "Can only knock on channels!"
+        assert self.is_channel(target), "Can only knock on channels!"
         sender = self.get_server(numeric)
         s = '[Knock] by %s (%s)' % (self.get_hostmask(numeric), text)
         self._send_with_prefix(sender, 'NOTICE @%s :%s' % (target, s))
@@ -675,7 +675,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # send 0 as a TS argument (which should be ignored unless breaking the internal channel TS is desired).
 
         # Also, we need to get rid of that extra space following the +f argument. :|
-        if utils.isChannel(args[0]):
+        if self.is_channel(args[0]):
             channel = args[0]
             oldobj = self._channels[channel].deepcopy()
 

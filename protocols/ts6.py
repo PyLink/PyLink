@@ -182,7 +182,7 @@ class TS6Protocol(TS6BaseProtocol):
         self.apply_modes(target, modes)
         modes = list(modes)
 
-        if utils.isChannel(target):
+        if self.is_channel(target):
             ts = ts or self._channels[target].ts
             # TMODE:
             # parameters: channelTS, channel, cmode changes, opt. cmode parameters...

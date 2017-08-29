@@ -199,7 +199,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        if ('+o', None) in modes and not utils.isChannel(target):
+        if ('+o', None) in modes and not self.is_channel(target):
             # https://github.com/inspircd/inspircd/blob/master/src/modules/m_spanningtree/opertype.cpp#L26-L28
             # Servers need a special command to set umode +o on people.
             self._oper_up(target)
@@ -207,7 +207,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.apply_modes(target, modes)
         joinedmodes = self.join_modes(modes)
 
-        if utils.isChannel(target):
+        if self.is_channel(target):
             ts = ts or self._channels[target].ts
             self._send_with_prefix(numeric, 'FMODE %s %s %s' % (target, ts, joinedmodes))
         else:
@@ -353,7 +353,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 raise ValueError('A server named %r already exists!' % name)
         if not self.is_internal_server(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
-        if not utils.isServerName(name):
+        if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
         self._send_with_prefix(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
