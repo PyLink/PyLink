@@ -21,6 +21,7 @@ from pylinkirc import protocols, plugins
 PLUGIN_PREFIX = plugins.__name__ + '.'
 PROTOCOL_PREFIX = protocols.__name__ + '.'
 NORMALIZEWHITESPACE_RE = re.compile(r'\s+')
+_proto_utils_class = None  # Set by classes.py when loaded
 
 class NotAuthorizedError(Exception):
     """
@@ -49,31 +50,40 @@ def add_hook(func, command):
     world.hooks[command].append(func)
     return func
 
-_nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
+# DEPRECATED
 def isNick(s, nicklen=None):
-    """Returns whether the string given is a valid nick."""
-    if nicklen and len(s) > nicklen:
-        return False
-    return bool(re.match(_nickregex, s))
+    """Returns whether the string given is a valid nick.
 
+    Deprecated since 2.0: use irc.is_nick() instead."""
+
+    log.warning('utils.isNick() is deprecated since PyLink 2.0, use irc.is_nick() instead.')
+    return _proto_utils_class.is_nick(s, nicklen=nicklen)
+
+# DEPRECATED
 def isChannel(s):
-    """Returns whether the string given is a valid channel name."""
-    return str(s).startswith('#')
+    """Returns whether the string given is a valid channel name.
 
-def _isASCII(s):
-    """Returns whether the string given is valid ASCII."""
-    chars = string.ascii_letters + string.digits + string.punctuation
-    return all(char in chars for char in s)
+    Deprecated since 2.0: use irc.is_channel() instead."""
 
+    log.warning('utils.isChannel() is deprecated since PyLink 2.0, use irc.is_channel() instead.')
+    return _proto_utils_class.is_channel(s)
+
+# DEPRECATED
 def isServerName(s):
-    """Returns whether the string given is a valid IRC server name."""
-    return _isASCII(s) and '.' in s and not s.startswith('.')
+    """Returns whether the string given is a valid server name.
 
-hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
+    Deprecated since 2.0: use irc.is_server_name() instead."""
+
+    log.warning('utils.isServerName() is deprecated since PyLink 2.0, use irc.is_server_name() instead.')
+    return _proto_utils_class.is_server_name(s)
+
+# DEPRECATED
 def isHostmask(text):
-    """Returns whether the given text is a valid hostmask."""
-    # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
-    return hostmaskRe.match(text) and '#' not in text
+    """Returns whether the given text is a valid hostmask.
+
+    Deprecated since 2.0: use irc.is_hostmask() instead."""
+    log.warning('utils.isHostmask() is deprecated since PyLink 2.0, use irc.is_hostmask() instead.')
+    return _proto_utils_class.is_hostmask(text)
 
 def expandpath(path):
     """
@@ -133,9 +143,6 @@ class ServiceBot():
         # Service name and default nick
         self.name = name
         self.default_nick = default_nick
-
-        # TODO: validate nick, ident, etc. on runtime as well
-        assert isNick(name), "Invalid service name %r" % name
 
         # Tracks whether the bot should be manipulatable by the 'bots' plugin and other commands.
         self.manipulatable = manipulatable

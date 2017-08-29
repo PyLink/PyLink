@@ -505,6 +505,38 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         casemapping (rfc1459 or ascii)."""
         return self._to_lower_core(text, casemapping=self.casemapping)
 
+    _NICK_REGEX = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
+    @classmethod
+    def is_nick(cls, s, nicklen=None):
+        """Returns whether the string given is a valid IRC nick."""
+
+        if nicklen and len(s) > nicklen:
+            return False
+        return bool(re.match(cls._NICK_REGEX, s))
+
+    @staticmethod
+    def is_channel(s):
+        """Returns whether the string given is a valid IRC channel name."""
+        return str(s).startswith('#')
+
+    @staticmethod
+    def _isASCII(s):
+        """Returns whether the given string only contains non-whitespace ASCII characters."""
+        chars = string.ascii_letters + string.digits + string.punctuation
+        return all(char in chars for char in s)
+
+    @classmethod
+    def is_server_name(cls, s):
+        """Returns whether the string given is a valid IRC server name."""
+        return cls._isASCII(s) and '.' in s and not s.startswith('.')
+
+    _HOSTMASK_RE = re.compile(r'^\S+!\S+@\S+$')
+    @classmethod
+    def is_hostmask(cls, text):
+        """Returns whether the given text is a valid IRC hostmask (nick!user@host)."""
+        # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
+        return bool(cls._HOSTMASK_RE.match(text) and '#' not in text)
+
     def parse_modes(self, target, args):
         """Parses a modestring list into a list of (mode, argument) tuples.
         ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
@@ -1177,6 +1209,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.name,
                      uid, nick)
             self.call_hooks([self.sid, 'SAVE', {'target': uid}])
+
+utils._proto_utils_class = PyLinkNetworkCoreWithUtils  # Used by compatibility wrappers
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
