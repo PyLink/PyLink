@@ -17,7 +17,7 @@ reply = modebot.reply
 error = modebot.error
 
 # Databasing variables.
-dbname = utils.getDatabaseName('automode')
+dbname = conf.getDatabaseName('automode')
 datastore = structures.JSONDataStore('automode', dbname, default_db=collections.defaultdict(dict))
 
 db = datastore.store

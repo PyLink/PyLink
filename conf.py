@@ -108,7 +108,6 @@ def validateConf(conf, logger=None):
 
     return conf
 
-
 def loadConf(filename, errors_fatal=True, logger=None):
     """Loads a PyLink configuration file from the filename given."""
     global confname, conf, fname
@@ -134,3 +133,17 @@ def loadConf(filename, errors_fatal=True, logger=None):
         raise
     else:
         return conf
+
+def getDatabaseName(dbname):
+    """
+    Returns a database filename with the given base DB name appropriate for the
+    current PyLink instance.
+
+    This returns '<dbname>.db' if the running config name is PyLink's default
+    (pylink.yml), and '<dbname>-<config name>.db' for anything else. For example,
+    if this is called from an instance running as './pylink testing.yml', it
+    would return '<dbname>-testing.db'."""
+    if confname != 'pylink':
+        dbname += '-%s' % conf.confname
+    dbname += '.db'
+    return dbname

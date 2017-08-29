@@ -18,7 +18,7 @@ relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
 
-dbname = utils.getDatabaseName('pylinkrelay')
+dbname = conf.getDatabaseName('pylinkrelay')
 datastore = structures.PickleDataStore('pylinkrelay', dbname)
 db = datastore.store
 

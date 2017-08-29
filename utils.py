@@ -112,20 +112,6 @@ def getProtocolModule(name):
     """
     return importlib.import_module(PROTOCOL_PREFIX + name)
 
-def getDatabaseName(dbname):
-    """
-    Returns a database filename with the given base DB name appropriate for the
-    current PyLink instance.
-
-    This returns '<dbname>.db' if the running config name is PyLink's default
-    (pylink.yml), and '<dbname>-<config name>.db' for anything else. For example,
-    if this is called from an instance running as './pylink testing.yml', it
-    would return '<dbname>-testing.db'."""
-    if conf.confname != 'pylink':
-        dbname += '-%s' % conf.confname
-    dbname += '.db'
-    return dbname
-
 def splitHostmask(mask):
     """
     Returns a nick!user@host hostmask split into three fields: nick, user, and host.
