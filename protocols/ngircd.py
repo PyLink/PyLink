@@ -45,13 +45,13 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self.send("SERVER %s 1 :%s" % (self.serverdata['hostname'],
                                        self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']))
 
-        self._uidgen = utils.PUIDGenerator('PUID')
+        self._uidgen = PUIDGenerator('PUID')
 
         # The first "SID" this generator should return is 2, because server token 1 is implied to be
         # the main PyLink server. RFC2813 has no official definition of SIDs, but rather uses
         # integer tokens in the SERVER and NICK (user introduction) commands to keep track of which
         # user exists on which server. Why did they do it this way? Who knows!
-        self._sidgen = utils.PUIDGenerator('PSID', start=1)
+        self._sidgen = PUIDGenerator('PSID', start=1)
         self.sid = self._sidgen.next_sid(prefix=self.serverdata['hostname'])
 
         self._caps.clear()

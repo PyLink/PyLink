@@ -12,7 +12,7 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
 
-class P10UIDGenerator(utils.IncrementalUIDGenerator):
+class P10UIDGenerator(IncrementalUIDGenerator):
      """Implements an incremental P10 UID Generator."""
 
      def __init__(self, sid):

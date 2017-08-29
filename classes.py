@@ -1671,3 +1671,22 @@ class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnake
 
         return sorted(result, key=self.sort_prefixes)
 IrcChannel = Channel
+
+
+class PUIDGenerator():
+    """
+    Pseudo UID Generator module, using a prefix and a simple counter.
+    """
+
+    def __init__(self, prefix, start=0):
+        self.prefix = prefix
+        self.counter = start
+
+    def next_uid(self, prefix=''):
+        """
+        Generates the next PUID.
+        """
+        uid = '%s@%s' % (prefix or self.prefix, self.counter)
+        self.counter += 1
+        return uid
+    next_sid = next_uid

@@ -38,65 +38,6 @@ class ProtocolError(RuntimeError):
     Exception raised when a network protocol violation is encountered in some way.
     """
 
-class IncrementalUIDGenerator():
-    """
-    Incremental UID Generator module, adapted from InspIRCd source:
-    https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156
-    """
-
-    def __init__(self, sid):
-        if not (hasattr(self, 'allowedchars') and hasattr(self, 'length')):
-             raise RuntimeError("Allowed characters list not defined. Subclass "
-                                "%s by defining self.allowedchars and self.length "
-                                "and then calling super().__init__()." % self.__class__.__name__)
-        self.uidchars = [self.allowedchars[0]]*self.length
-        self.sid = str(sid)
-
-    def increment(self, pos=None):
-        """
-        Increments the UID generator to the next available UID.
-        """
-        # Position starts at 1 less than the UID length.
-        if pos is None:
-            pos = self.length - 1
-
-        # If we're at the last character in the list of allowed ones, reset
-        # and increment the next level above.
-        if self.uidchars[pos] == self.allowedchars[-1]:
-            self.uidchars[pos] = self.allowedchars[0]
-            self.increment(pos-1)
-        else:
-            # Find what position in the allowed characters list we're currently
-            # on, and add one.
-            idx = self.allowedchars.find(self.uidchars[pos])
-            self.uidchars[pos] = self.allowedchars[idx+1]
-
-    def next_uid(self):
-        """
-        Returns the next unused UID for the server.
-        """
-        uid = self.sid + ''.join(self.uidchars)
-        self.increment()
-        return uid
-
-class PUIDGenerator():
-    """
-    Pseudo UID Generator module, using a prefix and a simple counter.
-    """
-
-    def __init__(self, prefix, start=0):
-        self.prefix = prefix
-        self.counter = start
-
-    def next_uid(self, prefix=''):
-        """
-        Generates the next PUID.
-        """
-        uid = '%s@%s' % (prefix or self.prefix, self.counter)
-        self.counter += 1
-        return uid
-    next_sid = next_uid
-
 def add_cmd(func, name=None, **kwargs):
     """Binds an IRC command function to the given command name."""
     world.services['pylink'].add_cmd(func, name=name, **kwargs)

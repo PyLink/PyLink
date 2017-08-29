@@ -61,8 +61,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """Initializes a connection to a server."""
         # (Re)initialize counter-based pseudo UID generators
         super().post_connect()
-        self.uidgen = utils.PUIDGenerator('PUID')
-        self.sidgen = utils.PUIDGenerator('ClientbotInternalSID')
+        self.uidgen = PUIDGenerator('PUID')
+        self.sidgen = PUIDGenerator('ClientbotInternalSID')
 
         self.has_eob = False
         ts = self.start_ts

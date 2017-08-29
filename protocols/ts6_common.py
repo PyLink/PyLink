@@ -85,7 +85,7 @@ class TS6SIDGenerator():
         sid = ''.join(self.output)
         return sid
 
-class TS6UIDGenerator(utils.IncrementalUIDGenerator):
+class TS6UIDGenerator(IncrementalUIDGenerator):
      """Implements an incremental TS6 UID Generator."""
 
      def __init__(self, sid):

@@ -333,7 +333,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
 
         # Track usages of legacy (Unreal 3.2) nicks.
-        self.legacy_uidgen = utils.PUIDGenerator('U32user')
+        self.legacy_uidgen = PUIDGenerator('U32user')
 
         self.umodes.update({'deaf': 'd', 'invisible': 'i', 'hidechans': 'p',
                                 'protected': 'q', 'registered': 'r',

@@ -10,6 +10,47 @@ from pylinkirc.classes import IRCNetwork, ProtocolError
 from pylinkirc.log import log
 from pylinkirc import utils, conf
 
+class IncrementalUIDGenerator():
+    """
+    Incremental UID Generator module, adapted from InspIRCd source:
+    https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156
+    """
+
+    def __init__(self, sid):
+        if not (hasattr(self, 'allowedchars') and hasattr(self, 'length')):
+             raise RuntimeError("Allowed characters list not defined. Subclass "
+                                "%s by defining self.allowedchars and self.length "
+                                "and then calling super().__init__()." % self.__class__.__name__)
+        self.uidchars = [self.allowedchars[0]]*self.length
+        self.sid = str(sid)
+
+    def increment(self, pos=None):
+        """
+        Increments the UID generator to the next available UID.
+        """
+        # Position starts at 1 less than the UID length.
+        if pos is None:
+            pos = self.length - 1
+
+        # If we're at the last character in the list of allowed ones, reset
+        # and increment the next level above.
+        if self.uidchars[pos] == self.allowedchars[-1]:
+            self.uidchars[pos] = self.allowedchars[0]
+            self.increment(pos-1)
+        else:
+            # Find what position in the allowed characters list we're currently
+            # on, and add one.
+            idx = self.allowedchars.find(self.uidchars[pos])
+            self.uidchars[pos] = self.allowedchars[idx+1]
+
+    def next_uid(self):
+        """
+        Returns the next unused UID for the server.
+        """
+        uid = self.sid + ''.join(self.uidchars)
+        self.increment()
+        return uid
+
 class IRCCommonProtocol(IRCNetwork):
 
     COMMON_PREFIXMODES = [('h', 'halfop'), ('a', 'admin'), ('q', 'owner'), ('y', 'owner')]
