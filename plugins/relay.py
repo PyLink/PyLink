@@ -1216,7 +1216,7 @@ def handle_messages(irc, numeric, command, args):
     else:
         target = '#' + target
 
-    if utils.isChannel(target):
+    if irc.is_channel(target):
         def _handle_messages_loop(irc, remoteirc, numeric, command, args, notice, target, text):
             real_target = get_remote_channel(irc, remoteirc, target)
 
@@ -1472,7 +1472,7 @@ def handle_mode(irc, numeric, command, args):
         target = args['target']
         modes = args['modes']
 
-        if utils.isChannel(target):
+        if irc.is_channel(target):
             # Use the old state of the channel to check for CLAIM access.
             oldchan = args.get('channeldata')
 
@@ -1789,7 +1789,7 @@ def create(irc, source, args):
     except IndexError:
         irc.error("Not enough arguments. Needs 1: channel.")
         return
-    if not utils.isChannel(channel):
+    if not irc.is_channel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
     if not irc.has_cap('can-host-relay'):
@@ -1842,7 +1842,7 @@ def destroy(irc, source, args):
             irc.error("Not enough arguments. Needs 1-2: channel, network (optional).")
             return
 
-    if not utils.isChannel(channel):
+    if not irc.is_channel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
 
@@ -1918,7 +1918,7 @@ def link(irc, source, args):
     remotenet = args.remotenet
 
     for c in (channel, localchan):
-        if not utils.isChannel(c):
+        if not irc.is_channel(c):
             irc.error('Invalid channel %r.' % c)
             return
 
@@ -2021,7 +2021,7 @@ def delink(irc, source, args):
 
     permissions.check_permissions(irc, source, ['relay.delink'])
 
-    if not utils.isChannel(channel):
+    if not irc.is_channel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
     entry = get_relay(irc, channel)
@@ -2145,7 +2145,7 @@ def linkacl(irc, source, args):
     except IndexError:
         irc.error(missingargs)
         return
-    if not utils.isChannel(channel):
+    if not irc.is_channel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
     relay = get_relay(irc, channel)

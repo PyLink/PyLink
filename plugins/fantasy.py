@@ -12,7 +12,7 @@ def handle_fantasy(irc, source, command, args):
     channel = args['target']
     orig_text = args['text']
 
-    if utils.isChannel(channel) and not irc.is_internal_client(source):
+    if irc.is_channel(channel) and not irc.is_internal_client(source):
         # The following conditions must be met for an incoming message for
         # fantasy to trigger:
         #   1) The message target is a channel.
