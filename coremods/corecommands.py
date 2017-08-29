@@ -54,7 +54,7 @@ def identify(irc, source, args):
     """<username> <password>
 
     Logs in to PyLink using the configured administrator account."""
-    if utils.isChannel(irc.called_in):
+    if irc.is_channel(irc.called_in):
         irc.reply('Error: This command must be sent in private. '
                   '(Would you really type a password inside a channel?)')
         return

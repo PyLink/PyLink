@@ -552,7 +552,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             args = args.split()
 
         assert args, 'No valid modes were supplied!'
-        usermodes = not utils.isChannel(target)
+        usermodes = not self.is_channel(target)
         prefix = ''
         modestring = args[0]
         args = args[1:]
@@ -632,7 +632,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         """Takes a list of parsed IRC modes, and applies them on the given target.
 
         The target can be either a channel or a user; this is handled automatically."""
-        usermodes = not utils.isChannel(target)
+        usermodes = not self.is_channel(target)
 
         try:
             if usermodes:
@@ -743,7 +743,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         if origstring:
             modes = self.parse_modes(target, modes.split(" "))
         # Get the current mode list first.
-        if utils.isChannel(target):
+        if self.is_channel(target):
             c = oldobj or self._channels[target]
             oldmodes = c.modes.copy()
             possible_modes = self.cmodes.copy()
@@ -1025,7 +1025,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             # Prepare a list of hosts to check against.
             if target in self.users:
 
-                if not utils.isHostmask(glob):
+                if not self.is_hostmask(glob):
                     for specialchar in '$:()':
                         # XXX: we should probably add proper rules on what's a valid account name
                         if specialchar in glob:
@@ -1128,7 +1128,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         template = string.Template(ban_style)
         banhost = template.safe_substitute(ban_style, **self.users[uid].__dict__)
-        assert utils.isHostmask(banhost), "Ban mask %r is not a valid hostmask!" % banhost
+        assert self.is_hostmask(banhost), "Ban mask %r is not a valid hostmask!" % banhost
 
         if ban_type in self.cmodes:
             return ('+%s' % self.cmodes[ban_type], banhost)
