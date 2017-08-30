@@ -1,52 +1,63 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 1.2-dev (2017-03-15).***
+***Last updated for 2.0-dev (2017-0X-XX).***
 
-In PyLink, each protocol module is a file consisting of a protocol class (e.g. `InspIRCdProtocol`), and a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These classes are usually based off boilerplate classes such as `classes.Protocol`, `protocols.ircs2s_common.IRCS2SProtocol`, or other protocol module classes that share functionality with it.
+Starting with PyLink 2.x, a protocol module is a file containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), and a global, and a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). Classes may be implemented based off any of the classes in the following inheritance tree, with each of which having a different amount of abstraction.
 
 ![[Protocol module inheritence graph]](protocol-modules.png)
 
-IRC objects load protocol modules by creating an instance of this `Class` attribute, and then proceeding to call its commands.
+## Starting Steps
 
-## Tasks
+**Before you proceed, we highly recommend protocol module coders to get in touch with us** via our IRC channel (`#PyLink @ irc.overdrivenetworks.com`). Letting us know what you are working on can help coordinate coding efforts and better prepare for potential API breaks.
 
-Protocol modules have some very important jobs. If any of these aren't done correctly, you will be left with a broken, desynced services server:
+For writing new protocol modules, it is recommended to start from one of the following classes:
 
-1) Handle incoming commands from the uplink IRCd.
+### `classes.IRCNetwork`
 
-2) Return [hook data](hooks-reference.md) for relevant commands, so that plugins can receive data from IRC.
+`IRCNetwork` is the base IRC class which includes the state checking utilities from `PyLinkNetworkCore`, the generic IRC utilities from `PyLinkNetworkCoreWithUtils`, along with abstraction for establishing IRC connections and pinging the uplink at a set interval.
 
-3) Make sure channel/user states are kept correctly. Joins, quits, parts, kicks, mode changes, nick changes, etc. should all be handled accurately.
+To use `classes.IRCNetwork`, the following functions must be defined.
 
-4) Respond to both pings *and* pongs - the `irc.lastping` attribute **must** be set to the current time whenever a `PONG` is received from the uplink, so PyLink's doesn't [lag out the uplink](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L383-L386) thinking that it isn't responding to our pings.
+- `handle_events(self, data)`: given a line of text containing an IRC command, parse it and return a hook payload as specified in the [PyLink hooks reference](hooks-reference.md).
+    - In all of the official PyLink modules so far, handling for specific commands is delegated into submethods via [`getattr()`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/protocols/ircs2s_common.py#L409-L412), and unknown commands are ignored.
+- `_ping_uplink(self)`: Sends a ping command to the uplink. No return value is expected / used.
 
-5) Implement a series of outgoing command functions (see below), used by plugins to send commands to IRC.
+This class offers the most flexibility because the protocol module can choose how it wants to handle any command. However, because most IRC server protocols use the same RFC 1459-style message format, rewriting the entire event handler is often not worth doing. Instead, it may be better to use `IRCS2SProtocol`, as documented below, which includes a `handle_events` method which handles most cases (TS5/6, P10, and TS-less protocols such as ngIRCd).
 
-6) Set the threading.Event object `irc.connected` (via `irc.connected.set()`) when the protocol negotiation with the uplink is complete. This is important for plugins like Relay which must check that links are ready before spawning clients, and they will fail to work if this is not set.
+- An exception to this general statement is `clientbot`, whose event handler also checks for unknown message senders and enumerates them when such a message is received.
 
-7) Check that `recvpass` is correct (when applicable), and raise `ProtocolError` with a relevant error message if not.
+### `protocols.ircs2s_common.IRCCommonProtocol`
 
-## Core functions
+`IRCCommonProtocol` (based off `IRCNetwork`) includes more IRC-specific methods such as parsers for ISUPPORT, as well as helper methods to parse arguments and recursively handle SQUIT. It also defines a default `ping_uplink()` and incoming command handlers for commands that are the same across known protocols (AWAY, PONG, ERROR).
 
-The following functions *must* be implemented by any protocol module within its main class, since they are used by the IRC object internals.
+`IRCCommonProtocol` does *not*, however, define an `handle_events` method.
 
-- **`connect`**`(self)` - Initializes a connection to a server.
+### `protocols.ircs2s_common.IRCS2SProtocol`
+`IRCS2SProtocol` is the most complete base server class, including a generic `handle_events()` supporting most IRC S2S message styles (i.e. prefix-less messages, protocols with and without UIDs). It also defines some incoming and outgoing command functions that hardly vary between protocols: `invite()`, `kick()`, `message()`, `notice()`, `numeric()`, `part()`, `quit()`, `squit()`, and `topic()` as of PyLink 2.0. This list is subject to change in future releases.
 
-- **`handle_events`**`(self, line)` - Handles inbound data (lines of text) from the uplink IRC server. Normally, this will pass commands to other command handlers within the protocol module, while dropping commands that are unrecognized (wildcard handling). This is type of handling is only a guideline, as it's technically possible to structure event listeners any way you want.
+### For non-IRC protocols: `classes.PyLinkNetworkCoreWithUtils`
+Although this hasn't been put into practice, PyLink is designed to allow expansion into non-IRC protocols by providing a generic class that only includes state checking and utility functions.
 
-- **`ping`**`(self, source=None, target=None)` - Sends a PING to a target server. Periodic PINGs are sent to our uplink automatically by the [`Irc()`
-internals](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L474-L483); plugins shouldn't have to use this.
+Subclassing one of the `PyLinkNetworkCore*` classes means that a protocol module only needs to define one method of entry: `connect()`, and must do all message processing by itself. Configuration validation checks and autoconnect must also be reimplemented. IRC-style utility functions (i.e. `PyLinkNetworkCoreWithUtils` methods) *may* also be reimplemented.
+
+(Unfortunately, this code work is complicated, so please get in touch with us if you're stuck or want tips!)
+
+### Other
+
+For protocols that are closely related to existing ones, it may be wise to subclass off of an existing protocol class. For example, the `hybrid` and `ratbox` modules are based off of `ts6`. However, these protocol modules *do not guarantee API stability*, so we recommend letting us know of your intentions beforehand.
 
 ### Outgoing command functions
 
-- **`spawnClient`**`(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)` - Spawns a client on the PyLink server. No nick collision / valid nickname checks are done by protocol modules, as it is up to plugins to make sure they don't introduce anything invalid.
+Unless otherwise noted, the camel-case variant of command functions (e.g. "`spawnClient`) are also supported, but deprecated. However, protocol module coders do *not* need to implement these aliases themselves: attempts to missing camel case functions are automatically coersed into their snake case variants via the [`structures.CamelCaseToSnakeCase`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/structures.py#L172-L197) wrapper.
+
+- **`spawn_client`**`(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)` - Spawns a client on the PyLink server. No nick collision / valid nickname checks are done by protocol modules, as it is up to plugins to make sure they don't introduce anything invalid.
     - `modes` is a list or set of `(mode char, mode arg)` tuples in the [PyLink mode format](#mode-formats).
-    - `ident` and `host` default to "null", while `realhost` defaults to the same things as `host` if not defined.
-    - `realname` defaults to the real name specified in the PyLink config, if not given.
-    - `ts` defaults to the current time if not given.
-    - `opertype` (the oper type name, if applicable) defaults to the simple text of `IRC Operator`.
+    - `ident` and `host` should default to "null", while `realhost` should default to the same things as `host` if not defined.
+    - `realname` should default to the real name specified in the PyLink config, if not given.
+    - `ts` should default to the current time if not given.
+    - `opertype` (the oper type name, if applicable) should default to the simple text of `IRC Operator`.
     - The `manipulatable` option toggles whether the client spawned should be considered protected. Currently, all this does is prevent commands from plugins like `bots` from modifying these clients, but future client protections (anti-kill flood, etc.) may also depend on this.
-    - The `server` option optionally takes a SID of any PyLink server, and spawns the client on the one given. It will default to the root PyLink server.
+    - The `server` option optionally takes a SID of any PyLink server, and spawns the client on the one given. It should default to the root PyLink server if not specified.
 
 - **`join`**`(self, client, channel)` - Joins the given client UID given to a channel.
 
@@ -58,7 +69,7 @@ internals](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L474-L483)
 
 - **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink client/server.
 
-- **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client.
+- **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client. This should raise `NotImplementedError` if not supported on the protocol.
 
 - **`message`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
 
@@ -79,15 +90,15 @@ optional, and defaults to the one we've stored in the channel state if not given
     - `sjoin('100', '#test', [('', '100AAABBC'), ('qo', 100AAABBB'), ('h', '100AAADDD')])`
     - `sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])`
 
-- **`spawnServer`**`(self, name, sid=None, uplink=None, desc=None)` - Spawns a server off another PyLink server. `desc` (server description) defaults to the one in the config. `uplink` defaults to the main PyLink server, and `sid` (the server ID) is automatically generated if not given. Sanity checks for server name and SID validity ARE done by the protocol module here.
+- **`spawn_server`**`(self, name, sid=None, uplink=None, desc=None)` - Spawns a server off another PyLink server. `desc` (server description) defaults to the one in the config. `uplink` defaults to the main PyLink server, and `sid` (the server ID) is automatically generated if not given. Sanity checks for server name and SID validity ARE done by the protocol module here.
 
 - **`squit`**`(self, source, target, text='No reason given')` - SQUITs a PyLink server.
 
-- **`topic`**`(self, source, target, text)` - Sends a topic change from a PyLink client.
+- **`topic`**`(self, source, target, text)` - Sends a topic change from a PyLink *client.
 
-- **`topicBurst`**`(self, source, target, text)` - Sends a topic change from a PyLink server. This is usually used on burst.
+- **`topic_burst`**`(self, source, target, text)` - Sends a topic change from a PyLink server. This is usually used on burst.
 
-- **`updateClient`**`(self, source, field, text)` - Updates the ident, host, or realname of a PyLink client. `field` should be either "IDENT", "HOST", "GECOS", or
+- **`update_client`**`(self, source, field, text)` - Updates the ident, host, or realname of a PyLink client. `field` should be either "IDENT", "HOST", "GECOS", or
 "REALNAME". If changing the field given on the IRCd isn't supported, `NotImplementedError` should be raised.
 
 ## Things to note
@@ -121,7 +132,7 @@ A protocol module manipulates the following attributes in the IRC object it is a
 
 When receiving or sending topics, there is a `topicset` attribute in the IRC channel (IrcChannel) object that should be set **True**. It simply denotes that a topic has been set in the channel at least once. Relay uses this so it doesn't overwrite topics with empty ones during burst, when a relay channel initialize before the uplink has sent the topic for it.
 
-*Caveat:* Topic handling is not yet subject to TS rules (which vary by IRCds) and are currently blindly accepted. https://github.com/GLolol/PyLink/issues/277
+*Caveat:* Topic handling on the current PyLink protocol modules is not yet subject to TS rules (which vary by IRCds) and are currently blindly accepted. https://github.com/GLolol/PyLink/issues/277
 
 ### Mode formats
 
@@ -161,11 +172,29 @@ When a certain mode (e.g. owner) isn't supported on a network, the key still exi
 
 ### Configuration key validation
 
-Starting with PyLink 0.10.x, protocol modules can specify which config values within a server block they need in order to work. This is done by adjusting the `self.conf_keys` attribute, usually in the protocol module's `__init__()` method. The default set, defined in [`Classes.Protocol`](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L1202-L1204), includes `{'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass', 'recvpass'}`. Should any of these keys be missing from a server block, PyLink will bail with a configuration error.
+Starting with PyLink 1.x, protocol modules can specify which config values within a server block they need in order to work. This is done by adjusting the `self.conf_keys` attribute, usually in the protocol module's `__init__()` method. The default set, defined in [`Classes.Protocol`](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L1202-L1204), includes `{'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass', 'recvpass'}`. Should any of these keys be missing from a server block, PyLink will bail with a configuration error.
 
 As an example, one protocol module that tweaks this is [`Clientbot`](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/clientbot.py#L17-L18), which removes all options except `ip`, `protocol`, and `port`.
 
+## The final checklist
+
+Protocol modules have some very important jobs. If any of these aren't done correctly, you will be left with a broken, desynced services server:
+
+1) Handle incoming commands from the uplink.
+
+2) Return [hook data](hooks-reference.md) for relevant commands, so that plugins can receive data from IRC.
+
+3) Make sure channel/user states are kept correctly. Joins, quits, parts, kicks, mode changes, nick changes, etc. should all be handled accurately where relevant.
+
+4) Implement a series of outgoing command functions (see below), used by plugins to send commands to IRC.
+
+5) Set the threading.Event object `irc.connected` (via `irc.connected.set()`) when the protocol negotiation with the uplink is complete. This is important for plugins like Relay which must check that links are ready before spawning clients, and they will fail to work if this is not set.
+
+6) Check that `recvpass` is correct when applicable, and raise `ProtocolError` with a relevant error message if not.
+
 ## Changes
+* 2017-0X-XX (2.0-dev)
+   - Rewritten specification for IRC-protocol class convergence, as well as command functions renamed to snake case.
 * 2017-03-15 (1.2-dev)
    - Corrected the location of `self.cmodes/umodes/prefixmodes` attributes
    - Mention `self.conf_keys` as a special variable for completeness
