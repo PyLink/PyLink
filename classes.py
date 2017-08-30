@@ -1210,6 +1210,26 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                      uid, nick)
             self.call_hooks([self.sid, 'SAVE', {'target': uid}])
 
+    def _expandPUID(self, uid):
+        """
+        Returns the nick or server name for the given UID/SID. This method helps support protocol
+        modules that use PUIDs internally, as they must convert them to talk with the uplink.
+        """
+        # TODO: stop hardcoding @ as separator
+        if '@' in uid:
+            if uid in self.users:
+                # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
+                # Return this user's nick accordingly.
+                nick = self.users[uid].nick
+                log.debug('(%s) Mangling target PUID %s to nick %s', self.name, uid, nick)
+                return nick
+            elif uid in self.servers:
+                # Ditto for servers
+                sname = self.servers[uid].name
+                log.debug('(%s) Mangling target PSID %s to server name %s', self.name, uid, sname)
+                return sname
+        return uid  # Regular UID, no change
+
 utils._proto_utils_class = PyLinkNetworkCoreWithUtils  # Used by compatibility wrappers
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
@@ -1705,7 +1725,6 @@ class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnake
 
         return sorted(result, key=self.sort_prefixes)
 IrcChannel = Channel
-
 
 class PUIDGenerator():
     """
