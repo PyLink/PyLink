@@ -1,8 +1,8 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.0-dev (2017-0X-XX).***
+***Last updated for 2.0-dev (2017-08-30).***
 
-Starting with PyLink 2.x, a protocol module is a file containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), and a global, and a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). Classes may be implemented based off any of the classes in the following inheritance tree, with each of which having a different amount of abstraction.
+Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
 ![[Protocol module inheritence graph]](protocol-modules.png)
 
@@ -10,7 +10,9 @@ Starting with PyLink 2.x, a protocol module is a file containing a class derived
 
 **Before you proceed, we highly recommend protocol module coders to get in touch with us** via our IRC channel (`#PyLink @ irc.overdrivenetworks.com`). Letting us know what you are working on can help coordinate coding efforts and better prepare for potential API breaks.
 
-For writing new protocol modules, it is recommended to start from one of the following classes:
+When writing new protocol modules, it is recommended to subclass from one of the following classes:
+
+(Note: these notes assume that PyLink is connecting as a server and is able to spawn subservers and users. If this is not the case, *virtual* clients and servers have to be spawned instead to emulate the correct state. The `clientbot` protocol module is a decent example of this, but be warned adding stubs to replace regular functionality does become ugly...)
 
 ### `classes.IRCNetwork`
 
@@ -48,7 +50,9 @@ For protocols that are closely related to existing ones, it may be wise to subcl
 
 ### Outgoing command functions
 
-Unless otherwise noted, the camel-case variant of command functions (e.g. "`spawnClient`) are also supported, but deprecated. However, protocol module coders do *not* need to implement these aliases themselves: attempts to missing camel case functions are automatically coersed into their snake case variants via the [`structures.CamelCaseToSnakeCase`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/structures.py#L172-L197) wrapper.
+The methods defined below are integral to any protocol module, as they are needed by plugins to communicate with the rest of the world.
+
+Unless otherwise noted, the camel-case variants of command functions (e.g. "`spawnClient`) are supported but deprecated. Protocol modules do *not* need to implement these aliases themselves; attempts to missing camel case functions are automatically coersed into their snake case variants via the [`structures.CamelCaseToSnakeCase`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/structures.py#L172-L197) wrapper.
 
 - **`spawn_client`**`(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)` - Spawns a client on the PyLink server. No nick collision / valid nickname checks are done by protocol modules, as it is up to plugins to make sure they don't introduce anything invalid.
     - `modes` is a list or set of `(mode char, mode arg)` tuples in the [PyLink mode format](#mode-formats).
@@ -98,8 +102,7 @@ optional, and defaults to the one we've stored in the channel state if not given
 
 - **`topic_burst`**`(self, source, target, text)` - Sends a topic change from a PyLink server. This is usually used on burst.
 
-- **`update_client`**`(self, source, field, text)` - Updates the ident, host, or realname of a PyLink client. `field` should be either "IDENT", "HOST", "GECOS", or
-"REALNAME". If changing the field given on the IRCd isn't supported, `NotImplementedError` should be raised.
+- **`update_client`**`(self, source, field, text)` - Updates the ident, host, or realname of a PyLink client. `field` should be either "IDENT", "HOST", "GECOS", or "REALNAME". If changing the field given on the IRCd isn't supported, `NotImplementedError` should be raised.
 
 ## Things to note
 
@@ -111,6 +114,29 @@ A protocol module should also set the following variables in their protocol clas
 - `self.hook_map`: this is a `dict`, which maps non-standard command names sent by the IRCd to those used by [PyLink hooks](hooks-reference.md).
     - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/unreal.py#L24-L27) and [InspIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/inspircd.py#L25-L28) modules.
 - `self.conf_keys`: a set of strings determining which server configuration options a protocol module needs to function; see the [Configuration key validation](#configuration-key-validation) section below.
+
+### Server, User, Channel classes
+PyLink defines classes named `Server`, `User`, and `Channel` in the `classes` module, and stores dictionaries of these in the `servers`, `users`, and `channels` attributes of a protocol object respectively.
+
+- `irc.servers` is a dictionary mapping server IDs (SIDs) to `Server` objects. If a protocol module does not use SIDs, servers are stored by server name instead.
+
+- `irc.users` is a dictionary mapping user IDs (UIDs) to `User` objects. If a protocol module does not use UIDs, a pseudo UID (PUID) generator such as [`classes.PUIDGenerator`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/classes.py#L1710-L1726) *must* be used instead.
+    - The rationale behind this is because plugins tracking user lists are not designed to removing and adding users when they change their nicks.
+    - When sending text back to the protocol module, it may be helpful to use the [`_expandPUID()`](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/classes.py#L1213-L1231) function in `PyLinkNetworkCoreWithUtils` to expand these pseudo-UIDs back to regular nicks.
+
+- `irc._channels` and `irc.channels` are [IRC case-insensitive dictionaries](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/structures.py#L114-L116) mapping channel names to Channel objects.
+    - The key difference between these two dictionaries is that `_channels` is powered by `classes.ChannelState` and creates new channels *automatically* when they are accessed by index. This makes writing protocol modules easier, as they can assume that the channels they wish to modify always exist (no chance of `KeyError`!).
+    - `irc.channels`, on the other hand, does *not* implicitly create channels and is thus better suited for plugins.
+
+The `Channel`, `User`, and `Server` classes are initiated as follows:
+
+- `Channel(irc, name)` - First arg is the protocol object, second is the channel name.
+- `User(irc, nick, ts, uid, server, ident='null', host='null', realname='PyLink dummy client', realhost='null', ip='0.0.0.0', manipulatable=False, opertype='IRC Operator')` - These arguments are essentially the same as `spawn_client()`'s.
+- `Server(irc, uplink, name, internal=False, desc="(None given)")`
+    - The `uplink` (type `str`) option sets the SID of the uplink server, or *None* for both the main PyLink server and its uplink.
+    - The `name` option sets the server name.
+    - The `internal` boolean sets whether the server is an internal PyLink server.
+    - The `desc` option sets the server description, when applicable.
 
 #### IRC object variables
 
@@ -128,31 +154,27 @@ A protocol module manipulates the following attributes in the IRC object it is a
 - `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
     - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 
-### Topics
-
-When receiving or sending topics, there is a `topicset` attribute in the IRC channel (IrcChannel) object that should be set **True**. It simply denotes that a topic has been set in the channel at least once. Relay uses this so it doesn't overwrite topics with empty ones during burst, when a relay channel initialize before the uplink has sent the topic for it.
-
-*Caveat:* Topic handling on the current PyLink protocol modules is not yet subject to TS rules (which vary by IRCds) and are currently blindly accepted. https://github.com/GLolol/PyLink/issues/277
-
 ### Mode formats
 
-Modes are stored a special format in PyLink, different from raw mode strings in order to make them easier to parse. Mode strings can be turned into mode *lists*, which are used to represent mode changes in hooks, and when storing modes internally.
+Modes are stored not stored as strings, but lists of mode pairs in order to ease parsing. These lists of mode pairs are used both to represent mode changes in hooks and store modes internally.
 
-`irc.parseModes(target, modestring)` is used to convert mode strings to mode lists. `target` is the channel name/UID the mode is being set on, while `modestring` takes either a string or string split by spaces (really a list).
+`irc.parse_modes(target, modestring)` is used to convert mode strings to mode lists. `target` is the channel name/UID the mode is being set on, while `modestring` takes either a string or string split by spaces (really a list).
 
-- `irc.parseModes('#chat', ['+tHIs', '*!*@is.sparta'])` would give:
+- `irc.parse_modes('#chat', ['+tHIs', '*!*@is.sparta'])` would give:
     - `[('+t', None), ('+H', None), ('+I', '*!*@is.sparta'), ('+s', None)]`
 
-`parseModes` will also automatically convert prefix mode targets from nicks to UIDs, and drop any duplicate (already set) or invalid (e.g. missing argument) modes.
+`parse_modes()` will also automatically convert prefix mode targets from nicks to UIDs, and drop any duplicate (already set) or invalid (e.g. missing argument) modes.
 
-- `irc.parseModes('#chat', ['+ol invalidnick'])`:
+- `irc.parse_modes('#chat', ['+ol invalidnick'])`:
     - `[]`
-- `irc.parseModes('#chat', ['+o GLolol'])`:
+- `irc.parse_modes('#chat', ['+o GLolol'])`:
     - `[('+o', '001ZJZW01')]`
 
-Then, a parsed mode list can be applied to channel name or UID using `irc.applyModes(target, parsed_modelist)`. **Note**: for protocols that accept or reject mode changes based on TS (i.e. practically every IRCd), you may want to use [`Protocol.updateTS(...)`](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L1252-L1261) to handle TS changes more efficiently.
+Afterwords, a parsed mode list can be applied to channel name or UID using `irc.apply_modes(target, parsed_modelist)`.
 
-Internally, modes are stored in `IrcChannel` and `IrcUser` objects as sets, with the `+` prefixing each mode character omitted. This set is accessed via the `modes` attribute:
+**Note**: for protocols that accept or reject mode changes based on TS (i.e. practically every IRCd), you will want to use [`updateTS(...)`](https://github.com/GLolol/PyLink/blob/master/classes.py#L1484-L1487) instead to only apply the modes if the remote TS is lower.
+
+Internally, modes are stored in `Channel` and `User` objects as sets, **with the `+` prefixing each mode character omitted**. These sets are accessed via the `modes` attribute:
 
 ```
 <+GLolol> PyLink-devel, eval irc.users[source].modes
@@ -161,7 +183,7 @@ Internally, modes are stored in `IrcChannel` and `IrcUser` objects as sets, with
 <@PyLink-devel> {('n', None), ('t', None)}
 ```
 
-**Exception**: the owner, admin, op, halfop, and voice channel prefix modes are stored separately as a dict of sets in `IrcChannel.prefixmodes`:
+**Exception**: the owner, admin, op, halfop, and voice channel prefix modes are stored separately as a dict of sets in `Channel.prefixmodes`:
 
 ```
 <@GLolol> PyLink-devel, eval irc.channels['#chat'].prefixmodes
@@ -169,6 +191,12 @@ Internally, modes are stored in `IrcChannel` and `IrcUser` objects as sets, with
 ```
 
 When a certain mode (e.g. owner) isn't supported on a network, the key still exists in `prefixmodes` but is simply unused.
+
+### Topics
+
+When receiving or sending topics, there is a `topicset` attribute in the `Channel` object that should be set to **True**. This boolean denotes that a topic has been set in the channel at least once; Relay uses it to know not to overwrite topics with empty ones during startup, when topics have not been received from all networks yet.
+
+*Caveat:* Topic handlers on the current protocol modules do not follow TS rules (which vary by IRCd), and blindly accept data. See issue https://github.com/GLolol/PyLink/issues/277
 
 ### Configuration key validation
 
@@ -182,19 +210,22 @@ Protocol modules have some very important jobs. If any of these aren't done corr
 
 1) Handle incoming commands from the uplink.
 
-2) Return [hook data](hooks-reference.md) for relevant commands, so that plugins can receive data from IRC.
+2) Return [hook data](hooks-reference.md) for relevant commands, so that plugins can receive data from the uplink.
 
 3) Make sure channel/user states are kept correctly. Joins, quits, parts, kicks, mode changes, nick changes, etc. should all be handled accurately where relevant.
 
-4) Implement a series of outgoing command functions (see below), used by plugins to send commands to IRC.
+4) Implement the specified outgoing command functions, which are used by plugins to send commands to the uplink.
 
-5) Set the threading.Event object `irc.connected` (via `irc.connected.set()`) when the protocol negotiation with the uplink is complete. This is important for plugins like Relay which must check that links are ready before spawning clients, and they will fail to work if this is not set.
+5) Set the `threading.Event` instance `self.connected` to True (via `self.connected.set()`) when the connection with the uplink is fully established. This is important for Relay and the services API, which will refuse to initialize if the connection is not marked ready.
 
 6) Check that `recvpass` is correct when applicable, and raise `ProtocolError` with a relevant error message if not.
 
 ## Changes
-* 2017-0X-XX (2.0-dev)
-   - Rewritten specification for IRC-protocol class convergence, as well as command functions renamed to snake case.
+* 2017-08-30 (2.0-dev)
+   - Rewritten specification for the IRC-protocol class convergence in PyLink 2.0
+   - Updated the spec for 2.0 method renames and class restructures.
+   - Added a proper "Starting Steps" section detailing which classes inherit from and when.
+   - Explicitly document the Server, User, and Channel classes.
 * 2017-03-15 (1.2-dev)
    - Corrected the location of `self.cmodes/umodes/prefixmodes` attributes
    - Mention `self.conf_keys` as a special variable for completeness

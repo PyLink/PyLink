@@ -1603,10 +1603,12 @@ IrcUser = User
 class Server():
     """PyLink IRC server class.
 
-    uplink: The SID of this PyLinkServer instance's uplink. This is set to None
-            for the main PyLink server.
+    irc: the protocol/network object this Server instance is attached to.
+    uplink: The SID of this Server instance's uplink. This is set to None
+            for **both** the main PyLink server and our uplink.
     name: The name of the server.
-    internal: Whether the server is an internal PyLink server.
+    internal: Boolean, whether the server is an internal PyLink server.
+    desc: Sets the server description if relevant.
     """
 
     def __init__(self, irc, uplink, name, internal=False, desc="(None given)"):
