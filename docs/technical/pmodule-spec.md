@@ -48,7 +48,7 @@ Subclassing one of the `PyLinkNetworkCore*` classes means that a protocol module
 
 For protocols that are closely related to existing ones, it may be wise to subclass off of an existing protocol class. For example, the `hybrid` and `ratbox` modules are based off of `ts6`. However, these protocol modules *do not guarantee API stability*, so we recommend letting us know of your intentions beforehand.
 
-### Outgoing command functions
+## Outgoing command functions
 
 The methods defined below are integral to any protocol module, as they are needed by plugins to communicate with the rest of the world.
 
@@ -108,12 +108,23 @@ optional, and defaults to the one we've stored in the channel state if not given
 
 ### Special variables
 
-A protocol module should also set the following variables in their protocol class:
+A protocol module should also set the following variables in each instance:
 
 - `self.casemapping`: a string (`'rfc1459'` or `'ascii'`) to determine which case mapping the IRCd uses.
 - `self.hook_map`: this is a `dict`, which maps non-standard command names sent by the IRCd to those used by [PyLink hooks](hooks-reference.md).
     - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/unreal.py#L24-L27) and [InspIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/inspircd.py#L25-L28) modules.
 - `self.conf_keys`: a set of strings determining which server configuration options a protocol module needs to function; see the [Configuration key validation](#configuration-key-validation) section below.
+- `self.cmodes` / `self.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
+    - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
+        - A = Mode that adds or removes a nick or address to a list. Always has a parameter.
+        - B = Mode that changes a setting and always has a parameter.
+        - C = Mode that changes a setting and only has a parameter when set.
+        - D = Mode that changes a setting and never has a parameter.
+    - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L127-L152
+    - An example of mode mapping hardcoding can be found here: https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/ts6.py#L259-L311
+    - You can find a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
+- `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
+    - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 
 ### Server, User, Channel classes
 PyLink defines classes named `Server`, `User`, and `Channel` in the `classes` module, and stores dictionaries of these in the `servers`, `users`, and `channels` attributes of a protocol object respectively.
@@ -137,22 +148,6 @@ The `Channel`, `User`, and `Server` classes are initiated as follows:
     - The `name` option sets the server name.
     - The `internal` boolean sets whether the server is an internal PyLink server.
     - The `desc` option sets the server description, when applicable.
-
-#### IRC object variables
-
-A protocol module manipulates the following attributes in the IRC object it is attached to:
-
-- `self.cmodes` / `self.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
-    - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
-        - A = Mode that adds or removes a nick or address to a list. Always has a parameter.
-        - B = Mode that changes a setting and always has a parameter.
-        - C = Mode that changes a setting and only has a parameter when set.
-        - D = Mode that changes a setting and never has a parameter.
-    - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L127-L152
-    - An example of mode mapping hardcoding can be found here: https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/ts6.py#L259-L311
-    - You can find a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
-- `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
-    - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 
 ### Mode formats
 
@@ -206,7 +201,7 @@ As an example, one protocol module that tweaks this is [`Clientbot`](https://git
 
 ## The final checklist
 
-Protocol modules have some very important jobs. If any of these aren't done correctly, you will be left with a broken, desynced services server:
+In short, protocol modules have some very important jobs. If any of these aren't done correctly, you will be left with a broken, desynced services server:
 
 1) Handle incoming commands from the uplink.
 
