@@ -215,7 +215,7 @@ class ServiceBot():
         joinmodes = ''.join([m for m in joinmodes if m in irc.prefixmodes])
 
         for chan in channels:
-            if isChannel(chan):
+            if irc.is_channel(chan):
                 if chan in irc.channels and u in irc.channels[chan].users:
                     log.debug('(%s) Skipping join of services %s to channel %s - it is already present', irc.name, self.name, chan)
                     continue
