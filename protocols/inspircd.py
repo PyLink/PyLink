@@ -716,6 +716,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_endburst(self, numeric, command, args):
         """ENDBURST handler; sends a hook with empty contents."""
+        self.servers[numeric].has_eob = True
         return {}
 
     def handle_away(self, numeric, command, args):

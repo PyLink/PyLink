@@ -379,6 +379,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_eos(self, numeric, command, args):
         """EOS is used to denote end of burst."""
+        self.servers[numeric].has_eob = True
         return {}
 
     def handle_uid(self, numeric, command, args):

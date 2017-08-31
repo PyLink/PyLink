@@ -1110,15 +1110,18 @@ class P10Protocol(IRCS2SProtocol):
 
         return {'channel': channel, 'users': [source], 'modes':
                 self._channels[channel].modes, 'ts': ts or int(time.time())}
-
     handle_create = handle_join
+
     def handle_end_of_burst(self, source, command, args):
-        """Handles end of burst from our uplink."""
+        """Handles end of burst from servers."""
+
         # Send EOB acknowledgement; this is required by the P10 specification,
         # and needed if we want to be able to receive channel messages, etc.
         if source == self.uplink:
             self._send_with_prefix(self.sid, 'EA')
-            return {}
+
+        self.servers[source].has_eob = True
+        return {}
 
     def handle_kick(self, source, command, args):
         """Handles incoming KICKs."""

@@ -504,16 +504,20 @@ class NgIRCdProtocol(IRCS2SProtocol):
         assert 'IRC+' in args[1], "Linking to non-ngIRCd server using this protocol module is not supported"
 
     def handle_ping(self, source, command, args):
-        if source == self.uplink:
-            self._send_with_prefix(self.sid, 'PONG %s :%s' % (self._expandPUID(self.sid), args[-1]), queue=False)
+        """
+        Handles incoming PINGs (and implicit end of burst).
+        """
+        self._send_with_prefix(self.sid, 'PONG %s :%s' % (self._expandPUID(self.sid), args[-1]), queue=False)
 
-            if not self.has_eob:
-                # Treat the first PING we receive as end of burst.
-                self.has_eob = True
+        if not self.servers[source].has_eob:
+            # Treat the first PING we receive as end of burst.
+            self.servers[source].has_eob = True
+
+            if source == self.uplink:
                 self.connected.set()
 
-                # Return the endburst hook.
-                return {'parse_as': 'ENDBURST'}
+            # Return the endburst hook.
+            return {'parse_as': 'ENDBURST'}
 
     def handle_server(self, source, command, args):
         """
