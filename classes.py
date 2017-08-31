@@ -349,6 +349,10 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
 
     def _run_autoconnect(self):
         """Blocks for the autoconnect time and returns True if autoconnect is enabled."""
+        if world.shutting_down.is_set():
+            log.debug('(%s) _run_autoconnect: aborting autoconnect attempt since we are shutting down.', self.name)
+            return
+
         autoconnect = self.serverdata.get('autoconnect')
 
         # Sets the autoconnect growth multiplier (e.g. a value of 2 multiplies the autoconnect
@@ -1478,7 +1482,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """Main IRC loop which listens for messages."""
         buf = b""
         data = b""
-        while not self._aborted.is_set():
+        while (not self._aborted.is_set()) and not world.shutting_down.is_set():
 
             try:
                 data = self._socket.recv(2048)
