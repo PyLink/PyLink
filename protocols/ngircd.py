@@ -32,8 +32,9 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # ngIRCd has no TS tracking.
         self.protocol_caps.discard('has-ts')
 
-        # It is, however, flexible about nicks and hosts.
-        self.protocol_caps |= {'slash-in-hosts', 'slash-in-nicks', 'underscore-in-hosts'}
+        # Slash in nicks is problematic; while it works for basic things like JOIN and messages,
+        # attempts to set user modes fail.
+        self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
 
     ### Commands
 
