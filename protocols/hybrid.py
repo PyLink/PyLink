@@ -230,6 +230,9 @@ class HybridProtocol(TS6Protocol):
         if not self.servers[numeric].has_eob:
             # Don't fight with TS6's generic PING-as-EOB
             self.servers[numeric].has_eob = True
+
+            if numeric == self.uplink:
+                self.connected.set()
             return {}
 
     def handle_svsmode(self, numeric, command, args):

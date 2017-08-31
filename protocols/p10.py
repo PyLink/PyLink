@@ -824,7 +824,6 @@ class P10Protocol(IRCS2SProtocol):
 
         self.send('SERVER %s 1 %s %s J10 %s]]] +s6 :%s' % (name, ts, ts, sid, desc))
         self._send_with_prefix(sid, "EB")
-        self.connected.set()
 
     def handle_server(self, source, command, args):
         """Handles incoming server introductions."""
@@ -1119,6 +1118,7 @@ class P10Protocol(IRCS2SProtocol):
         # and needed if we want to be able to receive channel messages, etc.
         if source == self.uplink:
             self._send_with_prefix(self.sid, 'EA')
+            self.connected.set()
 
         self.servers[source].has_eob = True
         return {}

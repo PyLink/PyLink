@@ -633,10 +633,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self.send(line)
 
         # Virtual endburst hook.
-        self.connected.set()  # Note, this should always be set before sending ENDBURST
-        if not self.has_eob:
-            self.has_eob = True
-            return {'parse_as': 'ENDBURST'}
+        self.connected.set()  # Note, this should always be set before the actual ENDBURST hook
+        self.servers[self.uplink].has_eob = True
+        return {'parse_as': 'ENDBURST'}
 
     handle_422 = handle_376
 

@@ -419,9 +419,6 @@ class TS6Protocol(TS6BaseProtocol):
         if 'SERVICES' in caps:
             self.cmodes['regonly'] = 'r'
 
-        log.debug('(%s) self.connected set!', self.name)
-        self.connected.set()
-
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands."""
         # PING:
@@ -445,6 +442,10 @@ class TS6Protocol(TS6BaseProtocol):
                 # TS6 endburst is just sending a PING to the other server.
                 # https://github.com/charybdis-ircd/charybdis/blob/dc336d1/modules/core/m_server.c#L484-L485
                 self.servers[source].has_eob = True
+
+                if source == self.uplink:
+                    log.debug('(%s) self.connected set!', self.name)
+                    self.connected.set()
 
                 # Return the endburst hook.
                 return {'parse_as': 'ENDBURST'}
