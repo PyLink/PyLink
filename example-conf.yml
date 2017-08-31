@@ -296,8 +296,6 @@ servers:
         ### The following options are specific to P10 servers:
         # Determines whether extended accounts should be used for this network.
         # For Nefarious, this **MUST** match the EXTENDED_ACCOUNTS setting in your IRCd configuration.
-        # Disable this if you are using X3, and leave it on for any other service package
-        # (atheme, etc.)
         # For other P10 IRCds, this should be set to FALSE.
         use_extended_accounts: true
 
