@@ -471,7 +471,7 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
         # Look for the "service" attribute in the User object,sname = userobj.service
         # Warn if the service name we fetched isn't a registered service.
         sname = userobj.service
-        if sname not in world.services.keys():
+        if sname is not None and sname not in world.services.keys():
             log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
                         "exist (%s)!", self.name, uid, userobj.nick, sname)
         return world.services.get(sname)
