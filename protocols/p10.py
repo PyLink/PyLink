@@ -796,6 +796,20 @@ class P10Protocol(IRCS2SProtocol):
                                     'registered': 'r', 'cloak_sethost': 'h', 'cloak_fakehost': 'f',
                                     'cloak_hashedhost': 'C', 'cloak_hashedip': 'c', 'locop': 'O',
                                     '*A': '', '*B': '', '*C': 'fCcrh', '*D': 'oOiwskgxnqBdDHIRWaXLz'})
+            # Nefarious supports extbans as documented at
+            # https://github.com/evilnet/nefarious2/blob/master/doc/extendedbans.txt
+            self.extbans_matching.update({
+                'ban_account': '~a:',
+                'ban_inchannel': '~c:',
+                'ban_realname': '~r:',
+                'ban_mark': '~m:',
+                'ban_unregistered_mark': '~M:',
+                'ban_banshare': '~j:'
+            })
+            self.extbans_acting.update({
+                'quiet': '~q:',
+                'ban_nonick': '~n:'
+            })
         elif p10_ircd == 'snircd':
             # snircd has +u instead of +Q for hidequits, and fewer chanel modes.
             cmodes = {'oplevel_apass': 'A', 'oplevel_upass': 'U', 'delayjoin': 'D', 'regonly': 'r',
