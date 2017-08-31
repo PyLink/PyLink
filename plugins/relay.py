@@ -623,7 +623,7 @@ isRelayClient = is_relay_client
 
 def iterate_all(origirc, func, extra_args=(), kwargs=None):
     """
-    Runs the given function 'func' on all connected networks. 'func' must take at least two arguments: the original IRCNetwork object and the remote IRCNetwork object.
+    Runs the given function 'func' on all connected networks. 'func' must take at least two arguments: the original network object and the remote network object.
     """
     if kwargs is None:
         kwargs = {}
@@ -634,6 +634,21 @@ def iterate_all(origirc, func, extra_args=(), kwargs=None):
             continue
 
         func(origirc, remoteirc, *extra_args, **kwargs)
+
+def iterate_all_present(origirc, origuser, func, extra_args=(), kwargs=None):
+    """
+    Runs the given function 'func' on all networks where the UID 'origuser'
+    from 'origirc' has a relay client.
+
+    'func' must take at least three arguments: the original network object,
+    the remote network object, and the UID on the remote network to work on.
+    """
+    if kwargs is None:
+        kwargs = {}
+
+    for netname, user in relayusers[(origirc.name, origuser)].copy().items():
+        remoteirc = world.networkobjects[netname]
+        func(origirc, remoteirc, user, *extra_args, **kwargs)
 
 ### EVENT HANDLER INTERNALS
 
@@ -1039,11 +1054,13 @@ def handle_operup(irc, numeric, command, args):
     Handles setting oper types on relay clients during oper up.
     """
     newtype = '%s (on %s)' % (args['text'], irc.get_full_network_name())
-    for netname, user in relayusers[(irc.name, numeric)].items():
+
+    def _handle_operup_func(irc, remoteirc, user):
         log.debug('(%s) relay.handle_opertype: setting OPERTYPE of %s/%s to %s',
-                  irc.name, user, netname, newtype)
-        remoteirc = world.networkobjects[netname]
+                  irc.name, user, remoteirc.name, newtype)
         remoteirc.users[user].opertype = newtype
+
+    iterate_all_present(irc, numeric, _handle_operup_func)
 utils.add_hook(handle_operup, 'CLIENT_OPERED')
 
 def handle_join(irc, numeric, command, args):
@@ -1099,13 +1116,16 @@ def handle_quit(irc, numeric, command, args):
     # deleting client from the relayusers cache.
     log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
               threading.current_thread().name, inspect.currentframe().f_code.co_name)
+
     if spawnlocks[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
-        for netname, user in relayusers[(irc.name, numeric)].copy().items():
-            remoteirc = world.networkobjects[netname]
+
+        def _handle_quit_func(irc, remoteirc, user):
             try:  # Try to quit the client. If this fails because they're missing, bail.
                 remoteirc.quit(user, args['text'])
             except LookupError:
                 pass
+
+        iterate_all_present(irc, numeric, _handle_quit_func)
         del relayusers[(irc.name, numeric)]
         spawnlocks[irc.name].release()
 
@@ -1156,11 +1176,14 @@ def handle_squit(irc, numeric, command, args):
 utils.add_hook(handle_squit, 'SQUIT')
 
 def handle_nick(irc, numeric, command, args):
-    for netname, user in relayusers[(irc.name, numeric)].items():
-        remoteirc = world.networkobjects[netname]
-        newnick = normalize_nick(remoteirc, irc.name, args['newnick'], uid=user)
-        if remoteirc.users[user].nick != newnick:
-            remoteirc.nick(user, newnick)
+    newnick = args['newnick']
+    def _handle_nick_func(irc, remoteirc, user):
+        remote_newnick = normalize_nick(remoteirc, irc.name, newnick, uid=user)
+        if remoteirc.users[user].nick != remote_newnick:
+            remoteirc.nick(user, remote_newnick)
+
+    iterate_all_present(irc, numeric, _handle_nick_func)
+
 utils.add_hook(handle_nick, 'NICK')
 
 def handle_part(irc, numeric, command, args):
@@ -1183,15 +1206,17 @@ def handle_part(irc, numeric, command, args):
         return
 
     for channel in channels:
-        for netname, user in relayusers[(irc.name, numeric)].copy().items():
-            remoteirc = world.networkobjects[netname]
+        def _handle_part_loop(irc, remoteirc, user):
             remotechan = get_remote_channel(irc, remoteirc, channel)
             if remotechan is None:
-                continue
+                return
             remoteirc.part(user, remotechan, text)
+
             if not remoteirc.users[user].channels:
                 remoteirc.quit(user, 'Left all shared channels.')
                 del relayusers[(irc.name, numeric)][remoteirc.name]
+        iterate_all_present(irc, numeric, _handle_part_loop)
+
 utils.add_hook(handle_part, 'PART')
 
 def handle_messages(irc, numeric, command, args):
@@ -1450,8 +1475,7 @@ def handle_chgclient(irc, source, command, args):
         field = 'GECOS'
         text = args['newgecos']
     if field:
-        for netname, user in relayusers[(irc.name, target)].items():
-            remoteirc = world.networkobjects[netname]
+        def _handle_chgclient_loop(irc, remoteirc, user):
             try:
                 if field == 'HOST':
                     newtext = normalize_host(remoteirc, text)
@@ -1461,8 +1485,9 @@ def handle_chgclient(irc, source, command, args):
             except NotImplementedError:  # IRCd doesn't support changing the field we want
                 log.debug('(%s) relay.handle_chgclient: Ignoring changing field %r of %s on %s (for %s/%s);'
                           ' remote IRCd doesn\'t support it', irc.name, field,
-                          user, netname, target, irc.name)
-                continue
+                          user, remoteirc.name, target, irc.name)
+                return
+        iterate_all_present(irc, target, _handle_chgclient_loop)
 
 for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
     utils.add_hook(handle_chgclient, c)
@@ -1637,9 +1662,9 @@ def handle_kill(irc, numeric, command, args):
 utils.add_hook(handle_kill, 'KILL')
 
 def handle_away(irc, numeric, command, args):
-    for netname, user in relayusers[(irc.name, numeric)].items():
-        remoteirc = world.networkobjects[netname]
-        remoteirc.away(user, args['text'])
+    iterate_all_present(irc, numeric,
+                        lambda irc, remoteirc, user:
+                            remoteirc.away(user, args['text']))
 utils.add_hook(handle_away, 'AWAY')
 
 def handle_invite(irc, source, command, args):
@@ -1673,9 +1698,10 @@ def handle_services_login(irc, numeric, command, args):
     """
     Relays services account changes as a hook, for integration with plugins like Automode.
     """
-    for netname, user in relayusers[(irc.name, numeric)].items():
-        remoteirc = world.networkobjects[netname]
-        remoteirc.call_hooks([user, 'PYLINK_RELAY_SERVICES_LOGIN', args])
+    iterate_all_present(irc, numeric,
+                        lambda irc, remoteirc, user:
+                            remoteirc.call_hooks([user, 'PYLINK_RELAY_SERVICES_LOGIN', args]))
+
 utils.add_hook(handle_services_login, 'CLIENT_SERVICES_LOGIN')
 
 def handle_disconnect(irc, numeric, command, args):
