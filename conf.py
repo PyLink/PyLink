@@ -115,7 +115,7 @@ def loadConf(filename, errors_fatal=True, logger=None):
     # Note: store globally the last loaded conf filename, for REHASH in coremods/control.
     fname = filename
     # For the internal config name, strip off any .yml extensions and absolute paths
-    confname = os.path.basename(filename).split('.', 1)[0]
+    confname = os.path.splitext(os.path.basename(filename))[0]
     try:
         with open(filename, 'r') as f:
             conf = yaml.load(f)
