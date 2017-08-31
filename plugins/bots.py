@@ -94,7 +94,7 @@ def joinclient(irc, source, args):
         prefixes = channel[:len(channel)-len(real_channel)]
         joinmodes = ''.join(prefix_to_mode[prefix] for prefix in prefixes)
 
-        if not utils.isChannel(real_channel):
+        if not irc.is_channel(real_channel):
             irc.error("Invalid channel name %r." % real_channel)
             return
 
@@ -186,7 +186,7 @@ def part(irc, source, args):
         return
 
     for channel in clist:
-        if not utils.isChannel(channel):
+        if not irc.is_channel(channel):
             irc.error("Invalid channel name %r." % channel)
             return
         irc.part(u, channel, reason)
@@ -227,7 +227,7 @@ def msg(irc, source, args):
         irc.error('No text given.')
         return
 
-    if not utils.isChannel(target):
+    if not irc.is_channel(target):
         # Convert nick of the message target to a UID, if the target isn't a channel
         real_target = irc.nick_to_uid(target)
         if real_target is None:  # Unknown target user, if target isn't a valid channel name

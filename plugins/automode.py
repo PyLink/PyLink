@@ -155,7 +155,7 @@ def _get_channel_pair(irc, source, chanpair, perm=None):
     channel = '#' + channel
     channel = irc.to_lower(channel)
 
-    assert utils.isChannel(channel), "Invalid channel name %s." % channel
+    assert irc.is_channel(channel), "Invalid channel name %s." % channel
 
     if network:
         ircobj = world.networkobjects.get(network)
