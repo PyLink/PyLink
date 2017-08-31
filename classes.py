@@ -1619,6 +1619,9 @@ class Server():
         self.desc = desc
         self._irc = irc
 
+        # Has the server finished bursting yet?
+        self.has_eob = False
+
     def __repr__(self):
         return 'Server(%s)' % self.name
 
