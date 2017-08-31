@@ -676,7 +676,10 @@ def relay_joins(irc, channel, users, ts, **kwargs):
                 if not irc.has_cap('has-ts'):
                     # Special hack for clientbot: just use the remote's modes so mode changes
                     # take precendence. (TS is always outside the clientbot's control)
-                    ts = remoteirc.channels[remotechan].ts
+                    if remotechan in remoteirc.channels:
+                        ts = remoteirc.channels[remotechan].ts
+                    else:
+                        ts = int(time.time())
                 else:
                     ts = irc.channels[channel].ts
                 prefixes = get_prefix_modes(irc, remoteirc, channel, user)
@@ -954,7 +957,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                             else:
                                 mode_parse_aborted = True
                     else:
-                        if name in ('ban', 'banexception', 'invex', 'quiet') and not utils.isHostmask(arg):
+                        if name in ('ban', 'banexception', 'invex', 'quiet') and not remoteirc.is_hostmask(arg):
                             # Don't add unsupported bans that don't match n!u@h syntax.
                             log.debug("(%s) relay.get_supported_cmodes: skipping unsupported extban/mode (%r, %r) because it doesn't match nick!user@host.",
                                       irc.name, modechar, arg)

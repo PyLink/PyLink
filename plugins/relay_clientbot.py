@@ -60,7 +60,7 @@ def cb_relay_core(irc, source, command, args):
 
                 real_command = 'ACTION'
 
-            elif not utils.isChannel(args['target']):
+            elif not irc.is_channel(args['target']):
                 # Target is a user; handle this accordingly.
                 if relay_conf.get('allow_clientbot_pms'):
                     real_command = 'PNOTICE' if args.get('is_notice') else 'PM'
@@ -112,7 +112,7 @@ def cb_relay_core(irc, source, command, args):
 
             # Figure out where the message is destined to.
             target = args.get('channel') or args.get('target')
-            if target is None or not (utils.isChannel(target) or private):
+            if target is None or not (irc.is_channel(target) or private):
                 # Non-channel specific message (e.g. QUIT or NICK). If this isn't a PM, figure out
                 # all channels that the sender shares over the relay, and relay them to those
                 # channels.

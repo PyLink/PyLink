@@ -20,7 +20,7 @@ def hook_privmsg(irc, source, command, args):
 
     # irc.pseudoclient stores the User object of the main PyLink client.
     # (i.e. the user defined in the bot: section of the config)
-    if utils.isChannel(channel) and irc.pseudoclient.nick in text:
+    if irc.is_channel(channel) and irc.pseudoclient.nick in text:
         irc.msg(channel, 'hi there!')
         # log.debug, log.info, log.warning, log.error, log.exception (within except: clauses)
         # and log.critical are supported here.
