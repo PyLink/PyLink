@@ -229,25 +229,31 @@ class NgIRCdProtocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client exists.')
         log.debug('(%s) sjoin: got %r for users', self.name, users)
 
-        njoin_prefix = ':%s NJOIN %s :' % (self._expandPUID(self.sid), channel)
+        njoin_prefix = ':%s NJOIN %s :' % (self._expandPUID(server), channel)
         # Format the user list into strings such as @user1, +user2, user3, etc.
-        nicks_to_send = ['%s%s' % (''.join(self.prefixmodes[modechar] for modechar in userpair[0] if modechar in self.prefixmodes),
-                                   self._expandPUID(userpair[1])) for userpair in users]
-
-        # Use 13 args max per line: this is equal to the max of 15 minus the command name and target channel.
-        for message in utils.wrapArguments(njoin_prefix, nicks_to_send, self.S2S_BUFSIZE, separator=',', max_args_per_line=13):
-            self.send(message)
-
-        # Add the affected users to our state.
+        nicks_to_send = []
         for userpair in users:
-            uid = userpair[1]
+            prefixes, uid = userpair
+
+            if uid not in self.users:
+                log.warning('(%s) Trying to NJOIN missing user %s?', self.name, uid)
+                continue
+            elif uid in self._channels[channel].users:
+                # Don't rejoin users already in the channel, this causes errors with ngIRCd.
+                continue
+
             self._channels[channel].users.add(uid)
-            try:
-                self.users[uid].channels.add(channel)
-            except KeyError:  # Not initialized yet?
-                log.warning("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.name, channel, uid)
+            self.users[uid].channels.add(channel)
 
             self.apply_modes(channel, (('+%s' % prefix, uid) for prefix in userpair[0]))
+
+            nicks_to_send.append(''.join(self.prefixmodes[modechar] for modechar in userpair[0]) + \
+                                 self._expandPUID(userpair[1]))
+
+        if nicks_to_send:
+            # Use 13 args max per line: this is equal to the max of 15 minus the command name and target channel.
+            for message in utils.wrapArguments(njoin_prefix, nicks_to_send, self.S2S_BUFSIZE, separator=',', max_args_per_line=13):
+                self.send(message)
 
         if modes:
             # Burst modes separately if there are any.
