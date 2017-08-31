@@ -24,9 +24,17 @@ def spawn_service(irc, source, command, args):
 
     old_userobj = irc.users.get(sbot.uids.get(irc.name))
     if old_userobj and old_userobj.service:
-        # A client already exists, so reuse it.
-        log.debug('(%s) spawn_service: Using existing nick %r for service %r', irc.name, old_userobj.nick, name)
-        userobj = old_userobj
+        # A client already exists, so don't respawn it.
+        log.debug('(%s) spawn_service: Not respawning service %r as service client %r already exists.', irc.name, name,
+                  irc.pseudoclient.nick)
+        return
+
+    if name == 'pylink' and irc.pseudoclient:
+        # irc.pseudoclient already exists, reuse values from it but
+        # spawn a new client. This is used for protocols like Clientbot,
+        # so that they can override the main service nick, among other things.
+        log.debug('(%s) spawn_service: Using existing nick %r for service %r', irc.name, irc.pseudoclient.nick, name)
+        userobj = irc.pseudoclient
         userobj.opertype = "PyLink Service"
         userobj.manipulatable = sbot.manipulatable
     else:
