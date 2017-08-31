@@ -20,9 +20,6 @@ class TS6Protocol(TS6BaseProtocol):
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
                          'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC', 'USERMODE': 'MODE'}
 
-        # Track whether we've received end-of-burst from the uplink.
-        self.has_eob = False
-
         self.required_caps = {'EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
 
         # From ChatIRCd: https://github.com/ChatLounge/ChatIRCd/blob/master/doc/technical/ChatIRCd-extra.txt
@@ -264,7 +261,6 @@ class TS6Protocol(TS6BaseProtocol):
     def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.start_ts
-        self.has_eob = False
 
         f = self.send
 
@@ -423,9 +419,6 @@ class TS6Protocol(TS6BaseProtocol):
         if 'SERVICES' in caps:
             self.cmodes['regonly'] = 'r'
 
-        log.debug('(%s) self.connected set!', self.name)
-        self.connected.set()
-
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands."""
         # PING:
@@ -445,10 +438,14 @@ class TS6Protocol(TS6BaseProtocol):
         if self.is_internal_server(destination):
             self._send_with_prefix(destination, 'PONG %s %s' % (destination, source), queue=False)
 
-            if destination == self.sid and not self.has_eob:
-                # Charybdis' endburst is just sending a PING to the other server.
+            if not self.servers[source].has_eob:
+                # TS6 endburst is just sending a PING to the other server.
                 # https://github.com/charybdis-ircd/charybdis/blob/dc336d1/modules/core/m_server.c#L484-L485
-                self.has_eob = True
+                self.servers[source].has_eob = True
+
+                if source == self.uplink:
+                    log.debug('(%s) self.connected set!', self.name)
+                    self.connected.set()
 
                 # Return the endburst hook.
                 return {'parse_as': 'ENDBURST'}

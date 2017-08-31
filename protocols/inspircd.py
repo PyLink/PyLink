@@ -520,9 +520,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
             log.debug('(%s) self.prefixmodes set to %r', self.name,
                       self.prefixmodes)
 
-            # Finally, set the irc.connected (protocol negotiation complete)
-            # state to True.
-            self.connected.set()
         elif args[0] == 'MODSUPPORT':
             # <- CAPAB MODSUPPORT :m_alltime.so m_check.so m_chghost.so m_chgident.so m_chgname.so m_fullversion.so m_gecosban.so m_knock.so m_muteban.so m_nicklock.so m_nopartmsg.so m_opmoderated.so m_sajoin.so m_sanick.so m_sapart.so m_serverban.so m_services_account.so m_showwhois.so m_silence.so m_swhois.so m_uninvite.so m_watch.so
             self.modsupport = args[-1].split()
@@ -716,6 +713,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_endburst(self, numeric, command, args):
         """ENDBURST handler; sends a hook with empty contents."""
+        self.servers[numeric].has_eob = True
+        if numeric == self.uplink:
+            self.connected.set()
         return {}
 
     def handle_away(self, numeric, command, args):

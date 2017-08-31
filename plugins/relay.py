@@ -217,7 +217,7 @@ def get_prefix_modes(irc, remoteirc, channel, user, mlist=None):
     return modes
 
 def spawn_relay_server(irc, remoteirc):
-    if irc.connected.wait(TCONDITION_TIMEOUT):
+    if irc.connected.is_set():
         try:
             # ENDBURST is delayed by 3 secs on supported IRCds to prevent
             # triggering join-flood protection and the like.
@@ -358,7 +358,7 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0)
     spawning one if it doesn't exist and spawn_if_missing is True."""
 
     # Wait until the network is working before trying to spawn anything.
-    if irc.connected.wait(TCONDITION_TIMEOUT):
+    if irc.connected.is_set():
         # Don't spawn clones for registered service bots.
         sbot = irc.get_service_bot(user)
         if sbot:

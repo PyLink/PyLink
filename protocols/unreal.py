@@ -379,6 +379,9 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_eos(self, numeric, command, args):
         """EOS is used to denote end of burst."""
+        self.servers[numeric].has_eob = True
+        if numeric == self.uplink:
+            self.connected.set()
         return {}
 
     def handle_uid(self, numeric, command, args):
@@ -482,9 +485,6 @@ class UnrealProtocol(TS6BaseProtocol):
                                     "(Unreal 4.x), got %s)" % (self.min_proto_ver, protover))
             self.servers[numeric] = Server(self, None, sname, desc=sdesc)
 
-            # Set irc.connected to True, meaning that protocol negotiation passed.
-            log.debug('(%s) self.connected set!', self.name)
-            self.connected.set()
         else:
             # Legacy (non-SID) servers can still be introduced using the SERVER command.
             # <- :services.int SERVER a.bc 2 :(H) [GL] a

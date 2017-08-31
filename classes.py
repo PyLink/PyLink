@@ -468,16 +468,13 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
         if not userobj:
             return False
 
-        # Look for the "service" attribute in the User object, if one exists.
-        try:
-            sname = userobj.service
-            # Warn if the service name we fetched isn't a registered service.
-            if sname not in world.services.keys():
-                log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
-                            "exist (%s)!", self.name, uid, userobj.nick, sname)
-            return world.services.get(sname)
-        except AttributeError:
-            return False
+        # Look for the "service" attribute in the User object,sname = userobj.service
+        # Warn if the service name we fetched isn't a registered service.
+        sname = userobj.service
+        if sname is not None and sname not in world.services.keys():
+            log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
+                        "exist (%s)!", self.name, uid, userobj.nick, sname)
+        return world.services.get(sname)
 
 structures._BLACKLISTED_COPY_TYPES.append(PyLinkNetworkCore)
 
@@ -1596,6 +1593,9 @@ class User():
         # Cloaked host for IRCds that use it
         self.cloaked_host = None
 
+        # Stores service bot name if applicable
+        self.service = None
+
     def __repr__(self):
         return 'User(%s/%s)' % (self.uid, self.nick)
 IrcUser = User
@@ -1618,6 +1618,9 @@ class Server():
         self.name = name.lower()
         self.desc = desc
         self._irc = irc
+
+        # Has the server finished bursting yet?
+        self.has_eob = False
 
     def __repr__(self):
         return 'Server(%s)' % self.name

@@ -229,25 +229,31 @@ class NgIRCdProtocol(IRCS2SProtocol):
             raise LookupError('No such PyLink client exists.')
         log.debug('(%s) sjoin: got %r for users', self.name, users)
 
-        njoin_prefix = ':%s NJOIN %s :' % (self._expandPUID(self.sid), channel)
+        njoin_prefix = ':%s NJOIN %s :' % (self._expandPUID(server), channel)
         # Format the user list into strings such as @user1, +user2, user3, etc.
-        nicks_to_send = ['%s%s' % (''.join(self.prefixmodes[modechar] for modechar in userpair[0] if modechar in self.prefixmodes),
-                                   self._expandPUID(userpair[1])) for userpair in users]
-
-        # Use 13 args max per line: this is equal to the max of 15 minus the command name and target channel.
-        for message in utils.wrapArguments(njoin_prefix, nicks_to_send, self.S2S_BUFSIZE, separator=',', max_args_per_line=13):
-            self.send(message)
-
-        # Add the affected users to our state.
+        nicks_to_send = []
         for userpair in users:
-            uid = userpair[1]
+            prefixes, uid = userpair
+
+            if uid not in self.users:
+                log.warning('(%s) Trying to NJOIN missing user %s?', self.name, uid)
+                continue
+            elif uid in self._channels[channel].users:
+                # Don't rejoin users already in the channel, this causes errors with ngIRCd.
+                continue
+
             self._channels[channel].users.add(uid)
-            try:
-                self.users[uid].channels.add(channel)
-            except KeyError:  # Not initialized yet?
-                log.warning("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.name, channel, uid)
+            self.users[uid].channels.add(channel)
 
             self.apply_modes(channel, (('+%s' % prefix, uid) for prefix in userpair[0]))
+
+            nicks_to_send.append(''.join(self.prefixmodes[modechar] for modechar in userpair[0]) + \
+                                 self._expandPUID(userpair[1]))
+
+        if nicks_to_send:
+            # Use 13 args max per line: this is equal to the max of 15 minus the command name and target channel.
+            for message in utils.wrapArguments(njoin_prefix, nicks_to_send, self.S2S_BUFSIZE, separator=',', max_args_per_line=13):
+                self.send(message)
 
         if modes:
             # Burst modes separately if there are any.
@@ -504,16 +510,20 @@ class NgIRCdProtocol(IRCS2SProtocol):
         assert 'IRC+' in args[1], "Linking to non-ngIRCd server using this protocol module is not supported"
 
     def handle_ping(self, source, command, args):
-        if source == self.uplink:
-            self._send_with_prefix(self.sid, 'PONG %s :%s' % (self._expandPUID(self.sid), args[-1]), queue=False)
+        """
+        Handles incoming PINGs (and implicit end of burst).
+        """
+        self._send_with_prefix(self.sid, 'PONG %s :%s' % (self._expandPUID(self.sid), args[-1]), queue=False)
 
-            if not self.has_eob:
-                # Treat the first PING we receive as end of burst.
-                self.has_eob = True
+        if not self.servers[source].has_eob:
+            # Treat the first PING we receive as end of burst.
+            self.servers[source].has_eob = True
+
+            if source == self.uplink:
                 self.connected.set()
 
-                # Return the endburst hook.
-                return {'parse_as': 'ENDBURST'}
+            # Return the endburst hook.
+            return {'parse_as': 'ENDBURST'}
 
     def handle_server(self, source, command, args):
         """
