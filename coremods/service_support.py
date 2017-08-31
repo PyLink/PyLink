@@ -22,10 +22,11 @@ def spawn_service(irc, source, command, args):
     # Get the ServiceBot object.
     sbot = world.services[name]
 
-    if name == 'pylink' and irc.pseudoclient:
-        # irc.pseudoclient already exists, for protocols like clientbot
-        log.debug('(%s) spawn_service: Using existing nick %r for service %r', irc.name, irc.pseudoclient.nick, name)
-        userobj = irc.pseudoclient
+    old_userobj = irc.users.get(sbot.uids.get(irc.name))
+    if old_userobj and old_userobj.service:
+        # A client already exists, so reuse it.
+        log.debug('(%s) spawn_service: Using existing nick %r for service %r', irc.name, old_userobj.nick, name)
+        userobj = old_userobj
         userobj.opertype = "PyLink Service"
         userobj.manipulatable = sbot.manipulatable
     else:
