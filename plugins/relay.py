@@ -676,7 +676,10 @@ def relay_joins(irc, channel, users, ts, **kwargs):
                 if not irc.has_cap('has-ts'):
                     # Special hack for clientbot: just use the remote's modes so mode changes
                     # take precendence. (TS is always outside the clientbot's control)
-                    ts = remoteirc.channels[remotechan].ts
+                    if remotechan in remoteirc.channels:
+                        ts = remoteirc.channels[remotechan].ts
+                    else:
+                        ts = int(time.time())
                 else:
                     ts = irc.channels[channel].ts
                 prefixes = get_prefix_modes(irc, remoteirc, channel, user)
