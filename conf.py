@@ -144,6 +144,6 @@ def getDatabaseName(dbname):
     if this is called from an instance running as './pylink testing.yml', it
     would return '<dbname>-testing.db'."""
     if confname != 'pylink':
-        dbname += '-%s' % conf.confname
+        dbname += '-%s' % confname
     dbname += '.db'
     return dbname
