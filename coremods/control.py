@@ -11,8 +11,6 @@ from pylinkirc import world, utils, conf  # Do not import classes, it'll import 
 from pylinkirc.log import log, makeFileLogger, stopFileLoggers, getConsoleLogLevel
 from . import permissions
 
-tried_shutdown = False
-
 def remove_network(ircobj):
     """Removes a network object from the pool."""
     # Disable autoconnect first by setting the delay negative.
@@ -57,12 +55,11 @@ atexit.register(_kill_plugins)
 
 def shutdown(irc=None):
     """Shuts down the Pylink daemon."""
-    global tried_shutdown
-    if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
+    if world.shutting_down.is_set():  # We froze on shutdown last time, so immediately abort.
         _print_remaining_threads()
         raise KeyboardInterrupt("Forcing shutdown.")
 
-    tried_shutdown = True
+    world.shutting_down.set()
 
     # HACK: run the _kill_plugins trigger with the current IRC object. XXX: We should really consider removing this
     # argument, since no plugins actually use it to do anything.

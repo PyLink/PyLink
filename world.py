@@ -22,7 +22,12 @@ exttarget_handlers = {}
 
 # Trigger to be set when all IRC objects are initially created.
 started = threading.Event()
+
+# Global daemon starting time.
 start_ts = time.time()
+
+# Trigger to set on shutdown.
+shutting_down = threading.Event()
 
 # Source address.
 source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!

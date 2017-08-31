@@ -26,7 +26,6 @@ except ImportError:
 
 from . import world, utils, structures, conf, __version__
 from .log import *
-from .coremods import control
 from .utils import ProtocolError  # Compatibility with PyLink 1.x
 
 ### Internal classes (users, servers, channels)
@@ -1265,7 +1264,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def _log_connection_error(self, *args, **kwargs):
         # Log connection errors to ERROR unless were shutting down (in which case,
         # the given text goes to DEBUG).
-        if self._aborted.is_set() or control.tried_shutdown:
+        if self._aborted.is_set() or world.shutting_down.is_set():
             log.debug(*args, **kwargs)
         else:
             log.error(*args, **kwargs)
