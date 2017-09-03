@@ -206,7 +206,7 @@ def get_prefix_modes(irc, remoteirc, channel, user, mlist=None):
     """
     modes = ''
 
-    if user in irc.channels[channel].users:
+    if channel in irc.channels and user in irc.channels[channel].users:
         # Iterate over the the prefix modes for relay supported by the remote IRCd.
         # Note: reverse the order so prefix modes are bursted in their traditional order
         # (e.g. owner before op before halfop). TODO: SJOIN modes should probably be
@@ -1072,7 +1072,7 @@ def handle_join(irc, numeric, command, args):
     users = set(args['users'])
 
     claim_passed = check_claim(irc, channel, numeric)
-    current_chandata = irc.channels[channel]
+    current_chandata = irc.channels.get(channel)
     chandata = args.get('channeldata')
     log.debug('(%s) relay.handle_join: claim for %s on %s: %s', irc.name, numeric, channel, claim_passed)
     log.debug('(%s) relay.handle_join: old channel data %s', irc.name, chandata)
@@ -1092,7 +1092,11 @@ def handle_join(irc, numeric, command, args):
             except KeyError:
                 # User was never in channel. Treat their mode list as empty.
                 oldmodes = set()
-            newmodes = set(current_chandata.get_prefix_modes(user))
+
+            newmodes = set()
+            if current_chandata is not None:
+                newmodes = set(current_chandata.get_prefix_modes(user))
+
             modediff = newmodes - oldmodes
             log.debug('(%s) relay.handle_join: mode diff for %s on %s: %s oldmodes=%s newmodes=%s',
                       irc.name, user, channel, modediff, oldmodes, newmodes)
