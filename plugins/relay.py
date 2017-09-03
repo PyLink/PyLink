@@ -1348,7 +1348,7 @@ def handle_messages(irc, numeric, command, args):
             return
 
 for cmd in ('PRIVMSG', 'NOTICE', 'PYLINK_SELF_NOTICE', 'PYLINK_SELF_PRIVMSG'):
-    utils.add_hook(handle_messages, cmd)
+    utils.add_hook(handle_messages, cmd, priority=500)
 
 def handle_kick(irc, source, command, args):
     channel = args['channel']
