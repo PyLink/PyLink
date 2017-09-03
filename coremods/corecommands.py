@@ -157,8 +157,9 @@ def unload(irc, source, args):
                         del world.services['pylink'].commands[cmdname]
 
         # Remove any command hooks set by the plugin.
-        for hookname, hookfuncs in world.hooks.copy().items():
-            for hookfunc in hookfuncs:
+        for hookname, hookpairs in world.hooks.copy().items():
+            for hookpair in hookpairs:
+                hookfunc = hookpair[1]
                 if hookfunc.__module__ == modulename:
                     world.hooks[hookname].remove(hookfunc)
                     # If the hookfuncs list is empty, remove it.

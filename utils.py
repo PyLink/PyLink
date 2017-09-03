@@ -44,10 +44,15 @@ def add_cmd(func, name=None, **kwargs):
     world.services['pylink'].add_cmd(func, name=name, **kwargs)
     return func
 
-def add_hook(func, command):
-    """Binds a hook function to the given command name."""
+def add_hook(func, command, priority=100):
+    """
+    Binds a hook function to the given command name.
+
+    A custom priority can also be given (defaults to 100), and hooks with
+    higher priority values will be called first."""
     command = command.upper()
-    world.hooks[command].append(func)
+    world.hooks[command].append((priority, func))
+    world.hooks[command].sort(key=lambda pair: pair[0], reverse=True)
     return func
 
 # DEPRECATED
