@@ -2,7 +2,7 @@
 
 In PyLink, **extended targets** or **exttargets** *replace* regular hostmasks with conditional matching based on specific situations. PyLink exttargets are supported by most plugins in the place of `nick!user@host` masks (provided they use the `IRCNetwork.match_host()` API with a user object).
 
-Exttargets were introduced in PyLink 0.9 alongside [Automode](automode.md), with the goal of making user/ACL matching more versatile. As of PyLink 1.2-alpha2, the following exttargets are supported:
+Exttargets were introduced in PyLink 0.9 alongside [Automode](automode.md), with the goal of making user/ACL matching more versatile. As of PyLink 2.0-dev, the following exttargets are supported:
 
 ### The "$account" target (PyLink 0.9+)
 Used to match users by their services account.
