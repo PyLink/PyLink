@@ -224,6 +224,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         if utils.isChannel(target):
 
+            modes = list(modes)  # Needed for indexing
             # Make sure we expand any PUIDs when sending outgoing modes...
             for idx, mode in enumerate(modes):
                 if mode[0][-1] in self.irc.prefixmodes:
