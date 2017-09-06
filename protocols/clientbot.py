@@ -958,5 +958,26 @@ class ClientbotWrapperProtocol(Protocol):
         self.quit(source, args[0])
         return {'text': args[0]}
 
+    def handle_404(self, source, command, args):
+        """
+        Handles ERR_CANNOTSENDTOCHAN and other similar numerics.
+        """
+        # <- :some.server 404 james #test :Cannot send to channel
+        if len(args) >= 2 and utils.isChannel(args[1]):
+            channel = args[1]
+            f = log.warning
+
+            # Don't sent the warning multiple times to prevent flood if the target
+            # is a log chan.
+            if hasattr(self.irc.channels[channel], '_clientbot_cannot_send_warned'):
+                f = log.debug
+            f('(%s) Failed to send message to %s: %s', self.irc.name, channel, args[-1])
+
+            self.irc.channels[channel]._clientbot_cannot_send_warned = True
+
+    # 408: ERR_NOCOLORSONCHAN on Bahamut, ERR_NOCTRLSONCHAN on Hybrid
+    handle_408 = handle_404
+    # 492: ERR_NOCTCP on Hybrid
+    handle_492 = handle_404
 
 Class = ClientbotWrapperProtocol
