@@ -201,7 +201,7 @@ def realname(irc, host, uid):
     $realname exttarget handler. This takes one argument: a glob, which is compared case-insensitively to the user's real name.
 
     Examples:
-    $realname:*James*: matches anyone with "James" in their real name.
+    $realname:*James* -> matches anyone with "James" in their real name.
     """
     groups = host.split(':')
     if len(groups) >= 2:
