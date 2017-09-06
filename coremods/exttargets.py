@@ -206,3 +206,21 @@ def realname(irc, host, uid):
     groups = host.split(':')
     if len(groups) >= 2:
         return irc.match_host(groups[1], irc.users[uid].realname)
+
+@bind
+def service(irc, host, uid):
+    """
+    $service exttarget handler. This takes one optional argument: a glob, which is compared case-insensitively to the target user's service name (if present).
+
+    Examples:
+    $service -> Matches any PyLink service bot.
+    $service:automode -> Matches the Automode service bot.
+    """
+    if not irc.users[uid].service:
+        return False
+
+    groups = host.split(':')
+
+    if len(groups) >= 2:
+        return irc.match_host(groups[1], irc.users[uid].service)
+    return True  # It *is* a service bot because of the check at the top.

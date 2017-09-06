@@ -64,3 +64,9 @@ Used to match users logged in to *PyLink* (i.e. via the `identify` command).
 Used to match users with certain realnames.
 
 - `$realname:*James*`: matches anyone with "James" in their real name (case insensitive).
+
+### The "$service" target (PyLink 2.0+)
+Used to match service bots. This exttarget takes one optional argument: a glob, which is compared case-insensitively to the target user's service name if present.
+
+- `$service`: matches any PyLink service bot.
+- `$service:automode`: matches the Automode service bot.
