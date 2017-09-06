@@ -55,20 +55,11 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 
 3) Download or copy https://github.com/GLolol/PyLink/blob/master/example-conf.yml for an example configuration.
 
-### Installing via Debian APT repository (8/Jessie+ and above)
-
-[The Utopia Repository](https://packages.overdrivenetworks.com/) hosts unofficial Debian packages for PyLink, which are available for Jessie and Stretch/unstable. Two versions of the `pylink` package are available:
-
-- The latest stable release and its dependencies are available in the `main` section of the corresponding Debian version (e.g. [`jessie/main`)](https://packages.overdrivenetworks.com/jessie_list.html).
-- Nightly builds of the PyLink `devel` branch are available in the corresponding `nightlies` section (e.g. [`jessie-nightlies/main`](https://packages.overdrivenetworks.com/jessie-nightlies_list.html))
-
-See https://packages.overdrivenetworks.com/ for setup instructions.
-
-Upon installing `pylink`, example configuration and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/) through the `pylink-doc` package.
-
 ### Installing via Ubuntu PPA (14.04/Trusty and above)
 
-Unofficial Ubuntu packages for PyLink are available via two PPAs for Ubuntu 14.04 LTS (trusty) and above. Like with the Debian installation, example configuration and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively.
+Unofficial Ubuntu packages for PyLink are available via two PPAs for Ubuntu 14.04 LTS (trusty) and above.
+
+Upon installing the `pylink` package, example configuration and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/) through the `pylink-doc` package.
 
 - Stable releases: [PyLink Stable PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink)
 - Nightly builds (devel branch): [PyLink Nightly Builds PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink-nightly)
