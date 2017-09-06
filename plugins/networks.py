@@ -89,12 +89,16 @@ def remote(irc, source, args):
     try:
         remoteirc = world.networkobjects[netname]
     except KeyError:  # Unknown network.
-        irc.error('No such network "%s" (case sensitive).' % netname)
+        irc.error('No such network %r (case sensitive).' % netname)
         REMOTE_IN_USE.clear()
         return
 
     if args.service not in world.services:
         irc.error('Unknown service %r.' % args.service)
+        REMOTE_IN_USE.clear()
+        return
+    elif not remoteirc.connected.is_set():
+        irc.error('Network %r is not connected.' % netname)
         REMOTE_IN_USE.clear()
         return
 
