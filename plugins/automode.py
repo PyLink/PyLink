@@ -106,18 +106,19 @@ def match(irc, channel, uids=None):
                 log.debug("(%s) automode: Filtered mode list of %s to %s (protocol:%s)",
                           irc.name, modes, outgoing_modes, irc.protoname)
 
-    # If the Automode bot is missing, send the mode through the PyLink server.
-    if modebot_uid not in irc.users:
-        modebot_uid = irc.sid
+    if outgoing_modes:
+        # If the Automode bot is missing, send the mode through the PyLink server.
+        if modebot_uid not in irc.users:
+            modebot_uid = irc.sid
 
-    log.debug("(%s) automode: sending modes from modebot_uid %s",
-              irc.name, modebot_uid)
+        log.debug("(%s) automode: sending modes from modebot_uid %s",
+                  irc.name, modebot_uid)
 
-    irc.proto.mode(modebot_uid, channel, outgoing_modes)
+        irc.proto.mode(modebot_uid, channel, outgoing_modes)
 
-    # Create a hook payload to support plugins like relay.
-    irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
-                  {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
+        # Create a hook payload to support plugins like relay.
+        irc.callHooks([modebot_uid, 'AUTOMODE_MODE',
+                      {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
 
 def handle_join(irc, source, command, args):
     """
