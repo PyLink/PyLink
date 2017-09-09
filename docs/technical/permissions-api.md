@@ -2,7 +2,7 @@
 
 Permissions were introduced in PyLink 1.0 as a way for plugins to manage command access, replacing the old `irc.checkAuthenticated()`. The permissions system in PyLink is fairly simple, globally assigning a list of permissions to each hostmask/exttarget.
 
-Permissions conventionally take the format `pluginname.commandname.optional_extra_portion(s)`, and support globs**\*** in matching. Permission nodes are case-insensitive and casemapping aware, but are defined as being all lowercase for consistency.
+Permissions conventionally take the format `pluginname.commandname.optional_extra_portion(s)`, and support globs† in matching. Permission nodes are case-insensitive and casemapping aware, but are defined as being all lowercase for consistency.
 
 The permissions module is available as `pylinkirc.coremods.permissions`. Usually, plugins import it this format:
 
@@ -10,7 +10,7 @@ The permissions module is available as `pylinkirc.coremods.permissions`. Usually
 from pylinkirc.coremods import permissions
 ```
 
-**\*** The globbing used by the permissions module is just generic IRC-style globbing. For example, anyone with `*`, `perm.*`, `perm.?`, `*.1`, etc. in their permissions list will be allowed to use a command checking for a permission named `perm.1`.
+† The globbing used by the permissions module is just generic IRC-style globbing. For example, anyone with `*`, `perm.*`, `perm.?`, `*.1`, etc. in their permissions list will be allowed to use a command checking for a permission named `perm.1`.
 
 ## Checking for permissions
 
