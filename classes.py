@@ -90,20 +90,27 @@ class Irc(utils.DeprecatedAttributesObject):
         """
         try:
             channels = conf.conf['logging']['channels'][self.name]
-        except KeyError:  # Not set up; just ignore.
+        except (KeyError, TypeError):  # Not set up; just ignore.
             return
 
         log.debug('(%s) Setting up channel logging to channels %r', self.name,
                   channels)
 
+        # Only create handlers if they haven't already been set up.
         if not self.loghandlers:
-            # Only create handlers if they haven't already been set up.
+            if not isinstance(channels, dict):
+                log.warning('(%s) Got invalid channel logging configuration %r; are your indentation '
+                            'and block commenting consistent?', self.name, channels)
+                return
 
             for channel, chandata in channels.items():
                 # Fetch the log level for this channel block.
                 level = None
-                if chandata is not None:
+                if isinstance(chandata, dict):
                     level = chandata.get('loglevel')
+                else:
+                    log.warning('(%s) Got invalid channel logging pair %r: %r; are your indentation '
+                                'and block commenting consistent?', self.name, filename, config)
 
                 handler = PyLinkChannelLogger(self, channel, level=level)
                 self.loghandlers.append(handler)

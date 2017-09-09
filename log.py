@@ -87,7 +87,11 @@ def stopFileLoggers():
 files = conf.conf['logging'].get('files')
 if files:
     for filename, config in files.items():
-        makeFileLogger(filename, config.get('loglevel'))
+        if isinstance(config, dict):
+            makeFileLogger(filename, config.get('loglevel'))
+        else:
+            log.warning('Got invalid file logging pair %r: %r; are your indentation and block '
+                        'commenting consistent?', filename, config)
 
 log.debug("log: Emptying log_queue")
 # Process and empty the log queue
