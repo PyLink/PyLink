@@ -885,7 +885,7 @@ class P10Protocol(IRCS2SProtocol):
 
             self.check_cloak_change(uid)
 
-            return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
+            return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip, 'parse_as': 'UID'}
 
         else:
             # <- ABAAA N GL_ 1460753763
