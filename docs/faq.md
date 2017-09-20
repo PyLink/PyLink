@@ -66,10 +66,6 @@ However, if the nick mentioned is legal on IRC, this issue is likely caused by a
 
 Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c/example-conf.yml#L303-L306
 
-Also, make sure that nothing is blocking the Clientbot from actually sending text, such as blockcolor/regmoderated modes or bans. Temporarily setting the PyLink log level to DEBUG can assist in debugging.
-
-Future PyLink versions will have better handling for these errors; see https://github.com/GLolol/PyLink/issues/497.
-
 ### Relay is occasionally dropping users from channels!
 
 This usually indicates a serious bug in either Relay or PyLink's protocol modules, and should be reported as an issue. When asking for help, please state which IRCds your PyLink instance is linking to: specifically, which IRCd the missing users are *from* and which IRCd the users are missing *on*. Also, be prepared to send debug logs as you reproduce the issue!
