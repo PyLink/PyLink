@@ -41,8 +41,8 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
 2) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
 
 3) Pick your branch.
-    * By default you'll be on the **master** (stable) branch, which is mostly bugfix only (except when a new stable release is introduced). This means that new features or more intensive bug fixes may not always be included.
-    * Instead, the **devel** (pre-release) branch is where active development goes, and it can be accessed by running `git checkout devel` in your Git tree.
+    * By default you'll be on the **master** branch, which contains the latest stable code. This branch is recommended for production networks that don't require new features or intensive bug fixes as they are developed.
+    * The **devel** branch is where active development goes, and it can be accessed by running `git checkout devel` in your Git tree.
 
 4) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
     * Note: `--user` is a *literal* string; *do not* replace it with your username.
