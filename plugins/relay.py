@@ -467,6 +467,7 @@ def initialize_channel(irc, channel):
     log.debug('(%s) relay.initialize_channel: relay pair found to be %s', irc.name, relay)
     queued_users = []
     if relay:
+        # Only allow one thread to initialize channels at a time.
         if relay in channels_init_in_progress and channels_init_in_progress[relay].is_set():
             log.debug('(%s) relay.initialize_channel: skipping init of %s since another one is in progress', irc.name, relay)
             return
