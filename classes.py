@@ -233,7 +233,7 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
                   command, hook_cmd)
 
         # Iterate over registered hook functions, catching errors accordingly.
-        for hook_pair in world.hooks[hook_cmd]:
+        for hook_pair in world.hooks[hook_cmd].copy():
             hook_func = hook_pair[1]
             try:
                 log.debug('(%s) Calling hook function %s from plugin "%s"', self.name,
