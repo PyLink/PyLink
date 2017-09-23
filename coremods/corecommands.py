@@ -161,9 +161,10 @@ def unload(irc, source, args):
             for hookpair in hookpairs:
                 hookfunc = hookpair[1]
                 if hookfunc.__module__ == modulename:
-                    world.hooks[hookname].remove(hookfunc)
+                    log.debug('Trying to remove hook func %s (%s) from plugin %s', hookfunc, hookname, modulename)
+                    world.hooks[hookname].remove(hookpair)
                     # If the hookfuncs list is empty, remove it.
-                    if not hookfuncs:
+                    if not hookpairs:
                         del world.hooks[hookname]
 
         # Call the die() function in the plugin, if present.
