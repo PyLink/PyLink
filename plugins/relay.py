@@ -17,6 +17,7 @@ relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.RLock)
 spawnlocks_servers = defaultdict(threading.RLock)
+channels_init_in_progress = defaultdict(threading.Event)
 
 dbname = conf.getDatabaseName('pylinkrelay')
 datastore = structures.PickleDataStore('pylinkrelay', dbname)
@@ -458,6 +459,7 @@ def get_remote_channel(irc, remoteirc, channel):
 
 def initialize_channel(irc, channel):
     """Initializes a relay channel (merge local/remote users, set modes, etc.)."""
+
     # We're initializing a relay that already exists. This can be done at
     # ENDBURST, or on the LINK command.
     relay = get_relay(irc, channel)
@@ -465,41 +467,49 @@ def initialize_channel(irc, channel):
     log.debug('(%s) relay.initialize_channel: relay pair found to be %s', irc.name, relay)
     queued_users = []
     if relay:
-        all_links = db[relay]['links'].copy()
-        all_links.update((relay,))
-        log.debug('(%s) relay.initialize_channel: all_links: %s', irc.name, all_links)
+        if relay in channels_init_in_progress and channels_init_in_progress[relay].is_set():
+            log.debug('(%s) relay.initialize_channel: skipping init of %s since another one is in progress', irc.name, relay)
+            return
 
-        # Iterate over all the remote channels linked in this relay.
-        for link in all_links:
-            remotenet, remotechan = link
-            if remotenet == irc.name:  # If the network is us, skip.
-                continue
-            remoteirc = world.networkobjects.get(remotenet)
+        channels_init_in_progress[relay].set()
+        try:
+            all_links = db[relay]['links'].copy()
+            all_links.update((relay,))
+            log.debug('(%s) relay.initialize_channel: all_links: %s', irc.name, all_links)
 
-            if remoteirc is None:
-                # Remote network doesn't have an IRC object; e.g. it was removed
-                # from the config. Skip this.
-                continue
+            # Iterate over all the remote channels linked in this relay.
+            for link in all_links:
+                remotenet, remotechan = link
+                if remotenet == irc.name:  # If the network is us, skip.
+                    continue
+                remoteirc = world.networkobjects.get(remotenet)
 
-            if not (remoteirc.connected.is_set() and get_remote_channel(remoteirc, irc, remotechan)):
-                continue  # Remote network isn't connected.
+                if remoteirc is None:
+                    # Remote network doesn't have an IRC object; e.g. it was removed
+                    # from the config. Skip this.
+                    continue
 
-            # Join their (remote) users and set their modes, if applicable.
-            if remotechan in remoteirc.channels:
-                rc = remoteirc.channels[remotechan]
-                relay_joins(remoteirc, remotechan, rc.users, rc.ts)
+                if not (remoteirc.connected.is_set() and get_remote_channel(remoteirc, irc, remotechan)):
+                    continue  # Remote network isn't connected.
 
-                # Only update the topic if it's different from what we already have,
-                # and topic bursting is complete.
-                if rc.topicset and rc.topic != irc.channels[channel].topic:
-                    irc.topic_burst(irc.sid, channel, rc.topic)
+                # Join their (remote) users and set their modes, if applicable.
+                if remotechan in remoteirc.channels:
+                    rc = remoteirc.channels[remotechan]
+                    relay_joins(remoteirc, remotechan, rc.users, rc.ts)
 
-        # Send our users and channel modes to the other nets
-        if channel in irc.channels:
-            relay_joins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
+                    # Only update the topic if it's different from what we already have,
+                    # and topic bursting is complete.
+                    if rc.topicset and rc.topic != irc.channels[channel].topic:
+                        irc.topic_burst(irc.sid, channel, rc.topic)
 
-        if 'pylink' in world.services:
-            world.services['pylink'].join(irc, channel)
+            # Send our users and channel modes to the other nets
+            if channel in irc.channels:
+                relay_joins(irc, channel, irc.channels[channel].users, irc.channels[channel].ts)
+
+            if 'pylink' in world.services:
+                world.services['pylink'].join(irc, channel)
+        finally:
+            channels_init_in_progress[relay].clear()
 
 def remove_channel(irc, channel):
     """Destroys a relay channel by parting all of its users."""
