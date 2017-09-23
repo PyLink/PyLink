@@ -1542,6 +1542,10 @@ def handle_mode(irc, numeric, command, args):
 
                             # Convert UIDs to nicks when relaying this to clientbot.
                             modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
+                        elif modepair[0][-1] in irc.cmodes['*A'] and irc.is_hostmask(modepair[1]) and \
+                                conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower() != 'none':
+                            # Don't show bans if the ban is a simple n!u@h and modesync is enabled
+                            continue
                         friendly_modes.append(modepair)
 
                     if friendly_modes:
