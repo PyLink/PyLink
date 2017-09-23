@@ -27,7 +27,7 @@ def p10b64encode(num, length=2):
     """
     # Pack the given number as an unsigned int.
     sidbytes = struct.pack('>I', num)[1:]
-    sid = base64.b64encode(sidbytes, b'[]')[-2:]
+    sid = base64.b64encode(sidbytes, b'[]')[-length:]
     return sid.decode()  # Return a string, not bytes.
 
 class P10SIDGenerator():
@@ -241,6 +241,28 @@ class P10Protocol(IRCS2SProtocol):
                 ip = '0' + ip
             return ip
 
+    @staticmethod
+    def encode_p10_ipv6(ip):
+        """Encodes a P10 IPv6 address."""
+        # This method is documented briefly at https://github.com/evilnet/nefarious2/blob/47c8bea/doc/p10.txt#L723
+        # Basically, each address chunk is encoded into a 3-length word, with :: replaced by _
+        # e.g. '1:2::3' -> AABAAC_AAD
+        #      '::1' -> AAA_AAB
+        ipbits = []
+        for ipbit in ip.split(':'):
+            if not ipbit:
+                # split() creates an empty string between the two colons in "::" if it exists
+                # Use this to our advantage here.
+                ipbits.append('_')
+            else:
+                ipbit = int(ipbit, base=16)
+                ipbits.append(p10b64encode(ipbit, length=3))
+
+        encoded_ip = ''.join(ipbits)
+        if encoded_ip.startswith('_'):  # Special case for ::1, as "__AAA" is probably invalid
+            encoded_ip = 'AAA' + encoded_ip
+        return encoded_ip
+
     ### COMMANDS
 
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -288,11 +310,14 @@ class P10Protocol(IRCS2SProtocol):
 
         # Encode IPs when sending
         if ip_address(ip).version == 4:
-            # Thanks to Jobe @ evilnet for the tips here! -GL
+            # Thanks to Jobe for the tips here!
             ip = b'\x00\x00' + socket.inet_aton(ip)
             b64ip = base64.b64encode(ip, b'[]')[2:].decode()
-        else:  # TODO: propagate IPv6 address, but only if uplink supports it
-            b64ip = 'AAAAAA'
+        else:  # Propagate IPv6 address, but only if uplink supports it
+            if '6' in self._flags:
+                b64ip = self.encode_p10_ipv6(ip)
+            else:
+                b64ip = 'AAAAAA'
 
         self._send_with_prefix(server, "N {nick} 1 {ts} {ident} {host} {modes} {ip} {uid} "
                    ":{realname}".format(ts=ts, host=host, nick=nick, ident=ident, uid=uid,
@@ -780,6 +805,8 @@ class P10Protocol(IRCS2SProtocol):
 
         desc = self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
 
+        self._flags = []
+
         # Enumerate modes, from https://github.com/evilnet/nefarious2/blob/master/doc/modes.txt
         p10_ircd = self.serverdata.get('p10_ircd', 'nefarious').lower()
         if p10_ircd == 'nefarious':
@@ -846,6 +873,7 @@ class P10Protocol(IRCS2SProtocol):
         sid = args[5][:2]
         sdesc = args[-1]
         self.servers[sid] = Server(self, source, servername, desc=sdesc)
+        self._flags = list(args[6])[1:]
 
         if self.uplink is None:
             # If we haven't already found our uplink, this is probably it.
