@@ -97,7 +97,8 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # Grab our server token; this is used instead of server name to denote where the client is.
         server_token = server.rsplit('@')[-1]
         # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
-        self._send_with_prefix(server, 'NICK %s 1 %s %s %s %s :%s' % (nick, ident, host, server_token, self.join_modes(modes), realname))
+        self._send_with_prefix(server, 'NICK %s %s %s %s %s %s :%s' % (nick, self.servers[server].hopcount,
+                               ident, host, server_token, self.join_modes(modes), realname))
         return userobj
 
     def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
@@ -130,8 +131,8 @@ class NgIRCdProtocol(IRCS2SProtocol):
         # We need to store a server token to introduce clients on the right server. Since this is just
         # a number, we can simply use the counter in our PSID generator for this.
         server_token = sid.rsplit('@')[-1]
-        self._send_with_prefix(uplink, 'SERVER %s 1 %s :%s' % (name, server_token, desc))
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
+        self._send_with_prefix(uplink, 'SERVER %s %s %s :%s' % (name, self.servers[sid].hopcount, server_token, desc))
         return sid
 
     def away(self, source, text):

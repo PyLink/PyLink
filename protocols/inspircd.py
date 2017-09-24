@@ -56,17 +56,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         realname = realname or conf.conf['bot']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
         self._send_with_prefix(server, "UID {uid} {ts} {nick} {realhost} {host} {ident} {ip}"
-                        " {ts} {modes} + :{realname}".format(ts=ts, host=host,
-                                                 nick=nick, ident=ident, uid=uid,
-                                                 modes=raw_modes, ip=ip, realname=realname,
-                                                 realhost=realhost))
+                               " {ts} {modes} + :{realname}".format(ts=ts, host=host,
+                               nick=nick, ident=ident, uid=uid,
+                               modes=raw_modes, ip=ip, realname=realname,
+                               realhost=realhost))
         if ('o', None) in modes or ('+o', None) in modes:
             self._oper_up(uid, opertype)
         return u
@@ -355,8 +355,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
         if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
-        self._send_with_prefix(uplink, 'SERVER %s * 1 %s :%s' % (name, sid, desc))
+
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
+        self._send_with_prefix(uplink, 'SERVER %s * %s %s :%s' % (name, self.servers[sid].hopcount, sid, desc))
 
         def endburstf():
             # Delay ENDBURST by X seconds if requested.

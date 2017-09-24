@@ -319,10 +319,10 @@ class P10Protocol(IRCS2SProtocol):
             else:
                 b64ip = 'AAAAAA'
 
-        self._send_with_prefix(server, "N {nick} 1 {ts} {ident} {host} {modes} {ip} {uid} "
-                   ":{realname}".format(ts=ts, host=host, nick=nick, ident=ident, uid=uid,
-                                        modes=raw_modes, ip=b64ip, realname=realname,
-                                        realhost=realhost))
+        self._send_with_prefix(server, "N {nick} {hopcount} {ts} {ident} {host} {modes} {ip} {uid} "
+                                       ":{realname}".format(ts=ts, host=host, nick=nick, ident=ident, uid=uid,
+                                                            modes=raw_modes, ip=b64ip, realname=realname,
+                                                            realhost=realhost, hopcount=self.servers[server].hopcount))
         return u
 
     def away(self, source, text):
@@ -696,10 +696,10 @@ class P10Protocol(IRCS2SProtocol):
         if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
 
-        self._send_with_prefix(uplink, 'SERVER %s 1 %s %s P10 %s]]] +h6 :%s' % \
-                   (name, self.start_ts, int(time.time()), sid, desc))
-
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
+        self._send_with_prefix(uplink, 'SERVER %s %s %s %s P10 %s]]] +h6 :%s' % \
+                   (name, self.servers[sid].hopcount, self.start_ts, int(time.time()), sid, desc))
+
         return sid
 
     def squit(self, source, target, text='No reason given'):

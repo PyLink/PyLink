@@ -58,11 +58,11 @@ class TS6Protocol(TS6BaseProtocol):
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
-        self._send_with_prefix(server, "EUID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
-                "{realhost} * :{realname}".format(ts=ts, host=host,
-                nick=nick, ident=ident, uid=uid,
-                modes=raw_modes, ip=ip, realname=realname,
-                realhost=realhost))
+        self._send_with_prefix(server, "EUID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
+                               "{realhost} * :{realname}".format(ts=ts, host=host,
+                               nick=nick, ident=ident, uid=uid,
+                               modes=raw_modes, ip=ip, realname=realname,
+                               realhost=realhost, hopcount=self.servers[server].hopcount))
 
         return u
 

@@ -169,6 +169,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         uplink = uplink or self.sid
         name = name.lower()
         desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
@@ -181,8 +182,9 @@ class TS6BaseProtocol(IRCS2SProtocol):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
         if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
-        self._send_with_prefix(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
+
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
+        self._send_with_prefix(uplink, 'SID %s %s %s :%s' % (name, self.servers[sid].hopcount, sid, desc))
         return sid
 
     def away(self, source, text):

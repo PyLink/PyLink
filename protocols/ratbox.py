@@ -77,10 +77,11 @@ class RatboxProtocol(TS6Protocol):
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
-        self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+        self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
                                ":{realname}".format(ts=ts, host=host,
                                nick=nick, ident=ident, uid=uid,
-                               modes=raw_modes, ip=ip, realname=realname))
+                               modes=raw_modes, ip=ip, realname=realname,
+                               hopcount=self.servers[server].hopcount))
 
         if orig_realhost:
             # If real host is specified, send it using ENCAP REALHOST

@@ -93,11 +93,12 @@ class UnrealProtocol(TS6BaseProtocol):
             encoded_ip = encoded_ip.strip().decode()
 
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
-        self._send_with_prefix(server, "UID {nick} 0 {ts} {ident} {realhost} {uid} 0 {modes} "
-                           "{host} * {ip} :{realname}".format(ts=ts, host=host,
-                                nick=nick, ident=ident, uid=uid,
-                                modes=raw_modes, realname=realname,
-                                realhost=realhost, ip=encoded_ip))
+        self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {ident} {realhost} {uid} 0 {modes} "
+                               "{host} * {ip} :{realname}".format(ts=ts, host=host,
+                               nick=nick, ident=ident, uid=uid,
+                               modes=raw_modes, realname=realname,
+                               realhost=realhost, ip=encoded_ip,
+                               hopcount=self.servers[server].hopcount))
 
         return u
 

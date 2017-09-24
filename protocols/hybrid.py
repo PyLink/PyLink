@@ -115,10 +115,11 @@ class HybridProtocol(TS6Protocol):
             realhost=realhost, ip=ip, manipulatable=manipulatable)
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
-        self._send_with_prefix(server, "UID {nick} 1 {ts} {modes} {ident} {host} {ip} {uid} "
+        self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
                 "* :{realname}".format(ts=ts, host=host,
                 nick=nick, ident=ident, uid=uid,
-                modes=raw_modes, ip=ip, realname=realname))
+                modes=raw_modes, ip=ip, realname=realname,
+                hopcount=self.servers[server].hopcount))
         return u
 
     def update_client(self, target, field, text):
