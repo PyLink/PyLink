@@ -85,10 +85,10 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 * [charybdis](https://github.com/charybdis-ircd/charybdis) (3.5+) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
-    - For vHost setting to work, `m_chghost.so` must be loaded.
+    - For vHost setting to work, `m_chghost.so` must be loaded. For ident and realname changing support, `m_chgident.so` and `m_chgname.so` must be loaded respectively.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
 * [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `p10`
-    - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (HOST_HIDING_STYLE settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
+    - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (`HOST_HIDING_STYLE` settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
 * [UnrealIRCd](https://www.unrealircd.org/) 4.x - module `unreal`
     - Linking to UnrealIRCd 3.2 servers is only possible when using an UnrealIRCd 4.x server as a hub, with topology such as `pylink<->unreal4<->unreal3.2`. We nevertheless encourage you to upgrade so all your IRCds are running the same version.
 
@@ -99,7 +99,6 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [ChatIRCd](http://www.chatlounge.net/software) (1.2.x / git master) - module `ts6`
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
-* [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - For host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
     - For KLINE support to work, a `shared{}` block should also be added for PyLink on all servers.
@@ -116,7 +115,18 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [snircd](https://development.quakenet.org/) (1.3.x+) - module `p10`
     - Outbound host changing (i.e. for the `changehost` plugin) is not supported on P10 variants other than Nefarious.
 
-Other TS6 and P10 variations may work, but are not officially supported.
+### Not officially supported
+
+These IRCds were tested to work at some point in time, but support is not guaranteed across PyLink versions. Consider submitting patches if you experience issues.
+
+* [beware-ircd](http://ircd.bircd.org/) (1.6.3) - module `p10`
+    - Because bircd disallows BURST after ENDBURST for regular servers, U-lines are required for all PyLink servers. Fortuantely, wildcards are supported in U-lines, so you can add something along the lines of `U:<your pylink server>:` and `U:*.relay:` (adjust accordingly for your relay server suffix).
+    - Use `ircd: snircd` as the target IRCd.
+    - Halfops, `sethost` (`+h`), and account-based cloaking (`VHostStyle=1`) are supported. Crypted IPs and static hosts (`VHostStyle` 2 and 3) are NOT.
+* [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
+    - The same notes for InspIRCd 2.x apply here as well.
+
+Other TS6 and P10 variations may work, but are also not officially supported.
 
 ### Clientbot
 
