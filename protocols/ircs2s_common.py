@@ -480,7 +480,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         """SQUITs a PyLink server."""
         # -> SQUIT 9PZ :blah, blah
         log.debug('(%s) squit: source=%s, target=%s', self.name, source, target)
-        self._send_with_prefix(source, 'SQUIT %s :%s' % (target, text))
+        self._send_with_prefix(source, 'SQUIT %s :%s' % (self._expandPUID(target), text))
         self.handle_squit(source, 'SQUIT', [target, text])
 
     def topic(self, source, target, text):
