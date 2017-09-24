@@ -264,6 +264,14 @@ class TS6Protocol(TS6BaseProtocol):
 
         f = self.send
 
+        # Find the target IRCd and update the mode dictionaries as applicable.
+        target_ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes') else 'charybdis')
+        target_ircd = target_ircd.lower()
+
+        if target_ircd not in self.SUPPORTED_IRCDS:
+            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
+            target_ircd = 'charybdis'
+
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
         chary_cmodes = { # TS6 generic modes (note that +p is noknock instead of private):
                         'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
@@ -286,7 +294,7 @@ class TS6Protocol(TS6BaseProtocol):
             self.prefixmodes['y'] = '~'
         if self.serverdata.get('use_admin'):
             chary_cmodes['admin'] = 'a'
-            self.prefixmodes['a'] = '!'
+            self.prefixmodes['a'] = '!' if target_ircd != 'chatircd' else '&'
         if self.serverdata.get('use_halfop'):
             chary_cmodes['halfop'] = 'h'
             self.prefixmodes['h'] = '%'
@@ -307,14 +315,6 @@ class TS6Protocol(TS6BaseProtocol):
         self.extbans_matching = {'ban_all_registered': '$a', 'ban_inchannel': '$c:', 'ban_account': '$a:',
                                  'ban_all_opers': '$o', 'ban_realname': '$r:', 'ban_server': '$s:',
                                  'ban_banshare': '$j:', 'ban_extgecos': '$x:', 'ban_all_ssl': '$z'}
-
-        # Find the target IRCd and update the mode dictionaries as applicable.
-        target_ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes') else 'charybdis')
-        target_ircd = target_ircd.lower()
-
-        if target_ircd not in self.SUPPORTED_IRCDS:
-            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
-            target_ircd = 'charybdis'
 
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
         # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
