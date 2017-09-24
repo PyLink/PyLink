@@ -1,3 +1,27 @@
+# PyLink 1.2.1
+The "Dancer" release. Changes from 1.2.0:
+
+#### Bug fixes
+- unreal: fix TypeError when relaying prefix modes via `mode()`
+- Fix wrong database and PID filenames if the config file name includes a period (".")
+- automode: don't send empty mode lines if no users match the ACL
+- networks: check in "remote" that the remote network is actually connected
+- Fix commonly reported crashes on `logging:` config syntax errors ([49136d5](https://github.com/GLolol/PyLink/commit/49136d5abd609fd5e3ba2ec2e42a0443118e62ab))
+- Backported fixes from 2.0-dev:
+    - p10: fix wrong hook name for user introduction
+    - clientbot: warn when an outgoing message is blocked (e.g. due to bans) (#497)
+    - ts6: fix setting real host of users to 'None' if it wasn't given
+
+#### Misc changes
+- Removed incorrect descriptions regarding P10 `extended_accounts`. Both X3 and atheme support extended accounts, and this needs to match your IRCd settings regardless.
+- Updated definitions in `channel/user-modes.csv`.
+
+#### Internal improvements
+- Backported improvements from 2.0-dev:
+    - Fix support for Hybrid 8.x trunk
+    - Minor logging cleanup for relay and `Irc.matchHost()`.
+    - Fix cmode `+p` mapping on TS6 networks.
+
 # PyLink 1.2.0
 The "Dragons" release. Changes since 1.2.0-rc1:
 
