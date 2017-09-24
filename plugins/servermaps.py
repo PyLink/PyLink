@@ -52,8 +52,8 @@ def _map(irc, source, args, show_relay=True):
         if hops == 0:
             # Show our root server once.
             rootusers = len(serverlist[sid].users)
-            reply('\x02%s\x02[%s]: %s user(s) (%s%%)' % (serverlist[sid].name, sid,
-                  rootusers, _percent(rootusers, usercount)))
+            reply('\x02%s\x02[%s]: %s user(s) (%s%%) {hopcount: %d}' % (serverlist[sid].name, sid,
+                  rootusers, _percent(rootusers, usercount), serverlist[sid].hopcount))
 
         log.debug('(%s) servermaps: servers under sid %s: %s', irc.name, sid, servers)
 
@@ -68,10 +68,12 @@ def _map(irc, source, args, show_relay=True):
             serverusers = len(serverlist[leaf].users)
             if is_relay_server:
                 # Skip showing user data for relay servers.
-                reply("%s\x02%s\x02[%s] (via PyLink Relay)" % ('    '*hops, serverlist[leaf].name, leaf))
+                reply("%s\x02%s\x02[%s] (via PyLink Relay)" %
+                      ('    '*hops, serverlist[leaf].name, leaf))
             else:
-                reply("%s\x02%s\x02[%s]: %s user(s) (%s%%)" % ('    '*hops, serverlist[leaf].name, leaf,
-                                                         serverusers, _percent(serverusers, usercount)))
+                reply("%s\x02%s\x02[%s]: %s user(s) (%s%%) {hopcount: %d}" %
+                      ('    '*hops, serverlist[leaf].name, leaf,
+                       serverusers, _percent(serverusers, usercount), serverlist[leaf].hopcount))
             showall(ircobj, leaf, hops, is_relay_server=is_relay_server)
 
             if (not is_relay_server) and hasattr(serverlist[leaf], 'remote') and show_relay:
