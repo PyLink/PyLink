@@ -96,9 +96,15 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 
 Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
+* [beware-ircd](http://ircd.bircd.org/) (1.6.3) - module `p10`
+    - Because bircd disallows BURST after ENDBURST for regular servers, U-lines are required for all PyLink servers. Fortuantely, wildcards are supported in U-lines, so you can add something along the lines of `U:<your pylink server>:` and `U:*.relay:` (adjust accordingly for your relay server suffix).
+    - Use `ircd: snircd` as the target IRCd.
+    - Halfops, `sethost` (`+h`), and account-based cloaking (`VHostStyle=1`) are supported. Crypted IPs and static hosts (`VHostStyle` 2 and 3) are NOT.
 * [ChatIRCd](http://www.chatlounge.net/software) (1.2.x / git master) - module `ts6`
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
+* [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
+    - The same notes for InspIRCd 2.x apply here as well.
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - For host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
     - For KLINE support to work, a `shared{}` block should also be added for PyLink on all servers.
@@ -115,18 +121,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [snircd](https://development.quakenet.org/) (1.3.x+) - module `p10`
     - Outbound host changing (i.e. for the `changehost` plugin) is not supported on P10 variants other than Nefarious.
 
-### Not officially supported
-
-These IRCds were tested to work at some point in time, but support is not guaranteed across PyLink versions. Consider submitting patches if you experience issues.
-
-* [beware-ircd](http://ircd.bircd.org/) (1.6.3) - module `p10`
-    - Because bircd disallows BURST after ENDBURST for regular servers, U-lines are required for all PyLink servers. Fortuantely, wildcards are supported in U-lines, so you can add something along the lines of `U:<your pylink server>:` and `U:*.relay:` (adjust accordingly for your relay server suffix).
-    - Use `ircd: snircd` as the target IRCd.
-    - Halfops, `sethost` (`+h`), and account-based cloaking (`VHostStyle=1`) are supported. Crypted IPs and static hosts (`VHostStyle` 2 and 3) are NOT.
-* [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
-    - The same notes for InspIRCd 2.x apply here as well.
-
-Other TS6 and P10 variations may work, but are also not officially supported.
+Other TS6 and P10 variations may work, but are not officially supported.
 
 ### Clientbot
 
