@@ -102,6 +102,10 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - For host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
     - For KLINE support to work, a `shared{}` block should also be added for PyLink on all servers.
+* [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ratbox`
+    - Host changing is not supported.
+    - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is a cloaked relay client: if you're paranoid about this, turn off Relay IP forwarding by setting the `relay_no_ips` option in the ratbox network's `server:` block.
+    - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [IRCu](http://coder-com.undernet.org/) (u2.10.12.16+) - module `p10`
     - Host changing is not supported.
 * [juno-ircd](https://github.com/cooper/juno) (13.x / ava) - module `ts6` (see [configuration example](https://github.com/cooper/juno/blob/master/doc/ts6.md#pylink))
@@ -119,10 +123,6 @@ These IRCds were tested to work at some point in time, but support is not guaran
     - Because bircd disallows BURST after ENDBURST for regular servers, U-lines are required for all PyLink servers. Fortuantely, wildcards are supported in U-lines, so you can add something along the lines of `U:<your pylink server>:` and `U:*.relay:` (adjust accordingly for your relay server suffix).
     - Use `ircd: snircd` as the target IRCd.
     - Halfops, `sethost` (`+h`), and account-based cloaking (`VHostStyle=1`) are supported. Crypted IPs and static hosts (`VHostStyle` 2 and 3) are NOT.
-* [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ratbox`
-    - Host changing is not supported.
-    - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is a cloaked relay client: if you're paranoid about this, turn off Relay IP forwarding by setting the `relay_no_ips` option in the ratbox network's `server:` block.
-    - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
     - The same notes for InspIRCd 2.x apply here as well.
 
