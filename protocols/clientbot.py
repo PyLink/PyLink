@@ -312,7 +312,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # Removing pseudoclients and pseudoservers.
         squit_data = self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
 
-        if squit_data.get('nicks'):
+        if squit_data and squit_data.get('nicks'):
             self.call_hooks([source, 'CLIENTBOT_SQUIT', squit_data])
 
     def _stub(self, *args):
