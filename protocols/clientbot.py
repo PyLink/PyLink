@@ -861,6 +861,13 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if self.pseudoclient and source == self.pseudoclient.uid:
             self.send('MODE %s' % channel)
             self._send_who(channel)
+
+            if self.serverdata.get('fetch_ban_lists', False):
+                self.send('MODE %s +b' % channel)
+
+                for m in ('banexception', 'invex'):
+                    if m in self.cmodes:
+                        self.send('MODE %s +%s' % (channel, self.cmodes[m]))
         else:
             self.call_hooks([source, 'CLIENTBOT_JOIN', {'channel': channel}])
             return {'channel': channel, 'users': [source], 'modes': self._channels[channel].modes}
@@ -1057,5 +1064,57 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     handle_408 = handle_404
     # 492: ERR_NOCTCP on Hybrid
     handle_492 = handle_404
+
+    def handle_367(self, source, command, args, banmode='b'):
+        """
+        Handles RPL_BANLIST, used to enumerate bans.
+        """
+        # <- :irc3.lose-the-game.nat 367 james #test *!*@1.2.3.4 james 1504560159
+        channel = args[1]
+        target = args[2]
+        if channel not in self.channels:
+            log.warning('(%s) got ban mode +%s %s on unknown channel %s?', self.name, banmode, target)
+        else:
+            # Just apply the mode; we send out a mode hook only when the corresponding ban list has finished sending.
+            self.apply_modes(channel, [('+%s' % banmode, target)])
+
+    def handle_368(self, source, command, args, banmode='b'):
+        """
+        Handles RPL_ENDOFBANLIST, used to end off ban lists.
+        """
+        # <- :irc3.lose-the-game.nat 368 james #test :End of Channel Ban List
+        channel = args[1]
+        # Send out the hook. We don't worry about repeats since these modes don't need to be
+        # enumerated more than once per JOIN anyways.
+        return {'target': channel, 'parse_as': 'MODE',
+                'modes': [('+%s' % banmode, m[1]) for m in self.channels[channel].modes if m[0] == banmode]}
+
+    def handle_346(self, *args):
+        """
+        Handles RPL_INVITELIST, used to enumerate invite exceptions.
+        """
+        return self.handle_367(*args, banmode=self.cmodes.get('invex', 'I'))
+
+    def handle_347(self, *args):
+        """
+        Handles RPL_ENDOFINVITELIST, used to end off invite exception lists.
+        """
+        if 'invex' not in self.cmodes:
+            log.warning('(%s) Got 347 / RPL_ENDOFINVITELIST even though invex is not a registered mode?', self.name)
+        return self.handle_368(*args, banmode=self.cmodes.get('invex', 'I'))
+
+    def handle_348(self, *args):
+        """
+        Handles RPL_EXCEPTLIST, used to enumerate ban exceptions.
+        """
+        return self.handle_367(*args, banmode=self.cmodes.get('banexception', 'e'))
+
+    def handle_349(self, *args):
+        """
+        Handles RPL_ENDOFEXCEPTLIST, used to end off ban exception lists.
+        """
+        if 'banexception' not in self.cmodes:
+            log.warning('(%s) Got 349 / RPL_ENDOFEXCEPTLIST even though banexception is not a registered mode?', self.name)
+        return self.handle_368(*args, banmode=self.cmodes.get('banexception', 'e'))
 
 Class = ClientbotWrapperProtocol

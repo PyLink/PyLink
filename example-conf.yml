@@ -441,6 +441,13 @@ servers:
         # "relay:" configuration block, and defaults to True for consistency with older releases.
         #relay_weird_senders: false
 
+        # Determines whether the bot should enumerate ban/banexception/invex modes when joining channels.
+        # This is required for relay mode sync to work properly, because the bot will otherwise refuse to
+        # relay unbans (Clientbot only removes modes that it knows are set).
+        # This defaults to False because it causes extra MODE messages to be sent on connect, which can
+        # drastically slow down startup if the bot joins a lot of channels.
+        #fetch_ban_lists: true
+
 # Plugins to load (omit the .py extension)
 plugins:
     # Commands plugin: Provides simple commands to check login status, show info on users and
