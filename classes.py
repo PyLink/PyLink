@@ -1630,6 +1630,13 @@ class Server():
         self.desc = desc
         self._irc = irc
 
+        assert uplink is None or uplink in self._irc.servers, "Unknown uplink %s" % uplink
+
+        if uplink is None:
+            self.hopcount = 1
+        else:
+            self.hopcount = self._irc.servers[uplink].hopcount + 1
+
         # Has the server finished bursting yet?
         self.has_eob = False
 
