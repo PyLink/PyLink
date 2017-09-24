@@ -218,6 +218,9 @@ def get_prefix_modes(irc, remoteirc, channel, user, mlist=None):
     return modes
 
 def spawn_relay_server(irc, remoteirc):
+    """
+    Spawns a relay server representing "remoteirc" on "irc".
+    """
     if irc.connected.is_set():
         try:
             # ENDBURST is delayed by 3 secs on supported IRCds to prevent
@@ -249,9 +252,11 @@ def spawn_relay_server(irc, remoteirc):
         log.debug('(%s) spawn_relay_server: current thread is %s',
                   irc.name, threading.current_thread().name)
 
-def get_remote_sid(irc, remoteirc, spawn_if_missing=True):
-    """Gets the remote server SID representing remoteirc on irc, spawning
-    it if it doesn't exist (and spawn_if_missing is enabled)."""
+def get_relay_server_sid(irc, remoteirc, spawn_if_missing=True):
+    """
+    Fetches the relay server SID representing remoteirc on irc, spawning
+    a new server if it doesn't exist and spawn_if_missing is enabled.
+    """
 
     log.debug('(%s) Grabbing spawnlocks_servers[%s] from thread %r in function %r', irc.name, irc.name,
               threading.current_thread().name, inspect.currentframe().f_code.co_name)
@@ -260,28 +265,31 @@ def get_remote_sid(irc, remoteirc, spawn_if_missing=True):
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
             if not spawn_if_missing:
-                log.debug('(%s) get_remote_sid: %s.relay doesn\'t have a known SID, ignoring.', irc.name, remoteirc.name)
+                log.debug('(%s) get_relay_server_sid: %s.relay doesn\'t have a known SID, ignoring.', irc.name, remoteirc.name)
                 spawnlocks_servers[irc.name].release()
                 return
 
-            log.debug('(%s) get_remote_sid: %s.relay doesn\'t have a known SID, spawning.', irc.name, remoteirc.name)
+            log.debug('(%s) get_relay_server_sid: %s.relay doesn\'t have a known SID, spawning.', irc.name, remoteirc.name)
             sid = spawn_relay_server(irc, remoteirc)
 
-        log.debug('(%s) get_remote_sid: got %s for %s.relay', irc.name, sid, remoteirc.name)
+        log.debug('(%s) get_relay_server_sid: got %s for %s.relay', irc.name, sid, remoteirc.name)
         if sid not in irc.servers:
-            log.debug('(%s) get_remote_sid: SID %s for %s.relay doesn\'t exist, respawning', irc.name, sid, remoteirc.name)
+            log.warning('(%s) Possible desync? SID %s for %s.relay doesn\'t exist anymore', irc.name, sid, remoteirc.name)
             # Our stored server doesn't exist anymore. This state is probably a holdover from a netsplit,
             # so let's refresh it.
             sid = spawn_relay_server(irc, remoteirc)
         elif sid in irc.servers and irc.servers[sid].remote != remoteirc.name:
-            log.debug('(%s) get_remote_sid: %s.relay != %s.relay, respawning', irc.name, irc.servers[sid].remote, remoteirc.name)
+            log.debug('(%s) Possible desync? SID %s for %s.relay doesn\'t exist anymore is mismatched (got %s.relay)', irc.name, irc.servers[sid].remote, remoteirc.name)
             sid = spawn_relay_server(irc, remoteirc)
 
-        log.debug('(%s) get_remote_sid: got %s for %s.relay (round 2)', irc.name, sid, remoteirc.name)
+        log.debug('(%s) get_relay_server_sid: got %s for %s.relay (round 2)', irc.name, sid, remoteirc.name)
         spawnlocks_servers[irc.name].release()
         return sid
 
 def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
+    """
+    Spawns a relay user representing "user" from "irc" (the local network) on remoteirc (the target network).
+    """
     userobj = irc.users.get(user)
     if userobj is None:
         # The query wasn't actually a valid user, or the network hasn't
@@ -318,7 +326,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
         if hideoper_mode and use_hideoper:
             modes.add((hideoper_mode, None))
 
-    rsid = get_remote_sid(remoteirc, irc)
+    rsid = get_relay_server_sid(remoteirc, irc)
     if not rsid:
         log.error('(%s) spawn_relay_user: aborting user spawn for %s/%s @ %s (failed to retrieve a '
                   'working SID).', irc.name, user, nick, remoteirc.name)
@@ -355,8 +363,9 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
 
 def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0):
     """
-    Gets the UID of the relay client requested on the target network (remoteirc),
-    spawning one if it doesn't exist and spawn_if_missing is True."""
+    Fetches and returns the relay client UID representing "user" on the remote network "remoteirc",
+    spawning a new user if one doesn't exist and spawn_if_missing is True.
+    """
 
     # Wait until the network is working before trying to spawn anything.
     if irc.connected.is_set():
@@ -383,7 +392,11 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0)
             # don't break the relayer. If it turns out there was a client in our relayusers
             # cache for the requested UID, but it doesn't match the request,
             # assume it was a leftover from the last split and replace it with a new one.
+            # XXX: this technically means that PyLink is desyncing somewhere, and that we should
+            # fix this in core properly...
             if u and ((u not in remoteirc.users) or remoteirc.users[u].remote != (irc.name, user)):
+                log.warning('(%s) Possible desync? Got invalid relay UID %s for %s on %s',
+                            irc.name, u, irc.get_friendly_name(user), remoteirc.name)
                 u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged)
 
             spawnlocks[irc.name].release()
@@ -718,7 +731,7 @@ def relay_joins(irc, channel, users, ts, **kwargs):
             # Look at whether we should relay this join as a regular JOIN, or a SJOIN.
             # SJOIN will be used if either the amount of users to join is > 1, or there are modes
             # to be set on the joining user.
-            rsid = get_remote_sid(remoteirc, irc)
+            rsid = get_relay_server_sid(remoteirc, irc)
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 modes = get_supported_cmodes(irc, remoteirc, channel, irc.channels[channel].modes)
 
@@ -1291,7 +1304,7 @@ def handle_messages(irc, numeric, command, args):
                 # possible - most IRCds except TS6 (charybdis, ratbox, hybrid)
                 # allow this.
                 try:
-                    user = get_remote_sid(remoteirc, irc, spawn_if_missing=False) \
+                    user = get_relay_server_sid(remoteirc, irc, spawn_if_missing=False) \
                         if notice else remoteirc.pseudoclient.uid
                     if not user:
                         return
@@ -1446,7 +1459,7 @@ def handle_kick(irc, source, command, args):
         else:
             # Kick originated from a server, or the kicker isn't in any
             # common channels with the target relay network.
-            rsid = get_remote_sid(remoteirc, irc)
+            rsid = get_relay_server_sid(remoteirc, irc)
             log.debug('(%s) relay.handle_kick: Kicking %s from channel %s via %s on behalf of %s/%s', irc.name, real_target, remotechan, rsid, kicker, irc.name)
 
             if not irc.has_cap('can-spawn-clients'):
@@ -1462,7 +1475,7 @@ def handle_kick(irc, source, command, args):
                 except AttributeError:
                     text = "(<unknown kicker>@%s) %s" % (irc.name, args['text'])
 
-            rsid = rsid or remoteirc.sid  # Fall back to the main PyLink SID if get_remote_sid() fails
+            rsid = rsid or remoteirc.sid  # Fall back to the main PyLink SID if get_relay_server_sid() fails
             remoteirc.kick(rsid, remotechan, real_target, text)
 
         # If the target isn't on any channels, quit them.
@@ -1528,7 +1541,7 @@ def handle_mode(irc, numeric, command, args):
                 # Check if the sender is a user with a relay client; otherwise relay the mode
                 # from the corresponding server.
                 remotesender = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False) or \
-                    get_remote_sid(remoteirc, irc) or remoteirc.sid
+                    get_relay_server_sid(remoteirc, irc) or remoteirc.sid
 
                 if not remoteirc.has_cap('can-spawn-clients'):
                     friendly_modes = []
@@ -1621,7 +1634,7 @@ def handle_topic(irc, numeric, command, args):
             if remoteuser:
                 remoteirc.topic(remoteuser, remotechan, topic)
             else:
-                rsid = get_remote_sid(remoteirc, irc)
+                rsid = get_relay_server_sid(remoteirc, irc)
                 remoteirc.topic_burst(rsid, remotechan, topic)
         iterate_all(irc, _handle_topic_loop, extra_args=(numeric, command, args))
 
@@ -1654,7 +1667,7 @@ def handle_kill(irc, numeric, command, args):
                 modes = get_prefix_modes(remoteirc, irc, remotechan, realuser[1])
                 log.debug('(%s) relay.handle_kill: userpair: %s, %s', irc.name, modes, realuser)
                 client = get_remote_user(remoteirc, irc, realuser[1], times_tagged=1)
-                irc.sjoin(get_remote_sid(irc, remoteirc), localchan, [(modes, client)])
+                irc.sjoin(get_relay_server_sid(irc, remoteirc), localchan, [(modes, client)])
 
         if userdata and numeric in irc.users:
             log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from %s to relay client %s/%s.',
