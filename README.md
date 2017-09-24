@@ -36,7 +36,7 @@ You can also find support via our IRC channels: `#PyLink @ irc.overdrivenetworks
     * PyYAML (`pip3 install pyyaml`)
     * ircmatch (`pip3 install ircmatch`)
     * *For password encryption*: Passlib (`pip3 install passlib`)
-    * *For the servprotect plugin*: expiringdict (install this from [source](https://github.com/mailgun/expiringdict); installation is broken in pip due to [mailgun/expiringdict#13](https://github.com/mailgun/expiringdict/issues/13))
+    * *For the servprotect plugin*: expiringdict (`pip3 install expiringdict`)
 
 2) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
 
