@@ -1,32 +1,32 @@
 # Automode Tutorial
 
-The Automode plugin was introduced in PyLink 0.9 as a simple way of managing channel access control lists with Relay. That said, it is not designed to entirely replace traditional IRC services such as ChanServ.
+The Automode plugin was introduced in PyLink 0.9 as a simple mechanism to manage channel access. That said, it is not designed to entirely replace traditional IRC services such as ChanServ.
 
 ## Starting steps
 
-Upon loading the `automode` plugin, you should see an Automode service bot connect, using the name that you defined. This bot provides the commands used to manage access.
+Upon loading the `automode` plugin, you should see an Automode service bot connect, using the name that you defined (this guide uses the default, `Automode`). This service provides the commands used to manage access.
 
 For a list of commands:
-- `/msg ModeBot help`
+- `/msg Automode help`
 
-Adding access lists to a channel:
-- `/msg ModeBot setacc #channel [MASK] [MODE LIST]`
-- The mask can be a simple `nick!user@host` hostmask or any of the extended targets (exttargets) mentioned below. MODE LIST is a string of any prefix modes that you want to set (no `+` before needed), such as `qo`, `h`, or `ov`.
+Adding access to a channel:
+- `/msg Automode setacc #channel [MASK] [MODE LIST]`
+- The mask can be a simple `nick!user@host` hostmask or any of the extended targets (exttargets) mentioned below. MODE LIST is a string of any prefix modes that you want to set (no leading `+` needed): e.g. `qo`, `h`, or `ov`.
 
 Removing access from a channel:
-- `/msg ModeBot delacc #channel [MASK]`
+- `/msg Automode delacc #channel [MASK]`
 
 Listing access entries on a channel:
-- `/msg ModeBot listacc #channel`
+- `/msg Automode listacc #channel`
 
 Applying all access entries on a channel (sync):
-- `/msg ModeBot syncacc #channel`
+- `/msg Automode syncacc #channel`
 
 Clearing all access entries on a channel:
-- `/msg ModeBot clearacc #channel`
+- `/msg Automode clearacc #channel`
 
 ## Supported masks and extended targets
-Automode supports any hostmask or extended target implemented in PyLink; see the [Exttargets Guide](exttargets.md) for more details.
+Automode supports any hostmask or PyLink extended target; see the [Exttargets Guide](exttargets.md) for more details.
 
 ## Permissions
 
