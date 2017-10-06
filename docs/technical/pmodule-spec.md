@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.0-dev (2017-08-30).***
+***Last updated for 2.0-alpha1 (2017-10-05).***
 
 Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
@@ -133,7 +133,7 @@ PyLink defines classes named `Server`, `User`, and `Channel` in the `classes` mo
 - `irc.servers` is a dictionary mapping server IDs (SIDs) to `Server` objects. If a protocol module does not use SIDs, servers are stored by server name instead.
 
 - `irc.users` is a dictionary mapping user IDs (UIDs) to `User` objects. If a protocol module does not use UIDs, a pseudo UID (PUID) generator such as [`classes.PUIDGenerator`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/classes.py#L1710-L1726) *must* be used instead.
-    - The rationale behind this is because plugins tracking user lists are not designed to removing and adding users when they change their nicks.
+    - The rationale behind this is because plugins tracking user lists are not designed to remove and re-add users when they change their nicks.
     - When sending text back to the protocol module, it may be helpful to use the [`_expandPUID()`](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/classes.py#L1213-L1231) function in `PyLinkNetworkCoreWithUtils` to expand these pseudo-UIDs back to regular nicks.
 
 - `irc._channels` and `irc.channels` are [IRC case-insensitive dictionaries](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/structures.py#L114-L116) mapping channel names to Channel objects.
@@ -149,6 +149,12 @@ The `Channel`, `User`, and `Server` classes are initiated as follows:
     - The `name` option sets the server name.
     - The `internal` boolean sets whether the server is an internal PyLink server.
     - The `desc` option sets the server description, when applicable.
+
+#### Statekeeping specifics
+- When a user is introduced, their UID must be added to both `irc.users` and to the `users` set in the `Server` object hosting the user (`irc.servers[SID].users`). The latter list is used internally to track SQUITs.
+- When a user joins a channel, the channel name is added to the User object's `channels` set (`irc.users[UID].channels`), as well as the Channel object's user list (`irc.channels[CHANNELNAME].users`)
+- When a user disconnects, the `_remove_client` helper method can be called on their UID to automatically remove them from the relevant Server object, as well as all channels they were in.
+- When a user leaves a channel, the `Channel.remove_user()` method can be used to easily remove them from the channel state, and vice versa.
 
 ### Mode formats
 
@@ -168,7 +174,7 @@ Modes are stored not stored as strings, but lists of mode pairs in order to ease
 
 Afterwords, a parsed mode list can be applied to channel name or UID using `irc.apply_modes(target, parsed_modelist)`.
 
-**Note**: for protocols that accept or reject mode changes based on TS (i.e. practically every IRCd), you will want to use [`updateTS(...)`](https://github.com/GLolol/PyLink/blob/master/classes.py#L1484-L1487) instead to only apply the modes if the remote TS is lower.
+**Note**: for protocols that accept or reject mode changes based on TS (i.e. practically every IRCd), you will want to use [`updateTS(...)`](https://github.com/GLolol/PyLink/blob/master/classes.py#L1484-L1487) instead to only apply the modes if the source TS is lower.
 
 Internally, modes are stored in `Channel` and `User` objects as sets, **with the `+` prefixing each mode character omitted**. These sets are accessed via the `modes` attribute:
 
@@ -217,10 +223,13 @@ In short, protocol modules have some very important jobs. If any of these aren't
 6) Check that `recvpass` is correct when applicable, and raise `ProtocolError` with a relevant error message if not.
 
 ## Changes
+* 2017-10-05 (2.0-alpha1)
+   - Added notes on user statekeeping and the tracking/helper functions used.
+   - Mention the `post_connect()` function that must be defined by protocols inheriting from IRCNetwork.
 * 2017-08-30 (2.0-dev)
-   - Rewritten specification for the IRC-protocol class convergence in PyLink 2.0
+   - Rewritten specification for the IRC-protocol class convergence in PyLink 2.0.
    - Updated the spec for 2.0 method renames and class restructures.
-   - Added a proper "Starting Steps" section detailing which classes inherit from and when.
+   - Added a proper "Starting Steps" section detailing which new classes inherit from and when.
    - Explicitly document the Server, User, and Channel classes.
 * 2017-03-15 (1.2-dev)
    - Corrected the location of `self.cmodes/umodes/prefixmodes` attributes
