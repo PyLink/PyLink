@@ -25,6 +25,3 @@ PyLink is an a modular, plugin-based IRC services framework. It uses swappable p
 
 - [Release Process for PyLink](release-process.md)
 
-### Future topics (not yet available)
-- [Writing tests for PyLink modules](writing-tests.md)
-
