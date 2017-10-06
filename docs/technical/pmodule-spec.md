@@ -22,6 +22,7 @@ To use `classes.IRCNetwork`, the following functions must be defined.
 
 - `handle_events(self, data)`: given a line of text containing an IRC command, parse it and return a hook payload as specified in the [PyLink hooks reference](hooks-reference.md).
     - In all of the official PyLink modules so far, handling for specific commands is delegated into submethods via [`getattr()`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/protocols/ircs2s_common.py#L409-L412), and unknown commands are ignored.
+- `post_connect(self)`: This method sends the server introduction commands to the uplink IRC server. This method replaces the `connect()` function defined by protocol modules prior to PyLink 2.x.
 - `_ping_uplink(self)`: Sends a ping command to the uplink. No return value is expected / used.
 
 This class offers the most flexibility because the protocol module can choose how it wants to handle any command. However, because most IRC server protocols use the same RFC 1459-style message format, rewriting the entire event handler is often not worth doing. Instead, it may be better to use `IRCS2SProtocol`, as documented below, which includes a `handle_events` method which handles most cases (TS5/6, P10, and TS-less protocols such as ngIRCd).
