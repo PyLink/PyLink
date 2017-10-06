@@ -48,7 +48,7 @@ owner,,"q (m_customprefix, m_chanprotect)",,y (when enabled),y (when enabled),q,
 paranoia,,,,,,,,,,,p*,
 permanent,,P (m_permchannels),P,P,P,P,z,,,,,P
 private,p,p,p*,p*,p*,p,p,p,p,p*,p*,p
-quiet,,,q,q,q,,,,,,,
+quiet,,(via extban m:),q,q,q,(via extban ~q:),(via extban ~q:),,,,,
 redirect,,L (m_redirect),f,f,f,L,L,,,,,
 registered,,r (m_services_account),,,,r,R,R,R,,r,r
 regmoderated,,M (m_services_account),,,,M,M,M,,,M,M

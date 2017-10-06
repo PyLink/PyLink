@@ -32,4 +32,4 @@ ban_server,$s:,s:,,
 ban_stripcolor,,S:,,
 ban_unregistered_mark,,,,~M:
 ban_unregistered_matching,,U:,,
-quiet,+q (cmode),m:,~q:,~q:
+quiet,(via cmode +q),m:,~q:,~q:

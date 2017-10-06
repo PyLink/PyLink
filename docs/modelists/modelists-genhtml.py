@@ -22,18 +22,21 @@ def _write(outf, text):
 def _format(articlename, text):
     # More formatting
     if text:
-        if 'modes' in articlename:
-            text = '+' + text
-        try:
-            text, note = text.split(' ', 1)
-        except ValueError:
-            if text.endswith('*'):
-                text = '<td class="tablecell-yes2">%s</td>' % text
-            else:
-                text = '<td class="tablecell-yes">%s</td>' % text
+        if text.startswith('('):
+            text = '<td class="tablecell-partial">%s</td>' % text
         else:
-            text = '%s<br><span class="note">%s</span>' % (text, note)
-            text = '<td class="tablecell-special">%s</td>' % text
+            if 'modes' in articlename:
+                text = '+' + text
+            try:
+                text, note = text.split(' ', 1)
+            except ValueError:
+                if text.endswith('*'):
+                    text = '<td class="tablecell-yes2">%s</td>' % text
+                else:
+                    text = '<td class="tablecell-yes">%s</td>' % text
+            else:
+                text = '%s<br><span class="note">%s</span>' % (text, note)
+                text = '<td class="tablecell-special">%s</td>' % text
     else:
         text = '<td class="tablecell-na note">n/a</td>'
     return text
