@@ -29,11 +29,6 @@ def _format(articlename, text):
         except ValueError:
             if text.endswith('*'):
                 text = '<td class="tablecell-yes2">%s</td>' % text
-            elif 'extbans' in articlename:
-                if text.endswith(':'):
-                    text = '<td class="tablecell-yes">%s<span class="note">data</span></td>' % text
-                else:  # Arg-less extban
-                    text = '<td class="tablecell-yes2">%s</td>' % text
             else:
                 text = '<td class="tablecell-yes">%s</td>' % text
         else:
