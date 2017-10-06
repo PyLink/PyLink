@@ -1,10 +1,10 @@
 # PyLink Services Bot API
 
-Starting with PyLink 0.9.x, a services bot API was introduced to make writing custom services slightly easier. PyLink's Services API automatically connects service bots, and handles rejoin on kick/kill all by itself, meaning less code is needed per plugin to have functional service bots.
+The goal of PyLink's Services API is to make writing custom services slightly easier. This API automatically creates service bots, handles rejoin on kill/kick, and exposes a simple way for plugins to bind commands to bots. It also handles U-line servprotect modes when enabled and available.
 
 ## Creating new service bots
 
-Services can be created (registered) using code similar to the following in a plugin:
+Services can be registered and created using code similar to the following in a plugin:
 
 ```python
 
@@ -14,12 +14,12 @@ from pylinkirc import utils, world
 desc = "Optional description of servicenick, in sentence form."
 
 # First argument is the internal service name.
-# utils.registerService() returns a utils.ServiceBot instance, which can also be found
-# by calling world["myservice"].
-myservice = utils.registerService("myservice", desc=desc)
+# utils.register_service() returns a utils.ServiceBot instance, which can also be found
+# by calling world.services["myservice"].
+myservice = utils.register_service("myservice", desc=desc)
 ```
 
-`utils.registerService()` passes its arguments directly to the `utils.ServiceBot` class constructor, which in turn supports the following options:
+`utils.register_service()` passes its arguments directly to the `utils.ServiceBot` class constructor, which in turn supports the following options:
 
 - **`name`** - defines the service name (mandatory)
 - `default_help` - Determines whether the default HELP command should be used for the service. Defaults to True.
@@ -36,13 +36,13 @@ Should you want to get the UID of a service bot on a specific server, use `myser
 
 ### Setting channels to join
 
-All services bots will automatically join the autojoin channels configured for a specific network, if any.
+All service bots will automatically join the autojoin channels configured for a specific network, if any.
 
-However, plugins can persistently join services bots to specific channels by calling `myservice.join(irc, channels)`. To manually add/remove channels from the service's autojoin list, modify the `myservice.extra_channels` set.
+However, plugins can persistently join service bots to specific channels by calling `myservice.join(irc, channels)`. To manually add/remove channels from the service's autojoin list, modify the `myservice.extra_channels` set.
 
 ## Removing services on unload
 
-All plugins using the services API **MUST** have a `die()` function that unregisters all services that they've created. A simple example would be in the `games` plugin:
+All plugins using the services API **MUST** have a `die()` function that unregisters all service bots that they've created. A simple example would be in the `games` plugin:
 
 ```python
 def die(irc):
