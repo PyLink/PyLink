@@ -1,9 +1,9 @@
 # PyLink Developer Documentation
 
-Please note that as PyLink is still in its development phase, its APIs are subject to change.
-Any documentation here is provided for reference only.
+This documentation is provided for reference only, and may not always be up to date as APIs change.
+Patches are welcome if something looks wrong or *is* wrong. In such cases, consulting the source code is probably your best bet.
 
-The docs are also really incomplete (contributors welcome!)
+The docs are also really incomplete (contributions are appreciated!)
 
 ## Introduction
 
@@ -20,8 +20,6 @@ PyLink is an a modular, plugin-based IRC services framework. It uses swappable p
 ----
 
 - [PyLink protocol module specification](pmodule-spec.md)
-- [Supported named channel modes](https://raw.githack.com/GLolol/PyLink/devel/docs/modelists/channel-modes.html)
-- [Supported named user modes](https://raw.githack.com/GLolol/PyLink/devel/docs/modelists/user-modes.html)
 
 ----
 

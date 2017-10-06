@@ -17,6 +17,7 @@ This folder contains general documentation for PyLink IRC services.
 
 ----
 
+- [PyLink named modes tables](modelists/)
 - [Developer documentation](technical/)
 
 There is also a Doxygen-powered API reference at https://pylink.github.io/
