@@ -977,21 +977,25 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""
         # <- :GL|!~GL@127.0.0.1 NICK :GL_
+        newnick = args[0]
 
         if not self.connected.is_set():
             # We haven't properly logged on yet, so any initial NICK should be treated as a forced
             # nick change for us. For example, this clause is used to handle forced nick changes
             # sent by ZNC, when the login nick and the actual IRC nick of the bouncer differ.
-            self.pseudoclient.nick = args[0]
+            self.pseudoclient.nick = newnick
             log.debug('(%s) Pre-auth FNC: Changing our nick to %s', self.name, args[0])
             return
         elif source == self.pseudoclient.uid:
             self._nick_fails = 0  # Our last nick change succeeded.
 
         oldnick = self.users[source].nick
-        self.users[source].nick = args[0]
 
-        return {'newnick': args[0], 'oldnick': oldnick}
+        # Check for any nick collisions with existing virtual clients.
+        self._check_nick_collision(newnick)
+        self.users[source].nick = newnick
+
+        return {'newnick': newnick, 'oldnick': oldnick}
 
     def handle_part(self, source, command, args):
         """
