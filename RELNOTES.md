@@ -730,161 +730,164 @@ Tagged as **0.8-alpha1** by [GLolol](https://github.com/GLolol) on 2016-04-23T03
 Tagged as **0.7.2-dev** by [GLolol](https://github.com/GLolol) on 2016-04-19T14:03:50Z
 
 Bug fix release:
-    - Support mixed Unreal 3.2/4.0 networks (#193)
-    - More complete APIs for checking channel access (#168)
-    - New **`servprotect`** plugin for KILL/SAVE flood protection. This was split out of relay due to expiringdict not being installable via pip.
-    - Documentation update (protocol module variables, mention new WHOIS, VERSION hooks)
-    - Minor fixes for Windows support. (#183)
-    - SIGTERM should now shut down the daemon cleanly. (#179)
 
-8ee64d5ec1bf9c87f16ba3a1210c2210bf50cd5f readme: mention why expiringdict is broken in pip3
-528dfdba2abc95701fe037bb9d3fa41a7f9476c0 pmodule-spec: mention cmodes, umodes, prefixmodes variables
-cb3187c5e95e78517671d53b32915d869f4fc9e9 ts6_common: do reverse nick lookup for KICK targets
-55afa1bff626e0dfea607149e285e0303bd3d01a unreal: log instances of PUID manging to debug
-75984c3c4c788ba13894c1f37eb37436cbbe2d21 ts6_common: add abstraction to convert UIDs->outgoing nicks
-9f20f8f76719a47e6ce8d0e1868dbeb056fd049e unreal: update SJOIN matching regex
-4157cb5671691b848a19c2f084e2d49fd6212381 ts6_common: use a better variable name for _getSid()
-e687bb0a78fce6fd6446c5a0655e1ec037120b26 unreal: remove outfilter hack, this doesn't handle text including PUIDs properly
-0136ff2c3a74561535259a9453687ce367465272 example conf: mention using spaces to indent
-86781d37ba773525bb96eedaf45f33af420f0a38 README: fix typo
-9fde35fd774e199648873b73cfca7e186b40eeca relay: handle server name conflicts more correctly
-c01b4497415691b140af747fb6187b4d41337d1d relay: treat network names case-sensitively
-02ec50826bd0af2e60a5fd024a68a2579c6ce2b2 unreal: fix super() syntax in SQUIT handling
-16779aa5ce067bfc4f9ddbf377e5238da105ea2b classes: remove lower() call when storing netname
-6acfbb41253bfe8c9093636612b3c48b8f25eb09 unreal: case-desensitize legacy server names when handling user introductions from them
-62da384caeb62f892286b9c1f269865e5b5dcbc3 README: unreal 3.2 mixed networks are supported now, sorta
-5d0f450c73ea2fbac2f136b7805825c51900a024 Merge branches 'master' and 'devel' into devel+unreal32
-956167538a4a7366ba23ca81624f798c0297bc64 unreal: add warnings & more descriptive errors regarding mixed_link
-f3ceefe87fe30aaae29d2e904fa44c6fd7a6e6aa unreal: initialize legacy users on the right server
-efd13d20ee4d801c0f69bee59d7335ca9e632069 example-conf: add sample unreal block, documenting mixed_link
-44b102ffce03b746ad172c266f00eece15c92f1a networks: allow all opers to run 'autoconnect'
-13e97177e2641595709a2940eb038b9fac2bdb3a docs: Add a PyLink oper guide
-c4273e68a4226ea2d9ee8f355ced734f6e57c88a unreal: fix for Python 3.4 support
-4f088942273b612a8979c6874d16ed34e3930825 unreal: typofix
-10be9623180ae1ed2dcbe4cffb598b79b4e2e39f unreal: actually return the hook data for NICK & KILL
-44dc856ffaa4af4ee7918d7e6129e210b7842ca2 unreal: use an awful outFilter hack to convert PUIDs->nicks when sending outgoing commands
-74ee1ded4dbf48fb123533a5277a35185eca2fa4 unreal: Start work on some really hacky Unreal 3.2 compat code (#193)
-3e7255e4b2e052c76cd94784ad04b4e3cbf96604 classes: remove ts6-specific hack in Protocol.removeClient
-514072804c7ba7a647e925c3e2cf0f1a95c2f8c8 README: mention the implications of #193
-fd32bbf45f91ea25fffd7397453afe0f6c49c7b8 unreal: fix typo in last commit
-efcc30c9838e8863b0a750973bc22e050bcd997d unreal: don't confuse legacy SERVER introductions from our uplink with protocol negotiation
-fab404f8d6312e83b317c41821ce9efb255beca9 Merge branches 'master' and 'wip/relay-fixes' into devel
-3a8b0aa123c32c55ea4cb599fe56c613c74c2d64 relay: catch OSError too when loading DB
-1bcadbe12b1df4b9d92954025697892c98b100b3 Use more flexible shebangs (/usr/bin/env python3)
-9e33081bc9544d59316833c7d1a75fce517c087e relay: fix typo in comment
-d21344342d7c69a2f7ca578692d27c8907219920 relay: experimental fix for #183
-8b7a9f6b459576641296271f7e4ce6ba0a2d9339 Merge pull request #189 from DanielOaks/devel+ignore-env
-d287a22aecd9aed707068bea12c61437df4a9aa2 gitignore: Ignore env folder for virtualenvs
-58519011b8fa23b06c36632fa154bead56588a25 coreplugin: modularize shutdown routines, handle SIGTERM->shutdown
-b100f30cfe537fc3e0cbc1f2773cf32fbe98306a fantasy: break if IRC object isn't ready
-cf363432f0aa9d8152cfbe2bbbdb6f644bcef960 pylink: use abspath() to get the source directory
-662d1ce03f8bb4b1110dab413cb13422737eeb9f inspircd: warn that inspircd 2.2 support is experimental
-4a0ee6f54c6f2952abfb634c84369e506623c2c5 relay: be more thread-safe via dict.copy()
-305db9f7540bea1f671007a2b1eea7cdd6c9fd87 utils: also don't crash in applyModes for bad mode targets
-e70dfb081196a2091d06476adc71bc8c4457f91f Merge branch 'master' into devel
-08c3b99dfb17d6f7b284664366291010eed9e455 relay: fix ambiguous logging in KICK blocking
-4125ff33b1803ab12e475fa508b3d1e1578f38b4 pylink: prettier "Loaded plugins" log message on start
-d5d3c2422bf2c623ffc3ccdf36110ed6a174dd6a inspircd: define minimum & target protocol versions instead of hardcoding them
-70b9bde2c4cafb9f2ac9d2cf4ea96b341893c032 unreal: fix a little typo
-ad517f80da2ea23fb65cc9b0114b2fe0205b67d4 unreal: bump protocol version to 4000
-19ac5b59a51988573eeab6ff77ded38ef4e93d04 protocols: drop underscores from pre-defined opertypes
-c71d2bfcb95d69aa1c54e46e1b388a7704e541c9 coreplugin: sync opertype changes in handle_operup
-9278e56dd82e043b61d1acbe55bd68c6c82e3d97 coreplugin: normalize WHOIS output format
-44083ccd5e94e3814b0bfff6f272567bef28bc5e core: Store opertype info in all IrcUser objects
-bdbc1020f2742bb004025bfd51966069f8841e5e Merge branch 'master' into devel
-fbd8659a7d6e2b08b7baa45bbdd95dbff67724b4 classes: spawn PyLink clients with a custom opertype
-a91fa46549e7601cb339fd9fc02e5ed47fbd1797 Regenerate pydoc documentation
-c8a35147765f04fb98e8629f6b475cf9a198feb4 hooks-reference: add VERSION and WHOIS
-f618b96b347b1a5c11cb11b9089ffb7f87874265 inspircd: add VERSION handling
-00552a41a739ecccd2a25ffbb4314f81b142fcab Move detailed version string generation to utils
-23056e97e3952561a83f466712cbc2a7c3df056a protocols & coreplugin: add handlers for VERSION requests
-45c2abdae79ad14342a4cfb615c7b658d0aaa9ac Irc: run initVars() on connect too
-aedb05608e6ed02503bd077d7b7d2974936da734 relay: actually, just kill handle_spawnmain
-b2b04c8e7501c2abc9e83317d9da4047b76ef5d9 classes: really ignore errors when shutting down sockets
-ce3d3cf697278d571ccda4f043a3300405336e7e relay: check to make sure network is ready before handling spawnmain
-0bb54d88e05431549cba39b0e172a70980ee727d New servprotect plugin (anti-KILL/SAVE flood)
-9fe3373906a2e79fd860b9ffcbcfcccbafb40fa8 relay: get rid of kill/save protection
-75ec95b8d358fc5a9ec936dae386bddc4fde0210 Merge branch 'master' into devel
-03b53aee59f81ba3a271e84e6f260c9a6b4ea95c Merge branch 'staging' into devel
-e1830786452220484e7ed16d42053d5b288c77e1 protocols: Remove "secret" testing channel name
-6962f3b73e8b18501bf91f4af6abfa64a55c9d8a ts6: unset has_eob correctly on reconnects
-c176c90bb6d3ac87bbda8953e68ac3998fd138ab coreplugin: use IrcChannel.getPrefixModes in whois replies
-f5f0df52ce0aaac3df5a21f117fe9f6bca71d801 classes: raise KeyError, not return KeyError...
-c86a02e044c47651ee6a942a51cd4572e7d92884 relay: use IrcChannel.getPrefixModes
-e948db5c7bf051ea780bfc36bc47495787b702ee classes: support looking at older versions of prefix modes mappings
-d84cfbcda169b2c1a428f5609463a4606ea07105 utils: simplify prefix modes handling in applyModes
-e8b00185854444faa12e0316b09bfe75731a9b60 classes: Implement IrcChannel.is(Voice|Halfop|Op)Plus (#168)
-ed333a6d1b03ecf57c6ea0917ccd54c1680f3ed4 classes: implement IrcChannel.isOp, isVoice, getPrefixmodes, etc
-8135f3a735cf1bd15e3805eed7b29c4694ba1ab2 core: Depluralize prefixmodes mappings (#168)
-1d4350c4fd00e7f8012781992ab73a1b73f396d2 classes: provide IrcChannel objects with their own name using KeyedDefaultdict
-544d6e10418165415c8ffe2b5fbe59fcffd65b0f utils: add KeyedDefaultdict
+- Support mixed Unreal 3.2/4.0 networks (#193)
+- More complete APIs for checking channel access (#168)
+- New **`servprotect`** plugin for KILL/SAVE flood protection. This was split out of relay due to expiringdict not being installable via pip.
+- Documentation update (protocol module variables, mention new WHOIS, VERSION hooks)
+- Minor fixes for Windows support. (#183)
+- SIGTERM should now shut down the daemon cleanly. (#179)
+
+----
+- 8ee64d5ec1bf9c87f16ba3a1210c2210bf50cd5f readme: mention why expiringdict is broken in pip3
+- 528dfdba2abc95701fe037bb9d3fa41a7f9476c0 pmodule-spec: mention cmodes, umodes, prefixmodes variables
+- cb3187c5e95e78517671d53b32915d869f4fc9e9 ts6_common: do reverse nick lookup for KICK targets
+- 55afa1bff626e0dfea607149e285e0303bd3d01a unreal: log instances of PUID manging to debug
+- 75984c3c4c788ba13894c1f37eb37436cbbe2d21 ts6_common: add abstraction to convert UIDs->outgoing nicks
+- 9f20f8f76719a47e6ce8d0e1868dbeb056fd049e unreal: update SJOIN matching regex
+- 4157cb5671691b848a19c2f084e2d49fd6212381 ts6_common: use a better variable name for _getSid()
+- e687bb0a78fce6fd6446c5a0655e1ec037120b26 unreal: remove outfilter hack, this doesn't handle text including PUIDs properly
+- 0136ff2c3a74561535259a9453687ce367465272 example conf: mention using spaces to indent
+- 86781d37ba773525bb96eedaf45f33af420f0a38 README: fix typo
+- 9fde35fd774e199648873b73cfca7e186b40eeca relay: handle server name conflicts more correctly
+- c01b4497415691b140af747fb6187b4d41337d1d relay: treat network names case-sensitively
+- 02ec50826bd0af2e60a5fd024a68a2579c6ce2b2 unreal: fix super() syntax in SQUIT handling
+- 16779aa5ce067bfc4f9ddbf377e5238da105ea2b classes: remove lower() call when storing netname
+- 6acfbb41253bfe8c9093636612b3c48b8f25eb09 unreal: case-desensitize legacy server names when handling user introductions from them
+- 62da384caeb62f892286b9c1f269865e5b5dcbc3 README: unreal 3.2 mixed networks are supported now, sorta
+- 5d0f450c73ea2fbac2f136b7805825c51900a024 Merge branches 'master' and 'devel' into devel+unreal32
+- 956167538a4a7366ba23ca81624f798c0297bc64 unreal: add warnings & more descriptive errors regarding mixed_link
+- f3ceefe87fe30aaae29d2e904fa44c6fd7a6e6aa unreal: initialize legacy users on the right server
+- efd13d20ee4d801c0f69bee59d7335ca9e632069 example-conf: add sample unreal block, documenting mixed_link
+- 44b102ffce03b746ad172c266f00eece15c92f1a networks: allow all opers to run 'autoconnect'
+- 13e97177e2641595709a2940eb038b9fac2bdb3a docs: Add a PyLink oper guide
+- c4273e68a4226ea2d9ee8f355ced734f6e57c88a unreal: fix for Python 3.4 support
+- 4f088942273b612a8979c6874d16ed34e3930825 unreal: typofix
+- 10be9623180ae1ed2dcbe4cffb598b79b4e2e39f unreal: actually return the hook data for NICK & KILL
+- 44dc856ffaa4af4ee7918d7e6129e210b7842ca2 unreal: use an awful outFilter hack to convert PUIDs->nicks when sending outgoing commands
+- 74ee1ded4dbf48fb123533a5277a35185eca2fa4 unreal: Start work on some really hacky Unreal 3.2 compat code (#193)
+- 3e7255e4b2e052c76cd94784ad04b4e3cbf96604 classes: remove ts6-specific hack in Protocol.removeClient
+- 514072804c7ba7a647e925c3e2cf0f1a95c2f8c8 README: mention the implications of #193
+- fd32bbf45f91ea25fffd7397453afe0f6c49c7b8 unreal: fix typo in last commit
+- efcc30c9838e8863b0a750973bc22e050bcd997d unreal: don't confuse legacy SERVER introductions from our uplink with protocol negotiation
+- fab404f8d6312e83b317c41821ce9efb255beca9 Merge branches 'master' and 'wip/relay-fixes' into devel
+- 3a8b0aa123c32c55ea4cb599fe56c613c74c2d64 relay: catch OSError too when loading DB
+- 1bcadbe12b1df4b9d92954025697892c98b100b3 Use more flexible shebangs (/usr/bin/env python3)
+- 9e33081bc9544d59316833c7d1a75fce517c087e relay: fix typo in comment
+- d21344342d7c69a2f7ca578692d27c8907219920 relay: experimental fix for #183
+- 8b7a9f6b459576641296271f7e4ce6ba0a2d9339 Merge pull request #189 from DanielOaks/devel+ignore-env
+- d287a22aecd9aed707068bea12c61437df4a9aa2 gitignore: Ignore env folder for virtualenvs
+- 58519011b8fa23b06c36632fa154bead56588a25 coreplugin: modularize shutdown routines, handle SIGTERM->shutdown
+- b100f30cfe537fc3e0cbc1f2773cf32fbe98306a fantasy: break if IRC object isn't ready
+- cf363432f0aa9d8152cfbe2bbbdb6f644bcef960 pylink: use abspath() to get the source directory
+- 662d1ce03f8bb4b1110dab413cb13422737eeb9f inspircd: warn that inspircd 2.2 support is experimental
+- 4a0ee6f54c6f2952abfb634c84369e506623c2c5 relay: be more thread-safe via dict.copy()
+- 305db9f7540bea1f671007a2b1eea7cdd6c9fd87 utils: also don't crash in applyModes for bad mode targets
+- e70dfb081196a2091d06476adc71bc8c4457f91f Merge branch 'master' into devel
+- 08c3b99dfb17d6f7b284664366291010eed9e455 relay: fix ambiguous logging in KICK blocking
+- 4125ff33b1803ab12e475fa508b3d1e1578f38b4 pylink: prettier "Loaded plugins" log message on start
+- d5d3c2422bf2c623ffc3ccdf36110ed6a174dd6a inspircd: define minimum & target protocol versions instead of hardcoding them
+- 70b9bde2c4cafb9f2ac9d2cf4ea96b341893c032 unreal: fix a little typo
+- ad517f80da2ea23fb65cc9b0114b2fe0205b67d4 unreal: bump protocol version to 4000
+- 19ac5b59a51988573eeab6ff77ded38ef4e93d04 protocols: drop underscores from pre-defined opertypes
+- c71d2bfcb95d69aa1c54e46e1b388a7704e541c9 coreplugin: sync opertype changes in handle_operup
+- 9278e56dd82e043b61d1acbe55bd68c6c82e3d97 coreplugin: normalize WHOIS output format
+- 44083ccd5e94e3814b0bfff6f272567bef28bc5e core: Store opertype info in all IrcUser objects
+- bdbc1020f2742bb004025bfd51966069f8841e5e Merge branch 'master' into devel
+- fbd8659a7d6e2b08b7baa45bbdd95dbff67724b4 classes: spawn PyLink clients with a custom opertype
+- a91fa46549e7601cb339fd9fc02e5ed47fbd1797 Regenerate pydoc documentation
+- c8a35147765f04fb98e8629f6b475cf9a198feb4 hooks-reference: add VERSION and WHOIS
+- f618b96b347b1a5c11cb11b9089ffb7f87874265 inspircd: add VERSION handling
+- 00552a41a739ecccd2a25ffbb4314f81b142fcab Move detailed version string generation to utils
+- 23056e97e3952561a83f466712cbc2a7c3df056a protocols & coreplugin: add handlers for VERSION requests
+- 45c2abdae79ad14342a4cfb615c7b658d0aaa9ac Irc: run initVars() on connect too
+- aedb05608e6ed02503bd077d7b7d2974936da734 relay: actually, just kill handle_spawnmain
+- b2b04c8e7501c2abc9e83317d9da4047b76ef5d9 classes: really ignore errors when shutting down sockets
+- ce3d3cf697278d571ccda4f043a3300405336e7e relay: check to make sure network is ready before handling spawnmain
+- 0bb54d88e05431549cba39b0e172a70980ee727d New servprotect plugin (anti-KILL/SAVE flood)
+- 9fe3373906a2e79fd860b9ffcbcfcccbafb40fa8 relay: get rid of kill/save protection
+- 75ec95b8d358fc5a9ec936dae386bddc4fde0210 Merge branch 'master' into devel
+- 03b53aee59f81ba3a271e84e6f260c9a6b4ea95c Merge branch 'staging' into devel
+- e1830786452220484e7ed16d42053d5b288c77e1 protocols: Remove "secret" testing channel name
+- 6962f3b73e8b18501bf91f4af6abfa64a55c9d8a ts6: unset has_eob correctly on reconnects
+- c176c90bb6d3ac87bbda8953e68ac3998fd138ab coreplugin: use IrcChannel.getPrefixModes in whois replies
+- f5f0df52ce0aaac3df5a21f117fe9f6bca71d801 classes: raise KeyError, not return KeyError...
+- c86a02e044c47651ee6a942a51cd4572e7d92884 relay: use IrcChannel.getPrefixModes
+- e948db5c7bf051ea780bfc36bc47495787b702ee classes: support looking at older versions of prefix modes mappings
+- d84cfbcda169b2c1a428f5609463a4606ea07105 utils: simplify prefix modes handling in applyModes
+- e8b00185854444faa12e0316b09bfe75731a9b60 classes: Implement IrcChannel.is(Voice|Halfop|Op)Plus (#168)
+- ed333a6d1b03ecf57c6ea0917ccd54c1680f3ed4 classes: implement IrcChannel.isOp, isVoice, getPrefixmodes, etc
+- 8135f3a735cf1bd15e3805eed7b29c4694ba1ab2 core: Depluralize prefixmodes mappings (#168)
+- 1d4350c4fd00e7f8012781992ab73a1b73f396d2 classes: provide IrcChannel objects with their own name using KeyedDefaultdict
+- 544d6e10418165415c8ffe2b5fbe59fcffd65b0f utils: add KeyedDefaultdict
 
 # [PyLink 0.7.1-dev](https://github.com/GLolol/PyLink/releases/tag/0.7.1-dev)
 Tagged as **0.7.1-dev** by [GLolol](https://github.com/GLolol) on 2016-03-31T01:42:41Z
 
 Bugfix release. Lingering errata which you may still encounter: #183.
 
-0fd093644cf14c9b689ce8d606722989df3477de utils: don't crash when mode target is invalid
-1930739aad815efcadcdb50ccbcddd44bdcd4aef Revert "Irc: don't call initVars() on IRC object initialization"
-2b16f25b612e2d3a0ba145cf314e5167b24c0767 classes.Irc: clear state on disconnect, not on connect
-a4395ed9893509334b868a9ba20f2da96923448c log: respect child loggers' levels if they are lower than the main one's
-46922ce879e7505d09d2008960740d4a7e1082f7 relay: remove dead networks' servers from the servers index unconditionally
-f2a21148e7bb9ddd4f17767aaffe6fc408e66942 Irc: run initVars() on connect too
-9cd1635f68dafee47f147de43b258014d14da6e2 unreal: fix wrong variable name in handle_umode2
-2169a9be28331c6207865d50912cd671ff3c34a2 utils: actually abort when mode target is invalid
+- 0fd093644cf14c9b689ce8d606722989df3477de utils: don't crash when mode target is invalid
+- 1930739aad815efcadcdb50ccbcddd44bdcd4aef Revert "Irc: don't call initVars() on IRC object initialization"
+- 2b16f25b612e2d3a0ba145cf314e5167b24c0767 classes.Irc: clear state on disconnect, not on connect
+- a4395ed9893509334b868a9ba20f2da96923448c log: respect child loggers' levels if they are lower than the main one's
+- 46922ce879e7505d09d2008960740d4a7e1082f7 relay: remove dead networks' servers from the servers index unconditionally
+- f2a21148e7bb9ddd4f17767aaffe6fc408e66942 Irc: run initVars() on connect too
+- 9cd1635f68dafee47f147de43b258014d14da6e2 unreal: fix wrong variable name in handle_umode2
+- 2169a9be28331c6207865d50912cd671ff3c34a2 utils: actually abort when mode target is invalid
 
 # [PyLink 0.7.0-dev](https://github.com/GLolol/PyLink/releases/tag/0.7.0-dev)
 Tagged as **0.7.0-dev** by [GLolol](https://github.com/GLolol) on 2016-03-21T19:09:12Z
 
 ### Changes from 0.6.1-dev:
-d12e70d5e5c1981cf3eeb3c55e716bcb09b4af16 ts6: unset has_eob correctly on reconnects
-5b2c9c593b467eb6fcd35f6fad3ff4f62925e4fe Add .mailmap
-abce18a5baf5d11d7e9f26b4339d1e64134eff52 log: split multi-line channel logs into multiple PRIVMSGs
-a8303d01102ba234ab667fad0df01cfb80e2c31b commands: sort channel list in 'showuser' output
-0dd8b80a21d89998234c839663671ab662b8d6f9 docs/t: use rawgit links to serve HTML
-506ae011a4a13531a66272573441f6f6bf5471f6 Update autogenerated docs (adding a script to do this now)
-d8e5202e5b684acc2571f0578319c48456a2345e world: use a better module description
-2adb67d38e49e166658d9e996fb4869bc7a69a86 runtests: remove .py extension, only run tests when ran as a script
-da7bd649d2c19a544381a4002b55d8b352757414 conf: fix testconf missing the logging: section
-557efc369f4e1bde965042513112b08bf2940c33 docs/t: mark hooks-reference as finished in README
-9d0fcb5395f88b8aeda284c71ab4f30bbf97296c docs: finish off hooks-reference (#113)
-15b35f1853b1d0826a409a4b5cc2216005a3554c ts6: support charybdis +T mode (closes #173)
-359bfcd9dae38e5e6e487f9c773144ee26af06a5 bots: map 'msg' command to 'say' too
-b6889fb0978b563709356cb708290bf123e55b3b irc: fix spacing in certificate fingerprint logging
-7f5bc52152bc082f7beb689233d062b7714ff571 relay: fix errors in KILL handling when target isn't in any relay channels
-3527960d18b2366084ca0c7ad99c16a907e4f0fd coreplugin: tell plugins to exit cleanly before closing connections
-9b0db81068e2c07867bd8100cb9007a198770cb5 changehost: modularize, add a command to apply cloaks now, match IPs too
-14388d932fb774fa714b6e2d65f5cd3e2d51c3cf utils.getHostmask: add option to return IP address
-5fed4629a612ba0e01616e61c70e03f3ce93c511 networks: remove networks with autoconnect off in 'disconnect'
-8ac5436152cc70d187eb380e99f5bd46097bf39c relay: allow admins to destroy channels hosted on other networks
-4df027cac43a44318504f83767eeba0573963d66 coreplugin: ignore services' attempts to send accountname before user introduction
-1ce2725f1e19d9140f478acd5631f837dd4ba8ed bots: update help for 'msg' command (reflect changes made for #161)
-54dc51aed4753691530b2ff056dac20ff2ac7c72 bots: make source client names optional (Closes #161)
-34ca9730470c0479ee8d647317c2bf399d349472 relay: cleanup, consistently include the function in log.debug calls
-a740163cbef345f4487c2c5ead89e8e76cc6a6e1 relay: implement DB exporting using threading.Timer, similar to classes.Irc.schedulePing
-d5312018505893401eab59856fde756ed5916737 Merge branch 'master' into devel
-ae8f369f2e1a321c93b1d3537af804d3eee18160 relay: only show networks that are actually connected in LINKED
-de1a9a7995cc3110dbf2d289ca2c01d230a2ebc8 relay: various cleanup
-eec8e0dca4cd598e078e715f3b0784d0f6431933 log: attempt to remedy #164 (more testing needed)
-40d76c8bb6b25a6a7fa49001ca921827e3d13081 coreplugin: demote successful oper-up messages to debug
-df23b797803f33d79d05cc8b66d72fa1bc214715 commands: reformat 'showuser' output, and show services login info (#25)
-decdf141fd7328c2ee133e8b1ecd6ccf946a6c16 unreal: don't use updateClient to update hostname of clients internally
-2ebdb4bad65ae66cc33ea2fcb7cef445dfa8a395 unreal: support services account tracking (#25), fix handle_SVSMODE applying modes on the wrong target
-cabdb11f86cbe42165f36c3d4743eeef5a8cb7e9 inspircd: implement services account tracking (#25)
-0fff91edfd3e10c4106039bc3b89101d6780c95f ts6: implement services account tracking (#25)
-cf15bed58dfd91ebb2ff2aa31ae19706f3f8abe5 classes: add services_account field in IrcUser (#25), default 'identified' attribute to empty string instead of None
-584f95211383a3363be39c39a0409f65d1793de0 conf: check to make sure logging block exists in config
-5877031203ceee2e60dc3d204691ddcb31393761 Merge branch 'master' into devel
-21167e8fb3db21bf07bac890e2787a4fc535ffb1 example conf: use 1 "#" without trailing space for commented-out options
-0d4655c381a1096920e16ce443ca688a7223755c core: support multiple channel loggers with DIFFERENT log levels & fix example conf (#83)
-669e889e6fbc9a8405f4c8a751ccebe2c1990faa Support configurable SSL fingerprint hash types (Closes #157)
-08fd50d3d8cbed4885791ec97f7c64f025664e08 Logging improvements, including support for custom file targets (#83)
-de84a5b4376da3e9636bad6463d7b79af0faa0c2 log: default level should be INFO, not DEBUG
-cf1de08457753bdfd13d340f2cfcb3e02998dd67 commands: support rehashing channel loggers
-2503bd3ee5e512a5f6bfbd5ffe64edabcb64c278 commands: In rehash, use irc.disconnect() to disconnect networks removed from conf
-14efb27fe8179cc199dab182e567c1ce4567ccdc Initial experimental support for logging to channels (#83)
-4b939ea641284aa9bbb796adc58d273f080e59ee ts6: rewrite end-of-burst code (EOB is literally just a PING in ts6)
-5a68dc1bc5f880d1117ca81e729f90fb5e1fce38 Irc: don't call initVars() on IRC object initialization
+
+- d12e70d5e5c1981cf3eeb3c55e716bcb09b4af16 ts6: unset has_eob correctly on reconnects
+- 5b2c9c593b467eb6fcd35f6fad3ff4f62925e4fe Add .mailmap
+- abce18a5baf5d11d7e9f26b4339d1e64134eff52 log: split multi-line channel logs into multiple PRIVMSGs
+- a8303d01102ba234ab667fad0df01cfb80e2c31b commands: sort channel list in 'showuser' output
+- 0dd8b80a21d89998234c839663671ab662b8d6f9 docs/t: use rawgit links to serve HTML
+- 506ae011a4a13531a66272573441f6f6bf5471f6 Update autogenerated docs (adding a script to do this now)
+- d8e5202e5b684acc2571f0578319c48456a2345e world: use a better module description
+- 2adb67d38e49e166658d9e996fb4869bc7a69a86 runtests: remove .py extension, only run tests when ran as a script
+- da7bd649d2c19a544381a4002b55d8b352757414 conf: fix testconf missing the logging: section
+- 557efc369f4e1bde965042513112b08bf2940c33 docs/t: mark hooks-reference as finished in README
+- 9d0fcb5395f88b8aeda284c71ab4f30bbf97296c docs: finish off hooks-reference (#113)
+- 15b35f1853b1d0826a409a4b5cc2216005a3554c ts6: support charybdis +T mode (closes #173)
+- 359bfcd9dae38e5e6e487f9c773144ee26af06a5 bots: map 'msg' command to 'say' too
+- b6889fb0978b563709356cb708290bf123e55b3b irc: fix spacing in certificate fingerprint logging
+- 7f5bc52152bc082f7beb689233d062b7714ff571 relay: fix errors in KILL handling when target isn't in any relay channels
+- 3527960d18b2366084ca0c7ad99c16a907e4f0fd coreplugin: tell plugins to exit cleanly before closing connections
+- 9b0db81068e2c07867bd8100cb9007a198770cb5 changehost: modularize, add a command to apply cloaks now, match IPs too
+- 14388d932fb774fa714b6e2d65f5cd3e2d51c3cf utils.getHostmask: add option to return IP address
+- 5fed4629a612ba0e01616e61c70e03f3ce93c511 networks: remove networks with autoconnect off in 'disconnect'
+- 8ac5436152cc70d187eb380e99f5bd46097bf39c relay: allow admins to destroy channels hosted on other networks
+- 4df027cac43a44318504f83767eeba0573963d66 coreplugin: ignore services' attempts to send accountname before user introduction
+- 1ce2725f1e19d9140f478acd5631f837dd4ba8ed bots: update help for 'msg' command (reflect changes made for #161)
+- 54dc51aed4753691530b2ff056dac20ff2ac7c72 bots: make source client names optional (Closes #161)
+- 34ca9730470c0479ee8d647317c2bf399d349472 relay: cleanup, consistently include the function in log.debug calls
+- a740163cbef345f4487c2c5ead89e8e76cc6a6e1 relay: implement DB exporting using threading.Timer, similar to classes.Irc.schedulePing
+- d5312018505893401eab59856fde756ed5916737 Merge branch 'master' into devel
+- ae8f369f2e1a321c93b1d3537af804d3eee18160 relay: only show networks that are actually connected in LINKED
+- de1a9a7995cc3110dbf2d289ca2c01d230a2ebc8 relay: various cleanup
+- eec8e0dca4cd598e078e715f3b0784d0f6431933 log: attempt to remedy #164 (more testing needed)
+- 40d76c8bb6b25a6a7fa49001ca921827e3d13081 coreplugin: demote successful oper-up messages to debug
+- df23b797803f33d79d05cc8b66d72fa1bc214715 commands: reformat 'showuser' output, and show services login info (#25)
+- decdf141fd7328c2ee133e8b1ecd6ccf946a6c16 unreal: don't use updateClient to update hostname of clients internally
+- 2ebdb4bad65ae66cc33ea2fcb7cef445dfa8a395 unreal: support services account tracking (#25), fix handle_SVSMODE applying modes on the wrong target
+- cabdb11f86cbe42165f36c3d4743eeef5a8cb7e9 inspircd: implement services account tracking (#25)
+- 0fff91edfd3e10c4106039bc3b89101d6780c95f ts6: implement services account tracking (#25)
+- cf15bed58dfd91ebb2ff2aa31ae19706f3f8abe5 classes: add services_account field in IrcUser (#25), default 'identified' attribute to empty string instead of None
+- 584f95211383a3363be39c39a0409f65d1793de0 conf: check to make sure logging block exists in config
+- 5877031203ceee2e60dc3d204691ddcb31393761 Merge branch 'master' into devel
+- 21167e8fb3db21bf07bac890e2787a4fc535ffb1 example conf: use 1 "#" without trailing space for commented-out options
+- 0d4655c381a1096920e16ce443ca688a7223755c core: support multiple channel loggers with DIFFERENT log levels & fix example conf (#83)
+- 669e889e6fbc9a8405f4c8a751ccebe2c1990faa Support configurable SSL fingerprint hash types (Closes #157)
+- 08fd50d3d8cbed4885791ec97f7c64f025664e08 Logging improvements, including support for custom file targets (#83)
+- de84a5b4376da3e9636bad6463d7b79af0faa0c2 log: default level should be INFO, not DEBUG
+- cf1de08457753bdfd13d340f2cfcb3e02998dd67 commands: support rehashing channel loggers
+- 2503bd3ee5e512a5f6bfbd5ffe64edabcb64c278 commands: In rehash, use irc.disconnect() to disconnect networks removed from conf
+- 14efb27fe8179cc199dab182e567c1ce4567ccdc Initial experimental support for logging to channels (#83)
+- 4b939ea641284aa9bbb796adc58d273f080e59ee ts6: rewrite end-of-burst code (EOB is literally just a PING in ts6)
+- 5a68dc1bc5f880d1117ca81e729f90fb5e1fce38 Irc: don't call initVars() on IRC object initialization
 
 # [PyLink 0.6.1-dev](https://github.com/GLolol/PyLink/releases/tag/0.6.1-dev)
 Tagged as **0.6.1-dev** by [GLolol](https://github.com/GLolol) on 2016-03-02T05:15:22Z
@@ -952,8 +955,8 @@ Tagged as **0.4.6-dev** by [GLolol](https://github.com/GLolol) on 2015-10-01T23:
 
 Bugfix release:
 
-f20e6775770b7a118a697c8ae08364d850cdf116 relay: fix PMs across the relay (7d919e6 regression)
-55d9eb240f037a3378a92ab7661b31011398f565 classes.Irc: prettier __repr__
+- f20e6775770b7a118a697c8ae08364d850cdf116 relay: fix PMs across the relay (7d919e6 regression)
+- 55d9eb240f037a3378a92ab7661b31011398f565 classes.Irc: prettier __repr__
 
 # [PyLink 0.4.5-dev](https://github.com/GLolol/PyLink/releases/tag/0.4.5-dev)
 Tagged as **0.4.5-dev** by [GLolol](https://github.com/GLolol) on 2015-09-30T04:14:22Z
@@ -963,103 +966,69 @@ The "fancy stuff!" release.
 New features including in-place config reloading (rehashing) (#89), FANTASY support (#111), and plugin (re/un)loading without a restart.
 
 Full diff since 0.4.0-dev: https://github.com/GLolol/PyLink/compare/0.4.0-dev...0.4.5-dev
-48831863d2cef8cc39599427bc6829eed5f3b205 validateConf: allow autojoin channels to be empty; nothing wrong with that
-54414f307e0408c1bbaa59182c72a82dac6d342a commands: new REHASH command (Closes #89)
-e84a2d102553b4d6def0bcf98e72e39a90a2aa47 Modularize our import hacks, make Irc() take a conf object again
-9e079497309c9736cba22fb0adde6c459209558e relay: make spawning of subservers toggleable
-55b642ea302837c45daa41761f89d6451afe6d08 Revert "relay: remove ENDBURST hook (is this needed anymore?)"
-630aa83084e1b78e2b07a1acb81edc58b70ca2d0 core: add some rudimentary config file validation
-0d3a7a5ce0609a751eba25c42b4cf761a38c1827 exec: import world, for easier access to it
-5aeaac0394880612f07bdfb17242798b7e72c6be commands: only allow loading plugins that aren't already loaded
-38a350a5f8b04446d69b5912b8808a31e28d06a8 Revert "pylink: use sys.path instead of imp library hacks"
-4a9a29e095fc6e5e9f23098e30efe7388ff0276a relay: remove ENDBURST hook (is this needed anymore?)
-a14e8a7b8f66071555dfd159316104d4ce27632d relay: add (experimental) support for plugin reloading
-07fe7202aa04a17ad4397f47c55740922eabfd1f commands: add plugin loading/unloading/reloading support
-bbedd387037bfc3e4019149620765adeb3a3ed19 world: rename command_hooks=>hooks, bot_commands=>commands
-cc171eb79a5d7500487ff3c0c0955d337d6b72a2 relay: abort connection when spawning a server fails
-cf2ba4b492107a618c04108747dc33833e31409b pylink: use sys.path instead of imp library hacks
-a903f9750787759e5294cc7d3ab5fd93f9782b3f Make world.plugins a dict instead of a list
-a37d4b6f3c2c2dc13a16932a25cea73a8f1d8717 fantasy: only work when the main PyLink client is in the channel
-7470efc461b8bce05a07c4d1f7fac24d44822bfa commands: add an echo command
-7d919e643ad071c33afb0219ac44acc87a7a5fd7 relay: forward messages from the main PyLink client too
-97a135a6f1dcef6bf7178a303aea2c3f87c3542e classes: add special PYLINK_SELF(PRIVMSG/NOTICE) hooks for command loopback
-034731ab1e52cdafae436d122669e62872091485 core: log which plugin is being called when calling hooks
-0378fcca1d8a00d566e2a68e9efd3573bd870644 fantasy: don't allow internal clients to trigger
-8e444c5dbe173a477e31630861d04fad5726bec9 plugins: support FANTASY (where reasonable) by using irc.msg(irc.called_by, ...) instead of irc.msg(source, ...)
-f55d227329169022ecc5e0d7aae343e8f330386d example conf: add fantasy.py to list and plugin descriptions
-4509e0757d6d2bc3c5d7334be126fcadca42e57a FANTASY support plugin (Closes #111)
-822544e3ccc3e73219638c5e78469589fe16c8f0 core: keep track of where last command was called & make command calling a shared function
-5afa621654c21794b42fac4da966ca1f2600dc4e utils.parseModes: add missing string formatting
-da3251cce2785ee0dc77b7d370947781cb218ec5 utils.parseModes: check to make sure target channel/user exists
-aaeeedadf2d245ea2a691d781dec47a1ee3a9ef0 start-cpulimit: pass command line options to ./pylink
-f884d71cf02851cf7f5f2cb059ce0f24ec46901d docs/pmodule-spec.md: formatting again
-86495db77080c451d3c8d39005b469f4eb557faa docs/pmodule-spec: formatting
-f015fe5e252202a432383dd835adca74b59f9aae Documentation updates, finish off pmodule-spec.md (#113)
-3351aafc79dd442c34cf2e092ec5f6333116e899 inspircd: fix wrong arguments in numericServer() stub
-c77d170765d20b0ac55b945fba4a6257fb15cf43 Move parseArgs and removeClient into the base Protocol class
 
 # [PyLink 0.3.50-dev](https://github.com/GLolol/PyLink/releases/tag/0.3.50-dev)
 Tagged as **0.3.50-dev** by [GLolol](https://github.com/GLolol) on 2015-09-19T18:28:24Z
 
 Many updates to core, preparing for an (eventual) 0.4.x release. Commits:
 
-63189e9 relay: look at the right prefix mode list when rejoining from KILL
-cb83db4 relay: don't allow creating a channel that's already part of a relay
-8faf86a relay: rejoin killed users to the RIGHT channels
-2e0a5e5 utils.parseModes: fix IndexError on empty query
-1f95774 inspircd: add proper fallback value for OPERTYPE?
-d6cb9d4 Merge commit '320de2079a78202e99c7b6aeb53c28c13f43ba47'
-320de20 relay: add INVITE support (Closes #94)
-60dc3fe relay: use "Channel delinked." part message when delinking channels
-9a47ff8 Merge branch 'master' into devel
-ace0ddf relay: use JOIN instead of SJOIN for non-burst joins
-c2ee9ef Merge branch 'master' into devel
-19fa31d relay: fix incorrect logging in getSupportedUmodes()
-2f760c8 relay: Don't send empty user mode changes
-4f40fae relay: in logs, be a bit more specific why we're blocking KILLs and KICKs
-0b590d6 relay/protocols: use utils.toLower() for channel names, respecting IRCd casemappings
-4525b81 relay.handle_kill: prevent yet another RuntimeError
-26e102f Show oper types on WHOIS
-8d19057 relay: set umode +H (hideoper) on all remote opered clients
-5480ae1 classes: Remove "opertype" IrcUser() argument
-531ebbb Merge branch 'master' into devel
-f9b4457 Decorate relay clients, etc. with custom OPERTYPEs
-4a964b1 Merge branch 'master' into devel
-1062e47 classes.IrcChannel: default modes to +nt on join
-d270a18 Remove unused imports
-94f83eb relay.showuser: show home network/nick, and relay nicks regardless of oper status
-5503477 commands: distinguish commands with multiple binds in 'list'
-8976322 Replace admin.showuser with prettier whois-style cmds in 'commands' and 'relay'
-e1e31f6 Allow multiple plugins to bind to one command name!
-afd6d8c Refactor conf loading; skip the file-loading parts entirely for tests (#56)
-cda54c7 main: Fix b71e508.
-a58bee7 Modularize tests using common classes, add our custom test runner (#56)
-549a1d1 classes: IrcServer.users is now a set()
-adb9ef1 classes: fixes for the test API
-973aba6 Move utils' global variables to world.py
-b71e508 classes.Irc no longer needs a conf argument; tweak tests again
-ad5fc97 Many fixes to test API, utils.reverseModes stub
-ab4cb4d Merge branch 'master' into devel
-2fe9b62 Consistently capitalize errors and other messages
-bc7765b Let's use consistent "Unknown command" errors, right?
-d059bd4 Move 'exec' command into its separate plugin
-3d621b0 Move checkAuthenticated() to utils, and give it and isOper() toggles for allowing oper/PyLink logins
-090fa85 Move Irc() from main.py to classes.py
+- 63189e9 relay: look at the right prefix mode list when rejoining from KILL
+- cb83db4 relay: don't allow creating a channel that's already part of a relay
+- 8faf86a relay: rejoin killed users to the RIGHT channels
+- 2e0a5e5 utils.parseModes: fix IndexError on empty query
+- 1f95774 inspircd: add proper fallback value for OPERTYPE?
+- d6cb9d4 Merge commit '320de2079a78202e99c7b6aeb53c28c13f43ba47'
+- 320de20 relay: add INVITE support (Closes #94)
+- 60dc3fe relay: use "Channel delinked." part message when delinking channels
+- 9a47ff8 Merge branch 'master' into devel
+- ace0ddf relay: use JOIN instead of SJOIN for non-burst joins
+- c2ee9ef Merge branch 'master' into devel
+- 19fa31d relay: fix incorrect logging in getSupportedUmodes()
+- 2f760c8 relay: Don't send empty user mode changes
+- 4f40fae relay: in logs, be a bit more specific why we're blocking KILLs and KICKs
+- 0b590d6 relay/protocols: use utils.toLower() for channel names, respecting IRCd casemappings
+- 4525b81 relay.handle_kill: prevent yet another RuntimeError
+- 26e102f Show oper types on WHOIS
+- 8d19057 relay: set umode +H (hideoper) on all remote opered clients
+- 5480ae1 classes: Remove "opertype" IrcUser() argument
+- 531ebbb Merge branch 'master' into devel
+- f9b4457 Decorate relay clients, etc. with custom OPERTYPEs
+- 4a964b1 Merge branch 'master' into devel
+- 1062e47 classes.IrcChannel: default modes to +nt on join
+- d270a18 Remove unused imports
+- 94f83eb relay.showuser: show home network/nick, and relay nicks regardless of oper status
+- 5503477 commands: distinguish commands with multiple binds in 'list'
+- 8976322 Replace admin.showuser with prettier whois-style cmds in 'commands' and 'relay'
+- e1e31f6 Allow multiple plugins to bind to one command name!
+- afd6d8c Refactor conf loading; skip the file-loading parts entirely for tests (#56)
+- cda54c7 main: Fix b71e508.
+- a58bee7 Modularize tests using common classes, add our custom test runner (#56)
+- 549a1d1 classes: IrcServer.users is now a set()
+- adb9ef1 classes: fixes for the test API
+- 973aba6 Move utils' global variables to world.py
+- b71e508 classes.Irc no longer needs a conf argument; tweak tests again
+- ad5fc97 Many fixes to test API, utils.reverseModes stub
+- ab4cb4d Merge branch 'master' into devel
+- 2fe9b62 Consistently capitalize errors and other messages
+- bc7765b Let's use consistent "Unknown command" errors, right?
+- d059bd4 Move 'exec' command into its separate plugin
+- 3d621b0 Move checkAuthenticated() to utils, and give it and isOper() toggles for allowing oper/PyLink logins
+- 090fa85 Move Irc() from main.py to classes.py
 
 # [PyLink 0.3.1-dev](https://github.com/GLolol/PyLink/releases/tag/0.3.1-dev)
 Tagged as **0.3.1-dev** by [GLolol](https://github.com/GLolol) on 2015-09-03T06:56:48Z
 
 Bugfix release + LINKACL support for relay. [Commits since 0.3.0-dev](https://github.com/GLolol/PyLink/compare/0.3.0-dev...0.3.1-dev):
 
-043fccf4470bfbc8041056f5dbb694be079a45a5 Fix previous commit (Closes #100)
-708d94916477f53ddc79a90c4ff321f636c01348 relay: join remote users before sending ours
-8d44830d5c5b12abd6764038d7e9983998acdfc6 relay.handle_kill: prevent yet another RuntimeError
-6d6606900e2df60eb8055da0e4452a560c7510b5 relay: coerse "/" to "|" in nicks if "/" isn't present in the separator
-c8e7b72065b2686c9691b276989ee948023ffe4d protocols: lowercase channel names in PRIVMSG handling
-37eecd7d69cec794186024bf715a8ba55902d0e8 pr/inspircd: use OPERTYPE to oper up clients correctly, and handle the metadata accordingly 9f0f4cb1246c95335f42a24f7c5016175e6fba66 relay: burst the right set of modes
-7620cd7433d9dc53dda1bdb06f6a9c673757f1f6 pr/inspircd: fix compatibility with channel mode +q (~)
-3523f8f7663e618829dccfbec6eccfaf0ec87cc5 LINKACL support
-51389b96e26224aab262b7b090032d0b745e9590 relay: LINKACL command (Closes #88)
+- 043fccf4470bfbc8041056f5dbb694be079a45a5 Fix previous commit (Closes #100)
+- 708d94916477f53ddc79a90c4ff321f636c01348 relay: join remote users before sending ours
+- 8d44830d5c5b12abd6764038d7e9983998acdfc6 relay.handle_kill: prevent yet another RuntimeError
+- 6d6606900e2df60eb8055da0e4452a560c7510b5 relay: coerse "/" to "|" in nicks if "/" isn't present in the separator
+- c8e7b72065b2686c9691b276989ee948023ffe4d protocols: lowercase channel names in PRIVMSG handling
+- 37eecd7d69cec794186024bf715a8ba55902d0e8 pr/inspircd: use OPERTYPE to oper up clients correctly, and handle the metadata accordingly 9f0f4cb1246c95335f42a24f7c5016175e6fba66 relay: burst the right set of modes
+- 7620cd7433d9dc53dda1bdb06f6a9c673757f1f6 pr/inspircd: fix compatibility with channel mode +q (~)
+- 3523f8f7663e618829dccfbec6eccfaf0ec87cc5 LINKACL support
+- 51389b96e26224aab262b7b090032d0b745e9590 relay: LINKACL command (Closes #88)
 
 # [PyLink 0.2.5-dev](https://github.com/GLolol/PyLink/releases/tag/0.2.5-dev)
 Tagged as **0.2.5-dev** by [GLolol](https://github.com/GLolol) on 2015-08-16T05:39:34Z
