@@ -99,12 +99,12 @@ def handle_stats(irc, source, command, args):
         # 213/RPL_STATSCLINE: "C <host> * <name> <port> <class>"
         for netname, serverdata in sorted(conf.conf['servers'].items()):
             # We're cramming as much as we can into the class field...
-            _num(213, "C %s * %s %s protocol:%s__ssl:%s__encoding:%s" %
+            _num(213, "C %s * %s %s [%s:%s:%s]" %
                  (serverdata.get('ip', '0.0.0.0'),
                   netname,
                   serverdata.get('port', 0),
                   serverdata['protocol'],
-                  bool(serverdata.get('ssl')),
+                  'ssl' if serverdata.get('ssl') else 'no-ssl',
                   serverdata.get('encoding', 'utf-8'))
                  )
     elif stats_type == 'o':
