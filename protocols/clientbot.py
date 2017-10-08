@@ -916,11 +916,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         if (not self.is_internal_client(source)) and not self.is_internal_server(source):
             # Don't repeat hooks if we're the kicker.
-            self.call_hooks([source, 'KICK', {'channel': channel, 'target': target, 'text': reason}])
-
-        # Delete channels that we were kicked from, for better state keeping.
-        if self.pseudoclient and target == self.pseudoclient.uid:
-            del self._channels[channel]
+            return {'channel': channel, 'target': target, 'text': reason}
 
     def handle_mode(self, source, command, args):
         """Handles MODE changes."""
@@ -1019,12 +1015,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self._channels[channel].remove_user(source)
         self.users[source].channels -= set(channels)
 
-        self.call_hooks([source, 'PART', {'channels': channels, 'text': reason}])
-
-        # Clear channels that are empty, or that we're parting.
-        for channel in channels:
-            if (self.pseudoclient and source == self.pseudoclient.uid) or not self._channels[channel].users:
-                del self._channels[channel]
+        return {'channels': channels, 'text': reason}
 
     def handle_ping(self, source, command, args):
         """

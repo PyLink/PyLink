@@ -163,3 +163,29 @@ def handle_time(irc, source, command, args):
     timestring = time.ctime()
     irc.numeric(irc.sid, 391, source, '%s :%s' % (irc.hostname(), timestring))
 utils.add_hook(handle_time, 'TIME')
+
+def _state_cleanup_core(irc, source, channel):
+    """
+    Handles PART and KICK on clientbot-like networks (where only the users and channels we see are available)
+    by deleting channels when we leave and users when they leave all shared channels.
+    """
+    if irc.has_cap('visible-state-only'):
+        # Delete channels that we were removed from.
+        if irc.pseudoclient and source == irc.pseudoclient.uid:
+            log.debug('(%s) state_cleanup: removing channel %s since we have left', irc.name, channel)
+            del irc._channels[channel]
+
+        # Delete users no longer sharing a channel with us.
+        if not irc.users[source].channels:
+            log.debug('(%s) state_cleanup: removing user %s/%s who no longer shares a channel with us',
+                      irc.name, source, irc.users[source].nick)
+            irc._remove_client(source)
+
+def stats_cleanup_part(irc, source, command, args):
+    for channel in args['channels']:
+        _state_cleanup_core(irc, source, channel)
+utils.add_hook(stats_cleanup_part, 'PART', priority=-100)
+
+def stats_cleanup_kick(irc, source, command, args):
+    _state_cleanup_core(irc, args['target'], args['channel'])
+utils.add_hook(stats_cleanup_kick, 'KICK', priority=-100)
