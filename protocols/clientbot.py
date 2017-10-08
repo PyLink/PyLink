@@ -25,7 +25,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps = {'clear-channels-on-leave', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
+        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
         self.has_eob = False
 
