@@ -1,3 +1,60 @@
+# PyLink 2.0-alpha1
+The "Eclectic" release. This release includes all changes from 1.2.1, plus the following:
+
+#### New features
+- **Login blocks can now be limited by network, user hostname, and IRCop status**: see the new "require_oper", "hosts", and "networks" options in the example config.
+- **Added support for ngIRCd, ChatIRCd, and beware-ircd** (via protocol modules `ngircd`, `ts6`, `p10` respectively)
+- **Add support for extbans in protocols and relay**: this is supported on UnrealIRCd, Charybdis (and derivatives), InspIRCd, and Nefarious P10.
+    - Yes, this means you can finally mute bothersome relay users.
+- Clientbot is now more featureful:
+    - Added support for IRCv3 caps `account-notify`, `account-tag`, `away-notify`, `chghost`, `extended-join`, and `userhost-in-names`
+    - Configurable alternate / fallback nicks are now supported: look for the `pylink_altnicks` option in the example config.
+    - Added support for WHOX, to complement IRCv3 `account-notify` and `account-tag`.
+    - Relay_clientbot can now relay mode changes as text.
+    - Clientbot can now optionally sync ban lists when it joins a channel, allowing Relay modesync to unset bans properly. See the `fetch_ban_lists` option in the example config.
+- PyLink received a new launcher, which now checks for stale PID files (when `psutil` is installed) and supports shutdown/restart/rehash via the command line.
+- New commands for the opercmds plugin, including:
+    - `chghost`, `chgident`, and `chgname`, for IRCds that don't expose them as commands.
+    - `massban`, `masskill`, `massbanre`, and `masskillre` - these commands allow setting kickbans, kills, or glines on users matching a PyLink mask (`n!u@h` mask/exttarget) or regular expression. The hope is that these tools can help opers actively fight botnets as they are connected, similar to atheme's `clearchan` and Anope's `chankill` commands.
+    - `checkbanre` - a companion to `checkban`, using regex matching
+- Better support for (pre-defined) U-lined services servers in relay:
+    - `CLAIM` restrictions are relaxed for service bots, which may now join with ops and set simple modes. This prevents mode floods when features such as `DEFCON` are enabled, and when a channel is accidentally registered on a network not on the CLAIM list.
+    - `DEFCON` modes set by services are ignored by Relay instead of bounced, and do not forward onto other networks unless the setting network is also in the channel's `CLAIM` list.
+    - To keep the spirit of `CLAIM` alive, opped services not in a channel's `CLAIM` list are still not allowed to kick remote users, set prefix modes (e.g. op) on others, or set list modes such as bans.
+- Service bots' hostnames and real names are now fully configurable, globally and per network.
+- Added per-network configuration of relay server suffixes.
+- Added IRC `/STATS` support via the `stats` plugin (`/stats c`, `u`, and `o` are supported so far)
+- PyLink's connection time is now displayed when WHOISing service bots. This info can be turned off using the `pylink:whois_show_startup_time` option.
+- More specific permissions for the `remote` command, which now allows assigning permissions by target network, service bot, and command.
+- New `$service` exttarget which matches service bots by name.
+
+#### Backwards incompatible changes
+- Signal handling on Unix was updated to use `SIGUSR1` for rehash and `SIGHUP` for shutdown - this changes PyLink to be more in line with foreground programs, which generally close with the owning terminal.
+- Some options were deprecated and renamed:
+    - The `p10_ircd` option for P10 servers is now named `ircd`, though the old option will still be read from.
+    - The `use_elemental_modes` setting on ts6 networks has been deprecated and replaced with an `ircd` option targeting charybdis, elemental-ircd, or chatircd. Supported values for `ircd` include `charybdis`, `elemental`, and `chatircd`.
+- PID file checking is now enabled by default, along with checks for stale PID files *only* when [`psutil`](https://pythonhosted.org/psutil/) is installed. Users upgrading from PyLink < 1.1-dev without `psutil` installed will need remove PyLink's PID files before starting the service.
+- The `fml` command in the `games` plugin was removed.
+
+#### Bug fixes
+- Relay should stop bursting channels multiple times on startup now. (`initialize_channel` now skips execution if another thread is currently initializing the same channel)
+- Fixed a long standing bug where fantasy responses would relay before a user's original command if the `fantasy` plugin was loaded before `relay`. (Bug #123)
+
+#### Internal changes
+- **API Break**: The protocol module layer is completely rewritten, with the `Irc` and `Protocol`-derived classes combining into one. Porting **will** be needed for old protocol modules and plugins targetting 1.x; see the [new (WIP) protocol specification](https://github.com/GLolol/PyLink/blob/devel/docs/technical/pmodule-spec.md) for details.
+- **API Break**: Channels are now stored in two linked dictionaries per IRC object: once in `irc._channels`, and again in `irc.channels`. The main difference is that `irc._channels` implicitly creates new channels when accessing them if they didn't previously exist (prefer this for protocol modules), while `irc.channels` does not raises and raises KeyError instead (prefer this for plugins).
+- **API Break**: Most methods in `utils` and `classes` were renamed from camel case to snake case. `log`, `conf`, and others will be ported too before the final 2.0 release.
+- **API Break**: IRC protocol modules' server introductions must now use **`post_connect()`** instead of **`connect()`** to prevent name collisions with the base connection handling code.
+- Channels are now stored case insensitively internally, so protocol modules and new plugins no longer need to manually coerse names to lowercase.
+- Plugins can now bind hooks as specific priorities via an optional `priority` option in `utils.add_hook`. Hooks with higher priorities will be called first; the default priority value us 500.
+- Commands can now be properly marked as aliases, so that duplicates don't show in the `list` command.
+- Added basic `GLINE/KLINE` support for most IRCds; work is ongoing to polish this off.
+- PyLink accounts are now implicitly matched: i.e. `user1` is now equivalent to `$pylinkacc:user1`
+- Added complete support for "Network Administrator" and "Network Service" as oper types on IRCds using user modes to denote them (e.g. UnrealIRCd, charybdis).
+- User and server hop counts are now tracked properly instead of being hardcoded as 1.
+- protocols/p10 now bursts IPv6 IPs to supported uplinks.
+- Fixed compatibility with ircd-hybrid trunk after commit 981c61e (EX and IE are no longer sent in the capability list)
+
 # PyLink 1.2.1
 The "Dancer" release. Changes from 1.2.0:
 
