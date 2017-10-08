@@ -253,6 +253,13 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self.send('NICK :%s' % newnick)
             # No state update here: the IRCd will respond with a NICK acknowledgement if the change succeeds.
         else:
+            assert source, "No source given?"
+            # Check that the new nick exists and isn't the same client as the sender
+            # (for changing nick case)
+            nick_uid = self.nick_to_uid(newnick)
+            if nick_uid and nick_uid != source:
+                log.warning('(%s) Blocking attempt from virtual client %s to change nick to %s (nick in use)', self.name, source, newnick)
+                return
             self.call_hooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
             self.users[source].nick = newnick
 
