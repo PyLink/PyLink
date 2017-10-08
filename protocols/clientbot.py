@@ -355,20 +355,22 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Limited (internal) nick collision checking is done here to prevent Clientbot users from
         being confused with virtual clients, and vice versa."""
         self._check_puid_collision(nick)
+
         idsource = self.nick_to_uid(nick)
-        is_internal = self.is_internal_client(idsource)
 
-        # If this sender isn't known or it is one of our virtual clients, spawn a new one.
-        # This also takes care of any nick collisions caused by new, Clientbot users
-        # taking the same nick as one of our virtual clients, and will force the virtual client to lose.
-        if (not idsource) or (is_internal and self.pseudoclient and idsource != self.pseudoclient.uid):
-            if idsource:
-                log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
-                self.call_hooks([self.sid, 'CLIENTBOT_NICKCOLLIDE', {'target': idsource, 'parse_as': 'SAVE'}])
+        if self.is_internal_client(idsource) and self.pseudoclient and idsource != self.pseudoclient.uid:
+            # We got a message from a client with the same nick as an internal client.
+            # Fire a virtual nick collision to prevent mixing senders.
+            log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
+            self.call_hooks([self.sid, 'SAVE', {'target': idsource}])
 
+            # Clear the UID for this nick and spawn a new client for the nick that was just freed.
+            idsource = None
+
+        if idsource is None:
+            # If this sender doesn't already exist, spawn a new client.
             idsource = self.spawn_client(nick, ident or 'unknown', host or 'unknown',
                                         server=self.uplink, realname=FALLBACK_REALNAME).uid
-
         return idsource
 
     def parse_message_tags(self, data):
