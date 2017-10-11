@@ -560,13 +560,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             args = args.split()
 
         assert args, 'No valid modes were supplied!'
-
-        # Strip off matching quotes from argparse and friends. We don't use str.strip()
-        # because that might remove quotes that actually belong at the end of a string
-        # (e.g. text filter args)
-        if args.startswith(("'", '"')) and args.endswith(("'", '"')):
-            args = args[1:-1]
-
         usermodes = not self.is_channel(target)
         prefix = ''
         modestring = args[0]
