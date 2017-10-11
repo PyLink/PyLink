@@ -72,7 +72,9 @@ class CaseInsensitiveFixedSet(collections.abc.Set, CopyWrapper):
     @staticmethod
     def _keymangle(key):
         """Converts the given key to lowercase."""
-        return key.lower()
+        if isinstance(key, str):
+            return key.lower()
+        return key
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self._data)
@@ -121,7 +123,9 @@ class IRCCaseInsensitiveDict(CaseInsensitiveDict):
 
     def _keymangle(self, key):
         """Converts the given key to lowercase."""
-        return self._irc.to_lower(key)
+        if isinstance(key, str):
+            return self._irc.to_lower(key)
+        return key
 
     def __copy__(self):
         return self.__class__(self._irc, data=self._data.copy())
@@ -147,7 +151,9 @@ class IRCCaseInsensitiveSet(CaseInsensitiveSet):
 
     def _keymangle(self, key):
         """Converts the given key to lowercase."""
-        return self._irc.to_lower(key)
+        if isinstance(key, str):
+            return self._irc.to_lower(key)
+        return key
 
     def __copy__(self):
         return self.__class__(self._irc, data=self._data.copy())
