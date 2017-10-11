@@ -25,7 +25,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps = {'clear-channels-on-leave', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
+        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
         self.has_eob = False
 
@@ -253,6 +253,13 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self.send('NICK :%s' % newnick)
             # No state update here: the IRCd will respond with a NICK acknowledgement if the change succeeds.
         else:
+            assert source, "No source given?"
+            # Check that the new nick exists and isn't the same client as the sender
+            # (for changing nick case)
+            nick_uid = self.nick_to_uid(newnick)
+            if nick_uid and nick_uid != source:
+                log.warning('(%s) Blocking attempt from virtual client %s to change nick to %s (nick in use)', self.name, source, newnick)
+                return
             self.call_hooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
             self.users[source].nick = newnick
 
@@ -355,20 +362,22 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Limited (internal) nick collision checking is done here to prevent Clientbot users from
         being confused with virtual clients, and vice versa."""
         self._check_puid_collision(nick)
+
         idsource = self.nick_to_uid(nick)
-        is_internal = self.is_internal_client(idsource)
 
-        # If this sender isn't known or it is one of our virtual clients, spawn a new one.
-        # This also takes care of any nick collisions caused by new, Clientbot users
-        # taking the same nick as one of our virtual clients, and will force the virtual client to lose.
-        if (not idsource) or (is_internal and self.pseudoclient and idsource != self.pseudoclient.uid):
-            if idsource:
-                log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
-                self.call_hooks([self.sid, 'CLIENTBOT_NICKCOLLIDE', {'target': idsource, 'parse_as': 'SAVE'}])
+        if self.is_internal_client(idsource) and self.pseudoclient and idsource != self.pseudoclient.uid:
+            # We got a message from a client with the same nick as an internal client.
+            # Fire a virtual nick collision to prevent mixing senders.
+            log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
+            self.call_hooks([self.sid, 'SAVE', {'target': idsource}])
 
+            # Clear the UID for this nick and spawn a new client for the nick that was just freed.
+            idsource = None
+
+        if idsource is None:
+            # If this sender doesn't already exist, spawn a new client.
             idsource = self.spawn_client(nick, ident or 'unknown', host or 'unknown',
                                         server=self.uplink, realname=FALLBACK_REALNAME).uid
-
         return idsource
 
     def parse_message_tags(self, data):
@@ -907,11 +916,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         if (not self.is_internal_client(source)) and not self.is_internal_server(source):
             # Don't repeat hooks if we're the kicker.
-            self.call_hooks([source, 'KICK', {'channel': channel, 'target': target, 'text': reason}])
-
-        # Delete channels that we were kicked from, for better state keeping.
-        if self.pseudoclient and target == self.pseudoclient.uid:
-            del self._channels[channel]
+            return {'channel': channel, 'target': target, 'text': reason}
 
     def handle_mode(self, source, command, args):
         """Handles MODE changes."""
@@ -975,21 +980,25 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""
         # <- :GL|!~GL@127.0.0.1 NICK :GL_
+        newnick = args[0]
 
         if not self.connected.is_set():
             # We haven't properly logged on yet, so any initial NICK should be treated as a forced
             # nick change for us. For example, this clause is used to handle forced nick changes
             # sent by ZNC, when the login nick and the actual IRC nick of the bouncer differ.
-            self.pseudoclient.nick = args[0]
+            self.pseudoclient.nick = newnick
             log.debug('(%s) Pre-auth FNC: Changing our nick to %s', self.name, args[0])
             return
         elif source == self.pseudoclient.uid:
             self._nick_fails = 0  # Our last nick change succeeded.
 
         oldnick = self.users[source].nick
-        self.users[source].nick = args[0]
 
-        return {'newnick': args[0], 'oldnick': oldnick}
+        # Check for any nick collisions with existing virtual clients.
+        self._check_nick_collision(newnick)
+        self.users[source].nick = newnick
+
+        return {'newnick': newnick, 'oldnick': oldnick}
 
     def handle_part(self, source, command, args):
         """
@@ -1006,12 +1015,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self._channels[channel].remove_user(source)
         self.users[source].channels -= set(channels)
 
-        self.call_hooks([source, 'PART', {'channels': channels, 'text': reason}])
-
-        # Clear channels that are empty, or that we're parting.
-        for channel in channels:
-            if (self.pseudoclient and source == self.pseudoclient.uid) or not self._channels[channel].users:
-                del self._channels[channel]
+        return {'channels': channels, 'text': reason}
 
     def handle_ping(self, source, command, args):
         """
