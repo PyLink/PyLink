@@ -215,7 +215,7 @@ servers:
         # IPs of other networks' users.
         #relay_no_ips: true
 
-        # Sets the suffix that relay subservers that this network should use.
+        # Sets the suffix that relay subservers on this network should use.
         # If not specified per network, falls back to the value at
         # relay:server_suffix or "relay" if that is not set.
         #server_suffix: "relay.yournet.net"
