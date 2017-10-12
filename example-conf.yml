@@ -127,16 +127,17 @@ servers:
         # Hostname we will use to connect to the remote server
         hostname: "pylink.yournet.local"
 
-        # SID - required for TS6 and TS6-like servers. This must be three characters:
-        # the first char must be a digit [0-9], and the remaining two chars may
-        # be either uppercase letters [A-Z] or digits.
+        # Sets the server ID (SID) that the main PyLink server should use.
+        # For TS6-like servers (InspIRCd, Charybdis, UnrealIRCd, etc.), this
+        # must be three characters: the first char must be a digit [0-9], and
+        # the remaining two may be either uppercase letters [A-Z] or digits.
         sid: "0PY"
 
-        # SID range - the range of SIDs PyLink is allowed to use to generate
-        # server IDs. On TS6, this should be a combination of digits, letters,
-        # and #'s. Each # denotes a range (0-9A-Z) of characters that can be
-        # used by PyLink to generate appropriate SIDs. You will want to make
-        # sure no other servers are using this range.
+        # Server ID range: this specifies the range of server IDs that PyLink
+        # may use for subservers such as relay. On TS6, this should be a
+        # combination of digits, letters, and #'s. Each # denotes a range (0-9A-Z)
+        # of characters that can be used by PyLink to generate appropriate SIDs.
+        # You will want to make sure no other servers are using this range.
         # There must be at least one # in this entry.
         sidrange: "8##"
 
@@ -284,8 +285,11 @@ servers:
         sendpass: "send"
         hostname: "pylink.midnight.vpn"
 
-        # For P10, the SID and SID range options are just numbers. Make sure nothing
-        # else is using the range you're reserving for PyLink.
+        # For P10, the SID and SID range options correspond to P10 server numerics. The PyLink
+        # "sid" should be the numeric of the main server, and "sidrange" should be a range of
+        # numerics that subservers (e.g. for relay) can use.
+        # Make sure no other servers are in the numeric range you're reserving for PyLink, or you
+        # may get conflicts.
         sid: 50
         sidrange: "100-150"
         channels: ["#lounge"]
