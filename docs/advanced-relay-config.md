@@ -20,9 +20,10 @@ These options take template strings as documented here: https://docs.python.org/
     - `$colored_netname`: color hashed version of `$netname`
 - For KICK, and other events that have a `$target` field corresponding to a user:
     - `$target_nick`: nick of target (as opposed to `$target`, which is an UID)
-- For events that have a `$channel` field attached (e.g. JOIN, PART):
+- For events that have a `$channel` field attached (e.g. JOIN, PART) or have a channel in `$target` (PRIVMSG, etc.):
     - `$local_channel`: the LOCAL channel name (of the clientbot network)
     - `$channel`: the real channel on the sender's network
+    - `$mode_prefix`: the highest prefix mode of the sender, if they are a user. This is normally either empty or one of (common prefix modes) `~&!@%+`.
 - For SJOIN, SQUIT:
     - `$nicks`: a comma-joined list of nicks that were bursted
     - `$colored_nicks`: a comma-joined list of each bursted nick, color hashed

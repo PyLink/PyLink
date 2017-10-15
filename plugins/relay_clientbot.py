@@ -7,14 +7,14 @@ from pylinkirc.log import log
 
 # Clientbot default styles:
 # These use template strings as documented @ https://docs.python.org/3/library/string.html#template-strings
-default_styles = {'MESSAGE': '\x02[$netname]\x02 <$colored_sender> $text',
+default_styles = {'MESSAGE': '\x02[$netname]\x02 <$mode_prefix$colored_sender> $text',
                   'KICK': '\x02[$netname]\x02 - $colored_sender$sender_identhost has kicked $target_nick from $channel ($text)',
                   'PART': '\x02[$netname]\x02 - $colored_sender$sender_identhost has left $channel ($text)',
                   'JOIN': '\x02[$netname]\x02 - $colored_sender$sender_identhost has joined $channel',
                   'NICK': '\x02[$netname]\x02 - $colored_sender$sender_identhost is now known as $newnick',
                   'QUIT': '\x02[$netname]\x02 - $colored_sender$sender_identhost has quit ($text)',
-                  'ACTION': '\x02[$netname]\x02 * $colored_sender $text',
-                  'NOTICE': '\x02[$netname]\x02 - Notice from $colored_sender: $text',
+                  'ACTION': '\x02[$netname]\x02 * $mode_prefix$colored_sender $text',
+                  'NOTICE': '\x02[$netname]\x02 - Notice from $mode_prefix$colored_sender: $text',
                   'SQUIT': '\x02[$netname]\x02 - Netsplit lost users: $colored_nicks',
                   'SJOIN': '\x02[$netname]\x02 - Netjoin gained users: $colored_nicks',
                   'MODE': '\x02[$netname]\x02 - $colored_sender$sender_identhost sets mode $modes on $channel',
@@ -90,6 +90,7 @@ def cb_relay_core(irc, source, command, args):
                 # just pretend the message comes from the current network.
                 log.debug('(%s) relay_cb_core: Overriding network origin to local (source=%s)', irc.name, source)
                 sourcenet = irc.name
+                realsource = source
             else:
                 # Get the original client that the relay client source was meant for.
                 log.debug('(%s) relay_cb_core: Trying to find original sender (user) for %s', irc.name, source)
@@ -98,12 +99,13 @@ def cb_relay_core(irc, source, command, args):
                 except (AttributeError, KeyError):
                     log.debug('(%s) relay_cb_core: Trying to find original sender (server) for %s. serverdata=%s', irc.name, source, args.get('serverdata'))
                     try:
-                        origuser = ((args.get('serverdata') or irc.servers[source]).remote,)
+                        localsid = args.get('serverdata') or irc.servers[source]
+                        origuser = (localsid.remote, world.networkobjects[localsid.remote].uplink)
                     except (AttributeError, KeyError):
                         return
 
                 log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
-                sourcenet = origuser[0]
+                sourcenet, realsource = origuser
 
             try:  # Try to get the full network name
                 netname = conf.conf['servers'][sourcenet]['netname']
@@ -125,8 +127,10 @@ def cb_relay_core(irc, source, command, args):
             else:
                 # Pluralize the channel so that we can iterate over it.
                 targets = [target]
+                args['channel'] = target
             log.debug('(%s) relay_cb_core: Relaying event %s to channels: %s', irc.name, real_command, targets)
 
+            identhost = ''
             if source in irc.users:
                 try:
                     identhost = irc.get_hostmask(source).split('!')[-1]
@@ -135,8 +139,6 @@ def cb_relay_core(irc, source, command, args):
                 # This is specifically spaced so that ident@host is only shown for users that have
                 # one, and not servers.
                 identhost = ' (%s)' % identhost
-            else:
-                identhost = ''
 
             # $target_nick: Convert the target for kicks, etc. from a UID to a nick
             if args.get("target") in irc.users:
@@ -146,13 +148,33 @@ def cb_relay_core(irc, source, command, args):
             if args.get('modes'):
                 args['modes'] = irc.join_modes(args['modes'])
 
-            args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
-                         'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
+            mode_prefix = ''
             if 'channel' in args:
-                # Display the real channel instead of the local name, if applicable
+                # Display the real (remote) channel name instead of the local one, if applicable.
                 args['local_channel'] = args['channel']
-                args['channel'] = relay.get_remote_channel(irc, world.networkobjects[sourcenet], args['channel'])
                 log.debug('(%s) relay_clientbot: coersing $channel from %s to %s', irc.name, args['local_channel'], args['channel'])
+
+                sourceirc = world.networkobjects.get(sourcenet)
+                log.debug('(%s) relay_clientbot: Checking prefix modes for %s on %s (relaying to %s)',
+                          irc.name, realsource, sourcenet, args['channel'])
+                if sourceirc:
+                    args['channel'] = remotechan = relay.get_remote_channel(irc, sourceirc, args['channel'])
+                    if source in irc.users and remotechan in sourceirc.channels and \
+                            realsource in sourceirc.channels[remotechan].users:
+                        # Fetch the prefixmode prefixes (e.g. ~@%) for the sender, if available.
+                        prefixmodes = sourceirc.channels[remotechan].get_prefix_modes(realsource)
+                        log.debug('(%s) relay_clientbot: got prefix modes %s for %s on %s@%s',
+                                  irc.name, prefixmodes, realsource, remotechan, sourcenet)
+                        if prefixmodes:
+                            # Only pick the highest prefix.
+                            mode_prefix = sourceirc.prefixmodes.get(
+                                sourceirc.cmodes.get(prefixmodes[0]))
+
+            args.update({
+                'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
+                'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname),
+                'mode_prefix': mode_prefix
+            })
 
             for target in targets:
                 cargs = args.copy()  # Copy args list to manipulate them in a channel specific way
@@ -163,7 +185,6 @@ def cb_relay_core(irc, source, command, args):
                 # still have to be relayed as such.
                 nicklist = args.get('nicks')
                 if nicklist:
-
                     # Get channel-specific nick list if relevent.
                     if isinstance(nicklist, dict):
                         nicklist = nicklist.get(target, [])
