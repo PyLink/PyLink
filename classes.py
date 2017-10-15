@@ -1722,10 +1722,9 @@ class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnake
         Implements a sorted()-compatible sorter for prefix modes, giving each one a
         numeric value.
         """
-        values = {'owner': 100, 'admin': 10, 'op': 5, 'halfop': 4, 'voice': 3}
+        values = {'owner': 0, 'admin': 100, 'op': 200, 'halfop': 300, 'voice': 500}
 
-        # Default to highest value (1000) for unknown modes, should we choose to
-        # support them.
+        # Default to highest value (1000) for unknown modes, should they appear.
         return values.get(key, 1000)
 
     def get_prefix_modes(self, uid, prefixmodes=None):

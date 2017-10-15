@@ -616,7 +616,7 @@ class P10Protocol(IRCS2SProtocol):
 
                 # Flip the (prefixmodes, user) pairs in users, and save it as a dict for easy lookup
                 # later of what modes each target user should have.
-                names_dict = dict([(uid, prefixes) for prefixes, uid in users])
+                names_dict = {uid: prefixes for prefixes, uid in users}
 
                 # Wrap all users and send them to prevent cutoff. Subtract 4 off the maximum
                 # buf size to account for user prefix data that may be re-added (e.g. ":ohv")
@@ -633,9 +633,8 @@ class P10Protocol(IRCS2SProtocol):
 
                         # If the first UID was supposed to have a prefix mode attached, re-add it here
                         first_uid = wrapped_namelist[0]
-                        # XXX: I'm not sure why the prefix list has to be reversed for it to match the
-                        # original string...
-                        first_prefix = names_dict.get(first_uid, '')[::-1]
+
+                        first_prefix = names_dict.get(first_uid, '')
                         log.debug('(%s) sjoin: prefixes for first user %s: %s (post-wrap fixing)', self.name,
                                   first_uid, first_prefix)
 
