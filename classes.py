@@ -1719,8 +1719,10 @@ class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnake
     @staticmethod
     def sort_prefixes(key):
         """
-        Implements a sorted()-compatible sorter for prefix modes, giving each one a
-        numeric value.
+        Returns a numeric value for a named prefix mode: higher ranks have lower values
+        (sorted first), and lower ranks have higher values (sorted last).
+
+        This function essentially implements a sorted() key function for named prefix modes.
         """
         values = {'owner': 0, 'admin': 100, 'op': 200, 'halfop': 300, 'voice': 500}
 
@@ -1728,7 +1730,9 @@ class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnake
         return values.get(key, 1000)
 
     def get_prefix_modes(self, uid, prefixmodes=None):
-        """Returns a list of all named prefix modes the given user has in the channel.
+        """
+        Returns a list of all named prefix modes the user has in the channel, in
+        increasing order from voice to owner.
 
         Optionally, a prefixmodes argument can be given to look at an earlier state of
         the channel's prefix modes mapping, e.g. for checking the op status of a mode
