@@ -445,7 +445,10 @@ class UnrealProtocol(TS6BaseProtocol):
         if not accountname.isdigit():
             self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
-        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
+        # parse_as is used here to prevent legacy user introduction from being confused
+        # with a nick change.
+        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host,
+                'ident': ident, 'ip': ip, 'parse_as': 'UID'}
 
     def handle_pass(self, numeric, command, args):
         # <- PASS :abcdefg
