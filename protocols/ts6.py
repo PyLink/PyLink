@@ -23,9 +23,11 @@ class TS6Protocol(TS6BaseProtocol):
             log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
             self._ircd = 'charybdis'
 
+        self._can_chghost = False
         if self._ircd in ('charybdis', 'elemental', 'chatircd'):
             # Charybdis and derivatives allow slashes in hosts. Ratbox does not.
             self.protocol_caps |= {'slash-in-hosts'}
+            self._can_chghost = True
 
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
@@ -257,7 +259,7 @@ class TS6Protocol(TS6BaseProtocol):
     def update_client(self, target, field, text):
         """Updates the hostname of any connected client."""
         field = field.upper()
-        if field == 'HOST':
+        if field == 'HOST' and self._can_chghost:
             self.users[target].host = text
             self._send_with_prefix(self.sid, 'CHGHOST %s :%s' % (target, text))
             if not self.is_internal_client(target):
@@ -267,7 +269,7 @@ class TS6Protocol(TS6BaseProtocol):
                                    {'target': target, 'newhost': text}])
         else:
             raise NotImplementedError("Changing field %r of a client is "
-                                      "unsupported by this protocol." % field)
+                                      "unsupported by this IRCd." % field)
 
     ### Core / handlers
 
@@ -309,6 +311,15 @@ class TS6Protocol(TS6BaseProtocol):
             self.extbans_matching = {'ban_all_registered': '$a', 'ban_inchannel': '$c:', 'ban_account': '$a:',
                                      'ban_all_opers': '$o', 'ban_realname': '$r:', 'ban_server': '$s:',
                                      'ban_banshare': '$j:', 'ban_extgecos': '$x:', 'ban_all_ssl': '$z'}
+        elif self._ircd == 'ratbox':
+            self.umodes.update({
+                'callerid': 'g', 'admin': 'a', 'sno_botfloods': 'b',
+                'sno_clientconnections': 'c', 'sno_extclientconnections': 'C', 'sno_debug': 'd',
+                'sno_fullauthblock': 'f', 'sno_skill': 'k', 'locops': 'l', 'sno_rejectedclients': 'r',
+                'snomask': 's', 'sno_badclientconnections': 'u', 'sno_serverconnects': 'x',
+                'sno_stats': 'y', 'operwall': 'z', 'sno_operspy': 'Z', 'deaf': 'D', 'servprotect': 'S',
+                '*A': '', '*B': '', '*C': '', '*D': 'igoabcCdfklrsuwxyzZD'
+            })
 
         # TODO: make these more flexible...
         if self.serverdata.get('use_owner'):
@@ -346,17 +357,18 @@ class TS6Protocol(TS6BaseProtocol):
             self.umodes['*D'] += ''.join(chatircd_umodes.values())
 
         # Add definitions for all the inverted versions of the extbans.
-        for k, v in self.extbans_matching.copy().items():
-            if k == 'ban_all_registered':
-                newk = 'ban_unregistered'
-            else:
-                newk = k.replace('_all_', '_').replace('ban_', 'ban_not_')
-            self.extbans_matching[newk] = '$~' + v[1:]
+        if self.extbans_matching:
+            for k, v in self.extbans_matching.copy().items():
+                if k == 'ban_all_registered':
+                    newk = 'ban_unregistered'
+                else:
+                    newk = k.replace('_all_', '_').replace('ban_', 'ban_not_')
+                self.extbans_matching[newk] = '$~' + v[1:]
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
         f('PASS %s TS 6 %s' % (self.serverdata["sendpass"], self.sid))
 
-        # We request the following capabilities (for charybdis):
+        # We request the following capabilities:
 
         # QS: SQUIT doesn't send recursive quits for each users; required
         # by charybdis (Source: https://github.com/grawity/irc-docs/blob/master/server/ts-capab.txt)
