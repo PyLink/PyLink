@@ -35,7 +35,7 @@ class TS6Protocol(TS6BaseProtocol):
                          # ENCAP LOGIN is used on burst for EUID-less servers
                          'USERMODE': 'MODE', 'LOGIN': 'CLIENT_SERVICES_LOGIN'}
 
-        self.required_caps = {'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
+        self.required_caps = {'TB', 'ENCAP', 'QS', 'CHW'}
 
         # From ChatIRCd: https://github.com/ChatLounge/ChatIRCd/blob/master/doc/technical/ChatIRCd-extra.txt
         # Our command handler rewrites ENCAP so that this is the exact same syntax as MODE.
