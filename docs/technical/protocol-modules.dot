@@ -40,7 +40,6 @@ digraph G {
 		"IRCS2SProtocol" -> "p10";
 		"IRCS2SProtocol" -> "ngircd";
 		"TS6BaseProtocol" -> "ts6" -> "hybrid";
-		"ts6" -> "ratbox";
 		"TS6BaseProtocol" -> "inspircd";
 		"TS6BaseProtocol" -> "unreal";
 		"IRCCommonProtocol" -> "clientbot";
