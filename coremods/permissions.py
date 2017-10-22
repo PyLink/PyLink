@@ -7,53 +7,22 @@ import threading
 
 # Global variables: these store mappings of hostmasks/exttargets to lists of permissions each target has.
 default_permissions = defaultdict(set)
-permissions = defaultdict(set)
-
-# Only allow one thread to change the permissions index at once.
-permissions_lock = threading.Lock()
 
 from pylinkirc import conf, utils
 from pylinkirc.log import log
 
-def reset_permissions():
-    """
-    Loads the permissions specified in the permissions: block of the PyLink configuration,
-    if such a block exists. Otherwise, fallback to the default permissions specified by plugins.
-    """
-    with permissions_lock:
-        global permissions
-        log.debug('permissions.reset_permissions: old perm list: %s', permissions)
-
-        new_permissions = default_permissions.copy()
-        log.debug('permissions.reset_permissions: new_permissions %s', new_permissions)
-        if not conf.conf.get('permissions_merge_defaults', True):
-            log.debug('permissions.reset_permissions: clearing perm list due to permissions_merge_defaults set False.')
-            new_permissions.clear()
-
-        # Convert all perm lists to sets.
-        for k, v in conf.conf.get('permissions', {}).items():
-            new_permissions[k] |= set(v)
-
-        log.debug('permissions.reset_permissions: new_permissions %s', new_permissions)
-        permissions.clear()
-        permissions.update(new_permissions)
-        log.debug('permissions.reset_permissions: new perm list: %s', permissions)
-resetPermissions = reset_permissions
-
 def add_default_permissions(perms):
     """Adds default permissions to the index."""
-    with permissions_lock:
-        global default_permissions
-        for target, permlist in perms.items():
-            default_permissions[target] |= set(permlist)
+    global default_permissions
+    for target, permlist in perms.items():
+        default_permissions[target] |= set(permlist)
 addDefaultPermissions = add_default_permissions
 
 def remove_default_permissions(perms):
     """Remove default permissions from the index."""
-    with permissions_lock:
-        global default_permissions
-        for target, permlist in perms.items():
-            default_permissions[target] -= set(permlist)
+    global default_permissions
+    for target, permlist in perms.items():
+        default_permissions[target] -= set(permlist)
 removeDefaultPermissions = remove_default_permissions
 
 def check_permissions(irc, uid, perms, also_show=[]):
@@ -68,8 +37,17 @@ def check_permissions(irc, uid, perms, also_show=[]):
                   irc.get_hostmask(uid))
         return True
 
-    # Iterate over all hostmask->permission list mappings.
-    for host, permlist in permissions.copy().items():
+    permissions = defaultdict(set)
+    # Enumerate the configured permissions list.
+    for k, v in (conf.conf.get('permissions') or {}).items():
+        permissions[k] |= set(v)
+
+    # Merge in default permissions if enabled.
+    if conf.conf.get('permissions_merge_defaults', True):
+        for k, v in default_permissions.items():
+            permissions[k] |= v
+
+    for host, permlist in permissions.items():
         log.debug('permissions: permlist for %s: %s', host, permlist)
         if irc.match_host(host, uid):
             # Now, iterate over all the perms we are looking for.
@@ -83,6 +61,3 @@ def check_permissions(irc, uid, perms, also_show=[]):
     raise utils.NotAuthorizedError("You are missing one of the following permissions: %s" %
                                    (', '.join(perms+also_show)))
 checkPermissions = check_permissions
-
-# Reset our permissions list on startup.
-reset_permissions()

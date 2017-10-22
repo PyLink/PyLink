@@ -105,10 +105,6 @@ def rehash():
     log.debug('rehash: updating console log level')
     world.console_handler.setLevel(getConsoleLogLevel())
 
-    # Reset permissions.
-    log.debug('rehash: resetting permissions')
-    permissions.reset_permissions()
-
     for network, ircobj in world.networkobjects.copy().items():
         # Server was removed from the config file, disconnect them.
         log.debug('rehash: checking if %r is in new conf still.', network)
