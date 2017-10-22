@@ -233,7 +233,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
-        if 'KNOCK' not in self.caps:
+        if 'KNOCK' not in self._caps:
             log.debug('(%s) knock: Dropping KNOCK to %r since the IRCd '
                       'doesn\'t support it.', self.name, target)
             return
@@ -424,7 +424,7 @@ class TS6Protocol(TS6BaseProtocol):
         # We only get a list of keywords here. Charybdis obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
         # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
-        self.caps = caps = args[0].split()
+        self._caps = caps = args[0].split()
 
         for required_cap in self.required_caps:
             if required_cap not in caps:
