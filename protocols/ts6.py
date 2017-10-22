@@ -12,7 +12,7 @@ from pylinkirc.protocols.ts6_common import *
 
 class TS6Protocol(TS6BaseProtocol):
 
-    SUPPORTED_IRCDS = ('charybdis', 'elemental', 'chatircd')
+    SUPPORTED_IRCDS = ('charybdis', 'elemental', 'chatircd', 'ratbox')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -35,7 +35,7 @@ class TS6Protocol(TS6BaseProtocol):
                          # ENCAP LOGIN is used on burst for EUID-less servers
                          'USERMODE': 'MODE', 'LOGIN': 'CLIENT_SERVICES_LOGIN'}
 
-        self.required_caps = {'EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
+        self.required_caps = {'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
 
         # From ChatIRCd: https://github.com/ChatLounge/ChatIRCd/blob/master/doc/technical/ChatIRCd-extra.txt
         # Our command handler rewrites ENCAP so that this is the exact same syntax as MODE.
@@ -65,19 +65,33 @@ class TS6Protocol(TS6BaseProtocol):
         # visible hostname, IP address, UID, real hostname, account name, gecos
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
-        realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,
-            realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host,
+                                   realname=realname, realhost=realhost or host, ip=ip,
+                                   manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
-        self._send_with_prefix(server, "EUID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
-                               "{realhost} * :{realname}".format(ts=ts, host=host,
-                               nick=nick, ident=ident, uid=uid,
-                               modes=raw_modes, ip=ip, realname=realname,
-                               realhost=realhost, hopcount=self.servers[server].hopcount))
+        if 'EUID' in self._caps:
+            # charybdis-style EUID
+            self._send_with_prefix(server, "EUID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
+                                           "{realhost} * :{realname}".format(ts=ts, host=host,
+                                           nick=nick, ident=ident, uid=uid,
+                                           modes=raw_modes, ip=ip, realname=realname,
+                                           realhost=realhost or host,
+                                           hopcount=self.servers[server].hopcount))
+        else:
+            # Basic ratbox UID
+            self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
+                                           ":{realname}".format(ts=ts, host=host,
+                                           nick=nick, ident=ident, uid=uid,
+                                           modes=raw_modes, ip=ip, realname=realname,
+                                           hopcount=self.servers[server].hopcount))
+
+            if realhost:
+                # If real host is specified, send it using ENCAP REALHOST
+                self._send_with_prefix(uid, "ENCAP * REALHOST %s" % realhost)
 
         return u
 
@@ -593,7 +607,6 @@ class TS6Protocol(TS6BaseProtocol):
         euid_args.insert(8, '*')
 
         # Copy the visible hostname to the real hostname, as this data isn't sent yet.
-        # TODO: handle encap realhost / encap login
         euid_args.insert(8, args[5])
 
         return self.handle_euid(numeric, command, euid_args)
