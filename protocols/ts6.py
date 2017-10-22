@@ -15,10 +15,23 @@ class TS6Protocol(TS6BaseProtocol):
     SUPPORTED_IRCDS = ('charybdis', 'elemental', 'chatircd')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.protocol_caps |= {'slash-in-hosts'}
+
+        self._ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes')
+                                                             else 'charybdis')
+        self._ircd = self._ircd.lower()
+        if self._ircd not in self.SUPPORTED_IRCDS:
+            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
+            self._ircd = 'charybdis'
+
+        if self._ircd in ('charybdis', 'elemental', 'chatircd'):
+            # Charybdis and derivatives allow slashes in hosts. Ratbox does not.
+            self.protocol_caps |= {'slash-in-hosts'}
+
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
-                         'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC', 'USERMODE': 'MODE'}
+                         'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC',
+                         # ENCAP LOGIN is used on burst for EUID-less servers
+                         'USERMODE': 'MODE', 'LOGIN': 'CLIENT_SERVICES_LOGIN'}
 
         self.required_caps = {'EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
 
@@ -264,63 +277,55 @@ class TS6Protocol(TS6BaseProtocol):
 
         f = self.send
 
-        # Find the target IRCd and update the mode dictionaries as applicable.
-        target_ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes') else 'charybdis')
-        target_ircd = target_ircd.lower()
-
-        if target_ircd not in self.SUPPORTED_IRCDS:
-            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
-            target_ircd = 'charybdis'
+        # Base TS6 mode set from ratbox.
+        self.cmodes.update({'sslonly': 'S', 'noknock': 'p',
+                            '*A': 'beI',
+                            '*B': 'k',
+                            '*C': 'l',
+                            '*D': 'imnpstrS'})
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
-        chary_cmodes = { # TS6 generic modes (note that +p is noknock instead of private):
-                        'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
-                        'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
-                        'secret': 's', 'topiclock': 't', 'inviteonly': 'i',
-                        'private': 'p',
-                         # charybdis-specific modes:
-                        'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
-                        'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
-                        'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                        'g', 'opmoderated': 'z', 'noctcp': 'C', 'ssl': 'Z',
-                         # charybdis-specific modes provided by EXTENSIONS
-                        'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
-                        'nonotice': 'T',
-                         # Now, map all the ABCD type modes:
-                        '*A': 'beIq', '*B': 'k', '*C': 'lfj', '*D': 'mnprstFLPQcgzCOAST'}
+        if self._ircd in ('charybdis', 'elemental', 'chatircd'):
+            self.cmodes.update({
+                'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
+                'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
+                'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
+                'g', 'opmoderated': 'z', 'noctcp': 'C', 'ssl': 'Z',
+                # charybdis modes provided by extensions
+                'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
+                'nonotice': 'T',
+                '*A': 'beIq', '*B': 'k', '*C': 'lfj', '*D': 'mnprstFLPQcgzCZOAST'
+            })
+            self.umodes.update({
+                'deaf': 'D', 'servprotect': 'S', 'admin': 'a',
+                'invisible': 'i', 'oper': 'o', 'wallops': 'w',
+                'snomask': 's', 'noforward': 'Q', 'regdeaf': 'R',
+                'callerid': 'g', 'operwall': 'z', 'locops': 'l',
+                'cloak': 'x', 'override': 'p',
+                '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'
+            })
 
+            # Charybdis extbans
+            self.extbans_matching = {'ban_all_registered': '$a', 'ban_inchannel': '$c:', 'ban_account': '$a:',
+                                     'ban_all_opers': '$o', 'ban_realname': '$r:', 'ban_server': '$s:',
+                                     'ban_banshare': '$j:', 'ban_extgecos': '$x:', 'ban_all_ssl': '$z'}
+
+        # TODO: make these more flexible...
         if self.serverdata.get('use_owner'):
-            chary_cmodes['owner'] = 'y'
+            self.cmodes['owner'] = 'y'
             self.prefixmodes['y'] = '~'
         if self.serverdata.get('use_admin'):
-            chary_cmodes['admin'] = 'a'
-            self.prefixmodes['a'] = '!' if target_ircd != 'chatircd' else '&'
+            self.cmodes['admin'] = 'a'
+            self.prefixmodes['a'] = '!' if self._ircd != 'chatircd' else '&'
         if self.serverdata.get('use_halfop'):
-            chary_cmodes['halfop'] = 'h'
+            self.cmodes['halfop'] = 'h'
             self.prefixmodes['h'] = '%'
-
-        self.cmodes = chary_cmodes
-
-        # Define supported user modes
-        chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'admin': 'a',
-                        'invisible': 'i', 'oper': 'o', 'wallops': 'w',
-                        'snomask': 's', 'noforward': 'Q', 'regdeaf': 'R',
-                        'callerid': 'g', 'operwall': 'z', 'locops': 'l',
-                        'cloak': 'x', 'override': 'p',
-                        # Now, map all the ABCD type modes:
-                        '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'}
-        self.umodes = chary_umodes
-
-        # Charybdis extbans
-        self.extbans_matching = {'ban_all_registered': '$a', 'ban_inchannel': '$c:', 'ban_account': '$a:',
-                                 'ban_all_opers': '$o', 'ban_realname': '$r:', 'ban_server': '$s:',
-                                 'ban_banshare': '$j:', 'ban_extgecos': '$x:', 'ban_all_ssl': '$z'}
 
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
         # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
         # +K (no repeat messages), +d (no nick changes), and user modes:
         # +B (bot), +C (blocks CTCP), +V (no invites), +I (hides channel list)
-        if target_ircd == 'elemental':
+        if self._ircd == 'elemental':
             elemental_cmodes = {'hiddenbans': 'u', 'nokick': 'E',
                                 'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd',
                                 'blockcaps': 'G'}
@@ -330,7 +335,8 @@ class TS6Protocol(TS6BaseProtocol):
             elemental_umodes = {'noctcp': 'C', 'bot': 'B', 'noinvite': 'V', 'hidechans': 'I'}
             self.umodes.update(elemental_umodes)
             self.umodes['*D'] += ''.join(elemental_umodes.values())
-        elif target_ircd == 'chatircd':
+
+        elif self._ircd == 'chatircd':
             chatircd_cmodes = {'netadminonly': 'N'}
             self.cmodes.update(chatircd_cmodes)
             self.cmodes['*D'] += ''.join(chatircd_cmodes.values())
