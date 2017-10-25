@@ -407,7 +407,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         if account is None:  # Ignore when account=None
             return
-        elif account == '*':  # This indicates logout
+        elif account in ('*', '0'):  # No account
             account = ''
 
         if account != self.users[uid].services_account:
