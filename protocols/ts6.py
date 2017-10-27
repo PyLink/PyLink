@@ -12,15 +12,30 @@ from pylinkirc.protocols.ts6_common import *
 
 class TS6Protocol(TS6BaseProtocol):
 
-    SUPPORTED_IRCDS = ('charybdis', 'elemental', 'chatircd')
+    SUPPORTED_IRCDS = ('charybdis', 'elemental', 'chatircd', 'ratbox')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.protocol_caps |= {'slash-in-hosts'}
+
+        self._ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes')
+                                                             else 'charybdis')
+        self._ircd = self._ircd.lower()
+        if self._ircd not in self.SUPPORTED_IRCDS:
+            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
+            self._ircd = 'charybdis'
+
+        self._can_chghost = False
+        if self._ircd in ('charybdis', 'elemental', 'chatircd'):
+            # Charybdis and derivatives allow slashes in hosts. Ratbox does not.
+            self.protocol_caps |= {'slash-in-hosts'}
+            self._can_chghost = True
+
         self.casemapping = 'rfc1459'
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
-                         'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC', 'USERMODE': 'MODE'}
+                         'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC',
+                         # ENCAP LOGIN is used on burst for EUID-less servers
+                         'USERMODE': 'MODE', 'LOGIN': 'CLIENT_SERVICES_LOGIN'}
 
-        self.required_caps = {'EUID', 'SAVE', 'TB', 'ENCAP', 'QS', 'CHW'}
+        self.required_caps = {'TB', 'ENCAP', 'QS', 'CHW'}
 
         # From ChatIRCd: https://github.com/ChatLounge/ChatIRCd/blob/master/doc/technical/ChatIRCd-extra.txt
         # Our command handler rewrites ENCAP so that this is the exact same syntax as MODE.
@@ -50,19 +65,33 @@ class TS6Protocol(TS6BaseProtocol):
         # visible hostname, IP address, UID, real hostname, account name, gecos
         ts = ts or int(time.time())
         realname = realname or conf.conf['bot']['realname']
-        realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,
-            realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host,
+                                   realname=realname, realhost=realhost or host, ip=ip,
+                                   manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
 
-        self._send_with_prefix(server, "EUID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
-                               "{realhost} * :{realname}".format(ts=ts, host=host,
-                               nick=nick, ident=ident, uid=uid,
-                               modes=raw_modes, ip=ip, realname=realname,
-                               realhost=realhost, hopcount=self.servers[server].hopcount))
+        if 'EUID' in self._caps:
+            # charybdis-style EUID
+            self._send_with_prefix(server, "EUID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
+                                           "{realhost} * :{realname}".format(ts=ts, host=host,
+                                           nick=nick, ident=ident, uid=uid,
+                                           modes=raw_modes, ip=ip, realname=realname,
+                                           realhost=realhost or host,
+                                           hopcount=self.servers[server].hopcount))
+        else:
+            # Basic ratbox UID
+            self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
+                                           ":{realname}".format(ts=ts, host=host,
+                                           nick=nick, ident=ident, uid=uid,
+                                           modes=raw_modes, ip=ip, realname=realname,
+                                           hopcount=self.servers[server].hopcount))
+
+            if realhost:
+                # If real host is specified, send it using ENCAP REALHOST
+                self._send_with_prefix(uid, "ENCAP * REALHOST %s" % realhost)
 
         return u
 
@@ -218,7 +247,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
-        if 'KNOCK' not in self.caps:
+        if 'KNOCK' not in self._caps:
             log.debug('(%s) knock: Dropping KNOCK to %r since the IRCd '
                       'doesn\'t support it.', self.name, target)
             return
@@ -244,7 +273,7 @@ class TS6Protocol(TS6BaseProtocol):
     def update_client(self, target, field, text):
         """Updates the hostname of any connected client."""
         field = field.upper()
-        if field == 'HOST':
+        if field == 'HOST' and self._can_chghost:
             self.users[target].host = text
             self._send_with_prefix(self.sid, 'CHGHOST %s :%s' % (target, text))
             if not self.is_internal_client(target):
@@ -254,7 +283,7 @@ class TS6Protocol(TS6BaseProtocol):
                                    {'target': target, 'newhost': text}])
         else:
             raise NotImplementedError("Changing field %r of a client is "
-                                      "unsupported by this protocol." % field)
+                                      "unsupported by this IRCd." % field)
 
     ### Core / handlers
 
@@ -264,63 +293,64 @@ class TS6Protocol(TS6BaseProtocol):
 
         f = self.send
 
-        # Find the target IRCd and update the mode dictionaries as applicable.
-        target_ircd = self.serverdata.get('ircd', 'elemental' if self.serverdata.get('use_elemental_modes') else 'charybdis')
-        target_ircd = target_ircd.lower()
-
-        if target_ircd not in self.SUPPORTED_IRCDS:
-            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
-            target_ircd = 'charybdis'
+        # Base TS6 mode set from ratbox.
+        self.cmodes.update({'sslonly': 'S', 'noknock': 'p',
+                            '*A': 'beI',
+                            '*B': 'k',
+                            '*C': 'l',
+                            '*D': 'imnpstrS'})
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L80
-        chary_cmodes = { # TS6 generic modes (note that +p is noknock instead of private):
-                        'op': 'o', 'voice': 'v', 'ban': 'b', 'key': 'k', 'limit':
-                        'l', 'moderated': 'm', 'noextmsg': 'n', 'noknock': 'p',
-                        'secret': 's', 'topiclock': 't', 'inviteonly': 'i',
-                        'private': 'p',
-                         # charybdis-specific modes:
-                        'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
-                        'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
-                        'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                        'g', 'opmoderated': 'z', 'noctcp': 'C', 'ssl': 'Z',
-                         # charybdis-specific modes provided by EXTENSIONS
-                        'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
-                        'nonotice': 'T',
-                         # Now, map all the ABCD type modes:
-                        '*A': 'beIq', '*B': 'k', '*C': 'lfj', '*D': 'mnprstFLPQcgzCOAST'}
+        if self._ircd in ('charybdis', 'elemental', 'chatircd'):
+            self.cmodes.update({
+                'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
+                'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
+                'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
+                'g', 'opmoderated': 'z', 'noctcp': 'C', 'ssl': 'Z',
+                # charybdis modes provided by extensions
+                'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
+                'nonotice': 'T',
+                '*A': 'beIq', '*B': 'k', '*C': 'lfj', '*D': 'mnprstFLPQcgzCZOAST'
+            })
+            self.umodes.update({
+                'deaf': 'D', 'servprotect': 'S', 'admin': 'a',
+                'invisible': 'i', 'oper': 'o', 'wallops': 'w',
+                'snomask': 's', 'noforward': 'Q', 'regdeaf': 'R',
+                'callerid': 'g', 'operwall': 'z', 'locops': 'l',
+                'cloak': 'x', 'override': 'p',
+                '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'
+            })
 
+            # Charybdis extbans
+            self.extbans_matching = {'ban_all_registered': '$a', 'ban_inchannel': '$c:', 'ban_account': '$a:',
+                                     'ban_all_opers': '$o', 'ban_realname': '$r:', 'ban_server': '$s:',
+                                     'ban_banshare': '$j:', 'ban_extgecos': '$x:', 'ban_all_ssl': '$z'}
+        elif self._ircd == 'ratbox':
+            self.umodes.update({
+                'callerid': 'g', 'admin': 'a', 'sno_botfloods': 'b',
+                'sno_clientconnections': 'c', 'sno_extclientconnections': 'C', 'sno_debug': 'd',
+                'sno_fullauthblock': 'f', 'sno_skill': 'k', 'locops': 'l', 'sno_rejectedclients': 'r',
+                'snomask': 's', 'sno_badclientconnections': 'u', 'sno_serverconnects': 'x',
+                'sno_stats': 'y', 'operwall': 'z', 'sno_operspy': 'Z', 'deaf': 'D', 'servprotect': 'S',
+                '*A': '', '*B': '', '*C': '', '*D': 'igoabcCdfklrsuwxyzZD'
+            })
+
+        # TODO: make these more flexible...
         if self.serverdata.get('use_owner'):
-            chary_cmodes['owner'] = 'y'
+            self.cmodes['owner'] = 'y'
             self.prefixmodes['y'] = '~'
         if self.serverdata.get('use_admin'):
-            chary_cmodes['admin'] = 'a'
-            self.prefixmodes['a'] = '!' if target_ircd != 'chatircd' else '&'
+            self.cmodes['admin'] = 'a'
+            self.prefixmodes['a'] = '!' if self._ircd != 'chatircd' else '&'
         if self.serverdata.get('use_halfop'):
-            chary_cmodes['halfop'] = 'h'
+            self.cmodes['halfop'] = 'h'
             self.prefixmodes['h'] = '%'
-
-        self.cmodes = chary_cmodes
-
-        # Define supported user modes
-        chary_umodes = {'deaf': 'D', 'servprotect': 'S', 'admin': 'a',
-                        'invisible': 'i', 'oper': 'o', 'wallops': 'w',
-                        'snomask': 's', 'noforward': 'Q', 'regdeaf': 'R',
-                        'callerid': 'g', 'operwall': 'z', 'locops': 'l',
-                        'cloak': 'x', 'override': 'p',
-                        # Now, map all the ABCD type modes:
-                        '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'}
-        self.umodes = chary_umodes
-
-        # Charybdis extbans
-        self.extbans_matching = {'ban_all_registered': '$a', 'ban_inchannel': '$c:', 'ban_account': '$a:',
-                                 'ban_all_opers': '$o', 'ban_realname': '$r:', 'ban_server': '$s:',
-                                 'ban_banshare': '$j:', 'ban_extgecos': '$x:', 'ban_all_ssl': '$z'}
 
         # Toggles support of shadowircd/elemental-ircd specific channel modes:
         # +T (no notice), +u (hidden ban list), +E (no kicks), +J (blocks kickrejoin),
         # +K (no repeat messages), +d (no nick changes), and user modes:
         # +B (bot), +C (blocks CTCP), +V (no invites), +I (hides channel list)
-        if target_ircd == 'elemental':
+        if self._ircd == 'elemental':
             elemental_cmodes = {'hiddenbans': 'u', 'nokick': 'E',
                                 'kicknorejoin': 'J', 'repeat': 'K', 'nonick': 'd',
                                 'blockcaps': 'G'}
@@ -330,7 +360,8 @@ class TS6Protocol(TS6BaseProtocol):
             elemental_umodes = {'noctcp': 'C', 'bot': 'B', 'noinvite': 'V', 'hidechans': 'I'}
             self.umodes.update(elemental_umodes)
             self.umodes['*D'] += ''.join(elemental_umodes.values())
-        elif target_ircd == 'chatircd':
+
+        elif self._ircd == 'chatircd':
             chatircd_cmodes = {'netadminonly': 'N'}
             self.cmodes.update(chatircd_cmodes)
             self.cmodes['*D'] += ''.join(chatircd_cmodes.values())
@@ -340,17 +371,18 @@ class TS6Protocol(TS6BaseProtocol):
             self.umodes['*D'] += ''.join(chatircd_umodes.values())
 
         # Add definitions for all the inverted versions of the extbans.
-        for k, v in self.extbans_matching.copy().items():
-            if k == 'ban_all_registered':
-                newk = 'ban_unregistered'
-            else:
-                newk = k.replace('_all_', '_').replace('ban_', 'ban_not_')
-            self.extbans_matching[newk] = '$~' + v[1:]
+        if self.extbans_matching:
+            for k, v in self.extbans_matching.copy().items():
+                if k == 'ban_all_registered':
+                    newk = 'ban_unregistered'
+                else:
+                    newk = k.replace('_all_', '_').replace('ban_', 'ban_not_')
+                self.extbans_matching[newk] = '$~' + v[1:]
 
         # https://github.com/grawity/irc-docs/blob/master/server/ts6.txt#L55
         f('PASS %s TS 6 %s' % (self.serverdata["sendpass"], self.sid))
 
-        # We request the following capabilities (for charybdis):
+        # We request the following capabilities:
 
         # QS: SQUIT doesn't send recursive quits for each users; required
         # by charybdis (Source: https://github.com/grawity/irc-docs/blob/master/server/ts-capab.txt)
@@ -406,7 +438,7 @@ class TS6Protocol(TS6BaseProtocol):
         # We only get a list of keywords here. Charybdis obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
         # <- CAPAB :BAN CHW CLUSTER ENCAP EOPMOD EUID EX IE KLN KNOCK MLOCK QS RSFNC SAVE SERVICES TB UNKLN
-        self.caps = caps = args[0].split()
+        self._caps = caps = args[0].split()
 
         for required_cap in self.required_caps:
             if required_cap not in caps:
@@ -575,7 +607,6 @@ class TS6Protocol(TS6BaseProtocol):
         euid_args.insert(8, '*')
 
         # Copy the visible hostname to the real hostname, as this data isn't sent yet.
-        # TODO: handle encap realhost / encap login
         euid_args.insert(8, args[5])
 
         return self.handle_euid(numeric, command, euid_args)

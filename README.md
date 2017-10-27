@@ -108,7 +108,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - For host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
     - For KLINE support to work, a `shared{}` block should also be added for PyLink on all servers.
-* [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ratbox`
+* [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ts6`
     - Host changing is not supported.
     - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is a cloaked relay client: if you're paranoid about this, turn off Relay IP forwarding by setting the `relay_no_ips` option in the ratbox network's `server:` block.
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.

@@ -15,9 +15,7 @@ class HybridProtocol(TS6Protocol):
         super().__init__(*args, **kwargs)
 
         self.casemapping = 'ascii'
-        self.caps = {}
         self.hook_map = {'EOB': 'ENDBURST', 'TBURST': 'TOPIC', 'SJOIN': 'JOIN'}
-        self.protocol_caps -= {'slash-in-hosts'}
 
     def post_connect(self):
         """Initializes a connection to a server."""
@@ -175,13 +173,10 @@ class HybridProtocol(TS6Protocol):
         # We only get a list of keywords here. Hybrid obviously assumes that
         # we know what modes it supports (indeed, this is a standard list).
         # <- CAPAB :UNDLN UNKLN KLN TBURST KNOCK ENCAP DLN IE EX HOPS CHW SVS CLUSTER EOB QS
-        self.caps = caps = args[0].split()
+        self._caps = caps = args[0].split()
         for required_cap in ('SVS', 'EOB', 'HOPS', 'QS', 'TBURST'):
              if required_cap not in caps:
                  raise ProtocolError('%s not found in TS6 capabilities list; this is required! (got %r)' % (required_cap, caps))
-
-        log.debug('(%s) self.connected set!', self.name)
-        self.connected.set()
 
     def handle_uid(self, numeric, command, args):
         """
@@ -278,7 +273,7 @@ class HybridProtocol(TS6Protocol):
 
                 # Propagate the hostmask change as a hook.
                 self.call_hooks([numeric, 'CHGHOST',
-                                   {'target': target, 'newhost': host}])
+                                 {'target': target, 'newhost': host}])
 
                 parsedmodes.remove(modepair)
 
