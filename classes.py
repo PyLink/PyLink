@@ -592,8 +592,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                         # We're setting a prefix mode on someone (e.g. +o user1)
                         log.debug('Mode %s: This mode is a prefix mode.', mode)
                         arg = args.pop(0)
-                        # Convert nicks to UIDs implicitly; most IRCds will want
-                        # this already.
+                        # Convert nicks to UIDs implicitly
                         arg = self.nick_to_uid(arg) or arg
                         if arg not in self.users:  # Target doesn't exist, skip it.
                             log.debug('(%s) Skipping setting mode "%s %s"; the '
@@ -721,7 +720,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     @staticmethod
     def _flip(mode):
         """Flips a mode character."""
-        # Make it a list first, strings don't support item assignment
+        # Make it a list first; strings don't support item assignment
         mode = list(mode)
         if mode[0] == '-':  # Query is something like "-n"
             mode[0] = '+'  # Change it to "+n"
@@ -732,7 +731,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         return ''.join(mode)
 
     def reverse_modes(self, target, modes, oldobj=None):
-        """Reverses/Inverts the mode string or mode list given.
+        """Reverses/inverts the mode string or mode list given.
 
         Optionally, an oldobj argument can be given to look at an earlier state of
         a channel/user object, e.g. for checking the op status of a mode setter
@@ -776,9 +775,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             # D = Mode that changes a setting and never has a parameter.
             mchar = char[-1]
             if mchar in possible_modes['*B'] + possible_modes['*C']:
-                # We need to find the current mode list, so we can reset arguments
-                # for modes that have arguments. For example, setting +l 30 on a channel
-                # that had +l 50 set should give "+l 30", not "-l".
+                # We need to look at the current mode list to reset modes that take arguments
+                # For example, trying to bounce +l 30 on a channel that had +l 50 set should
+                # give "+l 50" and not "-l".
                 oldarg = [m for m in oldmodes if m[0] == mchar]
                 if oldarg:  # Old mode argument for this mode existed, use that.
                     oldarg = oldarg[0]
@@ -796,8 +795,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                           "setting a mode that's already set.", self.name, char, arg, mpair)
                 continue
             elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
-                # We're unsetting a prefixmode that was never set - don't set it in response!
-                # Charybdis lacks verification for this server-side.
+                # We're unsetting a prefix mode that was never set - don't set it in response!
+                # TS6 IRCds lacks server-side verification for this and can cause annoying mode floods.
                 log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
                           "wasn't previously set.", self.name, char, arg, mpair)
                 continue
@@ -831,12 +830,12 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 # If the mode has a prefix, use that.
                 curr_prefix, mode = mode
             except ValueError:
-                # If not, the current prefix stays the same; move on to the next
-                # modepair.
+                # If not, the current prefix stays the same as the last mode pair; move on
+                # to the next one.
                 pass
             else:
-                # If the prefix of this mode isn't the same as the last one, add
-                # the prefix to the modestring. This prevents '+nt-lk' from turning
+                # Only when the prefix of this mode isn't the same as the last one do we add
+                # the prefix to the mode string. This prevents '+nt-lk' from turning
                 # into '+n+t-l-k' or '+ntlk'.
                 if prefix != curr_prefix:
                     modelist += curr_prefix
@@ -869,9 +868,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         modes = list(modes)
         while modes:
             # PyLink mode lists come in the form [('+t', None), ('-b', '*!*@someone'), ('+l', 3)]
-            # The +/- part is optional depending on context, and should either:
-            # 1) The prefix of the last mode.
-            # 2) + (adding modes), if no prefix was ever given
+            # The +/- part is optional and is treated as the prefix of the last mode if not given,
+            # or + (adding modes) if it is the first mode in the list.
             next_mode = modes.pop(0)
 
             modechar, arg = next_mode
@@ -879,19 +877,19 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             if prefix not in '+-':
                 prefix = last_prefix
                 # Explicitly add the prefix to the mode character to prevent
-                # ambiguity when passing it to join_modes().
+                # ambiguity when passing it to e.g. join_modes().
                 modechar = prefix + modechar
-                # XXX: because tuples are immutable, we have to replace the entire modepair..
+                # XXX: because tuples are immutable, we have to replace the entire modepair...
                 next_mode = (modechar, arg)
 
             # Figure out the length that the next mode will add to the buffer. If we're changing
-            # from + to - (setting to removing modes) or vice versa, we'll need two characters
-            # ("+" or "-") plus the mode char itself.
+            # from + to - (setting to removing modes) or vice versa, we'll need two characters:
+            # the "+" or "-" as well as the actual mode char.
             next_length = 1
             if prefix != last_prefix:
                 next_length += 1
 
-            # Replace the last_prefix with the current one for the next iteration.
+            # Replace the last mode prefix with the current one for the next iteration.
             last_prefix = prefix
 
             if arg:
@@ -910,8 +908,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 queued_modes.append(next_mode)
                 log.debug('wrap_modes: queued modes: %s', queued_modes)
             else:
-                # Otherwise, create a new message by joining the previous queue.
-                # Then, add our current mode.
+                # Otherwise, create a new message by joining the previous queued modes into a message.
+                # Then, create a new message with our current mode.
                 strings.append(cls.join_modes(queued_modes))
                 queued_modes.clear()
 
