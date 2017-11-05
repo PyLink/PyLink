@@ -1220,7 +1220,7 @@ def handle_part(irc, numeric, command, args):
         # if it affected a relay.
         if not irc.has_cap('can-spawn-clients'):
             for channel in [c for c in channels if get_relay(irc, c)]:
-                for user in irc.channels[channel].users:
+                for user in irc.channels[channel].users.copy():
                     if (not irc.is_internal_client(user)) and (not is_relay_client(irc, user)):
                         irc.call_hooks([irc.sid, 'CLIENTBOT_SERVICE_KICKED', {'channel': channel, 'target': user,
                                        'text': 'Clientbot was force parted (Reason: %s)' % text or 'None',
