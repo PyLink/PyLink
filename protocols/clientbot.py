@@ -1058,7 +1058,10 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             channel = args[1]
             f = log.warning
 
-            # Don't sent the warning multiple times to prevent flood if the target
+            if channel not in self.channels:
+                return
+
+            # Don't send the warning multiple times to prevent flood if the target
             # is a log chan.
             if hasattr(self.channels[channel], '_clientbot_cannot_send_warned'):
                 f = log.debug
