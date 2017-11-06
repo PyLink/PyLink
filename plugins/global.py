@@ -15,7 +15,8 @@ def g(irc, source, args):
     """
     permissions.checkPermissions(irc, source, ["global.global"])
     message = " ".join(args)
-    template = string.Template(conf.conf.get('global', {}).get("format", DEFAULT_FORMAT))
+    global_conf = conf.conf.get('global') or {}
+    template = string.Template(global_conf.get('format', DEFAULT_FORMAT))
 
     for name, ircd in world.networkobjects.items():
         if ircd.connected.is_set():  # Only attempt to send to connected networks
