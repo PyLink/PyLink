@@ -8,7 +8,27 @@ You are missing dependencies - re-read https://github.com/GLolol/PyLink/blob/mas
 
 ### I get errors like "yaml.scanner.ScannerError: while scanning for the next token, found character '\t' that cannot start any token"
 
-You must use **spaces** and not tabs to indent your configuration file! (`\t` is the escaped code for a tab, which is disallowed by YAML)
+You must use **spaces** and not tabs to indent your configuration file! (`\t` is the escaped code for a tab, which is not allowed in YAML)
+
+### I get errors like "ParserError: while parsing a block mapping ... expected &lt;block end&gt;, but found '&lt;block sequence start&gt;'
+This likely indicates an indentation issue. When you create a list in YAML (PyLink's config format), all entries must be indented consistently. For example, this is **bad**:
+
+```yaml
+# This will cause an error!
+someblock:
+    - abcd
+    - def
+  - ghi
+```
+
+This is good:
+
+```yaml
+someblock:
+    - abcd
+    - def
+    - ghi
+```
 
 ## Linking / Connection issues
 
@@ -21,14 +41,14 @@ As a general guide, you should check the following before asking for support:
         1) Is PyLink connecting to the right port (i.e. one the IRCd is listening on?)
         2) Is the target network's IRCd actually binding to the port you're trying to use? If there is a port conflict with another program, the IRCd may fail to bind but *still start* on other ports that are free.
         3) Is the target port firewalled on the target machine?
-        4) Is there a working connection between the source and target servers? Use ping to test this, as sometimes routing issues between providers can cause servers to become unreachable.
-            - If your servers are purposely blocking ping, it's up to you to find another way to test this! 😬
+        4) Is there a working connection between the source and target servers? Use ping to test this, as routing issues between providers can cause servers to become unreachable.
+            - If your servers are purposely blocking ping, it's up to you to figure this out yourself... 😬
 
     - If so:
         1) Check for recvpass/sendpass/server hostname/IP mismatches - usually the IRCd will tell you if you're running into one of these, provided you have the right server notices enabled (consult your IRCd documentation for how to do this).
         2) Make sure you're not connecting with SSL on a non-SSL port, or vice versa.
 
-If these steps haven't helped you so far, it doesn't hurt to ask for help. :)
+If these steps haven't helped you so far, maybe there's a bug somewhere. :)
 
 ### My networks keep disconnecting with SSL errors!
 
@@ -68,3 +88,10 @@ Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c
 ### Relay is occasionally dropping users from channels!
 
 This usually indicates a serious bug in either Relay or PyLink's protocol modules, and should be reported as an issue. When asking for help, please state which IRCds your PyLink instance is linking to: specifically, which IRCd the missing users are *from* and which IRCd the users are missing *on*. Also, be prepared to send debug logs as you reproduce the issue!
+- Another tip in debugging this is to run `showchan` on the affected channels. If PyLink shows users in `showchan` that aren't in the actual user list, this is most likely a protocol module issue. If `showchan`'s output is correct, it is instead probably a relay issue where users aren't spawning correctly.
+
+### Service bots aren't spawning on my network, even though PyLink connects
+
+This indicates either a bug in PyLink's protocol module or (less commonly) a bug in your IRCd. Hint: ENDBURST is not being sent or received properly, which causes service bot spawning to never trigger.
+
+Make sure you're using an [officially supported IRCd](https://github.com/GLolol/PyLink#supported-ircds) before requesting help, as custom IRCd code can potentially trigger S2S bugs and is not something we can support.
