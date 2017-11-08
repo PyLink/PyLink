@@ -134,7 +134,7 @@ def nick(irc, source, args):
     if newnick in ('0', u):  # Allow /nick 0 to work
         newnick = u
 
-    elif not utils.isNick(newnick):
+    elif not irc.is_nick(newnick):
         irc.error('Invalid nickname %r.' % newnick)
         return
 
