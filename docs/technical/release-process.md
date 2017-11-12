@@ -10,4 +10,4 @@ This document documents the steps that I (James) use to release updates to PyLin
 
 4) Publish the release via the GitHub release page, using the same changelog content as `RELNOTES.md`.
 
-5) For stable releases, ~~also upload to PyPI: `python3 setup.py sdist upload`~~ PyPi uploads are handled automatically via Travis-CI.
+5) For stable releases, ~~also upload to PyPI: `python3 setup.py sdist upload`~~ PyPI uploads are handled automatically via Travis-CI.

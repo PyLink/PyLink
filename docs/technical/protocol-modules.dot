@@ -1,5 +1,5 @@
 /* Graph showing inheritance with the current PyLink protocol modules:
- * Update using: dot -Tpng protocol-modules.dot > protocol-modules.png
+ * Update using: dot -Tsvg protocol-modules.dot > protocol-modules.svg
  */
 
 digraph G {
