@@ -55,16 +55,20 @@ def autoconnect(irc, source, args):
     irc.reply("Done.")
 
 remote_parser = utils.IRCParser()
-remote_parser.add_argument('network')
 remote_parser.add_argument('--service', type=str, default='pylink')
-remote_parser.add_argument('command', nargs='+')
+remote_parser.add_argument('network')
+remote_parser.add_argument('command', nargs=utils.IRCParser.REMAINDER)
 @utils.add_cmd
 def remote(irc, source, args):
-    """<network> [--service <service name>] <command>
+    """[--service <service name>] <network> <command>
 
     Runs <command> on the remote network <network>. Plugin responses sent using irc.reply() are
     supported and returned here, but others are dropped due to protocol limitations."""
     args = remote_parser.parse_args(args)
+    if not args.command:
+        irc.error('No command given!')
+        return
+
     netname = args.network
 
     permissions.check_permissions(irc, source, [
