@@ -1,62 +1,62 @@
-Channel Mode / IRCd,RFC 1459,InspIRCd,charybdis,Elemental-IRCd,ChatIRCd,UnrealIRCd,Nefarious,snircd,IRCu,ircd-ratbox,IRCd-Hybrid,ngIRCd
-admin,,"a (m_customprefix, m_chanprotect)",,a (when enabled),a (when enabled),a,,,,,,a
-adminonly,,,A (ext/chm_adminonly),A (ext/chm_adminonly.so),A (ext/chm_adminonly),,a,,,,,
-allowinvite,,A (m_allowinvite),g,g,g,,,,,,,
-autoop,,w (m_autoop),,,,,,,,,,
+Channel Mode / IRCd,rfc1459,hybrid,inspircd,ngircd,p10/ircu,p10/nefarious,p10/snircd,ts6/charybdis,ts6/chatircd,ts6/elemental,ts6/ratbox,unreal
+admin,,,"a (m_customprefix, m_chanprotect)",a,,,,,a (when enabled),a (when enabled),,a
+adminonly,,,,,,a,,A (ext/chm_adminonly),A (ext/chm_adminonly),A (ext/chm_adminonly.so),,
+allowinvite,,,A (m_allowinvite),,,,,g,g,g,,
+autoop,,,w (m_autoop),,,,,,,,,
 ban,b,b,b,b,b,b,b,b,b,b,b,b
-banexception,,e (m_banexception),e,e,e,e,e,,,e,e,e
-blockcaps,,B (m_blockcaps),,G (ext/chm_nocaps.so),,,,,,,,
-blockcolor,,c (m_blockcolor),,,,c,c,c,c,,c,
-delayjoin,,,,,,D,D,D,D,,,
-exemptchanops,,X (m_exemptchanops),,,,,,,,,,
-filter,,g (m_filter),,,,,,,,,,
-flood,,f (m_messageflood),,,,,,,,,,
-flood_unreal,,,,,,f,,,,,,
-freetarget,,,F,F,F,,,,,,,
-had_delayjoin,,,,,,,d,d,d,,,
-halfop,,"h (m_customprefix, m_halfop)",,h (when enabled),h (when enabled),h,,,,,h,h
-hiddenbans,,,,u,,,,,,,,
-hidequits,,,,,,,Q,u,,,,
-history,,H (m_chanhistory),,,,,,,,,,
-invex,,I (m_inviteexception),I,I,I,I,,,,I,I,I
+banexception,,e,e (m_banexception),e,,e,,e,e,e,e,e
+blockcaps,,,B (m_blockcaps),,,,,,,G (ext/chm_nocaps.so),,
+blockcolor,,c,c (m_blockcolor),,c,c,c,,,,,c
+delayjoin,,,,,D,D,D,,,,,D
+exemptchanops,,,X (m_exemptchanops),,,,,,,,,
+filter,,,g (m_filter),,,,,,,,,
+flood,,,f (m_messageflood),,,,,,,,,
+flood_unreal,,,,,,,,,,,,f
+freetarget,,,,,,,,F,F,F,,
+had_delayjoin,,,,,d,d,d,,,,,
+halfop,,h,"h (m_customprefix, m_halfop)",h,,,,,h (when enabled),h (when enabled),,h
+hiddenbans,,,,,,,,,,u,,
+hidequits,,,,,,Q,u,,,,,
+history,,,H (m_chanhistory),,,,,,,,,
+invex,,I,I (m_inviteexception),I,,,,I,I,I,I,I
 inviteonly,i,i,i,i,i,i,i,i,i,i,i,i
-issecure,,,,,,Z,,,,,,
-joinflood,,j (m_joinflood),j,j,j,,,,,,,
+issecure,,,,,,,,,,,,Z
+joinflood,,,j (m_joinflood),,,,,j,j,j,,
 key,k,k,k,k,k,k,k,k,k,k,k,k
-kicknorejoin,,J (m_kicknorejoin),,J,,,,,,,,
-largebanlist,,,L,L,L,,,,,,,
+kicknorejoin,,,J (m_kicknorejoin),,,,,,,J,,
+largebanlist,,,,,,,,L,L,L,,
 limit,l,l,l,l,l,l,l,l,l,l,l,l
 moderated,m,m,m,m,m,m,m,m,m,m,m,m
-netadminonly,,,,,N (ext/chm_netadminonly),,,,,,,
-nickflood,,F (m_nickflood),,,,,,,,,,
-noamsg,,,,,,,T,T,,,,
-noctcp,,C (m_noctcp),C,C,C,C,C,C,C,,C,
-noextmsg,n,n,n,n,n,n,n,,,n,n,n
-noforwards,,,Q,Q,Q,,,,,,,
-noinvite,,,,,,V,,,,,,V
-nokick,,Q (m_nokicks),,E,,Q,,,,,,Q
-noknock,,K (m_knock),p*,p*,p*,K,,,,p*,p*,
-nonick,,N (m_nonicks),,d,,N,,,,,,N
-nonotice,,T (m_nonotice),T (ext/chm_nonotice),T,T (ext/chm_nonotice),T,N,N,,,,
-official-join,,Y (m_ojoin),,,,,,,,,,
+netadminonly,,,,,,,,,N (ext/chm_netadminonly),,,
+nickflood,,,F (m_nickflood),,,,,,,,,
+noamsg,,,,,,T,T,,,,,
+noctcp,,C,C (m_noctcp),,C,C,C,C,C,C,,C
+noextmsg,n,n,n,n,,n,,n,n,n,n,n
+noforwards,,,,,,,,Q,Q,Q,,
+noinvite,,,,V,,,,,,,,V
+nokick,,,Q (m_nokicks),Q,,,,,,E,,Q
+noknock,,p*,K (m_knock),,,,,p*,p*,p*,p*,K
+nonick,,,N (m_nonicks),N,,,,,,d,,N
+nonotice,,,T (m_nonotice),,,N,N,T (ext/chm_nonotice),T (ext/chm_nonotice),T,,T
+official-join,,,Y (m_ojoin),,,,,,,,,
 op,o,o,o,o,o,o,o,o,o,o,o,o
-operonly,,O (m_operchans),O (ext/chm_operonly),O (ext/chm_operonly.so),O (ext/chm_operonly),O,O,,,,O,O
-oplevel_apass,,,,,,,A,A,A,,,
-oplevel_upass,,,,,,,U,U,U,,,
-opmoderated,,U (extras/m_opmoderated),z,z,z,,,,,,,
-owner,,"q (m_customprefix, m_chanprotect)",,y (when enabled),y (when enabled),q,,,,,,q
-paranoia,,,,,,,,,,,p*,
-permanent,,P (m_permchannels),P,P,P,P,z,,,,,P
-private,p,p,p*,p*,p*,p,p,p,p,p*,p*,p
-quiet,,(via extban m:),q,q,q,(via extban ~q:),(via extban ~q:),,,,,
-redirect,,L (m_redirect),f,f,f,L,L,,,,,
-registered,,r (m_services_account),,,,r,R,R,R,,r,r
-regmoderated,,M (m_services_account),,,,M,M,M,,,M,M
-regonly,,R (m_services_account),r,r,r,R,r,r,r,r,R,R
-repeat,,E (m_repeat),,K (ext/chm_norepeat.c),,,,,,,,
+operonly,,O,O (m_operchans),O,,O,,O (ext/chm_operonly),O (ext/chm_operonly),O (ext/chm_operonly.so),,O
+oplevel_apass,,,,,A,A,A,,,,,
+oplevel_upass,,,,,U,U,U,,,,,
+opmoderated,,,U (extras/m_opmoderated),,,,,z,z,z,,
+owner,,,"q (m_customprefix, m_chanprotect)",q,,,,,y (when enabled),y (when enabled),,q
+paranoia,,p*,,,,,,,,,,
+permanent,,,P (m_permchannels),P,,z,,P,P,P,,P
+private,p,p*,p,p,p,p,p,p*,p*,p*,p*,p
+quiet,,,(via extban m:),,,(via extban ~q:),,q,q,q,,(via extban ~q:)
+redirect,,,L (m_redirect),,,L,,f,f,f,,L
+registered,,r,r (m_services_account),r,R,R,R,,,,,r
+regmoderated,,M,M (m_services_account),M,,M,M,,,,,M
+regonly,,R,R (m_services_account),R,r,r,r,r,r,r,r,R
+repeat,,,E (m_repeat),,,,,,,K (ext/chm_norepeat.c),,
 secret,s,s,s,s,s,s,s,s,s,s,s,s
-sslonly,,z (m_sslmodes),S (ext/chm_sslonly),S (ext/chm_sslonly.c),S (ext/chm_sslonly),z,,,,S,S,z
-stripcolor,,S (m_stripcolor),c,c,c,S,S,,,,,
+sslonly,,S,z (m_sslmodes),z,,,,S (ext/chm_sslonly),S (ext/chm_sslonly),S (ext/chm_sslonly.c),S,z
+stripcolor,,,S (m_stripcolor),,,S,,c,c,c,,S
 topiclock,t,t,t,t,t,t,t,t,t,t,t,t
 voice,v,v,v,v,v,v,v,v,v,v,v,v
 ,,,,,,,,,,,,
