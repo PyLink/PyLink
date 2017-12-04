@@ -1419,7 +1419,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             except (OSError, RuntimeError, SystemExit) as e:
                 self._log_connection_error('(%s) Disconnected from IRC:', self.name, exc_info=True)
 
-            self.disconnect()
+            if not self._aborted.is_set():
+                self.disconnect()
+
             if not self._run_autoconnect():
                 return
 
