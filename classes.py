@@ -414,9 +414,6 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
         # Internal hook signifying that a network has disconnected.
         self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
 
-        log.debug('(%s) _post_disconnect: Clearing state via _init_vars().', self.name)
-        self._init_vars()
-
     def _remove_client(self, numeric):
         """Internal function to remove a client from our internal state."""
         for c, v in self.channels.copy().items():
