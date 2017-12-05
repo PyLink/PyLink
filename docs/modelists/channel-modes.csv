@@ -7,7 +7,7 @@ ban,b,b,b,b,b,b,b,b,b,b,b,b
 banexception,,e,e (m_banexception),e,,e,,e,e,e,e,e
 blockcaps,,,B (m_blockcaps),,,,,,,G (ext/chm_nocaps.so),,
 blockcolor,,c,c (m_blockcolor),,c,c,c,,,,,c
-delayjoin,,,,,D,D,D,,,,,D
+delayjoin,,,D (m_delayjoin),,D,D,D,,,,,D
 exemptchanops,,,X (m_exemptchanops),,,,,,,,,
 filter,,,g (m_filter),,,,,,,,,
 flood,,,f (m_messageflood),,,,,,,,,
