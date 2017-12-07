@@ -1002,8 +1002,9 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                                           "(name=%r; extban_name=%r) doesn't match any (static) extban on %s",
                                           irc.name, supported_char, arg, name, extban_name, remoteirc.name)
                                 mode_parse_aborted = True
-                        elif arg.startswith(extban_prefix):
-                            # This is a full extban with a prefix and some data.
+                        elif extban_prefix.endswith(':') and arg.startswith(extban_prefix):
+                            # This is a full extban with a prefix and some data. The assumption: all extbans with data
+                            # have a prefix ending with : (as a delimiter)
                             if extban_name in remoteirc.extbans_matching:
                                 # Chop off our prefix and apply the remote's.
                                 arg = arg[len(extban_prefix):]
