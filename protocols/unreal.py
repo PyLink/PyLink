@@ -375,7 +375,8 @@ class UnrealProtocol(TS6BaseProtocol):
         self._send_with_prefix(self.sid, 'EOS')
 
         # Extban definitions
-        self.extbans_acting = {'quiet': '~q:', 'ban_nonick': '~n:', 'ban_nojoins': '~j:'}
+        self.extbans_acting = {'quiet': '~q:', 'ban_nonick': '~n:', 'ban_nojoins': '~j:',
+                               'filter': '~T:block:', 'filter_censor': '~T:censor:'}
         self.extbans_matching = {'ban_account': '~a:', 'ban_inchannel': '~c:', 'ban_opertype': '~O:',
                                  'ban_realname': '~r:', 'ban_account_legacy': '~R:', 'ban_certfp': '~S:'}
 
