@@ -1032,8 +1032,9 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                     # We broke up an acting extban earlier. Now, rewrite it into a new mode by joining the prefix and data together.
                     while pending_extban_prefixes:
                         next_prefix = pending_extban_prefixes.pop()
-                        log.debug("(%s) relay.get_supported_cmodes: readding extban prefix %r to (%r, %r)",
-                                  irc.name, next_prefix, supported_char, arg)
+                        log.debug("(%s) relay.get_supported_cmodes: readding extban prefix %r (%r) to (%r, %r) for %s",
+                                  irc.name, next_prefix, remoteirc.extbans_acting[next_prefix],
+                                  supported_char, arg, remoteirc.name)
                         arg = remoteirc.extbans_acting[next_prefix] + arg
 
                 if mode_parse_aborted:
