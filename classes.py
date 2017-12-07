@@ -1729,7 +1729,7 @@ class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnake
     def get_prefix_modes(self, uid, prefixmodes=None):
         """
         Returns a list of all named prefix modes the user has in the channel, in
-        increasing order from voice to owner.
+        decreasing order from owner to voice.
 
         Optionally, a prefixmodes argument can be given to look at an earlier state of
         the channel's prefix modes mapping, e.g. for checking the op status of a mode
