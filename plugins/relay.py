@@ -962,6 +962,10 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                                 log.debug('(%s) relay.get_supported_cmodes: expanding acting extban %s%s %s to %s%s %s for %s',
                                           irc.name, prefix, orig_supported_char, old_arg, prefix,
                                           supported_char, arg, remoteirc.name)
+                                # Override the mode name so that we're not overly strict about nick!user@host
+                                # conformance. Note: the reverse (cmode->extban) is not done because that would
+                                # also trigger the nick!user@host filter for +b.
+                                name = extban_name
                             elif extban_name in remoteirc.extbans_acting:
                                 # This is also an extban on the target network.
                                 # Just chop off the local prefix now; we rewrite it later after processing
@@ -1020,8 +1024,9 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                     else:
                         if name in ('ban', 'banexception', 'invex', 'quiet') and not remoteirc.is_hostmask(arg):
                             # Don't add unsupported bans that don't match n!u@h syntax.
-                            log.debug("(%s) relay.get_supported_cmodes: skipping unsupported extban/mode (%r, %r) because it doesn't match nick!user@host.",
-                                      irc.name, supported_char, arg)
+                            log.debug("(%s) relay.get_supported_cmodes: skipping unsupported extban/mode (%r, %r) "
+                                      "because it doesn't match nick!user@host. (name=%r)",
+                                      irc.name, supported_char, arg, name)
                             break
 
                     # We broke up an acting extban earlier. Now, rewrite it into a new mode by joining the prefix and data together.
