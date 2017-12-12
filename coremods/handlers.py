@@ -50,7 +50,7 @@ def handle_whois(irc, source, command, args):
                 # Show the highest prefix mode like a regular IRCd does, if there are any.
                 prefixes = c.get_prefix_modes(target)
                 if prefixes:
-                    highest = prefixes[-1]
+                    highest = prefixes[0]
 
                     # Fetch the prefix mode letter from the named mode.
                     modechar = irc.cmodes[highest]
