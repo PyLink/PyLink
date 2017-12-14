@@ -750,7 +750,13 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
                     # Add this to the SJOIN mode list.
                     for mode in modedelta_modes:
                         modechar = remoteirc.cmodes.get(mode[0])
+
                         if modechar:
+                            if modechar in remoteirc.cmodes['*A'] or modechar in remoteirc.prefixmodes:
+                                log.warning('(%s) Refusing to set modedelta mode %r on %s because it is a list or prefix mode',
+                                            irc.name, modechar, channel)
+                                continue
+
                             modedelta_mode = ('+%s' % modechar, mode[1])
                             if adding:
                                 log.debug('(%s) relay.relay_joins: adding %r on %s/%s (modedelta)', irc.name,
@@ -1682,7 +1688,13 @@ def handle_mode(irc, numeric, command, args):
         for modepair in modes.copy():
             log.debug('(%s) relay.handle_mode: checking if modepair %s is in %s',
                       irc.name, str(modepair), str(modedelta_modes))
-            if modepair[0][-1] in modedelta_modes:
+            modechar = modepair[0][-1]
+            if modechar in modedelta_modes:
+                if modechar in irc.cmodes['*A'] or modechar in irc.prefixmodes:
+                    # Don't enforce invalid modes.
+                    log.debug('(%s) relay.handle_mode: Not enforcing invalid modedelta mode %s on %s (list or prefix mode)',
+                              irc.name, str(modepair), target)
+                    continue
                 modes.remove(modepair)
 
                 if relay_entry[0] != irc.name:
@@ -2463,7 +2475,7 @@ def modedelta(irc, source, args):
     don't police it as well as your own (e.g. you can set +R with this).
 
     Mode names are defined using PyLink named modes, and not IRC mode characters: you can find a
-    list of channel named modes and the characters they map to on different IRCds at
+    list of channel named modes and the characters they map to on different IRCds at:
 
     https://raw.githack.com/GLolol/PyLink/devel/docs/modelists/channel-modes.html
 
@@ -2481,6 +2493,9 @@ def modedelta(irc, source, args):
 
     A single hyphen (-) can also be given as a list of modes to disable the mode delta
     and remove any mode deltas from relay leaves.
+
+    Note: only simple and single-arg modes (e.g. +f, +l) are supported; list modes and
+    prefix modes such as bans and op are NOT.
     """
     try:
         channel = irc.to_lower(args[0])
@@ -2501,7 +2516,7 @@ def modedelta(irc, source, args):
     old_modes = []
     if '-' in args[1:]:  # - given to clear the list
         try:
-            # Keep track of the
+            # Keep track of the old modedelta modes, and unset them when applying the new ones
             old_modes = db[relay]['modedelta']
             del db[relay]['modedelta']
         except KeyError:
@@ -2516,6 +2531,13 @@ def modedelta(irc, source, args):
             m = modepair.split(',', 1)
             if len(m) == 1:
                 m.append(None)
+
+            # Sanity check: you shouldn't be allowed to lock things like op or redirects
+            # because one misconfiguration can cause serious desyncs.
+            if m[0] not in whitelisted_cmodes:
+                irc.error('Setting mode %r is not supported for modedelta.' % m[0])
+                return
+
             modes.append(m)
 
         if modes:
@@ -2548,8 +2570,13 @@ def modedelta(irc, source, args):
             if modeprefix not in '+-':  # Assume + if no prefix was given.
                 modeprefix = '+'
             modename = modepair[0].lstrip('+-')
+
             mchar = remoteirc.cmodes.get(modename)
             if mchar:
+                if mchar in remoteirc.cmodes['*A'] or mchar in remoteirc.prefixmodes:
+                    log.warning('(%s) Refusing to set modedelta mode %r on %s because it is a list or prefix mode',
+                                irc.name, mchar, remotechan)
+                    continue
                 remote_modes.append(('%s%s' % (modeprefix, mchar), modepair[1]))
         if remote_modes:
             log.debug('(%s) Sending modedelta modes %s to %s/%s', irc.name, remote_modes, remotenet, remotechan)
