@@ -756,6 +756,10 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
                                 log.warning('(%s) Refusing to set modedelta mode %r on %s because it is a list or prefix mode',
                                             irc.name, modechar, channel)
                                 continue
+                            elif not remoteirc.has_cap('can-spawn-clients'):
+                                log.debug('(%s) relay.handle_mode: Not enforcing modedelta modes on bot-only network %s',
+                                          irc.name, remoteirc.name)
+                                continue
 
                             modedelta_mode = ('+%s' % modechar, mode[1])
                             if adding:
@@ -1695,6 +1699,11 @@ def handle_mode(irc, numeric, command, args):
                     log.debug('(%s) relay.handle_mode: Not enforcing invalid modedelta mode %s on %s (list or prefix mode)',
                               irc.name, str(modepair), target)
                     continue
+                elif not irc.has_cap('can-spawn-clients'):
+                    log.debug('(%s) relay.handle_mode: Not enforcing modedelta modes on bot-only network',
+                              irc.name)
+                    continue
+
                 modes.remove(modepair)
 
                 if relay_entry[0] != irc.name:
@@ -2576,6 +2585,10 @@ def modedelta(irc, source, args):
                 if mchar in remoteirc.cmodes['*A'] or mchar in remoteirc.prefixmodes:
                     log.warning('(%s) Refusing to set modedelta mode %r on %s because it is a list or prefix mode',
                                 irc.name, mchar, remotechan)
+                    continue
+                elif not remoteirc.has_cap('can-spawn-clients'):
+                    log.debug('(%s) relay.handle_mode: Not enforcing modedelta modes on bot-only network %s',
+                              irc.name, remoteirc.name)
                     continue
                 remote_modes.append(('%s%s' % (modeprefix, mchar), modepair[1]))
         if remote_modes:
