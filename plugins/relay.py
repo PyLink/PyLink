@@ -1590,7 +1590,7 @@ def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
 
-    def _handle_mode_loop(irc, remoteirc, numeric, command, args):
+    def _handle_mode_loop(irc, remoteirc, numeric, command, target, modes):
         if irc.is_channel(target):
             remotechan = get_remote_channel(irc, remoteirc, target)
             if not remotechan:
@@ -1646,9 +1646,19 @@ def handle_mode(irc, numeric, command, args):
             if remoteuser and modes:
                 remoteirc.mode(remoteuser, remoteuser, modes)
 
+    reversed_modes = []
     if irc.is_channel(target):
         # Use the old state of the channel to check for CLAIM access.
         oldchan = args.get('channeldata')
+
+        # Block modedelta modes from being unset by leaf networks
+        relay_entry = get_relay(irc, target)
+        if not relay_entry:
+            modedelta_modes = []
+        else:
+            modedelta_modes = db[relay_entry].get('modedelta', [])
+            modedelta_modes = list(filter(None, [irc.cmodes.get(named_modepair[0])
+                                                 for named_modepair in modedelta_modes]))
 
         if not check_claim(irc, target, numeric, chanobj=oldchan):
             # Mode change blocked by CLAIM.
@@ -1667,14 +1677,31 @@ def handle_mode(irc, numeric, command, args):
                                   # Tried to set a list mode, revert
                                    or modepair[0][-1] in irc.cmodes['*A'])
                                  ]
+            modes.clear()  # Clear the mode list so nothing is relayed below
 
-            if reversed_modes:
-                log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
-                          irc.name, modes, reversed_modes)
-                irc.mode(irc.sid, target, reversed_modes)
-            return
+        for modepair in modes.copy():
+            log.debug('(%s) relay.handle_mode: checking if modepair %s is in %s',
+                      irc.name, str(modepair), str(modedelta_modes))
+            if modepair[0][-1] in modedelta_modes:
+                modes.remove(modepair)
 
-    iterate_all(irc, _handle_mode_loop, extra_args=(numeric, command, args))
+                if relay_entry[0] != irc.name:
+                    # On leaf nets, enforce the modedelta.
+                    reversed_modes += irc.reverse_modes(target, [modepair], oldobj=oldchan)
+                    log.debug('(%s) relay.handle_mode: Reverting change of modedelta mode %s on %s',
+                              irc.name, str(modepair), target)
+                else:
+                    # On the home net, just don't propagate the mode change.
+                    log.debug('(%s) relay.handle_mode: Not propagating change of modedelta mode %s on %s',
+                              irc.name, str(modepair), target)
+
+    if reversed_modes:
+        log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r.',
+                  irc.name, args['modes'], reversed_modes)
+        irc.mode(irc.sid, target, reversed_modes)
+
+    if modes:
+        iterate_all(irc, _handle_mode_loop, extra_args=(numeric, command, target, modes))
 
 utils.add_hook(handle_mode, 'MODE')
 
