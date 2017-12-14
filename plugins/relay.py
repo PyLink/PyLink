@@ -1483,30 +1483,6 @@ def handle_kick(irc, source, command, args):
             log.debug('(%s) relay.handle_kick: target %s is an internal client, going to look up the real user', irc.name, target)
             real_target = get_orig_user(irc, target, targetirc=remoteirc)
 
-            if not check_claim(irc, channel, kicker):
-                log.debug('(%s) relay.handle_kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
-                # Home network is not in the channel's claim AND the kicker is not
-                # opped. We won't propograte the kick then.
-                # TODO: make the check slightly more advanced: i.e. halfops can't
-                # kick ops, admins can't kick owners, etc.
-                modes = get_prefix_modes(remoteirc, irc, remotechan, real_target)
-
-                # Join the kicked client back with its respective modes.
-                irc.sjoin(irc.sid, channel, [(modes, target)])
-
-                if kicker in irc.users:
-                    log.info('(%s) relay: Blocked KICK (reason %r) from %s/%s to relay client %s on %s.',
-                             irc.name, args['text'], irc.users[source].nick, irc.name,
-                             remoteirc.users[real_target].nick, channel)
-                    irc.msg(kicker, "This channel is claimed; your kick to "
-                                    "%s has been blocked because you are not "
-                                    "(half)opped." % channel, notice=True)
-                else:
-                    log.info('(%s) relay: Blocked KICK (reason %r) from server %s to relay client %s/%s on %s.',
-                             irc.name, args['text'], irc.servers[source].name,
-                             remoteirc.users[real_target].nick, remoteirc.name, channel)
-                return
-
         if not real_target:
             return
 
@@ -1540,6 +1516,35 @@ def handle_kick(irc, source, command, args):
         if remoteirc != irc and (not remoteirc.users[real_target].channels) and not origuser:
             del relayusers[(irc.name, target)][remoteirc.name]
             remoteirc.quit(real_target, 'Left all shared channels.')
+
+    if not check_claim(irc, channel, kicker):
+
+        homenet, real_target = get_orig_user(irc, target)
+        homeirc = world.networkobjects.get(homenet)
+        homenick = homeirc.users[real_target].nick if homeirc else '<ghost user>'
+        homechan = get_remote_channel(irc, homeirc, channel)
+
+        log.debug('(%s) relay.handle_kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
+        # Home network is not in the channel's claim AND the kicker is not
+        # opped. We won't propograte the kick then.
+        # TODO: make the check slightly more advanced: i.e. halfops can't
+        # kick ops, admins can't kick owners, etc.
+        modes = get_prefix_modes(homeirc, irc, homechan, real_target)
+
+        # Join the kicked client back with its respective modes.
+        irc.sjoin(irc.sid, channel, [(modes, target)])
+        if kicker in irc.users:
+            log.info('(%s) relay: Blocked KICK (reason %r) from %s/%s to %s/%s on %s.',
+                     irc.name, args['text'], irc.users[source].nick, irc.name,
+                     homenick, homenet, channel)
+            irc.msg(kicker, "This channel is claimed; your kick to "
+                            "%s has been blocked because you are not "
+                            "(half)opped." % channel, notice=True)
+        else:
+            log.info('(%s) relay: Blocked KICK (reason %r) from server %s to %s/%s on %s.',
+                     irc.name, args['text'], irc.servers[source].name ,
+                     homenick, homenet, channel)
+        return
 
     iterate_all(irc, _handle_kick_loop, extra_args=(source, command, args))
 
@@ -1582,72 +1587,47 @@ def _is_uline(irc, client):
     return irc.get_friendly_name(irc.get_server(client)) in irc.serverdata.get('ulines', [])
 
 def handle_mode(irc, numeric, command, args):
+    target = args['target']
+    modes = args['modes']
+
     def _handle_mode_loop(irc, remoteirc, numeric, command, args):
-        target = args['target']
-        modes = args['modes']
-
         if irc.is_channel(target):
-            # Use the old state of the channel to check for CLAIM access.
-            oldchan = args.get('channeldata')
-
-            if check_claim(irc, target, numeric, chanobj=oldchan):
-                remotechan = get_remote_channel(irc, remoteirc, target)
-                if not remotechan:
-                    return
-                supported_modes = get_supported_cmodes(irc, remoteirc, target, modes)
-
-                # Check if the sender is a user with a relay client; otherwise relay the mode
-                # from the corresponding server.
-                remotesender = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False) or \
-                    get_relay_server_sid(remoteirc, irc) or remoteirc.sid
-
-                if not remoteirc.has_cap('can-spawn-clients'):
-                    friendly_modes = []
-                    for modepair in modes:
-                        if modepair[0][-1] in irc.prefixmodes:
-                            orig_user = get_orig_user(irc, modepair[1])
-                            if orig_user and orig_user[0] == remoteirc.name:
-                                # Don't display prefix mode changes for someone on the target clientbot
-                                # link; this will either be relayed via modesync or ignored.
-                                continue
-
-                            # Convert UIDs to nicks when relaying this to clientbot.
-                            modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
-                        elif modepair[0][-1] in irc.cmodes['*A'] and irc.is_hostmask(modepair[1]) and \
-                                conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower() != 'none':
-                            # Don't show bans if the ban is a simple n!u@h and modesync is enabled
-                            continue
-                        friendly_modes.append(modepair)
-
-                    if friendly_modes:
-                        # Call hooks, this is used for clientbot relay.
-                        remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': remotechan, 'modes': friendly_modes}])
-
-                if supported_modes:
-                    remoteirc.mode(remotesender, remotechan, supported_modes)
-
-            else:  # Mode change blocked by CLAIM.
-                reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
-
-                if _is_uline(irc, numeric):
-                    # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
-                    # attempts to op u-lined clients (trying to change status for others
-                    # SHOULD be reverted).
-                    # This is for compatibility with Anope's DEFCON for the most part, as well as
-                    # silly people who try to register a channel multiple times via relay.
-                    reversed_modes = [modepair for modepair in reversed_modes if
-                                      # Mode is a prefix mode but target isn't ulined, revert
-                                      ((modepair[0][-1] in irc.prefixmodes and not
-                                        _is_uline(irc, modepair[1]))
-                                      # Tried to set a list mode, revert
-                                       or modepair[0][-1] in irc.cmodes['*A'])
-                                     ]
-
-                if reversed_modes:
-                    log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
-                              irc.name, modes, reversed_modes)
-                    irc.mode(irc.sid, target, reversed_modes)
+            remotechan = get_remote_channel(irc, remoteirc, target)
+            if not remotechan:
                 return
+            supported_modes = get_supported_cmodes(irc, remoteirc, target, modes)
+
+            # Check if the sender is a user with a relay client; otherwise relay the mode
+            # from the corresponding server.
+            remotesender = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False) or \
+                get_relay_server_sid(remoteirc, irc) or remoteirc.sid
+
+            if not remoteirc.has_cap('can-spawn-clients'):
+                friendly_modes = []
+
+                for modepair in modes:
+                    modechar = modepair[0][-1]
+                    if modechar in irc.prefixmodes:
+                        orig_user = get_orig_user(irc, modepair[1])
+                        if orig_user and orig_user[0] == remoteirc.name:
+                            # Don't display prefix mode changes for someone on the target clientbot
+                            # link; this will either be relayed via modesync or ignored.
+                            continue
+
+                        # Convert UIDs to nicks when relaying this to clientbot.
+                        modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
+                    elif modechar in irc.cmodes['*A'] and irc.is_hostmask(modepair[1]) and \
+                            conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower() != 'none':
+                        # Don't show bans if the ban is a simple n!u@h and modesync is enabled
+                        continue
+                    friendly_modes.append(modepair)
+
+                if friendly_modes:
+                    # Call hooks, this is used for clientbot relay.
+                    remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': remotechan, 'modes': friendly_modes}])
+
+            if supported_modes:
+                remoteirc.mode(remotesender, remotechan, supported_modes)
 
         else:
             # Set hideoper on remote opers, to prevent inflating
@@ -1665,6 +1645,35 @@ def handle_mode(irc, numeric, command, args):
 
             if remoteuser and modes:
                 remoteirc.mode(remoteuser, remoteuser, modes)
+
+    if irc.is_channel(target):
+        # Use the old state of the channel to check for CLAIM access.
+        oldchan = args.get('channeldata')
+
+        if not check_claim(irc, target, numeric, chanobj=oldchan):
+            # Mode change blocked by CLAIM.
+            reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
+
+            if _is_uline(irc, numeric):
+                # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
+                # attempts to op u-lined clients (trying to change status for others
+                # SHOULD be reverted).
+                # This is for compatibility with Anope's DEFCON for the most part, as well as
+                # silly people who try to register a channel multiple times via relay.
+                reversed_modes = [modepair for modepair in reversed_modes if
+                                  # Mode is a prefix mode but target isn't ulined, revert
+                                  ((modepair[0][-1] in irc.prefixmodes and not
+                                    _is_uline(irc, modepair[1]))
+                                  # Tried to set a list mode, revert
+                                   or modepair[0][-1] in irc.cmodes['*A'])
+                                 ]
+
+            if reversed_modes:
+                log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r (CLAIM).',
+                          irc.name, modes, reversed_modes)
+                irc.mode(irc.sid, target, reversed_modes)
+            return
+
     iterate_all(irc, _handle_mode_loop, extra_args=(numeric, command, args))
 
 utils.add_hook(handle_mode, 'MODE')
