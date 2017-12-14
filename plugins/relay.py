@@ -2535,7 +2535,7 @@ def modedelta(irc, source, args):
             irc.reply('Cleared the mode delta for %r.' % channel)
     else:
         modes = []
-        for modepair in map(str.lower, args[1:]):
+        for modepair in args[1:]:
             # Construct mode pairs given the initial query.
             m = modepair.split(',', 1)
             if len(m) == 1:
@@ -2544,7 +2544,7 @@ def modedelta(irc, source, args):
             # Sanity check: you shouldn't be allowed to lock things like op or redirects
             # because one misconfiguration can cause serious desyncs.
             if m[0] not in whitelisted_cmodes:
-                irc.error('Setting mode %r is not supported for modedelta.' % m[0])
+                irc.error('Setting mode %r is not supported for modedelta (case sensitive).' % m[0])
                 return
 
             modes.append(m)
