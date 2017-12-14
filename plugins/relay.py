@@ -738,6 +738,29 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 modes = get_supported_cmodes(irc, remoteirc, channel, irc.channels[channel].modes)
 
+                # Subtract any mode delta modes from this burst
+                relay = db[get_relay(irc, channel)]
+                modedelta_modes = relay.get('modedelta')
+                if modedelta_modes:
+                    # Check if the target is a leaf channel: if so, add the mode delta modes to the target channel.
+                    # Otherwise, subtract this set of modes, as we don't want these modes from leaves to be sent back
+                    # to the original channel.
+                    adding = (remoteirc.name, remotechan) in relay['links']
+
+                    # Add this to the SJOIN mode list.
+                    for mode in modedelta_modes:
+                        modechar = remoteirc.cmodes.get(mode[0])
+                        if modechar:
+                            modedelta_mode = ('+%s' % modechar, mode[1])
+                            if adding:
+                                log.debug('(%s) relay.relay_joins: adding %r on %s/%s (modedelta)', irc.name,
+                                          str(modedelta_mode), remoteirc.name, remotechan)
+                                modes.append(modedelta_mode)
+                            elif modedelta_mode in modes:
+                                log.debug('(%s) relay.relay_joins: removing %r on %s/%s (modedelta)', irc.name,
+                                          str(modedelta_mode), remoteirc.name, remotechan)
+                                modes.remove(modedelta_mode)
+
                 if rsid:
                     remoteirc.sjoin(rsid, remotechan, queued_users, ts=ts, modes=modes)
             else:
@@ -2392,3 +2415,106 @@ def claim(irc, source, args):
     db[relay]["claim"] = claimed
     irc.reply('CLAIM for channel \x02%s\x02 set to: %s' %
             (channel, ', '.join(claimed) or '\x1D(none)\x1D'))
+
+@utils.add_cmd
+def modedelta(irc, source, args):
+    """<channel> [<named modes>]
+
+    Sets the relay mode delta for the given channel: a list of named mode pairs to apply on leaf
+    channels, but not the host network.
+
+    This may be helpful in fighting spam if leaf networks
+    don't police it as well as your own (e.g. you can set +R with this).
+
+    Mode names are defined using PyLink named modes, and not IRC mode characters: you can find a
+    list of channel named modes and the characters they map to on different IRCds at
+
+    https://raw.githack.com/GLolol/PyLink/devel/docs/modelists/channel-modes.html
+
+    Examples of setting modes:
+
+        modedelta #channel regonly
+
+        modedelta #channel regonly inviteonly
+
+        modedelta #channel key,supersecret sslonly
+
+        modedelta #channel -
+
+    If no modes are given, this shows the mode delta for the channel.
+
+    A single hyphen (-) can also be given as a list of modes to disable the mode delta
+    and remove any mode deltas from relay leaves.
+    """
+    try:
+        channel = irc.to_lower(args[0])
+    except IndexError:
+        irc.error("Not enough arguments. Needs 1-2: channel, list of modes (optional).")
+        return
+
+    permissions.check_permissions(irc, source, ['relay.modedelta'])
+
+    # We override get_relay() here to limit the search to the current network.
+    relay = (irc.name, channel)
+    if relay not in db:
+        irc.error('No relay %r exists on this network (this command must be run on the '
+                  'network this channel was created on).' % channel)
+        return
+
+    target_modes = []
+    old_modes = []
+    if '-' in args[1:]:  # - given to clear the list
+        try:
+            # Keep track of the
+            old_modes = db[relay]['modedelta']
+            del db[relay]['modedelta']
+        except KeyError:
+            irc.error('No mode delta exists for %r.' % channel)
+            return
+        else:
+            irc.reply('Cleared the mode delta for %r.' % channel)
+    else:
+        modes = []
+        for modepair in map(str.lower, args[1:]):
+            # Construct mode pairs given the initial query.
+            m = modepair.split(',', 1)
+            if len(m) == 1:
+                m.append(None)
+            modes.append(m)
+
+        if modes:
+            old_modes = db[relay].get('modedelta', [])
+            db[relay]['modedelta'] = target_modes = modes
+            log.debug('channel: %s', str(channel))
+            irc.reply('Set the mode delta for \x02%s\x02 to: %s' % (channel, modes))
+        else: # No modes given, so show the list.
+            irc.reply('Mode delta for channel \x02%s\x02 is set to: %s' %
+                      (channel, db[relay].get('modedelta') or '\x1D(none)\x1D'))
+
+    # Add to target_modes all former modedelta modes that don't have a positive equivalent
+    # Note: We only check for (modechar, modedata) and not for (+modechar, modedata) here
+    # internally, but the actual filtering below checks for both?
+    modedelta_diff = [('-%s' % modepair[0], modepair[1]) for modepair in old_modes if
+                      modepair not in target_modes]
+    target_modes += modedelta_diff
+    for chanpair in db[relay]['links']:
+        remotenet, remotechan = chanpair
+        remoteirc = world.networkobjects.get(remotenet)
+        if not remoteirc:
+            continue
+
+        remote_modes = []
+        # For each leaf channel, unset the old mode delta and set the new one
+        # if applicable.
+        log.debug('(%s) modedelta target modes for %s/%s: %s', irc.name, remotenet, remotechan, target_modes)
+        for modepair in target_modes:
+            modeprefix = modepair[0][0]
+            if modeprefix not in '+-':  # Assume + if no prefix was given.
+                modeprefix = '+'
+            modename = modepair[0].lstrip('+-')
+            mchar = remoteirc.cmodes.get(modename)
+            if mchar:
+                remote_modes.append(('%s%s' % (modeprefix, mchar), modepair[1]))
+        if remote_modes:
+            log.debug('(%s) Sending modedelta modes %s to %s/%s', irc.name, remote_modes, remotenet, remotechan)
+            remoteirc.mode(remoteirc.pseudoclient.uid, remotechan, remote_modes)
