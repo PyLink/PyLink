@@ -1450,9 +1450,13 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self._socket.close()
 
         # Stop the queue thread.
-        if self._queue:
-            # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
-            self._queue.queue.appendleft(None)
+        if self._queue is not None:
+            try:
+                # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
+                with self._queue.mutex:
+                    self._queue.queue[0] = None
+            except IndexError:
+                self._queue.put(None)
 
         # Stop the ping timer.
         if self._ping_timer:
