@@ -23,7 +23,8 @@ inviteonly,i,i,i,i,i,i,i,i,i,i,i,i
 issecure,,,,,,,,,,,,Z
 joinflood,,,j (m_joinflood),,,,,j,j,j,,
 key,k,k,k,k,k,k,k,k,k,k,k,k
-kicknorejoin,,,J (m_kicknorejoin),,,,,,,J,,
+kicknorejoin,,,,,,,,,,J,,
+kicknorejoin_insp,,,J (m_kicknorejoin),,,,,,,,,
 largebanlist,,,,,,,,L,L,L,,
 limit,l,l,l,l,l,l,l,l,l,l,l,l
 moderated,m,m,m,m,m,m,m,m,m,m,m,m
@@ -53,7 +54,8 @@ redirect,,,L (m_redirect),,,L,,f,f,f,,L
 registered,,r,r (m_services_account),r,R,R,R,,,,,r
 regmoderated,,M,M (m_services_account),M,,M,M,,,,,M
 regonly,,R,R (m_services_account),R,r,r,r,r,r,r,r,R
-repeat,,,E (m_repeat),,,,,,,K (ext/chm_norepeat.c),,
+repeat,,,,,,,,,,K (ext/chm_norepeat.c),,
+repeat_insp,,,E (m_repeat),,,,,,,,,
 secret,s,s,s,s,s,s,s,s,s,s,s,s
 sslonly,,S,z (m_sslmodes),z,,,,S (ext/chm_sslonly),S (ext/chm_sslonly),S (ext/chm_sslonly.c),S,z
 stripcolor,,,S (m_stripcolor),,,S,,c,c,c,,S
