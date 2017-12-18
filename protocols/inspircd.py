@@ -443,7 +443,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 # Strip c_ prefixes to be consistent with other protocols.
                 name = name.lstrip('c_')
 
-                if name == 'reginvite':  # Reginvite? That's a dumb name.
+                if name == 'reginvite':  # Reginvite? That's an odd name.
                     name = 'regonly'
 
                 if name == 'founder':  # Channel mode +q
@@ -451,6 +451,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     # name it anything you like. The former is config default,
                     # but I personally prefer the latter.
                     name = 'owner'
+
+                if name in ('repeat', 'kicknorejoin'):
+                    # Suffix modes using inspircd-specific arguments so that it can
+                    # be safely relayed.
+                    name += '_insp'
 
                 # We don't care about mode prefixes; just the mode char.
                 self.irc.cmodes[name] = char[-1]
