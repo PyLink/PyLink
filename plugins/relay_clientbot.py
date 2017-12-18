@@ -246,7 +246,7 @@ def rpm(irc, source, args):
     if not uid:
         irc.error('Unknown user %s.' % target)
         return
-    elif not relay.isRelayClient(irc, uid):
+    elif not relay.is_relay_client(irc, uid):
         irc.error('%s is not a relay user.' % target)
         return
     else:
