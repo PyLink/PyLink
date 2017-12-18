@@ -616,7 +616,7 @@ def get_supported_umodes(irc, remoteirc, modes):
             # in the supported modes list for the TARGET network, and set that
             # mode character as the one we're setting, if it exists.
             if modechar == m:
-                if name not in whitelisted_umodes:
+                if name not in WHITELISTED_UMODES:
                     log.debug("(%s) relay.get_supported_umodes: skipping mode (%r, %r) because "
                               "it isn't a whitelisted (safe) mode for relay.",
                               irc.name, modechar, arg)
@@ -811,7 +811,7 @@ def relay_part(irc, *args, **kwargs):
 
     iterate_all(irc, _relay_part_loop, extra_args=args, kwargs=kwargs)
 
-whitelisted_cmodes = {
+WHITELISTED_CMODES = {
      'admin',
      'adminonly',
      'allowinvite',
@@ -863,7 +863,7 @@ whitelisted_cmodes = {
      'topiclock',
      'voice'
 }
-whitelisted_umodes = {
+WHITELISTED_UMODES = {
      'bot',
      'hidechans',
      'hideidle',
@@ -875,8 +875,8 @@ whitelisted_umodes = {
      'stripcolor',
      'wallops'
 }
-clientbot_whitelisted_cmodes = {'admin', 'ban', 'banexception', 'halfop', 'invex', 'op', 'owner', 'voice'}
-modesync_options = ('none', 'half', 'full')
+CLIENTBOT_WHITELISTED_UMODES = {'admin', 'ban', 'banexception', 'halfop', 'invex', 'op', 'owner', 'voice'}
+CLIENTBOT_MODESYNC_OPTIONS = ('none', 'half', 'full')
 def get_supported_cmodes(irc, remoteirc, channel, modes):
     """
     Filters a channel mode change to the modes supported by the target IRCd.
@@ -886,18 +886,18 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
         return []
 
     # Handle Clientbot-specific mode whitelist settings
-    whitelist = whitelisted_cmodes
+    whitelist = WHITELISTED_CMODES
     if remoteirc.protoname == 'clientbot' or irc.protoname == 'clientbot':
         modesync = conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower()
-        if modesync not in modesync_options:
+        if modesync not in CLIENTBOT_MODESYNC_OPTIONS:
             modesync = 'none'
             log.warning('relay: Bad clientbot_modesync option %s: valid values are %s',
-                        modesync, modesync_options)
+                        modesync, CLIENTBOT_MODESYNC_OPTIONS)
 
         if modesync == 'none':
             return []  # Do nothing
         elif modesync == 'half':
-            whitelist = clientbot_whitelisted_cmodes
+            whitelist = CLIENTBOT_WHITELISTED_UMODES
 
     supported_modes = []
     for modepair in modes:
@@ -2545,7 +2545,7 @@ def modedelta(irc, source, args):
 
             # Sanity check: you shouldn't be allowed to lock things like op or redirects
             # because one misconfiguration can cause serious desyncs.
-            if m[0] not in whitelisted_cmodes:
+            if m[0] not in WHITELISTED_CMODES:
                 irc.error('Setting mode %r is not supported for modedelta (case sensitive).' % m[0])
                 return
 
