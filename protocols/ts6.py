@@ -33,14 +33,9 @@ class TS6Protocol(TS6BaseProtocol):
         self.hook_map = {'SJOIN': 'JOIN', 'TB': 'TOPIC', 'TMODE': 'MODE', 'BMASK': 'MODE',
                          'EUID': 'UID', 'RSFNC': 'SVSNICK', 'ETB': 'TOPIC',
                          # ENCAP LOGIN is used on burst for EUID-less servers
-                         'USERMODE': 'MODE', 'LOGIN': 'CLIENT_SERVICES_LOGIN'}
+                         'LOGIN': 'CLIENT_SERVICES_LOGIN'}
 
         self.required_caps = {'TB', 'ENCAP', 'QS', 'CHW'}
-
-        # From ChatIRCd: https://github.com/ChatLounge/ChatIRCd/blob/master/doc/technical/ChatIRCd-extra.txt
-        # Our command handler rewrites ENCAP so that this is the exact same syntax as MODE.
-        # <- :101AAAAAB ENCAP test.hub2 USERMODE 111AAAAAB :+Qw
-        self.handle_usermode = self.handle_mode
 
     ### OUTGOING COMMANDS
 
