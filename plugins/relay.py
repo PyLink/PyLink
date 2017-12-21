@@ -1984,8 +1984,13 @@ def handle_knock(irc, source, command, args):
 
         # Fallback to a simple notice directed to ops
         if use_fallback:
-            remoteirc.notice(remoteirc.pseudoclient.uid, '@' + remotechan,
-                             "Knock from %s: %s" % (irc.get_friendly_name(source), text))
+            nick = irc.get_friendly_name(source)
+            log.debug('(%s) relay: using fallback KNOCK routine for %s on %s/%s',
+                      irc.name, nick, remoteirc.name, remotechan)
+            prefix = '%' if 'h' in remoteirc.prefixmodes else '@'
+            remoteirc.notice(remoteirc.pseudoclient.uid, prefix + remotechan,
+                             "Knock from %s@%s (*not* invitable from this network): %s" %
+                             (nick, irc.name, text))
 
     iterate_all(irc, _handle_knock_loop, extra_args=(source, command, args))
 
