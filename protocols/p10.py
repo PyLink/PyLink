@@ -166,7 +166,8 @@ class P10Protocol(IRCS2SProtocol):
                          'WALLCHOPS': 'NOTICE', 'WALLHOPS': 'NOTICE',
                          'WALLVOICES': 'NOTICE'}
 
-        self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
+        self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts',
+                               'has-statusmsg'}
 
         # OPMODE is like SAMODE on other IRCds, and it follows the same modesetting syntax.
         self.handle_opmode = self.handle_mode

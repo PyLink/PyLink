@@ -107,6 +107,11 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # SID generator for TS6.
         self.sidgen = TS6SIDGenerator(self)
 
+        # Most TS6 variations (unreal, inspircd, charybdis) support this. For
+        # pure TS6, we also require the CHW capability which explicitly declares
+        # support.
+        self.protocol_caps |= {'has-statusmsg'}
+
     ### OUTGOING COMMANDS
 
     def kill(self, numeric, target, reason):
