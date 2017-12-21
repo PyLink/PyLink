@@ -1956,6 +1956,35 @@ def handle_svsnick(irc, numeric, command, args):
 
 utils.add_hook(handle_svsnick, "SVSNICK")
 
+def handle_knock(irc, source, command, args):
+    def _handle_knock_loop(irc, remoteirc, source, command, args):
+        channel = args['channel']
+        remotechan = get_remote_channel(irc, remoteirc, channel)
+        # TS6 does not use reasons with knock, so this is not always available.
+        text = args['text'] or 'No reason available'
+
+        if remotechan is None or remotechan not in remoteirc.channels:
+            return
+
+        remoteuser = get_remote_user(irc, remoteirc, source, spawn_if_missing=False)
+        use_fallback = False
+        if remoteuser:
+            try:
+                remoteirc.knock(remoteuser, remotechan, text)
+            except NotImplementedError:
+                use_fallback = True
+        else:
+            use_fallback = True
+
+        # Fallback to a simple notice directed to ops
+        if use_fallback:
+            remoteirc.notice(remoteirc.pseudoclient.uid, '@' + remotechan,
+                             "Knock from %s: %s" % (irc.get_friendly_name(source), text))
+
+    iterate_all(irc, _handle_knock_loop, extra_args=(source, command, args))
+
+utils.add_hook(handle_knock, 'KNOCK')
+
 ### PUBLIC COMMANDS
 
 def create(irc, source, args):
