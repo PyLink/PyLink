@@ -668,18 +668,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
         if target.startswith('='):
             target = '@' + target[1:]
 
-        # We use lowercase channels internally, but uppercase UIDs.
-        # Strip the target of leading prefix modes (for targets like @#channel)
-        # before checking whether it's actually a channel.
-
-        split_channel = target.split('#', 1)
-        if len(split_channel) >= 2 and self.is_channel('#' + split_channel[1]):
-            # Note: don't mess with the case of the channel prefix, or ~#channel
-            # messages will break on RFC1459 casemapping networks (it becomes ^#channel
-            # instead).
-            target = '#'.join((split_channel[0], split_channel[1]))
-            log.debug('(%s) Normalizing channel target %s to %s', self.name, args[0], target)
-
         return {'target': target, 'text': args[1]}
 
     handle_notice = handle_privmsg
