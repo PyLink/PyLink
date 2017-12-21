@@ -1318,7 +1318,7 @@ def handle_part(irc, numeric, command, args):
 utils.add_hook(handle_part, 'PART')
 
 def handle_messages(irc, numeric, command, args):
-    notice = (command in ('NOTICE', 'PYLINK_SELF_NOTICE'))
+    notice = ('PRIVMSG' not in command)
     target = args['target']
     text = args['text']
     if irc.is_internal_client(numeric) and irc.is_internal_client(target):
