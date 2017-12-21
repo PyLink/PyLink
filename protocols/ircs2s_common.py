@@ -662,7 +662,50 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # P10:
         # <- ABAAA P AyAAA :privmsg text
         # <- ABAAA O AyAAA :notice text
-        target = self._get_UID(args[0])
+        raw_target = args[0]
+        server_check = None
+        if '@' in raw_target and not self.is_channel(raw_target.lstrip(''.join(self.prefixmodes.values()))):
+            log.debug('(%s) Processing user@server message with target %s',
+                      self.name, raw_target)
+            raw_target, server_check = raw_target.split('@', 1)
+
+            if not self.is_server_name(server_check):
+                log.warning('(%s) Got user@server message with invalid server '
+                            'name %r (full target: %r)', self.name, server_check,
+                            args[0])
+                return
+
+        target = self._get_UID(raw_target)
+
+        if server_check is not None:
+            not_found = False
+            if target not in self.users:
+                # Most IRCds don't check locally if the target nick actually exists.
+                # If it doesn't, send an error back.
+                not_found = True
+            else:
+                # I guess we can technically leave this up to the IRCd to do the right
+                # checks here, but maybe that ruins the point of this 'security feature'
+                # in the first place.
+                log.debug('(%s) Checking if target %s/%s exists on server %s',
+                          self.name, target, raw_target, server_check)
+                sid = self._get_SID(server_check)
+
+                if not sid:
+                    log.debug('(%s) Failed user@server server check: %s does not exist.',
+                              self.name, server_check)
+                    not_found = True
+                elif sid != self.get_server(target):
+                    log.debug("(%s) Got user@server message for %s/%s, but they "
+                              "aren't on the server %s/%s. (full target: %r)",
+                              self.name, target, raw_target, server_check, sid,
+                              args[0])
+                    not_found = True
+
+            if not_found:
+                self.numeric(self.sid, 401, source, '%s :No such nick' %
+                             args[0])
+                return
 
         # Coerse =#channel from Charybdis op moderated +z to @#channel.
         if target.startswith('='):
