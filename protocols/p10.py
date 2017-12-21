@@ -137,6 +137,7 @@ class P10Protocol(IRCS2SProtocol):
         'USERIP': 'USERIP',
         'V': 'VERSION',
         'WC': 'WALLCHOPS',
+        'WH': 'WALLHOPS',
         'WA': 'WALLOPS',
         'WU': 'WALLUSERS',
         'WV': 'WALLVOICES',
@@ -160,7 +161,10 @@ class P10Protocol(IRCS2SProtocol):
         # SID generator for P10.
         self.sidgen = P10SIDGenerator(self)
 
-        self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE', 'CLEARMODE': 'MODE', 'BURST': 'JOIN'}
+        self.hook_map = {'END_OF_BURST': 'ENDBURST', 'OPMODE': 'MODE',
+                         'CLEARMODE': 'MODE', 'BURST': 'JOIN',
+                         'WALLCHOPS': 'NOTICE', 'WALLHOPS': 'NOTICE',
+                         'WALLVOICES': 'NOTICE'}
 
         self.protocol_caps |= {'slash-in-hosts', 'underscore-in-hosts'}
 
@@ -1304,5 +1308,15 @@ class P10Protocol(IRCS2SProtocol):
         # 1 <target numeric>
         # 2 <new nick>
         return {'target': args[0], 'newnick': args[1]}
+
+    def handle_wallchops(self, source, command, args):
+        """Handles WALLCHOPS/WALLHOPS/WALLVOICES, the equivalent of @#channel
+        messages and the like on P10."""
+        # <- ABAAA WC #magichouse :@ test
+        # <- ABAAA WH #magichouse :% test
+        # <- ABAAA WV #magichouse :+ test
+        prefix, text = args[-1].split(' ', 1)
+        return {'target': prefix+args[0], 'text': text}
+    handle_wallhops = handle_wallvoices = handle_wallchops
 
 Class = P10Protocol
