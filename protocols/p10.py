@@ -409,12 +409,44 @@ class P10Protocol(IRCS2SProtocol):
     def knock(self, numeric, target, text):
         raise NotImplementedError('KNOCK is not supported on P10.')
 
-    def message(self, numeric, target, text):
-        """Sends a PRIVMSG from a PyLink client."""
-        if not self.is_internal_client(numeric):
-            raise LookupError('No such PyLink client exists.')
+    def message(self, source, target, text, _notice=False):
+        """Sends a PRIVMSG from a PyLink client or server."""
+        if (not self.is_internal_client(source)) and \
+                (not self.is_internal_server(source)):
+            raise LookupError('No such PyLink client/server exists.')
 
-        self._send_with_prefix(numeric, 'P %s :%s' % (target, text))
+        token = 'O' if _notice else 'P'
+        stripped_target = target.lstrip(''.join(self.prefixmodes.values()))
+        if self.is_channel(stripped_target):
+            msgprefixes = target.split('#', 1)[0]
+            # Note: Only NOTICEs to @#channel are actually supported by P10 via
+            # WALLCHOPS/WALLHOPS/WALLVOICES. For us it's better to convert
+            # PRIVMSGs to these notices instead of dropping them.
+
+            # WALL* commands use this syntax:
+            # <- ABAAA WC #magichouse :@ test
+            # <- ABAAA WH #magichouse :% test
+            # <- ABAAA WV #magichouse :+ test
+            # An oddity with the protocol mandates that we send the target prefix
+            # in the message. As a side effect, the @/%/+ is actually added to the
+            # final text the client sees.
+            # This does however make parsing slightly easier.
+            if '@' in msgprefixes:
+                token = 'WC'
+                text = '@ ' + text
+            elif '%' in msgprefixes:
+                token = 'WH'
+                text = '% ' + text
+            elif '+' in msgprefixes:
+                token = 'WV'
+                text = '+ ' + text
+            target = stripped_target
+
+        self._send_with_prefix(source, '%s %s :%s' % (token, target, text))
+
+    def notice(self, source, target, text):
+        """Sends a NOTICE from a PyLink client or server."""
+        self.message(source, target, text, _notice=True)
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
@@ -480,14 +512,6 @@ class P10Protocol(IRCS2SProtocol):
         replies."""
         # <- AB 311 AyAAA GL ~gl nefarious.midnight.vpn * :realname
         self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
-
-    def notice(self, numeric, target, text):
-        """Sends a NOTICE from a PyLink client or server."""
-        if (not self.is_internal_client(numeric)) and \
-                (not self.is_internal_server(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
-        self._send_with_prefix(numeric, 'O %s :%s' % (target, text))
 
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
