@@ -1393,6 +1393,12 @@ def handle_messages(irc, numeric, command, args):
             log.debug('(%s) relay.handle_messages: sending message to %s from %s on behalf of %s',
                       irc.name, real_target, user, numeric)
 
+            if real_target.startswith(tuple(irc.prefixmodes.values())) and not \
+                    remoteirc.has_cap('has-statusmsg'):
+                log.debug("(%s) Not sending message destined to %s/%s because "
+                          "the remote does not support STATUSMSG.", irc.name,
+                          remoteirc.name, real_target)
+                return
             try:
                 if notice:
                     remoteirc.notice(user, real_target, real_text)
