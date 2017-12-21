@@ -411,8 +411,12 @@ class P10Protocol(IRCS2SProtocol):
         self._send_with_prefix(numeric, 'D %s :Killed (%s)' % (target, reason))
         self._remove_client(target)
 
-    def knock(self, numeric, target, text):
-        raise NotImplementedError('KNOCK is not supported on P10.')
+    def knock(self, source, target, text):
+        """KNOCK wrapper for P10: notifies chanops that someone wants to join
+        the channel."""
+        prefix = '%' if 'h' in self.prefixmodes else '@'
+        self.notice(self.pseudoclient.uid, prefix + target,
+                    "Knock from %s: %s" % (self.get_friendly_name(source), text))
 
     def message(self, source, target, text, _notice=False):
         """Sends a PRIVMSG from a PyLink client or server."""
