@@ -56,7 +56,6 @@ class TS6SIDGenerator():
                 self.output[idx] = self.allowedchars[idx][0]
                 next(self.iters[idx])
 
-
     def increment(self, pos=2):
         """
         Increments the SID generator to the next available SID.
@@ -197,6 +196,20 @@ class TS6BaseProtocol(IRCS2SProtocol):
         self.users[source].away = text
 
     ### HANDLERS
+
+    def handle_knock(self, numeric, command, args):
+        """Handles channel KNOCKs."""
+        # InspIRCd:
+        # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
+        # Charybdis:
+        # <- :42XAAAAAC KNOCK #endlessvoid
+        # UnrealIRCd propagates knocks as a channel notice to all ops, so this handler is not used there.
+        channel = args[0]
+        try:
+            text = args[1]
+        except IndexError:
+            text = ''
+        return {'channel': channel, 'text': text}
 
     def handle_nick(self, numeric, command, args):
         """Handles incoming NICK changes."""

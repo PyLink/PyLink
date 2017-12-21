@@ -672,13 +672,6 @@ class InspIRCdProtocol(TS6BaseProtocol):
     # SVSTOPIC is used by InspIRCd module m_topiclock - its arguments are the same as FTOPIC
     handle_svstopic = handle_ftopic
 
-    def handle_knock(self, numeric, command, args):
-        """Handles channel KNOCKs."""
-        # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
-        channel = args[0]
-        text = args[1]
-        return {'channel': channel, 'text': text}
-
     def handle_opertype(self, target, command, args):
         """Handles incoming OPERTYPE, which is used to denote an oper up.
 
