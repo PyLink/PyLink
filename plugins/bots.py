@@ -12,6 +12,11 @@ def spawnclient(irc, source, args):
 
     Spawns the specified client on the PyLink server.
     Note: this doesn't check the validity of any fields you give it!"""
+
+    if not irc.has_cap('can-spawn-clients'):
+        irc.error("This network does not support client spawning.")
+        return
+
     permissions.check_permissions(irc, source, ['bots.spawnclient'])
     try:
         nick, ident, host = args[:3]
