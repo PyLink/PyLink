@@ -1,3 +1,54 @@
+# PyLink 2.0-alpha2 (unreleased)
+This release includes all changes from 1.2.1+, plus the following:
+
+#### New features
+- relay_clientbot: add support for showing prefix modes in relay text, via a new `$mode_prefix` expansion. [issue#540](https://github.com/GLolol/PyLink/issues/540)
+- Added new modedelta feature to Relay:
+    - Modedelta allows specifying a list of (named) modes to only apply on leaf channels, which can be helpful to fight spam if leaf networks don't have adequate spam protection.
+- Added support for more channel modes in Relay:
+    * blockcaps: inspircd +B, elemental-ircd +G
+    * exemptchanops: inspircd +X
+    * filter: inspircd +g, unreal extban ~T:block ([issue#557](https://github.com/GLolol/PyLink/issues/557))
+    * hidequits: nefarious +Q, snircd +u
+    * history: inspircd +H
+    * largebanlist: ts6 +L
+    * noamsg: snircd/nefarious +T
+    * blockhighlight: inspircd +V (extras module)
+    * kicknorejoin: elemental-ircd +J ([issue#559](https://github.com/GLolol/PyLink/issues/559))
+    * kicknorejoin_insp: inspircd +J (with argument; [issue#559](https://github.com/GLolol/PyLink/issues/559))
+    * repeat: elemental-ircd +E ([issue#559](https://github.com/GLolol/PyLink/issues/559))
+    * repeat_insp: inspircd +K (with argument; [issue#559](https://github.com/GLolol/PyLink/issues/559))
+
+- Added support for UnrealIRCd extban `~T` in Relay. [issue#557](https://github.com/GLolol/PyLink/issues/557)
+- p10: added proper support for STATUSMSG notices (i.e. messages to `@#channel` and the like) via WALLCHOPS/WALLHOPS/WALLVOICES
+- p10: added outgoing /knock support by sending it as a notice
+- ts6: added incoming /knock handling
+- relay: added support for relaying /knock
+
+#### Backwards incompatible changes
+- **The ratbox protocol module has been merged into ts6**, with a new `ircd: ratbox` option introduced to declare Ratbox as the target IRCd. [issue#543](https://github.com/GLolol/PyLink/issues/543)
+
+#### Bug fixes
+- Fix default permissions not applying on startup (2.0-alpha1 regression). [issue#542](https://github.com/GLolol/PyLink/issues/542)
+- Fix rejoin-on-kill for the main PyLink bot not working (2.0-alpha1/[94e05a6](https://github.com/GLolol/PyLink/commit/94e05a623314e9b0607de4eb01fab28be2e0c7e1) regression).
+- Clientbot fixes:
+    - Fix desyncs caused by incomplete nick collision checking when a user on a Clientbot link changes their nick to match an existing virtual client. [issue#535](https://github.com/GLolol/PyLink/issues/535)
+    - Fix desync involving ghost users when a person leaves a channel, changes their nick, and rejoins. [issue#536](https://github.com/GLolol/PyLink/issues/536)
+    - Treat 0 as "no account" when parsing WHOX responses; this fixes incorrect "X is logged in as 0" output on WHOIS.
+- Fix long standing issues where relay would sometimes burst users multiple times on connect. [issue#529](https://github.com/GLolol/PyLink/issues/529)
+    - Also fix a regression from 2.0-alpha1 where users would not be joined if the hub link is down ([issue#548](https://github.com/GLolol/PyLink/issues/548))
+- Fix `$a:account` extbans being dropped by relay (they were being confused with `$a`). [issue#560](https://github.com/GLolol/PyLink/issues/560)
+- Fix corrupt arguments when mixing the `remote` and `mode` commands. [issue#538](https://github.com/GLolol/PyLink/issues/538)
+- Fix lingering queue threads when networks disconnect. [issue#558](https://github.com/GLolol/PyLink/issues/558)
+- The relay and global plugins now better handle empty / poorly formed config blocks.
+
+#### Internal improvements
+- `Channel.sort_prefixes()` now consistently sorts modes from highest to lowest (i.e. from owner to voice). Also removed workaround code added to deal with the wonkiness of this function.
+- ircs2s_common: add handling for `nick@servername` messages.
+- `IRCNetwork` should no longer send multiple disconnect hooks for one disconnection.
+- protocols/ts6 no longer requires `SAVE` support from the uplink. [issue#545](https://github.com/GLolol/PyLink/issues/545)
+- ts6, hybrid: miscellaneous cleanup
+
 # PyLink 2.0-alpha1
 The "Eclectic" release. This release includes all changes from 1.2.1, plus the following:
 
