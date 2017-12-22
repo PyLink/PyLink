@@ -18,7 +18,6 @@ This release includes all changes from 1.2.1+, plus the following:
     * kicknorejoin_insp: inspircd +J (with argument; [issue#559](https://github.com/GLolol/PyLink/issues/559))
     * repeat: elemental-ircd +E ([issue#559](https://github.com/GLolol/PyLink/issues/559))
     * repeat_insp: inspircd +K (with argument; [issue#559](https://github.com/GLolol/PyLink/issues/559))
-
 - Added support for UnrealIRCd extban `~T` in Relay. [issue#557](https://github.com/GLolol/PyLink/issues/557)
 - p10: added proper support for STATUSMSG notices (i.e. messages to `@#channel` and the like) via WALLCHOPS/WALLHOPS/WALLVOICES
 - p10: added outgoing /knock support by sending it as a notice
