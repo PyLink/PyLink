@@ -104,10 +104,14 @@ def joinclient(irc, source, args):
         else:
             irc.join(u, real_channel)
 
+        try:
+            modes = irc.channels[real_channel].modes
+        except KeyError:
+            modes = []
+
         # Call a join hook manually so other plugins like relay can understand it.
         irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
-                                                     'modes': irc.channels[real_channel].modes,
-                                                     'parse_as': 'JOIN'}])
+                                                     'modes': modes, 'parse_as': 'JOIN'}])
     irc.reply("Done.")
 utils.add_cmd(joinclient, name='join')
 
