@@ -820,6 +820,7 @@ WHITELISTED_CMODES = {
      'banexception',
      'blockcolor',
      'blockcaps',
+     'blockhighlight',
      'exemptchanops',
      'filter',
      'flood',
