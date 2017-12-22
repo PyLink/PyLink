@@ -1128,4 +1128,27 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.warning('(%s) Got 349 / RPL_ENDOFEXCEPTLIST even though banexception is not a registered mode?', self.name)
         return self.handle_368(*args, banmode=self.cmodes.get('banexception', 'e'))
 
+    def handle_471(self, source, command, args):
+        """
+        Handles numerics commonly sent when a client fails to join a channel:
+
+        * ERR_TOOMANYCHANNELS (405)
+        * ERR_CHANNELISFULL (471)
+        * ERR_INVITEONLYCHAN (473)
+        * ERR_BANNEDFROMCHAN (474)
+        * ERR_BADCHANNELKEY (475)
+        * ERR_BADCHANMASK (476)
+        * ERR_NEEDREGGEDNICK (477)
+        * ERR_BADCHANNAME (479)
+        * ERR_SECUREONLYCHAN / ERR_SSLONLYCHAN (489)
+        * ERR_DELAYREJOIN (495)
+        * ERR_OPERONLY (520)
+        """
+
+        if len(args) >= 3 and self.is_channel(args[1]):
+            log.warning('(%s) Failed to join channel %s: %s', self.name, args[1], args[-1])
+
+    handle_405 = handle_473 = handle_474 = handle_475 = handle_476 = handle_477 = \
+        handle_479 = handle_489 = handle_495 = handle_520 = handle_471
+
 Class = ClientbotWrapperProtocol
