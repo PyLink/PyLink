@@ -34,6 +34,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.proto_ver = 1202
         self.max_proto_ver = 1202  # Anything above should warn (not officially supported)
 
+        # Track the modules supported by the uplink.
+        self._modsupport = set()
+
     ### Outgoing commands
 
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -392,8 +395,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Initializes a connection to a server."""
         ts = self.start_ts
 
-        # Track the modules supported by the uplink.
-        self._modsupport = set()
+        self._modsupport.clear()
 
         f = self.send
         f('CAPAB START %s' % self.proto_ver)
