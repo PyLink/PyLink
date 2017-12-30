@@ -106,7 +106,8 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
         if irc.serverdata.get('relay_tag_nicks', conf.conf.get('relay', {}).get('tag_nicks', True)):
             times_tagged = 1
         else:
-            forcetag_nicks = conf.conf.get('relay', {}).get('forcetag_nicks', [])
+            forcetag_nicks = set(conf.conf.get('relay', {}).get('forcetag_nicks', []))
+            forcetag_nicks |= set(irc.serverdata.get('relay_forcetag_nicks', []))
             log.debug('(%s) relay.normalize_nick: checking if globs %s match %s.', irc.name, forcetag_nicks, nick)
             for glob in forcetag_nicks:
                 if irc.matchHost(glob, nick):
