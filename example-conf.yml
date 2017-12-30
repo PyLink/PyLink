@@ -216,6 +216,10 @@ servers:
         # IPs of other networks' users.
         #relay_no_ips: true
 
+        # If relay nick tagging is disabled, this option specifies a per-network list of nick
+        # globs to always tag when introducing users *from* other networks.
+        #relay_forcetag_nicks: ["someuser", "Guest*"]
+
         # Sets the suffix that relay subservers on this network should use.
         # If not specified per network, falls back to the value at
         # relay:server_suffix or "relay" if that is not set.
