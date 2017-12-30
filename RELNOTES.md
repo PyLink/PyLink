@@ -5,6 +5,7 @@ This release includes all changes from 1.2.1+, plus the following:
 - relay_clientbot: add support for showing prefix modes in relay text, via a new `$mode_prefix` expansion. [issue#540](https://github.com/GLolol/PyLink/issues/540)
 - Added new modedelta feature to Relay:
     - Modedelta allows specifying a list of (named) modes to only apply on leaf channels, which can be helpful to fight spam if leaf networks don't have adequate spam protection.
+- relay: added new option `server::<networkname>:relay_forcetag_nicks`, a per-network list of nick globs to always tag when introducing users onto a network. [issue#564](https://github.com/GLolol/PyLink/issues/564)
 - Added support for more channel modes in Relay:
     * blockcaps: inspircd +B, elemental-ircd +G
     * exemptchanops: inspircd +X
@@ -40,6 +41,8 @@ This release includes all changes from 1.2.1+, plus the following:
 - Fix corrupt arguments when mixing the `remote` and `mode` commands. [issue#538](https://github.com/GLolol/PyLink/issues/538)
 - Fix lingering queue threads when networks disconnect. [issue#558](https://github.com/GLolol/PyLink/issues/558)
 - The relay and global plugins now better handle empty / poorly formed config blocks.
+- bots: don't allow `spawnclient` on protocol modules with virtual clients (e.g. clientbot)
+- bots: fix KeyError when trying to join previously nonexistent channels
 
 #### Internal improvements
 - `Channel.sort_prefixes()` now consistently sorts modes from highest to lowest (i.e. from owner to voice). Also removed workaround code added to deal with the wonkiness of this function.
@@ -47,6 +50,8 @@ This release includes all changes from 1.2.1+, plus the following:
 - `IRCNetwork` should no longer send multiple disconnect hooks for one disconnection.
 - protocols/ts6 no longer requires `SAVE` support from the uplink. [issue#545](https://github.com/GLolol/PyLink/issues/545)
 - ts6, hybrid: miscellaneous cleanup
+- protocols/inspircd now tracks module (un)loads for `m_chghost.so` and friends. [issue#555](https://github.com/GLolol/PyLink/issues/555)
+- Clientbot now logs failed attempts in joining channels. [issue#533](https://github.com/GLolol/PyLink/issues/533)
 
 # PyLink 2.0-alpha1
 The "Eclectic" release. This release includes all changes from 1.2.1, plus the following:
