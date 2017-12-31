@@ -942,7 +942,7 @@ class P10Protocol(IRCS2SProtocol):
                 accountname = uobj.services_account
                 newhost = "%s.%s" % (accountname, suffix)
 
-            elif 'C' in modes and self.irc.serverdata.get('use_account_cloaks'):
+            elif 'C' in modes and self.irc.serverdata.get('use_hashed_cloaks'):
                 # +C propagates hashed IP cloaks, similar to UnrealIRCd. (thank god we don't
                 # need to generate these ourselves)
                 newhost = modes['C']
