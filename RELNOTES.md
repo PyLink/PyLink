@@ -35,6 +35,7 @@ This release includes all changes from 1.2.1+, plus the following:
     - Fix desyncs caused by incomplete nick collision checking when a user on a Clientbot link changes their nick to match an existing virtual client. [issue#535](https://github.com/GLolol/PyLink/issues/535)
     - Fix desync involving ghost users when a person leaves a channel, changes their nick, and rejoins. [issue#536](https://github.com/GLolol/PyLink/issues/536)
     - Treat 0 as "no account" when parsing WHOX responses; this fixes incorrect "X is logged in as 0" output on WHOIS.
+- protocols/p10: fix the `use_hashed_cloaks` server option not being effective.
 - Fix long standing issues where relay would sometimes burst users multiple times on connect. [issue#529](https://github.com/GLolol/PyLink/issues/529)
     - Also fix a regression from 2.0-alpha1 where users would not be joined if the hub link is down ([issue#548](https://github.com/GLolol/PyLink/issues/548))
 - Fix `$a:account` extbans being dropped by relay (they were being confused with `$a`). [issue#560](https://github.com/GLolol/PyLink/issues/560)
