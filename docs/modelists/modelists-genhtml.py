@@ -12,7 +12,7 @@ os.chdir(os.path.dirname(__file__))
 FILES = {
     'user-modes.csv': 'Supported User Modes for PyLink',
     'channel-modes.csv': 'Supported Channel Modes for PyLink',
-    'extbans.csv': 'Support Extbans for PyLink Relay',
+    'extbans.csv': 'Supported Extbans for PyLink',
 }
 
 def _write(outf, text):
