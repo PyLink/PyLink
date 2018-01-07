@@ -1,5 +1,5 @@
-# PyLink 2.0-alpha2 (unreleased)
-This release includes all changes from 1.2.1+, plus the following:
+# PyLink 2.0-alpha2
+This release includes all changes from 1.2.2-dev, plus the following:
 
 #### New features
 - relay_clientbot: add support for showing prefix modes in relay text, via a new `$mode_prefix` expansion. [issue#540](https://github.com/GLolol/PyLink/issues/540)
