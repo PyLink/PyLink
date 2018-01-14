@@ -1,3 +1,6 @@
+### Version Warning
+This version of the document targets the current stable branch of PyLink, and may be considerably outdated when compared to the **devel** branch where active development takes place. When developing new plugins or protocol modules, we highly recommend targeting the devel branch.
+
 # PyLink hooks reference
 
 ***Last updated for 1.2-dev (2017-02-24).***

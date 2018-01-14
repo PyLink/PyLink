@@ -1,3 +1,6 @@
+### Version Warning
+This version of the document targets the current stable branch of PyLink, and may be considerably outdated when compared to the **devel** branch where active development takes place. When developing new plugins or protocol modules, we highly recommend targeting the devel branch.
+
 # Writing plugins for PyLink
 
 PyLink plugins are modules that extend its functionality by giving it something to do. Without any plugins loaded, PyLink can only sit on a server and do absolutely nothing.
