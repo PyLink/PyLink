@@ -126,9 +126,9 @@ The following hooks represent regular IRC commands sent between servers.
 - **CHGNAME**: `{'target': 'UID2', 'newgecos': "I ain't telling you!"}`
     - SETNAME and CHGNAME commands, where available, both share this hook name.
 
-- **INVITE**: `{'target': 'UID3', 'channel': '#myroom'}`
+- **INVITE**: `{'target': 'UID3', 'channel': '#hello'}`
 
-- **KNOCK**: `{'text': 'let me in please!', 'channel': '#myroom'}`
+- **KNOCK**: `{'text': 'let me in please!', 'channel': '#hello'}`
     - This is not actually implemented by any protocol module as of writing.
 
 - **SAVE**: `{'target': 'UID8', 'ts': 1234567892, 'oldnick': 'Abracadabra'}`
