@@ -346,6 +346,9 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
 
     ## Shared helper functions
     def _pre_connect(self):
+        """
+        Implements triggers called before a network connects.
+        """
         self._aborted.clear()
         self._init_vars()
 
@@ -398,6 +401,9 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
             return
 
     def _pre_disconnect(self):
+        """
+        Implements triggers called before a network disconnects.
+        """
         self._aborted.set()
         self.was_successful = self.connected.is_set()
         log.debug('(%s) _pre_disconnect: got %s for was_successful state', self.name, self.was_successful)
@@ -410,7 +416,9 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
             log.removeHandler(self.loghandlers.pop())
 
     def _post_disconnect(self):
-
+        """
+        Implements triggers called after a network disconnects.
+        """
         # Internal hook signifying that a network has disconnected.
         self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
 
