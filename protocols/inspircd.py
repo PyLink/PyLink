@@ -391,11 +391,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     ### Core / command handlers
 
+    def _post_disconnect(self):
+        super()._post_disconnect()
+        log.debug('(%s) _post_disconnect: clearing _modsupport entries. Last: %s', self.name, self._modsupport)
+        self._modsupport.clear()
+
     def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.start_ts
-
-        self._modsupport.clear()
 
         f = self.send
         f('CAPAB START %s' % self.proto_ver)
