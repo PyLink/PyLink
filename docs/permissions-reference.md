@@ -58,7 +58,6 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 ## Exec
 - `exec.exec` - Allows access to the `exec` command.
 - `exec.eval` - Allows access to the `eval` command.
-- `exec.raw` - Allows access to the `raw` command.
 - `exec.inject` - Allows access to the `inject` command.
 
 ## Global
@@ -80,6 +79,10 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `opercmds.chghost` - Allows access to the `chghost` command.
 - `opercmds.chgident` - Allows access to the `chgident` command.
 - `opercmds.chgname` - Allows access to the `chgname` command.
+
+## Raw
+- `raw.raw` - Allows access to the `raw` command. `exec.raw` is equivalent to this and retained for compatibility with PyLink 1.x.
+- `raw.raw.unsupported_network` - Allows use of the `raw` command on servers other than Clientbot.
 
 ## Relay
 - `relay.claim` - Allows access to the `claim` command.
