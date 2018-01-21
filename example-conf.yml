@@ -508,6 +508,10 @@ plugins:
     # Servermaps plugin: displays network /map's from the PyLink server's perspective.
     #- servermaps
 
+    # Raw plugin: Provides a 'raw' command for sending raw text to IRC.
+    # Not supported outside Clientbot networks!
+    #- raw
+
 logging:
     # This configuration block defines targets that PyLink should log commands,
     # errors, etc., to.

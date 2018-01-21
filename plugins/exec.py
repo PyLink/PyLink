@@ -136,26 +136,6 @@ def pieval(irc, source, args):
     _eval(irc, source, args, locals_dict=exec_locals_dict, pretty_print=True)
 
 @utils.add_cmd
-def raw(irc, source, args):
-    """<text>
-
-    Admin-only. Sends raw text to the uplink IRC server.
-
-    \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
-    permissions.check_permissions(irc, source, ['exec.raw'])
-
-    args = ' '.join(args)
-    if not args.strip():
-        irc.reply('No text entered!')
-        return
-
-    log.debug('(%s) Sending raw text %r to IRC for %s', irc.name, args,
-              irc.get_hostmask(source))
-    irc.send(args)
-
-    irc.reply("Done.")
-
-@utils.add_cmd
 def inject(irc, source, args):
     """<text>
 
