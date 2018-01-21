@@ -139,11 +139,10 @@ def rehash():
     log.info('Finished reloading PyLink configuration.')
 
 if os.name == 'posix':
-    # Only register SIGHUP/SIGUSR1 on *nix.
-    def _sigusr1_handler(_signo, _stack_frame):
-        """Handles SIGUSR1 by rehashing the PyLink daemon."""
-        log.info("SIGUSR1 received, reloading config.")
+    # Only register SIGHUP on *nix.
+    def sighup_handler(_signo, _stack_frame):
+        """Handles SIGHUP by rehashing the PyLink daemon."""
+        log.info("SIGHUP received, reloading config.")
         rehash()
 
-    signal.signal(signal.SIGUSR1, _sigusr1_handler)
-    signal.signal(signal.SIGHUP, _sigterm_handler)
+    signal.signal(signal.SIGHUP, sighup_handler)
