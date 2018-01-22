@@ -156,14 +156,16 @@ def _get_channel_pair(irc, source, chanpair, perm=None):
     channel = '#' + channel
     channel = irc.to_lower(channel)
 
-    assert irc.is_channel(channel), "Invalid channel name %s." % channel
+    if not irc.is_channel(channel):
+        raise ValueError("Invalid channel name %s." % channel)
 
     if network:
         ircobj = world.networkobjects.get(network)
     else:
         ircobj = irc
 
-    assert ircobj, "Unknown network %s" % network
+    if not ircobj:
+        raise ValueError("Unknown network %s" % network)
 
     if perm is not None:
         # Only check for permissions if we're told to and the irc object exists.
