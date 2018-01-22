@@ -150,7 +150,7 @@ def _get_channel_pair(irc, source, chanpair, perm=None):
     """
     log.debug('(%s) Looking up chanpair %s', irc.name, chanpair)
     try:
-        network, channel = chanpair.split('#')
+        network, channel = chanpair.split('#', 1)
     except ValueError:
         raise ValueError("Invalid channel pair %r" % chanpair)
     channel = '#' + channel
