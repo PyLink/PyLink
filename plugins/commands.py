@@ -120,7 +120,8 @@ def showchan(irc, source, args):
         # Iterate over the user list, sorted by nick.
         for user, nick in sorted(zip(c.users, nicks),
                                  key=lambda userpair: userpair[1].lower()):
-            for pmode in c.get_prefix_modes(user):
+            # Note: reversed() is used here because we're adding prefixes onto the nick in reverse
+            for pmode in reversed(c.get_prefix_modes(user)):
                 # Show prefix modes in order from highest to lowest.
                 nick = irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '') + nick
             nicklist.append(nick)
