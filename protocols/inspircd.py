@@ -773,7 +773,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # Sets the services login name of the client.
 
             self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': args[-1]}])
-        elif args[1] == 'modules':
+        elif args[1] == 'modules' and numeric == self.uplink:
+            # Note: only handle METADATA from our uplink; otherwise leaf servers unloading modules
+            # while shutting down will corrupt the state.
             # <- :70M METADATA * modules :-m_chghost.so
             # <- :70M METADATA * modules :+m_chghost.so
             for module in args[-1].split():
