@@ -133,7 +133,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         STUB: Pretends to spawn a new server with a subset of the given options.
         """
-        name = name.lower()
         if internal:
             # Use a custom pseudo-SID format for internal servers to prevent any server name clashes
             sid = self.sidgen.next_sid(prefix=name)
@@ -645,7 +644,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         # Virtual endburst hook.
         self.connected.set()  # Note, this should always be set before the actual ENDBURST hook
-        self.servers[self.uplink].has_eob = True
+        self.servers[source].has_eob = True
+
         return {'parse_as': 'ENDBURST'}
 
     handle_422 = handle_376
