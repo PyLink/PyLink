@@ -1005,7 +1005,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         Handles incoming PARTs.
         """
         # <- :GL|!~GL@127.0.0.1 PART #whatever
-        channels = list(map(self.to_lower, args[0].split(',')))
+        channels = args[0].split(',')
         try:
             reason = args[1]
         except IndexError:
