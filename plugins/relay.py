@@ -1539,8 +1539,7 @@ def handle_kick(irc, source, command, args):
             del relayusers[(irc.name, target)][remoteirc.name]
             remoteirc.quit(real_target, 'Left all shared channels.')
 
-    if not check_claim(irc, channel, kicker):
-
+    if is_relay_client(irc, target) and not check_claim(irc, channel, kicker):
         homenet, real_target = get_orig_user(irc, target)
         homeirc = world.networkobjects.get(homenet)
         homenick = homeirc.users[real_target].nick if homeirc else '<ghost user>'
