@@ -221,15 +221,25 @@ def spawn_relay_server(irc, remoteirc):
     """
     if irc.connected.is_set():
         try:
-            # ENDBURST is delayed by 3 secs on supported IRCds to prevent
-            # triggering join-flood protection and the like.
             suffix = irc.serverdata.get('server_suffix', conf.conf.get('relay', {}).get('server_suffix', 'relay'))
-
             # Strip any leading or trailing .'s
             suffix = suffix.strip('.')
+
+            # On some IRCds (e.g. InspIRCd), we have to delay endburst to prevent triggering
+            # join flood protections that are counted locally.
+            needs_delayed_eob = hasattr(irc, '_endburst_delay')
+            if needs_delayed_eob:
+                old_eob_delay = irc._endburst_delay
+                irc._endburst_delay = 3
+
             sid = irc.spawn_server('%s.%s' % (remoteirc.name, suffix),
-                                        desc="PyLink Relay network - %s" %
-                                        (remoteirc.get_full_network_name()), endburst_delay=3)
+                                              desc="PyLink Relay network - %s" %
+                                              (remoteirc.get_full_network_name()))
+
+            # Set _endburst_delay back to its last value.
+            if needs_delayed_eob:
+                irc._endburst_delay = old_eob_delay
+
         except (RuntimeError, ValueError):  # Network not initialized yet, or a server name conflict.
             log.exception('(%s) Failed to spawn server for %r (possible jupe?):',
                           irc.name, remoteirc.name)

@@ -37,6 +37,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # Track the modules supported by the uplink.
         self._modsupport = set()
 
+        # Settable by plugins (e.g. relay) as needed, used to work around +j being triggered
+        # by bursting users.
+        self._endburst_delay = 0
+
     ### Outgoing commands
 
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
@@ -360,15 +364,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
         self._send_with_prefix(uplink, 'SERVER %s * %s %s :%s' % (name, self.servers[sid].hopcount, sid, desc))
 
+        # Endburst delay clutter
+
         def endburstf():
             # Delay ENDBURST by X seconds if requested.
-            if self._aborted.wait(endburst_delay):
+            if self._aborted.wait(self._endburst_delay):
                 # We managed to catch the abort flag before sending ENDBURST, so break
                 log.debug('(%s) stopping endburstf() for %s as aborted was set', self.name, sid)
                 return
             self._send_with_prefix(sid, 'ENDBURST')
 
-        if endburst_delay:
+        if self._endburst_delay:
             t = threading.Thread(target=endburstf, name="protocols/inspircd delayed ENDBURST thread for %s@%s" % (sid, self.name))
             t.daemon = True
             t.start()
