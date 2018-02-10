@@ -33,3 +33,4 @@ To disable relaying for any specific event, set the template string to an empty 
 ### Misc. options
 - `relay:clientbot_startup_delay`: Defines the amount of seconds Clientbot should wait after startup, before relaying any non-PRIVMSG events. This is used to prevent excess floods when the bot connects. Defaults to 5 seconds.
 - `servers:NETNAME:relay_force_slashes`: This network specific option forces Relay to use `/` in nickname separators. You should only use this option on TS6 or P10 variants that are less strict with nickname validation, as **it will cause protocol violations** on most IRCds. UnrealIRCd and InspIRCd users do not need to set this either, as `/` in nicks is automatically enabled.
+- `servers:NETNAME:relay_endburst_delay`: InspIRCd networks only: sets the endburst delay for relay subservers. If relay server bursts are causing +j (join flood) protection to trigger, raising this value can work around the issue.

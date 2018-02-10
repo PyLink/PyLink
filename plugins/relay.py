@@ -230,7 +230,7 @@ def spawn_relay_server(irc, remoteirc):
             needs_delayed_eob = hasattr(irc, '_endburst_delay')
             if needs_delayed_eob:
                 old_eob_delay = irc._endburst_delay
-                irc._endburst_delay = 3
+                irc._endburst_delay = irc.serverdata.get('relay_endburst_delay', 10)
 
             sid = irc.spawn_server('%s.%s' % (remoteirc.name, suffix),
                                               desc="PyLink Relay network - %s" %
