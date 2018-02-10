@@ -101,15 +101,13 @@ class NgIRCdProtocol(IRCS2SProtocol):
                                ident, host, server_token, self.join_modes(modes), realname))
         return userobj
 
-    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None):
         """
         Spawns a server off a PyLink server.
 
         * desc (server description) defaults to the one in the config.
         * uplink defaults to the main PyLink server.
         * SID is set equal to the server name for ngIRCd, as server UIDs are not used.
-
-        Endburst delay is not used on ngIRCd.
         """
         uplink = uplink or self.sid
         assert uplink in self.servers, "Unknown uplink %r?" % uplink

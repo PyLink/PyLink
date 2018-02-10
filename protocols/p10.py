@@ -698,14 +698,12 @@ class P10Protocol(IRCS2SProtocol):
 
         self.updateTS(server, channel, ts, changedmodes)
 
-    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None):
         """
         Spawns a server off a PyLink server. desc (server description)
         defaults to the one in the config. uplink defaults to the main PyLink
         server, and sid (the server ID) is automatically generated if not
         given.
-
-        Note: the endburst_delay is not implemented for P10 and will be ignored.
         """
         # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
         uplink = uplink or self.sid

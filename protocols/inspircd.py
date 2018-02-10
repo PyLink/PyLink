@@ -331,33 +331,38 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self._send_with_prefix(source, 'AWAY')
         self.users[source].away = text
 
-    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None):
         """
         Spawns a server off a PyLink server. desc (server description)
         defaults to the one in the config. uplink defaults to the main PyLink
         server, and sid (the server ID) is automatically generated if not
         given.
 
-        If endburst_delay is set greater than zero, the sending of ENDBURST
-        will be delayed by the amount given. This can be used to prevent
-        pseudoserver bursts from triggering IRCd join-flood preventions,
-        and prevent connections from filling up the snomasks too much.
+        Endburst delay can be tweaked by setting the _endburst_delay variable
+        to a positive value before calling spawn_server(). This can be used to
+        prevent PyLink bursts from filling up snomasks and triggering InspIRCd +j.
         """
         # -> :0AL SERVER test.server * 1 0AM :some silly pseudoserver
         uplink = uplink or self.sid
         name = name.lower()
+
         # "desc" defaults to the configured server description.
         desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
+
         assert len(sid) == 3, "Incorrect SID length"
         if sid in self.servers:
             raise ValueError('A server with SID %r already exists!' % sid)
+
         for server in self.servers.values():
             if name == server.name:
                 raise ValueError('A server named %r already exists!' % name)
+
         if not self.is_internal_server(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
+
         if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
 

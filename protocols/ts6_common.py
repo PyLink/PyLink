@@ -159,15 +159,12 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # Update the NICK TS.
         self.users[numeric].ts = int(time.time())
 
-    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None):
         """
         Spawns a server off a PyLink server. desc (server description)
         defaults to the one in the config. uplink defaults to the main PyLink
         server, and sid (the server ID) is automatically generated if not
         given.
-
-        Note: TS6 doesn't use a specific ENDBURST command, so the endburst_delay
-        option will be ignored if given.
         """
         # -> :0AL SID test.server 1 0XY :some silly pseudoserver
         uplink = uplink or self.sid

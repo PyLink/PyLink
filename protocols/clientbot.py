@@ -129,7 +129,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         return u
 
-    def spawn_server(self, name, sid=None, uplink=None, desc=None, endburst_delay=0, internal=True):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None, internal=True):
         """
         STUB: Pretends to spawn a new server with a subset of the given options.
         """
