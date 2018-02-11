@@ -139,12 +139,17 @@ def main():
             log.error("(%s) Configuration error: No protocol module specified, aborting.", network)
         else:
             # Fetch the correct protocol module.
-            proto = utils.getProtocolModule(protoname)
+            try:
+                proto = utils.getProtocolModule(protoname)
 
-            # Create and connect the network.
-            world.networkobjects[network] = irc = proto.Class(network)
-            log.debug('Connecting to network %r', network)
-            irc.connect()
+                # Create and connect the network.
+                world.networkobjects[network] = irc = proto.Class(network)
+                log.debug('Connecting to network %r', network)
+                irc.connect()
+            except:
+                log.exception('(%s) Failed to connect to network %r, skipping it...',
+                              network, network)
+                continue
 
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
