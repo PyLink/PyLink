@@ -102,6 +102,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - Use `ircd: snircd` as the target IRCd.
     - Halfops, `sethost` (`+h`), and account-based cloaking (`VHostStyle=1`) are supported. Crypted IPs and static hosts (`VHostStyle` 2 and 3) are NOT.
 * [ChatIRCd](http://www.chatlounge.net/software) (1.2.x / git master) - module `ts6`
+    - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
