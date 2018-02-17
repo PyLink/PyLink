@@ -11,7 +11,7 @@ PyLink is an extensible, plugin-based IRC services framework written in Python. 
 
 1) a replacement for the now-defunct Janus.
 
-2) a versatile framework and gateway to IRC.
+2) a versatile framework for developing IRC services.
 
 PyLink and any bundled software are licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The corresponding documentation in the [docs/](docs/) folder is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
 

@@ -62,7 +62,7 @@ PyLink does not support inbound connections - much like regular services such as
 
 ### Does everyone need to install PyLink Relay for it to work?
 
-**No!** Only the PyLink administrator needs to host a PyLink instance, as each can connect to multiple networks. Everyone else only needs to add a link block on their IRCd.
+**No!** Only the PyLink administrator needs to host a PyLink instance with the `relay` plugin loaded, as each instance can connect to multiple networks. Everyone else only needs to add a link block on their IRCd.
 
 InterJanus-style links between PyLink daemons are not supported yet; see https://github.com/GLolol/PyLink/issues/99 for any progress regarding that.
 
