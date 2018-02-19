@@ -311,7 +311,7 @@ class ServiceBot():
     def get_nick(self, irc, fails=0):
         """
         If the 'fails' argument is set to zero, this method returns the preferred nick for this
-        service bot on the given network. The following fields are checked in the given order:
+        service bot on the given network. The following fields are checked in order:
         # 1) Network specific nick settings for this service (servers:<netname>:servicename_nick)
         # 2) Global settings for this service (servicename:nick)
         # 3) The service's hardcoded default nick.
@@ -353,7 +353,7 @@ class ServiceBot():
 
     def get_ident(self, irc):
         """
-        Returns the preferred ident for this service bot on the given network. The following fields are checked in the given order:
+        Returns the preferred ident for this service bot on the given network. The following fields are checked in order:
         # 1) Network specific ident settings for this service (servers:<netname>:servicename_ident)
         # 2) Global settings for this service (servicename:ident)
         # 3) The service's hardcoded default nick.
@@ -364,7 +364,7 @@ class ServiceBot():
 
     def get_host(self, irc):
         """
-        Returns the preferred hostname for this service bot on the given network. The following fields are checked in the given order:
+        Returns the preferred hostname for this service bot on the given network. The following fields are checked in order:
         # 1) Network specific hostname settings for this service (servers:<netname>:servicename_host)
         # 2) Global settings for this service (servicename:host)
         # 3) The PyLink server hostname.
@@ -374,7 +374,7 @@ class ServiceBot():
 
     def get_realname(self, irc):
         """
-        Returns the preferred real name for this service bot on the given network. The following fields are checked in the given order:
+        Returns the preferred real name for this service bot on the given network. The following fields are checked in order:
         # 1) Network specific realname settings for this service (servers:<netname>:servicename_realname)
         # 2) Global settings for this service (servicename:realname)
         # 3) The globally configured real name (pylink:realname).
