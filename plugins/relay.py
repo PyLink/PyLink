@@ -1329,14 +1329,14 @@ def handle_part(irc, numeric, command, args):
 
 utils.add_hook(handle_part, 'PART')
 
-def _get_highest_prefix(prefixes):
+def _get_lowest_prefix(prefixes):
     if not prefixes:
         return ''
-    for prefix in 'qyaohv':
+    for prefix in 'vhoayq':
         if prefix in prefixes:
             return prefix
     else:
-        log.warning('relay._get_highest_prefix: unknown prefixes string %r', prefixes)
+        log.warning('relay._get_lowest_prefix: unknown prefixes string %r', prefixes)
         return ''
 
 def handle_messages(irc, numeric, command, args):
@@ -1397,10 +1397,10 @@ def handle_messages(irc, numeric, command, args):
                     return
 
             # This bit of filtering exists because some IRCds let you do /msg ~@#channel
-            # and such, despite its redundancy. (This is equivalent to ~#channel AFAIK)
-            highest_msgprefix = _get_highest_prefix(msgprefixes)
-            highest_msgprefix = remoteirc.prefixmodes.get(highest_msgprefix, '')
-            real_target = highest_msgprefix + real_target
+            # and such, despite its redundancy. (This is equivalent to @#channel AFAIK)
+            lowest_msgprefix = _get_lowest_prefix(msgprefixes)
+            lowest_msgprefix = remoteirc.prefixmodes.get(lowest_msgprefix, '')
+            real_target = lowest_msgprefix + real_target
 
             user = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
 
