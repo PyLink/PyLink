@@ -60,7 +60,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or conf.conf['bot']['realname']
+        realname = realname or conf.conf['pylink']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
         u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
@@ -347,7 +347,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         name = name.lower()
 
         # "desc" defaults to the configured server description.
-        desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = desc or self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
 
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
@@ -419,7 +419,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         host = self.serverdata["hostname"]
         f('SERVER {host} {Pass} 0 {sid} :{sdesc}'.format(host=host,
           Pass=self.serverdata["sendpass"], sid=self.sid,
-          sdesc=self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
+          sdesc=self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']))
 
         self._send_with_prefix(self.sid, 'BURST %s' % ts)
         # InspIRCd sends VERSION data on link, instead of whenever requested by a client.

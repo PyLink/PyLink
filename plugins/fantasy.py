@@ -29,7 +29,7 @@ def handle_fantasy(irc, source, command, args):
             # 2) The global "pylink::respond_to_nick" option
             # 3) The (deprecated) global "bot::respondtonick" option.
             respondtonick = conf.conf.get(botname, {}).get('respond_to_nick',
-                conf.conf['pylink'].get("respond_to_nick", conf.conf['bot'].get("respondtonick")))
+                conf.conf['pylink'].get("respond_to_nick", conf.conf['pylink'].get("respondtonick")))
 
             log.debug('(%s) fantasy: checking bot %s', irc.name, botname)
             servuid = sbot.uids.get(irc.name)
@@ -38,7 +38,7 @@ def handle_fantasy(irc, source, command, args):
                 # Look up a string prefix for this bot in either its own configuration block, or
                 # in bot::prefixes::<botname>.
                 prefixes = [conf.conf.get(botname, {}).get('prefix',
-                            conf.conf['bot'].get('prefixes', {}).get(botname))]
+                            conf.conf['pylink'].get('prefixes', {}).get(botname))]
 
                 # If responding to nick is enabled, add variations of the current nick
                 # to the prefix list: "<nick>," and "<nick>:"

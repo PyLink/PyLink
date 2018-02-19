@@ -215,7 +215,7 @@ class DataStore:
         log.debug('(DataStore:%s) using implementation %s', self.name, self.__class__.__name__)
         log.debug('(DataStore:%s) database path set to %s', self.name, self.filename)
 
-        self.save_frequency = save_frequency or conf.conf['bot'].get('save_delay', 300)
+        self.save_frequency = save_frequency or conf.conf['pylink'].get('save_delay', 300)
         log.debug('(DataStore:%s) saving every %s seconds', self.name, self.save_frequency)
 
         if default_db is not None:

@@ -61,7 +61,7 @@ class UnrealProtocol(TS6BaseProtocol):
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or conf.conf['bot']['realname']
+        realname = realname or conf.conf['pylink']['realname']
         realhost = realhost or host
 
         # Add +xt so that vHost cloaking always works.
@@ -369,7 +369,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # ESVID - Supports account names in services stamps instead of just the signon time.
         #         AFAIK this doesn't actually affect services' behaviour?
         f('PROTOCTL SJOIN SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.serverdata["hostname"], self.sid))
-        sdesc = self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        sdesc = self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.sid, sdesc))
         f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.start_ts, self.proto_ver, self.serverdata.get("netname", self.name)))
         self._send_with_prefix(self.sid, 'EOS')

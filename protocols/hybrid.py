@@ -85,7 +85,7 @@ class HybridProtocol(TS6Protocol):
         f('CAPAB :TBURST DLN KNOCK UNDLN UNKLN KLN ENCAP IE EX HOPS CHW SVS CLUSTER EOB QS')
 
         f('SERVER %s 0 :%s' % (self.serverdata["hostname"],
-                               self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
+                               self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']))
 
         # send endburst now
         self.send(':%s EOB' % (self.sid,))
@@ -107,7 +107,7 @@ class HybridProtocol(TS6Protocol):
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or conf.conf['bot']['realname']
+        realname = realname or conf.conf['pylink']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
         u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,

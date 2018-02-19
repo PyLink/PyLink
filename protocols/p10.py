@@ -301,7 +301,7 @@ class P10Protocol(IRCS2SProtocol):
 
         # Fill in all the values we need
         ts = ts or int(time.time())
-        realname = realname or conf.conf['bot']['realname']
+        realname = realname or conf.conf['pylink']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
 
@@ -708,7 +708,7 @@ class P10Protocol(IRCS2SProtocol):
         # <- SERVER nefarious.midnight.vpn 1 1460673022 1460673239 J10 ABP]] +h6 :Nefarious2 test server
         uplink = uplink or self.sid
         name = name.lower()
-        desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = desc or self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
 
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
@@ -833,7 +833,7 @@ class P10Protocol(IRCS2SProtocol):
         # Encode our SID using P10 Base64.
         self.sid = sid = p10b64encode(self.serverdata["sid"])
 
-        desc = self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
 
         self._flags = []
 

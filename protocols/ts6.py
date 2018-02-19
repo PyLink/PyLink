@@ -59,7 +59,7 @@ class TS6Protocol(TS6BaseProtocol):
         # parameters: nickname, hopcount, nickTS, umodes, username,
         # visible hostname, IP address, UID, real hostname, account name, gecos
         ts = ts or int(time.time())
-        realname = realname or conf.conf['bot']['realname']
+        realname = realname or conf.conf['pylink']['realname']
         raw_modes = self.join_modes(modes)
         u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host,
                                    realname=realname, realhost=realhost or host, ip=ip,
@@ -398,7 +398,7 @@ class TS6Protocol(TS6BaseProtocol):
         f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC EOPMOD SAVETS_100 KLN')
 
         f('SERVER %s 0 :%s' % (self.serverdata["hostname"],
-                               self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']))
+                               self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']))
 
         # Finally, end all the initialization with a PING - that's Charybdis'
         # way of saying end-of-burst :)

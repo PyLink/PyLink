@@ -85,7 +85,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
-        realname = realname or conf.conf['bot']['realname']
+        realname = realname or conf.conf['pylink']['realname']
 
         uid = self._uidgen.next_uid(prefix=nick)
         userobj = self.users[uid] = User(self,  nick, ts or int(time.time()), uid, server, ident=ident, host=host, realname=realname,
@@ -114,7 +114,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         name = name.lower()
         sid = self._sidgen.next_sid(prefix=name)
 
-        desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = desc or self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
 
         if sid in self.servers:
             raise ValueError('A server named %r already exists!' % sid)

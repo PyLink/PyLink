@@ -169,7 +169,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # -> :0AL SID test.server 1 0XY :some silly pseudoserver
         uplink = uplink or self.sid
         name = name.lower()
-        desc = desc or self.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = desc or self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
 
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
