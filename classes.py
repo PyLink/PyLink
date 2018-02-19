@@ -238,7 +238,13 @@ class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelC
             try:
                 log.debug('(%s) Calling hook function %s from plugin "%s"', self.name,
                           hook_func, hook_func.__module__)
-                hook_func(self, numeric, command, parsed_args)
+                retcode = hook_func(self, numeric, command, parsed_args)
+
+                if retcode is False:
+                    log.debug('(%s) Stopping hook loop for %r (command=%r)', self.name,
+                              hook_func, command)
+                    break
+
             except Exception:
                 # We don't want plugins to crash our servers...
                 log.exception('(%s) Unhandled exception caught in hook %r from plugin "%s"',
