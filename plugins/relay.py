@@ -1329,6 +1329,16 @@ def handle_part(irc, numeric, command, args):
 
 utils.add_hook(handle_part, 'PART')
 
+def _get_highest_prefix(prefixes):
+    if not prefixes:
+        return ''
+    for prefix in 'qyaohv':
+        if prefix in prefixes:
+            return prefix
+    else:
+        log.warning('relay._get_highest_prefix: unknown prefixes string %r', prefixes)
+        return ''
+
 def handle_messages(irc, numeric, command, args):
     command = command.upper()
     notice = 'NOTICE' in command or command.startswith('WALL')
@@ -1347,23 +1357,50 @@ def handle_messages(irc, numeric, command, args):
     relay = get_relay(irc, target)
     remoteusers = relayusers[(irc.name, numeric)]
 
-    # HACK: Don't break on sending to @#channel or similar. TODO: This should really
-    # be handled more neatly in core.
-    try:
-        prefix, target = target.split('#', 1)
-    except ValueError:
-        prefix = ''
-    else:
-        target = '#' + target
+    avail_prefixes = {v: k for k, v in irc.prefixmodes.items()}
+    prefixes = []
+    # Split up @#channel prefixes and the like into their prefixes and target components
+    while target and target[0] in avail_prefixes:
+        prefixes.append(avail_prefixes[target[0]])
+        target = target[1:]
+
+    log.debug('(%s) relay.handle_messages: splitting target %r into prefixes=%r, target=%r',
+              irc.name, args['target'], prefixes, target)
 
     if irc.is_channel(target):
-        def _handle_messages_loop(irc, remoteirc, numeric, command, args, notice, target, text):
+        def _handle_messages_loop(irc, remoteirc, numeric, command, args, notice,
+                                  target, text, msgprefixes):
             real_target = get_remote_channel(irc, remoteirc, target)
 
             # Don't relay anything back to the source net, or to disconnected networks
             # and networks without a relay for this channel.
             if (not real_target) or (not irc.connected.is_set()):
                 return
+
+            orig_msgprefixes = msgprefixes
+            # Filter @#channel prefixes by what's available on the target network
+            msgprefixes = list(filter(lambda p: p in remoteirc.prefixmodes, msgprefixes))
+            log.debug("(%s) relay: filtering message prefixes for %s%s from %s to %s",
+                      irc.name, remoteirc.name, real_target, orig_msgprefixes,
+                      msgprefixes)
+
+            # If we originally had message prefixes but ended with none,
+            # assume that we don't have a place to forward the message and drop it.
+            # One exception though is that %#channel implies @#channel.
+            if orig_msgprefixes and not msgprefixes:
+                if 'h' in orig_msgprefixes:
+                    msgprefixes.append('o')
+                else:
+                    log.debug("(%s) relay: dropping message for %s%s, orig_prefixes=%r since "
+                              "prefixes were empty after filtering.", irc.name,
+                              remoteirc.name, real_target, orig_msgprefixes)
+                    return
+
+            # This bit of filtering exists because some IRCds let you do /msg ~@#channel
+            # and such, despite its redundancy. (This is equivalent to ~#channel AFAIK)
+            highest_msgprefix = _get_highest_prefix(msgprefixes)
+            highest_msgprefix = remoteirc.prefixmodes.get(highest_msgprefix, '')
+            real_target = highest_msgprefix + real_target
 
             user = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
 
@@ -1403,7 +1440,6 @@ def handle_messages(irc, numeric, command, args):
             else:
                 real_text = text
 
-            real_target = prefix + real_target
             log.debug('(%s) relay.handle_messages: sending message to %s from %s on behalf of %s',
                       irc.name, real_target, user, numeric)
 
@@ -1425,7 +1461,8 @@ def handle_messages(irc, numeric, command, args):
                             "trying to send a message through it!", irc.name,
                             remoteirc.name, user)
                 return
-        iterate_all(irc, _handle_messages_loop, extra_args=(numeric, command, args, notice, target, text))
+        iterate_all(irc, _handle_messages_loop,
+                    extra_args=(numeric, command, args, notice, target, text, prefixes))
 
     else:
         # Get the real user that the PM was meant for
