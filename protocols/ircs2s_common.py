@@ -318,6 +318,12 @@ class IRCCommonProtocol(IRCNetwork):
             self.umodes['callerid'] = newcaps.get('CALLERID') or 'g'
             log.debug('(%s) handle_005: got umode callerid=%r', self.name, self.umodes['callerid'])
 
+        if 'STATUSMSG' in newcaps:
+            # Note: This assumes that all available prefixes can be used in STATUSMSG too.
+            # Even though this isn't always true, I don't see the point in making things
+            # any more complicated.
+            self.protocol_caps |= {'has-statusmsg'}
+
     def _send_with_prefix(self, source, msg, **kwargs):
         """Sends a RFC1459-style raw command from the given sender."""
         self.send(':%s %s' % (self._expandPUID(source), msg), **kwargs)

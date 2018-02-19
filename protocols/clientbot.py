@@ -1033,7 +1033,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.warning('(%s) Received %s to %s being routed the wrong way!', self.name, command, target)
             return
 
-        if not self.is_channel(target):
+        real_target = target.lstrip(''.join(self.prefixmodes.values()))
+        if not self.is_channel(real_target):
             target = self.nick_to_uid(target)
 
         if target:
