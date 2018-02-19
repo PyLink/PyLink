@@ -5,25 +5,55 @@ import datetime
 from pylinkirc import utils
 from pylinkirc.log import log
 
-def handle_ctcpversion(irc, source, args):
+def handle_ctcp(irc, source, command, args):
+    """
+    CTCP event handler.
+    """
+    text = args['text']
+    if not (text.startswith('\x01') and text.endswith('\x01')):
+        return None # Pass through to other plugins
+
+    target = args['target']
+    if not irc.get_service_bot(target):
+        # Ignore this message if the target isn't a service bot
+        return None
+
+    text = text.strip('\x01')
+    try:
+        ctcp_command, data = text.split(" ", 1)
+    except ValueError:
+        ctcp_command = text
+        data = ''
+
+    ctcp_command = ctcp_command.upper()
+    log.debug('(%s) ctcp: got CTCP command %r, data %r',
+              irc.name, ctcp_command, data)
+
+    if ctcp_command in SUPPORTED_COMMANDS:
+        log.info('(%s) Received CTCP %s from %s',
+                 irc.name, ctcp_command, irc.get_hostmask(source))
+
+        # Call the helper function and display its result.
+        result = SUPPORTED_COMMANDS[ctcp_command](irc, source, ctcp_command, data)
+        if result:
+            irc.reply('\x01%s %s\x01' % (ctcp_command, result),
+                      notice=True, private=True, source=target)
+
+        return False  # Block this message from reaching the general command handler
+    else:
+        log.info('(%s) Received unknown CTCP %s from %s',
+                 irc.name, ctcp_command, irc.get_hostmask(source))
+        return False
+
+utils.add_hook(handle_ctcp, 'PRIVMSG', priority=200)
+
+def handle_ctcpversion(irc, source, ctcp, data):
     """
     Handles CTCP version requests.
     """
-    irc.msg(source, '\x01VERSION %s\x01' % irc.version(), notice=True)
+    return irc.version()
 
-utils.add_cmd(handle_ctcpversion, '\x01version')
-utils.add_cmd(handle_ctcpversion, '\x01version\x01')
-
-def handle_ctcpping(irc, source, args):
-    """
-    Handles CTCP ping requests.
-    """
-    # CTCP PING 23152511
-    pingarg = ' '.join(args).strip('\x01')
-    irc.msg(source, '\x01PING %s\x01' % pingarg, notice=True)
-utils.add_cmd(handle_ctcpping, '\x01ping')
-
-def handle_ctcpeaster(irc, source, args):
+def handle_ctcpeaster(irc, source, ctcp, data):
     """
     Secret easter egg.
     """
@@ -44,11 +74,10 @@ def handle_ctcpeaster(irc, source, args):
                  "Hey, can you keep a secret? \x031,1 %s" % " " * random.randint(1,20),
                 ]
 
-    irc.msg(source, '\x01EASTER %s\x01' % random.choice(responses), notice=True)
+    return random.choice(responses)
 
-utils.add_cmd(handle_ctcpeaster, '\x01easter')
-utils.add_cmd(handle_ctcpeaster, '\x01easter\x01')
-utils.add_cmd(handle_ctcpeaster, '\x01about')
-utils.add_cmd(handle_ctcpeaster, '\x01about\x01')
-utils.add_cmd(handle_ctcpeaster, '\x01pylink')
-utils.add_cmd(handle_ctcpeaster, '\x01pylink\x01')
+# Map CTCP commands to functions generating an appropriate text response.
+SUPPORTED_COMMANDS = {'VERSION': handle_ctcpversion,
+                      'PING': lambda irc, source, ctcp, data: data,
+                      'ABOUT': handle_ctcpeaster,
+                      'EASTER': handle_ctcpeaster}
