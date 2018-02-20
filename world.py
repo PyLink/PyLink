@@ -36,3 +36,6 @@ log_queue = deque()
 
 # Determines whether we have a PID file that needs to be removed.
 _should_remove_pid = False
+
+# Determines whether we're daemonized.
+daemon = False
