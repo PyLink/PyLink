@@ -25,6 +25,7 @@ def main():
     parser.add_argument("-r", "--restart", help="restarts the PyLink instance with the given config file", action='store_true')
     parser.add_argument("-s", "--stop", help="stops the PyLink instance with the given config file", action='store_true')
     parser.add_argument("-R", "--rehash", help="rehashes the PyLink instance with the given config file", action='store_true')
+    parser.add_argument("-d", "--daemonize", help="[experimental] daemonizes the PyLink instance on POSIX systems", action='store_true')
     args = parser.parse_args()
 
     if args.version:  # Display version and exit
@@ -44,6 +45,37 @@ def main():
 
     from pylinkirc.log import log
     from pylinkirc import classes, utils, coremods
+
+    world.daemon = args.daemonize
+    if args.daemonize:
+        if args.no_pid:
+            print('ERROR: Combining --no-pid and --daemonize is not supported.')
+            sys.exit(1)
+        elif os.name != 'posix':
+            print('ERROR: Daemonization is not supported outside POSIX systems.')
+            sys.exit(1)
+        else:
+            log.info('Forking into the background.')
+            log.removeHandler(world.console_handler)
+
+            # Adapted from https://stackoverflow.com/questions/5975124/
+            if os.fork():
+                # Fork and exit the parent process.
+                os._exit(0)
+
+            os.setsid()  # Decouple from our lovely terminal
+            if os.fork():
+                # Fork again to prevent starting zombie apocalypses.
+                os._exit(0)
+    else:
+        # For foreground sessions, set the terminal window title.
+        # See https://bbs.archlinux.org/viewtopic.php?id=85567 &
+        #     https://stackoverflow.com/questions/7387276/
+        if os.name == 'nt':
+            import ctypes
+            ctypes.windll.kernel32.SetConsoleTitleW("PyLink %s" % __version__)
+        elif os.name == 'posix':
+            sys.stdout.write("\x1b]2;PyLink %s\x07" % __version__)
 
     # Write and check for an existing PID file unless specifically told not to.
     if not args.no_pid:
@@ -108,14 +140,6 @@ def main():
         world._should_remove_pid = True
 
     log.info('PyLink %s starting...', __version__)
-
-    # Set terminal window title. See https://bbs.archlinux.org/viewtopic.php?id=85567
-    # and https://stackoverflow.com/questions/7387276/
-    if os.name == 'nt':
-        import ctypes
-        ctypes.windll.kernel32.SetConsoleTitleW("PyLink %s" % __version__)
-    elif os.name == 'posix':
-        sys.stdout.write("\x1b]2;PyLink %s\x07" % __version__)
 
     # Load configured plugins
     to_load = conf.conf['plugins']
