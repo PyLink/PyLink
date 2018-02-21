@@ -433,8 +433,11 @@ servers:
         # something like 0.5 or 1.0 should help. Defaults to 0.005 if not set.
         throttle_time: 0.3
 
-        # Clientbot also supports auto perform, using raw IRC messages.
+        # Raw IRC messages to send on connect. As of 2.0-alpha2, expansions such as $nick, $ident,
+        # and $host are also supported via Python template strings
+        # (https://docs.python.org/3/library/string.html#template-strings)
         #autoperform:
+        #   - "MODE $nick +B"
         #   - "NOTICE somebody :hello, i've connected"
 
         # Determines whether oper statuses should be tracked on this Clientbot network. This
