@@ -379,13 +379,28 @@ servers:
         #ssl_certfile: mycert.pem
         #ssl_keyfile: mycert.pem
 
+        # Autoconnect works as usual.
+        autoconnect: 30
+
+        # Message throttling: when set to a non-zero value, only one message will be sent every X
+        # seconds. If your bot is constantly running into Excess Flood errors, raising this to
+        # something like 0.5 or 1.0 should help. Defaults to 0.005 if not set.
+        throttle_time: 0.3
+
+        # Determines whether messages from unknown clients (servers, clients not sharing in a -n
+        # channel, etc.) should be forwarded via the PyLink server. If this is disabled, these
+        # messages will be silently dropped. This overrides the "accept_weird_senders" option in the
+        # "relay:" configuration block, and defaults to True for consistency with older releases.
+        #relay_weird_senders: false
+
+        ### The following options are specific to Clientbot servers:
         # SASL login: for mechanisms, only EXTERNAL (SSL cert) and PLAIN (username and password)
         # are supported so far.
         # SASL PLAIN requires the sasl_username and sasl_password options to be set, while
         # SASL EXTERNAL requires ssl, ssl_certfile, and ssl_keyfile to work.
         #sasl_mechanism: "PLAIN"
         #sasl_username: "mIRCsKripterz"
-        #sasl_password: "DownLoaditn00b!!!"
+        #sasl_password: "somestrangepassword"
 
         # Defines the SASL timeout - this defaults to 15 seconds.
         #sasl_timeout: 15
@@ -396,14 +411,6 @@ servers:
         # InspIRCd 3.x and charybdis 4+ are some compatible IRCds as of 2016-12-19.
         #sasl_reauth: true
 
-        # Autoconnect works like usual.
-        autoconnect: 30
-
-        # Message throttling: when set to a non-zero value, only one message will be sent every X
-        # seconds. If your bot is constantly running into Excess Flood errors, raising this to
-        # something like 0.5 or 1.0 should help. Defaults to 0.005 if not set.
-        throttle_time: 0.3
-
         # Clientbot also supports auto perform, using raw IRC messages.
         #autoperform:
         #   - "NOTICE somebody :hello, i've connected"
@@ -413,12 +420,6 @@ servers:
         # entire PyLink service than what's desired, even when PyLink is only connected as a bot.
         # This defaults to false if not specified.
         #track_oper_statuses: false
-
-        # Determines whether messages from unknown clients (servers, clients not sharing in a -n
-        # channel, etc.) should be forwarded via the PyLink server. If this is disabled, these
-        # messages will be silently dropped. This overrides the "accept_weird_senders" option in the
-        # "relay:" configuration block, and defaults to True for consistency with older releases.
-        #relay_weird_senders: false
 
 # Plugins to load (omit the .py extension)
 plugins:
