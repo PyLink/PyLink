@@ -66,7 +66,7 @@ def checkban(irc, source, args, use_regex=False):
             irc.reply('Yes, \x02%s\x02 matches \x02%s\x02.' % (args.target, args.banmask))
         else:
             irc.reply('No, \x02%s\x02 does not match \x02%s\x02.' % (args.target, args.banmask))
-utils.add_cmd(checkban, aliases=('cban',))
+utils.add_cmd(checkban, aliases=('cban', 'trace'))
 
 def checkbanre(irc, source, args):
     """<regular expression> [<target nick or hostmask>] [--channel #channel] [--maxresults <num>]
