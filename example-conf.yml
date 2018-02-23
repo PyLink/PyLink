@@ -237,10 +237,10 @@ servers:
         # networks (charybdis, etc.), since they don't allow "/" in nicks.
         separator: "|"
 
-        # The following options are specific to TS6 servers:
+        ### The following options are specific to TS6 servers:
         # Toggles owner (+y), admin (+a), and halfop (+h) support for
         # shadowircd/elemental-ircd.
-        # This defaults to off for the best compatibility.
+        # These default to off for the best compatibility.
         use_owner: false
         use_admin: false
         use_halfop: false
@@ -269,6 +269,7 @@ servers:
         sidrange: "8##"
         protocol: "unreal"
         autoconnect: 5
+
 
         # You can also define network-specific nicks and idents for various service
         # bots, using the configuration options "servicename_nick" and "servicename_ident".
@@ -309,10 +310,10 @@ servers:
         # for PyLink / relay clients) are enabled, along with a set of modes tailored to Nefarious.
 
         # With this key set to 'snircd', SETHOST and a set of modes tailored to snircd are enabled.
-        # vHost changing of other users (e.g. via the changehost plugin) is not supported.
+        # Host changing for other users (e.g. via the changehost plugin) is not supported.
 
         # With this key set to 'ircu', a set of modes tailored to IRCu is enabled.
-        # vHost changing is not supported.
+        # Host changing is not supported.
 
         # With this key set to 'generic', neither of these host changing features are enabled
         # and a baseline RFC1459 mode set is used. This configuration is not officially supported.
@@ -328,14 +329,14 @@ servers:
         # IRCd configuration if use_account_cloaks is enabled.
         cloak_suffix: "users.yournet.org"
 
-        ### The following options are specific to Nefarious servers and should be set to false if
-        ### you're using another P10 IRCd (unless your variant supports them as well):
-        # Halfop is optional in Nefarious. This should match your IRCd configuration.
+        ### The following options are specific to Nefarious and should be disabled unless
+        #   you're using another P10 variant explicitly supporting them:
+        # Halfop is optional in Nefarious. This setting should match your IRCd configuration.
         use_halfop: false
 
         # Determines whether account-based cloaks should be used for opers
         # (someone.opers.yournet.org format). If use_account_cloaks is disabled,
-        # this will have no effect. This should match your IRCd configuration:
+        # this will have no effect. This setting should match your IRCd configuration.
         use_oper_account_cloaks: false
 
         # The cloak suffix to be used for IRCop account-based cloaks. This **MUST** match your
@@ -343,7 +344,7 @@ servers:
         oper_cloak_suffix: "staff.yournet.org"
 
         # Determines whether UnrealIRCd-style hashed-host cloaks will be used.
-        # This should match your IRCd configuration:
+        # This setting should match your IRCd configuration.
         # ENABLE this if HOST_HIDING_STYLE is set to either 2 or 3.
         use_hashed_cloaks: false
 
