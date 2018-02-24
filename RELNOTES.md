@@ -83,7 +83,7 @@ This release includes all changes from 1.2.2-dev, plus the following:
 - protocols/inspircd now tracks module (un)loads for `m_chghost.so` and friends. [issue#555](https://github.com/GLolol/PyLink/issues/555)
 - Clientbot now logs failed attempts in joining channels. [issue#533](https://github.com/GLolol/PyLink/issues/533)
 
-# PyLink 2.0-alpha1
+# PyLink 2.0-alpha1 (2017-10-07)
 The "Eclectic" release. This release includes all changes from 1.2.1, plus the following:
 
 #### New features
@@ -140,7 +140,7 @@ The "Eclectic" release. This release includes all changes from 1.2.1, plus the f
 - protocols/p10 now bursts IPv6 IPs to supported uplinks.
 - Fixed compatibility with ircd-hybrid trunk after commit 981c61e (EX and IE are no longer sent in the capability list)
 
-# PyLink 1.2.1
+# PyLink 1.2.1 (2017-09-19)
 The "Dancer" release. Changes from 1.2.0:
 
 #### Bug fixes
@@ -164,7 +164,7 @@ The "Dancer" release. Changes from 1.2.0:
     - Minor logging cleanup for relay and `Irc.matchHost()`.
     - Fix cmode `+p` mapping on TS6 networks.
 
-# PyLink 1.2.0
+# PyLink 1.2.0 (2017-08-14)
 The "Dragons" release. Changes since 1.2.0-rc1:
 
 #### Feature changes
