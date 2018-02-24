@@ -510,6 +510,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     @staticmethod
     @functools.lru_cache(maxsize=2048)
     def _to_lower_core(text, casemapping='rfc1459'):
+        if not text:
+            return text
         if casemapping == 'rfc1459':
             text = text.replace('{', '[')
             text = text.replace('}', ']')
@@ -1232,8 +1234,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         Returns the nick or server name for the given UID/SID. This method helps support protocol
         modules that use PUIDs internally, as they must convert them to talk with the uplink.
         """
+        log.debug('(%s) _expandPUID: got uid %s', self.name, uid)
         # TODO: stop hardcoding @ as separator
-        if '@' in uid:
+        if uid and '@' in uid:
             if uid in self.users:
                 # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
                 # Return this user's nick accordingly.
