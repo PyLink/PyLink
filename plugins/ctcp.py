@@ -36,9 +36,11 @@ def handle_ctcp(irc, source, command, args):
 
         # Call the helper function and display its result.
         result = SUPPORTED_COMMANDS[ctcp_command](irc, source, ctcp_command, data)
-        if result:
-            irc.reply('\x01%s %s\x01' % (ctcp_command, result),
-                      notice=True, private=True, source=target)
+        if result and source in irc.users:
+            # Note, do NOT use irc.reply() in hook handlers because nothing except the
+            # command handler system actually updates the last caller.
+            irc.msg(source, '\x01%s %s\x01' % (ctcp_command, result),
+                    notice=True, private=True, source=target)
 
         return False  # Block this message from reaching the general command handler
     else:
