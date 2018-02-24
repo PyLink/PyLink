@@ -1,4 +1,33 @@
-# PyLink 2.0-alpha2
+# PyLink 2.0-alpha3 (unreleased)
+
+#### New features
+- **Experimental daemonization support via `pylink -d`!** [issue#187](https://github.com/GLolol/PyLink/issues/187)
+- Clientbot now supports expansions such as `$nick` in autoperform
+- Relay endburst delay (on InspIRCd networks) is now configurable via the `servers:NETNAME:relay_endburst_delay` option.
+- Relay now translates STATUSMSG messages (e.g. `@#channel` messages) for target networks instead of passing them on as-is. [issue#570](https://github.com/GLolol/PyLink/issues/570)
+
+#### Feature changes
+- **Reverted the commit making SIGHUP shutdown the PyLink daemon**. Now, SIGUSR1 and SIGHUP both trigger a rehash, while SIGTERM triggers a shutdown.
+- The `raw` command has been split into a new plugin (`plugins/raw.py`) with two permissions: `raw.raw` for Clientbot networks, and `raw.raw.unsupported_network` for other protocols. Using raw commands outside Clientbot is not supported. [issue#565](https://github.com/GLolol/PyLink/issues/565)
+
+#### Bug fixes
+- protocols/clientbot: fix errors when connecting to networks with mixed-case server names (e.g. AfterNET)
+- relay: fix KeyError when a local client is kicked from a claimed channel. [issue#572](https://github.com/GLolol/PyLink/issues/572)
+- automode: fix handling of channels with multiple \#'s in them
+- launcher: prevent protocol module loading errors (e.g. non-existent protocol module) from blocking the setup of other networks.
+    - This fixes a side-effect which can cause relay to stop functioning (`world.started` is never set)
+- Fixed various 2.0-alpha2 regressions:
+    - Relay now relays service client messages as PRIVMSG and P10 WALL\* commands as NOTICE
+    - protocols/inspircd: fix supported modules list being corrupted when an indirectly linked server shuts down. [issue#567](https://github.com/GLolol/PyLink/issues/567)
+- commands: fix 'showchan' displaying status prefixes in reverse
+
+#### Internal improvements
+- Rewritten CTCP plugin, now extending to all service bots. [issue#468](https://github.com/GLolol/PyLink/issues/468), [issue#407](https://github.com/GLolol/PyLink/issues/407)
+- The `endburst_delay` option to `spawn_server()` was removed from the protocol spec, and replaced by a private API used by protocols/inspircd and relay.
+- New API: hook functions can now block further execution from other handlers by returning False. [issue#547](https://github.com/GLolol/PyLink/issues/547)
+- automode: replace assert checks with proper exceptions
+
+# PyLink 2.0-alpha2 (2018-01-16)
 This release includes all changes from 1.2.2-dev, plus the following:
 
 #### New features
