@@ -40,7 +40,7 @@ def handle_ctcp(irc, source, command, args):
             # Note, do NOT use irc.reply() in hook handlers because nothing except the
             # command handler system actually updates the last caller.
             irc.msg(source, '\x01%s %s\x01' % (ctcp_command, result),
-                    notice=True, private=True, source=target)
+                    notice=True, source=target)
 
         return False  # Block this message from reaching the general command handler
     else:
