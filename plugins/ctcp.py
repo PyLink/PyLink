@@ -44,7 +44,7 @@ def handle_ctcp(irc, source, command, args):
 
         return False  # Block this message from reaching the general command handler
     else:
-        log.info('(%s) Received unknown CTCP %s from %s',
+        log.info('(%s) Received unknown CTCP %s from %s to %s',
                  irc.name, ctcp_command, irc.get_hostmask(source),
                  irc.get_friendly_name(target))
         return False
