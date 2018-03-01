@@ -1254,6 +1254,7 @@ utils._proto_utils_class = PyLinkNetworkCoreWithUtils  # Used by compatibility w
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
+    SOCKET_REPOLL_WAIT = 0.5
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1512,6 +1513,11 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             try:
                 data = self._socket.recv(2048)
+            except BlockingIOError:
+                log.debug('(%s) No data to read, trying again later...', self.name)
+                if self._aborted.wait(self.SOCKET_REPOLL_WAIT):
+                    break
+                continue
             except OSError:
                 # Suppress socket read warnings from lingering recv() calls if
                 # we've been told to shutdown.
