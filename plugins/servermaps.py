@@ -6,6 +6,17 @@ from pylinkirc.coremods import permissions
 
 import collections
 
+DEFAULT_PERMISSIONS = {"$ircop": ['servermaps.localmap']}
+
+def main(irc=None):
+    """Servermaps plugin main function, called on plugin load."""
+    # Register our permissions.
+    permissions.add_default_permissions(DEFAULT_PERMISSIONS)
+
+def die(irc=None):
+    """Servermaps plugin die function, called on plugin unload."""
+    permissions.remove_default_permissions(DEFAULT_PERMISSIONS)
+
 def _percent(num, total):
     return '%.1f' % (num/total*100)
 
