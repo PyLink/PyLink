@@ -99,7 +99,8 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `relay.savedb` - Allows access to the `savedb` command.
 
 ## Servermaps
-- `servermaps.map` - Allows access to the `map` and `localmap` commands.
+- `servermaps.localmap` - Allows access to the `localmap` command.
+- `servermaps.map` - Allows access to the `map` command.
 
 ## Stats
 - `stats.uptime` - Allows access to the `stats` command.

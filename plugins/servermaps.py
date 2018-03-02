@@ -14,7 +14,11 @@ def _map(irc, source, args, show_relay=True):
 
     Shows the network map for the given network, or the current network if not specified."""
 
-    permissions.check_permissions(irc, source, ['servermaps.map'])
+    if show_relay:
+        perm = 'servermaps.map'
+    else:
+        perm = 'servermaps.localmap'
+    permissions.check_permissions(irc, source, [perm])
 
     try:
         netname = args[0]
