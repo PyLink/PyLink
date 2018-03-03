@@ -143,11 +143,11 @@ def main():
 
     # Load configured plugins
     to_load = conf.conf['plugins']
-    utils.resetModuleDirs()
+    utils.reset_module_dirs()
 
     for plugin in to_load:
         try:
-            world.plugins[plugin] = pl = utils.loadPlugin(plugin)
+            world.plugins[plugin] = pl = utils.load_plugin(plugin)
         except Exception as e:
             log.exception('Failed to load plugin %r: %s: %s', plugin, type(e).__name__, str(e))
         else:
@@ -164,7 +164,7 @@ def main():
         else:
             # Fetch the correct protocol module.
             try:
-                proto = utils.getProtocolModule(protoname)
+                proto = utils.get_protocol_module(protoname)
 
                 # Create and connect the network.
                 world.networkobjects[network] = irc = proto.Class(network)
