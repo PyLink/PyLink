@@ -1574,9 +1574,9 @@ def handle_kick(irc, source, command, args):
                         kname = irc.servers[kicker].name
                     else:
                         kname = irc.users.get(kicker).nick
-                    text = "(%s/%s) %s" % (kname, irc.name, args['text'])
+                    text = "(%s) %s" % (kname, args['text'])
                 except AttributeError:
-                    text = "(<unknown kicker>@%s) %s" % (irc.name, args['text'])
+                    text = "(<unknown kicker>) %s" % args['text']
 
             rsid = rsid or remoteirc.sid  # Fall back to the main PyLink SID if get_relay_server_sid() fails
             remoteirc.kick(rsid, remotechan, real_target, text)
