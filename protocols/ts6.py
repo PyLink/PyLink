@@ -186,7 +186,7 @@ class TS6Protocol(TS6BaseProtocol):
                 msgprefix = ':{sid} BMASK {ts} {channel} {bmode} :'.format(sid=server, ts=ts,
                                                                           channel=channel, bmode=bmode)
                 # Actually, we cut off at 17 arguments/line, since the prefix and command name don't count.
-                for msg in utils.wrapArguments(msgprefix, bans, self.S2S_BUFSIZE, max_args_per_line=17):
+                for msg in utils.wrap_arguments(msgprefix, bans, self.S2S_BUFSIZE, max_args_per_line=17):
                     self.send(msg)
 
         self.updateTS(server, channel, ts, changedmodes)

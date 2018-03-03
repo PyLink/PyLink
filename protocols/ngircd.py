@@ -252,7 +252,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         if nicks_to_send:
             # Use 13 args max per line: this is equal to the max of 15 minus the command name and target channel.
-            for message in utils.wrapArguments(njoin_prefix, nicks_to_send, self.S2S_BUFSIZE, separator=',', max_args_per_line=13):
+            for message in utils.wrap_arguments(njoin_prefix, nicks_to_send, self.S2S_BUFSIZE, separator=',', max_args_per_line=13):
                 self.send(message)
 
         if modes:

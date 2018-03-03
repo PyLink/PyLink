@@ -180,7 +180,7 @@ class UnrealProtocol(TS6BaseProtocol):
         sjoin_prefix += " :"
         # Wrap arguments to the max supported S2S line length to prevent cutoff
         # (https://github.com/GLolol/PyLink/issues/378)
-        for line in utils.wrapArguments(sjoin_prefix, itemlist, self.S2S_BUFSIZE):
+        for line in utils.wrap_arguments(sjoin_prefix, itemlist, self.S2S_BUFSIZE):
             self.send(line)
 
         self._channels[channel].users.update(uids)

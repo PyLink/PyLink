@@ -446,7 +446,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             else:
                 # Sender is a either a nick or a nick!user@host prefix. Split it into its relevant parts.
                 try:
-                    nick, ident, host = utils.splitHostmask(sender)
+                    nick, ident, host = utils.split_hostmask(sender)
                 except ValueError:
                     ident = host = None  # Set ident and host as null for now.
                     nick = sender  # Treat the sender prefix we received as a nick.
@@ -674,7 +674,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
             # Handle userhost-in-names where available.
             if 'userhost-in-names' in self.ircv3_caps:
-                nick, ident, host = utils.splitHostmask(nick)
+                nick, ident, host = utils.split_hostmask(nick)
             else:
                 ident = host = None
 
