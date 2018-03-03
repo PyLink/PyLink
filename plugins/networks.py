@@ -173,7 +173,7 @@ def reloadproto(irc, source, args):
         irc.error('Not enough arguments (needs 1: protocol module name)')
         return
 
-    proto = utils.get_protocol_module(name)
+    proto = utils._get_protocol_module(name)
     importlib.reload(proto)
 
     irc.reply("Done. You will have to manually disconnect and reconnect any network using the %r module for changes to apply." % name)

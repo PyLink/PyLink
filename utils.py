@@ -96,30 +96,30 @@ def expand_path(path):
     return os.path.expanduser(os.path.expandvars(path))
 expandpath = expand_path  # Consistency with os.path
 
-def reset_module_dirs():
+def _reset_module_dirs():
     """
     (Re)sets custom protocol module and plugin directories to the ones specified in the config.
     """
     # Note: This assumes that the first element of the package path is the default one.
     plugins.__path__ = [plugins.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('plugin_dirs', [])]
-    log.debug('reset_module_dirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
+    log.debug('_reset_module_dirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
     protocols.__path__ = [protocols.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('protocol_dirs', [])]
-    log.debug('reset_module_dirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
-resetModuleDirs = reset_module_dirs
+    log.debug('_reset_module_dirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
+resetModuleDirs = _reset_module_dirs
 
-def load_plugin(name):
+def _load_plugin(name):
     """
     Imports and returns the requested plugin.
     """
     return importlib.import_module(PLUGIN_PREFIX + name)
-loadPlugin = load_plugin
+loadPlugin = _load_plugin
 
-def get_protocol_module(name):
+def _get_protocol_module(name):
     """
     Imports and returns the protocol module requested.
     """
     return importlib.import_module(PROTOCOL_PREFIX + name)
-getProtocolModule = get_protocol_module
+getProtocolModule = _get_protocol_module
 
 def split_hostmask(mask):
     """

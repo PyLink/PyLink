@@ -125,13 +125,13 @@ def rehash():
 
             ircobj.log_setup()
 
-    utils.reset_module_dirs()
+    utils._reset_module_dirs()
 
     for network, sdata in new_conf['servers'].items():
         # Connect any new networks or disconnected networks if they aren't already.
         if (network not in world.networkobjects) or (not world.networkobjects[network]._connection_thread.is_alive()):
             try:
-                proto = utils.get_protocol_module(sdata['protocol'])
+                proto = utils._get_protocol_module(sdata['protocol'])
 
                 # API note: 2.0.x style of starting network connections
                 world.networkobjects[network] = newirc = proto.Class(network)
