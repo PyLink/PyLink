@@ -130,11 +130,14 @@ def rehash():
     for network, sdata in new_conf['servers'].items():
         # Connect any new networks or disconnected networks if they aren't already.
         if (network not in world.networkobjects) or (not world.networkobjects[network]._connection_thread.is_alive()):
-            proto = utils.getProtocolModule(sdata['protocol'])
+            try:
+                proto = utils.getProtocolModule(sdata['protocol'])
 
-            # API note: 2.0.x style of starting network connections
-            world.networkobjects[network] = newirc = proto.Class(network)
-            newirc.connect()
+                # API note: 2.0.x style of starting network connections
+                world.networkobjects[network] = newirc = proto.Class(network)
+                newirc.connect()
+            except:
+                log.exception('Failed to initialize network %r, skipping it...', network)
 
     log.info('Finished reloading PyLink configuration.')
 
