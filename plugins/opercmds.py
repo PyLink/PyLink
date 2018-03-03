@@ -322,7 +322,7 @@ def jupe(irc, source, args):
         irc.error('Not enough arguments. Needs 1-2: servername, reason (optional).')
         return
 
-    if not utils.isServerName(servername):
+    if not irc.is_server_name(servername):
         irc.error("Invalid server name %r." % servername)
         return
 
