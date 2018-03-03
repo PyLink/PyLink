@@ -558,7 +558,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
         return bool(cls._HOSTMASK_RE.match(text) and '#' not in text)
 
-    def _parse_modes(self, args, existing, supported_modes, prefixmodes=None):
+    def _parse_modes(self, args, existing, supported_modes, is_channel=False, prefixmodes=None):
         """
         parse_modes() core.
 
@@ -646,7 +646,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # C = Mode that changes a setting and only has a parameter when set.
         # D = Mode that changes a setting and never has a parameter.
 
-        if not self.is_channel(target):
+        is_channel = self.is_channel(target)
+        if not is_channel:
             log.debug('(%s) Using self.umodes for this query: %s', self.name, self.umodes)
 
             if target not in self.users:
@@ -663,7 +664,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             oldmodes = self._channels[target].modes
             prefixmodes = self.prefixmodes
 
-        return self._parse_modes(args, oldmodes, supported_modes, prefixmodes=prefixmodes)
+        return self._parse_modes(args, oldmodes, supported_modes, is_channel=is_channel,
+                                 prefixmodes=prefixmodes)
 
     def _apply_modes(self, old_modelist, changedmodes, is_channel=False,
                      prefixmodes=None):
