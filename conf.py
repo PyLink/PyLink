@@ -60,7 +60,7 @@ def _log(level, text, *args, logger=None, **kwargs):
     else:
         world._log_queue.append((level, text))
 
-def validateConf(conf, logger=None):
+def _validate_conf(conf, logger=None):
     """Validates a parsed configuration dict."""
     validate(isinstance(conf, dict),
             "Invalid configuration given: should be type dict, not %s."
@@ -108,7 +108,7 @@ def validateConf(conf, logger=None):
 
     return conf
 
-def loadConf(filename, errors_fatal=True, logger=None):
+def load_conf(filename, errors_fatal=True, logger=None):
     """Loads a PyLink configuration file from the filename given."""
     global confname, conf, fname
     # Note: store globally the last loaded conf filename, for REHASH in coremods/control.
@@ -118,7 +118,7 @@ def loadConf(filename, errors_fatal=True, logger=None):
     try:
         with open(filename, 'r') as f:
             conf = yaml.load(f)
-            conf = validateConf(conf, logger=logger)
+            conf = _validate_conf(conf, logger=logger)
     except Exception as e:
         e = 'Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e)
 
@@ -134,7 +134,7 @@ def loadConf(filename, errors_fatal=True, logger=None):
     else:
         return conf
 
-def getDatabaseName(dbname):
+def get_database_name(dbname):
     """
     Returns a database filename with the given base DB name appropriate for the
     current PyLink instance.

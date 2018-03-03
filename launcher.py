@@ -41,7 +41,7 @@ def main():
         sys.exit(1)
 
     # FIXME: we can't pass logging on to conf until we set up the config...
-    conf.loadConf(args.config)
+    conf.load_conf(args.config)
 
     from pylinkirc.log import log
     from pylinkirc import classes, utils, coremods
