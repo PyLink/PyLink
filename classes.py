@@ -589,7 +589,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 arg = None
                 log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
                 try:
-                    if prefixmodes and mode in prefixmodes:
+                    if prefixmodes and mode in self.prefixmodes:
                         # We're setting a prefix mode on someone (e.g. +o user1)
                         log.debug('Mode %s: This mode is a prefix mode.', mode)
                         arg = args.pop(0)
@@ -661,13 +661,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
             supported_modes = self.umodes
             oldmodes = self.users[target].modes
-            prefixmodes = {}
+            prefixmodes = None
         else:
             log.debug('(%s) Using self.cmodes for this query: %s', self.name, self.cmodes)
 
             supported_modes = self.cmodes
             oldmodes = self._channels[target].modes
-            prefixmodes = self.prefixmodes
+            prefixmodes = self._channels[target].prefixmodes
 
         return self._parse_modes(args, oldmodes, supported_modes, is_channel=is_channel,
                                  prefixmodes=prefixmodes)
@@ -699,13 +699,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                     # for ops).
                     for pmode, pmodelist in prefixmodes.items():
                         if pmode in supported_modes and real_mode[0] == supported_modes[pmode]:
-                            log.debug('(%s) Initial prefixmodes list: %s', self.name, pmodelist)
+                            log.debug('(%s) Initial prefixmodes list (%s): %s', self.name, pmode, pmodelist)
                             if mode[0][0] == '+':
                                 pmodelist.add(mode[1])
                             else:
                                 pmodelist.discard(mode[1])
 
-                            log.debug('(%s) Final prefixmodes list: %s', self.name, pmodelist)
+                            log.debug('(%s) Final prefixmodes list (%s): %s', self.name, pmode, pmodelist)
 
                 if real_mode[0] in self.prefixmodes:
                     # Don't add prefix modes to Channel.modes; they belong in the
