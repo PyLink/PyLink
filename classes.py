@@ -633,7 +633,12 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                                 'argument but none was found. (modestring: %r)',
                                 self.name, mode, modestring)
                     continue  # Skip this mode; don't error out completely.
-                res.append((prefix + mode, arg))
+                newmode = (prefix + mode, arg)
+                res.append(newmode)
+
+                # Tentatively apply the new mode to the "existing" mode list.
+                existing = self._apply_modes(existing, [newmode], is_channel=is_channel)
+
         return res
 
     def parse_modes(self, target, args):
