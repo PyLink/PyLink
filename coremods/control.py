@@ -67,7 +67,7 @@ def shutdown(irc=None):
     _kill_plugins(irc=irc)
 
     # Remove our main PyLink bot as well.
-    utils.unregisterService('pylink')
+    utils.unregister_service('pylink')
 
     for ircobj in world.networkobjects.copy().values():
         # Disconnect all our networks.

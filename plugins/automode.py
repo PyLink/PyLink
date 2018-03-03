@@ -12,7 +12,7 @@ mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by
           "to users matching hostmasks or exttargets.")
 
 # Register ourselves as a service.
-modebot = utils.registerService("automode", default_nick="Automode", desc=mydesc)
+modebot = utils.register_service("automode", default_nick="Automode", desc=mydesc)
 reply = modebot.reply
 error = modebot.error
 
@@ -46,7 +46,7 @@ def die(irc=None):
     """Saves the Automode database and quit."""
     datastore.die()
     permissions.remove_default_permissions(default_permissions)
-    utils.unregisterService('automode')
+    utils.unregister_service('automode')
 
 def _check_automode_access(irc, uid, channel, command):
     """Checks the caller's access to Automode."""

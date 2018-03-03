@@ -145,4 +145,4 @@ utils.add_hook(handle_commands, 'PRIVMSG')
 # TODO: be more specific, and possibly allow plugins to modify this to mention
 # their features?
 mydesc = "\x02PyLink\x02 provides extended network services for IRC."
-utils.registerService('pylink', default_nick="PyLink", desc=mydesc, manipulatable=True)
+utils.register_service('pylink', default_nick="PyLink", desc=mydesc, manipulatable=True)

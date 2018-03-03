@@ -8,7 +8,7 @@ from pylinkirc.log import log
 
 mydesc = "The \x02Games\x02 plugin provides simple games for IRC."
 
-gameclient = utils.registerService("Games", default_nick="Games", manipulatable=True, desc=mydesc)
+gameclient = utils.register_service("Games", default_nick="Games", manipulatable=True, desc=mydesc)
 reply = gameclient.reply  # TODO find a better syntax for ServiceBot.reply()
 error = gameclient.error  # TODO find a better syntax for ServiceBot.error()
 # commands
@@ -71,4 +71,4 @@ def eightball(irc, source, args):
 gameclient.add_cmd(eightball, featured=True, aliases=('8ball', '8b'))
 
 def die(irc=None):
-    utils.unregisterService('games')
+    utils.unregister_service('games')
