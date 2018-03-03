@@ -665,25 +665,18 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         return self._parse_modes(args, oldmodes, supported_modes, prefixmodes=prefixmodes)
 
-    def apply_modes(self, target, changedmodes):
-        """Takes a list of parsed IRC modes, and applies them on the given target.
-
-        The target can be either a channel or a user; this is handled automatically."""
-        usermodes = not self.is_channel(target)
-
-        try:
-            if usermodes:
-                old_modelist = self.users[target].modes
-                supported_modes = self.umodes
-            else:
-                old_modelist = self._channels[target].modes
-                supported_modes = self.cmodes
-        except KeyError:
-            log.warning('(%s) Possible desync? Mode target %s is unknown.', self.name, target)
-            return
-
+    def _apply_modes(self, old_modelist, changedmodes, is_channel=False,
+                     prefixmodes=None):
+        """
+        Takes a list of parsed IRC modes, and applies them onto the given target mode list.
+        """
         modelist = set(old_modelist)
-        log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', self.name, changedmodes, target, modelist)
+
+        if is_channel:
+            supported_modes = self.cmodes
+        else:
+            supported_modes = self.umodes
+
         for mode in changedmodes:
             # Chop off the +/- part that parse_modes gives; it's meaningless for a mode list.
             try:
@@ -691,13 +684,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             except IndexError:
                 real_mode = mode
 
-            if not usermodes:
+            if prefixmodes is not None and is_channel:
                 # We only handle +qaohv for now. Iterate over every supported mode:
                 # if the IRCd supports this mode and it is the one being set, add/remove
                 # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
                 # for ops).
-                for pmode, pmodelist in self._channels[target].prefixmodes.items():
-                    if pmode in self.cmodes and real_mode[0] == self.cmodes[pmode]:
+                for pmode, pmodelist in prefixmodes.items():
+                    if pmode in supported_modes and real_mode[0] == supported_modes[pmode]:
                         log.debug('(%s) Initial prefixmodes list: %s', self.name, pmodelist)
                         if mode[0][0] == '+':
                             pmodelist.add(mode[1])
@@ -714,20 +707,20 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                     continue
 
             if mode[0][0] != '-':
+                log.debug('(%s) Adding mode %r on %s', self.name, real_mode, modelist)
                 # We're adding a mode
                 existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
-                if existing and real_mode[1] and real_mode[0] not in self.cmodes['*A']:
+                if existing and real_mode[1] and real_mode[0] not in supported_modes['*A']:
                     # The mode we're setting takes a parameter, but is not a list mode (like +beI).
                     # Therefore, only one version of it can exist at a time, and we must remove
                     # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
                     # for example, someone sets mode "+l 30" on a channel already set "+l 25".
-                    log.debug('(%s) Old modes for mode %r exist on %s, removing them: %s',
-                              self.name, real_mode, target, str(existing))
+                    log.debug('(%s) Old modes for mode %r exist in %s, removing them: %s',
+                              self.name, real_mode, modelist, str(existing))
                     [modelist.discard(oldmode) for oldmode in existing]
                 modelist.add(real_mode)
-                log.debug('(%s) Adding mode %r on %s', self.name, real_mode, target)
             else:
-                log.debug('(%s) Removing mode %r on %s', self.name, real_mode, target)
+                log.debug('(%s) Removing mode %r from %s', self.name, real_mode, modelist)
                 # We're removing a mode
                 if real_mode[1] is None:
                     # We're removing a mode that only takes arguments when setting.
@@ -739,13 +732,36 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 else:
                     modelist.discard(real_mode)
         log.debug('(%s) Final modelist: %s', self.name, modelist)
+        return modelist
+
+    def apply_modes(self, target, changedmodes):
+        """Takes a list of parsed IRC modes, and applies them on the given target.
+
+        The target can be either a channel or a user; this is handled automatically."""
+        is_channel = self.is_channel(target)
+
+        prefixmodes = None
         try:
-            if usermodes:
-                self.users[target].modes = modelist
+            if is_channel:
+                c = self._channels[target]
+                old_modelist = c.modes
+                prefixmodes = c.prefixmodes
             else:
-                self._channels[target].modes = modelist
+                old_modelist = self.users[target].modes
         except KeyError:
-            log.warning("(%s) Invalid MODE target %s (usermodes=%s)", self.name, target, usermodes)
+            log.warning('(%s) Possible desync? Mode target %s is unknown.', self.name, target)
+            return
+
+        modelist = self._apply_modes(old_modelist, changedmodes, is_channel=is_channel,
+                                     prefixmodes=prefixmodes)
+
+        try:
+            if is_channel:
+                self._channels[target].modes = modelist
+            else:
+                self.users[target].modes = modelist
+        except KeyError:
+            log.warning("(%s) Invalid MODE target %s (is_channel=%s)", self.name, target, is_channel)
 
     @staticmethod
     def _flip(mode):
