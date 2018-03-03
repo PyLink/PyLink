@@ -8,7 +8,7 @@ import sys
 import atexit
 
 from pylinkirc import world, utils, conf  # Do not import classes, it'll import loop
-from pylinkirc.log import log, makeFileLogger, stopFileLoggers, getConsoleLogLevel
+from pylinkirc.log import log, _make_file_logger, _stop_file_loggers, _get_console_log_level
 from . import permissions
 
 def remove_network(ircobj):
@@ -96,14 +96,14 @@ def rehash():
     conf.conf = new_conf
 
     # Reset any file logger options.
-    stopFileLoggers()
+    _stop_file_loggers()
     files = new_conf['logging'].get('files')
     if files:
         for filename, config in files.items():
-            makeFileLogger(filename, config.get('loglevel'))
+            _make_file_logger(filename, config.get('loglevel'))
 
     log.debug('rehash: updating console log level')
-    world.console_handler.setLevel(getConsoleLogLevel())
+    world.console_handler.setLevel(_get_console_log_level())
 
     for network, ircobj in world.networkobjects.copy().items():
         # Server was removed from the config file, disconnect them.
