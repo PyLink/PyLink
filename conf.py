@@ -50,7 +50,7 @@ conf['pylink'] = conf['bot']
 confname = 'unconfigured'
 
 def validate(condition, errmsg):
-    """Convenience function to validate conditions in validateConf()."""
+    """Raises ConfigValidationError with errmsg unless the given condition is met."""
     if not condition:
         raise ConfigValidationError(errmsg)
 
