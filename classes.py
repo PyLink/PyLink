@@ -684,20 +684,21 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             except IndexError:
                 real_mode = mode
 
-            if prefixmodes is not None and is_channel:
-                # We only handle +qaohv for now. Iterate over every supported mode:
-                # if the IRCd supports this mode and it is the one being set, add/remove
-                # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
-                # for ops).
-                for pmode, pmodelist in prefixmodes.items():
-                    if pmode in supported_modes and real_mode[0] == supported_modes[pmode]:
-                        log.debug('(%s) Initial prefixmodes list: %s', self.name, pmodelist)
-                        if mode[0][0] == '+':
-                            pmodelist.add(mode[1])
-                        else:
-                            pmodelist.discard(mode[1])
+            if is_channel:
+                if prefixmodes is not None:
+                    # We only handle +qaohv for now. Iterate over every supported mode:
+                    # if the IRCd supports this mode and it is the one being set, add/remove
+                    # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
+                    # for ops).
+                    for pmode, pmodelist in prefixmodes.items():
+                        if pmode in supported_modes and real_mode[0] == supported_modes[pmode]:
+                            log.debug('(%s) Initial prefixmodes list: %s', self.name, pmodelist)
+                            if mode[0][0] == '+':
+                                pmodelist.add(mode[1])
+                            else:
+                                pmodelist.discard(mode[1])
 
-                        log.debug('(%s) Final prefixmodes list: %s', self.name, pmodelist)
+                            log.debug('(%s) Final prefixmodes list: %s', self.name, pmodelist)
 
                 if real_mode[0] in self.prefixmodes:
                     # Don't add prefix modes to Channel.modes; they belong in the
