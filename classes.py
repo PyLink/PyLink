@@ -1594,8 +1594,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
         try:
             self._socket.send(encoded_data)
-        except (OSError, AttributeError):
-            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, data)
+        except:
+            log.exception("(%s) Failed to send message %r; aborting!", self.name, data)
+            self.disconnect()
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
