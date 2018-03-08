@@ -98,6 +98,10 @@ def _map(irc, source, args, show_relay=True):
                 if remoteirc.has_cap('can-track-servers'):
                     # Only ever show relay subservers once - this prevents infinite loops.
                     showall(remoteirc, remoteirc.sid, hops=hops, is_relay_server=True)
+                else:
+                    # For Clientbot links, show the server we're actually connected to.
+                    reply("%s\x02%s\x02 (actual server name)" %
+                          ('    '*(hops+1), remoteirc.uplink))
 
         else:
             # Afterwards, decrement the hopcount.
