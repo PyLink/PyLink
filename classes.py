@@ -1554,7 +1554,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             try:
                 data = self._socket.recv(2048)
-            except BlockingIOError:
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
                 log.debug('(%s) No data to read, trying again later...', self.name)
                 if self._aborted.wait(self.SOCKET_REPOLL_WAIT):
                     break
