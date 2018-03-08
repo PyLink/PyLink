@@ -1295,7 +1295,7 @@ utils._proto_utils_class = PyLinkNetworkCoreWithUtils  # Used by compatibility w
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
-    SOCKET_REPOLL_WAIT = 0.5
+    SOCKET_REPOLL_WAIT = 1.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
