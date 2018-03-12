@@ -33,10 +33,7 @@ default_permissions = {"*!*@*": ['relay.linked'],
 def initialize_all(irc):
     """Initializes all relay channels for the given IRC object."""
 
-    # Wait for all IRC objects to be created first. This prevents
-    # relay servers from being spawned too early (before server authentication),
-    # which would break connections.
-    if world.started.wait(TCONDITION_TIMEOUT):
+    def _initialize_all():
         for chanpair, entrydata in db.items():
             network, channel = chanpair
 
@@ -47,6 +44,14 @@ def initialize_all(irc):
                 network, channel = link
                 if network == irc.name:
                     initialize_channel(irc, channel)
+
+    # Wait for all IRC objects to be created first. This prevents
+    # relay servers from being spawned too early (before server authentication),
+    # which would break connections.
+    if world.started.wait(TCONDITION_TIMEOUT):
+        t = threading.Thread(target=_initialize_all, daemon=True,
+                             name='relay initialize_all thread from network %r' % irc.name)
+        t.start()
 
 def main(irc=None):
     """Main function, called during plugin loading at start."""
@@ -500,9 +505,8 @@ def initialize_channel(irc, channel):
                 # from the config. Skip this.
                 continue
 
-            # Give each network a tiny bit of leeway to finish up its connection.
-            # This is better than just dropping users their completely.
-            if not remoteirc.connected.wait(TCONDITION_TIMEOUT):
+            # Remote net isn't ready yet, try again later.
+            if not remoteirc.connected.is_set():
                 continue
 
             # Join their (remote) users and set their modes, if applicable.
