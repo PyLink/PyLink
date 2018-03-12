@@ -281,14 +281,9 @@ def get_relay_server_sid(irc, remoteirc, spawn_if_missing=True):
             sid = spawn_relay_server(irc, remoteirc)
 
         log.debug('(%s) get_relay_server_sid: got %s for %s.relay', irc.name, sid, remoteirc.name)
-        if sid not in irc.servers:
-            log.warning('(%s) Possible desync? SID %s for %s.relay doesn\'t exist anymore', irc.name, sid, remoteirc.name)
-            # Our stored server doesn't exist anymore. This state is probably a holdover from a netsplit,
-            # so let's refresh it.
-            sid = spawn_relay_server(irc, remoteirc)
-        elif sid in irc.servers and irc.servers[sid].remote != remoteirc.name:
-            log.debug('(%s) Possible desync? SID %s for %s.relay doesn\'t exist anymore is mismatched (got %s.relay)', irc.name, irc.servers[sid].remote, remoteirc.name)
-            sid = spawn_relay_server(irc, remoteirc)
+        if (sid not in irc.servers) or (sid in irc.servers and irc.servers[sid].remote != remoteirc.name):
+            # SID changed in the meantime; abort.
+            return
 
         log.debug('(%s) get_relay_server_sid: got %s for %s.relay (round 2)', irc.name, sid, remoteirc.name)
         spawnlocks_servers[irc.name].release()
@@ -336,7 +331,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
 
     rsid = get_relay_server_sid(remoteirc, irc)
     if not rsid:
-        log.error('(%s) spawn_relay_user: aborting user spawn for %s/%s @ %s (failed to retrieve a '
+        log.debug('(%s) spawn_relay_user: aborting user spawn for %s/%s @ %s (failed to retrieve a '
                   'working SID).', irc.name, user, nick, remoteirc.name)
         return
     try:
