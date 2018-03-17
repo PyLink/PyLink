@@ -44,7 +44,7 @@ def main():
     conf.load_conf(args.config)
 
     from pylinkirc.log import log
-    from pylinkirc import classes, utils, coremods
+    from pylinkirc import classes, utils, coremods, selectdriver
 
     world.daemon = args.daemonize
     if args.daemonize:
@@ -177,3 +177,4 @@ def main():
 
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
+    selectdriver.start()
