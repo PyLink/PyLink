@@ -1295,7 +1295,7 @@ utils._proto_utils_class = PyLinkNetworkCoreWithUtils  # Used by compatibility w
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
-    SOCKET_REPOLL_WAIT = 0.5
+    SOCKET_REPOLL_WAIT = 1.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1540,6 +1540,11 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         data = b''
         try:
             data = self._socket.recv(2048)
+        except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            log.debug('(%s) No data to read, trying again later...', self.name)
+            if self._aborted.wait(self.SOCKET_REPOLL_WAIT):
+                break
+            continue
         except OSError:
             # Suppress socket read warnings from lingering recv() calls if
             # we've been told to shutdown.
@@ -1577,8 +1582,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
         try:
             self._socket.send(encoded_data)
-        except (OSError, AttributeError):
-            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, data)
+        except:
+            log.exception("(%s) Failed to send message %r; aborting!", self.name, data)
+            self.disconnect()
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""

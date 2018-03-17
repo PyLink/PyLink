@@ -33,10 +33,7 @@ default_permissions = {"*!*@*": ['relay.linked'],
 def initialize_all(irc):
     """Initializes all relay channels for the given IRC object."""
 
-    # Wait for all IRC objects to be created first. This prevents
-    # relay servers from being spawned too early (before server authentication),
-    # which would break connections.
-    if world.started.wait(TCONDITION_TIMEOUT):
+    def _initialize_all():
         for chanpair, entrydata in db.items():
             network, channel = chanpair
 
@@ -47,6 +44,14 @@ def initialize_all(irc):
                 network, channel = link
                 if network == irc.name:
                     initialize_channel(irc, channel)
+
+    # Wait for all IRC objects to be created first. This prevents
+    # relay servers from being spawned too early (before server authentication),
+    # which would break connections.
+    if world.started.wait(TCONDITION_TIMEOUT):
+        t = threading.Thread(target=_initialize_all, daemon=True,
+                             name='relay initialize_all thread from network %r' % irc.name)
+        t.start()
 
 def main(irc=None):
     """Main function, called during plugin loading at start."""
@@ -281,14 +286,9 @@ def get_relay_server_sid(irc, remoteirc, spawn_if_missing=True):
             sid = spawn_relay_server(irc, remoteirc)
 
         log.debug('(%s) get_relay_server_sid: got %s for %s.relay', irc.name, sid, remoteirc.name)
-        if sid not in irc.servers:
-            log.warning('(%s) Possible desync? SID %s for %s.relay doesn\'t exist anymore', irc.name, sid, remoteirc.name)
-            # Our stored server doesn't exist anymore. This state is probably a holdover from a netsplit,
-            # so let's refresh it.
-            sid = spawn_relay_server(irc, remoteirc)
-        elif sid in irc.servers and irc.servers[sid].remote != remoteirc.name:
-            log.debug('(%s) Possible desync? SID %s for %s.relay doesn\'t exist anymore is mismatched (got %s.relay)', irc.name, irc.servers[sid].remote, remoteirc.name)
-            sid = spawn_relay_server(irc, remoteirc)
+        if (sid not in irc.servers) or (sid in irc.servers and irc.servers[sid].remote != remoteirc.name):
+            # SID changed in the meantime; abort.
+            return
 
         log.debug('(%s) get_relay_server_sid: got %s for %s.relay (round 2)', irc.name, sid, remoteirc.name)
         spawnlocks_servers[irc.name].release()
@@ -336,7 +336,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
 
     rsid = get_relay_server_sid(remoteirc, irc)
     if not rsid:
-        log.error('(%s) spawn_relay_user: aborting user spawn for %s/%s @ %s (failed to retrieve a '
+        log.debug('(%s) spawn_relay_user: aborting user spawn for %s/%s @ %s (failed to retrieve a '
                   'working SID).', irc.name, user, nick, remoteirc.name)
         return
     try:
@@ -505,9 +505,8 @@ def initialize_channel(irc, channel):
                 # from the config. Skip this.
                 continue
 
-            # Give each network a tiny bit of leeway to finish up its connection.
-            # This is better than just dropping users their completely.
-            if not remoteirc.connected.wait(TCONDITION_TIMEOUT):
+            # Remote net isn't ready yet, try again later.
+            if not remoteirc.connected.is_set():
                 continue
 
             # Join their (remote) users and set their modes, if applicable.
@@ -1475,16 +1474,20 @@ def handle_messages(irc, numeric, command, args):
         # Otherwise, the sender doesn't have a client representing them
         # on the remote network, and we won't have anything to send our
         # messages from.
+        # Note: don't spam ulined senders (e.g. services announcers) with
+        # these notices.
         if homenet not in remoteusers.keys():
-            irc.msg(numeric, 'You must be in a common channel '
-                      'with %r in order to send messages.' % \
-                      irc.users[target].nick, notice=True)
+            if not _is_uline(irc, numeric):
+                irc.msg(numeric, 'You must be in a common channel '
+                        'with %r in order to send messages.' % \
+                        irc.users[target].nick, notice=True)
             return
         remoteirc = world.networkobjects[homenet]
 
         if (not remoteirc.has_cap('can-spawn-clients')) and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
-            irc.msg(numeric, 'Private messages to users connected via Clientbot have '
-                    'been administratively disabled.', notice=True)
+            if not _is_uline(irc, numeric):
+                irc.msg(numeric, 'Private messages to users connected via Clientbot have '
+                        'been administratively disabled.', notice=True)
             return
 
         user = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)

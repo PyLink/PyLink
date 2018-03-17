@@ -87,7 +87,8 @@ def handle_stats(irc, source, command, args):
     try:
         permissions.check_permissions(irc, source, perms)
     except utils.NotAuthorizedError as e:
-        irc.msg(source, 'Error: %s' % e)  # Note, no irc.error() because this is not a command, but a handler
+        # Note, no irc.error() because this is not a command, but a handler
+        irc.msg(source, 'Error: %s' % e, notice=True)
         return
 
     log.info('(%s) /STATS %s requested by %s', irc.name, stats_type, irc.get_hostmask(source))
