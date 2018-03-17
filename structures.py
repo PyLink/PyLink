@@ -158,23 +158,6 @@ class IRCCaseInsensitiveSet(CaseInsensitiveSet):
     def __copy__(self):
         return self.__class__(self._irc, data=self._data.copy())
 
-class DeprecatedAttributesObject():
-    """
-    Object implementing deprecated attributes and warnings on access.
-    """
-    def __init__(self):
-        self.deprecated_attributes = {}
-
-    def __getattribute__(self, attr):
-        # Note: "self.deprecated_attributes" calls this too, so the != check is
-        # needed to prevent a recursive loop!
-        # Also ignore reserved names beginning with "__".
-        if attr != 'deprecated_attributes' and not attr.startswith('__') and attr in self.deprecated_attributes:
-            log.warning('Attribute %s.%s is deprecated: %s' % (self.__class__.__name__, attr,
-                        self.deprecated_attributes.get(attr)))
-
-        return object.__getattribute__(self, attr)
-
 class CamelCaseToSnakeCase():
     """
     Class which automatically converts missing attributes from camel case to snake case.

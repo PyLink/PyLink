@@ -44,14 +44,10 @@ class ChannelState(structures.IRCCaseInsensitiveDict):
 
         return self._data[key]
 
-class PyLinkNetworkCore(structures.DeprecatedAttributesObject, structures.CamelCaseToSnakeCase):
+class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
 
     def __init__(self, netname):
-        self.deprecated_attributes = {
-            'conf': 'Deprecated since 1.2; consider switching to conf.conf',
-            'botdata': "Deprecated since 1.2; consider switching to conf.conf['pylink']",
-        }
 
         self.loghandlers = []
         self.name = netname
@@ -1705,7 +1701,7 @@ class Server():
 
 IrcServer = Server
 
-class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnakeCase, structures.CopyWrapper):
+class Channel(structures.CamelCaseToSnakeCase, structures.CopyWrapper):
     """PyLink IRC channel class."""
 
     def __init__(self, irc, name=None):
@@ -1724,8 +1720,6 @@ class Channel(structures.DeprecatedAttributesObject, structures.CamelCaseToSnake
 
         # Saves the channel name (may be useful to plugins, etc.)
         self.name = name
-
-        self.deprecated_attributes = {'removeuser': 'Deprecated in 2.0; use remove_user() instead!'}
 
     def __repr__(self):
         return 'Channel(%s)' % self.name
