@@ -1543,8 +1543,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
             log.debug('(%s) No data to read, trying again later...', self.name)
             if self._aborted.wait(self.SOCKET_REPOLL_WAIT):
-                break
-            continue
+                return
         except OSError:
             # Suppress socket read warnings from lingering recv() calls if
             # we've been told to shutdown.
