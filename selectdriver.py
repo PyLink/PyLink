@@ -33,8 +33,11 @@ def unregister(irc):
     """
     Removes a network from the global selectors instance.
     """
-    log.debug('selectdriver: de-registering %s for network %s', irc._socket, irc.name)
-    selector.unregister(irc._socket)
+    if irc._socket.fileno() != -1:
+        log.debug('selectdriver: de-registering %s for network %s', irc._socket, irc.name)
+        selector.unregister(irc._socket)
+    else:
+        log.debug('selectdriver: skipping de-registering %s for network %s', irc._socket, irc.name)
 
 def start():
     """
