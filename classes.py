@@ -1304,6 +1304,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._ping_timer = None
         self._socket = None
         self._selector_key = None
+        self._buffer = b''
 
     def _init_vars(self, *args, **kwargs):
         super()._init_vars(*args, **kwargs)
@@ -1504,6 +1505,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         if self._ping_timer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
             self._ping_timer.cancel()
+        self._buffer = b''
         self._post_disconnect()
 
         if self._run_autoconnect():
@@ -1536,7 +1538,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """
         Message handler, called when select() has data to read.
         """
-        buf = b''
         data = b''
         try:
             data = self._socket.recv(2048)
@@ -1551,7 +1552,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 return
             raise
 
-        buf += data
+        self._buffer += data
         if not data:
             self._log_connection_error('(%s) Connection lost, disconnecting.', self.name)
             self.disconnect()
@@ -1561,8 +1562,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self.disconnect()
             return
 
-        while b'\n' in buf:
-            line, buf = buf.split(b'\n', 1)
+        while b'\n' in self._buffer:
+            line, self._buffer = self._buffer.split(b'\n', 1)
             line = line.strip(b'\r')
             line = line.decode(self.encoding, "replace")
             self.parse_irc_command(line)
