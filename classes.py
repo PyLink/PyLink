@@ -1508,8 +1508,14 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._buffer = b''
         self._post_disconnect()
 
-        if self._run_autoconnect():
-            self.connect()
+        def _reconnect():
+            # _run_autoconnect() will block and return True after the autoconnect
+            # delay has passed, if autoconnect is disabled. (We do not want it to
+            # block whatever is calling disconnect() though.)
+            if self._run_autoconnect():
+                self.connect()
+        t = threading.Thread(target=_reconnect, name="Reconnecting network %s" % self.name)
+        t.start()
 
     def handle_events(self, line):
         raise NotImplementedError
