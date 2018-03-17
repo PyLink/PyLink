@@ -19,7 +19,7 @@ def _process_conns():
     while not world.shutting_down.is_set():
         for socketkey, mask in selector.select(timeout=SELECT_TIMEOUT):
             irc = socketkey.data
-            if mask & selectors.EVENT_READ:
+            if mask & selectors.EVENT_READ and not irc._aborted.is_set():
                 irc._run_irc()
 
 def register(irc):
