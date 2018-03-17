@@ -1474,16 +1474,20 @@ def handle_messages(irc, numeric, command, args):
         # Otherwise, the sender doesn't have a client representing them
         # on the remote network, and we won't have anything to send our
         # messages from.
+        # Note: don't spam ulined senders (e.g. services announcers) with
+        # these notices.
         if homenet not in remoteusers.keys():
-            irc.msg(numeric, 'You must be in a common channel '
-                      'with %r in order to send messages.' % \
-                      irc.users[target].nick, notice=True)
+            if not _is_uline(irc, numeric):
+                irc.msg(numeric, 'You must be in a common channel '
+                        'with %r in order to send messages.' % \
+                        irc.users[target].nick, notice=True)
             return
         remoteirc = world.networkobjects[homenet]
 
         if (not remoteirc.has_cap('can-spawn-clients')) and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
-            irc.msg(numeric, 'Private messages to users connected via Clientbot have '
-                    'been administratively disabled.', notice=True)
+            if not _is_uline(irc, numeric):
+                irc.msg(numeric, 'Private messages to users connected via Clientbot have '
+                        'been administratively disabled.', notice=True)
             return
 
         user = get_remote_user(irc, remoteirc, numeric, spawn_if_missing=False)
