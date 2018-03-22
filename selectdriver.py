@@ -19,8 +19,12 @@ def _process_conns():
     while not world.shutting_down.is_set():
         for socketkey, mask in selector.select(timeout=SELECT_TIMEOUT):
             irc = socketkey.data
-            if mask & selectors.EVENT_READ and not irc._aborted.is_set():
-                irc._run_irc()
+            try:
+                if mask & selectors.EVENT_READ and not irc._aborted.is_set():
+                    irc._run_irc()
+            except:
+                log.exception('Error in select driver loop:')
+                continue
 
 def register(irc):
     """
