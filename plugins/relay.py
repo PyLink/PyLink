@@ -165,7 +165,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
         if char not in allowed_chars:
             nick = nick.replace(char, fallback_separator)
 
-    while irc.nick_to_uid(nick) and irc.nick_to_uid(nick) != uid:
+    while irc.nick_to_uid(nick) not in (None, uid):
         # The nick we want exists: Increase the separator length by 1 if the user was already
         # tagged, but couldn't be created due to a nick conflict. This can happen when someone
         # steals a relay user's nick.
