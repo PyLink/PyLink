@@ -1301,6 +1301,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._socket = None
         self._selector_key = None
         self._buffer = b''
+        self._reconnect_thread = None
 
     def _init_vars(self, *args, **kwargs):
         super()._init_vars(*args, **kwargs)
@@ -1471,9 +1472,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             if not self._aborted.is_set():
                 self.disconnect()
 
-            if not self._run_autoconnect():
-                return
-
     def disconnect(self):
         """Handle disconnects from the remote server."""
         self._pre_disconnect()
@@ -1510,8 +1508,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # block whatever is calling disconnect() though.)
             if self._run_autoconnect():
                 self.connect()
-        t = threading.Thread(target=_reconnect, name="Reconnecting network %s" % self.name)
-        t.start()
+
+        if self._reconnect_thread is None or not self._reconnect_thread.is_alive():
+            self._reconnect_thread = threading.Thread(target=_reconnect, name="Reconnecting network %s" % self.name)
+            self._reconnect_thread.start()
 
     def handle_events(self, line):
         raise NotImplementedError
