@@ -424,6 +424,9 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         # Internal hook signifying that a network has disconnected.
         self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
 
+        # Clear the to_lower cache.
+        self.to_lower.cache_clear()
+
     def _remove_client(self, numeric):
         """Internal function to remove a client from our internal state."""
         for c, v in self.channels.copy().items():
@@ -503,12 +506,11 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # Lock for updateTS to make sure only one thread can change the channel TS at one time.
         self._ts_lock = threading.Lock()
 
-    @staticmethod
-    @functools.lru_cache(maxsize=2048)
-    def _to_lower_core(text, casemapping='rfc1459'):
+    @functools.lru_cache(maxsize=8192)
+    def to_lower(self, text):
         if not text:
             return text
-        if casemapping == 'rfc1459':
+        if self.casemapping == 'rfc1459':
             text = text.replace('{', '[')
             text = text.replace('}', ']')
             text = text.replace('|', '\\')
@@ -516,11 +518,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # Encode the text as bytes first, and then lowercase it so that only ASCII characters are
         # changed. Unicode in channel names, etc. *is* case sensitive!
         return text.encode().lower().decode()
-
-    def to_lower(self, text):
-        """Returns a lowercase representation of text based on the IRC object's
-        casemapping (rfc1459 or ascii)."""
-        return self._to_lower_core(text, casemapping=self.casemapping)
 
     _NICK_REGEX = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
     @classmethod
