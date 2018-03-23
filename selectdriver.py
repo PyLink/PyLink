@@ -24,8 +24,6 @@ def _process_conns():
                     irc._run_irc()
             except:
                 log.exception('Error in select driver loop:')
-                if not irc._aborted.is_set():
-                    irc.disconnect()
                 continue
 
 def register(irc):
