@@ -387,34 +387,22 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0,
         if sbot:
             return sbot.uids.get(remoteirc.name)
 
-        log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
-                  threading.current_thread().name, inspect.currentframe().f_code.co_name)
-        if spawnlocks[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
-            # Be sort-of thread safe: lock the user spawns for the current net first.
-            u = None
-            try:
-                # Look up the existing user, stored here as dict entries in the format:
-                # {('ournet', 'UID'): {'remotenet1': 'UID1', 'remotenet2': 'UID2'}}
-                u = relayusers[(irc.name, user)][remoteirc.name]
-            except KeyError:
-                # User doesn't exist. Spawn a new one if requested.
-                if spawn_if_missing:
+        # Be sort-of thread safe: lock the user spawns for the current net first.
+        u = None
+        try:
+            # Look up the existing user, stored here as dict entries in the format:
+            # {('ournet', 'UID'): {'remotenet1': 'UID1', 'remotenet2': 'UID2'}}
+            u = relayusers[(irc.name, user)][remoteirc.name]
+        except KeyError:
+            # User doesn't exist. Spawn a new one if requested.
+            if spawn_if_missing:
+                log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
+                          threading.current_thread().name, inspect.currentframe().f_code.co_name)
+                if spawnlocks[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
                     u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged, reuse_sid=reuse_sid)
+                    spawnlocks[irc.name].release()
+        return u
 
-            # This is a sanity check to make sure netsplits and other state resets
-            # don't break the relayer. If it turns out there was a client in our relayusers
-            # cache for the requested UID, but it doesn't match the request,
-            # assume it was a leftover from the last split and replace it with a new one.
-            # XXX: this technically means that PyLink is desyncing somewhere, and that we should
-            # fix this in core properly...
-            if u and ((u not in remoteirc.users) or remoteirc.users[u].remote != (irc.name, user)):
-                log.warning('(%s) Possible desync? Got invalid relay UID %s for %s on %s',
-                            irc.name, u, irc.get_friendly_name(user), remoteirc.name)
-                u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged)
-
-            spawnlocks[irc.name].release()
-
-            return u
     else:
         log.debug('(%s) skipping spawn_relay_user(%s, %s, %s, ...); the local server (%s) is not ready yet',
                   irc.name, irc.name, remoteirc.name, user, irc.name)
