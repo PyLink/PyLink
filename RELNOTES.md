@@ -30,6 +30,10 @@
 #### Internal improvements
 - **Reading from sockets now uses select instead of one thread per network.**
     - This new code uses the Python selectors module, which automatically chooses the fastest polling backend available ([`epoll|kqueue|devpoll > poll > select`](https://github.com/python/cpython/blob/v3.6.5rc1/Lib/selectors.py#L599-L601)).
+- Optimized `irc.nick_to_uid` by having `PyLinkNetworkCore.users` and `classes.User` transparently maintain an index mapping nicks to UIDs
+    - This introduces a new `UserMapping` class, which stores User objects by UID and provides a `bynick` dict storing case-normalized nicks to lists of UIDs.
+    - `classes.User.nick` is now a property, where the setter implicitly updates the `bynick` index with a pre-computed case-normalized version of the nick (`User.lower_nick`)
+- Various relay optimizations.
 - Rewritten CTCP plugin, now extending to all service bots. [issue#468](https://github.com/GLolol/PyLink/issues/468), [issue#407](https://github.com/GLolol/PyLink/issues/407)
 - Relay no longer spams configured ULines with "message dropped because you aren't in a common channel" errors
 - The `endburst_delay` option to `spawn_server()` was removed from the protocol spec, and replaced by a private API used by protocols/inspircd and relay.
