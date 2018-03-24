@@ -1386,10 +1386,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
                 self._socket = context.wrap_socket(self._socket)
 
-            self._selector_key = selectdriver.register(self)
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
             self._socket.connect((ip, port))
             self._socket.settimeout(self.pingtimeout)
+            self._selector_key = selectdriver.register(self)
 
             # If SSL was enabled, optionally verify the certificate
             # fingerprint for some added security. I don't bother to check
