@@ -18,6 +18,8 @@ import queue
 import functools
 import string
 import re
+import collections
+import collections.abc
 
 try:
     import ircmatch
@@ -43,6 +45,131 @@ class ChannelState(structures.IRCCaseInsensitiveDict):
             return newchan
 
         return self._data[key]
+
+
+class User():
+    """PyLink IRC user class."""
+    def __init__(self, irc, nick, ts, uid, server, ident='null', host='null',
+                 realname='PyLink dummy client', realhost='null',
+                 ip='0.0.0.0', manipulatable=False, opertype='IRC Operator'):
+        self._nick = nick
+        self.lower_nick = irc.to_lower(nick)
+
+        self.ts = ts
+        self.uid = uid
+        self.ident = ident
+        self.host = host
+        self.realhost = realhost
+        self.ip = ip
+        self.realname = realname
+        self.modes = set()  # Tracks user modes
+        self.server = server
+        self._irc = irc
+
+        # Tracks PyLink identification status
+        self.account = ''
+
+        # Tracks oper type (for display only)
+        self.opertype = opertype
+
+        # Tracks external services identification status
+        self.services_account = ''
+
+        # Tracks channels the user is in
+        self.channels = structures.IRCCaseInsensitiveSet(self._irc)
+
+        # Tracks away message status
+        self.away = ''
+
+        # This sets whether the client should be marked as manipulatable.
+        # Plugins like bots.py's commands should take caution against
+        # manipulating these "protected" clients, to prevent desyncs and such.
+        # For "serious" service clients, this should always be False.
+        self.manipulatable = manipulatable
+
+        # Cloaked host for IRCds that use it
+        self.cloaked_host = None
+
+        # Stores service bot name if applicable
+        self.service = None
+
+    @property
+    def nick(self):
+        return self._nick
+
+    @nick.setter
+    def nick(self, newnick):
+        oldnick = self.lower_nick
+        self._nick = newnick
+        self.lower_nick = self._irc.to_lower(newnick)
+
+        # Update the irc.users bynick index:
+        if oldnick in self._irc.users.bynick:
+            # Remove existing value -> key mappings.
+            self._irc.users.bynick[oldnick].remove(self.uid)
+
+            # Remove now-empty keys as well.
+            if not self._irc.users.bynick[oldnick]:
+                del self._irc.users.bynick[oldnick]
+
+        # Update the new nick.
+        self._irc.users.bynick.setdefault(self.lower_nick, []).append(self.uid)
+
+    def __repr__(self):
+        return 'User(%s/%s)' % (self.uid, self.nick)
+IrcUser = User
+
+# Bidirectional dict based off https://stackoverflow.com/a/21894086
+class UserMapping(collections.abc.MutableMapping, structures.CopyWrapper):
+    """
+    A mapping storing User objects by UID, as well as UIDs by nick via
+    the 'bynick' attribute
+    """
+    def __init__(self, *, data=None):
+        if data is not None:
+            assert isinstance(data, dict)
+            self._data = data
+        else:
+            self._data = {}
+        self.bynick = collections.defaultdict(list)
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __setitem__(self, key, userobj):
+        assert isinstance(userobj, User), "UserMapping can only hold User objects"
+        if key in self._data:
+            log.warning('(%s) Attempting to replace User object for %r: %r -> %r', self.name,
+                        key, self._data.get(key), userobj)
+
+        self._data[key] = userobj
+        self.bynick.setdefault(userobj.lower_nick, []).append(key)
+
+    def __delitem__(self, key):
+        # Remove this entry from the bynick index
+        if self[key].lower_nick in self.bynick:
+            self.bynick[self[key].lower_nick].remove(key)
+
+            if not self.bynick[self[key].lower_nick]:
+                del self.bynick[self[key].lower_nick]
+
+        del self._data[key]
+
+    # Generic container methods. XXX: consider abstracting this out in structures?
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __contains__(self, key):
+        return self._data.__contains__(key)
+
+    def __copy__(self):
+        return self.__class__(data=self._data.copy())
 
 class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
@@ -133,7 +260,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         # Intialize the server, channel, and user indexes to be populated by
         # our protocol module.
         self.servers = {}
-        self.users = {}
+        self.users = UserMapping()
 
         # Two versions of the channels index exist in PyLink 2.0, and they are joined together
         # - irc._channels which implicitly creates channels on access (mostly used
@@ -445,9 +572,14 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
     def nick_to_uid(self, nick):
         """Looks up the UID of a user with the given nick, if one is present."""
         nick = self.to_lower(nick)
-        for k, v in self.users.copy().items():
-            if self.to_lower(v.nick) == nick:
-                return k
+
+        uids = self.users.bynick.get(nick, [])
+        if len(uids) > 1:
+            log.warning('(%s) Multiple UIDs found for nick %r: %r', self.name, nick, uids)
+        try:
+            return uids[0]
+        except IndexError:
+            return None
 
     def is_internal_client(self, numeric):
         """
@@ -1627,54 +1759,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 break
 
 Irc = IRCNetwork
-
-class User():
-    """PyLink IRC user class."""
-    def __init__(self, irc, nick, ts, uid, server, ident='null', host='null',
-                 realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0', manipulatable=False, opertype='IRC Operator'):
-        self.nick = nick
-        self.ts = ts
-        self.uid = uid
-        self.ident = ident
-        self.host = host
-        self.realhost = realhost
-        self.ip = ip
-        self.realname = realname
-        self.modes = set()  # Tracks user modes
-        self.server = server
-        self._irc = irc
-
-        # Tracks PyLink identification status
-        self.account = ''
-
-        # Tracks oper type (for display only)
-        self.opertype = opertype
-
-        # Tracks external services identification status
-        self.services_account = ''
-
-        # Tracks channels the user is in
-        self.channels = structures.IRCCaseInsensitiveSet(self._irc)
-
-        # Tracks away message status
-        self.away = ''
-
-        # This sets whether the client should be marked as manipulatable.
-        # Plugins like bots.py's commands should take caution against
-        # manipulating these "protected" clients, to prevent desyncs and such.
-        # For "serious" service clients, this should always be False.
-        self.manipulatable = manipulatable
-
-        # Cloaked host for IRCds that use it
-        self.cloaked_host = None
-
-        # Stores service bot name if applicable
-        self.service = None
-
-    def __repr__(self):
-        return 'User(%s/%s)' % (self.uid, self.nick)
-IrcUser = User
 
 class Server():
     """PyLink IRC server class.
