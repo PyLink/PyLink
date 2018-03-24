@@ -170,7 +170,7 @@ def main():
     parser.add_argument("-s", "--stop", help="stops the PyLink instance with the given config file", action='store_true')
     parser.add_argument("-R", "--rehash", help="rehashes the PyLink instance with the given config file", action='store_true')
     parser.add_argument("-d", "--daemonize", help="[experimental] daemonizes the PyLink instance on POSIX systems", action='store_true')
-    parser.add_argument("-t", "--trace", help="traces through running Python code; do not use in production instances!", action='store_true')
+    parser.add_argument("-t", "--trace", help="traces through running Python code; useful for debugging", action='store_true')
     parser.add_argument('--trace-ignore-mods', help='comma-separated list of extra modules to ignore when tracing', action='store', default='')
     parser.add_argument('--trace-ignore-dirs', help='comma-separated list of extra directories to ignore when tracing', action='store', default='')
     args = parser.parse_args()
