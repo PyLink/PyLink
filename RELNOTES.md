@@ -11,6 +11,7 @@
 - The `raw` command has been split into a new plugin (`plugins/raw.py`) with two permissions: `raw.raw` for Clientbot networks, and `raw.raw.unsupported_network` for other protocols. Using raw commands outside Clientbot is not supported. [issue#565](https://github.com/GLolol/PyLink/issues/565)
 - The servermaps plugin now uses two perms for `map` and `localmap`: `servermaps.map` and `servermaps.localmap` respectively
 - The servermaps plugin now shows the uplink server name for Clientbot links
+- Added `--trace / -t` options to the launcher for integration with Python's `trace` module.
 
 #### Bug fixes
 - protocols/clientbot: fix errors when connecting to networks with mixed-case server names (e.g. AfterNET)
