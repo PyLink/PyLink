@@ -1387,7 +1387,13 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 self._socket = context.wrap_socket(self._socket)
 
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
-            self._socket.connect((ip, port))
+
+            try:
+                self._socket.connect((ip, port))
+            except (ssl.SSLError, OSError):
+                log.exception('Unable to connect to network %r', self.name)
+                self._start_reconnect()
+                return
             self._socket.settimeout(self.pingtimeout)
             self._selector_key = selectdriver.register(self)
 
@@ -1498,17 +1504,23 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self._ping_timer.cancel()
         self._buffer = b''
         self._post_disconnect()
+        self._start_reconnect()
 
+    def _start_reconnect(self):
+        """Schedules a reconnection to the network."""
         def _reconnect():
             # _run_autoconnect() will block and return True after the autoconnect
-            # delay has passed, if autoconnect is disabled. (We do not want it to
-            # block whatever is calling disconnect() though.)
+            # delay has passed, if autoconnect is disabled. We do not want it to
+            # block whatever is calling disconnect() though, so we run it in a new
+            # thread.
             if self._run_autoconnect():
                 self.connect()
 
         if self._reconnect_thread is None or not self._reconnect_thread.is_alive():
             self._reconnect_thread = threading.Thread(target=_reconnect, name="Reconnecting network %s" % self.name)
             self._reconnect_thread.start()
+        else:
+            log.debug('(%s) Ignoring attempt to reschedule reconnect as one is in progress.', self.name)
 
     def handle_events(self, line):
         raise NotImplementedError
