@@ -9,23 +9,34 @@
 #### Feature changes
 - **Reverted the commit making SIGHUP shutdown the PyLink daemon**. Now, SIGUSR1 and SIGHUP both trigger a rehash, while SIGTERM triggers a shutdown.
 - The `raw` command has been split into a new plugin (`plugins/raw.py`) with two permissions: `raw.raw` for Clientbot networks, and `raw.raw.unsupported_network` for other protocols. Using raw commands outside Clientbot is not supported. [issue#565](https://github.com/GLolol/PyLink/issues/565)
+- The servermaps plugin now uses two perms for `map` and `localmap`: `servermaps.map` and `servermaps.localmap` respectively
+- The servermaps plugin now shows the uplink server name for Clientbot links
 
 #### Bug fixes
 - protocols/clientbot: fix errors when connecting to networks with mixed-case server names (e.g. AfterNET)
 - relay: fix KeyError when a local client is kicked from a claimed channel. [issue#572](https://github.com/GLolol/PyLink/issues/572)
+- Fix `irc.parse_modes()` incorrectly mangling modes changes like `+b-b *!*@test.host *!*@test.host` into `+b *!*@test.host`. [issue#573](https://github.com/GLolol/PyLink/issues/573)
 - automode: fix handling of channels with multiple \#'s in them
 - launcher: prevent protocol module loading errors (e.g. non-existent protocol module) from blocking the setup of other networks.
     - This fixes a side-effect which can cause relay to stop functioning (`world.started` is never set)
+- relay_clientbot: fix `STATUSMSG` (`@#channel`) notices from being relayed to channels that it shouldn't
 - Fixed various 2.0-alpha2 regressions:
     - Relay now relays service client messages as PRIVMSG and P10 WALL\* commands as NOTICE
     - protocols/inspircd: fix supported modules list being corrupted when an indirectly linked server shuts down. [issue#567](https://github.com/GLolol/PyLink/issues/567)
-- commands: fix 'showchan' displaying status prefixes in reverse
+- commands: fix `showchan` displaying status prefixes in reverse
+- stats: route permission error replies to notice instead of PRIVMSG
+    - This prevents "Unknown command" flood loops with services which poll `/stats` on link.
 
 #### Internal improvements
+- **Reading from sockets now uses select instead of one thread per network.**
+    - This new code uses the Python selectors module, which automatically chooses the fastest polling backend available ([`epoll|kqueue|devpoll > poll > select`](https://github.com/python/cpython/blob/v3.6.5rc1/Lib/selectors.py#L599-L601)).
 - Rewritten CTCP plugin, now extending to all service bots. [issue#468](https://github.com/GLolol/PyLink/issues/468), [issue#407](https://github.com/GLolol/PyLink/issues/407)
+- Relay no longer spams configured ULines with "message dropped because you aren't in a common channel" errors
 - The `endburst_delay` option to `spawn_server()` was removed from the protocol spec, and replaced by a private API used by protocols/inspircd and relay.
 - New API: hook functions can now block further execution from other handlers by returning False. [issue#547](https://github.com/GLolol/PyLink/issues/547)
 - automode: replace assert checks with proper exceptions
+- Renamed methods in log, utils, conf to snake case. [issue#523](https://github.com/GLolol/PyLink/issues/523)
+- Remove `structures.DeprecatedAttributesObject`; it's vastly inefficient for what it accomplishes
 
 # PyLink 2.0-alpha2 (2018-01-16)
 This release includes all changes from 1.2.2-dev, plus the following:
