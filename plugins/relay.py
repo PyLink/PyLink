@@ -294,7 +294,7 @@ def get_relay_server_sid(irc, remoteirc, spawn_if_missing=True):
         spawnlocks_servers[irc.name].release()
         return sid
 
-def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
+def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
     """
     Spawns a relay user representing "user" from "irc" (the local network) on remoteirc (the target network).
     """
@@ -303,6 +303,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
         # The query wasn't actually a valid user, or the network hasn't
         # been connected yet... Oh well!
         return
+
     nick = normalize_nick(remoteirc, irc.name, userobj.nick, times_tagged=times_tagged)
     # Truncate idents at 10 characters, because TS6 won't like them otherwise!
     ident = userobj.ident[:10]
@@ -311,8 +312,8 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
     realname = userobj.realname
     modes = set(get_supported_umodes(irc, remoteirc, userobj.modes))
     opertype = ''
-    if ('o', None) in userobj.modes:
 
+    if ('o', None) in userobj.modes:
         # Try to get the oper type, adding an "(on <networkname>)" suffix similar to what
         # Janus does.
         if hasattr(userobj, 'opertype'):
@@ -334,11 +335,15 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
         if hideoper_mode and use_hideoper:
             modes.add((hideoper_mode, None))
 
-    rsid = get_relay_server_sid(remoteirc, irc)
-    if not rsid:
-        log.debug('(%s) spawn_relay_user: aborting user spawn for %s/%s @ %s (failed to retrieve a '
-                  'working SID).', irc.name, user, nick, remoteirc.name)
-        return
+    if reuse_sid:
+        rsid = reuse_sid
+    else:
+        rsid = get_relay_server_sid(remoteirc, irc)
+        if not rsid:
+            log.debug('(%s) spawn_relay_user: aborting user spawn for %s/%s @ %s (failed to retrieve a '
+                      'working SID).', irc.name, user, nick, remoteirc.name)
+            return
+
     try:
         showRealIP = conf.conf['relay']['show_ips'] and not \
                      irc.serverdata.get('relay_no_ips') and not \
@@ -369,7 +374,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0):
     relayusers[(irc.name, user)][remoteirc.name] = u
     return u
 
-def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0):
+def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0, reuse_sid=None):
     """
     Fetches and returns the relay client UID representing "user" on the remote network "remoteirc",
     spawning a new user if one doesn't exist and spawn_if_missing is True.
@@ -394,7 +399,7 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0)
             except KeyError:
                 # User doesn't exist. Spawn a new one if requested.
                 if spawn_if_missing:
-                    u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged)
+                    u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged, reuse_sid=reuse_sid)
 
             # This is a sanity check to make sure netsplits and other state resets
             # don't break the relayer. If it turns out there was a client in our relayusers
@@ -708,13 +713,16 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
             # just skip it.
             return
 
+        # This is a batch-like event, so try to reuse a relay server SID as much as possible.
+        rsid = get_relay_server_sid(remoteirc, irc)
+
         for user in users.copy():
             if is_relay_client(irc, user):
                 # Don't clone relay clients; that'll cause bad infinite loops.
                 continue
 
             assert user in irc.users, "(%s) relay.relay_joins: How is this possible? %r isn't in our user database." % (irc.name, user)
-            u = get_remote_user(irc, remoteirc, user)
+            u = get_remote_user(irc, remoteirc, user, reuse_sid=rsid)
 
             if not u:
                 continue
@@ -744,7 +752,6 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
             # Look at whether we should relay this join as a regular JOIN, or a SJOIN.
             # SJOIN will be used if either the amount of users to join is > 1, or there are modes
             # to be set on the joining user.
-            rsid = get_relay_server_sid(remoteirc, irc)
             if burst or len(queued_users) > 1 or queued_users[0][0]:
                 modes = get_supported_cmodes(irc, remoteirc, channel, irc.channels[channel].modes)
 
