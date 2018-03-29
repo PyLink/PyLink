@@ -117,7 +117,7 @@ def load_conf(filename, errors_fatal=True, logger=None):
     confname = os.path.splitext(os.path.basename(filename))[0]
     try:
         with open(filename, 'r') as f:
-            conf = yaml.load(f)
+            conf = yaml.safe_load(f)
             conf = _validate_conf(conf, logger=logger)
     except Exception as e:
         e = 'Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e)
