@@ -1612,7 +1612,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._pre_disconnect()
 
         if self._socket is not None:
-            selectdriver.unregister(self)
+            try:
+                selectdriver.unregister(self)
+            except KeyError:
+                pass
             try:
                 log.debug('(%s) disconnect: Shutting down socket.', self.name)
                 self._socket.shutdown(socket.SHUT_RDWR)
@@ -1636,6 +1639,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self._ping_timer.cancel()
         self._buffer = b''
         self._post_disconnect()
+
+        # Clear old sockets.
+        self._socket = None
+
         self._start_reconnect()
 
     def _start_reconnect(self):
