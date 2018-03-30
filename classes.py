@@ -36,6 +36,7 @@ class ProtocolError(RuntimeError):
 
 class Irc(utils.DeprecatedAttributesObject):
     """Base IRC object for PyLink."""
+    SOCKET_REPOLL_WAIT = 1.0
 
     def __init__(self, netname, proto, conf):
         """
@@ -433,9 +434,13 @@ class Irc(utils.DeprecatedAttributesObject):
         buf = b""
         data = b""
         while not self.aborted.is_set():
-
             try:
                 data = self.socket.recv(2048)
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                log.debug('(%s) No data to read, trying again later...', self.name)
+                if self.aborted.wait(self.SOCKET_REPOLL_WAIT):
+                    return
+                continue
             except OSError:
                 # Suppress socket read warnings from lingering recv() calls if
                 # we've been told to shutdown.
