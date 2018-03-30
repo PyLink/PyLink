@@ -27,7 +27,7 @@ def _login(irc, source, username):
         return
 
     elif require_oper and not irc.isOper(source, allowAuthed=False):
-        irc.error("You must be opered up to log in to %r." % username)
+        irc.error("You must be opered to log in to %r." % username)
         log.warning("(%s) Failed login to %r from %s (needs oper)", irc.name, username, irc.getHostmask(source))
         return
 
