@@ -1720,6 +1720,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
     def _send(self, data):
         """Sends raw text to the uplink server."""
+        if self._aborted.is_set():
+            log.debug("(%s) Not sending message %r since the connection is dead", self.name, data)
+            return
+
         # Safeguard against newlines in input!! Otherwise, each line gets
         # treated as a separate command, which is particularly nasty.
         data = data.replace('\n', ' ')
@@ -1760,6 +1764,11 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 elif self not in world.networkobjects.values():
                     log.debug('(%s) Stopping stale queue thread; no longer matches world.networkobjects', self.name)
                     break
+                elif self._aborted.is_set():
+                    # The _aborted flag may have changed while we were waiting for an item,
+                    # so check for it again.
+                    log.debug('(%s) Stopping queue thread since the connection is dead', self.name)
+                    return
                 elif data:
                     self._send(data)
             else:
