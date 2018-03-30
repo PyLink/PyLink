@@ -15,12 +15,15 @@ from pylinkirc.log import log
 
 def _login(irc, source, username):
     """Internal function to process logins."""
+    # Mangle case before we start checking for login data.
+    accounts = {k.lower(): v for k, v in conf.conf['login'].get('accounts', {}).items()}
 
     if irc.is_internal_client(source):
         irc.error("Cannot use 'identify' via a command proxy.")
         return
 
-    logindata = conf.conf['login'].get('accounts', {}).get(username, {})
+    logindata = accounts.get(username.lower(), {})
+
     network_filter = logindata.get('networks')
     require_oper = logindata.get('require_oper', False)
     hosts_filter = logindata.get('hosts', [])
