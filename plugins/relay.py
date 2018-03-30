@@ -73,12 +73,16 @@ def die(irc=None):
     """Deinitialize PyLink Relay by quitting all relay clients and saving the
     relay DB."""
 
-    # For every connected network:
-    for ircobj in world.networkobjects.values():
-        # 1) SQUIT every relay subserver.
-        for server, sobj in ircobj.servers.copy().items():
-            if hasattr(sobj, 'remote'):
-                ircobj.proto.squit(ircobj.sid, server, text="Relay plugin unloaded.")
+    if not world.shutting_down.is_set():
+        # Speed up shutdowns significantly by not manually splitting off every relay server -
+        # the connection will soon be gone anyways.
+
+        # For every connected network:
+        for ircobj in world.networkobjects.values():
+            # 1) SQUIT every relay subserver.
+            for server, sobj in ircobj.servers.copy().items():
+                if hasattr(sobj, 'remote'):
+                    ircobj.proto.squit(ircobj.sid, server, text="Relay plugin unloaded.")
 
     # 2) Clear our internal servers and users caches.
     relayservers.clear()
