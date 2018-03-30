@@ -59,7 +59,13 @@ def cb_relay_core(irc, source, command, args):
 
                 real_command = 'ACTION'
 
-            elif not utils.isChannel(args['target']):
+            # We only handle # channels - this skips utils.isChannel() so that
+            # @#channel messages aren't incorrectly interpreted as non-channel
+            # specific.
+            # A more thorough fix for this bug exists in 2.0[1] but depends on
+            # somewhat invasive changes to how relay handles STATUSMSG entirely.
+            # [1]: https://github.com/GLolol/PyLink/commit/57334183
+            elif '#' not in args['target']:
                 # Target is a user; handle this accordingly.
                 if relay_conf.get('allow_clientbot_pms'):
                     real_command = 'PNOTICE' if args.get('is_notice') else 'PM'
@@ -111,7 +117,7 @@ def cb_relay_core(irc, source, command, args):
 
             # Figure out where the message is destined to.
             target = args.get('channel') or args.get('target')
-            if target is None or not (utils.isChannel(target) or private):
+            if target is None or not ('#' in target or private):
                 # Non-channel specific message (e.g. QUIT or NICK). If this isn't a PM, figure out
                 # all channels that the sender shares over the relay, and relay them to those
                 # channels.
