@@ -579,7 +579,7 @@ def get_supported_umodes(irc, remoteirc, modes):
             # in the supported modes list for the TARGET network, and set that
             # mode character as the one we're setting, if it exists.
             if modechar == m:
-                if name not in whitelisted_umodes:
+                if name not in WHITELISTED_UMODES:
                     log.debug("(%s) relay.get_supported_umodes: skipping mode (%r, %r) because "
                               "it isn't a whitelisted (safe) mode for relay.",
                               irc.name, modechar, arg)
@@ -712,22 +712,74 @@ def relay_part(irc, channel, user):
             remoteirc.proto.quit(remoteuser, 'Left all shared channels.')
             del relayusers[(irc.name, user)][remoteirc.name]
 
+WHITELISTED_CMODES = {
+     'admin',
+     'adminonly',
+     'allowinvite',
+     'autoop',
+     'ban',
+     'banexception',
+     'blockcolor',
+     'blockcaps',
+     'blockhighlight',
+     'exemptchanops',
+     'filter',
+     'flood',
+     'flood_unreal',
+     'freetarget',
+     'halfop',
+     'hidequits',
+     'history',
+     'invex',
+     'inviteonly',
+     'joinflood',
+     'key',
+     'kicknorejoin',
+     'kicknorejoin_insp',
+     'largebanlist',
+     'limit',
+     'moderated',
+     'nickflood',
+     'noamsg',
+     'noctcp',
+     'noextmsg',
+     'noforwards',
+     'noinvite',
+     'nokick',
+     'noknock',
+     'nonick',
+     'nonotice',
+     'op',
+     'operonly',
+     'opmoderated',
+     'owner',
+     'private',
+     'quiet',
+     'regmoderated',
+     'regonly',
+     'repeat',
+     'repeat_insp',
+     'secret',
+     'sslonly',
+     'stripcolor',
+     'topiclock',
+     'voice'
+}
+WHITELISTED_UMODES = {
+     'bot',
+     'hidechans',
+     'hideidle',
+     'hideoper',
+     'invisible',
+     'noctcp',
+     'oper',
+     'regdeaf',
+     'stripcolor',
+     'wallops'
+}
+CLIENTBOT_WHITELISTED_CMODES = {'admin', 'ban', 'banexception', 'halfop', 'invex', 'op', 'owner', 'voice'}
+CLIENTBOT_MODESYNC_OPTIONS = ('none', 'half', 'full')
 
-whitelisted_cmodes = {'admin', 'allowinvite', 'autoop', 'ban', 'banexception',
-                      'blockcolor', 'halfop', 'invex', 'inviteonly', 'key',
-                      'limit', 'moderated', 'noctcp', 'noextmsg', 'nokick',
-                      'noknock', 'nonick', 'nonotice', 'op', 'operonly',
-                      'opmoderated', 'owner', 'private', 'regonly',
-                      'regmoderated', 'secret', 'sslonly', 'adminonly',
-                      'stripcolor', 'topiclock', 'voice', 'flood',
-                      'flood_unreal', 'joinflood', 'freetarget',
-                      'noforwards', 'noinvite'}
-whitelisted_umodes = {'bot', 'hidechans', 'hideoper', 'invisible', 'oper',
-                      'regdeaf', 'stripcolor', 'noctcp', 'wallops',
-                      'hideidle'}
-clientbot_whitelisted_cmodes = {'admin', 'ban', 'banexception',
-                                'halfop', 'invex', 'op', 'owner', 'voice'}
-modesync_options = ('none', 'half', 'full')
 def get_supported_cmodes(irc, remoteirc, channel, modes):
     """
     Filters a channel mode change to the modes supported by the target IRCd.
@@ -737,18 +789,18 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
         return []
 
     # Handle Clientbot-specific mode whitelist settings
-    whitelist = whitelisted_cmodes
+    whitelist = WHITELISTED_CMODES
     if remoteirc.protoname == 'clientbot' or irc.protoname == 'clientbot':
         modesync = conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower()
-        if modesync not in modesync_options:
+        if modesync not in CLIENTBOT_MODESYNC_OPTIONS:
             modesync = 'none'
             log.warning('relay: Bad clientbot_modesync option %s: valid values are %s',
-                        modesync, modesync_options)
+                        modesync, CLIENTBOT_MODESYNC_OPTIONS)
 
         if modesync == 'none':
             return []  # Do nothing
         elif modesync == 'half':
-            whitelist = clientbot_whitelisted_cmodes
+            whitelist = CLIENTBOT_WHITELISTED_CMODES
 
     supported_modes = []
     for modepair in modes:
