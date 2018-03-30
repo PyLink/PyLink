@@ -137,7 +137,7 @@ class UserMapping(collections.abc.MutableMapping, structures.CopyWrapper):
         return self._data[key]
 
     def __setitem__(self, key, userobj):
-        assert isinstance(userobj, User), "UserMapping can only hold User objects"
+        assert hasattr(userobj, 'lower_nick'), "Cannot add object without lower_nick attribute to UserMapping"
         if key in self._data:
             log.warning('(%s) Attempting to replace User object for %r: %r -> %r', self.name,
                         key, self._data.get(key), userobj)
