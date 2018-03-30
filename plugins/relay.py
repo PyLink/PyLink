@@ -881,7 +881,7 @@ WHITELISTED_UMODES = {
      'stripcolor',
      'wallops'
 }
-CLIENTBOT_WHITELISTED_UMODES = {'admin', 'ban', 'banexception', 'halfop', 'invex', 'op', 'owner', 'voice'}
+CLIENTBOT_WHITELISTED_CMODES = {'admin', 'ban', 'banexception', 'halfop', 'invex', 'op', 'owner', 'voice'}
 CLIENTBOT_MODESYNC_OPTIONS = ('none', 'half', 'full')
 def get_supported_cmodes(irc, remoteirc, channel, modes):
     """
@@ -903,7 +903,7 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
         if modesync == 'none':
             return []  # Do nothing
         elif modesync == 'half':
-            whitelist = CLIENTBOT_WHITELISTED_UMODES
+            whitelist = CLIENTBOT_WHITELISTED_CMODES
 
     supported_modes = []
     for modepair in modes:
