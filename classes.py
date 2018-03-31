@@ -1609,6 +1609,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
     def disconnect(self):
         """Handle disconnects from the remote server."""
+        if self._aborted.is_set():
+            return
+
         self._pre_disconnect()
 
         if self._socket is not None:
