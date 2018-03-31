@@ -62,7 +62,7 @@ Unofficial Ubuntu packages for PyLink are available via two PPAs for Ubuntu 14.0
 Upon installing the `pylink` package, example configuration and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/) through the `pylink-doc` package.
 
 - Stable releases: [PyLink Stable PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink)
-- Nightly builds (devel branch): [PyLink Nightly Builds PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink-nightly)
+- Nightly builds (of the devel branch): [PyLink Nightly Builds PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink-nightly) - Only supported on Ubuntu 16.04 and higher
 
 ## Configuration
 
