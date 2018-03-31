@@ -167,7 +167,7 @@ def main():
     parser = argparse.ArgumentParser(description='Starts an instance of PyLink IRC Services.')
     parser.add_argument('config', help='specifies the path to the config file (defaults to pylink.yml)', nargs='?', default='pylink.yml')
     parser.add_argument("-v", "--version", help="displays the program version and exits", action='store_true')
-    parser.add_argument("-c", "--check-pid", help="no-op; kept for compatiblity with PyLink 1.x", action='store_true')
+    parser.add_argument("-c", "--check-pid", help="no-op; kept for compatibility with PyLink <= 1.2.x", action='store_true')
     parser.add_argument("-n", "--no-pid", help="skips generating and checking PID files", action='store_true')
     parser.add_argument("-r", "--restart", help="restarts the PyLink instance with the given config file", action='store_true')
     parser.add_argument("-s", "--stop", help="stops the PyLink instance with the given config file", action='store_true')
