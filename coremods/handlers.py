@@ -181,11 +181,11 @@ def _state_cleanup_core(irc, source, channel):
                       irc.name, source, irc.users[source].nick)
             irc._remove_client(source)
 
-def stats_cleanup_part(irc, source, command, args):
+def _state_cleanup_part(irc, source, command, args):
     for channel in args['channels']:
         _state_cleanup_core(irc, source, channel)
-utils.add_hook(stats_cleanup_part, 'PART', priority=-100)
+utils.add_hook(_state_cleanup_part, 'PART', priority=-100)
 
-def stats_cleanup_kick(irc, source, command, args):
+def _state_cleanup_kick(irc, source, command, args):
     _state_cleanup_core(irc, args['target'], args['channel'])
-utils.add_hook(stats_cleanup_kick, 'KICK', priority=-100)
+utils.add_hook(_state_cleanup_kick, 'KICK', priority=-100)
