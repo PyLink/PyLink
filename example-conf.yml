@@ -221,9 +221,9 @@ servers:
         #relay_forcetag_nicks: ["someuser", "Guest*"]
 
         # Sets the suffix that relay subservers on this network should use.
-        # If not specified per network, falls back to the value at
-        # relay:server_suffix or "relay" if that is not set.
-        #server_suffix: "relay.yournet.net"
+        # If not specified per network, this falls back to the value at
+        # relay::server_suffix, or "relay" if that is also not set.
+        #relay_server_suffix: "relay.yournet.net"
 
         # Determines whether relay will tag nicks on this network. This overrides the relay::tag_nicks
         # option on a per network-basis.
@@ -690,7 +690,8 @@ relay:
     allow_clientbot_pms: false
 
     # Sets the suffix that relay subservers should use. Defaults to "relay" (as in net1.relay,
-    # net2.relay, etc.) if not specified. This can also be set per-network.
+    # net2.relay, etc.) if not specified. This can also be set per-network via
+    # servers::<netname>::relay_server_suffix.
     #server_suffix: "relay.yournet.net"
 
     # Sets whether Clientbot mode sync will be enabled. Valid options:

@@ -230,7 +230,7 @@ def spawn_relay_server(irc, remoteirc):
     """
     if irc.connected.is_set():
         try:
-            suffix = irc.serverdata.get('server_suffix', conf.conf.get('relay', {}).get('server_suffix', 'relay'))
+            suffix = irc.serverdata.get('relay_server_suffix', conf.conf.get('relay', {}).get('server_suffix', 'relay'))
             # Strip any leading or trailing .'s
             suffix = suffix.strip('.')
 
