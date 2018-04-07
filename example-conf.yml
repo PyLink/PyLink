@@ -255,19 +255,21 @@ servers:
         # these two fields to "*" and enable SSL with a cert and key file.
         recvpass: "coffee"
         sendpass: "tea"
+
         #ssl: true
         #ssl_certfile: mycert.pem
         #ssl_keyfile: mycert.pem
-
         hostname: "pylink.example.com"
         sid: "2PY"
-        netname: "Network name: this should match your UnrealIRCd config"
         sidrange: "8##"
         protocol: "unreal"
         autoconnect: 10
 
-        # You can also define network-specific nicks, idents, and hosts for any service
-        # bot using the configuration options "servicename_nick", etc.
+        # Sets the full network name, used for display purposes.
+        netname: "Network name"
+
+        # You can also define network-specific nicks, idents, and hosts for various service
+        # bots, using the configuration options "servicename_nick", etc.
         #pylink_nick: MagicServ
         #pylink_ident: magicserv
         #pylink_host: magicserv.mynet.net
@@ -299,7 +301,7 @@ servers:
         #channels: ["#lounge"]
         protocol: p10
         autoconnect: 10
-        netname: "Change this"
+        netname: "Network name"
 
         # Configures the relay separator. Note: /'s in nicks are automatically translated to |
         # for IRCds other than Unreal and InspIRCd, since they are not supported in nicks.
@@ -365,7 +367,7 @@ servers:
         sendpass: "abcd"
         hostname: "pylink.example.com"
         sid: "8PY"
-        netname: "Your Network Name"
+        netname: "Network name"
         sidrange: "8##"
 
         protocol: "ts6"
@@ -393,7 +395,7 @@ servers:
         # Optional server password.
         #sendpass: "wastedbytes103"
 
-        netname: "Change this"
+        netname: "Network name"
         #channels: ["#this-works-as-usual"]
         protocol: "clientbot"
 
@@ -432,7 +434,7 @@ servers:
         # SASL PLAIN requires the sasl_username and sasl_password options to be set, while
         # SASL EXTERNAL requires ssl, ssl_certfile, and ssl_keyfile to work.
         #sasl_mechanism: "PLAIN"
-        #sasl_username: "mIRCsKripterz"
+        #sasl_username: "abc"
         #sasl_password: "somestrangepassword"
 
         # Defines the SASL timeout - this defaults to 15 seconds.
@@ -442,6 +444,7 @@ servers:
         # connected, as services become available throughout netsplits and reconnects.
         # Note: This requires an IRC server capable of IRCv3.2 cap-notify and sasl:
         # InspIRCd 3.x and charybdis 4+ are some compatible IRCds as of 2016-12-19.
+        # This defaults to false.
         #sasl_reauth: true
 
         # Raw IRC messages to send on connect. As of 2.0-alpha2, expansions such as $nick, $ident,
