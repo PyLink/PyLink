@@ -1639,6 +1639,15 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
         self._pre_disconnect()
 
+        # Stop the queue thread.
+        if self._queue is not None:
+            try:
+                # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
+                with self._queue.mutex:
+                    self._queue.queue[0] = None
+            except IndexError:
+                self._queue.put(None)
+
         if self._socket is not None:
             try:
                 selectdriver.unregister(self)
@@ -1650,19 +1659,11 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             except:
                 log.debug('(%s) Error on socket shutdown:', self.name, exc_info=True)
 
+            log.debug('(%s) disconnect: waiting for write half of socket %s to shutdown', self.name, self._socket)
             # Wait for the write half to shut down when applicable.
             if self._queue_thread is None or self._aborted_send.wait(10):
                 log.debug('(%s) disconnect: closing socket %s', self.name, self._socket)
                 self._socket.close()
-
-        # Stop the queue thread.
-        if self._queue is not None:
-            try:
-                # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
-                with self._queue.mutex:
-                    self._queue.queue[0] = None
-            except IndexError:
-                self._queue.put(None)
 
         # Stop the ping timer.
         if self._ping_timer:
