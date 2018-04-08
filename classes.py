@@ -1462,7 +1462,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         else:
             log.error(*args, **kwargs)
 
-    def connect(self):
+    def _connect(self):
         """
         Connects to the network.
         """
@@ -1481,11 +1481,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # Set the socket bind if applicable.
             if 'bindhost' in self.serverdata:
                 self._socket.bind((self.serverdata['bindhost'], 0))
-
-            # Set the connection timeouts. Initial connection timeout is a
-            # lot smaller than the timeout after we've connected; this is
-            # intentional.
-            self._socket.settimeout(self.pingfreq)
 
             # Resolve hostnames if it's not an IP address already.
             old_ip = ip
@@ -1520,12 +1515,25 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
 
+            # Use a lower timeout for the initial connect.
+            self._socket.settimeout(self.pingfreq)
+
             try:
                 self._socket.connect((ip, port))
             except (ssl.SSLError, OSError):
                 log.exception('Unable to connect to network %r', self.name)
                 self._start_reconnect()
                 return
+
+            if self not in world.networkobjects.values():
+                log.debug("(%s) _connect: disconnecting socket %s as the network was removed",
+                          self.name, self._socket)
+                try:
+                    self._socket.shutdown(socket.SHUT_RDWR)
+                finally:
+                    self._socket.close()
+                return
+
             self._socket.settimeout(self.pingtimeout)
             self._selector_key = selectdriver.register(self)
 
@@ -1607,6 +1615,15 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             if not self._aborted.is_set():
                 self.disconnect()
 
+    def connect(self):
+        """
+        Starts a thread to connect the network.
+        """
+        connect_thread = threading.Thread(target=self._connect, daemon=True,
+                                          name="Connect thread for %s" %
+                                          self.name)
+        connect_thread.start()
+
     def disconnect(self):
         """Handle disconnects from the remote server."""
         if self._aborted.is_set():
@@ -1658,7 +1675,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             if self._run_autoconnect():
                 self.connect()
 
-        if self._reconnect_thread is None or not self._reconnect_thread.is_alive():
+        if self not in world.networkobjects.values():
+            log.debug('(%s) _start_reconnect: Stopping reconnect timer as the network was removed', self.name)
+            return
+        elif self._reconnect_thread is None or not self._reconnect_thread.is_alive():
             self._reconnect_thread = threading.Thread(target=_reconnect, name="Reconnecting network %s" % self.name)
             self._reconnect_thread.start()
         else:
