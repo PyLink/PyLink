@@ -189,3 +189,18 @@ utils.add_hook(_state_cleanup_part, 'PART', priority=-100)
 def _state_cleanup_kick(irc, source, command, args):
     _state_cleanup_core(irc, args['target'], args['channel'])
 utils.add_hook(_state_cleanup_kick, 'KICK', priority=-100)
+
+def _state_cleanup_mode(irc, source, command, args):
+    """
+    Cleans up and removes empty channels when -P (permanent mode) is removed from them.
+    """
+    target = args['target']
+    if target in irc.channels and 'permanent' in irc.cmodes:
+        c = irc.channels[target]
+        mode = '-%s' % irc.cmodes['permanent']
+
+        if (not c.users) and (mode, None) in args['modes']:
+            log.debug('(%s) _state_cleanup_mode: deleting empty channel %s as %s was set', irc.name, target, mode)
+            del irc._channels[target]
+            return False  # Block further hooks from running
+utils.add_hook(_state_cleanup_mode, 'MODE', priority=10000)
