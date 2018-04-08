@@ -467,6 +467,30 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         """
         return self.serverdata.get('netname', self.name)
 
+    def get_service_option(self, servicename, option, default=None, global_option=None):
+        """
+        Returns the value of the requested service bot option on the current network, or the
+        global value if it is not set for this network. This function queries and returns:
+
+        1) If present, the value of the config option servers::<NETNAME>::<SERVICENAME>_<OPTION>
+        2) If present, the value of the config option <SERVICENAME>::<GLOBAL_OPTION>, where
+           <GLOBAL_OPTION> is either the 'global_option' keyword argument or <OPTION>.
+        3) The default value given in the 'keyword' argument.
+
+        While service bot and config option names can technically be uppercase or mixed case,
+        the convention is to define them in all lowercase characters.
+        """
+        netopt = self.serverdata.get('%s_%s' % (servicename, option))
+        if netopt is not None:
+            return netopt
+
+        if global_option is not None:
+            option = global_option
+        globalopt = conf.conf.get(servicename, {}).get(option)
+        if globalopt is not None:
+            return globalopt
+
+        return default
 
     def has_cap(self, capab):
         """
