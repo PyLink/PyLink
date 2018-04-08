@@ -201,6 +201,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
 
         self.connected = threading.Event()
         self._aborted = threading.Event()
+        self._aborted_send = threading.Event()
         self._reply_lock = threading.RLock()
 
         # Sets the multiplier for autoconnect delay (grows with time).
@@ -478,6 +479,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         """
         Implements triggers called before a network connects.
         """
+        self._aborted_send.clear()
         self._aborted.clear()
         self._init_vars()
 
@@ -1431,6 +1433,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._selector_key = None
         self._buffer = b''
         self._reconnect_thread = None
+        self._queue_thread = None
 
     def _init_vars(self, *args, **kwargs):
         super()._init_vars(*args, **kwargs)
@@ -1446,6 +1449,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def _schedule_ping(self):
         """Schedules periodic pings in a loop."""
         self._ping_uplink()
+
+        if self._aborted.is_set():
+            return
 
         self._ping_timer = threading.Timer(self.pingfreq, self._schedule_ping)
         self._ping_timer.daemon = True
@@ -1521,6 +1527,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             try:
                 self._socket.connect((ip, port))
             except (ssl.SSLError, OSError):
+                if world.shutting_down.is_set():
+                    return
                 log.exception('Unable to connect to network %r', self.name)
                 self._start_reconnect()
                 return
@@ -1637,12 +1645,15 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             except KeyError:
                 pass
             try:
-                log.debug('(%s) disconnect: Shutting down socket.', self.name)
-                self._socket.shutdown(socket.SHUT_RDWR)
-            except Exception as e:  # Socket timed out during creation; ignore
-                log.debug('(%s) error on socket shutdown: %s: %s', self.name, type(e).__name__, e)
+                log.debug('(%s) disconnect: shutting down read half of socket %s', self.name, self._socket)
+                self._socket.shutdown(socket.SHUT_RD)
+            except:
+                log.debug('(%s) Error on socket shutdown:', self.name, exc_info=True)
 
-            self._socket.close()
+            # Wait for the write half to shut down when applicable.
+            if self._queue_thread is None or self._aborted_send.wait(10):
+                log.debug('(%s) disconnect: closing socket %s', self.name, self._socket)
+                self._socket.close()
 
         # Stop the queue thread.
         if self._queue is not None:
@@ -1791,11 +1802,17 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                     # The _aborted flag may have changed while we were waiting for an item,
                     # so check for it again.
                     log.debug('(%s) Stopping queue thread since the connection is dead', self.name)
-                    return
+                    break
                 elif data:
                     self._send(data)
             else:
                 break
+
+        # Once we're done here, shut down the write part of the socket.
+        if self._socket:
+            log.debug('(%s) _process_queue: shutting down write half of socket %s', self.name, self._socket)
+            self._socket.shutdown(socket.SHUT_WR)
+        self._aborted_send.set()
 
 Irc = IRCNetwork
 
