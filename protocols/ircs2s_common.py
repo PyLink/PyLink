@@ -653,10 +653,6 @@ class IRCS2SProtocol(IRCCommonProtocol):
             except IndexError:
                 reason = ''
 
-            # Clear empty non-permanent channels.
-            if not (self._channels[channel].users or ((self.cmodes.get('permanent'), None) in self._channels[channel].modes)):
-                del self._channels[channel]
-
         if channels:
             return {'channels': channels, 'text': reason}
 

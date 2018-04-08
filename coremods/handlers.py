@@ -181,6 +181,12 @@ def _state_cleanup_core(irc, source, channel):
                       irc.name, source, irc.users[source].nick)
             irc._remove_client(source)
 
+    # Clear empty non-permanent channels.
+    if channel in irc.channels and not (irc._channels[channel].users or ((irc.cmodes.get('permanent'), None) \
+            in irc._channels[channel].modes)):
+        log.debug('(%s) state_cleanup: removing empty channel %s', irc.name, channel)
+        del irc._channels[channel]
+
 def _state_cleanup_part(irc, source, command, args):
     for channel in args['channels']:
         _state_cleanup_core(irc, source, channel)
