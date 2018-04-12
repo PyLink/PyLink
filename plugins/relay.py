@@ -539,23 +539,19 @@ def remove_channel(irc, channel):
     if irc is None:
         return
 
-    if channel not in map(str.lower, irc.serverdata.get('channels', [])):
-        world.services['pylink'].extra_channels[irc.name].discard(channel)
-        if irc.pseudoclient:
-            irc.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
+    world.services['pylink'].dynamic_channels[irc.name].discard(channel)
 
     relay = get_relay(irc, channel)
     if relay and channel in irc.channels:
         for user in irc.channels[channel].users.copy():
-            if not is_relay_client(irc, user):
+            # Relay a /part of all local users.
+            if not is_internal_client(irc, user):
                 relay_part(irc, channel, user)
-            # Don't ever part the main client from any of its autojoin channels.
             else:
-                if user == irc.pseudoclient.uid and channel in \
-                        irc.serverdata.get('channels', []):
+                # Part and quit all relay clients.
+                if irc.get_service_bot(user):  # ...but ignore service bots
                     continue
                 irc.part(user, channel, 'Channel delinked.')
-                # Don't ever quit it either...
                 if user != irc.pseudoclient.uid and not irc.users[user].channels:
                     remoteuser = get_orig_user(irc, user)
                     del relayusers[remoteuser][irc.name]
