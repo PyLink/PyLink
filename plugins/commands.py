@@ -1,5 +1,5 @@
 # commands.py: base PyLink commands
-from time import ctime
+import time
 
 from pylinkirc import utils, __version__, world, real_version
 from pylinkirc.log import log
@@ -62,8 +62,8 @@ def showuser(irc, source, args):
     ts = userobj.ts
 
     # Show connected server & nick TS
-    f('\x02Home server\x02: %s (%s); \x02Nick TS:\x02 %s (%s)' % \
-      (serverobj.name, sid, ctime(float(ts)), ts))
+    f('\x02Home server\x02: %s (%s); \x02Nick TS:\x02 %s [UTC] (%s)' % \
+      (serverobj.name, sid, time.asctime(time.gmtime(int(ts))), ts))
 
     if verbose:  # Oper only data: user modes, channels on, account info, etc.
 
@@ -109,8 +109,9 @@ def showchan(irc, source, args):
         f('\x02Channel topic\x02: %s' % c.topic)
 
     # Mark TS values as untrusted on Clientbot and others (where TS is read-only or not trackable)
-    f('\x02Channel creation time\x02: %s (%s)%s' % (ctime(c.ts), c.ts,
-                                                    ' [UNTRUSTED]' if not irc.has_cap('has-ts') else ''))
+    f('\x02Channel creation time\x02: %s (%s) [UTC]%s' %
+      (time.asctime(time.gmtime(int(c.ts))), c.ts,
+       ' [UNTRUSTED]' if not irc.has_cap('has-ts') else ''))
 
     # Show only modes that aren't list-style modes.
     modes = irc.join_modes([m for m in c.modes if m[0] not in irc.cmodes['*A']], sort=True)
