@@ -545,7 +545,7 @@ def remove_channel(irc, channel):
     if relay and channel in irc.channels:
         for user in irc.channels[channel].users.copy():
             # Relay a /part of all local users.
-            if not is_internal_client(irc, user):
+            if not irc.is_internal_client(user):
                 relay_part(irc, channel, user)
             else:
                 # Part and quit all relay clients.
