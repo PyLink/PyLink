@@ -107,16 +107,25 @@ def handle_kill(irc, source, command, args):
         irc.pseudoclient = None
     userdata = args.get('userdata')
     sbot = irc.get_service_bot(target)
-    servicename = None
 
-    if userdata and hasattr(userdata, 'service'):  # Look for the target's service name attribute
-        servicename = userdata.service
-    elif sbot:  # Or their service bot instance
+    servicename = None
+    channels = []
+
+    if userdata:
+        # Look for the target's service name
+        servicename = getattr(userdata, 'service', servicename)
+        channels = getattr(userdata, 'channels', channels)
+    elif sbot:
+        # Or its service bot instance
         servicename = sbot.name
+        channels = irc.users[target].channels
     if servicename:
         log.info('(%s) Received kill to service %r (nick: %r) from %s (reason: %r).', irc.name, servicename,
                  userdata.nick if userdata else irc.users[target].nick, irc.get_hostmask(source), args.get('text'))
         spawn_service(irc, source, command, {'name': servicename})
+
+        # Rejoin the killed service bot to all channels it was previously in.
+        world.services[servicename].join(irc, channels)
 
 utils.add_hook(handle_kill, 'KILL')
 
@@ -156,7 +165,7 @@ def handle_kick(irc, source, command, args):
     if not _services_dynamic_part(irc, channel):
         kicked = args['target']
         sbot = irc.get_service_bot(kicked)
-        if sbot and channel in sbot.get_persistent_channels(irc):
+        if sbot:
             sbot.join(irc, channel)
 utils.add_hook(handle_kick, 'KICK')
 
