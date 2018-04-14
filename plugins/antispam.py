@@ -54,6 +54,10 @@ def _punish(irc, target, channel, reason):
         irc.call_hooks([my_uid, 'ANTISPAM_KICK', {'channel': channel, 'text': reason, 'target': target,
                                                   'parse_as': 'KICK'}])
     def _kill():
+        if target not in irc.users:
+            log.debug('(%s) antispam: not killing %s/%s; they already left', irc.name, target,
+                      irc.get_friendly_name(target))
+            return
         userdata = irc.users[target]
         irc.kill(my_uid, target, reason)
         irc.call_hooks([my_uid, 'ANTISPAM_KILL', {'target': target, 'text': reason,
