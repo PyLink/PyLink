@@ -38,6 +38,9 @@ def _punish(irc, target, channel, reason):
         return False
 
     my_uid = sbot.uids.get(irc.name)
+    # XXX workaround for single-bot protocols like Clientbot
+    if irc.pseudoclient and not irc.has_cap('can-spawn-clients'):
+        my_uid = irc.pseudoclient.uid
 
     punishment = irc.get_service_option('antispam', 'punishment',
                                         'kick+ban').lower()
@@ -100,6 +103,10 @@ def handle_masshighlight(irc, source, command, args):
     mhl_settings = irc.get_service_option('antispam', 'masshighlight',
                                           MASSHIGHLIGHT_DEFAULTS)
     my_uid = sbot.uids.get(irc.name)
+
+    # XXX workaround for single-bot protocols like Clientbot
+    if irc.pseudoclient and not irc.has_cap('can-spawn-clients'):
+        my_uid = irc.pseudoclient.uid
 
     if (not irc.connected.is_set()) or (not my_uid):
         # Break if the network isn't ready.
