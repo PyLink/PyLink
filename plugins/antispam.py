@@ -40,7 +40,7 @@ def _punish(irc, target, channel, reason):
     my_uid = sbot.uids.get(irc.name)
 
     punishment = irc.get_service_option('antispam', 'punishment',
-                                        'ban+kill').lower()
+                                        'kick+ban').lower()
     bans = set()
     log.debug('(%s) antispam: got %r as punishment for %s/%s', irc.name, punishment,
               target, irc.get_friendly_name(target))
