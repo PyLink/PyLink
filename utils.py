@@ -13,7 +13,7 @@ import collections
 import argparse
 
 from .log import log
-from . import world, conf
+from . import world, conf, structures
 
 # Load the protocol and plugin packages.
 from pylinkirc import protocols, plugins
@@ -152,9 +152,10 @@ class ServiceBot():
         # spawned.
         self.uids = {}
 
-        # Track what channels other than those defined in the config
-        # that the bot should join by default.
-        self.extra_channels = collections.defaultdict(set)
+        # Track plugin-defined persistent channels. The bot will leave them if they're empty,
+        # and rejoin whenever someone else does.
+        self.dynamic_channels = structures.KeyedDefaultdict(lambda netname:
+            structures.IRCCaseInsensitiveSet(world.networkobjects[netname]))
 
         # Service description, used in the default help command if one is given.
         self.desc = desc
@@ -183,9 +184,14 @@ class ServiceBot():
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
-    def join(self, irc, channels, autojoin=True):
+    def join(self, irc, channels, ignore_empty=True):
         """
-        Joins the given service bot to the given channel(s).
+        Joins the given service bot to the given channel(s). channels can be an iterable of channel names
+        or the name of a single channel (str).
+
+        The ignore_empty option sets whether we should skip joining empty channels and join them
+        later when we see someone else join. This is option is disabled on networks where we cannot
+        monitor channel state.
         """
 
         if isinstance(irc, str):
@@ -198,16 +204,16 @@ class ServiceBot():
             channels = [channels]
         channels = set(channels)
 
-        if autojoin:
-            log.debug('(%s/%s) Adding channels %s to autojoin', netname, self.name, channels)
-            self.extra_channels[netname] |= channels
-
         # If the network was given as a string, look up the Irc object here.
         try:
             irc = world.networkobjects[netname]
         except KeyError:
             log.debug('(%s/%s) Skipping join(), IRC object not initialized yet', netname, self.name)
             return
+
+        if irc.has_cap('visible-state-only'):
+            # Disable dynamic channel joining on networks where we can't monitor channels for joins.
+            ignore_empty = False
 
         try:
             u = self.uids[irc.name]
@@ -221,10 +227,16 @@ class ServiceBot():
 
         for chan in channels:
             if irc.is_channel(chan):
-                if chan in irc.channels and u in irc.channels[chan].users:
-                    log.debug('(%s) Skipping join of services %s to channel %s - it is already present', irc.name, self.name, chan)
+                if chan in irc.channels:
+                    if u in irc.channels[chan].users:
+                        log.debug('(%s) Skipping join of service %r to channel %r - it is already present', irc.name, self.name, chan)
+                        continue
+                elif ignore_empty:
+                    log.debug('(%s) Skipping joining service %r to empty channel %r', irc.name, self.name, chan)
                     continue
+
                 log.debug('(%s) Joining services %s to channel %s with modes %r', irc.name, self.name, chan, joinmodes)
+
                 if joinmodes:  # Modes on join were specified; use SJOIN to burst our service
                     irc.proto.sjoin(irc.sid, chan, [(joinmodes, u)])
                 else:
@@ -386,6 +398,15 @@ class ServiceBot():
         """
         sbconf = conf.conf.get(self.name, {})
         return irc.serverdata.get("%s_realname" % self.name) or sbconf.get('realname') or conf.conf['pylink'].get('realname') or self.name
+
+    def get_persistent_channels(self, irc):
+        """
+        Returns a set of persistent channels for the IRC network.
+        """
+        channels = self.dynamic_channels[irc.name].copy()
+        channels |= set(irc.serverdata.get(self.name+'_channels', []))
+        channels |= set(irc.serverdata.get('channels', []))
+        return channels
 
     def _show_command_help(self, irc, command, private=False, shortform=False):
         """
