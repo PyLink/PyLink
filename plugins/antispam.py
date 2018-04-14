@@ -13,10 +13,10 @@ PUNISH_OPTIONS = ['kill', 'ban', 'quiet', 'kick']
 EXEMPT_OPTIONS = ['voice', 'halfop', 'op']
 DEFAULT_EXEMPT_OPTION = 'halfop'
 def _punish(irc, target, channel, reason):
-    """Punishes the target user."""
+    """Punishes the target user. This function returns True if the user was successfully punished."""
     if irc.is_oper(target, allowAuthed=False):
         log.debug("(%s) antispam: refusing to punish oper %s/%s", irc.name, target, irc.get_friendly_name(target))
-        return
+        return False
 
     exempt_level = irc.get_service_option('antispam', 'exempt_level', DEFAULT_EXEMPT_OPTION).lower()
     c = irc.channels[channel]
@@ -29,13 +29,13 @@ def _punish(irc, target, channel, reason):
 
     if exempt_level == 'voice' and c.is_voice_plus(target):
         log.debug("(%s) antispam: refusing to punish voiced and above %s/%s", irc.name, target, irc.get_friendly_name(target))
-        return
+        return False
     elif exempt_level == 'halfop' and c.is_halfop_plus(target):
         log.debug("(%s) antispam: refusing to punish halfop and above %s/%s", irc.name, target, irc.get_friendly_name(target))
-        return
+        return False
     elif exempt_level == 'op' and c.is_op_plus(target):
         log.debug("(%s) antispam: refusing to punish op and above %s/%s", irc.name, target, irc.get_friendly_name(target))
-        return
+        return False
 
     my_uid = sbot.uids.get(irc.name)
 
@@ -82,6 +82,7 @@ def _punish(irc, target, channel, reason):
                         {'target': channel, 'modes': bans, 'parse_as': 'MODE'}])
     if kill:
         _kill()
+    return True
 
 MASSHIGHLIGHT_DEFAULTS = {
     'min_length': 50,
@@ -125,6 +126,7 @@ def handle_masshighlight(irc, source, command, args):
     # Don't allow repeating the same nick to trigger punishment
     nicks_caught = set()
 
+    punished = False
     for word in words:
         if word in userlist:
             nicks_caught.add(word)
@@ -132,10 +134,11 @@ def handle_masshighlight(irc, source, command, args):
             reason = mhl_settings.get('reason', MASSHIGHLIGHT_DEFAULTS['reason'])
             log.debug('(%s) antispam: calling _punish on %s/%s', irc.name,
                       source, irc.get_friendly_name(source))
-            _punish(irc, source, channel, reason)
+            punished = _punish(irc, source, channel, reason)
             break
 
     log.debug('(%s) antispam: got %s/%s nicks on message to %r', irc.name, len(nicks_caught), min_nicks, channel)
+    return not punished  # Filter this message from relay, etc. if it triggered protection
 
-utils.add_hook(handle_masshighlight, 'PRIVMSG')
-utils.add_hook(handle_masshighlight, 'NOTICE')
+utils.add_hook(handle_masshighlight, 'PRIVMSG', priority=1000)
+utils.add_hook(handle_masshighlight, 'NOTICE', priority=1000)
