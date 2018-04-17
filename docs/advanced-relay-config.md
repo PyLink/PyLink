@@ -6,7 +6,24 @@ PyLink Relay provides a few advanced configuration options not documented in the
 
 ### Custom Clientbot Styles
 
-Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::EVENTNAME`. A list of supported events can be found at https://github.com/GLolol/PyLink/blob/1.1-alpha1/plugins/relay_clientbot.py#L12-L24.
+Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::EVENTNAME`. 
+
+|Name|Value|
+| :---: | :--- |
+MESSAGE  | \x02[$colored\_netname]\x02 <$colored\_sender> $text
+KICK     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has kicked $target_nick from $channel ($text)
+PART     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has left $channel ($text) 
+JOIN     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has joined $channel 
+NICK     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost is now known as $newnick
+QUIT     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has quit ($text)
+ACTION   | \x02[$colored\_netname]\x02 * $colored\_sender $text
+NOTICE   | \x02[$colored\_netname]\x02 - Notice from $colored\_sender: $text
+SQUIT    | \x02[$colored\_netname]\x02 - Netsplit lost users: $colored\_nicks
+SJOIN    | \x02[$colored\_netname]\x02 - Netjoin gained users: $colored\_nicks
+PM       | PM from $sender on $netname: $text
+PNOTICE  | <$sender> $text
+
+
 - Note: the `PM` and `PNOTICE` events represent private messages and private notices respectively, when they're relayed to users behind a Clientbot link.
 - Note 2: as of 1.1.x, all public channel events are sent to channels as PRIVMSG, while `PM` and `PNOTICE` are relayed privately as NOTICE.
 
