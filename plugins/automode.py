@@ -40,7 +40,7 @@ def main(irc=None):
         netname, channel = entry.split('#', 1)
         channel = '#' + channel
         log.debug('automode: auto-joining %s on %s', channel, netname)
-        modebot.join(netname, channel)
+        modebot.join(netname, channel, ignore_empty=True)
 
 def die(irc=None):
     """Saves the Automode database and quit."""
