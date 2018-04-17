@@ -35,7 +35,7 @@ These options take template strings as documented here: https://docs.python.org/
 
 To disable relaying for any specific event, set the template string to an empty string (`''`).
 
-To disable colors for events, see [below](#disabling-colorcontrol-codes).
+To disable colors for events, see [below](#disabling-colorscontrol-codes).
 
 #### List of supported events
 
