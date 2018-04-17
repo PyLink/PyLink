@@ -35,6 +35,8 @@ These options take template strings as documented here: https://docs.python.org/
 
 To disable relaying for any specific event, set the template string to an empty string (`''`).
 
+To disable colors for events, see [below](#disabling-colorcontrol-codes).
+
 #### List of supported events
 
 |Event name|Default value|
@@ -54,6 +56,31 @@ PNOTICE  | <$sender> $text
 
 - Note: the `PM` and `PNOTICE` events represent private messages and private notices respectively, when they're relayed to users behind a Clientbot link.
 - Note 2: as of 1.1.x, all public channel events are sent to channels as PRIVMSG, while `PM` and `PNOTICE` are relayed privately as NOTICE.
+
+#### Disabling Colors/Control Codes
+
+If you don't want the messages PyLink sends for clientbot messages to be emboldened or colored,
+remove all escape sequences (e.g. `\x02`) from the format template and replace the colored variants
+of applicable substitutions with their non-colored versions.
+
+This is a example clientbot_styles config block, which you can copy into your `relay` configuration block.
+(*Do not* make multiple `relay` config blocks, or duplicate any config blocks with the same name!)
+
+```yaml
+    clientbot_styles:
+        ACTION: "[$netname] * $sender $text"
+        JOIN: "[$netname] - $sender$sender_identhost has joined $channel"
+        KICK: "[$netname] - $sender$sender_identhost has kicked $target_nick from $channel ($text)"
+        MESSAGE: "[$netname] <$sender> $text"
+        NICK: "[$netname] - $sender$sender_identhost is now known as $newnick"
+        NOTICE: "[$netname] - Notice from $sender: $text"
+        PART: "[$netname] - $sender$sender_identhost has left $channel ($text)"
+        PM: "PM from $sender on $netname: $text"
+        PNOTICE: "<$sender> $text"
+        QUIT: "[$netname] - $sender$sender_identhost has quit ($text)"
+        SJOIN: "[$netname] - Netjoin gained users: $nicks"
+        SQUIT: "[$netname] - Netsplit lost users: $nicks"
+```
 
 ### Misc. options
 - `relay::clientbot_startup_delay`: Defines the amount of seconds Clientbot should wait after startup, before relaying any non-PRIVMSG events. This is used to prevent excess floods when the bot connects. Defaults to 5 seconds.
