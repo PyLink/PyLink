@@ -131,6 +131,10 @@ utils.add_hook(handle_kill, 'KILL')
 
 def handle_join(irc, source, command, args):
     """Monitors channel joins for dynamic service bot joining."""
+    if irc.has_cap('visible-state-only'):
+        # No-op on bot-only servers.
+        return
+
     channel = args['channel']
     users = irc.channels[channel].users
     for servicename, sbot in world.services.items():
@@ -143,6 +147,10 @@ utils.add_hook(handle_join, 'PYLINK_SERVICE_JOIN')
 
 def _services_dynamic_part(irc, channel):
     """Dynamically removes service bots from empty channels."""
+    if irc.has_cap('visible-state-only'):
+        # No-op on bot-only servers.
+        return
+
     # If all remaining users in the channel are service bots, make them all part.
     if all(irc.is_internal_client(u) for u in irc.channels[channel].users):
         for u in irc.channels[channel].users.copy():
