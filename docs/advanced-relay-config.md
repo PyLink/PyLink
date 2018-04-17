@@ -1,8 +1,16 @@
 # Advanced Configuration for PyLink Relay
 
-PyLink Relay provides a few advanced configuration options not documented in the example configuration, either because they have limited use, or are too complicated to be described briefly.
+PyLink Relay provides a few configuration options not documented in the example configuration, either because they have limited use or are too complicated to be described briefly.
 
-**This guide assumes that you are relatively familiar with the way YAML syntax works (lists, named arrays/dicts, etc.).** For the purposes of this document, configuration options will be referred to in the format `a::b::c`, which represents the "`c`" configuration key in a "`b`" block, all within an "`a`" block.
+**This guide assumes that you are relatively familiar with the way YAML syntax works (lists, named arrays/dicts, etc.).** In this document, configuration options will be referred to in the format `a::b::c`, which represents the "`c`" option inside a "`b`" config block, all within an "`a`" config block.
+
+In actual YAML, that translates to this:
+
+```yaml
+a:
+    b:
+        c: "some value"
+```
 
 ### Custom Clientbot Styles
 
@@ -13,14 +21,14 @@ These options take template strings as documented here: https://docs.python.org/
 - For all events:
     - `$netname`: origin network name
     - `$sender`: nick of sender
-    - `$sender_identhost`: ident@host string of sender
+    - `$sender_identhost`: ident@host string of the sender
     - `$colored_sender`: color hashed version of `$sender`
     - `$colored_netname`: color hashed version of `$netname`
 - For KICK, and other events that have a `$target` field corresponding to a user:
-    - `$target_nick`: nick of target (as opposed to `$target`, which is an UID)
+    - `$target_nick`: the nick of the target (as opposed to `$target`, which is an user ID)
 - For events that have a `$channel` field attached (e.g. JOIN, PART):
-    - `$local_channel`: the LOCAL channel name (of the clientbot network)
-    - `$channel`: the real channel on the sender's network
+    - `$local_channel`: the *local* channel name (i.e. the channel on the clientbot network)
+    - `$channel`: the real channel name on the sender's network
 - For SJOIN, SQUIT:
     - `$nicks`: a comma-joined list of nicks that were bursted
     - `$colored_nicks`: a comma-joined list of each bursted nick, color hashed
