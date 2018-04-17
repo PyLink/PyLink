@@ -51,8 +51,8 @@ plugins:
 
 #### List of supported events
 
-|Event name|Default value|
-| :---: | :--- |
+| Event name | Default value|
+| :--------: | :----------- |
 ACTION   | \x02[$colored\_netname]\x02 * $colored\_sender $text
 JOIN     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has joined $channel
 KICK     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has kicked $target_nick from $channel ($text)
