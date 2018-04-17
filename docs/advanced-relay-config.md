@@ -2,7 +2,7 @@
 
 PyLink Relay provides a few advanced configuration options not documented in the example configuration, either because they have limited use, or are too complicated to be described briefly.
 
-**This guide assumes that you are relatively familiar with the way YAML syntax works (lists, named arrays/dicts, etc.).** For the purposes of this document, configuration options will be referred to in the format `a:b:c`, which represents the "`c`" configuration key in a "`b`" block, all within an "`a`" block.
+**This guide assumes that you are relatively familiar with the way YAML syntax works (lists, named arrays/dicts, etc.).** For the purposes of this document, configuration options will be referred to in the format `a::b::c`, which represents the "`c`" configuration key in a "`b`" block, all within an "`a`" block.
 
 ### Custom Clientbot Styles
 
@@ -31,6 +31,6 @@ These options take template strings as documented here: https://docs.python.org/
 To disable relaying for any specific event, set the template string to an empty string (`''`).
 
 ### Misc. options
-- `relay:clientbot_startup_delay`: Defines the amount of seconds Clientbot should wait after startup, before relaying any non-PRIVMSG events. This is used to prevent excess floods when the bot connects. Defaults to 5 seconds.
-- `servers:NETNAME:relay_force_slashes`: This network specific option forces Relay to use `/` in nickname separators. You should only use this option on TS6 or P10 variants that are less strict with nickname validation, as **it will cause protocol violations** on most IRCds. UnrealIRCd and InspIRCd users do not need to set this either, as `/` in nicks is automatically enabled.
-- `servers:NETNAME:relay_endburst_delay`: InspIRCd networks only: sets the endburst delay for relay subservers. If relay server bursts are causing +j (join flood) protection to trigger, raising this value can work around the issue.
+- `relay::clientbot_startup_delay`: Defines the amount of seconds Clientbot should wait after startup, before relaying any non-PRIVMSG events. This is used to prevent excess floods when the bot connects. Defaults to 5 seconds.
+- `servers::NETNAME::relay_force_slashes`: This network specific option forces Relay to use `/` in nickname separators. You should only use this option on TS6 or P10 variants that are less strict with nickname validation, as **it will cause protocol violations** on most IRCds. UnrealIRCd and InspIRCd users do not need to set this either, as `/` in nicks is automatically enabled.
+- `servers::NETNAME::relay_endburst_delay`: InspIRCd networks only: sets the endburst delay for relay subservers. If relay server bursts are causing +j (join flood) protection to trigger, raising this value can work around the issue.
