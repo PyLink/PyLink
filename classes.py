@@ -590,7 +590,11 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
 
         sid = self.get_server(numeric)
         log.debug('Removing client %s from self.users', numeric)
-        del self.users[numeric]
+        try:
+            del self.users[numeric]
+        except KeyError:
+            log.warning('(%s) Failed to remove %r from users index - possible desync or timing issue? (stray QUIT after KILL)',
+                        self.name, numeric, exc_info=True)
         log.debug('Removing client %s from self.servers[%s].users', numeric, sid)
         self.servers[sid].users.discard(numeric)
 
