@@ -15,7 +15,10 @@ PyLink is an extensible, plugin-based IRC services framework written in Python. 
 
 PyLink and any bundled software are licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The corresponding documentation in the [docs/](docs/) folder is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
 
-## Support
+## Support the project
+[![Donate via PayPal](https://img.shields.io/badge/donate-paypal-50CAF2.svg)](https://www.paypal.me/jlucode)
+
+## Obtaining support
 
 **First, MAKE SURE you've read the [FAQ](docs/faq.md)!**
 
