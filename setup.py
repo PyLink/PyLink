@@ -29,12 +29,11 @@ with open('__init__.py', 'w') as f:
     f.write('__version__ = %r\n' % version)
     f.write('real_version = %r\n' % real_version)
 
-# Convert Markdown to RST for PyPI
 try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst', format='markdown_github')
-except ImportError:
-    print('WARNING: PyPandoc not available; skipping writing long description.')
+    with open('README.md') as f:
+        long_description = f.read()
+except OSError:
+    print('WARNING: Failed to read readme, skipping writing long_description')
     long_description = None
 
 setup(
@@ -43,6 +42,7 @@ setup(
 
     description='PyLink IRC Services',
     long_description=long_description,
+    long_description_content_type='text/markdown',
 
     url='https://github.com/GLolol/PyLink',
 
@@ -50,7 +50,7 @@ setup(
     author='James Lu',
     author_email='james@overdrivenetworks.com',
 
-    # Choose your license
+    # License
     license='MPL 2.0',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
