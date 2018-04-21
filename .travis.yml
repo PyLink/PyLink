@@ -7,7 +7,6 @@ python:
   - '3.5'
   - '3.6'
 
-install: echo "On tag $TRAVIS_TAG" && pip install pypandoc
 script: python3 -m compileall .
 
 addons:
