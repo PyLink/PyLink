@@ -706,12 +706,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         log.debug('(%s) handle_353: adding modes %s to %s', self.name, modes, channel)
 
         # Send JOIN hook payloads only for users that we know the ident@host of already.
-        # We also use this to track whether kicks are successful, rejoining the target in the next /names lookup
-        # if it wasn't.
-        fully_synced_names = [uid for uid in names if hasattr(self.users[uid], '_clientbot_identhost_received')]
-        if fully_synced_names:
-            log.debug('(%s) handle_353: sending pre-WHO JOIN hook for %s: %s', self.name, channel, fully_synced_names)
-            return {'channel': channel, 'users': fully_synced_names, 'modes': self._channels[channel].modes,
+        # This is mostly used to resync kicked Clientbot users that can't actually be kicked
+        # after a delay.
+        if names and hasattr(self.irc.channels[channel], '_clientbot_initial_who_received'):
+            log.debug('(%s) handle_353: sending JOIN hook because /WHO was already received for %s',
+                      self.irc.name, channel)
+            return {'channel': channel, 'users': names, 'modes': self._channels[channel].modes,
                     'parse_as': "JOIN"}
 
     def _check_puid_collision(self, nick):
@@ -741,6 +741,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # with WHO %cuhsnfar (WHOX) - note, hopcount and realname are separate!
         #                                0   1     2   3         4                      5  6  7   8(-1)
         # <- :charybdis.midnight.vpn 354 ice #test ~gl localhost charybdis.midnight.vpn GL H*@ GL :realname
+        channel = args[1]
         ident = args[2]
         host = args[3]
         nick = args[5]
@@ -762,6 +763,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self.update_client(uid, 'HOST', host)
         self.update_client(uid, 'GECOS', realname)
         self.users[uid]._clientbot_identhost_received = True
+        self._channels[channel]._clientbot_initial_who_received = True
 
         # The status given uses the following letters: <H|G>[*][@|+]
         # H means here (not marked /away)
@@ -813,11 +815,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         modes = set(c.modes)
         for user in users.copy():
-            if user in c.users and 'userhost-in-names' in self.ircv3_caps:
-                log.debug("(%s) handle_315: Skipping ENDOFWHO -> JOIN for %s on %s, they're already there", self.name, user, channel)
-                users.remove(user)
-                continue
-
             # Fill in prefix modes of everyone when doing mock SJOIN.
             try:
                 for mode in c.get_prefix_modes(user):
