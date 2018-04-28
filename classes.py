@@ -589,14 +589,13 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
                 del self.channels[c]
 
         sid = self.get_server(numeric)
-        log.debug('Removing client %s from self.users', numeric)
+        log.debug('(%s) Removing client %s from users index', self.name, numeric)
         try:
             del self.users[numeric]
+            self.servers[sid].users.discard(numeric)
         except KeyError:
             log.warning('(%s) Failed to remove %r from users index - possible desync or timing issue? (stray QUIT after KILL)',
                         self.name, numeric, exc_info=True)
-        log.debug('Removing client %s from self.servers[%s].users', numeric, sid)
-        self.servers[sid].users.discard(numeric)
 
     ## State checking functions
     def nick_to_uid(self, nick):
