@@ -98,7 +98,7 @@ def handle_endburst(irc, source, command, args):
         for name, sbot in world.services.items():
             spawn_service(irc, source, command, {'name': name})
 
-utils.add_hook(handle_endburst, 'ENDBURST')
+utils.add_hook(handle_endburst, 'ENDBURST', priority=500)
 
 def handle_kill(irc, source, command, args):
     """Handle KILLs to PyLink service bots, respawning them as needed."""
