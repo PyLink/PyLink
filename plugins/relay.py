@@ -532,14 +532,14 @@ def initialize_channel(irc, channel):
             relay_joins(irc, channel, c.users, c.ts)
 
         if 'pylink' in world.services:
-            world.services['pylink'].join(irc, channel)
+            world.services['pylink'].add_persistent_channel(irc, 'relay_local', channel)
 
 def remove_channel(irc, channel):
     """Destroys a relay channel by parting all of its users."""
     if irc is None:
         return
 
-    world.services['pylink'].dynamic_channels[irc.name].discard(channel)
+    world.services['pylink'].remove_persistent_channel(channel, 'relay_local', try_part=False)
 
     relay = get_relay(irc, channel)
     if relay and channel in irc.channels:
@@ -549,13 +549,18 @@ def remove_channel(irc, channel):
                 relay_part(irc, channel, user)
             else:
                 # Part and quit all relay clients.
-                if irc.get_service_bot(user):  # ...but ignore service bots
-                    continue
-                irc.part(user, channel, 'Channel delinked.')
-                if user != irc.pseudoclient.uid and not irc.users[user].channels:
-                    remoteuser = get_orig_user(irc, user)
-                    del relayusers[remoteuser][irc.name]
-                    irc.quit(user, 'Left all shared channels.')
+                # Service bots are treated differently: they have plugin-defined persistent
+                # channels, so we can request a part and it will apply if no other plugins
+                # have the channel registered.
+                sbot = irc.get_service_bot(user)
+                if sbot:
+                    sbot.part(irc, channel)
+                else:
+                    irc.part(user, channel, 'Channel delinked.')
+                    if user != irc.pseudoclient.uid and not irc.users[user].channels:
+                        remoteuser = get_orig_user(irc, user)
+                        del relayusers[remoteuser][irc.name]
+                        irc.quit(user, 'Left all shared channels.')
 
 def check_claim(irc, channel, sender, chanobj=None):
     """
@@ -734,6 +739,12 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
 
                 # proto.sjoin() takes its users as a list of (prefix mode characters, UID) pairs.
                 userpair = (prefixes, u)
+
+                # Join the service bot on the remote channel persistently.
+                rsbot = remoteirc.get_service_bot(u)
+                if rsbot:
+                    rsbot.add_persistent_channel(irc, 'relay_remote', channel, try_join=False)
+
                 queued_users.append(userpair)
 
         if queued_users:
@@ -805,6 +816,14 @@ def relay_part(irc, *args, **kwargs):
             # If there is no relay channel on the target network, or the relay
             # user doesn't exist, just do nothing.
             return
+
+        # Remove any persistent channel entries from the remote end.
+        rsbot = remoteirc.get_service_bot(u)
+        if rsbot:
+            try:
+                sbot.remove_persistent_channel(irc, 'relay_remote', channel, try_part=False)
+            except KeyError:
+                pass
 
         # Part the relay client with the channel delinked message.
         remoteirc.part(remoteuser, remotechan, 'Channel delinked.')

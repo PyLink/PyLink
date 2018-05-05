@@ -35,13 +35,6 @@ def main(irc=None):
     # Register our permissions.
     permissions.add_default_permissions(default_permissions)
 
-    # Queue joins to all channels where Automode has entries.
-    for entry in db:
-        netname, channel = entry.split('#', 1)
-        channel = '#' + channel
-        log.debug('automode: auto-joining %s on %s', channel, netname)
-        modebot.join(netname, channel, ignore_empty=True)
-
 def die(irc=None):
     """Saves the Automode database and quit."""
     datastore.die()
@@ -119,6 +112,19 @@ def match(irc, channel, uids=None):
         # Create a hook payload to support plugins like relay.
         irc.call_hooks([modebot_uid, 'AUTOMODE_MODE',
                       {'target': channel, 'modes': outgoing_modes, 'parse_as': 'MODE'}])
+
+def handle_endburst(irc, source, command, args):
+    """ENDBURST hook handler - used to join the Automode service to channels where it has entries."""
+    if source != irc.uplink:
+        return
+
+    for entry in db:
+        netname, channel = entry.split('#', 1)
+        channel = '#' + channel
+        if netname == irc.name:
+            modebot.add_persistent_channel(irc, 'automode', channel)
+
+utils.add_hook(handle_endburst, 'ENDBURST')
 
 def handle_join(irc, source, command, args):
     """

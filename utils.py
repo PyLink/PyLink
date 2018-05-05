@@ -154,8 +154,9 @@ class ServiceBot():
 
         # Track plugin-defined persistent channels. The bot will leave them if they're empty,
         # and rejoin whenever someone else does.
-        self.dynamic_channels = structures.KeyedDefaultdict(lambda netname:
-            structures.IRCCaseInsensitiveSet(world.networkobjects[netname]))
+        # This is stored as a nested dictionary:
+        # {"plugin1": {"net1": IRCCaseInsensitiveSet({"#a", "#b"}), "net2": ...}, ...}
+        self.dynamic_channels = {}
 
         # Service description, used in the default help command if one is given.
         self.desc = desc
@@ -186,65 +187,93 @@ class ServiceBot():
 
     def join(self, irc, channels, ignore_empty=True):
         """
-        Joins the given service bot to the given channel(s). channels can be an iterable of channel names
-        or the name of a single channel (str).
+        Joins the given service bot to the given channel(s). "channels" can be
+        an iterable of channel names or the name of a single channel (str).
 
-        The ignore_empty option sets whether we should skip joining empty channels and join them
-        later when we see someone else join. This is option is disabled on networks where we cannot
-        monitor channel state.
+        The ignore_empty option sets whether we should skip joining empty
+        channels and join them later when we see someone else join. This is
+        option is disabled on networks where we cannot monitor channel state.
         """
+        uid = self.uids.get(irc.name)
+        if uid is None:
+            return
 
-        if isinstance(irc, str):
-            netname = irc
-        else:
-            netname = irc.name
-
-        # Ensure type safety: pluralize strings if only one channel was given, then convert to set.
         if isinstance(channels, str):
             channels = [channels]
-        channels = set(channels)
-
-        # If the network was given as a string, look up the Irc object here.
-        try:
-            irc = world.networkobjects[netname]
-        except KeyError:
-            log.debug('(%s/%s) Skipping join(), IRC object not initialized yet', netname, self.name)
-            return
 
         if irc.has_cap('visible-state-only'):
             # Disable dynamic channel joining on networks where we can't monitor channels for joins.
             ignore_empty = False
 
-        try:
-            u = self.uids[irc.name]
-        except KeyError:
-            log.debug('(%s/%s) Skipping join(), UID not initialized yet', irc.name, self.name)
-            return
-
         # Specify modes to join the services bot with.
-        joinmodes = irc.serverdata.get("%s_joinmodes" % self.name) or conf.conf.get(self.name, {}).get('joinmodes') or ''
+        joinmodes = irc.get_service_option(self.name, 'joinmodes', default='')
         joinmodes = ''.join([m for m in joinmodes if m in irc.prefixmodes])
 
-        for chan in channels:
-            if irc.is_channel(chan):
-                if chan in irc.channels:
-                    if u in irc.channels[chan].users:
-                        log.debug('(%s) Skipping join of service %r to channel %r - it is already present', irc.name, self.name, chan)
+        for channel in channels:
+            if irc.is_channel(channel):
+                if channel in irc.channels:
+                    if uid in irc.channels[channel].users:
+                        log.debug('(%s/%s) Skipping join to %r - we are already present', irc.name, self.name, channel)
                         continue
                 elif ignore_empty:
-                    log.debug('(%s) Skipping joining service %r to empty channel %r', irc.name, self.name, chan)
+                    log.debug('(%s/%s) Skipping joining empty channel %r', irc.name, self.name, channel)
                     continue
 
-                log.debug('(%s) Joining services %s to channel %s with modes %r', irc.name, self.name, chan, joinmodes)
+                log.debug('(%s/%s) Joining channel %s with modes %r', irc.name, self.name, channel, joinmodes)
 
                 if joinmodes:  # Modes on join were specified; use SJOIN to burst our service
-                    irc.proto.sjoin(irc.sid, chan, [(joinmodes, u)])
+                    irc.proto.sjoin(irc.sid, channel, [(joinmodes, uid)])
                 else:
-                    irc.proto.join(u, chan)
+                    irc.proto.join(uid, channel)
 
-                irc.call_hooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
+                irc.call_hooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': channel, 'users': [uid]}])
             else:
-                log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
+                log.warning('(%s/%s) Ignoring invalid channel %r', irc.name, self.name, channel)
+
+    def part(self, irc, channels):
+        """
+        Parts the given service bot from the given channel(s) if no plugins
+        still register it as a persistent dynamic channel.
+
+        "channels" can be an iterable of channel names or the name of a single
+        channel (str).
+        """
+        uid = self.uids.get(irc.name)
+        if uid is None:
+            return
+
+        if isinstance(channels, str):
+            channels = [channels]
+
+        to_part = []
+        persistent_channels = self.get_persistent_channels(irc)
+        for channel in channels:
+            '''
+            if channel in irc.channels and uid in irc.channels[channel].users:
+                for dch_namespace, dch_data in self.dynamic_channels.items():
+                    if irc.name in dch_data and channel in dch_data[irc.name]:
+                        log.debug('(%s/%s) Not parting %r because namespace %r still registers it '
+                                  'as a dynamic channel.', irc.name, self.name, channel,
+                                  dch_namespace)
+                        break
+                else:
+                    to_part.append(channel)
+                    irc.part(uid, channel, '')  # TODO: configurable part message?
+            '''
+
+            if channel in irc.channels and uid in irc.channels[channel].users:
+                if channel in persistent_channels:
+                    log.debug('(%s/%s) Not parting %r because it is registered '
+                              'as a dynamic channel: %r', irc.name, self.name, channel,
+                              persistent_channels)
+                    continue
+                to_part.append(channel)
+                irc.part(uid, channel, '')  # TODO: configurable part message?
+            else:
+                log.debug('(%s/%s) Ignoring part to %r, we are not there', irc.name, self.name, channel)
+                continue
+
+        irc.call_hooks([uid, 'PYLINK_SERVICE_PART', {'channels': to_part, 'text': ''}])
 
     def reply(self, irc, text, notice=None, private=None):
         """Replies to a message as the service in question."""
@@ -399,11 +428,45 @@ class ServiceBot():
         sbconf = conf.conf.get(self.name, {})
         return irc.serverdata.get("%s_realname" % self.name) or sbconf.get('realname') or conf.conf['pylink'].get('realname') or self.name
 
-    def get_persistent_channels(self, irc):
+    def add_persistent_channel(self, irc, namespace, channel, try_join=True):
         """
-        Returns a set of persistent channels for the IRC network.
+        Adds a persistent channel to the service bot on the given network and namespace.
         """
-        channels = self.dynamic_channels[irc.name].copy()
+        namespace = self.dynamic_channels.setdefault(namespace, {})
+        chanlist = namespace.setdefault(irc.name, structures.IRCCaseInsensitiveSet(irc))
+        chanlist.add(channel)
+
+        if try_join:
+            self.join(irc, [channel])
+
+    def remove_persistent_channel(self, irc, namespace, channel, try_part=True):
+        """
+        Removes a persistent channel from the service bot on the given network and namespace.
+        """
+        chanlist = self.dynamic_channels[namespace][irc.name].remove(channel)
+
+        if try_part and irc.connected.is_set():
+            self.part(irc, [channel])
+
+    def get_persistent_channels(self, irc, namespace=None):
+        """
+        Returns a set of persistent channels for the IRC network, optionally filtering
+        by namespace is one is given.
+        """
+        channels = structures.IRCCaseInsensitiveSet(irc)
+        if namespace:
+            chanlist = self.dynamic_channels.get(namespace, {}).get(irc.name, set())
+            log.debug('(%s/%s) get_persistent_channels: adding channels '
+                      '%r from namespace %r (single)', irc.name, self.name,
+                      chanlist, namespace)
+            channels |= chanlist
+        else:
+            for dch_namespace, dch_data in self.dynamic_channels.items():
+                chanlist = dch_data.get(irc.name, set())
+                log.debug('(%s/%s) get_persistent_channels: adding channels '
+                          '%r from namespace %r', irc.name, self.name,
+                          chanlist, dch_namespace)
+                channels |= chanlist
         channels |= set(irc.serverdata.get(self.name+'_channels', []))
         channels |= set(irc.serverdata.get('channels', []))
         return channels
