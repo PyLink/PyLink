@@ -539,7 +539,10 @@ def remove_channel(irc, channel):
     if irc is None:
         return
 
-    world.services['pylink'].remove_persistent_channel(irc, 'relay', channel, try_part=False)
+    try:
+        world.services['pylink'].remove_persistent_channel(irc, 'relay', channel, try_part=False)
+    except KeyError:
+        log.warning('(%s) relay: failed to remove persistent channel %r on delink', irc.name, channel, exc_info=True)
 
     relay = get_relay(irc, channel)
     if relay and channel in irc.channels:
@@ -554,7 +557,10 @@ def remove_channel(irc, channel):
                 # have the channel registered.
                 sbot = irc.get_service_bot(user)
                 if sbot:
-                    sbot.part(irc, channel)
+                    try:
+                        sbot.remove_persistent_channel(irc, 'relay', channel)
+                    except KeyError:
+                        pass
                 else:
                     irc.part(user, channel, 'Channel delinked.')
                     if user != irc.pseudoclient.uid and not irc.users[user].channels:
