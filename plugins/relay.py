@@ -532,14 +532,14 @@ def initialize_channel(irc, channel):
             relay_joins(irc, channel, c.users, c.ts)
 
         if 'pylink' in world.services:
-            world.services['pylink'].add_persistent_channel(irc, 'relay_local', channel)
+            world.services['pylink'].add_persistent_channel(irc, 'relay', channel)
 
 def remove_channel(irc, channel):
     """Destroys a relay channel by parting all of its users."""
     if irc is None:
         return
 
-    world.services['pylink'].remove_persistent_channel(channel, 'relay_local', try_part=False)
+    world.services['pylink'].remove_persistent_channel(irc, 'relay', channel, try_part=False)
 
     relay = get_relay(irc, channel)
     if relay and channel in irc.channels:
@@ -720,6 +720,11 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
             if not u:
                 continue
 
+            # Join the service bot on the remote channel persistently.
+            rsbot = remoteirc.get_service_bot(u)
+            if rsbot:
+                rsbot.add_persistent_channel(irc, 'relay', channel, try_join=False)
+
             if (remotechan not in remoteirc.channels) or u not in remoteirc.channels[remotechan].users:
                 # Note: only join users if they aren't already joined. This prevents op floods
                 # on charybdis from repeated SJOINs sent for one user.
@@ -739,11 +744,6 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
 
                 # proto.sjoin() takes its users as a list of (prefix mode characters, UID) pairs.
                 userpair = (prefixes, u)
-
-                # Join the service bot on the remote channel persistently.
-                rsbot = remoteirc.get_service_bot(u)
-                if rsbot:
-                    rsbot.add_persistent_channel(irc, 'relay_remote', channel, try_join=False)
 
                 queued_users.append(userpair)
 
@@ -818,10 +818,10 @@ def relay_part(irc, *args, **kwargs):
             return
 
         # Remove any persistent channel entries from the remote end.
-        rsbot = remoteirc.get_service_bot(u)
+        rsbot = remoteirc.get_service_bot(remoteuser)
         if rsbot:
             try:
-                sbot.remove_persistent_channel(irc, 'relay_remote', channel, try_part=False)
+                sbot.remove_persistent_channel(irc, 'relay', channel, try_part=False)
             except KeyError:
                 pass
 
