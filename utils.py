@@ -230,7 +230,7 @@ class ServiceBot():
             else:
                 log.warning('(%s/%s) Ignoring invalid channel %r', irc.name, self.name, channel)
 
-    def part(self, irc, channels):
+    def part(self, irc, channels, reason=''):
         """
         Parts the given service bot from the given channel(s) if no plugins
         still register it as a persistent dynamic channel.
@@ -268,12 +268,12 @@ class ServiceBot():
                               persistent_channels)
                     continue
                 to_part.append(channel)
-                irc.part(uid, channel, '')  # TODO: configurable part message?
+                irc.part(uid, channel, reason)
             else:
                 log.debug('(%s/%s) Ignoring part to %r, we are not there', irc.name, self.name, channel)
                 continue
 
-        irc.call_hooks([uid, 'PYLINK_SERVICE_PART', {'channels': to_part, 'text': ''}])
+        irc.call_hooks([uid, 'PYLINK_SERVICE_PART', {'channels': to_part, 'text': reason}])
 
     def reply(self, irc, text, notice=None, private=None):
         """Replies to a message as the service in question."""
@@ -439,14 +439,14 @@ class ServiceBot():
         if try_join:
             self.join(irc, [channel])
 
-    def remove_persistent_channel(self, irc, namespace, channel, try_part=True):
+    def remove_persistent_channel(self, irc, namespace, channel, try_part=True, part_reason=''):
         """
         Removes a persistent channel from the service bot on the given network and namespace.
         """
         chanlist = self.dynamic_channels[namespace][irc.name].remove(channel)
 
         if try_part and irc.connected.is_set():
-            self.part(irc, [channel])
+            self.part(irc, [channel], reason=part_reason)
 
     def get_persistent_channels(self, irc, namespace=None):
         """
