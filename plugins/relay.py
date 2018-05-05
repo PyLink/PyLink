@@ -540,7 +540,7 @@ def remove_channel(irc, channel):
         return
 
     try:
-        world.services['pylink'].remove_persistent_channel(irc, 'relay', channel, try_part=False)
+        world.services['pylink'].remove_persistent_channel(irc, 'relay', channel)
     except KeyError:
         log.warning('(%s) relay: failed to remove persistent channel %r on delink', irc.name, channel, exc_info=True)
 
