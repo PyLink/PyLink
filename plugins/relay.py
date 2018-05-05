@@ -511,16 +511,6 @@ def initialize_channel(irc, channel):
             # Join their (remote) users and set their modes, if applicable.
             if remotechan in remoteirc.channels:
                 rc = remoteirc.channels[remotechan]
-                '''
-                if not hasattr(rc, '_relay_initial_burst'):
-                    rc._relay_initial_burst = threading.Event()
-
-                if rc._relay_initial_burst.is_set():
-                    log.debug('(%s) relay.initialize_channel: skipping inbound burst from %s/%s => %s/%s '
-                              'as it has already been bursted', irc.name, remoteirc.name, remotechan, irc.name, channel)
-                    continue
-                rc._relay_initial_burst.set()
-                '''
                 relay_joins(remoteirc, remotechan, rc.users, rc.ts, targetirc=irc)
 
                 # Only update the topic if it's different from what we already have,

@@ -248,19 +248,6 @@ class ServiceBot():
         to_part = []
         persistent_channels = self.get_persistent_channels(irc)
         for channel in channels:
-            '''
-            if channel in irc.channels and uid in irc.channels[channel].users:
-                for dch_namespace, dch_data in self.dynamic_channels.items():
-                    if irc.name in dch_data and channel in dch_data[irc.name]:
-                        log.debug('(%s/%s) Not parting %r because namespace %r still registers it '
-                                  'as a dynamic channel.', irc.name, self.name, channel,
-                                  dch_namespace)
-                        break
-                else:
-                    to_part.append(channel)
-                    irc.part(uid, channel, '')  # TODO: configurable part message?
-            '''
-
             if channel in irc.channels and uid in irc.channels[channel].users:
                 if channel in persistent_channels:
                     log.debug('(%s/%s) Not parting %r because it is registered '
