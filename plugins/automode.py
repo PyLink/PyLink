@@ -26,6 +26,20 @@ db = datastore.store
 default_permissions = {"$ircop": ['automode.manage.relay_owned', 'automode.sync.relay_owned',
                                   'automode.list']}
 
+def _join_db_channels(irc):
+    """
+    Joins the Automode service client to channels on the current network in its DB.
+    """
+    if not irc.connected.is_set():
+        log.debug('(%s) _join_db_channels: aborting, network not ready yet', irc.name)
+        return
+
+    for entry in db:
+        netname, channel = entry.split('#', 1)
+        channel = '#' + channel
+        if netname == irc.name:
+            modebot.add_persistent_channel(irc, 'automode', channel)
+
 def main(irc=None):
     """Main function, called during plugin loading at start."""
 
@@ -34,6 +48,10 @@ def main(irc=None):
 
     # Register our permissions.
     permissions.add_default_permissions(default_permissions)
+
+    if irc:  # After initial startup
+        for ircobj in world.networkobjects.values():
+            _join_db_channels(ircobj)
 
 def die(irc=None):
     """Saves the Automode database and quit."""
@@ -115,15 +133,8 @@ def match(irc, channel, uids=None):
 
 def handle_endburst(irc, source, command, args):
     """ENDBURST hook handler - used to join the Automode service to channels where it has entries."""
-    if source != irc.uplink:
-        return
-
-    for entry in db:
-        netname, channel = entry.split('#', 1)
-        channel = '#' + channel
-        if netname == irc.name:
-            modebot.add_persistent_channel(irc, 'automode', channel)
-
+    if source == irc.uplink:
+        _join_db_channels(irc)
 utils.add_hook(handle_endburst, 'ENDBURST')
 
 def handle_join(irc, source, command, args):
