@@ -30,6 +30,17 @@ someblock:
     - ghi
 ```
 
+### I keep getting YAML / syntax errors trying to set up my instance!
+
+Take a few minutes to familiarize yourself with YAML, the markup language we use for the config file: [CraftIRC](https://github.com/Animosity/CraftIRC/wiki/Complete-idiot%27s-introduction-to-yaml), [Ansible](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html), and [Wikipedia](https://en.wikipedia.org/wiki/YAML) all provide excellent guides (with examples) on its basic structure.
+
+A common misconception is that the YAML format is something specific to Python or PyLink, but this is not the case! YAML is a programming language-independent standard which *happens* to use indents for structures like Python does, but [parsers for it exist just about everywhere](http://yaml.org/). The reason I (James) chose it for this project is essentially a restatement of its common benefits:
+
+- It's compact and human readable (compared to raw JSON or XML)
+- It's powerful, supporting everything from nested config blocks to multi-line strings
+- It fits well in the Python landscape, compared to a flat .ini or C-style config format
+- It's language independent, which means it's not a giant pain if we decide to rewrite the project in some other language one day... 🙃
+
 ## Linking / Connection issues
 
 ### PyLink won't connect to my network!
