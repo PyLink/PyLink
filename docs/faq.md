@@ -109,8 +109,10 @@ See https://github.com/GLolol/PyLink/blob/master/docs/advanced-relay-config.md#c
 This usually indicates a serious bug in either Relay or PyLink's protocol modules, and should be reported as an issue. When asking for help, please state which IRCds your PyLink instance is linking to: specifically, which IRCd the missing users are *from* and which IRCd the users are missing *on*. Also, be prepared to send debug logs as you reproduce the issue!
 - Another tip in debugging this is to run `showchan` on the affected channels. If PyLink shows users in `showchan` that aren't in the actual user list, this is most likely a protocol module issue. If `showchan`'s output is correct, it is instead probably a relay issue where users aren't spawning correctly.
 
+## Services issues
+
 ### Service bots aren't spawning on my network, even though PyLink connects
 
-This indicates either a bug in PyLink's protocol module or (less commonly) a bug in your IRCd. Hint: ENDBURST is not being sent or received properly, which causes service bot spawning to never trigger.
+This indicates either a bug in PyLink's protocol module or (less commonly) a bug in your IRCd. Hint: ENDBURST is likely not being sent or received properly, which causes service bot spawning to never trigger.
 
 Make sure you're using an [officially supported IRCd](https://github.com/GLolol/PyLink#supported-ircds) before requesting help, as custom IRCd code can potentially trigger S2S bugs and is not something we can support.
