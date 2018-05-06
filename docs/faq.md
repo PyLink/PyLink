@@ -32,9 +32,12 @@ someblock:
 
 ### I keep getting YAML / syntax errors trying to set up my instance!
 
-Take a few minutes to familiarize yourself with YAML, the markup language we use for the config file: [CraftIRC](https://github.com/Animosity/CraftIRC/wiki/Complete-idiot%27s-introduction-to-yaml), [Ansible](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html), and [Wikipedia](https://en.wikipedia.org/wiki/YAML) all provide excellent guides (with examples) on its basic structure.
+Take a few minutes to familiarize yourself with YAML, the markup language we use for the config file.
+[CraftIRC](https://github.com/Animosity/CraftIRC/wiki/Complete-idiot%27s-introduction-to-yaml), [Ansible](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html), and [Wikipedia](https://en.wikipedia.org/wiki/YAML) all provide excellent guides (with examples) on its basic structure.
 
-A common misconception is that the YAML format is something specific to Python or PyLink, but this is not the case! YAML is a programming language-independent standard which *happens* to use indents for structures like Python does, but [parsers for it exist just about everywhere](http://yaml.org/). The reason I (James) chose it for this project is essentially a restatement of its common benefits:
+A common misconception is that the YAML format is something specific to Python or PyLink, but this is not the case! YAML is a programming language-independent standard which *happens* to use indents for structures like Python does, but [parsers for it exist just about everywhere](http://yaml.org/).
+
+The reason I (James) chose it for this project is essentially a restatement of its common benefits:
 
 - It's compact and human readable (compared to raw JSON or XML)
 - It's powerful, supporting everything from nested config blocks to multi-line strings
@@ -45,25 +48,27 @@ A common misconception is that the YAML format is something specific to Python o
 
 ### PyLink won't connect to my network!
 
-As a general guide, you should check the following before asking for support:
+As a general guide, you should check the following before asking for help:
 
 - Is the target network's IRCd showing failed connection attempts?
     - If not:
         1) Is PyLink connecting to the right port (i.e. one the IRCd is listening on?)
-        2) Is the target network's IRCd actually binding to the port you're trying to use? If there is a port conflict with another program, the IRCd may fail to bind but *still start* on other ports that are free.
+        2) Is the target network's IRCd actually binding to the port you're trying to use? If there is a port conflict with another program, the IRCd may fail to bind to specific ports but *still start* on others which are free.
         3) Is the target port firewalled on the target machine?
         4) Is there a working connection between the source and target servers? Use ping to test this, as routing issues between providers can cause servers to become unreachable.
-            - If your servers are purposely blocking ping, it's up to you to figure this out yourself... 😬
+            - If your servers purposely block ping, you're going to have to figure this one out yourself... 😬
 
     - If so:
-        1) Check for recvpass/sendpass/server hostname/IP mismatches - usually the IRCd will tell you if you're running into one of these, provided you have the right server notices enabled (consult your IRCd documentation for how to do this).
+        1) Check for recvpass/sendpass/server hostname/IP mismatches - usually the IRCd will tell you if you're running into one of these, provided you have the right server notices enabled (consult your IRCd documentation for how to enable these).
         2) Make sure you're not connecting with SSL on a non-SSL port, or vice versa.
 
-If these steps haven't helped you so far, maybe there's a bug somewhere. :)
+If these steps haven't helped you so far, maybe you've found a bug...?
 
 ### My networks keep disconnecting with SSL errors!
 
-See https://github.com/GLolol/PyLink/issues/463 - this seems to be caused by a regression in OpenSSL 1.0.2, which ships with distros such as Ubuntu 16.04 LTS. Unfortunately, the only workarounds so far are to either disable SSL/TLS, or wrap a plain IRC connection in an external service (stunnel, OpenVPN, etc.)
+See https://github.com/GLolol/PyLink/issues/463 - the problem appears to be caused somewhere in Python's SSL stack and/or OpenSSL, and not directly by our code.
+
+Unfortunately, the only workarounds so far are to either disable SSL/TLS, or wrap a plain IRC connection in an external service (stunnel, OpenVPN, etc.)
 
 ### I turned autoconnect for PyLink on, and now I'm getting errors!
 
@@ -94,7 +99,7 @@ However, if the nick mentioned is legal on IRC, this issue is likely caused by a
 
 ### Clientbot doesn't relay both ways!
 
-Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c/example-conf.yml#L303-L306
+Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/1.3-beta1/example-conf.yml#L465-L468
 
 ### How do I turn off colors in Clientbot?
 See https://github.com/GLolol/PyLink/blob/master/docs/advanced-relay-config.md#custom-clientbot-styles, especially the section "Disabling Colors/Control Codes".
