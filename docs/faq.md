@@ -85,6 +85,9 @@ However, if the nick mentioned is legal on IRC, this issue is likely caused by a
 
 Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/e1fab8c/example-conf.yml#L303-L306
 
+### How do I turn off colors in Clientbot?
+See https://github.com/GLolol/PyLink/blob/master/docs/advanced-relay-config.md#custom-clientbot-styles, especially the section "Disabling Colors/Control Codes".
+
 ### Relay is occasionally dropping users from channels!
 
 This usually indicates a serious bug in either Relay or PyLink's protocol modules, and should be reported as an issue. When asking for help, please state which IRCds your PyLink instance is linking to: specifically, which IRCd the missing users are *from* and which IRCd the users are missing *on*. Also, be prepared to send debug logs as you reproduce the issue!
