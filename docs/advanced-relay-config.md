@@ -14,7 +14,9 @@ a:
 
 ### Custom Clientbot Styles
 
-Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::<event name>`. See below for a list of supported events and their default values (as of 1.3-beta1).
+Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::<event name>`. See below for a list of supported events and their default values (as of 1.3.0).
+
+A common use case for this feature is to turn off or adjust colors/formatting; this is explicitly documented [below](#disabling-colorscontrol-codes).
 
 These options take template strings as documented here: https://docs.python.org/3/library/string.html#template-strings. Supported substitution values differ by event, but usually include the [hook values for each](technical/hooks-reference.md#irc-command-hooks), *plus* the following:
 
@@ -34,8 +36,6 @@ These options take template strings as documented here: https://docs.python.org/
     - `$colored_nicks`: a comma-joined list of each bursted nick, color hashed
 
 To disable relaying for any specific event, set the template string to an empty string (`''`).
-
-To disable colors for events, see [below](#disabling-colorscontrol-codes).
 
 #### List of supported events
 
@@ -63,7 +63,7 @@ If you don't want the messages PyLink sends for clientbot messages to be embolde
 remove all escape sequences (e.g. `\x02`) from the format template and replace the colored variants
 of applicable substitutions with their non-colored versions.
 
-This is a example clientbot_styles config block, which you can copy into your `relay` configuration block.
+This is a example clientbot_styles config block, which you can copy *into* your `relay` configuration block.
 (*Do not* make multiple `relay` config blocks, or duplicate any config blocks with the same name!)
 
 ```yaml
