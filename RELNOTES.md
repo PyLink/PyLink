@@ -1,3 +1,9 @@
+# PyLink 1.3.0 (2018-05-08)
+The 1.3 update focuses on backporting some commonly requested and useful features from the WIP 2.0 branch. This release includes all changes from 1.3-beta1, plus the following:
+
+- Errors due to missing permissions now log to warning. [issue#593](https://github.com/GLolol/PyLink/issues/593)
+- Documentation updates to advanced-relay-config.md and the FAQ
+
 # PyLink 1.3-beta1 (2018-04-07)
 The 1.3 update focuses on backporting some commonly requested and useful features from the WIP 2.0 branch. This beta release includes all changes from 1.2.1, plus the following:
 
