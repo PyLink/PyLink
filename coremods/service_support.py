@@ -143,7 +143,7 @@ def _services_dynamic_part(irc, channel):
         return
 
     # If all remaining users in the channel are service bots, make them all part.
-    if all(irc.is_internal_client(u) for u in irc.channels[channel].users):
+    if all(irc.get_service_bot(u) for u in irc.channels[channel].users):
         for u in irc.channels[channel].users.copy():
             sbot = irc.get_service_bot(u)
             if sbot:
