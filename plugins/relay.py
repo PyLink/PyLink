@@ -84,7 +84,7 @@ def die(irc=None):
             # 1) SQUIT every relay subserver.
             for server, sobj in ircobj.servers.copy().items():
                 if hasattr(sobj, 'remote'):
-                    ircobj.proto.squit(ircobj.sid, server, text="Relay plugin unloaded.")
+                    ircobj.squit(ircobj.sid, server, text="Relay plugin unloaded.")
 
     # 2) Clear our internal servers and users caches.
     relayservers.clear()
@@ -758,7 +758,7 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
                     ts = irc.channels[channel].ts
                 prefixes = get_prefix_modes(irc, remoteirc, channel, user)
 
-                # proto.sjoin() takes its users as a list of (prefix mode characters, UID) pairs.
+                # sjoin() takes its users as a list of (prefix mode characters, UID) pairs.
                 userpair = (prefixes, u)
 
                 queued_users.append(userpair)
@@ -1971,7 +1971,7 @@ def handle_disconnect(irc, numeric, command, args):
                 except KeyError:
                     return
                 else:
-                    remoteirc.proto.squit(remoteirc.sid, rsid, text='Relay network lost connection.')
+                    remoteirc.squit(remoteirc.sid, rsid, text='Relay network lost connection.')
 
             if irc.name in relayservers[name]:
                 del relayservers[name][irc.name]
