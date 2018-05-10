@@ -222,9 +222,9 @@ class ServiceBot():
                 log.debug('(%s/%s) Joining channel %s with modes %r', irc.name, self.name, channel, joinmodes)
 
                 if joinmodes:  # Modes on join were specified; use SJOIN to burst our service
-                    irc.proto.sjoin(irc.sid, channel, [(joinmodes, uid)])
+                    irc.sjoin(irc.sid, channel, [(joinmodes, uid)])
                 else:
-                    irc.proto.join(uid, channel)
+                    irc.join(uid, channel)
 
                 irc.call_hooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': channel, 'users': [uid]}])
             else:
@@ -637,7 +637,7 @@ def unregister_service(name):
         if name == 'pylink':
             ircobj.pseudoclient = None
 
-        ircobj.proto.quit(uid, "Service unloaded.")
+        ircobj.quit(uid, "Service unloaded.")
 
     del world.services[name]
 unregisterService = unregister_service
