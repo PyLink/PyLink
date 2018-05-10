@@ -41,7 +41,7 @@ def _join_db_channels(irc):
             modebot.add_persistent_channel(irc, 'automode', channel)
 
 def main(irc=None):
-    """Main function, called during plugin loading at start."""
+    """Main function, called during plugin loading."""
 
     # Load the automode database.
     datastore.load()
@@ -49,7 +49,7 @@ def main(irc=None):
     # Register our permissions.
     permissions.add_default_permissions(default_permissions)
 
-    if irc:  # After initial startup
+    if irc:  # This was a reload.
         for ircobj in world.networkobjects.values():
             _join_db_channels(ircobj)
 
