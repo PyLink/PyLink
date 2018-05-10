@@ -777,11 +777,14 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         # The rest are prefix modes. Multiple can be given by the IRCd if multiple are set
         log.debug('(%s) handle_352: status string on user %s: %s', self.name, nick, status)
         if status[0] == 'G':
-            log.debug('(%s) handle_352: calling away() with argument', self.name)
-            self.away(uid, 'Away')
+            if not self.users[uid].away:
+                # Only set away status if not previously set
+                log.debug('(%s) handle_352: calling away() with argument', self.name)
+                self.away(uid, 'Away')
         elif status[0] == 'H':
-            log.debug('(%s) handle_352: calling away() without argument', self.name)
-            self.away(uid, '')  # Unmark away status
+            if self.users[uid].away:
+                log.debug('(%s) handle_352: calling away() without argument', self.name)
+                self.away(uid, '')  # Unmark away status, but only if /away was previously set
         else:
             log.warning('(%s) handle_352: got wrong string %s for away status', self.name, status[0])
 
