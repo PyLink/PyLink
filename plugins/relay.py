@@ -2479,7 +2479,7 @@ def linkacl(irc, source, args):
             setting = args[2].lower()
             if setting in ('y', 'yes', 'true', '1', 'on'):
                 entry['use_whitelist'] = True
-                irc.reply('Done. Whitelist mode \x02enabled\x02 on \x02%r\x02.' % channel)
+                irc.reply('Done. Whitelist mode \x02enabled\x02 on \x02%s\x02.' % channel)
                 return
             elif setting in ('n', 'np', 'false', '0', 'off'):
                 entry['use_whitelist'] = False
@@ -2504,7 +2504,7 @@ def linkacl(irc, source, args):
             try:
                 db[relay]['allowed_nets'].remove(remotenet)
             except KeyError:
-                irc.error('Network %r is not on the whitelist for %r.' % (remotenet, channel))
+                irc.error('Network \x02%s\x02 is not on the whitelist for \x02%s\x02.' % (remotenet, channel))
                 return
         else:
             # In blacklist mode, DENY *adds* to the blacklist
@@ -2522,7 +2522,7 @@ def linkacl(irc, source, args):
             try:
                 db[relay]['blocked_nets'].remove(remotenet)
             except KeyError:
-                irc.error('Network %r is not on the blacklist for %r.' % (remotenet, channel))
+                irc.error('Network \x02%s\x02 is not on the blacklist for \x02%s\x02.' % (remotenet, channel))
                 return
         irc.reply('Done.')
     else:
