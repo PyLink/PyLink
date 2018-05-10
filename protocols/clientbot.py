@@ -768,7 +768,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self.update_client(uid, 'HOST', host)
         self.update_client(uid, 'GECOS', realname)
         self.users[uid]._clientbot_identhost_received = True
-        self._channels[channel]._clientbot_initial_who_received = True
 
         # The status given uses the following letters: <H|G>[*][@|+]
         # H means here (not marked /away)
@@ -822,6 +821,9 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         c = self._channels[channel]
 
         modes = set(c.modes)
+        bursted_before = hasattr(c, '_clientbot_initial_who_received')
+
+        queued_users = []
         for user in users.copy():
             # Fill in prefix modes of everyone when doing mock SJOIN.
             try:
@@ -834,7 +836,14 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                 log.debug("(%s) Ignoring KeyError (%s) from WHO response; it's probably someone we "
                           "don't share any channels with", self.name, e)
 
-        if users:
+            if bursted_before and user in c.users:
+                log.debug("(%s) Skipping join of %s/%s to %r", self.name, user,
+                          self.get_friendly_name(user), channel)
+                continue
+            queued_users.append(user)
+
+        c._clientbot_initial_who_received = True
+        if queued_users:
             return {'channel': channel, 'users': users, 'modes': modes,
                     'parse_as': "JOIN"}
 
