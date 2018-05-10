@@ -324,7 +324,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def _stub(self, *args):
         """Stub outgoing command function (does nothing)."""
         return
-    kill = topic = topic_burst = knock = numeric = _stub
+    topic = topic_burst = _stub  # XXX: incomplete
+
+    def _stub_raise(self, *args):
+        """Stub outgoing command function (raises an error)."""
+        raise NotImplementedError("Not supported on Clientbot")
+    kill = knock = numeric = _stub_raise
 
     def update_client(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""

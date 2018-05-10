@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.0-alpha1 (2017-10-05).***
+***Last updated for 2.0-alpha3 (2018-05-09).***
 
 Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
@@ -70,11 +70,11 @@ Unless otherwise noted, the camel-case variants of command functions (e.g. "`spa
 
 - **`invite`**`(self, source, target, channel)` - Sends an INVITE from a PyLink client.
 
-- **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink client/server.
+- **`kick`**`(self, source, channel, target, reason=None)` - Sends a kick from a PyLink client/server. This should raise `NotImplementedError` if not supported by a protocol.
 
-- **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink client/server.
+- **`kill`**`(self, source, target, reason)` - Sends a kill from a PyLink client/server. This should raise `NotImplementedError` if not supported by a protocol.
 
-- **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client. This should raise `NotImplementedError` if not supported on the protocol.
+- **`knock`**`(self, source, target, text)` - Sends a KNOCK from a PyLink client. This should raise `NotImplementedError` if not supported by a protocol.
 
 - **`message`**`(self, source, target, text)` - Sends a PRIVMSG from a PyLink client.
 
@@ -84,7 +84,7 @@ Unless otherwise noted, the camel-case variants of command functions (e.g. "`spa
 
 - **`notice`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client or server.
 
-- **`numeric`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`.
+- **`numeric`**`(self, source, numeric, target, text)` - Sends a raw numeric `numeric` with `text` from the `source` server to `target`. This should raise `NotImplementedError` if not supported on a protocol.
 
 - **`part`**`(self, client, channel, reason=None)` - Sends a part from a PyLink client.
 
@@ -223,6 +223,9 @@ In short, protocol modules have some very important jobs. If any of these aren't
 6) Check that `recvpass` is correct when applicable, and raise `ProtocolError` with a relevant error message if not.
 
 ## Changes
+* 2018-05-09 (2.0-alpha3)
+   - `kill` and `kick` implementations should raise `NotImplementedError` if not supported (anti-desync measure).
+   - Future PyLink versions will further standardize which functions should be stubbed (no-op) when not available and which should raise an error.
 * 2017-10-05 (2.0-alpha1)
    - Added notes on user statekeeping and the tracking/helper functions used.
    - Mention the `post_connect()` function that must be defined by protocols inheriting from IRCNetwork.
