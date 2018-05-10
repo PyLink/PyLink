@@ -101,7 +101,7 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 Support for these IRCds exist, but are not tested as frequently and thoroughly. Bugs should be filed if there are any issues, though they may not always be fixed in a timely fashion.
 
 * [beware-ircd](http://ircd.bircd.org/) (1.6.3) - module `p10`
-    - Because bircd disallows BURST after ENDBURST for regular servers, U-lines are required for all PyLink servers. Fortuantely, wildcards are supported in U-lines, so you can add something along the lines of `U:<your pylink server>:` and `U:*.relay:` (adjust accordingly for your relay server suffix).
+    - Because bircd disallows BURST after ENDBURST for regular servers, U-lines are required for all PyLink servers. Fortunately, wildcards are supported in U-lines, so you can add something along the lines of `U:<your pylink server>:` and `U:*.relay:` (adjust accordingly for your relay server suffix).
     - Use `ircd: snircd` as the target IRCd.
     - Halfops, `sethost` (`+h`), and account-based cloaking (`VHostStyle=1`) are supported. Crypted IPs and static hosts (`VHostStyle` 2 and 3) are NOT.
 * [ChatIRCd](http://www.chatlounge.net/software) (1.2.x / git master) - module `ts6`
