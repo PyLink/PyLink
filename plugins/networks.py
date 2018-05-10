@@ -113,6 +113,10 @@ def remote(irc, source, args):
         irc.error('Network %r is not connected.' % netname)
         REMOTE_IN_USE.clear()
         return
+    elif not world.services[args.service].uids.get(netname):
+        irc.error('The requested service %r is not available on %r.' % (args.service, netname))
+        REMOTE_IN_USE.clear()
+        return
 
     # Force remoteirc.called_in to something private in order to prevent
     # accidental information leakage from replies.
