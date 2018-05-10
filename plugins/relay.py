@@ -728,15 +728,18 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
                 continue
 
             assert user in irc.users, "(%s) relay.relay_joins: How is this possible? %r isn't in our user database." % (irc.name, user)
+
+            # Special case for service bots: mark the channel is persistent so that it is joined
+            # when the service bot is next ready. This can be done regardless of whether the remote
+            # client exists at this stage.
+            sbot = irc.get_service_bot(user)
+            if sbot:
+                sbot.add_persistent_channel(remoteirc, 'relay', remotechan, try_join=False)
+
             u = get_remote_user(irc, remoteirc, user, reuse_sid=rsid)
 
             if not u:
                 continue
-
-            # Join the service bot on the remote channel persistently.
-            sbot = irc.get_service_bot(user)
-            if sbot:
-                sbot.add_persistent_channel(remoteirc, 'relay', remotechan, try_join=False)
 
             if (remotechan not in remoteirc.channels) or u not in remoteirc.channels[remotechan].users:
                 # Note: only join users if they aren't already joined. This prevents op floods
