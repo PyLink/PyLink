@@ -702,6 +702,9 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
     to that specific network.
     """
 
+    log.debug('(%s) relay.relay_joins: called on %r with users %r, targetirc=%s', irc.name, channel,
+              ['%s/%s' % (user, irc.get_friendly_name(user)) for user in users], targetirc)
+
     if ts < 750000:
         current_ts = int(time.time())
         log.debug('(%s) relay: resetting too low TS value of %s on %s to %s', irc.name, ts, users, current_ts)
@@ -731,9 +734,9 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
                 continue
 
             # Join the service bot on the remote channel persistently.
-            rsbot = remoteirc.get_service_bot(u)
-            if rsbot:
-                rsbot.add_persistent_channel(irc, 'relay', channel, try_join=False)
+            sbot = irc.get_service_bot(user)
+            if sbot:
+                sbot.add_persistent_channel(remoteirc, 'relay', remotechan, try_join=False)
 
             if (remotechan not in remoteirc.channels) or u not in remoteirc.channels[remotechan].users:
                 # Note: only join users if they aren't already joined. This prevents op floods
@@ -828,10 +831,10 @@ def relay_part(irc, *args, **kwargs):
             return
 
         # Remove any persistent channel entries from the remote end.
-        rsbot = remoteirc.get_service_bot(remoteuser)
-        if rsbot:
+        sbot = irc.get_service_bot(user)
+        if sbot:
             try:
-                sbot.remove_persistent_channel(irc, 'relay', channel, try_part=False)
+                sbot.remove_persistent_channel(remoteirc, 'relay', remotechan, try_part=False)
             except KeyError:
                 pass
 
