@@ -479,6 +479,7 @@ class ServiceBot():
         if command not in self.commands:
             _reply('Error: Unknown command %r.' % command)
             return
+
         else:
             funcs = self.commands[command]
             if len(funcs) > 1:
@@ -500,8 +501,8 @@ class ServiceBot():
                         # combinations of more) have the effect of showing a new line on IRC.
                         # Single newlines are stripped so that word wrap can be applied in source
                         # code without affecting the output on IRC.
-                        # TODO: we should probably verify that the output line doesn't exceed IRC
-                        # line length limits...
+                        # (On the same topic, real line wrapping on IRC is done in irc.msg() as of
+                        #  2.0-alpha4)
                         next_line = ''
                         for linenum, line in enumerate(lines[1:], 1):
                             stripped_line = line.strip()
@@ -522,6 +523,7 @@ class ServiceBot():
                                 _reply_format(next_line)
                                 next_line = ''  # Reset the next line buffer
                         else:
+                            # Show the last line.
                             _reply_format(next_line)
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)

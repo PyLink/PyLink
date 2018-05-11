@@ -20,6 +20,7 @@ import string
 import re
 import collections
 import collections.abc
+import textwrap
 
 try:
     import ircmatch
@@ -384,7 +385,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         """
         world.services['pylink'].call_cmd(self, source, text)
 
-    def msg(self, target, text, notice=None, source=None, loopback=True):
+    def msg(self, target, text, notice=None, source=None, loopback=True, wrap=True):
         """Handy function to send messages/notices to clients. Source
         is optional, and defaults to the main PyLink client if not specified."""
         if not text:
@@ -395,20 +396,28 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
             return
         source = source or self.pseudoclient.uid
 
-        if notice:
-            self.notice(source, target, text)
-            cmd = 'PYLINK_SELF_NOTICE'
-        else:
-            self.message(source, target, text)
-            cmd = 'PYLINK_SELF_PRIVMSG'
+        def _msg(text):
+            if notice:
+                self.notice(source, target, text)
+                cmd = 'PYLINK_SELF_NOTICE'
+            else:
+                self.message(source, target, text)
+                cmd = 'PYLINK_SELF_PRIVMSG'
 
-        if loopback:
-            # Determines whether we should send a hook for this msg(), to relay things like services
+            # Determines whether we should send a hook for this msg(), to forward things like services
             # replies across relay.
-            self.call_hooks([source, cmd, {'target': target, 'text': text}])
+            if loopback:
+                self.call_hooks([source, cmd, {'target': target, 'text': text}])
+
+        # Optionally wrap the text output.
+        if wrap:
+            for line in self.wrap_message(source, target, text):
+                _msg(line)
+        else:
+            _msg(text)
 
     def _reply(self, text, notice=None, source=None, private=None, force_privmsg_in_private=False,
-            loopback=True):
+            loopback=True, wrap=True):
         """
         Core of the reply() function - replies to the last caller in the right context
         (channel or PM).
@@ -428,7 +437,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         else:
             target = self.called_in
 
-        self.msg(target, text, notice=notice, source=source, loopback=loopback)
+        self.msg(target, text, notice=notice, source=source, loopback=loopback, wrap=wrap)
 
     def reply(self, *args, **kwargs):
         """
@@ -1445,6 +1454,14 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 return sname
         return uid  # Regular UID, no change
 
+    def wrap_message(self, source, target, command, text):
+        """
+        Wraps the given message text into multiple lines (length depends on how much the protocol
+        allows), and returns these as a list.
+        """
+        # This is protocol specific, so stub it here in the base class.
+        raise NotImplementedError
+
 utils._proto_utils_class = PyLinkNetworkCoreWithUtils  # Used by compatibility wrappers
 
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
@@ -1843,6 +1860,21 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             log.debug('(%s) _process_queue: shutting down write half of socket %s', self.name, self._socket)
             self._socket.shutdown(socket.SHUT_WR)
         self._aborted_send.set()
+
+    def wrap_message(self, source, target, text):
+        """
+        Wraps the given message text into multiple lines, and returns these as a list.
+
+        For IRC, the maximum length of one message is calculated as S2S_BUFSIZE (default to 510)
+        minus the length of ":sender-nick!sender-user@sender-host PRIVMSG #target :"
+        """
+        prefixstr = ":%s PRIVMSG %s :" % (self.get_hostmask(source), target)
+        maxlen = self.S2S_BUFSIZE - len(prefixstr)
+
+        log.debug('(%s) wrap_message: length of prefix %r is %s, S2S_BUFSIZE=%s, maxlen=%s',
+                  self.name, prefixstr, len(prefixstr), self.S2S_BUFSIZE, maxlen)
+
+        return textwrap.wrap(text, width=maxlen)
 
 Irc = IRCNetwork
 

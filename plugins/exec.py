@@ -97,7 +97,9 @@ def _eval(irc, source, args, locals_dict=None, pretty_print=False):
         if len(lines) > PPRINT_MAX_LINES:
             irc.reply('Suppressing %s more line(s) of output.' % (len(lines) - PPRINT_MAX_LINES))
     else:
-        irc.reply(repr(result))
+        # Purposely disable text wrapping so results are cut instead of potentially flooding;
+        # 'peval' is specifically designed to work around that.
+        irc.reply(repr(result), wrap=False)
 
 utils.add_cmd(_eval, 'eval')
 
