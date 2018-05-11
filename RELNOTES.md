@@ -3,18 +3,18 @@
 This release contains all changes from 1.3.0, as well as the following:
 
 #### New features
-- **Experimental daemonization support via `pylink -d`!** [issue#187](https://github.com/GLolol/PyLink/issues/187)
-- Clientbot now supports expansions such as `$nick` in autoperform
+- **Experimental daemonization support via `pylink -d`**. [issue#187](https://github.com/GLolol/PyLink/issues/187)
+- New (alpha-quality) `antispam` plugin targeting mass-highlight spam: it supports any combination of kick, ban, quiet (mute), and kill as punishment. [issue#359](https://github.com/GLolol/PyLink/issues/359)
+- Clientbot now supports expansions such as `$nick` in autoperform.
 - Relay now translates STATUSMSG messages (e.g. `@#channel` messages) for target networks instead of passing them on as-is. [issue#570](https://github.com/GLolol/PyLink/issues/570)
 - Relay endburst delay on InspIRCd networks is now configurable via the `servers::NETNAME::relay_endburst_delay` option.
+- The servermaps plugin now shows the uplink server name for Clientbot links
+- Added `--trace / -t` options to the launcher for integration with Python's `trace` module.
 
 #### Feature changes
-- New (alpha-quality) `antispam` plugin targeting mass-highlight spam: it supports any combination of kick, ban, quiet (mute), and kill as punishment. [issue#359](https://github.com/GLolol/PyLink/issues/359)
 - **Reverted the commit making SIGHUP shutdown the PyLink daemon**. Now, SIGUSR1 and SIGHUP both trigger a rehash, while SIGTERM triggers a shutdown.
 - The `raw` command has been split into a new plugin (`plugins/raw.py`) with two permissions: `raw.raw` for Clientbot networks, and `raw.raw.unsupported_network` for other protocols. Using raw commands outside Clientbot is not supported. [issue#565](https://github.com/GLolol/PyLink/issues/565)
 - The servermaps plugin now uses two permissions for `map` and `localmap`: `servermaps.map` and `servermaps.localmap` respectively
-- The servermaps plugin now shows the uplink server name for Clientbot links
-- Added `--trace / -t` options to the launcher for integration with Python's `trace` module.
 - `showuser` and `showchan` now consistently report times in UTC
 
 #### Bug fixes
@@ -39,20 +39,20 @@ This release contains all changes from 1.3.0, as well as the following:
     - This new code uses the Python selectors module, which automatically chooses the fastest polling backend available ([`epoll|kqueue|devpoll > poll > select`](https://github.com/python/cpython/blob/v3.6.5/Lib/selectors.py#L599-L601)).
 - **API Break: significantly reworked channel handling for service bots**. [issue#265](https://github.com/GLolol/PyLink/issues/265)
     - The `ServiceBot.extra_channels` attribute in previous versions is replaced with `ServiceBot.dynamic_channels`, which is accessed indirectly via new functions `ServiceBot.add_persistent_channel()`, `ServiceBot.remove_persistent_channel()`, `ServiceBot.get_persistent_channels()`. This API also replaces `ServiceBot.join()` for most plugins, which now joins channels *non-persistently*.
-    - This API change provides plugins with a way of registering dynamic persistent channels, which are consistently rejoined on kick or kill
-    - Persistent channels are also "dynamic" in the sense that PyLink service bots will now part channels marked persistent when they become empty, and rejoin when it is recreated
-    - This new implementation is also plugin specific, as plugins must provide a namespace (usually the plugin name) when managing persistent channels using `ServiceBot.(add|remove)_persistent_channel()`
-    - New abstraction: `ServiceBot.get_persistent_channels()` which fetches the list of all persistent channels on a network (i.e. *both* the config defined channels and what's registered in `dynamic_channels`)
+    - This API change provides plugins with a way of registering dynamic persistent channels, which are consistently rejoined on kick or kill.
+    - Persistent channels are also "dynamic" in the sense that PyLink service bots will now part channels marked persistent when they become empty, and rejoin when it is recreated.
+    - This new implementation is also plugin specific, as plugins must provide a namespace (usually the plugin name) when managing persistent channels using `ServiceBot.(add|remove)_persistent_channel()`.
+    - New abstraction: `ServiceBot.get_persistent_channels()` which fetches the list of all persistent channels on a network (i.e. *both* the config defined channels and what's registered in `dynamic_channels`).
     - New abstraction: `ServiceBot.part()` sends a part request to channels and only succeeds if it is not marked persistent by any plugin. This effectively works around the long-standing issue of relay-services conflicts. [issue#265](https://github.com/GLolol/PyLink/issues/265)
 - Major optimizations to `irc.nick_to_uid`: `PyLinkNetworkCore.users` and `classes.User` now transparently maintain an index mapping nicks to UIDs instead of doing reverse lookup on every call.
-    - This introduces a new `UserMapping` class, which stores User objects by UID and provides a `bynick` dict storing case-normalized nicks to lists of UIDs.
-    - `classes.User.nick` is now a property, where the setter implicitly updates the `bynick` index with a pre-computed case-normalized version of the nick (`User.lower_nick`)
-- Various relay optimizations.
+    - This is done via a new `UserMapping` class in `pylinkirc.classes`, which stores User objects by UID and provides a `bynick` attribute mapping case-normalized nicks to lists of UIDs.
+    - `classes.User.nick` is now a property, where the setter implicitly updates the `bynick` index with a pre-computed case-normalized version of the nick (also stored to `User.lower_nick`)
+- Various relay optimizations: reuse target SID when bursting joins, and only look up nick once in `normalize_nick`
 - Rewritten CTCP plugin, now extending to all service bots. [issue#468](https://github.com/GLolol/PyLink/issues/468), [issue#407](https://github.com/GLolol/PyLink/issues/407)
 - Relay no longer spams configured U-lines with "message dropped because you aren't in a common channel" errors
 - The `endburst_delay` option to `spawn_server()` was removed from the protocol spec, and replaced by a private API used by protocols/inspircd and relay.
-- New API: hook functions can now block further execution from other handlers by returning False. [issue#547](https://github.com/GLolol/PyLink/issues/547)
-- New API: added `irc.get_server_option()` to fetch server-specific config variables and global settings as fallback. [issue#574](https://github.com/GLolol/PyLink/issues/574)
+- New API: hook handlers can now filter messages from lower-priority handlers by returning `False`. [issue#547](https://github.com/GLolol/PyLink/issues/547)
+- New API: added `irc.get_server_option()` to fetch server-specific config variables and global settings as a fallback. [issue#574](https://github.com/GLolol/PyLink/issues/574)
 - automode: replace assert checks with proper exceptions
 - Renamed methods in log, utils, conf to snake case. [issue#523](https://github.com/GLolol/PyLink/issues/523)
 - Remove `structures.DeprecatedAttributesObject`; it's vastly inefficient for what it accomplishes
