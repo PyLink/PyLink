@@ -702,7 +702,7 @@ relay:
     #linkacl_use_whitelist: false
 
     # Determines whether CLAIM should be enabled by default for newly created channels.
-    # This defaults to true, and can also be specified per network via the 'enable_default_claim'
+    # This defaults to true, and can also be specified per network via the 'relay_enable_default_claim'
     # option in a server block.
     #enable_default_claim: true
 
