@@ -1988,19 +1988,34 @@ def handle_disconnect(irc, numeric, command, args):
     # Announce the disconnects to every leaf channel where the disconnected network is the owner
     announcement = conf.conf.get('relay', {}).get('disconnect_announcement')
     log.debug('(%s) relay: last connection successful: %s', irc.name, args.get('was_successful'))
-    if announcement and args.get('was_successful'):
+    if args.get('was_successful'):
         for chanpair, entrydata in db.items():
-            log.debug('(%s) relay: Looking up %s', irc.name, chanpair)
             if chanpair[0] == irc.name:
                 for leaf in entrydata['links']:
-                    log.debug('(%s) relay: Announcing disconnect to %s%s', irc.name,
-                              leaf[0], leaf[1])
                     remoteirc = world.networkobjects.get(leaf[0])
                     if remoteirc and remoteirc.connected.is_set():
-                        text = string.Template(announcement).safe_substitute(
-                            {'homenetwork': irc.name, 'homechannel': chanpair[1],
-                             'network': remoteirc.name, 'channel': leaf[1]})
-                        remoteirc.msg(leaf[1], text, loopback=False)
+                        if announcement:
+                            log.debug('(%s) relay: Announcing disconnect to %s%s', irc.name,
+                                      leaf[0], leaf[1])
+                            text = string.Template(announcement).safe_substitute({
+                                   'homenetwork': irc.name, 'homechannel': chanpair[1],
+                                   'network': remoteirc.name, 'channel': leaf[1]})
+                            remoteirc.msg(leaf[1], text, loopback=False)
+
+                        # Also remove any services bots that joined because of relay.
+                        for sname, sbot in world.services.items():
+                            if sname == 'pylink':
+                                # We always keep the relay service on the channel
+                                # for consistency.
+                                continue
+                            try:
+                                sbot.remove_persistent_channel(remoteirc, 'relay', leaf[1],
+                                                               part_reason=CHANNEL_DELINKED_PARTMSG)
+                            except KeyError:
+                                continue
+                            else:
+                                log.debug('(%s) Removed service %r from %s%s as the home network disconnected',
+                                          irc.name, sname, leaf[0], leaf[1])
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
