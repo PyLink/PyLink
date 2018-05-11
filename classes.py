@@ -1872,6 +1872,12 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         For IRC, the maximum length of one message is calculated as S2S_BUFSIZE (default to 510)
         minus the length of ":sender-nick!sender-user@sender-host PRIVMSG #target :"
         """
+        try:
+            target = self.get_friendly_name(target)
+        except KeyError:
+            log.warning('(%s) Possible desync? Error while expanding wrap_message target %r '
+                        '(source=%s)', self.name, target, source, exc_info=True)
+
         prefixstr = ":%s PRIVMSG %s :" % (self.get_hostmask(source), target)
         maxlen = self.S2S_BUFSIZE - len(prefixstr)
 
