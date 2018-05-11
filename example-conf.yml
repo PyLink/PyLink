@@ -692,13 +692,13 @@ relay:
     allow_clientbot_pms: false
 
     # Sets the suffix that relay subservers should use. Defaults to "relay" (as in net1.relay,
-    # net2.relay, etc.) if not specified. This can also be set per-network via
-    # servers::<netname>::relay_server_suffix.
+    # net2.relay, etc.) if not specified. This can also be specified per network via the
+    # 'relay_server_suffix' option in a server block.
     #server_suffix: "relay.yournet.net"
 
-    # Determines whether LINKACL should use whitelist or blacklist mode by default. This defaults
-    # to false, and can also be specified per network via the 'relay_linkacl_use_whitelist' option
-    # in a server block.
+    # Determines whether LINKACL should use whitelist or blacklist mode by default for newly
+    # created channels. This defaults to false, and can also be specified per network via the
+    # 'relay_linkacl_use_whitelist' option in a server block.
     #linkacl_use_whitelist: false
 
     # Determines whether CLAIM should be enabled by default for newly created channels.
