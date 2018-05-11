@@ -673,16 +673,15 @@ relay:
     # option in server blocks override this if specified.
     separator: "/"
 
-    # Determines whether all nicks will be tagged by default, instead of only when a
-    # nick collision happens. It is HIGHLY RECOMMENDED that you enable this, unless you're
-    # absolutely sure NO ONE will be using the same nick on 2 or more networks in your
-    # relay.
-    # This defaults to True if not specified. Disabling this option is currently
-    # experimental.
+    # Determines whether all relay users' nicks will be tagged with their network, instead of only
+    # when a nick collision occurs. It is recommended that you either leave this on or maintain a
+    # list of nicks in "forcetag_nicks", so that your users don't complain about "nick in use"
+    # errors. This option defaults to True if not specified.
     tag_nicks: true
 
-    # If tag_nicks is False, this specifies a list of NICK globs that network
-    # tags should be added for anyways (e.g. network services).
+    # If tag_nicks is False, this specifies a list of NICK globs that network tags should be added
+    # for anyways (e.g. network services).
+    # There is also a per-network version of this option: see 'relay_forcetag_nicks'.
     forcetag_nicks:
         - "*Serv"
 
