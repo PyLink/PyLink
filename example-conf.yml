@@ -696,6 +696,11 @@ relay:
     # servers::<netname>::relay_server_suffix.
     #server_suffix: "relay.yournet.net"
 
+    # Determines whether LINKACL should use whitelist or blacklist mode by default. This defaults
+    # to false, and can also be specified per network via the 'relay_linkacl_use_whitelist' option
+    # in a server block.
+    #linkacl_use_whitelist: false
+
     # Sets whether Clientbot mode sync will be enabled. Valid options:
     # "full" - Sync bans, ban/invite exceptions, prefix modes, and all RFC1459-standard modes. The
     #          bot will need op in the Clientbot channel for this to work both ways.

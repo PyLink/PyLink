@@ -2114,7 +2114,9 @@ def create(irc, source, args):
     # pair - this is just a dict with various keys.
     db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(),
                                'blocked_nets': set(), 'creator': creator,
-                               'ts': time.time()}
+                               'ts': time.time(),
+                               'use_whitelist': irc.get_service_option('relay', 'linkacl_use_whitelist', False),
+                               'allowed_nets': set()}
     log.info('(%s) relay: Channel %s created by %s.', irc.name, channel, creator)
     initialize_channel(irc, channel)
     irc.reply('Done.')
