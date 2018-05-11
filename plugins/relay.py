@@ -2127,11 +2127,14 @@ def create(irc, source, args):
     creator = irc.get_hostmask(source)
     # Create the relay database entry with the (network name, channel name)
     # pair - this is just a dict with various keys.
-    db[(irc.name, channel)] = {'claim': [irc.name], 'links': set(),
-                               'blocked_nets': set(), 'creator': creator,
+    db[(irc.name, channel)] = {'links': set(),
+                               'blocked_nets': set(),
+                               'creator': creator,
                                'ts': time.time(),
                                'use_whitelist': irc.get_service_option('relay', 'linkacl_use_whitelist', False),
-                               'allowed_nets': set()}
+                               'allowed_nets': set(),
+                               'claim': [irc.name] if irc.get_service_option('relay', 'enable_default_claim', True)
+                                        else []}
     log.info('(%s) relay: Channel %s created by %s.', irc.name, channel, creator)
     initialize_channel(irc, channel)
     irc.reply('Done.')

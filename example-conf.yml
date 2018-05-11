@@ -701,6 +701,11 @@ relay:
     # in a server block.
     #linkacl_use_whitelist: false
 
+    # Determines whether CLAIM should be enabled by default for newly created channels.
+    # This defaults to true, and can also be specified per network via the 'enable_default_claim'
+    # option in a server block.
+    #enable_default_claim: true
+
     # Sets whether Clientbot mode sync will be enabled. Valid options:
     # "full" - Sync bans, ban/invite exceptions, prefix modes, and all RFC1459-standard modes. The
     #          bot will need op in the Clientbot channel for this to work both ways.
