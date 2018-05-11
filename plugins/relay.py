@@ -2262,7 +2262,9 @@ def link(irc, source, args):
         irc.error('No such relay %r exists.' % args.channel)
         return
     else:
-        if irc.name in entry['blocked_nets']:
+        whitelist_mode = entry.get('use_whitelist', False)
+        if ((not whitelist_mode) and irc.name in entry['blocked_nets']) or \
+                (whitelist_mode and irc.name not in entry.get('allowed_nets', set())):
             irc.error('Access denied (target channel is not open to links).')
             return
         for link in entry['links']:
@@ -2433,12 +2435,16 @@ linked = utils.add_cmd(linked, featured=True)
 
 @utils.add_cmd
 def linkacl(irc, source, args):
-    """ALLOW|DENY|LIST <channel> <remotenet>
+    """ALLOW|DENY <channel> <remotenet> [OR] LIST <channel> [OR] WHITELIST <channel> [true/false]
 
-    Allows blocking / unblocking certain networks from linking to a relayed channel, based on a blacklist.
+    Allows managing link access control lists.
 
-    LINKACL LIST returns a list of blocked networks for a channel, while the ALLOW and DENY subcommands allow manipulating this blacklist."""
-    missingargs = "Not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST), channel, remote network (for ALLOW/DENY)."
+    LINKACL LIST returns a list of whitelisted / blacklisted networks for a channel.
+
+    LINKACL ALLOW and DENY allow manipulating the blacklist or whitelist for a channel.
+
+    LINKACL WHITELIST allows showing and setting whether the channel uses a blacklist or a whitelist for ACL management."""
+    missingargs = "Not enough arguments. Needs 2-3: subcommand (ALLOW/DENY/LIST/WHITELIST), channel, remote network (for ALLOW/DENY)."
 
     try:
         cmd = args[0].lower()
@@ -2446,16 +2452,42 @@ def linkacl(irc, source, args):
     except IndexError:
         irc.error(missingargs)
         return
+
     if not irc.is_channel(channel):
         irc.error('Invalid channel %r.' % channel)
         return
+
     relay = get_relay(irc, channel)
     if not relay:
         irc.error('No such relay %r exists.' % channel)
         return
+
+    entry = db[relay]
+    whitelist = entry.get('use_whitelist', False)
+
     if cmd == 'list':
         permissions.check_permissions(irc, source, ['relay.linkacl.view'])
-        s = 'Blocked networks for \x02%s\x02: \x02%s\x02' % (channel, ', '.join(db[relay]['blocked_nets']) or '(empty)')
+        if whitelist:
+            s = 'Whitelisted networks for \x02%s\x02: \x02%s\x02' % (channel, ', '.join(entry['allowed_nets']) or '(empty)')
+        else:
+            s = 'Blocked networks for \x02%s\x02: \x02%s\x02' % (channel, ', '.join(entry.get('blocked_nets', set())) or '(empty)')
+        irc.reply(s)
+        return
+    elif cmd == 'whitelist':
+        s = 'Whitelist mode is currently \x02%s\x02 on \x02%s\x02.' % ('enabled' if whitelist else 'disabled', channel)
+        if len(args) >= 3:
+            setting = args[2].lower()
+            if setting in ('y', 'yes', 'true', '1', 'on'):
+                entry['use_whitelist'] = True
+                irc.reply('Done. Whitelist mode \x02enabled\x02 on \x02%s\x02.' % channel)
+                return
+            elif setting in ('n', 'np', 'false', '0', 'off'):
+                entry['use_whitelist'] = False
+                irc.reply('Done. Whitelist mode \x02disabled\x02 on \x02%s\x02.' % channel)
+                return
+            else:
+                irc.reply('Unknown option %r. %s' % (setting, s))
+                return
         irc.reply(s)
         return
 
@@ -2465,16 +2497,34 @@ def linkacl(irc, source, args):
     except IndexError:
         irc.error(missingargs)
         return
+
     if cmd == 'deny':
-        db[relay]['blocked_nets'].add(remotenet)
-        irc.reply('Done.')
-    elif cmd == 'allow':
-        try:
-            db[relay]['blocked_nets'].remove(remotenet)
-        except KeyError:
-            irc.error('Network %r is not on the blacklist for %r.' % (remotenet, channel))
+        if whitelist:
+            # In whitelist mode, DENY *removes* from the whitelist
+            try:
+                db[relay]['allowed_nets'].remove(remotenet)
+            except KeyError:
+                irc.error('Network \x02%s\x02 is not on the whitelist for \x02%s\x02.' % (remotenet, channel))
+                return
         else:
-            irc.reply('Done.')
+            # In blacklist mode, DENY *adds* to the blacklist
+            db[relay]['blocked_nets'].add(remotenet)
+        irc.reply('Done.')
+
+    elif cmd == 'allow':
+        if whitelist:
+            # In whitelist mode, ALLOW *adds* to the whitelist
+            if 'allowed_nets' not in entry:  # Upgrading from < 2.0-alpha4
+                entry['allowed_nets'] = set()
+            db[relay]['allowed_nets'].add(remotenet)
+        else:
+            # In blacklist mode, ALLOW *removes* from the blacklist
+            try:
+                db[relay]['blocked_nets'].remove(remotenet)
+            except KeyError:
+                irc.error('Network \x02%s\x02 is not on the blacklist for \x02%s\x02.' % (remotenet, channel))
+                return
+        irc.reply('Done.')
     else:
         irc.error('Unknown subcommand %r: valid ones are ALLOW, DENY, and LIST.' % cmd)
 
