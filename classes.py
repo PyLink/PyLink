@@ -1172,12 +1172,16 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def get_friendly_name(self, entityid):
         """
-        Returns the friendly name of a SID or UID (server name for SIDs, nick for UID).
+        Returns the friendly name of a SID (the server name), UID (the nick), or channel (returned as-is).
         """
         if entityid in self.servers:
             return self.servers[entityid].name
         elif entityid in self.users:
             return self.users[entityid].nick
+        elif self.is_channel(entityid):
+            # We assume that channels don't conflict with the SID/UID format. For IRC, this is a
+            # relatively safe bet.
+            return entityid
         else:
             raise KeyError("Unknown UID/SID %s" % entityid)
 
