@@ -1,6 +1,6 @@
-# PyLink 2.0-alpha3 (unreleased)
+# PyLink 2.0-alpha3 (2018-05-10)
 
-This release contains all changes from 1.3.0, plus the following:
+This release contains all changes from 1.3.0, as well as the following:
 
 #### New features
 - **Experimental daemonization support via `pylink -d`!** [issue#187](https://github.com/GLolol/PyLink/issues/187)
@@ -28,9 +28,11 @@ This release contains all changes from 1.3.0, plus the following:
 - Fixed various 2.0-alpha2 regressions:
     - Relay now relays service client messages as PRIVMSG and P10 WALL\* commands as NOTICE
     - protocols/inspircd: fix supported modules list being corrupted when an indirectly linked server shuts down. [issue#567](https://github.com/GLolol/PyLink/issues/567)
+- networks: `remote` now properly errors if the target service is not available on a network. [issue#554](https://github.com/GLolol/PyLink/issues/554)
 - commands: fix `showchan` displaying status prefixes in reverse
 - stats: route permission error replies to notice instead of PRIVMSG
     - This prevents "Unknown command" flood loops with services which poll `/stats` on link.
+- clientbot: fixed sending duplicate JOIN hooks and AWAY status updates. [issue#551](https://github.com/GLolol/PyLink/issues/551)
 
 #### Internal improvements
 - **Reading from sockets now uses select instead of one thread per network.**
@@ -55,6 +57,8 @@ This release contains all changes from 1.3.0, plus the following:
 - Renamed methods in log, utils, conf to snake case. [issue#523](https://github.com/GLolol/PyLink/issues/523)
 - Remove `structures.DeprecatedAttributesObject`; it's vastly inefficient for what it accomplishes
 - clientbot: removed unreliable pre-/WHO join bursting with `userhost-in-names`
+- API change: `kick` and `kill` command funcitons now raise `NotImplementedError` when not supported by a protocol
+- relay, utils: remove remaining references to deprecated `irc.proto`
 
 # PyLink 2.0-alpha2 (2018-01-16)
 This release includes all changes from 1.2.2-dev, plus the following:
