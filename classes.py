@@ -613,9 +613,9 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
 
         uids = self.users.bynick.get(nick, [])
         if len(uids) > 1:
-            log.warning('(%s) Multiple UIDs found for nick %r: %r', self.name, nick, uids)
+            log.warning('(%s) Multiple UIDs found for nick %r: %r; using the last one!', self.name, nick, uids)
         try:
-            return uids[0]
+            return uids[-1]
         except IndexError:
             return None
 
