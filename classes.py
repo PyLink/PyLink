@@ -1876,6 +1876,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         For IRC, the maximum length of one message is calculated as S2S_BUFSIZE (default to 510)
         minus the length of ":sender-nick!sender-user@sender-host PRIVMSG #target :"
         """
+        # We explicitly want wrapping (e.g. for messages eventually making its way to a user), so
+        # use the default bufsize of 510 even if the IRCd's S2S protocol allows infinitely long
+        # long messages.
+        bufsize = self.S2S_BUFSIZE or IRCNetwork.S2S_BUFSIZE
         try:
             target = self.get_friendly_name(target)
         except KeyError:
@@ -1883,10 +1887,15 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                         '(source=%s)', self.name, target, source, exc_info=True)
 
         prefixstr = ":%s PRIVMSG %s :" % (self.get_hostmask(source), target)
-        maxlen = self.S2S_BUFSIZE - len(prefixstr)
+        maxlen = bufsize - len(prefixstr)
 
-        log.debug('(%s) wrap_message: length of prefix %r is %s, S2S_BUFSIZE=%s, maxlen=%s',
-                  self.name, prefixstr, len(prefixstr), self.S2S_BUFSIZE, maxlen)
+        log.debug('(%s) wrap_message: length of prefix %r is %s, bufsize=%s, maxlen=%s',
+                  self.name, prefixstr, len(prefixstr), bufsize, maxlen)
+
+        if maxlen <= 0:
+            log.error('(%s) Got invalid maxlen %s for wrap_message (%s -> %s)', self.name, maxlen,
+                      source, target)
+            return [text]
 
         return textwrap.wrap(text, width=maxlen)
 
