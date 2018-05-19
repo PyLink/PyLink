@@ -1774,6 +1774,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """
         Message handler, called when select() has data to read.
         """
+        if self._socket is None:
+            log.debug('(%s) Ignoring attempt to read data because self._socket is None', self.name)
+            return
+
         data = b''
         try:
             data = self._socket.recv(2048)
