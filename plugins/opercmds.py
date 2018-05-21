@@ -386,6 +386,9 @@ def kill(irc, source, args):
         # Whatever we were told to kick doesn't exist!
         irc.error("No such nick %r." % target)
         return
+    elif irc.pseudoclient.uid == targetu:
+        irc.error("Cannot kill the main PyLink client!")
+        return
 
     irc.kill(sender, targetu, reason)
 
