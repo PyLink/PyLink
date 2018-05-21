@@ -710,6 +710,8 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
         log.debug('(%s) relay: resetting too low TS value of %s on %s to %s', irc.name, ts, users, current_ts)
         ts = current_ts
 
+    claim_passed = check_claim(irc, channel, irc.uplink)
+
     def _relay_joins_loop(irc, remoteirc, channel, users, ts, burst=True):
         queued_users = []
 
@@ -768,40 +770,45 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
             # SJOIN will be used if either the amount of users to join is > 1, or there are modes
             # to be set on the joining user.
             if burst or len(queued_users) > 1 or queued_users[0][0]:
-                modes = get_supported_cmodes(irc, remoteirc, channel, irc.channels[channel].modes)
+                # Check CLAIM on the bursting network to see if they should be allowed to burst
+                # modes towards other links.
+                if claim_passed:
+                    modes = get_supported_cmodes(irc, remoteirc, channel, irc.channels[channel].modes)
 
-                # Subtract any mode delta modes from this burst
-                relay = db[get_relay(irc, channel)]
-                modedelta_modes = relay.get('modedelta')
-                if modedelta_modes:
-                    # Check if the target is a leaf channel: if so, add the mode delta modes to the target channel.
-                    # Otherwise, subtract this set of modes, as we don't want these modes from leaves to be sent back
-                    # to the original channel.
-                    adding = (remoteirc.name, remotechan) in relay['links']
+                    # Subtract any mode delta modes from this burst
+                    relay = db[get_relay(irc, channel)]
+                    modedelta_modes = relay.get('modedelta')
+                    if modedelta_modes:
+                        # Check if the target is a leaf channel: if so, add the mode delta modes to the target channel.
+                        # Otherwise, subtract this set of modes, as we don't want these modes from leaves to be sent back
+                        # to the original channel.
+                        adding = (remoteirc.name, remotechan) in relay['links']
 
-                    # Add this to the SJOIN mode list.
-                    for mode in modedelta_modes:
-                        modechar = remoteirc.cmodes.get(mode[0])
+                        # Add this to the SJOIN mode list.
+                        for mode in modedelta_modes:
+                            modechar = remoteirc.cmodes.get(mode[0])
 
-                        if modechar:
-                            if modechar in remoteirc.cmodes['*A'] or modechar in remoteirc.prefixmodes:
-                                log.warning('(%s) Refusing to set modedelta mode %r on %s because it is a list or prefix mode',
-                                            irc.name, modechar, channel)
-                                continue
-                            elif not remoteirc.has_cap('can-spawn-clients'):
-                                log.debug('(%s) relay.handle_mode: Not enforcing modedelta modes on bot-only network %s',
-                                          irc.name, remoteirc.name)
-                                continue
+                            if modechar:
+                                if modechar in remoteirc.cmodes['*A'] or modechar in remoteirc.prefixmodes:
+                                    log.warning('(%s) Refusing to set modedelta mode %r on %s because it is a list or prefix mode',
+                                                irc.name, modechar, channel)
+                                    continue
+                                elif not remoteirc.has_cap('can-spawn-clients'):
+                                    log.debug('(%s) relay.handle_mode: Not enforcing modedelta modes on bot-only network %s',
+                                              irc.name, remoteirc.name)
+                                    continue
 
-                            modedelta_mode = ('+%s' % modechar, mode[1])
-                            if adding:
-                                log.debug('(%s) relay.relay_joins: adding %r on %s/%s (modedelta)', irc.name,
-                                          str(modedelta_mode), remoteirc.name, remotechan)
-                                modes.append(modedelta_mode)
-                            elif modedelta_mode in modes:
-                                log.debug('(%s) relay.relay_joins: removing %r on %s/%s (modedelta)', irc.name,
-                                          str(modedelta_mode), remoteirc.name, remotechan)
-                                modes.remove(modedelta_mode)
+                                modedelta_mode = ('+%s' % modechar, mode[1])
+                                if adding:
+                                    log.debug('(%s) relay.relay_joins: adding %r on %s/%s (modedelta)', irc.name,
+                                              str(modedelta_mode), remoteirc.name, remotechan)
+                                    modes.append(modedelta_mode)
+                                elif modedelta_mode in modes:
+                                    log.debug('(%s) relay.relay_joins: removing %r on %s/%s (modedelta)', irc.name,
+                                              str(modedelta_mode), remoteirc.name, remotechan)
+                                    modes.remove(modedelta_mode)
+                else:
+                    modes = set()
 
                 if rsid:
                     remoteirc.sjoin(rsid, remotechan, queued_users, ts=ts, modes=modes)
