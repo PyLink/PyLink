@@ -2286,6 +2286,9 @@ def link(irc, source, args):
         if ((not whitelist_mode) and irc.name in entry['blocked_nets']) or \
                 (whitelist_mode and irc.name not in entry.get('allowed_nets', set())):
             irc.error('Access denied (target channel is not open to links).')
+            log.warning('(%s) relay: Blocking link request %s%s -> %s%s from %s due to LINKACL (whitelist_mode=%s)',
+                        irc.name, irc.name, localchan, remotenet, channel,
+                        irc.get_hostmask(source), whitelist_mode)
             return
         for link in entry['links']:
             if link[0] == irc.name:
@@ -2313,7 +2316,7 @@ def link(irc, source, args):
             their_ts = world.networkobjects[remotenet].channels[channel].ts
             if (our_ts < their_ts) and irc.has_cap('has-ts'):
                 log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
-                          irc.name, localchan, remotenet, args.channel, our_ts, their_ts)
+                          irc.name, localchan, remotenet, channel, our_ts, their_ts)
                 irc.error("The channel creation date (TS) on %s (%s) is lower than the target "
                           "channel's (%s); refusing to link. You should clear the local channel %s first "
                           "before linking, or use a different local channel (you may be able to "
