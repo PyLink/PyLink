@@ -60,30 +60,31 @@ def verify_hash(password, passhash):
         return pwd_context.verify(password, passhash)
     return False  # No password given!
 
-def _irc_try_login(irc, source, username):
+def _irc_try_login(irc, source, username, skip_checks=False):
     """Internal function to process logins via IRC."""
     if irc.is_internal_client(source):
         irc.error("Cannot use 'identify' via a command proxy.")
         return
 
-    logindata = _get_account(username)
+    if not skip_checks:
+        logindata = _get_account(username)
 
-    network_filter = logindata.get('networks')
-    require_oper = logindata.get('require_oper', False)
-    hosts_filter = logindata.get('hosts', [])
+        network_filter = logindata.get('networks')
+        require_oper = logindata.get('require_oper', False)
+        hosts_filter = logindata.get('hosts', [])
 
-    if network_filter and irc.name not in network_filter:
-        log.warning("(%s) Failed login to %r from %s (wrong network: networks filter says %r but we got %r)",
-                    irc.name, username, irc.get_hostmask(source), ', '.join(network_filter), irc.name)
-        raise utils.NotAuthorizedError("Account is not authorized to login on this network.")
+        if network_filter and irc.name not in network_filter:
+            log.warning("(%s) Failed login to %r from %s (wrong network: networks filter says %r but we got %r)",
+                        irc.name, username, irc.get_hostmask(source), ', '.join(network_filter), irc.name)
+            raise utils.NotAuthorizedError("Account is not authorized to login on this network.")
 
-    elif require_oper and not irc.is_oper(source, allowAuthed=False):
-        log.warning("(%s) Failed login to %r from %s (needs oper)", irc.name, username, irc.get_hostmask(source))
-        raise utils.NotAuthorizedError("You must be opered.")
+        elif require_oper and not irc.is_oper(source, allowAuthed=False):
+            log.warning("(%s) Failed login to %r from %s (needs oper)", irc.name, username, irc.get_hostmask(source))
+            raise utils.NotAuthorizedError("You must be opered.")
 
-    elif hosts_filter and not any(irc.match_host(host, source) for host in hosts_filter):
-        log.warning("(%s) Failed login to %r from %s (hostname mismatch)", irc.name, username, irc.get_hostmask(source))
-        raise utils.NotAuthorizedError("Hostname mismatch.")
+        elif hosts_filter and not any(irc.match_host(host, source) for host in hosts_filter):
+            log.warning("(%s) Failed login to %r from %s (hostname mismatch)", irc.name, username, irc.get_hostmask(source))
+            raise utils.NotAuthorizedError("Hostname mismatch.")
 
     irc.users[source].account = username
     irc.reply('Successfully logged in as %s.' % username)
@@ -113,7 +114,7 @@ def identify(irc, source, args):
     # Process legacy logins (login:user).
     if username.lower() == conf.conf['login'].get('user', '').lower() and password == conf.conf['login'].get('password'):
         realuser = conf.conf['login']['user']
-        _irc_try_login(irc, source, realuser)
+        _irc_try_login(irc, source, realuser, skip_checks=True)
         return
 
     # Username not found or password incorrect.
