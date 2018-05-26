@@ -635,9 +635,6 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
 
     def get_server(self, numeric):
         """Finds the SID of the server a user is on."""
-        if numeric in self.servers:  # We got a server already (lazy hack)
-            return numeric
-
         userobj = self.users.get(numeric)
         if userobj:
             return userobj.server
