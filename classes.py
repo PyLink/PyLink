@@ -47,12 +47,29 @@ class ChannelState(structures.IRCCaseInsensitiveDict):
 
         return self._data[key]
 
+class TSObject():
+    """Base class for classes containing a type-normalized timestamp."""
+    def __init__(self, *args, **kwargs):
+        self._ts = int(time.time())
 
-class User():
+    @property
+    def ts(self):
+        return self._ts
+
+    @ts.setter
+    def ts(self, value):
+        if (not isinstance(value, int)) and (not isinstance(value, float)):
+            log.warning('TSObject: Got bad type for TS, converting from %s to int',
+                        type(value), stack_info=True)
+            value = int(value)
+        self._ts = value
+
+class User(TSObject):
     """PyLink IRC user class."""
     def __init__(self, irc, nick, ts, uid, server, ident='null', host='null',
                  realname='PyLink dummy client', realhost='null',
                  ip='0.0.0.0', manipulatable=False, opertype='IRC Operator'):
+        super().__init__()
         self._nick = nick
         self.lower_nick = irc.to_lower(nick)
 
@@ -1977,15 +1994,15 @@ class Server():
 
 IrcServer = Server
 
-class Channel(structures.CamelCaseToSnakeCase, structures.CopyWrapper):
+class Channel(TSObject, structures.CamelCaseToSnakeCase, structures.CopyWrapper):
     """PyLink IRC channel class."""
 
     def __init__(self, irc, name=None):
+        super().__init__()
         # Initialize variables, such as the topic, user list, TS, who's opped, etc.
         self.users = set()
         self.modes = set()
         self.topic = ''
-        self.ts = int(time.time())
         self.prefixmodes = {'op': set(), 'halfop': set(), 'voice': set(),
                             'owner': set(), 'admin': set()}
         self._irc = irc
