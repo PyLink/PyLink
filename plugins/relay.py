@@ -598,7 +598,7 @@ def check_claim(irc, channel, sender, chanobj=None):
     return (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
         irc.name in db[relay]['claim'] or \
         (any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')])
-         and not _is_uline(irc, sender)) \
+         and not irc.is_privileged_service(sender)) \
         or irc.is_internal_client(sender) or \
         irc.is_internal_server(sender)
 
@@ -1246,7 +1246,7 @@ def handle_join(irc, numeric, command, args):
                 modechar = irc.cmodes.get(modename)
                 # Special case for U-lined servers: allow them to join with ops,
                 # but don't forward this mode change on.
-                if modechar and not _is_uline(irc, numeric):
+                if modechar and not irc.is_privileged_service(numeric):
                     modes.append(('-%s' % modechar, user))
 
         if modes:
@@ -1514,7 +1514,7 @@ def handle_messages(irc, numeric, command, args):
         # Note: don't spam ulined senders (e.g. services announcers) with
         # these notices.
         if homenet not in remoteusers.keys():
-            if not _is_uline(irc, numeric):
+            if not irc.is_privileged_service(numeric):
                 irc.msg(numeric, 'You must be in a common channel '
                         'with %r in order to send messages.' % \
                         irc.users[target].nick, notice=True)
@@ -1522,7 +1522,7 @@ def handle_messages(irc, numeric, command, args):
         remoteirc = world.networkobjects[homenet]
 
         if (not remoteirc.has_cap('can-spawn-clients')) and not conf.conf.get('relay', {}).get('allow_clientbot_pms'):
-            if not _is_uline(irc, numeric):
+            if not irc.is_privileged_service(numeric):
                 irc.msg(numeric, 'Private messages to users connected via Clientbot have '
                         'been administratively disabled.', notice=True)
             return
@@ -1691,9 +1691,6 @@ def handle_chgclient(irc, source, command, args):
 for c in ('CHGHOST', 'CHGNAME', 'CHGIDENT'):
     utils.add_hook(handle_chgclient, c)
 
-def _is_uline(irc, client):
-    return irc.get_friendly_name(irc.get_server(client)) in irc.serverdata.get('ulines', [])
-
 def handle_mode(irc, numeric, command, args):
     target = args['target']
     modes = args['modes']
@@ -1772,7 +1769,7 @@ def handle_mode(irc, numeric, command, args):
             # Mode change blocked by CLAIM.
             reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
 
-            if _is_uline(irc, numeric):
+            if irc.is_privileged_service(numeric):
                 # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
                 # attempts to op u-lined clients (trying to change status for others
                 # SHOULD be reverted).
@@ -1781,7 +1778,7 @@ def handle_mode(irc, numeric, command, args):
                 reversed_modes = [modepair for modepair in reversed_modes if
                                   # Mode is a prefix mode but target isn't ulined, revert
                                   ((modepair[0][-1] in irc.prefixmodes and not
-                                    _is_uline(irc, modepair[1]))
+                                    irc.is_privileged_service(modepair[1]))
                                   # Tried to set a list mode, revert
                                    or modepair[0][-1] in irc.cmodes['*A'])
                                  ]

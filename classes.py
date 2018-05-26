@@ -1186,6 +1186,19 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         else:
             raise KeyError("Unknown UID/SID %s" % entityid)
 
+    def is_privileged_service(self, entityid):
+        """
+        Returns whether the given UID and SID belongs to a privileged service (IRC U:line).
+        """
+        ulines = self.serverdata.get('ulines', [])
+
+        if entityid in self.users:
+            sid = self.get_server(entityid)
+        else:
+            sid = entityid
+
+        return self.get_friendly_name(sid) in ulines
+
     def is_oper(self, uid, allowAuthed=True, allowOper=True):
         """
         Returns whether the given user has operator status on PyLink. This can be achieved
