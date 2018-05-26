@@ -116,6 +116,37 @@ class User():
         # Update the new nick.
         self._irc.users.bynick.setdefault(self.lower_nick, []).append(self.uid)
 
+    def get_fields(self):
+        """
+        Returns all template/substitution-friendly fields for the User object in a read-only dictionary.
+        """
+        fields = self.__dict__.copy()
+
+        # These don't really make sense in text substitutions
+        for field in ('manipulatable', '_irc'):
+            del fields[field]
+
+        # Pre-format the channels list. FIXME: maybe this should be configurable somehow?
+        fields['channels'] = ','.join(sorted(self.channels))
+
+        # Swap SID and server name for convenience
+        fields['sid'] = self.server
+        try:
+            fields['server'] = self._irc.get_friendly_name(self.server)
+        except KeyError:
+            pass  # Keep it as is (i.e. as the SID) if grabbing the server name fails
+
+        # Network name
+        fields['netname'] = self._irc.name
+
+        # Join umodes together
+        fields['modes'] = self._irc.join_modes(self.modes)
+
+        # Add the nick attribute; this isn't in __dict__ because it's a property
+        fields['nick'] = self._nick
+
+        return fields
+
     def __repr__(self):
         return 'User(%s/%s)' % (self.uid, self.nick)
 IrcUser = User

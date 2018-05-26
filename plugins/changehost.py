@@ -114,9 +114,9 @@ def handle_chghost(irc, sender, command, args):
                               irc.name, target, ex)
                     return
 
-            userdata = irc.users.get(target)
-            if userdata:
-                _changehost(irc, target, userdata.__dict__)
+            userobj = irc.users.get(target)
+            if userobj:
+                _changehost(irc, target, userobj.get_fields())
 
 utils.add_hook(handle_chghost, 'CHGHOST')
 

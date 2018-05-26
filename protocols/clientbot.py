@@ -647,7 +647,11 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         for line in self.serverdata.get("autoperform", []):
             # Expand substitutions like $nick, $ident, $host
             tmpl = string.Template(line)
-            line = tmpl.safe_substitute(**self.pseudoclient.__dict__)
+
+            args = self.pseudoclient.get_fields()
+
+            log.debug('(%s) handle_376: bot user fields are %s', self.name, args)
+            line = tmpl.safe_substitute(**args)
             self.send(line)
 
         # Virtual endburst hook.
