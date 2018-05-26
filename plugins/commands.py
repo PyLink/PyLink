@@ -61,12 +61,14 @@ def showuser(irc, source, args):
     serverobj = irc.servers[sid]
     ts = userobj.ts
 
-    # Show connected server & nick TS
-    f('\x02Home server\x02: %s (%s); \x02Nick TS:\x02 %s [UTC] (%s)' % \
-      (serverobj.name, sid, time.asctime(time.gmtime(int(ts))), ts))
+    # Show connected server & nick TS if available
+    serverinfo = '%s[%s]' % (serverobj.name, sid) \
+        if irc.has_cap('can-track-servers') else 'N/A'
+    tsinfo = '%s [UTC] (%s)' % (time.asctime(time.gmtime(int(ts))), ts) \
+        if irc.has_cap('has-ts') else 'N/A'
+    f('\x02Home server\x02: %s; \x02Nick TS:\x02 %s' % (serverinfo, tsinfo))
 
-    if verbose:  # Oper only data: user modes, channels on, account info, etc.
-
+    if verbose:  # Oper/self only data: user modes, channels in, account info, etc.
         f('\x02User modes\x02: %s' % irc.join_modes(userobj.modes, sort=True))
         f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
           (u, userobj.realhost, userobj.ip))
