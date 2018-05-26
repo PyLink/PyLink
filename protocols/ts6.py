@@ -561,6 +561,7 @@ class TS6Protocol(TS6BaseProtocol):
         nick = args[0]
         self._check_nick_collision(nick)
         ts, modes, ident, host, ip, uid, realhost, accountname, realname = args[2:11]
+        ts = int(ts)
         if realhost == '*':
             realhost = host
 
@@ -572,7 +573,7 @@ class TS6Protocol(TS6BaseProtocol):
         if ip == '0':  # IP was invalid; something used for services.
             ip = '0.0.0.0'
 
-        self.users[uid] = User(self,  nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.users[uid] = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
         parsedmodes = self.parse_modes(uid, [modes])
         log.debug('Applying modes %s for %s', parsedmodes, uid)

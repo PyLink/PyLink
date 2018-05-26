@@ -395,6 +395,7 @@ class UnrealProtocol(TS6BaseProtocol):
         nick = args[0]
         self._check_nick_collision(nick)
         ts, ident, realhost, uid, accountname, modestring, host = args[2:9]
+        ts = int(ts)
 
         if host == '*':
             # A single * means that there is no displayed/virtual host, and
@@ -421,7 +422,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         realname = args[-1]
 
-        self.users[uid] = User(self,  nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.users[uid] = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
         self.servers[numeric].users.add(uid)
 
         # Handle user modes

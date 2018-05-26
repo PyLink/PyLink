@@ -110,10 +110,13 @@ class HybridProtocol(TS6Protocol):
         realname = realname or conf.conf['pylink']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,
+
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable)
+
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
+
         self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {modes} {ident} {host} {ip} {uid} "
                 "* :{realname}".format(ts=ts, host=host,
                 nick=nick, ident=ident, uid=uid,
@@ -188,13 +191,14 @@ class HybridProtocol(TS6Protocol):
         nick = args[0]
         self._check_nick_collision(nick)
         ts, modes, ident, host, ip, uid, account, realname = args[2:10]
+        ts = int(ts)
         if account == '*':
             account = None
         log.debug('(%s) handle_uid: got args nick=%s ts=%s uid=%s ident=%s '
                   'host=%s realname=%s ip=%s', self.name, nick, ts, uid,
                   ident, host, realname, ip)
 
-        self.users[uid] = User(self,  nick, ts, uid, numeric, ident, host, realname, host, ip)
+        self.users[uid] = User(self, nick, ts, uid, numeric, ident, host, realname, host, ip)
 
         parsedmodes = self.parse_modes(uid, [modes])
         log.debug('(%s) handle_uid: Applying modes %s for %s', self.name, parsedmodes, uid)

@@ -88,8 +88,10 @@ class NgIRCdProtocol(IRCS2SProtocol):
         realname = realname or conf.conf['pylink']['realname']
 
         uid = self._uidgen.next_uid(prefix=nick)
-        userobj = self.users[uid] = User(self,  nick, ts or int(time.time()), uid, server, ident=ident, host=host, realname=realname,
-                                         manipulatable=manipulatable, opertype=opertype, realhost=host)
+        userobj = self.users[uid] = User(self, nick, ts or int(time.time()), uid, server,
+                                         ident=ident, host=host, realname=realname,
+                                         manipulatable=manipulatable, opertype=opertype,
+                                         realhost=host)
 
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
@@ -451,7 +453,8 @@ class NgIRCdProtocol(IRCS2SProtocol):
             realname = args[-1]
 
             ts = int(time.time())
-            self.users[uid] = User(self,  nick, ts, uid, source, ident=ident, host=host, realname=realname, realhost=host)
+            self.users[uid] = User(self, nick, ts, uid, source, ident=ident, host=host,
+                                   realname=realname, realhost=host)
             parsedmodes = self.parse_modes(uid, [args[5]])
             self.apply_modes(uid, parsedmodes)
 

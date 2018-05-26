@@ -63,8 +63,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         realname = realname or conf.conf['pylink']['realname']
         realhost = realhost or host
         raw_modes = self.join_modes(modes)
-        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
-            realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host,
+                                   realname=realname, realhost=realhost, ip=ip,
+                                   manipulatable=manipulatable, opertype=opertype)
 
         self.apply_modes(uid, modes)
         self.servers[server].users.add(uid)
@@ -598,9 +599,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """Handles incoming UID commands (user introduction)."""
         # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
+
+        ts = int(ts)
+
         self._check_nick_collision(nick)
         realname = args[-1]
-        self.users[uid] = userobj = User(self,  nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.users[uid] = userobj = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
 
         parsedmodes = self.parse_modes(uid, [args[8], args[9]])
         self.apply_modes(uid, parsedmodes)
