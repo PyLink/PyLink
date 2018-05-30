@@ -16,7 +16,9 @@ import pylinkirc
 import importlib
 
 exec_locals_dict = {}
+# FIXME: make these config vars.
 PPRINT_MAX_LINES = 20
+PPRINT_MAX_LINES_PRIVATE = 200
 PPRINT_WIDTH = 200
 
 def _exec(irc, source, args, locals_dict=None):
@@ -92,9 +94,12 @@ def _eval(irc, source, args, locals_dict=None, pretty_print=False):
 
     if pretty_print:
         lines = pprint.pformat(result, width=PPRINT_WIDTH, compact=True).splitlines()
-        for line in lines[:PPRINT_MAX_LINES]:
+
+        maxlines = PPRINT_MAX_LINES if irc.is_channel(irc.called_in) else PPRINT_MAX_LINES_PRIVATE
+
+        for line in lines[:maxlines]:
             irc.reply(line)
-        if len(lines) > PPRINT_MAX_LINES:
+        if len(lines) > maxlines:
             irc.reply('Suppressing %s more line(s) of output.' % (len(lines) - PPRINT_MAX_LINES))
     else:
         # Purposely disable text wrapping so results are cut instead of potentially flooding;
