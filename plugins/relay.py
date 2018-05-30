@@ -12,7 +12,7 @@ from pylinkirc.coremods import permissions
 # Sets the timeout to wait for as individual servers / the PyLink daemon to start up.
 TCONDITION_TIMEOUT = 2
 
-CHANNEL_DELINKED_PARTMSG = 'Channel delinked.'
+CHANNEL_DELINKED_MSG = "Channel delinked."
 RELAY_UNLOADED_MSG = "Relay plugin unloaded."
 
 ### GLOBAL (statekeeping) VARIABLES
@@ -552,7 +552,7 @@ def remove_channel(irc, channel):
         return
 
     try:
-        world.services['pylink'].remove_persistent_channel(irc, 'relay', channel, part_reason=CHANNEL_DELINKED_PARTMSG)
+        world.services['pylink'].remove_persistent_channel(irc, 'relay', channel, part_reason=CHANNEL_DELINKED_MSG)
     except KeyError:
         log.warning('(%s) relay: failed to remove persistent channel %r on delink', irc.name, channel, exc_info=True)
 
@@ -570,11 +570,11 @@ def remove_channel(irc, channel):
                 sbot = irc.get_service_bot(user)
                 if sbot:
                     try:
-                        sbot.remove_persistent_channel(irc, 'relay', channel, part_reason=CHANNEL_DELINKED_PARTMSG)
+                        sbot.remove_persistent_channel(irc, 'relay', channel, part_reason=CHANNEL_DELINKED_MSG)
                     except KeyError:
                         pass
                 else:
-                    irc.part(user, channel, CHANNEL_DELINKED_PARTMSG)
+                    irc.part(user, channel, CHANNEL_DELINKED_MSG)
                     if user != irc.pseudoclient.uid and not irc.users[user].channels:
                         remoteuser = get_orig_user(irc, user)
                         del relayusers[remoteuser][irc.name]
@@ -857,7 +857,7 @@ def relay_part(irc, *args, **kwargs):
                 pass
 
         # Part the relay client with the channel delinked message.
-        remoteirc.part(remoteuser, remotechan, CHANNEL_DELINKED_PARTMSG)
+        remoteirc.part(remoteuser, remotechan, CHANNEL_DELINKED_MSG)
 
         # If the relay client no longer has any channels, quit them to prevent inflating /lusers.
         if is_relay_client(remoteirc, remoteuser) and not remoteirc.users[remoteuser].channels:
@@ -2022,7 +2022,7 @@ def handle_disconnect(irc, numeric, command, args):
                                 continue
                             try:
                                 sbot.remove_persistent_channel(remoteirc, 'relay', leaf[1],
-                                                               part_reason=CHANNEL_DELINKED_PARTMSG)
+                                                               part_reason=CHANNEL_DELINKED_MSG)
                             except KeyError:
                                 continue
                             else:
