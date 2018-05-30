@@ -458,6 +458,37 @@ class ServiceBot():
         channels |= set(irc.serverdata.get('channels', []))
         return channels
 
+    def clear_persistent_channels(self, irc, namespace, try_part=True, part_reason=''):
+        """
+        Clears the persistent channels defined by a namespace.
+
+        irc can be None to clear persistent channels for all networks in this namespace.
+        """
+        dch_data = self.dynamic_channels.get(namespace, {})
+
+        if irc is not None:
+            if irc.name in dch_data:
+                chanlist = dch_data[irc.name]
+                log.debug('(%s/%s) Clearing persistent channels %r from namespace %r',
+                          irc.name, self.name, chanlist, namespace)
+
+                del dch_data[irc.name]
+
+                if try_part:
+                    self.part(irc, chanlist, reason=part_reason)
+
+
+        else:  # when irc is None
+            del self.dynamic_channels[namespace]
+
+            for netname, chanlist in dch_data.items():
+                log.debug('(%s/%s) Globally clearing persistent channels %r from namespace %r',
+                          netname, self.name, chanlist, namespace)
+                if try_part and netname in world.networkobjects:
+                    self.part(world.networkobjects[netname], chanlist,
+                              reason=part_reason)
+
+
     def _show_command_help(self, irc, command, private=False, shortform=False):
         """
         Shows help for the given command.
