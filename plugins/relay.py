@@ -13,6 +13,7 @@ from pylinkirc.coremods import permissions
 TCONDITION_TIMEOUT = 2
 
 CHANNEL_DELINKED_PARTMSG = 'Channel delinked.'
+RELAY_UNLOADED_MSG = "Relay plugin unloaded."
 
 ### GLOBAL (statekeeping) VARIABLES
 relayusers = defaultdict(dict)
@@ -84,7 +85,7 @@ def die(irc=None):
             # 1) SQUIT every relay subserver.
             for server, sobj in ircobj.servers.copy().items():
                 if hasattr(sobj, 'remote'):
-                    ircobj.squit(ircobj.sid, server, text="Relay plugin unloaded.")
+                    ircobj.squit(ircobj.sid, server, text=RELAY_UNLOADED_MSG)
 
     # 2) Clear our internal servers and users caches.
     relayservers.clear()
@@ -93,8 +94,15 @@ def die(irc=None):
     # 3) Unload our permissions.
     permissions.remove_default_permissions(default_permissions)
 
-    # 4) Save the database and quit.
+    # 4) Save the database.
     datastore.die()
+
+    # 5) Clear all persistent channels set up by relay.
+    try:
+        world.services['pylink'].clear_persistent_channels(None, 'relay',
+                                                           part_reason=RELAY_UNLOADED_MSG)
+    except KeyError:
+        log.debug('relay.die: failed to clear persistent channels:', exc_info=True)
 
 allowed_chars = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
 fallback_separator = '|'
