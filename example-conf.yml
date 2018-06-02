@@ -819,7 +819,7 @@ stats:
     # This block configures the antispam plugin; you don't need this if you aren't using it.
     # Antispam is automatically enabled in all channels that it's in, and you can configure
     # its presence (like with all service bots) by setting 'antispam_channels' on the applicable
-    # network.
+    # networks.
     # Antispam also integrates with relay by punishing users locally (so that bans, kills, etc.
     # are not bounced by relay) and not relaying messages marked as spam.
 
@@ -832,7 +832,7 @@ stats:
 
     #masshighlight:
         # This block configures options for antispam's mass highlight blocking. It can also
-        # be overriden (as an entire block) per-network by copying its options to
+        # be overriden (as an entire block) per-network by copying its options under
         #   servers::<server name>::antispam_masshighlight
 
         # Determines whether mass highlight prevention should be enabled. Defaults to
