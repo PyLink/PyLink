@@ -818,7 +818,12 @@ stats:
     # Antispam also integrates with relay by punishing users locally (so that bans, kills, etc.
     # are not bounced by relay) and not relaying messages marked as spam.
 
-    # IMPORTANT: Antispam is in ALPHA stagse as of 2.0-alpha3 and some options may not work yet.
+    # IMPORTANT: Antispam is in ALPHA stages as of 2.0-alpha3 and some options may not work yet.
+
+    # Determines the minimum level of channel access needed to be exempt from Antispam.
+    # Note: opers are automatically exempt.
+    # Valid values are "voice", "halfop", and "op". This defaults to "halfop" if not set.
+    #exempt_level: halfop
 
     #masshighlight:
         # This block configures options for antispam's mass highlight blocking. It can also
