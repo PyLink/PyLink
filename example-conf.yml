@@ -839,7 +839,7 @@ stats:
         # set.
         #enabled: true
 
-        # Sets the punishment that Antispam should use to punish mass highlighters.
+        # Sets the punishment that Antispam should use against mass highlighters.
         # Valid values include "kill", "kick", "ban", "quiet", and combinations of these strung
         # together with "+" (e.g. "kick+ban"). Defaults to "kick+ban" if not set.
         #punishment: kick+ban
@@ -851,3 +851,28 @@ stats:
         # mass highlight prevention to trigger.
         #min_length: 50
         #min_nicks: 5
+
+    #textfilter:
+        # This block configures options for antispam's text spamfilters. It can also be overridden
+        # (as an entire block) per-network by copying its options under
+        #   servers::<server name>::antispam_textfilter
+
+        # Determines whether text spamfilters should be enabled. Defaults to false if not set.
+        #enabled: true
+
+        # Sets the punishment that Antispam's text spamfilter should use.
+        # Valid values include "kill", "kick", "ban", "quiet", and combinations of these strung
+        # together with "+" (e.g. "kick+ban"). Defaults to "kick+ban" if not set.
+        #punishment: kick+ban
+
+        # Sets the kick / kill message used when the text spamfilter is triggered.
+        #reason: "Spam is prohibited"
+
+    # Configures a (case-insensitive) list of bad strings to block in messages (PRIVMSG, NOTICE).
+    # Globs are supported; use them to your advantage here.
+    # You can also define server specific lists of bad strings by defining
+    #   servers::<server name>::antispam_textfilters_messages
+    # the contents of which will be merged into the global list specified below.
+    #textfilter_globs:
+        # - "*very bad don't say this*"
+        # - "TWFkZSB5b3UgbG9vayE="
