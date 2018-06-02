@@ -14,9 +14,14 @@ EXEMPT_OPTIONS = ['voice', 'halfop', 'op']
 DEFAULT_EXEMPT_OPTION = 'halfop'
 def _punish(irc, target, channel, punishment, reason):
     """Punishes the target user. This function returns True if the user was successfully punished."""
-    if irc.is_oper(target, allowAuthed=False):
+    if target not in irc.users:
+        log.warning("(%s) antispam: got target %r that isn't a user?", irc.name, target)
+        return False
+    elif irc.is_oper(target, allowAuthed=False):
         log.debug("(%s) antispam: refusing to punish oper %s/%s", irc.name, target, irc.get_friendly_name(target))
         return False
+
+    target_nick = irc.get_friendly_name(target)
 
     exempt_level = irc.get_service_option('antispam', 'exempt_level', DEFAULT_EXEMPT_OPTION).lower()
     c = irc.channels[channel]
@@ -65,6 +70,7 @@ def _punish(irc, target, channel, punishment, reason):
                                                   'userdata': userdata, 'parse_as': 'KILL'}])
 
     kill = False
+    successful_punishments = 0
     for action in set(punishment.split('+')):
         if action not in PUNISH_OPTIONS:
             log.error('(%s) Antispam punishment %r is not a valid setting; '
@@ -74,20 +80,46 @@ def _punish(irc, target, channel, punishment, reason):
             return
         elif action == 'kill':
             kill = True  # Delay kills so that the user data doesn't disappear.
+        # XXX factorize these blocks
         elif action == 'kick':
-            _kick()
+            try:
+                _kick()
+            except NotImplementedError:
+                log.warning("(%s) antispam: Kicks are not supported on this network, skipping; "
+                            "target was %s/%s", irc.name, target_nick, channel)
+            else:
+                successful_punishments += 1
         elif action == 'ban':
-            _ban()
+            try:
+                _ban()
+            except (ValueError, NotImplementedError):
+                log.warning("(%s) antispam: Bans are not supported on this network, skipping; "
+                            "target was %s/%s", irc.name, target_nick, channel)
+            else:
+                successful_punishments += 1
         elif action == 'quiet':
-            _quiet()
+            try:
+                _quiet()
+            except (ValueError, NotImplementedError):
+                log.warning("(%s) antispam: Quiet is not supported on this network, skipping; "
+                            "target was %s/%s", irc.name, target_nick, channel)
+            else:
+                successful_punishments += 1
 
     if bans:  # Set all bans at once to prevent spam
         irc.mode(my_uid, channel, bans)
         irc.call_hooks([my_uid, 'ANTISPAM_BAN',
                         {'target': channel, 'modes': bans, 'parse_as': 'MODE'}])
     if kill:
-        _kill()
-    return True
+        try:
+            _kill()
+        except NotImplementedError:
+            log.warning("(%s) antispam: Kills are not supported on this network, skipping; "
+                        "target was %s/%s", irc.name, target_nick, channel)
+        else:
+            successful_punishments += 1
+
+    return bool(successful_punishments)
 
 MASSHIGHLIGHT_DEFAULTS = {
     'min_length': 50,
