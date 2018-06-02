@@ -94,7 +94,8 @@ def _punish(irc, target, channel, reason):
 MASSHIGHLIGHT_DEFAULTS = {
     'min_length': 50,
     'min_nicks': 5,
-    'reason': "Mass highlight spam is prohibited"
+    'reason': "Mass highlight spam is prohibited",
+    'enabled': False
 }
 def handle_masshighlight(irc, source, command, args):
     """Handles mass highlight attacks."""
@@ -102,6 +103,10 @@ def handle_masshighlight(irc, source, command, args):
     text = args['text']
     mhl_settings = irc.get_service_option('antispam', 'masshighlight',
                                           MASSHIGHLIGHT_DEFAULTS)
+
+    if not mhl_settings.get('enabled', False):
+        return
+
     my_uid = sbot.uids.get(irc.name)
 
     # XXX workaround for single-bot protocols like Clientbot
