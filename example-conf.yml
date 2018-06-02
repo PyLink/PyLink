@@ -831,12 +831,12 @@ stats:
     #exempt_level: halfop
 
     #masshighlight:
-        # This block configures options for antispam's mass highlight blocking. It can also
-        # be overriden (as an entire block) per-network by copying its options under
+        # This block configures options for antispam's mass highlight blocking. It can also be
+        # overridden (as an entire block) per-network by copying its options under
         #   servers::<server name>::antispam_masshighlight
 
-        # Determines whether mass highlight prevention should be enabled. Defaults to
-        # false if not set.
+        # Determines whether mass highlight prevention should be enabled. Defaults to false if not
+        # set.
         #enabled: true
 
         # Sets the punishment that Antispam should use to punish mass highlighters.
