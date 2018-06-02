@@ -2466,6 +2466,11 @@ def linked(irc, source, args):
 
             if s:  # Indent to make the list look nicer
                 irc.reply('    Channel created%s.' % s, private=True)
+
+        desc = v.get('description')
+        if desc:  # Show channel description, if there is one.
+            irc.reply('    \x02Description:\x02 %s' % desc, private=True)
+
 linked = utils.add_cmd(linked, featured=True)
 
 @utils.add_cmd
@@ -2804,3 +2809,38 @@ def modedelta(irc, source, args):
         if remote_modes:
             log.debug('(%s) Sending modedelta modes %s to %s/%s', irc.name, remote_modes, remotenet, remotechan)
             remoteirc.mode(remoteirc.pseudoclient.uid, remotechan, remote_modes)
+
+@utils.add_cmd
+def chandesc(irc, source, args):
+    """<channel> [<text> or "-"]
+
+    Sets a description for the given relay channel, which will be shown in the LINKED command.
+    If no description is given, this shows the channel's current description.
+
+    A single hyphen (-) can also be given as the description text to clear a channel's description.
+    """
+    try:
+        channel = irc.to_lower(args[0])
+    except IndexError:
+        irc.error("Not enough arguments. Needs 1-2: channel, text (optional).")
+        return
+
+    # We override get_relay() here to limit the search to the current network.
+    relay = (irc.name, channel)
+    if relay not in db:
+        irc.error('No relay %r exists on this network (this command must be run on the '
+                  'network the channel was created on).' % channel)
+        return
+
+    if len(args) >= 2:
+        if args[1].strip() == '-':
+            permissions.check_permissions(irc, source, ['relay.chandesc.remove'])
+
+            db[relay]['description'] = ''
+            irc.reply('Done. Cleared the description for \x02%s\x02.' % channel)
+        else:
+            permissions.check_permissions(irc, source, ['relay.chandesc.set'])
+            db[relay]['description'] = ' '.join(args[1:])
+            irc.reply('Done. Updated the description for \x02%s\x02.' % channel)
+    else:
+        irc.reply('Description for \x02%s\x02: %s' % (channel, db[relay].get('description') or  '\x1D(none)\x1D'))
