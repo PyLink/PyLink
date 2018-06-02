@@ -505,6 +505,11 @@ plugins:
     # configured correctly below.
     #- changehost
 
+    # Antispam plugin: catches and punishes spammers locally and across relays as necessary.
+    # You *will need* to configure it via the "antispam:" configuration block below.
+    # Note: Antispam is in ALPHA stages as of 2.0-alpha3 and some options may not work yet.
+    #- antispam
+
     # Servprotect plugin: disconnects from networks if too many kills or nick collisions to
     # PyLink clients are received.
     #- servprotect
