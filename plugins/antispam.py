@@ -12,7 +12,7 @@ def die(irc=None):
 PUNISH_OPTIONS = ['kill', 'ban', 'quiet', 'kick']
 EXEMPT_OPTIONS = ['voice', 'halfop', 'op']
 DEFAULT_EXEMPT_OPTION = 'halfop'
-def _punish(irc, target, channel, reason):
+def _punish(irc, target, channel, punishment, reason):
     """Punishes the target user. This function returns True if the user was successfully punished."""
     if irc.is_oper(target, allowAuthed=False):
         log.debug("(%s) antispam: refusing to punish oper %s/%s", irc.name, target, irc.get_friendly_name(target))
@@ -42,8 +42,6 @@ def _punish(irc, target, channel, reason):
     if irc.pseudoclient and not irc.has_cap('can-spawn-clients'):
         my_uid = irc.pseudoclient.uid
 
-    punishment = irc.get_service_option('antispam', 'punishment',
-                                        'kick+ban').lower()
     bans = set()
     log.debug('(%s) antispam: got %r as punishment for %s/%s', irc.name, punishment,
               target, irc.get_friendly_name(target))
@@ -95,6 +93,7 @@ MASSHIGHLIGHT_DEFAULTS = {
     'min_length': 50,
     'min_nicks': 5,
     'reason': "Mass highlight spam is prohibited",
+    'punishment': 'kick+ban',
     'enabled': False
 }
 def handle_masshighlight(irc, source, command, args):
@@ -147,10 +146,13 @@ def handle_masshighlight(irc, source, command, args):
         if word in userlist:
             nicks_caught.add(word)
         if len(nicks_caught) >= min_nicks:
+            # Get the punishment and reason.
+            punishment = mhl_settings.get('punishment', MASSHIGHLIGHT_DEFAULTS['punishment']).lower()
             reason = mhl_settings.get('reason', MASSHIGHLIGHT_DEFAULTS['reason'])
+
             log.debug('(%s) antispam: calling _punish on %s/%s', irc.name,
                       source, irc.get_friendly_name(source))
-            punished = _punish(irc, source, channel, reason)
+            punished = _punish(irc, source, channel, punishment, reason)
             break
 
     log.debug('(%s) antispam: got %s/%s nicks on message to %r', irc.name, len(nicks_caught), min_nicks, channel)

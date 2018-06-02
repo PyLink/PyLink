@@ -829,10 +829,15 @@ stats:
         # false if not set.
         #enabled: true
 
+        # Sets the punishment that Antispam should use to punish mass highlighters.
+        # Valid values include "kill", "kick", "ban", "quiet", and combinations of these strung
+        # together with "+" (e.g. "kick+ban"). Defaults to "kick+ban" if not set.
+        #punishment: kick+ban
+
         # Sets the kick / kill message used when mass highlight prevention is triggered.
         #reason: "Mass highlight spam is prohibited"
 
         # Sets the minimum message length and amount of nicks needed in a message for
-        # masshighlight prevention to trigger.
+        # mass highlight prevention to trigger.
         #min_length: 50
         #min_nicks: 5
