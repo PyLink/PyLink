@@ -809,3 +809,30 @@ stats:
     #     $current_fullnetwork: the full name of the network we're currently broadcasting on
     #     $text: the global text
     #format: "[$sender@$fullnetwork] $text"
+
+#antispam:
+    # This block configures the antispam plugin; you don't need this if you aren't using it.
+    # Antispam is automatically enabled in all channels that it's in, and you can configure
+    # its presence (like with all service bots) by setting 'antispam_channels' on the applicable
+    # network.
+    # Antispam also integrates with relay by punishing users locally (so that bans, kills, etc.
+    # are not bounced by relay) and not relaying messages marked as spam.
+
+    # IMPORTANT: Antispam is in ALPHA stagse as of 2.0-alpha3 and some options may not work yet.
+
+    #masshighlight:
+        # This block configures options for antispam's mass highlight blocking. It can also
+        # be overriden (as an entire block) per-network by copying its options to
+        #   servers::<server name>::antispam_masshighlight
+
+        # Determines whether mass highlight prevention should be enabled. Defaults to
+        # false if not set.
+        #enabled: true
+
+        # Sets the kick / kill message used when mass highlight prevention is triggered.
+        #reason: "Mass highlight spam is prohibited"
+
+        # Sets the minimum message length and amount of nicks needed in a message for
+        # masshighlight prevention to trigger.
+        #min_length: 50
+        #min_nicks: 5
