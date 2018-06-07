@@ -1775,6 +1775,8 @@ def link(irc, source, args):
         irc.error('Cannot link two channels on the same network.')
         return
 
+    permissions.checkPermissions(irc, source, ['relay.link'])
+
     if source not in irc.channels[localchan].users:
         # Caller is not in the requested channel.
         log.debug('(%s) Source not in channel %s; protoname=%s', irc.name, localchan, irc.protoname)
@@ -1795,8 +1797,6 @@ def link(irc, source, args):
         else:
             irc.error('You must be opped in %r to complete this operation.' % localchan)
         return
-
-    permissions.checkPermissions(irc, source, ['relay.link'])
 
     if remotenet not in world.networkobjects:
         irc.error('No network named %r exists.' % remotenet)
