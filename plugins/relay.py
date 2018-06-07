@@ -2234,15 +2234,16 @@ link_parser = utils.IRCParser()
 link_parser.add_argument('remotenet')
 link_parser.add_argument('channel')
 link_parser.add_argument('localchannel', nargs='?')
-link_parser.add_argument("-f", "--force", action='store_true')
+link_parser.add_argument("-f", "--force-ts", action='store_true')
 def link(irc, source, args):
-    """<remotenet> <channel> [<local channel>] [-f/--force]
+    """<remotenet> <channel> [<local channel>] [-f/--force-ts]
 
     Links the specified channel on \x02remotenet\x02 over PyLink Relay as \x02local channel\x02.
     If \x02local channel\x02 is not specified, it defaults to the same name as \x02channel\x02.
 
-    If the --force option is given, this command will bypass checks for TS and whether the target
-    network is alive, and link the channel anyways."""
+    If the --force-ts option is given, this command will bypass checks for TS and whether the target
+    network is alive, and link the channel anyways. It will not bypass other link restrictions like
+    those imposed by LINKACL."""
 
     args = link_parser.parse_args(args)
 
@@ -2312,7 +2313,7 @@ def link(irc, source, args):
                           "as %r." % (remotenet, args.channel, link[1]))
                 return
 
-        if args.force:
+        if args.force_ts:
             permissions.check_permissions(irc, source, ['relay.link.force'])
             log.info("(%s) relay: Forcing link %s%s -> %s%s", irc.name, irc.name, localchan, remotenet,
                      args.channel)
