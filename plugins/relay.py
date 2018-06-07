@@ -2243,6 +2243,7 @@ def link(irc, source, args):
 
     If the --force option is given, this command will bypass checks for TS and whether the target
     network is alive, and link the channel anyways."""
+
     args = link_parser.parse_args(args)
 
     # Normalize channel case
@@ -2258,6 +2259,8 @@ def link(irc, source, args):
     if remotenet == irc.name:
         irc.error('Cannot link two channels on the same network.')
         return
+
+    permissions.check_permissions(irc, source, ['relay.link'])
 
     if localchan not in irc.channels or source not in irc.channels[localchan].users:
         # Caller is not in the requested channel.
@@ -2279,8 +2282,6 @@ def link(irc, source, args):
         else:
             irc.error('You must be opped in %r to complete this operation.' % localchan)
         return
-
-    permissions.check_permissions(irc, source, ['relay.link'])
 
     if remotenet not in world.networkobjects:
         irc.error('No network named %r exists.' % remotenet)
