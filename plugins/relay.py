@@ -1785,13 +1785,16 @@ def link(irc, source, args):
                 irc.proto.join(irc.pseudoclient.uid, localchan)
                 irc.reply('Joining %r now to check for op status; please run this command again after I join.' % localchan)
                 return
-            elif not irc.channels[localchan].isOpPlus(source):
-                irc.error('You must be opped in %r to complete this operation.' % localchan)
-                return
 
         else:
             irc.error('You must be in %r to complete this operation.' % localchan)
             return
+    elif not irc.channels[localchan].isOpPlus(source):
+        if irc.pseudoclient and source == irc.pseudoclient.uid:
+            irc.error('Please op the bot in %r to complete this operation.' % localchan)
+        else:
+            irc.error('You must be opped in %r to complete this operation.' % localchan)
+        return
 
     permissions.checkPermissions(irc, source, ['relay.link'])
 
