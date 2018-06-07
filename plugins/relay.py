@@ -499,27 +499,25 @@ def remove_channel(irc, channel):
     if irc is None:
         return
 
-    if channel not in map(str.lower, irc.serverdata.get('channels', [])):
-        world.services['pylink'].extra_channels[irc.name].discard(channel)
-        if irc.pseudoclient:
-            irc.proto.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
-
     relay = get_relay((irc.name, channel))
     if relay:
         for user in irc.channels[channel].users.copy():
             if not isRelayClient(irc, user):
                 relay_part(irc, channel, user)
-            # Don't ever part the main client from any of its autojoin channels.
             else:
-                if user == irc.pseudoclient.uid and channel in \
-                        irc.serverdata.get('channels', []):
-                    continue
+                if user == irc.pseudoclient.uid:
+                    continue  # We handle parting the main client later.
                 irc.proto.part(user, channel, 'Channel delinked.')
                 # Don't ever quit it either...
                 if user != irc.pseudoclient.uid and not irc.users[user].channels:
                     remoteuser = get_orig_user(irc, user)
                     del relayusers[remoteuser][irc.name]
                     irc.proto.quit(user, 'Left all shared channels.')
+
+    if channel not in map(str.lower, irc.serverdata.get('channels', [])):
+        world.services['pylink'].extra_channels[irc.name].discard(channel)
+        if irc.pseudoclient:
+            irc.proto.part(irc.pseudoclient.uid, channel, 'Channel delinked.')
 
 def check_claim(irc, channel, sender, chanobj=None):
     """
