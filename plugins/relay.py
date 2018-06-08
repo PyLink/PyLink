@@ -2314,7 +2314,7 @@ def link(irc, source, args):
                 return
 
         if args.force_ts:
-            permissions.check_permissions(irc, source, ['relay.link.force'])
+            permissions.check_permissions(irc, source, ['relay.link.force_ts', 'relay.link.force'])
             log.info("(%s) relay: Forcing link %s%s -> %s%s", irc.name, irc.name, localchan, remotenet,
                      args.channel)
         else:
