@@ -174,13 +174,14 @@ class UserMapping(collections.abc.MutableMapping, structures.CopyWrapper):
     A mapping storing User objects by UID, as well as UIDs by nick via
     the 'bynick' attribute
     """
-    def __init__(self, *, data=None):
+    def __init__(self, irc, data=None):
         if data is not None:
             assert isinstance(data, dict)
             self._data = data
         else:
             self._data = {}
         self.bynick = collections.defaultdict(list)
+        self._irc = irc
 
     def __getitem__(self, key):
         return self._data[key]
@@ -188,7 +189,7 @@ class UserMapping(collections.abc.MutableMapping, structures.CopyWrapper):
     def __setitem__(self, key, userobj):
         assert hasattr(userobj, 'lower_nick'), "Cannot add object without lower_nick attribute to UserMapping"
         if key in self._data:
-            log.warning('(%s) Attempting to replace User object for %r: %r -> %r', self.name,
+            log.warning('(%s) Attempting to replace User object for %r: %r -> %r', self._irc.name,
                         key, self._data.get(key), userobj)
 
         self._data[key] = userobj
@@ -310,7 +311,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         # Intialize the server, channel, and user indexes to be populated by
         # our protocol module.
         self.servers = {}
-        self.users = UserMapping()
+        self.users = UserMapping(self)
 
         # Two versions of the channels index exist in PyLink 2.0, and they are joined together
         # - irc._channels which implicitly creates channels on access (mostly used
