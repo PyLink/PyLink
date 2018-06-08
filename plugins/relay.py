@@ -2234,15 +2234,17 @@ link_parser = utils.IRCParser()
 link_parser.add_argument('remotenet')
 link_parser.add_argument('channel')
 link_parser.add_argument('localchannel', nargs='?')
-link_parser.add_argument("-f", "--force", action='store_true')
+link_parser.add_argument("-f", "--force-ts", action='store_true')
 def link(irc, source, args):
-    """<remotenet> <channel> [<local channel>] [-f/--force]
+    """<remotenet> <channel> [<local channel>] [-f/--force-ts]
 
     Links the specified channel on \x02remotenet\x02 over PyLink Relay as \x02local channel\x02.
     If \x02local channel\x02 is not specified, it defaults to the same name as \x02channel\x02.
 
-    If the --force option is given, this command will bypass checks for TS and whether the target
-    network is alive, and link the channel anyways."""
+    If the --force-ts option is given, this command will bypass checks for TS and whether the target
+    network is alive, and link the channel anyways. It will not bypass other link restrictions like
+    those imposed by LINKACL."""
+
     args = link_parser.parse_args(args)
 
     # Normalize channel case
@@ -2259,6 +2261,8 @@ def link(irc, source, args):
         irc.error('Cannot link two channels on the same network.')
         return
 
+    permissions.check_permissions(irc, source, ['relay.link'])
+
     if localchan not in irc.channels or source not in irc.channels[localchan].users:
         # Caller is not in the requested channel.
         log.debug('(%s) Source not in channel %s; protoname=%s', irc.name, localchan, irc.protoname)
@@ -2269,15 +2273,16 @@ def link(irc, source, args):
                 irc.join(irc.pseudoclient.uid, localchan)
                 irc.reply('Joining %r now to check for op status; please run this command again after I join.' % localchan)
                 return
-            elif not irc.channels[localchan].is_op_plus(source):
-                irc.error('You must be opped in %r to complete this operation.' % localchan)
-                return
-
         else:
             irc.error('You must be in %r to complete this operation.' % localchan)
             return
 
-    permissions.check_permissions(irc, source, ['relay.link'])
+    elif irc.protoname == 'clientbot' and not irc.channels[localchan].is_op_plus(source):
+        if irc.pseudoclient and source == irc.pseudoclient.uid:
+            irc.error('Please op the bot in %r to complete this operation.' % localchan)
+        else:
+            irc.error('You must be opped in %r to complete this operation.' % localchan)
+        return
 
     if remotenet not in world.networkobjects:
         irc.error('No network named %r exists.' % remotenet)
@@ -2308,8 +2313,8 @@ def link(irc, source, args):
                           "as %r." % (remotenet, args.channel, link[1]))
                 return
 
-        if args.force:
-            permissions.check_permissions(irc, source, ['relay.link.force'])
+        if args.force_ts:
+            permissions.check_permissions(irc, source, ['relay.link.force_ts', 'relay.link.force'])
             log.info("(%s) relay: Forcing link %s%s -> %s%s", irc.name, irc.name, localchan, remotenet,
                      args.channel)
         else:
