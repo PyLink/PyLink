@@ -1225,9 +1225,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             return self.servers[entityid].name
         elif entityid in self.users:
             return self.users[entityid].nick
-        elif self.is_channel(entityid):
-            # We assume that channels don't conflict with the SID/UID format. For IRC, this is a
-            # relatively safe bet.
+        # Return channels as-is. Remember to strip any STATUSMSG prefixes like from @#channel
+        elif self.is_channel(entityid.lstrip(''.join(self.prefixmodes.values()))):
             return entityid
         else:
             raise KeyError("Unknown UID/SID %s" % entityid)
