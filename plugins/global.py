@@ -24,8 +24,12 @@ def g(irc, source, args):
     template = string.Template(global_conf.get('format', DEFAULT_FORMAT))
 
     exempt_channels = set(global_conf.get('exempt_channels', set()))
+
+    netcount = 0
+    chancount = 0
     for netname, ircd in world.networkobjects.items():
         if ircd.connected.is_set():  # Only attempt to send to connected networks
+            netcount += 1
             for channel in ircd.pseudoclient.channels:
 
                 local_exempt_channels = exempt_channels | set(ircd.serverdata.get('global_exempt_channels', set()))
@@ -51,5 +55,8 @@ def g(irc, source, args):
                 # Disable relaying or other plugins handling the global message.
                 ircd.msg(channel, template.safe_substitute(subst), loopback=False)
 
+                chancount += 1
+
+    irc.reply('Done. Sent to %d channels across %d networks.' % (chancount, netcount))
 
 utils.add_cmd(g, "global", featured=True)
