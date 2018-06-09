@@ -14,7 +14,12 @@ def g(irc, source, args):
     Sends out a Instance-wide notice.
     """
     permissions.check_permissions(irc, source, ["global.global"])
-    message = " ".join(args)
+    message = " ".join(args).strip()
+
+    if not message:
+        irc.error("Refusing to send an empty message.")
+        return
+
     global_conf = conf.conf.get('global') or {}
     template = string.Template(global_conf.get('format', DEFAULT_FORMAT))
 
