@@ -1,5 +1,7 @@
 # antispam.py: Basic services-side spamfilters for IRC
 
+import ircmatch
+
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
@@ -23,24 +25,25 @@ def _punish(irc, target, channel, punishment, reason):
 
     target_nick = irc.get_friendly_name(target)
 
-    exempt_level = irc.get_service_option('antispam', 'exempt_level', DEFAULT_EXEMPT_OPTION).lower()
-    c = irc.channels[channel]
+    if channel:
+        c = irc.channels[channel]
+        exempt_level = irc.get_service_option('antispam', 'exempt_level', DEFAULT_EXEMPT_OPTION).lower()
 
-    if exempt_level not in EXEMPT_OPTIONS:
-        log.error('(%s) Antispam exempt %r is not a valid setting, '
-                  'falling back to defaults; accepted settings include: %s',
-                  irc.name, exempt_level, ', '.join(EXEMPT_OPTIONS))
-        exempt_level = DEFAULT_EXEMPT_OPTION
+        if exempt_level not in EXEMPT_OPTIONS:
+            log.error('(%s) Antispam exempt %r is not a valid setting, '
+                      'falling back to defaults; accepted settings include: %s',
+                      irc.name, exempt_level, ', '.join(EXEMPT_OPTIONS))
+            exempt_level = DEFAULT_EXEMPT_OPTION
 
-    if exempt_level == 'voice' and c.is_voice_plus(target):
-        log.debug("(%s) antispam: refusing to punish voiced and above %s/%s", irc.name, target, irc.get_friendly_name(target))
-        return False
-    elif exempt_level == 'halfop' and c.is_halfop_plus(target):
-        log.debug("(%s) antispam: refusing to punish halfop and above %s/%s", irc.name, target, irc.get_friendly_name(target))
-        return False
-    elif exempt_level == 'op' and c.is_op_plus(target):
-        log.debug("(%s) antispam: refusing to punish op and above %s/%s", irc.name, target, irc.get_friendly_name(target))
-        return False
+        if exempt_level == 'voice' and c.is_voice_plus(target):
+            log.debug("(%s) antispam: refusing to punish voiced and above %s/%s", irc.name, target, target_nick)
+            return False
+        elif exempt_level == 'halfop' and c.is_halfop_plus(target):
+            log.debug("(%s) antispam: refusing to punish halfop and above %s/%s", irc.name, target, target_nick)
+            return False
+        elif exempt_level == 'op' and c.is_op_plus(target):
+            log.debug("(%s) antispam: refusing to punish op and above %s/%s", irc.name, target, target_nick)
+            return False
 
     my_uid = sbot.uids.get(irc.name)
     # XXX workaround for single-bot protocols like Clientbot
@@ -81,7 +84,7 @@ def _punish(irc, target, channel, punishment, reason):
         elif action == 'kill':
             kill = True  # Delay kills so that the user data doesn't disappear.
         # XXX factorize these blocks
-        elif action == 'kick':
+        elif action == 'kick' and channel:
             try:
                 _kick()
             except NotImplementedError:
@@ -89,7 +92,7 @@ def _punish(irc, target, channel, punishment, reason):
                             "target was %s/%s", irc.name, target_nick, channel)
             else:
                 successful_punishments += 1
-        elif action == 'ban':
+        elif action == 'ban' and channel:
             try:
                 _ban()
             except (ValueError, NotImplementedError):
@@ -97,7 +100,7 @@ def _punish(irc, target, channel, punishment, reason):
                             "target was %s/%s", irc.name, target_nick, channel)
             else:
                 successful_punishments += 1
-        elif action == 'quiet':
+        elif action == 'quiet' and channel:
             try:
                 _quiet()
             except (ValueError, NotImplementedError):
@@ -182,13 +185,95 @@ def handle_masshighlight(irc, source, command, args):
             punishment = mhl_settings.get('punishment', MASSHIGHLIGHT_DEFAULTS['punishment']).lower()
             reason = mhl_settings.get('reason', MASSHIGHLIGHT_DEFAULTS['reason'])
 
-            log.debug('(%s) antispam: calling _punish on %s/%s', irc.name,
-                      source, irc.get_friendly_name(source))
+            log.info("(%s) antispam: punishing %s => %s for mass highlight spam",
+                     irc.name,
+                     irc.get_friendly_name(source),
+                     channel)
             punished = _punish(irc, source, channel, punishment, reason)
             break
 
-    log.debug('(%s) antispam: got %s/%s nicks on message to %r', irc.name, len(nicks_caught), min_nicks, channel)
+    log.debug('(%s) antispam.masshighlight: got %s/%s nicks on message to %r', irc.name,
+              len(nicks_caught), min_nicks, channel)
     return not punished  # Filter this message from relay, etc. if it triggered protection
 
 utils.add_hook(handle_masshighlight, 'PRIVMSG', priority=1000)
 utils.add_hook(handle_masshighlight, 'NOTICE', priority=1000)
+
+TEXTFILTER_DEFAULTS = {
+    'reason': "Spam is prohibited",
+    'punishment': 'kick+ban',
+    'watch_pms': 'false',
+    'enabled': False
+}
+def handle_textfilter(irc, source, command, args):
+    """Antispam text filter handler."""
+    target = args['target']
+    text = args['text']
+    txf_settings = irc.get_service_option('antispam', 'textfilter',
+                                          TEXTFILTER_DEFAULTS)
+
+    if not txf_settings.get('enabled', False):
+        return
+
+    my_uid = sbot.uids.get(irc.name)
+
+    # XXX workaround for single-bot protocols like Clientbot
+    if irc.pseudoclient and not irc.has_cap('can-spawn-clients'):
+        my_uid = irc.pseudoclient.uid
+
+    if (not irc.connected.is_set()) or (not my_uid):
+        # Break if the network isn't ready.
+        log.debug("(%s) antispam.textfilters: skipping processing; network isn't ready", irc.name)
+        return
+    elif irc.is_internal_client(source):
+        # Ignore messages from our own clients.
+        log.debug("(%s) antispam.textfilters: skipping processing message from internal client %s", irc.name, source)
+        return
+    elif source not in irc.users:
+        log.debug("(%s) antispam.textfilters: ignoring message from non-user %s", irc.name, source)
+        return
+
+    if irc.is_channel(target):
+        channel_or_none = target
+        if target not in irc.channels or my_uid not in irc.channels[target].users:
+            # We're not monitoring this channel.
+            log.debug("(%s) antispam.textfilters: skipping processing message from channel %r we're not in", irc.name, target)
+            return
+    else:
+        channel_or_none = None
+        watch_pms = txf_settings.get('watch_pms', TEXTFILTER_DEFAULTS['watch_pms'])
+
+        if watch_pms == 'services':
+            if not irc.get_service_bot(target):
+                log.debug("(%s) antispam.textfilters: skipping processing; %r is not a service bot (watch_pms='services')", irc.name, target)
+                return
+        elif watch_pms == 'all':
+            log.debug("(%s) antispam.textfilters: checking all PMs (watch_pms='all')", irc.name)
+            pass
+        else:
+            # Not a channel.
+            log.debug("(%s) antispam.textfilters: skipping processing; %r is not a channel and watch_pms is disabled", irc.name, target)
+            return
+
+    # Merge together global and local textfilter lists.
+    txf_globs = set(conf.conf.get('antispam', {}).get('textfilter_globs', [])) | \
+                set(irc.serverdata.get('antispam_textfilter_globs', []))
+
+    punishment = txf_settings.get('punishment', TEXTFILTER_DEFAULTS['punishment']).lower()
+    reason = txf_settings.get('reason', TEXTFILTER_DEFAULTS['reason'])
+
+    punished = False
+    for filterglob in txf_globs:
+        if ircmatch.match(1, filterglob, text):
+            log.info("(%s) antispam: punishing %s => %s for text filter %r",
+                     irc.name,
+                     irc.get_friendly_name(source),
+                     irc.get_friendly_name(target),
+                     filterglob)
+            punished = _punish(irc, source, channel_or_none, punishment, reason)
+            break
+
+    return not punished  # Filter this message from relay, etc. if it triggered protection
+
+utils.add_hook(handle_textfilter, 'PRIVMSG', priority=999)
+utils.add_hook(handle_textfilter, 'NOTICE', priority=999)

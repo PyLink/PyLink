@@ -868,11 +868,21 @@ stats:
         # Sets the kick / kill message used when the text spamfilter is triggered.
         #reason: "Spam is prohibited"
 
-    # Configures a (case-insensitive) list of bad strings to block in messages (PRIVMSG, NOTICE).
+        # Determines whether PMs to PyLink clients should also be tracked to prevent spam.
+        # Valid values include false (the boolean value), 'services', and 'all':
+        # - If this is set to false, PMs are ignored by text filtering.
+        # - If this is set to 'services', only PMs sent to services are checked for spam (this allows
+        #   them to effectively act as PM spam traps)
+        # - If this is set to 'all', all PyLink clients (including relay users) have incoming PMs
+        #   checked for spam.
+        # This defaults to false if not set.
+        #watch_pms: false
+
+    # Configures an (ASCII case-insensitive) list of bad strings to block in messages (PRIVMSG, NOTICE).
     # Globs are supported; use them to your advantage here.
     # You can also define server specific lists of bad strings by defining
-    #   servers::<server name>::antispam_textfilters_messages
-    # the contents of which will be merged into the global list specified below.
+    #   servers::<server name>::antispam_textfilters_globs
+    # the contents of which will be *merged* into the global list of bad strings specified below.
     #textfilter_globs:
         # - "*very bad don't say this*"
         # - "TWFkZSB5b3UgbG9vayE="
