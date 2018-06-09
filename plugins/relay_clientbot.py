@@ -80,8 +80,8 @@ def cb_relay_core(irc, source, command, args):
         # Try to fetch the format for the given command from the relay:clientbot_styles:$command
         # key, falling back to one defined in default_styles above, and then nothing if not found
         # there.
-        text_template = (relay_conf.get('clientbot_styles') or {}).get(real_command,
-                                                                       default_styles.get(real_command, ''))
+        text_template = irc.get_service_option('relay', 'clientbot_styles', {}).get(
+                            real_command, default_styles.get(real_command, ''))
         text_template = string.Template(text_template)
 
         if text_template:
