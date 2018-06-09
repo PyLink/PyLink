@@ -219,7 +219,7 @@ class UserMapping(collections.abc.MutableMapping, structures.CopyWrapper):
         return self._data.__contains__(key)
 
     def __copy__(self):
-        return self.__class__(data=self._data.copy())
+        return self.__class__(self._irc, data=self._data.copy())
 
 class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
     """Base IRC object for PyLink."""
