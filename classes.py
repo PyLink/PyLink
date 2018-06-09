@@ -1363,6 +1363,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                     hosts.add(self.get_hostmask(target, realhost=True))
 
             else:  # We were given a host, use that.
+                if '@' not in text:
+                    log.warning('(%s) Using match_host() on non-hostlike globs is deprecated as of 2.0-alpha4 - '
+                                'use match_text() instead', self.name)
                 hosts = [target]
 
             # Iterate over the hosts to match using ircmatch.
@@ -1376,6 +1379,19 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         if invert:
             result = not result
         return result
+
+    def match_text(self, glob, text):
+        """
+        Returns whether the given glob matches the given text under the network's
+        current case mapping.
+        """
+        # Get the corresponding casemapping value used by ircmatch.
+        if self.casemapping == 'rfc1459':
+            casemapping = 0
+        else:
+            casemapping = 1
+
+        return ircmatch.match(casemapping, glob, text)
 
     def match_all(self, banmask, channel=None):
         """
