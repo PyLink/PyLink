@@ -149,22 +149,25 @@ def handle_masshighlight(irc, source, command, args):
 
     if (not irc.connected.is_set()) or (not my_uid):
         # Break if the network isn't ready.
-        log.debug("(%s) antispam: skipping processing; network isn't ready", irc.name)
+        log.debug("(%s) antispam.masshighlight: skipping processing; network isn't ready", irc.name)
         return
     elif not irc.is_channel(channel):
-        # Not a channel.
-        log.debug("(%s) antispam: skipping processing; %r is not a channel", irc.name, channel)
+        # Not a channel - mass highlight blocking only makes sense within channels
+        log.debug("(%s) antispam.masshighlight: skipping processing; %r is not a channel", irc.name, channel)
         return
     elif irc.is_internal_client(source):
         # Ignore messages from our own clients.
-        log.debug("(%s) antispam: skipping processing message from internal client %s", irc.name, source)
+        log.debug("(%s) antispam.masshighlight: skipping processing message from internal client %s", irc.name, source)
+        return
+    elif source not in irc.users:
+        log.debug("(%s) antispam.masshighlight: ignoring message from non-user %s", irc.name, source)
         return
     elif channel not in irc.channels or my_uid not in irc.channels[channel].users:
         # We're not monitoring this channel.
-        log.debug("(%s) antispam: skipping processing message from channel %r we're not in", irc.name, channel)
+        log.debug("(%s) antispam.masshighlight: skipping processing message from channel %r we're not in", irc.name, channel)
         return
     elif len(text) < mhl_settings.get('min_length', MASSHIGHLIGHT_DEFAULTS['min_length']):
-        log.debug("(%s) antispam: skipping processing message %r; it's too short", irc.name, text)
+        log.debug("(%s) antispam.masshighlight: skipping processing message %r; it's too short", irc.name, text)
         return
 
     # Strip :, from potential nicks
