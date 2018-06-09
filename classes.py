@@ -768,7 +768,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
         return bool(cls._HOSTMASK_RE.match(text) and '#' not in text)
 
-    def _parse_modes(self, args, existing, supported_modes, is_channel=False, prefixmodes=None):
+    def _parse_modes(self, args, existing, supported_modes, is_channel=False, prefixmodes=None,
+                     ignore_missing_args=False):
         """
         parse_modes() core.
 
@@ -839,9 +840,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                         log.debug('Mode %s: Only has parameter when setting.', mode)
                         arg = args.pop(0)
                 except IndexError:
-                    log.warning('(%s) Error while parsing mode %r: mode requires an '
-                                'argument but none was found. (modestring: %r)',
-                                self.name, mode, modestring)
+                    logfunc = log.debug if ignore_missing_args else log.warning
+                    logfunc('(%s) Error while parsing mode %r: mode requires an '
+                            'argument but none was found. (modestring: %r)',
+                            self.name, mode, modestring)
                     continue  # Skip this mode; don't error out completely.
                 newmode = (prefix + mode, arg)
                 res.append(newmode)
@@ -851,7 +853,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         return res
 
-    def parse_modes(self, target, args):
+    def parse_modes(self, target, args, ignore_missing_args=False):
         """Parses a modestring list into a list of (mode, argument) tuples.
         ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
         """
@@ -880,7 +882,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             prefixmodes = self._channels[target].prefixmodes
 
         return self._parse_modes(args, oldmodes, supported_modes, is_channel=is_channel,
-                                 prefixmodes=prefixmodes)
+                                 prefixmodes=prefixmodes, ignore_missing_args=ignore_missing_args)
 
     def _apply_modes(self, old_modelist, changedmodes, is_channel=False,
                      prefixmodes=None):

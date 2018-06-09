@@ -972,7 +972,10 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         channel = args[1]
         modes = args[2:]
         log.debug('(%s) Got RPL_CHANNELMODEIS (324) modes %s for %s', self.name, modes, channel)
-        changedmodes = self.parse_modes(channel, modes)
+
+        # Sometimes IRCds suppress arguments to +lk, so ignore missing args
+        changedmodes = self.parse_modes(channel, modes, ignore_missing_args=True)
+
         self.apply_modes(channel, changedmodes)
 
     def handle_329(self, source, command, args):
