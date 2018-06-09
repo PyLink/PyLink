@@ -836,6 +836,10 @@ stats:
     # Valid values are "voice", "halfop", and "op". This defaults to "halfop" if not set.
     #exempt_level: halfop
 
+    # Determines whether Antispam should strip formatting before applying filter checks.
+    # Defaults to true if not set.
+    #strip_formatting: true
+
     #masshighlight:
         # This block configures options for antispam's mass highlight blocking. It can also be
         # overridden (as an entire block) per-network by copying its options under

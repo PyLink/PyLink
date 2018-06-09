@@ -177,6 +177,9 @@ def handle_masshighlight(irc, source, command, args):
         log.debug("(%s) antispam.masshighlight: skipping processing message %r; it's too short", irc.name, text)
         return
 
+    if irc.get_service_option('antispam', 'strip_formatting', True):
+        text = utils.strip_irc_formatting(text)
+
     # Strip :, from potential nicks
     words = [word.rstrip(':,') for word in text.split()]
 
@@ -271,6 +274,9 @@ def handle_textfilter(irc, source, command, args):
 
     punishment = txf_settings.get('punishment', TEXTFILTER_DEFAULTS['punishment']).lower()
     reason = txf_settings.get('reason', TEXTFILTER_DEFAULTS['reason'])
+
+    if irc.get_service_option('antispam', 'strip_formatting', True):
+        text = utils.strip_irc_formatting(text)
 
     punished = False
     for filterglob in txf_globs:
