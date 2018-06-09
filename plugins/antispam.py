@@ -11,7 +11,7 @@ sbot = utils.register_service("antispam", default_nick="AntiSpam", desc=mydesc)
 def die(irc=None):
     utils.unregister_service("antispam")
 
-PUNISH_OPTIONS = ['kill', 'ban', 'quiet', 'kick']
+PUNISH_OPTIONS = ['kill', 'ban', 'quiet', 'kick', 'block']
 EXEMPT_OPTIONS = ['voice', 'halfop', 'op']
 DEFAULT_EXEMPT_OPTION = 'halfop'
 def _punish(irc, target, channel, punishment, reason):
@@ -81,6 +81,9 @@ def _punish(irc, target, channel, punishment, reason):
                       'these joined together with a "+".',
                       irc.name, punishment, ', '.join(PUNISH_OPTIONS))
             return
+        elif action == 'block':
+            # We only need to increment this for this function to return True
+            successful_punishments += 1
         elif action == 'kill':
             kill = True  # Delay kills so that the user data doesn't disappear.
         # XXX factorize these blocks
@@ -121,6 +124,10 @@ def _punish(irc, target, channel, punishment, reason):
                         "target was %s/%s", irc.name, target_nick, channel)
         else:
             successful_punishments += 1
+
+    if not successful_punishments:
+        log.warning('(%s) antispam: Failed to punish %s with %r, target was %s', irc.name,
+                    target_nick, punishment, channel or 'a PM')
 
     return bool(successful_punishments)
 
@@ -204,7 +211,7 @@ utils.add_hook(handle_masshighlight, 'NOTICE', priority=1000)
 
 TEXTFILTER_DEFAULTS = {
     'reason': "Spam is prohibited",
-    'punishment': 'kick+ban',
+    'punishment': 'kick+ban+block',
     'watch_pms': 'false',
     'enabled': False
 }

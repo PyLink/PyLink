@@ -846,8 +846,8 @@ stats:
         #enabled: true
 
         # Sets the punishment that Antispam should use against mass highlighters.
-        # Valid values include "kill", "kick", "ban", "quiet", and combinations of these strung
-        # together with "+" (e.g. "kick+ban"). Defaults to "kick+ban" if not set.
+        # Valid values include "kill", "kick", "ban", "quiet", "block", and combinations of these
+        # strung together with "+" (e.g. "kick+ban"). Defaults to "kick+ban" if not set.
         #punishment: kick+ban
 
         # Sets the kick / kill message used when mass highlight prevention is triggered.
@@ -868,10 +868,10 @@ stats:
 
         # Sets the punishment that Antispam's text spamfilter should use.
         # Valid values include "kill", "kick", "ban", "quiet", and combinations of these strung
-        # together with "+" (e.g. "kick+ban"). Defaults to "kick+ban" if not set.
+        # together with "+" (e.g. "kick+ban"). Defaults to "kick+ban+block" if not set.
         # If you want Antispam to also monitor PM spam, you will want to change this to something
-        # not channel-specific (such as "kill").
-        #punishment: kick+ban
+        # not channel-specific (such as "kill" or "block").
+        #punishment: kick+ban+block
 
         # Sets the kick / kill message used when the text spamfilter is triggered.
         #reason: "Spam is prohibited"
