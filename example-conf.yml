@@ -815,6 +815,12 @@ stats:
     #     $text: the global text
     #format: "[$sender@$fullnetwork] $text"
 
+    # Configures a set of channel globs to exempt from announcements. You can also add to
+    # this per network via: servers::<server name>::global_exempt_channels,
+    # the contents of which will be merged into this list.
+    #exempt_channels:
+    #    - "#*staff*"
+
 #antispam:
     # This block configures the antispam plugin; you don't need this if you aren't using it.
     # Antispam is automatically enabled in all channels that it's in, and you can configure

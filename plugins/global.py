@@ -23,14 +23,28 @@ def g(irc, source, args):
     global_conf = conf.conf.get('global') or {}
     template = string.Template(global_conf.get('format', DEFAULT_FORMAT))
 
-    for name, ircd in world.networkobjects.items():
+    exempt_channels = set(global_conf.get('exempt_channels', set()))
+    for netname, ircd in world.networkobjects.items():
         if ircd.connected.is_set():  # Only attempt to send to connected networks
             for channel in ircd.pseudoclient.channels:
+
+                local_exempt_channels = exempt_channels | set(ircd.serverdata.get('global_exempt_channels', set()))
+
+                skip = False
+                for exempt in local_exempt_channels:
+                    if irc.match_text(exempt, channel):
+                        log.debug('global: Skipping channel %s%s for exempt %r', netname, channel, exempt)
+                        skip = True
+                        break
+
+                if skip:
+                    continue
+
                 subst = {'sender': irc.get_friendly_name(source),
                          'network': irc.name,
                          'fullnetwork': irc.get_full_network_name(),
                          'current_channel': channel,
-                         'current_network': ircd.name,
+                         'current_network': netname,
                          'current_fullnetwork': ircd.get_full_network_name(),
                          'text': message}
 
