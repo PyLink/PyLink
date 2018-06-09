@@ -724,3 +724,14 @@ class IRCParser(argparse.ArgumentParser):
 
     def exit(self, *args):
         return
+
+# From http://modern.ircdocs.horse/formatting.html
+_strip_color_regex = re.compile(r'\x03(\d{1,2}(,\d{1,2})?)?')
+_irc_formatting_chars = "\x02\x1D\x1F\x1E\x11\x16\x0F\x03"
+
+def strip_irc_formatting(text):
+    """Returns text with IRC formatting (colors, underlines, bold, italics, reverse) removed."""
+    text = _strip_color_regex.sub('', text)
+    for char in _irc_formatting_chars:
+        text = text.replace(char, '')
+    return text
