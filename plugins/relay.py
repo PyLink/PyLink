@@ -2381,6 +2381,9 @@ def delink(irc, source, args):
                     if link[0] == remotenet:
                         remove_channel(world.networkobjects.get(remotenet), link[1])
                         db[entry]['links'].remove(link)
+        elif remotenet:
+            irc.error('You can only use this delink syntax from the network that owns this channel.')
+            return
         else:
             remove_channel(irc, channel)
             db[entry]['links'].remove((irc.name, channel))
