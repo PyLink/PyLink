@@ -272,9 +272,11 @@ def delacc(irc, source, args):
         # XXX: Automode entries are actually unordered: what we're actually doing is sorting the keys
         # by name into a list, running remove_range on that, and removing the difference.
         removed = []
+        source_host = irc.get_hostmask(source)
         for mask_entry in dbentry.copy():
             if mask_entry not in new_keys:
                 del dbentry[mask_entry]
+                log.info('(%s) %s removed modes for %s on %s', ircobj.name, source_host, mask_entry, channel)
                 removed.append(mask_entry)
 
         reply(irc, 'Done. Removed \x02%d\x02 entries on \x02%s\x02: %s' % (len(removed), channel, ', '.join(removed)))
