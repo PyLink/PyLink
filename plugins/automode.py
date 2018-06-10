@@ -277,7 +277,7 @@ def delacc(irc, source, args):
                 del dbentry[mask_entry]
                 removed.append(mask_entry)
 
-        irc.reply('Done. Removed %d entries on %s: %s' % (len(removed), channel, ', '.join(removed)))
+        reply(irc, 'Done. Removed \x02%d\x02 entries on \x02%s\x02: %s' % (len(removed), channel, ', '.join(removed)))
 
     # Remove channels if no more entries are left.
     if not dbentry:
