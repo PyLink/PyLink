@@ -236,9 +236,12 @@ def setacc(irc, source, args):
 modebot.add_cmd(setacc, aliases=('setaccess', 'set'), featured=True)
 
 def delacc(irc, source, args):
-    """<channel/chanpair> <mask>
+    """<channel/chanpair> <mask or range string>
 
-    Removes the Automode entry for the given mask on the given channel, if one exists.
+    Removes the Automode entry for the given mask or range string, if they exist.
+
+    Range strings are indices (entry numbers) or ranges of them joined together with commas: e.g.
+    "1", "2-10", "1,3,5-8". Entry numbers are shown by LISTACC.
     """
     try:
         chanpair, mask = args
@@ -259,7 +262,22 @@ def delacc(irc, source, args):
         log.info('(%s) %s removed modes for %s on %s', ircobj.name, irc.get_hostmask(source), mask, channel)
         reply(irc, "Done. Removed the Automode access entry for \x02%s\x02 in \x02%s\x02." % (mask, channel))
     else:
-        error(irc, "No Automode access entry for \x02%s\x02 exists in \x02%s\x02." % (mask, channel))
+        # Treat the mask as a range string.
+        try:
+            new_keys = utils.remove_range(mask, sorted(dbentry.keys()))
+        except ValueError:
+            error(irc, "No Automode access entry for \x02%s\x02 exists in \x02%s\x02." % (mask, channel))
+            return
+
+        # XXX: Automode entries are actually unordered: what we're actually doing is sorting the keys
+        # by name into a list, running remove_range on that, and removing the difference.
+        removed = []
+        for mask_entry in dbentry.copy():
+            if mask_entry not in new_keys:
+                del dbentry[mask_entry]
+                removed.append(mask_entry)
+
+        irc.reply('Done. Removed %d entries on %s: %s' % (len(removed), channel, ', '.join(removed)))
 
     # Remove channels if no more entries are left.
     if not dbentry:
@@ -290,7 +308,7 @@ def listacc(irc, source, args):
         # Iterate over all entries and print them. Do this in private to prevent channel
         # floods.
         reply(irc, "Showing Automode entries for \x02%s\x02:" % channel, private=True)
-        for entrynum, entry in enumerate(dbentry.items(), start=1):
+        for entrynum, entry in enumerate(sorted(dbentry.items()), start=1):
             mask, modes = entry
             reply(irc, "[%s] \x02%s\x02 has modes +\x02%s\x02" % (entrynum, mask, modes), private=True)
         reply(irc, "End of Automode entries list.", private=True)
