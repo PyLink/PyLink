@@ -735,3 +735,54 @@ def strip_irc_formatting(text):
     for char in _irc_formatting_chars:
         text = text.replace(char, '')
     return text
+
+_subrange_re = re.compile(r'(?P<start>(\d+))-(?P<end>(\d+))')
+def remove_range(rangestr, mylist):
+    """
+    Removes a range string of (one-indexed) items from the list.
+    Range strings are indices or ranges of them joined together with a ",":
+    e.g. "5", "2", "2-10", "1,3,5-8"
+
+    See test/test_utils.py for more complete examples.
+    """
+    if None in mylist:
+        raise ValueError("mylist must not contain None!")
+
+    # Split and filter out empty subranges
+    ranges = filter(None, rangestr.split(','))
+    if not ranges:
+        raise ValueError("Invalid range string %r" % rangestr)
+
+    for subrange in ranges:
+        match = _subrange_re.match(subrange)
+        if match:
+            start = int(match.group('start'))
+            end = int(match.group('end'))
+
+            if end <= start:
+                raise ValueError("Range start (%d) is <= end (%d) in range string %r" %
+                                 (start, end, rangestr))
+            elif 0 in (end, start):
+                raise ValueError("Got range index 0 in range string %r, this function is one-indexed" %
+                                 rangestr)
+
+            # For our purposes, make sure the start and end are within the list
+            mylist[start-1], mylist[end-1]
+
+            # Replace the entire range with None's
+            log.debug('utils.remove_range: removing items from %s to %s: %s', start, end, mylist[start-1:end])
+            mylist[start-1:end] = [None] * (end-(start-1))
+
+        elif subrange in string.digits:
+            index = int(subrange)
+            if index == 0:
+                raise ValueError("Got index 0 in range string %r, this function is one-indexed" %
+                                 rangestr)
+            log.debug('utils.remove_range: removing item %s: %s', index, mylist[index-1])
+            mylist[index-1] = None
+
+        else:
+            raise ValueError("Got invalid subrange %r in range string %r" %
+                             (subrange, rangestr))
+
+    return list(filter(lambda x: x is not None, mylist))

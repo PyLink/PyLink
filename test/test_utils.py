@@ -41,5 +41,94 @@ class UtilsTestCase(unittest.TestCase):
             "\x0305t\x030,1h\x0307,02e\x0308,06 \x0309,13q\x0303,15u\x0311,14i\x0310,05c\x0312,04k\x0302,07 \x0306,08b\x0313,09r\x0305,10o\x0304,12w\x0307,02n\x0308,06 \x0309,13f\x0303,15o\x0311,14x\x0310,05 \x0312,04j\x0302,07u\x0306,08m\x0313,09p\x0305,10s\x0304,12 \x0307,02o\x0308,06v\x0309,13e\x0303,15r\x0311,14 \x0310,05t\x0312,04h\x0302,07e\x0306,08 \x0313,09l\x0305,10a\x0304,12z\x0307,02y\x0308,06 \x0309,13d\x0303,15o\x0311,14g\x0f"),
             "the quick brown fox jumps over the lazy dog")
 
+    def test_remove_range(self):
+        self.assertEqual(utils.remove_range(
+            "1", [1,2,3,4,5,6,7,8,9]),
+            [2,3,4,5,6,7,8,9])
+
+        self.assertEqual(utils.remove_range(
+            "2,4", [1,2,3,4,5,6,7,8,9]),
+            [1,3,5,6,7,8,9])
+
+        self.assertEqual(utils.remove_range(
+            "1-4", [1,2,3,4,5,6,7,8,9]),
+            [5,6,7,8,9])
+
+        self.assertEqual(utils.remove_range(
+            "1-3,7", [1,2,3,4,5,6,7,8,9]),
+            [4,5,6,8,9])
+
+        self.assertEqual(utils.remove_range(
+            "1-3,5-9", [1,2,3,4,5,6,7,8,9]),
+            [4])
+
+        self.assertEqual(utils.remove_range(
+            "1-2,3-5,6-9", [1,2,3,4,5,6,7,8,9]),
+            [])
+
+        # Anti-patterns, but should be legal
+        self.assertEqual(utils.remove_range(
+            "4,2", [1,2,3,4,5,6,7,8,9]),
+            [1,3,5,6,7,8,9])
+        self.assertEqual(utils.remove_range(
+            "4,4,4", [1,2,3,4,5,6,7,8,9]),
+            [1,2,3,5,6,7,8,9])
+
+        # Empty subranges should be filtered away
+        self.assertEqual(utils.remove_range(
+            ",2,,4,", [1,2,3,4,5,6,7,8,9]),
+            [1,3,5,6,7,8,9])
+
+        # Not enough items
+        with self.assertRaises(IndexError):
+            utils.remove_range(
+                "5", ["abcd", "efgh"])
+        with self.assertRaises(IndexError):
+            utils.remove_range(
+                "1-5", ["xyz", "cake"])
+
+        # Ranges going in reverse or invalid
+        with self.assertRaises(ValueError):
+            utils.remove_range(
+                "5-2", [":)", ":D", "^_^"])
+            utils.remove_range(
+                "2-2", [":)", ":D", "^_^"])
+
+        # 0th element
+        with self.assertRaises(ValueError):
+            utils.remove_range(
+                "5,0", list(range(50)))
+
+        # List can't contain None
+        with self.assertRaises(ValueError):
+            utils.remove_range(
+                "1-2", [None, "", 0, False])
+
+        # Malformed indices
+        with self.assertRaises(ValueError):
+            utils.remove_range(
+                " ", ["some", "clever", "string"])
+            utils.remove_range(
+                " ,,, ", ["some", "clever", "string"])
+            utils.remove_range(
+                "a,b,c,1,2,3", ["some", "clever", "string"])
+
+        # Malformed ranges
+        with self.assertRaises(ValueError):
+            utils.remove_range(
+                "1,2-", [":)", ":D", "^_^"])
+            utils.remove_range(
+                "-", [":)", ":D", "^_^"])
+            utils.remove_range(
+                "1-2-3", [":)", ":D", "^_^"])
+            utils.remove_range(
+                "-1-2", [":)", ":D", "^_^"])
+            utils.remove_range(
+                "3--", [":)", ":D", "^_^"])
+            utils.remove_range(
+                "--5", [":)", ":D", "^_^"])
+            utils.remove_range(
+                "-3--5", ["we", "love", "emotes"])
+
 if __name__ == '__main__':
     unittest.main()
