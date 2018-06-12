@@ -12,7 +12,6 @@ import time
 import socket
 import ssl
 import hashlib
-import inspect
 import ipaddress
 import queue
 import functools
@@ -1260,21 +1259,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             elif allowAuthed and self.users[uid].account:
                 return True
         return False
-
-    def check_authenticated(self, uid, allowAuthed=True, allowOper=True):
-        """
-        Checks whether the given user has operator status on PyLink, raising
-        NotAuthorizedError and logging the access denial if not.
-        """
-        log.warning("(%s) check_authenticated() is deprecated as of PyLink 1.2 and may be "
-                    "removed in a future relase. Consider migrating to the PyLink Permissions API.",
-                    self.name)
-        lastfunc = inspect.stack()[1][3]
-        if not self.is_oper(uid, allowAuthed=allowAuthed, allowOper=allowOper):
-            log.warning('(%s) Access denied for %s calling %r', self.name,
-                        self.get_hostmask(uid), lastfunc)
-            raise utils.NotAuthorizedError("You are not authenticated!")
-        return True
 
     def match_host(self, glob, target, ip=True, realhost=True):
         """
