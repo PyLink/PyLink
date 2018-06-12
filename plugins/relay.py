@@ -2903,10 +2903,14 @@ def chandesc(irc, source, args):
             permissions.check_permissions(irc, source, ['relay.chandesc.remove'])
 
             db[relay]['description'] = ''
+            log.info('(%s) %s cleared the description for %s', irc.name, irc.get_hostmask(source), channel)
             irc.reply('Done. Cleared the description for \x02%s\x02.' % channel)
         else:
             permissions.check_permissions(irc, source, ['relay.chandesc.set'])
-            db[relay]['description'] = ' '.join(args[1:])
+
+            db[relay]['description'] = newdesc = ' '.join(args[1:])
+            log.info('(%s) %s set the description for %s to: %s', irc.name, irc.get_hostmask(source),
+                     channel, newdesc)
             irc.reply('Done. Updated the description for \x02%s\x02.' % channel)
     else:
         irc.reply('Description for \x02%s\x02: %s' % (channel, db[relay].get('description') or  '\x1D(none)\x1D'))
