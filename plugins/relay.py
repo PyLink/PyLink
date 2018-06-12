@@ -326,7 +326,7 @@ def _has_common_pool(sourcenet, targetnet, namespace):
     if 'relay' not in conf.conf:
         return False
 
-    for pool in conf.conf['relay'].get(namespace, []):
+    for pool in (conf.conf['relay'].get(namespace) or []):
         if sourcenet in pool and targetnet in pool:
             log.debug('relay._has_common_pool: found networks %r and %r in %s pool %r', sourcenet, targetnet,
                       namespace, pool)
@@ -1905,30 +1905,54 @@ def handle_kill(irc, numeric, command, args):
 
     # Target user was remote:
     if realuser and realuser[0] != irc.name:
-        # We don't allow killing over the relay, so we must respawn the affected
-        # client and rejoin it to its channels.
         del relayusers[realuser][irc.name]
-        remoteirc = world.networkobjects[realuser[0]]
-        for remotechan in remoteirc.users[realuser[1]].channels:
-            localchan = get_remote_channel(remoteirc, irc, remotechan)
-            if localchan:
-                modes = get_prefix_modes(remoteirc, irc, remotechan, realuser[1])
-                log.debug('(%s) relay.handle_kill: userpair: %s, %s', irc.name, modes, realuser)
-                client = get_remote_user(remoteirc, irc, realuser[1], times_tagged=1)
-                irc.sjoin(get_relay_server_sid(irc, remoteirc), localchan, [(modes, client)])
+        fwd_reason = 'KILL from %s/%s: %s' % (irc.get_friendly_name(numeric), irc.name, args['text'])
 
-        if userdata and numeric in irc.users:
-            log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from %s to relay client %s/%s.',
-                     irc.name, args['text'], irc.users[numeric].nick,
-                     remoteirc.users[realuser[1]].nick, realuser[0])
-            irc.msg(numeric, "Your kill to %s has been blocked "
-                             "because PyLink does not allow killing"
-                             " users over the relay at this time." % \
-                             userdata.nick, notice=True)
+        origirc = world.networkobjects[realuser[0]]
+
+        # If we're allowed to forward kills, then do so.
+        if _has_common_pool(irc.name, realuser[0], 'kill_share_pools'):
+            def _relay_kill_loop(irc, remoteirc):
+                if remoteirc == origirc:
+                    # Don't bother with get_orig_user when we relay onto the target's home net
+                    rtarget = realuser[1]
+                else:
+                    rtarget = get_remote_user(origirc, remoteirc, realuser[1])
+
+                if rtarget:
+                    # Forward the kill from the relay server when available
+                    rsender = get_relay_server_sid(remoteirc, irc, spawn_if_missing=False) or \
+                              remoteirc.sid
+                    remoteirc.kill(rsender, rtarget, fwd_reason)
+
+            iterate_all(irc, _relay_kill_loop)
+
+            del relayusers[realuser]
         else:
-            log.info('(%s) relay.handle_kill: Blocked KILL (reason %r) from server %s to relay client %s/%s.',
-                     irc.name, args['text'], irc.servers[numeric].name,
-                     remoteirc.users[realuser[1]].nick, realuser[0])
+            # Otherwise, forward kills as kicks where applicable.
+            for remotechan in origirc.users[realuser[1]].channels.copy():
+                localchan = get_remote_channel(origirc, irc, remotechan)
+
+                if localchan:
+                    # Forward kills as kicks in all channels that the sender has CLAIM access to.
+                    if check_claim(irc, localchan, numeric):
+                        rsid = get_relay_server_sid(origirc, irc)
+                        log.debug('(%s) relay.handle_kill: forwarding kill to %s/%s@%s as '
+                                  'kick on %s', irc.name, realuser[1],
+                                  origirc.get_friendly_name(realuser[1]), realuser[0], remotechan)
+
+                        origirc.kick(rsid, remotechan, realuser[1], fwd_reason)
+                        origirc.call_hooks([rsid, 'RELAY_KILLFORWARD_KICK',
+                            {'target': realuser[1], 'channel': remotechan, 'text': fwd_reason,
+                             'parse_as': 'KICK'}])
+
+                    # If we have no access in a channel, rejoin the target.
+                    else:
+                        modes = get_prefix_modes(origirc, irc, remotechan, realuser[1])
+                        log.debug('(%s) relay.handle_kill: rejoining target userpair: (%r, %r)', irc.name, modes, realuser)
+                        # Set times_tagged=1 to forcetag the target when they return.
+                        client = get_remote_user(origirc, irc, realuser[1], times_tagged=1)
+                        irc.sjoin(irc.sid, localchan, [(modes, client)])
 
     # Target user was local.
     else:

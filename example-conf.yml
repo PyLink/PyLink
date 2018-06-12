@@ -659,6 +659,15 @@ relay:
     #    - ["net1", "net2", "net3"]
     #    - ["net1", "meganet"]
 
+    # This option defines lists of networks that kills should be relayed between.
+    # If a network is in a pool (case-SENSITIVE), they will be able to kill users
+    # on other networks in the pool, and will also receive kills from other networks
+    # in the pool.
+    # You should generally have a consensus among your linked networks as to which
+    # network should be in which pool.
+    #kill_share_pools:
+    #    - ["net1", "net2", "net3"]
+
     # Determines whether NickServ login info should be shown in the /whois output for
     # relay users.
     # Valid options include "all" (show this to everyone), "opers" (show only to
