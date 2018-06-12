@@ -21,7 +21,6 @@ from pylinkirc import protocols, plugins
 PLUGIN_PREFIX = plugins.__name__ + '.'
 PROTOCOL_PREFIX = protocols.__name__ + '.'
 NORMALIZEWHITESPACE_RE = re.compile(r'\s+')
-_proto_utils_class = None  # Set by classes.py when loaded
 
 class NotAuthorizedError(Exception):
     """
@@ -54,41 +53,6 @@ def add_hook(func, command, priority=100):
     world.hooks[command].append((priority, func))
     world.hooks[command].sort(key=lambda pair: pair[0], reverse=True)
     return func
-
-# DEPRECATED
-def isNick(s, nicklen=None):
-    """Returns whether the string given is a valid nick.
-
-    Deprecated since 2.0: use irc.is_nick() instead."""
-
-    log.warning('utils.isNick() is deprecated since PyLink 2.0, use irc.is_nick() instead.')
-    return _proto_utils_class.is_nick(s, nicklen=nicklen)
-
-# DEPRECATED
-def isChannel(s):
-    """Returns whether the string given is a valid channel name.
-
-    Deprecated since 2.0: use irc.is_channel() instead."""
-
-    log.warning('utils.isChannel() is deprecated since PyLink 2.0, use irc.is_channel() instead.')
-    return _proto_utils_class.is_channel(s)
-
-# DEPRECATED
-def isServerName(s):
-    """Returns whether the string given is a valid server name.
-
-    Deprecated since 2.0: use irc.is_server_name() instead."""
-
-    log.warning('utils.isServerName() is deprecated since PyLink 2.0, use irc.is_server_name() instead.')
-    return _proto_utils_class.is_server_name(s)
-
-# DEPRECATED
-def isHostmask(text):
-    """Returns whether the given text is a valid hostmask.
-
-    Deprecated since 2.0: use irc.is_hostmask() instead."""
-    log.warning('utils.isHostmask() is deprecated since PyLink 2.0, use irc.is_hostmask() instead.')
-    return _proto_utils_class.is_hostmask(text)
 
 def expand_path(path):
     """

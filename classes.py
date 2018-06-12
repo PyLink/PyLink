@@ -1543,8 +1543,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # This is protocol specific, so stub it here in the base class.
         raise NotImplementedError
 
-utils._proto_utils_class = PyLinkNetworkCoreWithUtils  # Used by compatibility wrappers
-
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
 
