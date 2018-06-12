@@ -1350,9 +1350,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                     hosts.add(self.get_hostmask(target, realhost=True))
 
             else:  # We were given a host, use that.
-                if '@' not in text:
-                    log.warning('(%s) Using match_host() on non-hostlike globs is deprecated as of 2.0-alpha4 - '
-                                'use match_text() instead', self.name)
                 hosts = [target]
 
             # Iterate over the hosts to match using ircmatch.
