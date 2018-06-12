@@ -640,6 +640,14 @@ relay:
     # This block defines various options for the Relay plugin. You don't need this
     # if you aren't using it.
 
+    # Determines whether all opers should be able to create, link, delink, destroy,
+    # and adjust claim settings on relay channels. You can disable this if you want
+    # to configure link permissions in a more fine grained way, e.g. by granting each
+    # network admin their own PyLink account.
+    # This defaults to True if not set, for consistency with older (< 2.0) PyLink versions.
+    # Changing this setting requires a rehash and reload of the Relay plugin to apply.
+    allow_free_oper_links: true
+
     # Determines whether all relay users' nicks will be tagged with their network, instead of only
     # when a nick collision occurs. It is recommended that you either leave this on or maintain a
     # list of nicks in "forcetag_nicks", so that your users don't complain about "nick in use"

@@ -27,9 +27,9 @@ datastore = structures.PickleDataStore('pylinkrelay', dbname)
 db = datastore.store
 
 default_permissions = {"*!*@*": ['relay.linked'],
-                       "$ircop": ['relay.create', 'relay.linkacl*',
-                                  'relay.destroy', 'relay.link', 'relay.delink',
-                                  'relay.claim']}
+                       "$ircop": ['relay.linkacl*']}
+default_oper_permissions = {"$ircop": ['relay.create', 'relay.destroy', 'relay.link',
+                                       'relay.delink', 'relay.claim']}
 
 ### INTERNAL FUNCTIONS
 
@@ -62,6 +62,9 @@ def main(irc=None):
     datastore.load()
 
     permissions.add_default_permissions(default_permissions)
+
+    if 'relay' in conf.conf and conf.conf['relay'].get('allow_free_oper_links', True):
+        permissions.add_default_permissions(default_oper_permissions)
 
     if irc is not None:
         # irc is defined when the plugin is reloaded. Otherwise, it means that we've just started the
@@ -103,6 +106,7 @@ def die(irc=None):
 
     # 3) Unload our permissions.
     permissions.remove_default_permissions(default_permissions)
+    permissions.remove_default_permissions(default_oper_permissions)
 
     # 4) Save the database.
     datastore.die()
