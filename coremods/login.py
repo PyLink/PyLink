@@ -78,7 +78,7 @@ def _irc_try_login(irc, source, username, skip_checks=False):
                         irc.name, username, irc.get_hostmask(source), ', '.join(network_filter), irc.name)
             raise utils.NotAuthorizedError("Account is not authorized to login on this network.")
 
-        elif require_oper and not irc.is_oper(source, allowAuthed=False):
+        elif require_oper and not irc.is_oper(source):
             log.warning("(%s) Failed login to %r from %s (needs oper)", irc.name, username, irc.get_hostmask(source))
             raise utils.NotAuthorizedError("You must be opered.")
 

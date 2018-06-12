@@ -800,12 +800,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         if self.serverdata.get('track_oper_statuses'):
             if '*' in status:  # Track IRCop status
-                if not self.is_oper(uid, allowAuthed=False):
+                if not self.is_oper(uid):
                     # Don't send duplicate oper ups if the target is already oper.
                     self.apply_modes(uid, [('+o', None)])
                     self.call_hooks([uid, 'MODE', {'target': uid, 'modes': {('+o', None)}}])
                     self.call_hooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-            elif self.is_oper(uid, allowAuthed=False) and not self.is_internal_client(uid):
+            elif self.is_oper(uid) and not self.is_internal_client(uid):
                 # Track deopers
                 self.apply_modes(uid, [('-o', None)])
                 self.call_hooks([uid, 'MODE', {'target': uid, 'modes': {('-o', None)}}])

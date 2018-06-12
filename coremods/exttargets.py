@@ -74,7 +74,7 @@ def ircop(irc, host, uid):
 
     if len(groups) == 1:
         # 1st scenario.
-        return irc.is_oper(uid, allowAuthed=False)
+        return irc.is_oper(uid)
     else:
         # 2nd scenario. Use match_host (ircmatch) to match the opertype glob to the opertype.
         return irc.match_host(groups[1], irc.users[uid].opertype)

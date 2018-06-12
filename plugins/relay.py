@@ -1202,7 +1202,7 @@ def handle_relay_whois(irc, source, command, args):
         setting = conf.conf.get('relay', {}).get(infoline, '').lower()
         if setting == 'all':
             return True
-        elif setting == 'opers' and irc.is_oper(source, allowAuthed=False):
+        elif setting == 'opers' and irc.is_oper(source):
             return True
         return False
 

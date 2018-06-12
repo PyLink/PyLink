@@ -19,7 +19,7 @@ def _punish(irc, target, channel, punishment, reason):
     if target not in irc.users:
         log.warning("(%s) antispam: got target %r that isn't a user?", irc.name, target)
         return False
-    elif irc.is_oper(target, allowAuthed=False):
+    elif irc.is_oper(target):
         log.debug("(%s) antispam: refusing to punish oper %s/%s", irc.name, target, irc.get_friendly_name(target))
         return False
 
