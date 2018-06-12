@@ -137,11 +137,9 @@ class PyLinkChannelLogger(logging.Handler):
         # 1) irc.pseudoclient must be initialized already
         # 2) IRC object must be finished bursting
         # 3) Target channel must exist
-        # 4) Main PyLink client must be in this target channel
-        # 5) This function hasn't been called already (prevents recursive loops).
+        # 4) This function hasn't been called already (prevents recursive loops).
         if self.irc.pseudoclient and self.irc.connected.is_set() \
-                and self.channel in self.irc.channels and self.irc.pseudoclient.uid in \
-                self.irc.channels[self.channel].users and not self.called:
+                and self.channel in self.irc.channels and not self.called:
 
             self.called = True
             msg = self.format(record)
