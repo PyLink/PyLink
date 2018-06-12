@@ -231,7 +231,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         self.conf = conf.conf
         self.sid = None
         self.serverdata = conf.conf['servers'][netname]
-        self.botdata = conf.conf['pylink']
+
         self.protoname = self.__class__.__module__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = self.irc = self  # Backwards compat
 
