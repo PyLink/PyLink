@@ -1906,7 +1906,7 @@ def handle_kill(irc, numeric, command, args):
     # Target user was remote:
     if realuser and realuser[0] != irc.name:
         del relayusers[realuser][irc.name]
-        fwd_reason = 'KILL from %s/%s: %s' % (irc.get_friendly_name(numeric), irc.name, args['text'])
+        fwd_reason = 'KILL FWD from %s/%s: %s' % (irc.get_friendly_name(numeric), irc.name, args['text'])
 
         origirc = world.networkobjects[realuser[0]]
 
