@@ -640,11 +640,26 @@ relay:
     # This block defines various options for the Relay plugin. You don't need this
     # if you aren't using it.
 
-    # Determines whether remote opers will have user mode +H (hideoper) set on
-    # them. This has the benefit of lowering the oper count in /lusers and
-    # /stats (P|p), but only on IRCds that support it. This defaults to true
-    # if not set.
-    hideoper: true
+    # Determines whether all relay users' nicks will be tagged with their network, instead of only
+    # when a nick collision occurs. It is recommended that you either leave this on or maintain a
+    # list of nicks in "forcetag_nicks", so that your users don't complain about "nick in use"
+    # errors. This option defaults to True if not specified.
+    tag_nicks: true
+
+    # If tag_nicks is False, this specifies a list of NICK globs that network tags should be added
+    # for anyways (e.g. network services).
+    # There is also a per-network version of this option: see 'relay_forcetag_nicks'.
+    forcetag_nicks:
+        - "*Serv"
+
+    # Sets the suffix that relay subservers should use. Defaults to "relay" (as in net1.relay,
+    # net2.relay, etc.) if not specified. This can also be specified per network via the
+    # 'relay_server_suffix' option in a server block.
+    #server_suffix: "relay.yournet.net"
+
+    # Sets the default Relay separator. Defaults to / if not specified. The "separator"
+    # option in server blocks override this if specified.
+    separator: "/"
 
     # This option defines lists of networks to relay user IPs between (instead of
     # masking them as 0.0.0.0). If a network is in a pool (case-SENSITIVE), their
@@ -668,57 +683,10 @@ relay:
     #kill_share_pools:
     #    - ["net1", "net2", "net3"]
 
-    # Determines whether NickServ login info should be shown in the /whois output for
-    # relay users.
-    # Valid options include "all" (show this to everyone), "opers" (show only to
-    # opers), and "none" (disabled). Defaults to none if not specified.
-    whois_show_accounts: all
-
-    # Determines whether the origin server should be shown in the /whois output for
-    # relay users.
-    # Valid options include "all" (show this to everyone), "opers" (show only to
-    # opers), and "none" (disabled). Defaults to none if not specified.
-    whois_show_server: opers
-
-    # Determines whether the servers disconnecting in a netsplit should be shown when
-    # relaying quits due to a netsplit. Defaults to False.
-    show_netsplits: false
-
-    # Sets the default Relay separator. Defaults to / if not specified. The "separator"
-    # option in server blocks override this if specified.
-    separator: "/"
-
-    # Determines whether all relay users' nicks will be tagged with their network, instead of only
-    # when a nick collision occurs. It is recommended that you either leave this on or maintain a
-    # list of nicks in "forcetag_nicks", so that your users don't complain about "nick in use"
-    # errors. This option defaults to True if not specified.
-    tag_nicks: true
-
-    # If tag_nicks is False, this specifies a list of NICK globs that network tags should be added
-    # for anyways (e.g. network services).
-    # There is also a per-network version of this option: see 'relay_forcetag_nicks'.
-    forcetag_nicks:
-        - "*Serv"
-
     # This determines whether private messages & notices will be forwarded over Clientbot relay,
     # and whether the 'rpm' command will be allowed from Clientbot networks. This defaults to
     # False.
     allow_clientbot_pms: false
-
-    # Sets the suffix that relay subservers should use. Defaults to "relay" (as in net1.relay,
-    # net2.relay, etc.) if not specified. This can also be specified per network via the
-    # 'relay_server_suffix' option in a server block.
-    #server_suffix: "relay.yournet.net"
-
-    # Determines whether LINKACL should use whitelist or blacklist mode by default for newly
-    # created channels. This defaults to false, and can also be specified per network via the
-    # 'relay_linkacl_use_whitelist' option in a server block.
-    #linkacl_use_whitelist: false
-
-    # Determines whether CLAIM should be enabled by default for newly created channels.
-    # This defaults to true, and can also be specified per network via the 'relay_enable_default_claim'
-    # option in a server block.
-    #enable_default_claim: true
 
     # Sets whether Clientbot mode sync will be enabled. Valid options:
     # "full" - Sync bans, ban/invite exceptions, prefix modes, and all RFC1459-standard modes. The
@@ -734,10 +702,25 @@ relay:
     #
     #clientbot_modesync: none
 
-    # Determines whether messages from unknown clients (servers, clients not sharing in a -n channel,
-    # etc.) should be forwarded via the PyLink server. If this is disabled, these messages will be
-    # silently dropped. This defaults to True for consistency with older releases.
-    #accept_weird_senders: false
+    # Determines whether remote opers will have user mode +H (hideoper) set on
+    # them. This has the benefit of lowering the oper count in /lusers and
+    # /stats (P|p), but only on IRCds that support it. This defaults to true
+    # if not set.
+    hideoper: true
+
+    # Determines whether the servers disconnecting in a netsplit should be shown when
+    # relaying quits due to a netsplit. Defaults to False.
+    show_netsplits: false
+
+    # Determines whether LINKACL should use whitelist or blacklist mode by default for newly
+    # created channels. This defaults to false, and can also be specified per network via the
+    # 'relay_linkacl_use_whitelist' option in a server block.
+    #linkacl_use_whitelist: false
+
+    # Determines whether CLAIM should be enabled by default for newly created channels.
+    # This defaults to true, and can also be specified per network via the 'relay_enable_default_claim'
+    # option in a server block.
+    #enable_default_claim: true
 
     # Optionally defines a message that should be sent to all leaf channels that a network owns, when
     # it disconnects. This uses a template string as documented at
@@ -750,6 +733,23 @@ relay:
     #disconnect_announcement: >-
     # Network $homenetwork has disconnected: $channel will remain open as the link is
     # re-established, but new links will be disabled.
+
+    # Determines whether messages from unknown clients (servers, clients not sharing in a -n channel,
+    # etc.) should be forwarded via the PyLink server. If this is disabled, these messages will be
+    # silently dropped. This defaults to True for consistency with older releases.
+    #accept_weird_senders: false
+
+    # Determines whether NickServ login info should be shown in the /whois output for
+    # relay users.
+    # Valid options include "all" (show this to everyone), "opers" (show only to
+    # opers), and "none" (disabled). Defaults to none if not specified.
+    whois_show_accounts: all
+
+    # Determines whether the origin server should be shown in the /whois output for
+    # relay users.
+    # Valid options include "all" (show this to everyone), "opers" (show only to
+    # opers), and "none" (disabled). Defaults to none if not specified.
+    whois_show_server: opers
 
 #servprotect:
     # This block configures the servprotect plugin; you don't need this if you aren't using it.
