@@ -141,7 +141,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
             forcetag_nicks |= set(irc.serverdata.get('relay_forcetag_nicks', []))
             log.debug('(%s) relay.normalize_nick: checking if globs %s match %s.', irc.name, forcetag_nicks, nick)
             for glob in forcetag_nicks:
-                if irc.match_host(glob, nick):
+                if irc.match_text(glob, nick):
                     # User matched a nick to force tag nicks for. Tag them.
                     times_tagged = 1
                     break
