@@ -2514,6 +2514,10 @@ def linked(irc, source, args):
 
         irc.reply(s, private=True)
 
+        desc = v.get('description')
+        if desc:  # Show channel description, if there is one.
+            irc.reply('    \x02Description:\x02 %s' % desc, private=True)
+
         if irc.is_oper(source):
             s = ''
 
@@ -2532,10 +2536,6 @@ def linked(irc, source, args):
 
             if s:  # Indent to make the list look nicer
                 irc.reply('    Channel created%s.' % s, private=True)
-
-        desc = v.get('description')
-        if desc:  # Show channel description, if there is one.
-            irc.reply('    \x02Description:\x02 %s' % desc, private=True)
 
 linked = utils.add_cmd(linked, featured=True)
 
