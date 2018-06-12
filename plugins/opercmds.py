@@ -390,10 +390,16 @@ def kill(irc, source, args):
         irc.error("Cannot kill the main PyLink client!")
         return
 
-    irc.kill(sender, targetu, reason)
+    # Deliver a more complete kill reason if our target is a non-PyLink client.
+    # We skip this for PyLink clients so that relayed kills don't get
+    # "Killed (abc (...))" tacked on both here and by the receiving IRCd.
+    if not irc.is_internal_client(targetu):
+        reason = "Killed (%s (Requested by %s: %s))" % (
+                 irc.get_friendly_name(sender),
+                 irc.get_friendly_name(source),
+                 reason)
 
-    # Format the kill reason properly in hooks.
-    reason = "Killed (%s (%s))" % (irc.get_friendly_name(sender), reason)
+    irc.kill(sender, targetu, reason)
 
     irc.reply("Done.")
     irc.call_hooks([source, 'OPERCMDS_KILL', {'target': targetu, 'text': reason,
