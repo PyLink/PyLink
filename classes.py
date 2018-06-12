@@ -1245,19 +1245,20 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         return self.get_friendly_name(sid) in ulines
 
-    def is_oper(self, uid, allowAuthed=True, allowOper=True):
+    def is_oper(self, uid, **kwargs):
         """
-        Returns whether the given user has operator status on PyLink. This can be achieved
-        by either identifying to PyLink as admin (if allowAuthed is True),
-        or having user mode +o set (if allowOper is True). At least one of
-        allowAuthed or allowOper must be True for this to give any meaningful
-        results.
+        Returns whether the given user has operator status. For IRC, this checks usermode +o.
+
+        The allowAuthed and allowOper keyword arguments are deprecated since PyLink 2.0-alpha4.
         """
-        if uid in self.users:
-            if allowOper and ("o", None) in self.users[uid].modes:
-                return True
-            elif allowAuthed and self.users[uid].account:
-                return True
+        if 'allowAuthed' in kwargs or 'allowOper' in kwargs:
+            log.warning('(%s) is_oper: the "allowAuthed" and "allowOper" options are deprecated as '
+                        'of PyLink 2.0-alpha4 and now imply False and True respectively. To check for'
+                        'PyLink account status, instead check the User.account attribute directly.',
+                        self.name)
+
+        if uid in self.users and ("o", None) in self.users[uid].modes:
+            return True
         return False
 
     def match_host(self, glob, target, ip=True, realhost=True):
