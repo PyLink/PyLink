@@ -113,7 +113,6 @@ def rehash():
             remove_network(ircobj)
         else:
             # XXX: we should really just add abstraction to Irc to update config settings...
-            ircobj.conf = new_conf
             ircobj.serverdata = new_conf['servers'][network]
 
             ircobj.autoconnect_active_multiplier = 1
