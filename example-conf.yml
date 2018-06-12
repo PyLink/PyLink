@@ -211,11 +211,6 @@ servers:
         # This setting is EXPERIMENTAL as of PyLink 1.2.x.
         #encoding: utf-8
 
-        # If enabled, this opts this network out of relay IP sharing: this network
-        # will not have its users' IPs sent across the relay, and it will not see any
-        # IPs of other networks' users.
-        #relay_no_ips: true
-
         # If relay nick tagging is disabled, this option specifies a list of nick globs to always
         # tag when introducing remote users *onto* this network.
         #relay_forcetag_nicks: ["someuser", "Guest*"]
@@ -651,12 +646,18 @@ relay:
     # if not set.
     hideoper: true
 
-    # Determines whether real IPs should be sent across the relay. You should
-    # generally have a consensus with your linked networks on whether this should
-    # be turned on. You will see other networks' user IP addresses, and they
-    # will see yours. Individual networks can also opt out of IP sharing
-    # both ways by defining "relay_no_ips: true" in their server block.
-    show_ips: false
+    # This option defines lists of networks to relay user IPs between (instead of
+    # masking them as 0.0.0.0). If a network is in a pool (case-SENSITIVE), their
+    # opers will see the IPs from users in the rest of the pool, and the rest of
+    # the pool will receive IPs from that network too.
+    # You should generally have a consensus among your linked networks as to which
+    # network should be in which pool. A network can be part of one pool, multiple
+    # pools, or none at all.
+    # This option replaces the "relay::show_ips" and network-specific "relay_no_ips"
+    # options, which are DEPRECATED as of 2.0-alpha4.
+    #ip_share_pools:
+    #    - ["net1", "net2", "net3"]
+    #    - ["net1", "meganet"]
 
     # Determines whether NickServ login info should be shown in the /whois output for
     # relay users.

@@ -66,9 +66,19 @@ def main(irc=None):
     if irc is not None:
         # irc is defined when the plugin is reloaded. Otherwise, it means that we've just started the
         # server. Iterate over all connected networks and initialize their relay users.
-        for ircobj in world.networkobjects.values():
+        for netname, ircobj in world.networkobjects.items():
             if ircobj.connected.is_set():
                 initialize_all(ircobj)
+
+            if 'relay_no_ips' in ircobj.serverdata:
+                log.warning('(%s) The "relay_no_ips" option is deprecated as of 2.0-alpha4. Consider migrating '
+                            'to "ip_share_pools", which provides more fine-grained control over which networks '
+                            'see which networks\' IPs.', netname)
+
+    if 'relay' in conf.conf and 'show_ips' in conf.conf['relay']:
+        log.warning('The "relay::show_ips" option is deprecated as of 2.0-alpha4. Consider migrating '
+                    'to "ip_share_pools", which provides more fine-grained control over which networks '
+                    'see which networks\' IPs.')
 
     log.debug('relay.main: finished initialization sequence')
 
@@ -308,6 +318,21 @@ def get_relay_server_sid(irc, remoteirc, spawn_if_missing=True):
         spawnlocks_servers[irc.name].release()
         return sid
 
+def _has_common_pool(sourcenet, targetnet, namespace):
+    """
+    Returns the source network and target networks are in a pool under the given namespace
+    (e.g. "ip_share_pools").
+    """
+    if 'relay' not in conf.conf:
+        return False
+
+    for pool in conf.conf['relay'].get(namespace, []):
+        if sourcenet in pool and targetnet in pool:
+            log.debug('relay._has_common_pool: found networks %r and %r in %s pool %r', sourcenet, targetnet,
+                      namespace, pool)
+            return True
+    return False
+
 def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
     """
     Spawns a relay user representing "user" from "irc" (the local network) on remoteirc (the target network).
@@ -358,12 +383,17 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
                       'working SID).', irc.name, user, nick, remoteirc.name)
             return
 
+    # This is the legacy (< 2.0-alpha4) control for relay IP sharing
     try:
         showRealIP = conf.conf['relay']['show_ips'] and not \
                      irc.serverdata.get('relay_no_ips') and not \
                      remoteirc.serverdata.get('relay_no_ips')
+
     except KeyError:
         showRealIP = False
+
+    # New (>= 2.0-alpha4) IP sharing is configured via pools of networks
+    showRealIP = showRealIP or _has_common_pool(irc.name, remoteirc.name, "ip_share_pools")
     if showRealIP:
         ip = userobj.ip
         realhost = userobj.realhost
@@ -372,7 +402,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
         ip = '0.0.0.0'
 
     u = remoteirc.spawn_client(nick, ident=ident, host=host, realname=realname, modes=modes,
-                                    opertype=opertype, server=rsid, ip=ip, realhost=realhost).uid
+                               opertype=opertype, server=rsid, ip=ip, realhost=realhost).uid
     try:
         remoteirc.users[u].remote = (irc.name, user)
         remoteirc.users[u].opertype = opertype
