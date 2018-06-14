@@ -1934,25 +1934,39 @@ def handle_kill(irc, numeric, command, args):
             del relayusers[realuser]
         else:
             # Otherwise, forward kills as kicks where applicable.
-            for remotechan in origirc.users[realuser[1]].channels.copy():
-                localchan = get_remote_channel(origirc, irc, remotechan)
+            for homechan in origirc.users[realuser[1]].channels.copy():
+                localchan = get_remote_channel(origirc, irc, homechan)
 
                 if localchan:
                     # Forward kills as kicks in all channels that the sender has CLAIM access to.
                     if check_claim(irc, localchan, numeric):
-                        rsid = get_relay_server_sid(origirc, irc)
-                        log.debug('(%s) relay.handle_kill: forwarding kill to %s/%s@%s as '
-                                  'kick on %s', irc.name, realuser[1],
-                                  origirc.get_friendly_name(realuser[1]), realuser[0], remotechan)
+                        target_nick = origirc.get_friendly_name(realuser[1])
 
-                        origirc.kick(rsid, remotechan, realuser[1], fwd_reason)
-                        origirc.call_hooks([rsid, 'RELAY_KILLFORWARD_KICK',
-                            {'target': realuser[1], 'channel': remotechan, 'text': fwd_reason,
-                             'parse_as': 'KICK'}])
+                        def _relay_kill_to_kick(origirc, remoteirc, rtarget):
+                            # Forward as a kick to each present relay client
+                            remotechan = get_remote_channel(origirc, remoteirc, homechan)
+                            rsender = get_relay_server_sid(remoteirc, irc, spawn_if_missing=False) or \
+                                      remoteirc.sid
+                            log.debug('(%s) relay.handle_kill: forwarding kill to %s/%s@%s as '
+                                      'kick to %s/%s@%s on %s', irc.name, realuser[1],
+                                      target_nick, realuser[0],
+                                      rtarget, remoteirc.get_friendly_name(rtarget), remoteirc.name,
+                                      remotechan)
+                            remoteirc.kick(rsender, remotechan, rtarget, fwd_reason)
+
+                        iterate_all_present(origirc, realuser[1], _relay_kill_to_kick)
+
+                        # Then, forward to the home network.
+                        hsender = get_relay_server_sid(origirc, irc, spawn_if_missing=False) or \
+                                  homeirc.sid
+                        log.debug('(%s) relay.handle_kill: forwarding kill to %s/%s@%s as '
+                                  'kick on %s', irc.name, realuser[1], target_nick,
+                                  realuser[0], homechan)
+                        origirc.kick(hsender, homechan, realuser[1], fwd_reason)
 
                     # If we have no access in a channel, rejoin the target.
                     else:
-                        modes = get_prefix_modes(origirc, irc, remotechan, realuser[1])
+                        modes = get_prefix_modes(origirc, irc, homechan, realuser[1])
                         log.debug('(%s) relay.handle_kill: rejoining target userpair: (%r, %r)', irc.name, modes, realuser)
                         # Set times_tagged=1 to forcetag the target when they return.
                         client = get_remote_user(origirc, irc, realuser[1], times_tagged=1)
