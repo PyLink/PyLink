@@ -20,6 +20,7 @@ import re
 import collections
 import collections.abc
 import textwrap
+import sys
 
 try:
     import ircmatch
@@ -1684,6 +1685,28 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
 
             self._socket.settimeout(self.pingfreq)
+
+            # Adapted from https://stackoverflow.com/questions/12248132/
+            # Use TCP keepalive to manage timeouts
+            if hasattr(socket, 'TCP_KEEPIDLE'):
+                self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, self.pingfreq)
+                self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, self.pingfreq)
+                self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, KEEPALIVE_MAX_MISSED)
+                log.debug('(%s) enabled Linux socket keepalive', self.name)
+            elif sys.platform == 'win32':
+                # SIO_KEEPALIVE_VALS as documented at https://msdn.microsoft.com/en-us/library/dd877220%28v=vs.85%29.aspx
+                # 1st value: whether to enable keepalive (1 = on, 0 = off)
+                # 2nd value: idle time before first keepalive packet is sent, in milliseconds
+                # 3rd value: time between keepalive packets, in milliseconds
+
+                # According to https://msdn.microsoft.com/en-us/library/ee470551(v=vs.85).aspx
+                # "On Windows Vista and later, the number of keep-alive probes (data retransmissions) is set to 10 and cannot be changed."
+                self._socket.ioctl(socket.SIO_KEEPALIVE_VALS, (1, self.pingfreq * 1000, self.pingfreq * 1000))
+                log.debug('(%s) enabled Windows socket keepalive', self.name)
+            else:
+                log.debug('(%s) No TCP keepalive support yet, (sys.platform=%r)', self.name,
+                          sys.platform)
 
             # Start the actual connection
             self._socket.connect((ip, port))
