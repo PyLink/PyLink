@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from . import world
 
-class ConfigValidationError(Exception):
+class ConfigurationError(RuntimeError):
     """Error when config conditions aren't met."""
 
 conf = {'bot':
@@ -50,9 +50,9 @@ conf['pylink'] = conf['bot']
 confname = 'unconfigured'
 
 def validate(condition, errmsg):
-    """Raises ConfigValidationError with errmsg unless the given condition is met."""
+    """Raises ConfigurationError with errmsg unless the given condition is met."""
     if not condition:
-        raise ConfigValidationError(errmsg)
+        raise ConfigurationError(errmsg)
 
 def _log(level, text, *args, logger=None, **kwargs):
     if logger:
