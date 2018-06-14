@@ -1528,6 +1528,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 class TLSValidationError(ConnectionError):
     """Exception raised when additional TLS verifications fail."""
 
+# When this many pings in a row are missed, the ping timer loop will force a disconnect on the
+# next cycle. Effectively the ping timeout is: pingfreq * (KEEPALIVE_MAX_MISSED + 1)
+KEEPALIVE_MAX_MISSED = 2
+
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
 
@@ -1546,9 +1550,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         super()._init_vars(*args, **kwargs)
 
         # Set IRC specific variables for ping checking and queuing
-        self.lastping = time.time()
+        self.lastping = time.time()  # This actually tracks the last message received as of 2.0-alpha4
         self.pingfreq = self.serverdata.get('pingfreq') or 90
-        self.pingtimeout = self.pingfreq * 3
 
         self.maxsendq = self.serverdata.get('maxsendq', 4096)
         self._queue = queue.Queue(self.maxsendq)
@@ -1558,6 +1561,12 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._ping_uplink()
 
         if self._aborted.is_set():
+            return
+
+        elapsed = time.time() - self.lastping
+        if elapsed > (self.pingfreq * KEEPALIVE_MAX_MISSED):
+            log.error('(%s) Disconnected from IRC: Ping timeout (%d secs)', self.name, elapsed)
+            self.disconnect()
             return
 
         self._ping_timer = threading.Timer(self.pingfreq, self._schedule_ping)
@@ -1673,7 +1682,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
 
-            # Use a lower timeout for the initial connect.
             self._socket.settimeout(self.pingfreq)
 
             # Start the actual connection
@@ -1687,8 +1695,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 finally:
                     self._socket.close()
                 return
-
-            self._socket.settimeout(self.pingtimeout)
 
             # Make sure future reads never block, since select doesn't always guarantee this.
             self._socket.setblocking(False)
@@ -1847,16 +1853,15 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self._log_connection_error('(%s) Connection lost, disconnecting.', self.name)
             self.disconnect()
             return
-        elif (time.time() - self.lastping) > self.pingtimeout:
-            self._log_connection_error('(%s) Connection timed out.', self.name)
-            self.disconnect()
-            return
 
         while b'\n' in self._buffer:
             line, self._buffer = self._buffer.split(b'\n', 1)
             line = line.strip(b'\r')
             line = line.decode(self.encoding, "replace")
             self.parse_irc_command(line)
+
+        # Update the last message received time
+        self.lastping = time.time()
 
     def _send(self, data):
         """Sends raw text to the uplink server."""
