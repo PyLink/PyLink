@@ -688,6 +688,9 @@ relay:
     # in the pool.
     # You should generally have a consensus among your linked networks as to which
     # network should be in which pool.
+    # When a kill is sent to a target not sharing any kill pool with the sender's network,
+    # the kill is relayed as a kick on the target to all shared channels where the sender
+    # has CLAIM access.
     #kill_share_pools:
     #    - ["net1", "net2", "net3"]
 
