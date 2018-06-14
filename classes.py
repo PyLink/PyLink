@@ -1525,6 +1525,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # This is protocol specific, so stub it here in the base class.
         raise NotImplementedError
 
+class TLSValidationError(ConnectionError):
+    """Exception raised when additional TLS verifications fail."""
+
 class IRCNetwork(PyLinkNetworkCoreWithUtils):
     S2S_BUFSIZE = 510
 
@@ -1572,6 +1575,73 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         else:
             log.error(*args, **kwargs)
 
+    def _make_ssl_context(self):
+        """
+        Returns a ssl.SSLContext instance appropriate for this connection.
+        """
+        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+
+        # Disable SSLv2 and SSLv3 - these are insecure
+        context.options |= ssl.OP_NO_SSLv2
+        context.options |= ssl.OP_NO_SSLv3
+        return context
+
+    def _setup_ssl(self):
+        """
+        Initializes SSL/TLS for this network.
+        """
+        log.info('(%s) Using TLS/SSL for this connection...', self.name)
+        certfile = self.serverdata.get('ssl_certfile')
+        keyfile = self.serverdata.get('ssl_keyfile')
+
+        context = self._make_ssl_context()
+
+        # Cert and key files are optional, load them if specified.
+        if certfile and keyfile:
+            try:
+                context.load_cert_chain(certfile, keyfile)
+            except OSError:
+                 log.exception('(%s) Caught OSError trying to initialize the SSL connection; '
+                               'are "ssl_certfile" and "ssl_keyfile" set correctly?',
+                               self.name)
+                 raise
+
+        self._socket = context.wrap_socket(self._socket)
+
+    def _verify_ssl(self):
+        """
+        Implements additional SSL/TLS verification (so far, only certificate fingerprints if enabled).
+        """
+        peercert = self._socket.getpeercert(binary_form=True)
+
+        # Hash type is configurable using the ssl_fingerprint_type
+        # value, and defaults to sha256.
+        hashtype = self.serverdata.get('ssl_fingerprint_type', 'sha256').lower()
+
+        try:
+            hashfunc = getattr(hashlib, hashtype)
+        except AttributeError:
+            raise conf.ConfigurationError('Unsupported or invalid TLS/SSL certificate fingerprint type %r',
+                                          hashtype)
+        else:
+            fp = hashfunc(peercert).hexdigest()
+            expected_fp = self.serverdata.get('ssl_fingerprint')
+
+            if expected_fp:
+                if fp != expected_fp:
+                    # SSL Fingerprint doesn't match; break.
+                    raise TLSValidationError('Uplink TLS/SSL certificate fingerprint (%s) does not '
+                                             'match the one configured (%s: %s)' % (expected_fp, hashtype, fp))
+                else:
+                    log.info('(%s) Uplink TLS/SSL certificate fingerprint '
+                             '(%s) verified: %r', self.name, hashtype, fp)
+            else:
+                log.info('(%s) Uplink\'s TLS/SSL certificate fingerprint (%s) '
+                         'is %r. You can enhance the security of your '
+                         'link by specifying this in a "ssl_fingerprint"'
+                         ' option in your server block.', self.name,
+                         hashtype, fp)
+
     def _connect(self):
         """
         Connects to the network.
@@ -1580,7 +1650,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
-        checks_ok = True
         try:
             # Set the socket type (IPv6 or IPv4).
             stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
@@ -1600,28 +1669,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # Enable SSL if set to do so.
             self.ssl = self.serverdata.get('ssl')
             if self.ssl:
-                log.info('(%s) Attempting SSL for this connection...', self.name)
-                certfile = self.serverdata.get('ssl_certfile')
-                keyfile = self.serverdata.get('ssl_keyfile')
-
-                context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                # Disable SSLv2 and SSLv3 - these are insecure
-                context.options |= ssl.OP_NO_SSLv2
-                context.options |= ssl.OP_NO_SSLv3
-
-                # Cert and key files are optional, load them if specified.
-                if certfile and keyfile:
-                    try:
-                        context.load_cert_chain(certfile, keyfile)
-                    except OSError:
-                         log.exception('(%s) Caught OSError trying to '
-                                       'initialize the SSL connection; '
-                                       'are "ssl_certfile" and '
-                                       '"ssl_keyfile" set correctly?',
-                                       self.name)
-                         checks_ok = False
-
-                self._socket = context.wrap_socket(self._socket)
+                self._setup_ssl()
 
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
 
@@ -1653,74 +1701,30 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             self._selector_key = selectdriver.register(self)
 
-            # If SSL was enabled, optionally verify the certificate
-            # fingerprint for some added security. I don't bother to check
-            # the entire certificate for validity, since most IRC networks
-            # self-sign their certificates anyways.
-            if self.ssl and checks_ok:
-                peercert = self._socket.getpeercert(binary_form=True)
+            if self.ssl:
+                self._verify_ssl()
 
-                # Hash type is configurable using the ssl_fingerprint_type
-                # value, and defaults to sha256.
-                hashtype = self.serverdata.get('ssl_fingerprint_type', 'sha256').lower()
+            self._queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
+                                                 target=self._process_queue, daemon=True)
+            self._queue_thread.start()
 
-                try:
-                    hashfunc = getattr(hashlib, hashtype)
-                except AttributeError:
-                    log.error('(%s) Unsupported SSL certificate fingerprint type %r given, disconnecting...',
-                              self.name, hashtype)
-                    checks_ok = False
-                else:
-                    fp = hashfunc(peercert).hexdigest()
-                    expected_fp = self.serverdata.get('ssl_fingerprint')
+            self.sid = self.serverdata.get("sid")
+            # All our checks passed, get the protocol module to connect and run the listen
+            # loop. This also updates any SID values should the protocol module do so.
+            self.post_connect()
 
-                    if expected_fp and checks_ok:
-                        if fp != expected_fp:
-                            # SSL Fingerprint doesn't match; break.
-                            log.error('(%s) Uplink\'s SSL certificate '
-                                      'fingerprint (%s) does not match the '
-                                      'one configured: expected %r, got %r; '
-                                      'disconnecting...', self.name, hashtype,
-                                      expected_fp, fp)
-                            checks_ok = False
-                        else:
-                            log.info('(%s) Uplink SSL certificate fingerprint '
-                                     '(%s) verified: %r', self.name, hashtype,
-                                     fp)
-                    else:
-                        log.info('(%s) Uplink\'s SSL certificate fingerprint (%s) '
-                                 'is %r. You can enhance the security of your '
-                                 'link by specifying this in a "ssl_fingerprint"'
-                                 ' option in your server block.', self.name,
-                                 hashtype, fp)
+            log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
+            host = self.hostname()
 
-            if checks_ok:
+            self.servers[self.sid] = Server(self, None, host, internal=True,
+                                            desc=self.serverdata.get('serverdesc')
+                                            or conf.conf['pylink']['serverdesc'])
 
-                self._queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
-                                                     target=self._process_queue, daemon=True)
-                self._queue_thread.start()
+            log.info('(%s) Starting ping schedulers....', self.name)
+            self._schedule_ping()
+            log.info('(%s) Server ready; listening for data.', self.name)
+            self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
 
-                self.sid = self.serverdata.get("sid")
-                # All our checks passed, get the protocol module to connect and run the listen
-                # loop. This also updates any SID values should the protocol module do so.
-                self.post_connect()
-
-                log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
-                host = self.hostname()
-
-                self.servers[self.sid] = Server(self, None, host, internal=True,
-                                                desc=self.serverdata.get('serverdesc')
-                                                or conf.conf['pylink']['serverdesc'])
-
-                log.info('(%s) Starting ping schedulers....', self.name)
-                self._schedule_ping()
-                log.info('(%s) Server ready; listening for data.', self.name)
-                self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
-            else:  # Configuration error :(
-                log.error('(%s) A configuration error was encountered '
-                          'trying to set up this connection. Please check'
-                          ' your configuration file and try again.',
-                          self.name)
         # _run_irc() or the protocol module it called raised an exception, meaning we've disconnected!
         # Note: socket.error, ConnectionError, IOError, etc. are included in OSError since Python 3.3,
         # so we don't need to explicitly catch them here.
