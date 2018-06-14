@@ -1676,14 +1676,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # Use a lower timeout for the initial connect.
             self._socket.settimeout(self.pingfreq)
 
-            try:
-                self._socket.connect((ip, port))
-            except (ssl.SSLError, OSError):
-                if world.shutting_down.is_set():
-                    return
-                log.exception('Unable to connect to network %r', self.name)
-                self._start_reconnect()
-                return
+            # Start the actual connection
+            self._socket.connect((ip, port))
 
             if self not in world.networkobjects.values():
                 log.debug("(%s) _connect: disconnecting socket %s as the network was removed",
@@ -1725,12 +1719,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             log.info('(%s) Server ready; listening for data.', self.name)
             self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
 
-        # _run_irc() or the protocol module it called raised an exception, meaning we've disconnected!
-        # Note: socket.error, ConnectionError, IOError, etc. are included in OSError since Python 3.3,
-        # so we don't need to explicitly catch them here.
-        # We also catch SystemExit here as a way to abort out connection threads properly, and stop the
-        # IRC connection from freezing instead.
-        except (OSError, RuntimeError, SystemExit) as e:
+        # _run_irc() or the protocol module it called raised an exception, meaning we've disconnected
+        except:
             self._log_connection_error('(%s) Disconnected from IRC:', self.name, exc_info=True)
             if not self._aborted.is_set():
                 self.disconnect()
