@@ -151,33 +151,9 @@ servers:
         # There must be at least one # in this entry.
         sidrange: "8##"
 
-        # Autojoin channels. The "channels" option affects all service bots, but you can also
-        # configure channels per service using keys in the name of "<servicename>_channels"
-        # Comment out or remove these keys if you don't want service bots# to join any channels by
-        # default.
-        #channels: ["#pylink"]
-        #pylink_channels: ["#services"]
-        #automode_channels: ["#chat"]
-
         # Sets the protocol module to use for this network - see the README for a
         # list of supported IRCds.
         protocol: "inspircd"
-
-        # Sets autoconnect delay - comment this out or set the value below 1 to
-        # disable autoconnect entirely.
-        autoconnect: 10
-
-        # Optional autoconnect settings:
-        # Defines whether we should multiply the autoconnect delay by a certain value every time
-        # a connection fails. This defaults to 2 if not set (30 secs becomes 60 secs, 120 secs, etc.)
-        #autoconnect_multiplier: 2
-        # Defines what the maximum autoconnect time will be (defaults to 1800 secs).
-        #autoconnect_max: 1800
-
-        # Sets the ping frequency in seconds (i.e. how long we should wait between
-        # sending pings to our uplink). When more than two consecutive pings are missed,
-        # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
-        #pingfreq: 90
 
         # Sets the max nick length for the network. It is important that this is
         # set correctly, or PyLink might introduce a nick that is too long and
@@ -215,6 +191,25 @@ servers:
         # This setting defaults to sha256.
         #ssl_fingerprint_type: sha256
 
+        # Sets autoconnect delay - comment this out or set the value below 1 to
+        # disable autoconnect entirely.
+        autoconnect: 10
+
+        # Optional autoconnect settings:
+        # Defines whether we should multiply the autoconnect delay by a certain value every time
+        # a connection fails. This defaults to 2 if not set (30 secs becomes 60 secs, 120 secs, etc.)
+        #autoconnect_multiplier: 2
+        # Defines what the maximum autoconnect time will be (defaults to 1800 secs).
+        #autoconnect_max: 1800
+
+        # Autojoin channels. The "channels" option affects all service bots, but you can also
+        # configure channels per service using keys in the name of "<servicename>_channels"
+        # Comment out or remove these keys if you don't want service bots# to join any channels by
+        # default.
+        #channels: ["#pylink"]
+        #pylink_channels: ["#services"]
+        #automode_channels: ["#chat"]
+
         # Encoding: allows you to override the network's encoding. This can be useful for networks
         # using m_nationalchars or something similar. Encoding defaults to utf-8 if not set, and
         # should be one of the standard encodings defined at
@@ -223,6 +218,11 @@ servers:
         # to apply.
         # This setting is EXPERIMENTAL as of PyLink 1.2.x.
         #encoding: utf-8
+
+        # Sets the ping frequency in seconds (i.e. how long we should wait between
+        # sending pings to our uplink). When more than two consecutive pings are missed,
+        # PyLink will disconnect with a ping timeout. This defaults to 90 if not set.
+        #pingfreq: 90
 
         # If relay nick tagging is disabled, this option specifies a list of nick globs to always
         # tag when introducing remote users *onto* this network.
