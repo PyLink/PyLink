@@ -436,8 +436,10 @@ servers:
         # effectively forcing it to be false.
         #ssl_accept_invalid_certs: false
 
-        # Autoconnect works as usual.
+        # Autoconnect options work the same as on a regular network.
         autoconnect: 30
+        #autoconnect_multiplier: 1.5
+        #autoconnect_max: 1800
 
         # Message throttling: when set to a non-zero value, only one message will be sent every X
         # seconds. If your bot is constantly running into Excess Flood errors, raising this to
