@@ -1588,11 +1588,23 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """
         Returns a ssl.SSLContext instance appropriate for this connection.
         """
-        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        context = ssl.create_default_context()
 
-        # Disable SSLv2 and SSLv3 - these are insecure
-        context.options |= ssl.OP_NO_SSLv2
-        context.options |= ssl.OP_NO_SSLv3
+        # Use the ssl-should-verify protocol capability to determine whether we should
+        # accept invalid certs by default. Generally, cert validation is OFF for server protocols
+        # and ON for client-based protocols like clientbot
+        if self.serverdata.get('ssl_accept_invalid_certs', not self.has_cap("ssl-should-verify")):
+            # Note: check_hostname has to be off to set verify_mode to CERT_NONE,
+            # since it's possible for the remote link to not provide a cert at all
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        else:
+            # Otherwise, only check cert hostname if the target is a hostname OR we have
+            # ssl-should-verify defined
+            context.check_hostname = self.serverdata.get('ssl_validate_hostname',
+                self.has_cap("ssl-should-verify") or
+                utils.get_hostname_type(self.serverdata['ip']) is 0)
+
         return context
 
     def _setup_ssl(self):

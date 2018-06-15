@@ -25,7 +25,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
+        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts',
+                              'ssl-should-verify'}
 
         self.has_eob = False
 
@@ -56,20 +57,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self._nick_fails = 0
 
         self.hook_map = {'ACCOUNT': 'CLIENT_SERVICES_LOGIN'}
-
-    def _make_ssl_context(self):
-        """
-        Returns a ssl.SSLContext instance with certificate validation enabled by default.
-        """
-        context = ssl.create_default_context()
-        if self.serverdata.get('ssl_accept_invalid_certs', False):
-            # Note: we have to disable hostname checking before disabling cert validation
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-        else:
-            context.check_hostname = self.serverdata.get('ssl_validate_hostname', True)
-
-        return context
 
     def post_connect(self):
         """Initializes a connection to a server."""

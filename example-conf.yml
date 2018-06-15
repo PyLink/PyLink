@@ -191,8 +191,21 @@ servers:
         #ssl_certfile: pylink-cert.pem
         #ssl_keyfile: pylink-key.pem
 
-        # Optionally, you can set this option to verify the SSL certificate
-        # fingerprint of your uplink.
+        # New in 2.0: Determines whether the target server's TLS certificate hostnames should be
+        # checked against the hostname we're set to connect to. This defaults to true for Clientbot
+        # networks and others linked to via a hostname. It depends on ssl_accept_invalid_certs being
+        # *disabled* to take effect.
+        #ssl_validate_hostname: true
+
+        # New in 2.0: When enabled, this disables TLS certificate validation on the target network.
+        # This defaults to false (bad certs are rejected) on Clientbot and true for server protocols
+        # (where bad certs are accepted). This disables the ssl_validate_hostname option,
+        # effectively forcing it to be false.
+        #ssl_accept_invalid_certs: false
+
+        # Optionally, you can set this option to verify the SSL certificate fingerprint of your
+        # uplink. This check works regardless of whether ssl_validate_hostname and
+        # ssl_accept_invalid_certs are enabled.
         #ssl_fingerprint: "e0fee1adf795c84eec4735f039503eb18d9c35cc"
 
         # This sets the hash type for the fingerprint (md5, sha1, sha256, etc.)
@@ -412,11 +425,15 @@ servers:
         #ssl_keyfile: mycert.pem
 
         # New in 2.0: Determines whether the target server's TLS certificate hostnames should be
-        # checked against the hostname given. This defaults to true if not specified.
+        # checked against the hostname we're set to connect to. This defaults to true for Clientbot
+        # networks and others linked to via a hostname. It depends on ssl_accept_invalid_certs being
+        # *disabled* to take effect.
         #ssl_validate_hostname: true
 
         # New in 2.0: When enabled, this disables TLS certificate validation on the target network.
-        # This defaults to false if not specified.
+        # This defaults to false (bad certs are rejected) on Clientbot and true for server protocols
+        # (where bad certs are accepted). This disables the ssl_validate_hostname option,
+        # effectively forcing it to be false.
         #ssl_accept_invalid_certs: false
 
         # Autoconnect works as usual.
