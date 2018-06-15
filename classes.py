@@ -1628,7 +1628,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
     def _verify_ssl(self):
         """
-        Implements additional SSL/TLS verification (so far, only certificate fingerprints if enabled).
+        Implements additional SSL/TLS verifications (so far, only certificate fingerprints when enabled).
         """
         peercert = self._socket.getpeercert(binary_form=True)
 
@@ -1657,7 +1657,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 else:
                     log.info('(%s) Uplink TLS/SSL certificate fingerprint '
                              'verified (%s: %r)', self.name, hashtype, fp)
-            else:
+            elif hasattr(self._socket, 'context') and self._socket.context.verify_mode == ssl.CERT_NONE:
                 log.info('(%s) Uplink\'s TLS/SSL certificate fingerprint (%s) '
                          'is %r. You can enhance the security of your '
                          'link by specifying this in a "ssl_fingerprint"'
