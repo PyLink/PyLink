@@ -297,6 +297,13 @@ servers:
         # be used for the connection.
         #ipv6: false
 
+        # Note: if you are actually using dynamic DNS for an IRC link, consider enabling
+        # TLS/SSL certificate checking (new in 2.0). These checks are disabled by default for
+        # server links because self-signed certificates are still quite common.
+        #ssl: true
+        #ssl_accept_invalid_certs: false
+        #ssl_validate_hostname: true
+
         recvpass: "PASS123"
         sendpass: "PASS321"
         hostname: "pylink.somenet.ddns.local"
