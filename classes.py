@@ -1656,7 +1656,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                                                'match the one configured (%s: %r)' % (hashtype, fp, hashtype, expected_fp))
                 else:
                     log.info('(%s) Uplink TLS/SSL certificate fingerprint '
-                             '(%s) verified: %r', self.name, hashtype, fp)
+                             'verified (%s: %r)', self.name, hashtype, fp)
             else:
                 log.info('(%s) Uplink\'s TLS/SSL certificate fingerprint (%s) '
                          'is %r. You can enhance the security of your '
