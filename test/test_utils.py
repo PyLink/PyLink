@@ -130,5 +130,25 @@ class UtilsTestCase(unittest.TestCase):
             utils.remove_range(
                 "-3--5", ["we", "love", "emotes"])
 
+    def test_get_hostname_type(self):
+        self.assertEqual(utils.get_hostname_type("1.2.3.4"), 1)
+        self.assertEqual(utils.get_hostname_type("192.168.0.1"), 1)
+        self.assertEqual(utils.get_hostname_type("127.0.0.5"), 1)
+
+        self.assertEqual(utils.get_hostname_type("0::1"), 2)
+        self.assertEqual(utils.get_hostname_type("::1"), 2)
+        self.assertEqual(utils.get_hostname_type("fc00::1234"), 2)
+        self.assertEqual(utils.get_hostname_type("1111:2222:3333:4444:5555:6666:7777:8888"), 2)
+
+        self.assertEqual(utils.get_hostname_type("example.com"), False)
+        self.assertEqual(utils.get_hostname_type("abc.mynet.local"), False)
+        self.assertEqual(utils.get_hostname_type("123.example"), False)
+
+        self.assertEqual(utils.get_hostname_type("123.456.789.000"), False)
+        self.assertEqual(utils.get_hostname_type("1::2::3"), False)
+        self.assertEqual(utils.get_hostname_type("1:"), False)
+        self.assertEqual(utils.get_hostname_type(":5"), False)
+
+
 if __name__ == '__main__':
     unittest.main()

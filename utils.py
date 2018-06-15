@@ -11,6 +11,7 @@ import importlib
 import os
 import collections
 import argparse
+import ipaddress
 
 from .log import log
 from . import world, conf, structures
@@ -750,3 +751,20 @@ def remove_range(rangestr, mylist):
                              (subrange, rangestr))
 
     return list(filter(lambda x: x is not None, mylist))
+
+def get_hostname_type(address):
+    """
+    Returns whether the given address is an IPv4 address (1), IPv6 address (2), or neither
+    (False; assumed to be a hostname instead).
+    """
+    try:
+        ip = ipaddress.ip_address(address)
+    except ValueError:
+        return False
+    else:
+        if isinstance(ip, ipaddress.IPv4Address):
+            return 1
+        elif isinstance(ip, ipaddress.IPv6Address):
+            return 2
+        else:
+            raise ValueError("Got unknown value %r from ipaddress.ip_address()" % address)
