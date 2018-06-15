@@ -160,8 +160,9 @@ servers:
         # cause netsplits! This defaults to 30 if not set.
         maxnicklen: 30
 
-        # Toggles SSL for this network. Defaults to False if not specified.
-        #ssl: true
+        # Toggles SSL for this network - you should seriously consider using TLS in all your links
+        # for optimal security. Defaults to False if not specified.
+        ssl: true
 
         # Optional SSL cert/key to pass to the uplink server.
         #ssl_certfile: pylink-cert.pem
@@ -266,7 +267,7 @@ servers:
         recvpass: "coffee"
         sendpass: "tea"
 
-        #ssl: true
+        ssl: true
         #ssl_certfile: mycert.pem
         #ssl_keyfile: mycert.pem
         hostname: "pylink.example.com"
@@ -300,7 +301,7 @@ servers:
         # Note: if you are actually using dynamic DNS for an IRC link, consider enabling
         # TLS/SSL certificate checking (new in 2.0). These checks are disabled by default for
         # server links because self-signed certificates are still quite common.
-        #ssl: true
+        ssl: true
         #ssl_accept_invalid_certs: false
         #ssl_validate_hostname: true
 
@@ -380,6 +381,7 @@ servers:
     ts6net:
         ip: 1.2.3.4
         port: 7000
+        ssl: true
         recvpass: "abcd"
         sendpass: "abcd"
         hostname: "pylink.example.com"
