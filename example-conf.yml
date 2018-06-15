@@ -386,7 +386,7 @@ servers:
     # Sample Clientbot configuration, if you want to connect PyLink as a bot to relay somewhere
     # (or do other bot things).
     magicnet:
-        ip: 1.2.3.4
+        ip: irc.somenet.local
         port: 6697
 
         # Optional server password.
@@ -405,11 +405,19 @@ servers:
         # number of underscores.
         #pylink_altnicks: ["pybot`", "pybot-"]
 
-        # SSL options. Certfile and keyfile are optional, but can be used for CertFP/SASL external
-        # if supported.
+        # TLS/SSL options. Certfile and keyfile are optional, but can be used for CertFP/SASL external
+        # where supported.
         ssl: true
         #ssl_certfile: mycert.pem
         #ssl_keyfile: mycert.pem
+
+        # New in 2.0: Determines whether the target server's TLS certificate hostnames should be
+        # checked against the hostname given. This defaults to true if not specified.
+        #ssl_validate_hostname: true
+
+        # New in 2.0: When enabled, this disables TLS certificate validation on the target network.
+        # This defaults to false if not specified.
+        #ssl_accept_invalid_certs: false
 
         # Autoconnect works as usual.
         autoconnect: 30

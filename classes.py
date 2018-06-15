@@ -1615,7 +1615,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                                self.name)
                  raise
 
-        self._socket = context.wrap_socket(self._socket)
+        self._socket = context.wrap_socket(self._socket, server_hostname=self.serverdata.get('ip'))
 
     def _verify_ssl(self):
         """
