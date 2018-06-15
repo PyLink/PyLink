@@ -755,12 +755,12 @@ def remove_range(rangestr, mylist):
 def get_hostname_type(address):
     """
     Returns whether the given address is an IPv4 address (1), IPv6 address (2), or neither
-    (False; assumed to be a hostname instead).
+    (0; assumed to be a hostname instead).
     """
     try:
         ip = ipaddress.ip_address(address)
     except ValueError:
-        return False
+        return 0
     else:
         if isinstance(ip, ipaddress.IPv4Address):
             return 1

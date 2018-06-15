@@ -140,14 +140,14 @@ class UtilsTestCase(unittest.TestCase):
         self.assertEqual(utils.get_hostname_type("fc00::1234"), 2)
         self.assertEqual(utils.get_hostname_type("1111:2222:3333:4444:5555:6666:7777:8888"), 2)
 
-        self.assertEqual(utils.get_hostname_type("example.com"), False)
-        self.assertEqual(utils.get_hostname_type("abc.mynet.local"), False)
-        self.assertEqual(utils.get_hostname_type("123.example"), False)
+        self.assertEqual(utils.get_hostname_type("example.com"), 0)
+        self.assertEqual(utils.get_hostname_type("abc.mynet.local"), 0)
+        self.assertEqual(utils.get_hostname_type("123.example"), 0)
 
-        self.assertEqual(utils.get_hostname_type("123.456.789.000"), False)
-        self.assertEqual(utils.get_hostname_type("1::2::3"), False)
-        self.assertEqual(utils.get_hostname_type("1:"), False)
-        self.assertEqual(utils.get_hostname_type(":5"), False)
+        self.assertEqual(utils.get_hostname_type("123.456.789.000"), 0)
+        self.assertEqual(utils.get_hostname_type("1::2::3"), 0)
+        self.assertEqual(utils.get_hostname_type("1:"), 0)
+        self.assertEqual(utils.get_hostname_type(":5"), 0)
 
 
 if __name__ == '__main__':
