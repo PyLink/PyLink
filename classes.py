@@ -1525,9 +1525,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # This is protocol specific, so stub it here in the base class.
         raise NotImplementedError
 
-class TLSValidationError(ConnectionError):
-    """Exception raised when additional TLS verifications fail."""
-
 # When this many pings in a row are missed, the ping timer loop will force a disconnect on the
 # next cycle. Effectively the ping timeout is: pingfreq * (KEEPALIVE_MAX_MISSED + 1)
 KEEPALIVE_MAX_MISSED = 2
@@ -1651,8 +1648,8 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             if expected_fp:
                 if fp != expected_fp:
                     # SSL Fingerprint doesn't match; break.
-                    raise TLSValidationError('Uplink TLS/SSL certificate fingerprint (%s) does not '
-                                             'match the one configured (%s: %s)' % (expected_fp, hashtype, fp))
+                    raise ssl.CertificateError('Uplink TLS/SSL certificate fingerprint (%s: %r) does not '
+                                               'match the one configured (%s: %r)' % (hashtype, fp, hashtype, expected_fp))
                 else:
                     log.info('(%s) Uplink TLS/SSL certificate fingerprint '
                              '(%s) verified: %r', self.name, hashtype, fp)
