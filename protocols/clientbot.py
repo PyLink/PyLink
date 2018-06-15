@@ -1119,9 +1119,13 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         """
         # <- :irc3.lose-the-game.nat 368 james #test :End of Channel Ban List
         channel = args[1]
+        if channel not in self.channels:
+            return
+
+        modes = [('+%s' % banmode, m[1]) for m in self.channels[channel].modes if m[0] == banmode]
+
         # Send out the hook. We don't worry about repeats since these modes don't need to be
         # enumerated more than once per JOIN anyways.
-        modes = [('+%s' % banmode, m[1]) for m in self.channels[channel].modes if m[0] == banmode]
         if modes:
             return {'target': channel, 'parse_as': 'MODE',
                     'modes': modes}
