@@ -1642,8 +1642,12 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             raise conf.ConfigurationError('Unsupported or invalid TLS/SSL certificate fingerprint type %r',
                                           hashtype)
         else:
-            fp = hashfunc(peercert).hexdigest()
             expected_fp = self.serverdata.get('ssl_fingerprint')
+            if expected_fp and peercert is None:
+                raise ssl.CertificateError('TLS/SSL certificate fingerprint checking is enabled but the uplink '
+                                           'did not provide a certificate')
+
+            fp = hashfunc(peercert).hexdigest()
 
             if expected_fp:
                 if fp != expected_fp:
