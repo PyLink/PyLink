@@ -243,8 +243,10 @@ servers:
 
         # Determines whether IPv6 should be used for this connection. Should the ip:
         # above be a hostname instead of an IP, this will also affect whether A records
-        # (no IPv6) or AAAA records (IPv6) will be used in resolving it.
-        ipv6: yes
+        # (IPv4) or AAAA records (IPv6) will be used in resolving it.
+        # As of PyLink 2.0-alpha4, you can leave this unset for direct connections to IP addresses;
+        # the address type will be automatically detected.
+        #ipv6: yes
 
         # Received and sent passwords. For passwordless links using SSL fingerprints, simply set
         # these two fields to "*" and enable SSL with a cert and key file.

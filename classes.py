@@ -1660,8 +1660,9 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         try:
-            # Set the socket type (IPv6 or IPv4).
-            stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
+            # Set the socket type (IPv6 or IPv4), auto detecting it if not specified.
+            isipv6 = self.serverdata.get("ipv6", utils.get_hostname_type(ip) == 2)
+            stype = socket.AF_INET6 if isipv6 else socket.AF_INET
 
             # Creat the socket.
             self._socket = socket.socket(stype)
