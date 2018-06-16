@@ -149,6 +149,44 @@ class UtilsTestCase(unittest.TestCase):
         self.assertEqual(utils.get_hostname_type("1:"), 0)
         self.assertEqual(utils.get_hostname_type(":5"), 0)
 
+    def test_parse_duration(self):
+        # Base case: simple number
+        self.assertEqual(utils.parse_duration("0"), 0)
+        self.assertEqual(utils.parse_duration("256"), 256)
+
+        # Not valid: not a positive integer
+        with self.assertRaises(ValueError):
+            utils.parse_duration("-5")
+            utils.parse_duration("3.1416")
+
+        # Not valid: wrong units or nonsense
+        with self.assertRaises(ValueError):
+            utils.parse_duration("")
+            utils.parse_duration("3j")
+            utils.parse_duration("5h6")  # stray number at end
+            utils.parse_duration("5h3k")
+            utils.parse_duration(" 6d ")
+            utils.parse_duration("6.6d")  # we don't support monster math
+            utils.parse_duration("zzzzzdstwataw")
+            utils.parse_duration("3asdfjkl;")
+
+        # Test all supported units
+        self.assertEqual(utils.parse_duration("3s"), 3)
+        self.assertEqual(utils.parse_duration("1m"), 60)
+        self.assertEqual(utils.parse_duration("9h"), 9 * 60 * 60)
+        self.assertEqual(utils.parse_duration("15d"), 15 * 24 * 60 * 60)
+        self.assertEqual(utils.parse_duration("3w"), 3 * 7 * 24 * 60 * 60)
+
+        # Composites
+        self.assertEqual(utils.parse_duration("6m10s"), 6 * 60 + 10)
+        self.assertEqual(utils.parse_duration("1d5h"), ((24+5) * 60 * 60))
+        self.assertEqual(utils.parse_duration("2d3m4s"), (48 * 60 * 60 + 3 * 60 + 4))
+
+        # Not valid: wrong order of units
+        with self.assertRaises(ValueError):
+            utils.parse_duration("4s3d")
+            utils.parse_duration("1m5w")
+
 
 if __name__ == '__main__':
     unittest.main()

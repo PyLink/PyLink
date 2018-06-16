@@ -768,3 +768,48 @@ def get_hostname_type(address):
             return 2
         else:
             raise ValueError("Got unknown value %r from ipaddress.ip_address()" % address)
+
+_duration_re = re.compile(r"^((?P<week>\d+)w)?((?P<day>\d+)d)?((?P<hour>\d+)h)?((?P<minute>\d+)m)?((?P<second>\d+)s)?$")
+def parse_duration(text):
+    """
+    Takes in a duration string and returns the equivalent amount of seconds.
+
+    Time strings are in the following format:
+    - '123'         => 123 seconds
+                       (positive integers are treated as # of seconds)
+    - '1w2d3h4m5s'  => 1 week, 2 days, 3 hours, 4 minutes, and 5 seconds
+                       (must be in decreasing order by unit)
+    - '72h'         => 72 hours
+    - '1h5s'        => 1 hour and 5 seconds
+    and so on...
+    """
+    # If we get an already valid number, just return it
+    if text.isdigit():
+        return int(text)
+
+    match = _duration_re.match(text)
+    if not match:
+        raise ValueError("Failed to parse duration string %r" % text)
+    result = 0
+    matched = 0
+
+    if match.group('week'):
+        result += int(match.group('week'))   *  7 * 24 * 60 * 60
+        matched += 1
+    if match.group('day'):
+        result += int(match.group('day'))    * 24 * 60 * 60
+        matched += 1
+    if match.group('hour'):
+        result += int(match.group('hour'))   * 60 * 60
+        matched += 1
+    if match.group('minute'):
+        result += int(match.group('minute')) * 60
+        matched += 1
+    if match.group('second'):
+        result += int(match.group('second'))
+        matched += 1
+
+    if not matched:
+        raise ValueError("Failed to parse duration string %r" % text)
+
+    return result
