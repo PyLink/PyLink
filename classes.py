@@ -1693,6 +1693,11 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             self.ssl = self.serverdata.get('ssl')
             if self.ssl:
                 self._setup_ssl()
+            elif not ipaddress.ip_address(ip).is_loopback:
+                log.warning('(%s) This connection will be made via plain text, which is vulnerable '
+                            'to man-in-the-middle (MITM) attacks and passive eavesdropping. Consider '
+                            'enabling TLS/SSL with either certificate validation or fingerprint '
+                            'pinning to better secure your network traffic.', self.name)
 
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
 
