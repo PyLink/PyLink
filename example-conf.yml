@@ -294,9 +294,11 @@ servers:
         ip: somenet.ddns.local
         port: 45454
 
-        # When the IP field is set to a hostname, this option determines whether IPv4 or IPv6 should
-        # be used for the connection.
+        # When the IP field is set to a hostname, the "ipv6" option determines whether IPv4 or IPv6
+        # addresses should be used when resolving it. You can leave this field blank and use an
+        # explicit bindhost instead, which will let the the address type be automatically detected.
         #ipv6: false
+        #bindhost: 1111:2222:3333:4444
 
         # Note: if you are actually using dynamic DNS for an IRC link, consider enabling
         # TLS/SSL certificate checking (new in 2.0). These checks are disabled by default for
