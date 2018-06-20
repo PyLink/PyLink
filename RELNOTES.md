@@ -18,12 +18,12 @@ This release contains all changes from 2.0-alpha3 as well as the following:
     - You can now set descriptions for channels in `LINKED` via the `CHANDESC` command. [issue#576](https://github.com/jlu5/PyLink/issues/576)
     - `relay_clientbot` now supports setting clientbot styles by network. [issue#455](https://github.com/jlu5/PyLink/issues/455)
     - New `relay::allow_free_oper_links` allows disabling oper access to `CREATE/LINK/DELINK/DESTROY/CLAIM` by default
-- IPv4/IPv6 address selection is now automatic, detecting when an IPv6 address or bindhost is given. [issue#212](https://github.com/jlu5/PyLink/issues/212)
-- New Antispam features:
-    - Antispam now supports text filtering with configured bad strings; see the `antispam:` example block. [issue#359](https://github.com/jlu5/PyLink/issues/359)
+- New Antispam features (see the `antispam:` example block for configuration details):
+    - Antispam now supports text filtering with configured bad strings. [issue#359](https://github.com/jlu5/PyLink/issues/359)
     - Added `block` as a punishment to only hide messages from other plugins like relay. [issue#616](https://github.com/jlu5/PyLink/issues/616)
     - Antispam can now process PMs to PyLink clients for spam - this can be limited to service bots, enabled for all PyLink clients (including relay clones), or disabled entirely (the default).
     - IRC formatting (bold, underline, colors, etc.) is now removed before processing text. [issue#615](https://github.com/jlu5/PyLink/issues/615)
+- IPv4/IPv6 address selection is now automatic, detecting when an IPv6 address or bindhost is given. [issue#212](https://github.com/jlu5/PyLink/issues/212)
 - Messages sent by most commands are now transparently word-wrapped to prevent cutoff. [issue#153](https://github.com/jlu5/PyLink/issues/153)
 - The Global plugin now supports configuring exempt channels. [issue#453](https://github.com/jlu5/PyLink/issues/453)
 - Automode now allows removing entries by entry numbers. [issue#506](https://github.com/jlu5/PyLink/issues/506)
@@ -60,9 +60,9 @@ This release contains all changes from 2.0-alpha3 as well as the following:
     - `remove_range()` removes a range string of (one-indexed) items from the list, where range strings are indices or ranges of them joined together with a "," (e.g. "5", "2", "2-10", "1,3,5-8") - [issue#506](https://github.com/jlu5/PyLink/issues/506)
     - `get_hostname_type()` takes in an IP or hostname and returns an int representing the detected address type: 0 (none detected), 1 (IPv4), 2 (IPv6) - [issue#212](https://github.com/jlu5/PyLink/issues/212)
     - `parse_duration()` takes in a duration string (in the form `1w2d3h4m5s`, etc.) and returns the equiv. amount of seconds - [issue#504](https://github.com/jlu5/PyLink/issues/504)
-- The TLS/SSL setup bits in `IRCNetwork` were broken into multiple functions: `_make_ssl_context(), `_setup_ssl`, and `_verify_ssl()`
+- The TLS/SSL setup bits in `IRCNetwork` were broken into multiple functions: `_make_ssl_context()`, `_setup_ssl`, and `_verify_ssl()`
 - Removed deprecated attributes: `irc.botdata`, `irc.conf`, `utils.is*` methods, `PyLinkNetworkCoreWithUtils.check_authenticated()` - [issue#422](https://github.com/jlu5/PyLink/issues/422)
-- PyLinkNCWUtils: The `allowAuthed`, `allowOper` options in `is_oper()` are now deprecated no-ops (they are set to false and true respectively)
+- PyLinkNCWUtils: The `allowAuthed`, `allowOper` options in `is_oper()` are now deprecated no-ops (they are set to False and True respectively)
 
 # PyLink 2.0-alpha3 (2018-05-10)
 
