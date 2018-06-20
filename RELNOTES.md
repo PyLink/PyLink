@@ -1,3 +1,69 @@
+# PyLink 2.0-beta1 (unreleased)
+
+This release contains all changes from 2.0-alpha3 as well as the following:
+
+#### New features
+- **Added TLS certificate verification, which is now enabled by default on Clientbot networks**.
+    - This adds the options `ssl_validate_hostname` and `ssl_accept_invalid_certs` options which have defaults as follows:
+        - | Server type              | `ssl_validate_hostname`                             | `ssl_accept_invalid_certs` |
+          |--------------------------|-----------------------------------------------------|----------------------------|
+          | Full links (S2S)         | false (implied by `ssl_accept_invalid_certs: true`) | true                       |
+          | Clientbot networks (C2S) | true                                                | false                      |
+        - `ssl_validate_hostname` determines whether certificates will be checked for a matching hostname
+        - `ssl_accept_invalid_certs` disables certificate checking entirely when enabled and also turns off `ssl_validate_hostname`
+        - The existing TLS/SSL certificate fingerprint options are unchanged by this and can be turned on and off regardless of these new options' values.
+- New Relay features:
+    - **LINKACL now supports whitelisting networks in addition to the original blacklist implementation** (see `help LINKACL`). [issue#394](https://github.com/jlu5/PyLink/issues/394)
+    - Defaults for relay CLAIM (on or off) and LINKACL mode can now be configured for new channels.[issue#581](https://github.com/jlu5/PyLink/issues/581)
+    - You can now set descriptions for channels in `LINKED` via the `CHANDESC` command. [issue#576](https://github.com/jlu5/PyLink/issues/576)
+    - `relay_clientbot` now supports setting clientbot styles by network. [issue#455](https://github.com/jlu5/PyLink/issues/455)
+    - New `relay::allow_free_oper_links` allows disabling oper access to `CREATE/LINK/DELINK/DESTROY/CLAIM` by default
+- IPv4/IPv6 address selection is now automatic, detecting when an IPv6 address or bindhost is given. [issue#212](https://github.com/jlu5/PyLink/issues/212)
+- New Antispam features:
+    - Antispam now supports text filtering with configured bad strings; see the `antispam:` example block. [issue#359](https://github.com/jlu5/PyLink/issues/359)
+    - Added `block` as a punishment to only hide messages from other plugins like relay
+    - Antispam can now process PMs to PyLink clients for spam - this can be limited to service bots, enabled for all PyLink clients (including relay clones), or disabled entirely (the default)
+    - IRC formatting (bold, underline, colors, etc.) is now removed before processing text
+- Messages sent by most commands are now transparently word-wrapped to prevent cutoff. [issue#153](https://github.com/jlu5/PyLink/issues/153)
+- The Global plugin now supports configuring exempt channels. [issue#453](https://github.com/jlu5/PyLink/issues/453)
+- Automode now allows removing entries by entry numbers. [issue#506](https://github.com/jlu5/PyLink/issues/506)
+
+#### Feature changes
+- Relay feature changes:
+    - Relay IP sharing now uses a pool-based configuration scheme (`relay::ip_share_pools`), deprecating the `relay::show_ips` and `relay_no_ips` options.
+        - IPs and real hosts are shared between all networks in an ipshare pool,
+    - **KILL handling received a major rework**:
+        - Instead of always bouncing, kills to a relay client can now be forwarded between networks in a killshare pool (`relay::kill_share_pools`)
+        - If the sender and target's networks are not in a killshare pool, the kill is forwarded as a kick to all shared channels that the sender
+          has CLAIM access on (e.g. when they are the home network, whitelisted in `CLAIM`, and/or an op)
+- The PyLink service client no longer needs to be in channels to log to them
+
+#### Bug fixes
+- Fixed ping timeout handling (this was broken sometime during the port to select)
+- relay: block networks not on the claim list from merging in modes when relinking (better support for modes set by e.g. services DEFCON)
+- Reworked relay+clientbot op checks on to [be more consistent](https://github.com/jlu5/PyLink/compare/fee64ece045ad9dc49a07d1b438caa019c90a778~...d4bf407)
+- inspircd: fix potential desyncs when sending a kill by removing the target immediately. [issue#607](https://github.com/jlu5/PyLink/issues/607)
+- UserMapping: fixed a missing reference to the parent `irc` instance causing errors on nick collisions
+- clientbot: suppress warnings if `/mode #channel` doesn't show arguments to `+lk`, etc. [issue#537](https://github.com/jlu5/PyLink/issues/537)
+- Relay now removes service persistent channels on unload, and when the home network for a link disconnects
+- relay: raise an error when trying to delink a leaf channel from another leaf network
+    - Previously this would (confusingly) delink the channel from the network the command was called on instead of the intended target.
+- opercmds: forbid killing the main PyLink client
+
+#### Internal changes
+- Login handling was rewritten and moved entirely from `coremods.corecommands` to `coremods.login`. [issue#590](https://github.com/jlu5/PyLink/issues/590)
+- New stuff for the core network classes:
+    - `is_privileged_service(entityid)` returns whether the given UID or SID belongs to a (preconfigured) privileged service (IRC U:line).
+    - User, Channel `ts` is now consistently stored as `int`s. [issue#594](https://github.com/jlu5/PyLink/issues/594)
+    - `match_host()` was split into `match_host()` and `match_text()`; the latter is now preferred as a simple text matcher for IRC-style globs
+- New stuff in utils:
+    - `remove_range()` removes a range string of (one-indexed) items from the list, where range strings are indices or ranges of them joined together with a "," (e.g. "5", "2", "2-10", "1,3,5-8")
+    - `get_hostname_type()` takes in an IP or hostname and returns an int representing the detected address type: 0 (none detected), 1 (IPv4), 2 (IPv6) - [issue#212](https://github.com/jlu5/PyLink/issues/212)
+    - `parse_duration()` takes in a duration string (in the form `1w2d3h4m5s`, etc.) and returns the equiv. amount of seconds [issue#504](https://github.com/jlu5/PyLink/issues/504)
+- The TLS/SSL setup bits in `IRCNetwork` were broken into multiple functions: `_make_ssl_context(), `_setup_ssl`, and `_verify_ssl()`
+- Removed deprecated attributes: `irc.botdata`, `irc.conf`, `utils.is*` methods, `PyLinkNetworkCoreWithUtils.check_authenticated()` - [issue#422](https://github.com/jlu5/PyLink/issues/422)
+- PyLinkNCWUtils: The `allowAuthed`, `allowOper` options in `is_oper()` are now deprecated no-ops (they are set to false and true respectively)
+
 # PyLink 2.0-alpha3 (2018-05-10)
 
 This release contains all changes from 1.3.0, as well as the following:
