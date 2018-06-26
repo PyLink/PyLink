@@ -74,12 +74,12 @@ def main(irc=None):
                 initialize_all(ircobj)
 
             if 'relay_no_ips' in ircobj.serverdata:
-                log.warning('(%s) The "relay_no_ips" option is deprecated as of 2.0-alpha4. Consider migrating '
+                log.warning('(%s) The "relay_no_ips" option is deprecated as of 2.0-beta1. Consider migrating '
                             'to "ip_share_pools", which provides more fine-grained control over which networks '
                             'see which networks\' IPs.', netname)
 
     if 'relay' in conf.conf and 'show_ips' in conf.conf['relay']:
-        log.warning('The "relay::show_ips" option is deprecated as of 2.0-alpha4. Consider migrating '
+        log.warning('The "relay::show_ips" option is deprecated as of 2.0-beta1. Consider migrating '
                     'to "ip_share_pools", which provides more fine-grained control over which networks '
                     'see which networks\' IPs.')
 
@@ -387,7 +387,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
                       'working SID).', irc.name, user, nick, remoteirc.name)
             return
 
-    # This is the legacy (< 2.0-alpha4) control for relay IP sharing
+    # This is the legacy (< 2.0-beta1) control for relay IP sharing
     try:
         showRealIP = conf.conf['relay']['show_ips'] and not \
                      irc.serverdata.get('relay_no_ips') and not \
@@ -396,7 +396,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
     except KeyError:
         showRealIP = False
 
-    # New (>= 2.0-alpha4) IP sharing is configured via pools of networks
+    # New (>= 2.0-beta1) IP sharing is configured via pools of networks
     showRealIP = showRealIP or _has_common_pool(irc.name, remoteirc.name, "ip_share_pools")
     if showRealIP:
         ip = userobj.ip
@@ -2634,7 +2634,7 @@ def linkacl(irc, source, args):
     elif cmd == 'allow':
         if whitelist:
             # In whitelist mode, ALLOW *adds* to the whitelist
-            if 'allowed_nets' not in entry:  # Upgrading from < 2.0-alpha4
+            if 'allowed_nets' not in entry:  # Upgrading from < 2.0-beta1
                 entry['allowed_nets'] = set()
             db[relay]['allowed_nets'].add(remotenet)
         else:

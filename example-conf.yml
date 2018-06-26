@@ -258,7 +258,7 @@ servers:
         # Determines whether IPv6 should be used for this connection. Should the ip:
         # above be a hostname instead of an IP, this will also affect whether A records
         # (IPv4) or AAAA records (IPv6) will be used in resolving it.
-        # As of PyLink 2.0-alpha4, you can leave this unset for direct connections to IP addresses;
+        # As of PyLink 2.0-beta1, you can leave this unset for direct connections to IP addresses;
         # the address type will be automatically detected.
         #ipv6: yes
 
@@ -717,7 +717,7 @@ relay:
     # network should be in which pool. A network can be part of one pool, multiple
     # pools, or none at all.
     # This option replaces the "relay::show_ips" and network-specific "relay_no_ips"
-    # options, which are DEPRECATED as of 2.0-alpha4.
+    # options, which are DEPRECATED as of 2.0-beta1.
     #ip_share_pools:
     #    - ["net1", "net2", "net3"]
     #    - ["net1", "meganet"]

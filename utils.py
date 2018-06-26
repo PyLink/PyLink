@@ -498,7 +498,7 @@ class ServiceBot():
                         # Single newlines are stripped so that word wrap can be applied in source
                         # code without affecting the output on IRC.
                         # (On the same topic, real line wrapping on IRC is done in irc.msg() as of
-                        #  2.0-alpha4)
+                        #  2.0-beta1)
                         next_line = ''
                         for linenum, line in enumerate(lines[1:], 1):
                             stripped_line = line.strip()
