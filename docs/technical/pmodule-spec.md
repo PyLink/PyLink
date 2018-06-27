@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.0-alpha3 (2018-05-09).***
+***Last updated for 2.0-beta1 (2018-06-26).***
 
 Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
@@ -8,17 +8,17 @@ Starting with PyLink 2.x, a *protocol module* is any module containing a class d
 
 ## Starting Steps
 
-**Before you proceed, we highly recommend protocol module coders to get in touch with us** via our IRC channel (`#PyLink @ irc.overdrivenetworks.com`). Letting us know what you are working on can help coordinate coding efforts and better prepare for potential API breaks.
+**Before you proceed, we highly recommend protocol module coders to get in touch with us** (e.g. via IRC at `#PyLink @ irc.overdrivenetworks.com`). Letting us know what you are working on can help coordinate coding efforts and better prepare for potential API breaks.
+
+Note: The following notes in this section assume that you are working on some IRCd's server protocol, such that PyLink can spawn subservers and its own pseudoclients. If this is not the case, *virtual* clients and servers have to be spawned instead to emulate the correct state - the `clientbot` protocol module is a functional (though not very elegant) example of this.
 
 When writing new protocol modules, it is recommended to subclass from one of the following classes:
-
-(Note: these notes assume that PyLink is connecting as a server and is able to spawn subservers and users. If this is not the case, *virtual* clients and servers have to be spawned instead to emulate the correct state. The `clientbot` protocol module is a decent example of this, but be warned adding stubs to replace regular functionality does become ugly...)
 
 ### `classes.IRCNetwork`
 
 `IRCNetwork` is the base IRC class which includes the state checking utilities from `PyLinkNetworkCore`, the generic IRC utilities from `PyLinkNetworkCoreWithUtils`, along with abstraction for establishing IRC connections and pinging the uplink at a set interval.
 
-To use `classes.IRCNetwork`, the following functions must be defined.
+To use `classes.IRCNetwork`, the following functions must be defined:
 
 - `handle_events(self, data)`: given a line of text containing an IRC command, parse it and return a hook payload as specified in the [PyLink hooks reference](hooks-reference.md).
     - In all of the official PyLink modules so far, handling for specific commands is delegated into submethods via [`getattr()`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/protocols/ircs2s_common.py#L409-L412), and unknown commands are ignored.
@@ -31,7 +31,7 @@ This class offers the most flexibility because the protocol module can choose ho
 
 ### `protocols.ircs2s_common.IRCCommonProtocol`
 
-`IRCCommonProtocol` (based off `IRCNetwork`) includes more IRC-specific methods such as parsers for ISUPPORT, as well as helper methods to parse arguments and recursively handle SQUIT. It also defines a default `ping_uplink()` and incoming command handlers for commands that are the same across known protocols (AWAY, PONG, ERROR).
+`IRCCommonProtocol` (based off `IRCNetwork`) includes more IRC-specific methods such as parsers for ISUPPORT, as well as helper methods to parse arguments and recursively handle SQUIT. It also defines a default `_ping_uplink()` and incoming command handlers for commands that are the same across known protocols (AWAY, PONG, ERROR).
 
 `IRCCommonProtocol` does *not*, however, define an `handle_events` method.
 
@@ -39,11 +39,11 @@ This class offers the most flexibility because the protocol module can choose ho
 `IRCS2SProtocol` is the most complete base server class, including a generic `handle_events()` supporting most IRC S2S message styles (i.e. prefix-less messages, protocols with and without UIDs). It also defines some incoming and outgoing command functions that hardly vary between protocols: `invite()`, `kick()`, `message()`, `notice()`, `numeric()`, `part()`, `quit()`, `squit()`, and `topic()` as of PyLink 2.0. This list is subject to change in future releases.
 
 ### For non-IRC protocols: `classes.PyLinkNetworkCoreWithUtils`
-Although this hasn't been put into practice, PyLink is designed to allow expansion into non-IRC protocols by providing a generic class that only includes state checking and utility functions.
+Although no such transports have been implemented yet, PyLink leaves some level of abstraction for non-IRC protocols (e.g. Discord, Telegram, Slack, ...) by providing generic classes that only include state checking and utility functions.
 
-Subclassing one of the `PyLinkNetworkCore*` classes means that a protocol module only needs to define one method of entry: `connect()`, and must do all message processing by itself. Configuration validation checks and autoconnect must also be reimplemented. IRC-style utility functions (i.e. `PyLinkNetworkCoreWithUtils` methods) *may* also be reimplemented.
+Subclassing one of the `PyLinkNetworkCore*` classes means that a protocol module only needs to define one method of entry: `connect()`, and must set up its own message handling stack. Protocol configuration validation checks and autoconnect must also be reimplemented. IRC-style utility functions (i.e. `PyLinkNetworkCoreWithUtils` methods) should also be reimplemented / overridden when applicable.
 
-(Unfortunately, this code work is complicated, so please get in touch with us if you're stuck or want tips!)
+(Unfortunately, this work is complicated, so please get in touch with us if you're stuck or want tips!)
 
 ### Other
 
@@ -208,7 +208,7 @@ As an example, one protocol module that tweaks this is [`Clientbot`](https://git
 
 ## The final checklist
 
-In short, protocol modules have some very important jobs. If any of these aren't done correctly, you will be left with a broken, desynced services server:
+In short, protocol modules have some very important jobs. If any of these aren't done correctly, you will be left with a very broken, desynced services server:
 
 1) Handle incoming commands from the uplink.
 
@@ -222,7 +222,9 @@ In short, protocol modules have some very important jobs. If any of these aren't
 
 6) Check that `recvpass` is correct when applicable, and raise `ProtocolError` with a relevant error message if not.
 
-## Changes
+## Changes to this document
+* 2018-06-26 (2.0-beta1)
+   - Wording tweaks (no functional changes)
 * 2018-05-09 (2.0-alpha3)
    - `kill` and `kick` implementations should raise `NotImplementedError` if not supported (anti-desync measure).
    - Future PyLink versions will further standardize which functions should be stubbed (no-op) when not available and which should raise an error.
