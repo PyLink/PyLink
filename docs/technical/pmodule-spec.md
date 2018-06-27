@@ -129,34 +129,35 @@ A protocol module should also set the following variables in each instance:
 ## Protocol capabilities
 TODO
 
-## PyLink state structures
+## PyLink structures
+In this section, `self` refers to the network object/protocol module instance itself (i.e. from its own perspective).
 
 ### Server, User, Channel classes
 PyLink defines classes named `Server`, `User`, and `Channel` in the `classes` module, and stores dictionaries of these in the `servers`, `users`, and `channels` attributes of a protocol object respectively.
 
-- `irc.servers` is a dictionary mapping server IDs (SIDs) to `Server` objects. If a protocol module does not use SIDs, servers are stored by server name instead.
+- `self.servers` is a dictionary mapping server IDs (SIDs) to `Server` objects. If a protocol module does not use SIDs, servers are stored by server name instead.
 
-- `irc.users` is a dictionary mapping user IDs (UIDs) to `User` objects. If a protocol module does not use UIDs, a pseudo UID (PUID) generator such as [`classes.PUIDGenerator`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/classes.py#L1710-L1726) *must* be used instead.
+- `self.users` is a dictionary mapping user IDs (UIDs) to `User` objects. If a protocol module does not use UIDs, a pseudo UID (PUID) generator such as [`classes.PUIDGenerator`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/classes.py#L1710-L1726) *must* be used instead.
     - The rationale behind this is because plugins tracking user lists are not designed to remove and re-add users when they change their nicks.
     - When sending text back to the protocol module, it may be helpful to use the [`_expandPUID()`](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/classes.py#L1213-L1231) function in `PyLinkNetworkCoreWithUtils` to expand these pseudo-UIDs back to regular nicks.
 
-- `irc._channels` and `irc.channels` are [IRC case-insensitive dictionaries](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/structures.py#L114-L116) mapping channel names to Channel objects.
+- `self._channels` and `self.channels` are [IRC case-insensitive dictionaries](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/structures.py#L114-L116) mapping channel names to Channel objects.
     - The key difference between these two dictionaries is that `_channels` is powered by `classes.ChannelState` and creates new channels *automatically* when they are accessed by index. This makes writing protocol modules easier, as they can assume that the channels they wish to modify always exist (no chance of `KeyError`!).
-    - `irc.channels`, on the other hand, does *not* implicitly create channels and is thus better suited for plugins.
+    - `self.channels`, on the other hand, does *not* implicitly create channels and is thus better suited for plugins.
 
 The `Channel`, `User`, and `Server` classes are initiated as follows:
 
-- `Channel(irc, name)` - First arg is the protocol object, second is the channel name.
-- `User(irc, nick, ts, uid, server, ident='null', host='null', realname='PyLink dummy client', realhost='null', ip='0.0.0.0', manipulatable=False, opertype='IRC Operator')` - These arguments are essentially the same as `spawn_client()`'s.
-- `Server(irc, uplink, name, internal=False, desc="(None given)")`
+- `Channel(self, name)` - First arg is the protocol object, second is the channel name.
+- `User(self, nick, ts, uid, server, ident='null', host='null', realname='PyLink dummy client', realhost='null', ip='0.0.0.0', manipulatable=False, opertype='IRC Operator')` - These arguments are essentially the same as `spawn_client()`'s.
+- `Server(self, uplink, name, internal=False, desc="(None given)")`
     - The `uplink` (type `str`) option sets the SID of the uplink server, or *None* for both the main PyLink server and its uplink.
     - The `name` option sets the server name.
     - The `internal` boolean sets whether the server is an internal PyLink server.
     - The `desc` option sets the server description, when applicable.
 
 #### Statekeeping specifics
-- When a user is introduced, their UID must be added to both `irc.users` and to the `users` set in the `Server` object hosting the user (`irc.servers[SID].users`). The latter list is used internally to track SQUITs.
-- When a user joins a channel, the channel name is added to the User object's `channels` set (`irc.users[UID].channels`), as well as the Channel object's user list (`irc.channels[CHANNELNAME].users`)
+- When a user is introduced, their UID must be added to both `self.users` and to the `users` set in the `Server` object hosting the user (`self.servers[SID].users`). The latter list is used internally to track SQUITs.
+- When a user joins a channel, the channel name is added to the User object's `channels` set (`self.users[UID].channels`), as well as the Channel object's user list (`self.channels[CHANNELNAME].users`)
 - When a user disconnects, the `_remove_client` helper method can be called on their UID to automatically remove them from the relevant Server object, as well as all channels they were in.
 - When a user leaves a channel, the `Channel.remove_user()` method can be used to easily remove them from the channel state, and vice versa.
 
@@ -164,19 +165,19 @@ The `Channel`, `User`, and `Server` classes are initiated as follows:
 
 Modes are stored not stored as strings, but lists of mode pairs in order to ease parsing. These lists of mode pairs are used both to represent mode changes in hooks and store modes internally.
 
-`irc.parse_modes(target, modestring)` is used to convert mode strings to mode lists. `target` is the channel name/UID the mode is being set on, while `modestring` takes either a string or string split by spaces (really a list).
+`self.parse_modes(target, modestring)` is used to convert mode strings to mode lists. `target` is the channel name/UID the mode is being set on, while `modestring` takes either a string or string split by spaces (really a list).
 
-- `irc.parse_modes('#chat', ['+tHIs', '*!*@is.sparta'])` would give:
+- `self.parse_modes('#chat', ['+tHIs', '*!*@is.sparta'])` would give:
     - `[('+t', None), ('+H', None), ('+I', '*!*@is.sparta'), ('+s', None)]`
 
 `parse_modes()` will also automatically convert prefix mode targets from nicks to UIDs, and drop any duplicate (already set) or invalid (e.g. missing argument) modes.
 
-- `irc.parse_modes('#chat', ['+ol invalidnick'])`:
+- `self.parse_modes('#chat', ['+ol invalidnick'])`:
     - `[]`
-- `irc.parse_modes('#chat', ['+o GLolol'])`:
+- `self.parse_modes('#chat', ['+o GLolol'])`:
     - `[('+o', '001ZJZW01')]`
 
-Afterwords, a parsed mode list can be applied to channel name or UID using `irc.apply_modes(target, parsed_modelist)`.
+Afterwords, a parsed mode list can be applied to channel name or UID using `self.apply_modes(target, parsed_modelist)`.
 
 **Note**: for protocols that accept or reject mode changes based on TS (i.e. practically every IRCd), you will want to use [`updateTS(...)`](https://github.com/GLolol/PyLink/blob/master/classes.py#L1484-L1487) instead to only apply the modes if the source TS is lower.
 
@@ -228,7 +229,8 @@ In short, protocol modules have some very important jobs. If any of these aren't
 
 ## Changes to this document
 * 2018-06-26 (2.0-beta1)
-   - Wording tweaks (no functional changes)
+   - Wording tweaks
+   - Consistently refer to protocol module attributes as `self.<whatever>` instead of `irc.<whatever>`
 * 2018-05-09 (2.0-alpha3)
    - `kill` and `kick` implementations should raise `NotImplementedError` if not supported (anti-desync measure).
    - Future PyLink versions will further standardize which functions should be stubbed (no-op) when not available and which should raise an error.
