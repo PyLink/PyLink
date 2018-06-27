@@ -126,8 +126,35 @@ A protocol module should also set the following variables in each instance:
     - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
 - `self.connected`: this is a `threading.Event` object that plugins use to determine if the network has finished bursting. Protocol modules should set this to True via `self.connected.set()` when ready.
 
-## Protocol capabilities
-TODO
+## PyLink Protocol capabilities
+PyLink 1.2 introduced the concept of protocol-defined capabilities, so that plugins wishing to use IRCd-specific features don't have to hard code protocol modules by name. Protocol capabilities are defined in `self.protocol_caps` (a set of strings) and may be changed freely before `self.connected` is set. Individual capabilities are then checked by plugins via `irc.has_cap(capability_name)`.
+
+As of writing, the following protocol capabilities (case-sensitive) are implemented:
+
+### Supported protocol capabilities
+- `can-host-relay` - whether servers using this protocol can host a relay channel (for sanity reasons, this should be off for anything that's not IRC S2S)
+- `can-spawn-clients` - determines whether any spawned clients are real or virtual (mainly for `services_support`).
+- `can-track-servers` - determines whether servers are accurately tracked (for `servermaps` and other statistics)
+- `has-statusmsg` - whether STATUSMSG messages (e.g. `@#channel`) are supported
+- `has-ts` - determines whether channel and user timestamps are trackable (and not just spoofed)
+- `slash-in-hosts` - determines whether `/` is allowed in hostnames
+- `slash-in-nicks` - determines whether `/` is allowed in nicks
+- `ssl-should-verify` - determines whether TLS certificates should be checked for validity by default - this should be enabled for any protocol modules needing to verify a remote server (e.g. Clientbot or a non-IRC API endpoint), and disabled for most IRC S2S links (where self-signed certs are widespread)
+- `underscore-in-hosts` - determines whether `_` is allowed in client hostnames (yes, support for this actually varies by IRCd)
+- `visible-state-only` - determines whether channels should be autocleared when the PyLink client leaves (for clientbot, etc.)
+    - Note: enabling this in a protocol module lets `coremods/handlers` automatically clean up old channels for you!
+
+New protocol capabilities are generally added when needed - see https://github.com/jlu5/PyLink/issues/620
+
+### Abstraction defaults
+
+For reference, the `IRCS2SProtocol` class defines the following by default:
+- `can-host-relay`
+- `can-spawn-clients`
+- `can-track-servers`
+- `has-ts`
+
+Whereas `PyLinkNetworkCore` defines no capabilities (i.e. the empty set) by default.
 
 ## PyLink structures
 In this section, `self` refers to the network object/protocol module instance itself (i.e. from its own perspective).
@@ -227,9 +254,12 @@ In short, protocol modules have some very important jobs. If any of these aren't
 
 6) Check that `recvpass` is correct when applicable, and raise `ProtocolError` with a relevant error message if not.
 
+7) Declare the correct set of protocol module capabilities to prevent confusing PyLink's plugins.
+
 ## Changes to this document
 * 2018-06-26 (2.0-beta1)
-   - Wording tweaks
+   - Added documentation for PyLink protocol capabilities
+   - Wording tweaks, restructured headings
    - Consistently refer to protocol module attributes as `self.<whatever>` instead of `irc.<whatever>`
 * 2018-05-09 (2.0-alpha3)
    - `kill` and `kick` implementations should raise `NotImplementedError` if not supported (anti-desync measure).
