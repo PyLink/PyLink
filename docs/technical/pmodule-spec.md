@@ -105,9 +105,7 @@ optional, and defaults to the one we've stored in the channel state if not given
 
 - **`update_client`**`(self, source, field, text)` - Updates the ident, host, or realname of a PyLink client. `field` should be either "IDENT", "HOST", "GECOS", or "REALNAME". If changing the field given on the IRCd isn't supported, `NotImplementedError` should be raised.
 
-## Things to note
-
-### Special variables
+## Special variables
 
 A protocol module should also set the following variables in each instance:
 
@@ -126,6 +124,12 @@ A protocol module should also set the following variables in each instance:
     - You can find a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
 - `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
     - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
+- `self.connected`: this is a `threading.Event` object that plugins use to determine if the network has finished bursting. Protocol modules should set this to True via `self.connected.set()` when ready.
+
+## Protocol capabilities
+TODO
+
+## PyLink state structures
 
 ### Server, User, Channel classes
 PyLink defines classes named `Server`, `User`, and `Channel` in the `classes` module, and stores dictionaries of these in the `servers`, `users`, and `channels` attributes of a protocol object respectively.
@@ -200,7 +204,7 @@ When receiving or sending topics, there is a `topicset` attribute in the `Channe
 
 *Caveat:* Topic handlers on the current protocol modules do not follow TS rules (which vary by IRCd), and blindly accept data. See issue https://github.com/GLolol/PyLink/issues/277
 
-### Configuration key validation
+## Configuration key validation
 
 Starting with PyLink 1.x, protocol modules can specify which config values within a server block they need in order to work. This is done by adjusting the `self.conf_keys` attribute, usually in the protocol module's `__init__()` method. The default set, defined in [`Classes.Protocol`](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L1202-L1204), includes `{'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass', 'recvpass'}`. Should any of these keys be missing from a server block, PyLink will bail with a configuration error.
 
