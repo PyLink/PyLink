@@ -1,4 +1,4 @@
-# PyLink 2.0-beta1 (unreleased)
+# PyLink 2.0-beta1 (2018-06-27)
 
 This release contains all changes from 2.0-alpha3 as well as the following:
 
