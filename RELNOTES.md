@@ -17,7 +17,7 @@ This release contains all changes from 2.0-alpha3 as well as the following:
     - relay: The defaults for CLAIM (on or off) and LINKACL (whitelist or blacklist mode) can now be pre-configured for new channels. [issue#581](https://github.com/jlu5/PyLink/issues/581)
     - You can now set descriptions for channels in `LINKED` via the `CHANDESC` command. [issue#576](https://github.com/jlu5/PyLink/issues/576)
     - `relay_clientbot` now supports setting clientbot styles by network. [issue#455](https://github.com/jlu5/PyLink/issues/455)
-    - New `relay::allow_free_oper_links` allows disabling oper access to `CREATE/LINK/DELINK/DESTROY/CLAIM` by default
+    - New `relay::allow_free_oper_links` option allows disabling oper access to `CREATE/LINK/DELINK/DESTROY/CLAIM` by default
 - New Antispam features (see the `antispam:` example block for configuration details):
     - Antispam now supports text filtering with configured bad strings. [issue#359](https://github.com/jlu5/PyLink/issues/359)
     - Added `block` as a punishment to only hide messages from other plugins like relay. [issue#616](https://github.com/jlu5/PyLink/issues/616)
@@ -31,7 +31,7 @@ This release contains all changes from 2.0-alpha3 as well as the following:
 #### Feature changes
 - Relay feature changes:
     - Relay IP sharing now uses a pool-based configuration scheme (`relay::ip_share_pools`), deprecating the `relay::show_ips` and `relay_no_ips` options.
-        - IPs and real hosts are shared between all networks in an ipshare pool,
+        - IPs and real hosts are shared bidirectionally between all networks in an ipshare pool, and masked as `0.0.0.0` when sending to a network not in a pool and when receiving those networks' users.
     - **KILL handling received a major rework** ([issue#520](https://github.com/jlu5/PyLink/issues/520):
         - Instead of always bouncing, kills to a relay client can now be forwarded between networks in a killshare pool (`relay::kill_share_pools`).
         - If the sender and target's networks are not in a killshare pool, the kill is forwarded as a kick to all shared channels that the sender
