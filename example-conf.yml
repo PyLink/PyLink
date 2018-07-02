@@ -42,7 +42,8 @@ pylink:
 
     # Determines whether spawning additional services for bots (e.g. Automode, Games) should be
     # enabled. This defaults to True, unless a network's protocol module doesn't support spawning
-    # extra service bots.
+    # extra service bots. If this is set to false, the other plugins' commands and channels will
+    # be merged into that of the main PyLink service bot.
     #spawn_services: true
 
     # Defines extra directories to look up plugins and protocol modules in.
@@ -830,6 +831,8 @@ automode:
     # Determines whether a separate service bot should be spawned for this plugin. This defaults to
     # True, unless a network's protocol module doesn't support spawning extra service bots.
     # This option overrides the global "spawn_services" option defined in "pylink:".
+    # If this is set to False, this plugin's commands and channels will be merged into that of the
+    # main PyLink service bot.
     #spawn_service: true
 
     # Defines a fantasy prefix for the Automode bot (requires spawn_services to be set and the
