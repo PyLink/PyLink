@@ -85,4 +85,17 @@ Commands for service bots and commands for the main PyLink bot have two main dif
 
 ### Featured commands
 
-Commands for service bots can also be marked as *featured*, which shows it with its command arguments in the default `LIST` command. To mark a command as featured, use `myservice.add_cmd(cmdfunc, 'cmdname', featured=True)`.
+Commands for service bots can also be marked as *featured*, which shows it with its command arguments in the default `LIST` command. To mark a command as featured, enable the `featured` option when binding it: e.g. `myservice.add_cmd(cmdfunc, featured=True)`.
+
+### Command aliases
+
+Since PyLink 2.0-alpha1, `ServiceBot.add_cmd(...)` and `utils.add_cmd(...)` support assigning aliases to a command by defining the `aliases` argument. Command aliases do not show in `LIST`, allowing command listings to be much cleaner. Instead, they are only mentioned when `HELP` is called on an alias command name or its parent.
+
+Example:
+
+```python
+myservice.add_cmd(functwo, aliases=('abc',))
+myservice.add_cmd(somefunc, aliases=('command1', 'command2'))
+```
+
+Note: use `(variable,)` to define a one length tuple to [prevent it from being parsed as a single string](https://wiki.python.org/moin/TupleSyntax).
