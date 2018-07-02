@@ -45,35 +45,35 @@ def die(irc=None):
     utils.unregister_service('games')
 ```
 
-Should your service bot define any persistent channels, you will also want to clear them on unload via `myservice.clear_persistent_channels(irc, 'your-namespace', ...)`
+Should your service bot define any persistent channels, you will also want to clear them on unload via `myservice.clear_persistent_channels(None, 'your-namespace', ...)`
 
 ## Persistent channel joining
 
-Since PyLink 2.0-alpha3, persistent channels are handled in a plugin specific manner. For any service bot on any network, a plugin can register a list of channels that the bot should join persistently (i.e. through kicks and kills). Instead of removing channels from service bots directly, plugins then "request" parts through the services API, which succeed only if no plugins still request the channel to be persistent. This rework fixes [edge-case desyncs](https://github.com/jlu5/PyLink/issues/265) in earlier versions when multiple plugins change a service bot's channel list, and replaces the `ServiceBot.extra_channels` attribute (which is no longer supported).
+Since PyLink 2.0-alpha3, persistent channels are handled in a plugin specific manner. For any service bot on any network, a plugin can register a list of channels that the bot should join persistently (i.e. through kicks and kills). Instead of removing channels from service bots directly, plugins then "request" parts through the services API, which succeed only if no other plugins still mark the channel as persistent. This rework fixes [edge-case desyncs](https://github.com/jlu5/PyLink/issues/265) in earlier versions when multiple plugins change a service bot's channel list, and replaces the `ServiceBot.extra_channels` attribute (which is no longer supported).
 
-Note: autojoin channels defined in a network's server block are always treated as persistent on that network.
+Note: Autojoin channels defined in a network's server block are always treated as persistent on that network.
 
 ### Channel management methods
 
-Persistent channels are managed through the following functions implemented by `ServiceBot`. While namespaces for channel registrations can technically be any string, it is preferable to keep them close (or equal) to your plugin name.
+Channels, persistent and otherwise are managed through the following functions implemented by `ServiceBot`. While namespaces for channel registrations can technically be any string, it is preferable to keep them close (or equal) to your plugin name.
 
 - `myservice.add_persistent_channel(irc, namespace, channel, try_join=True)`: Adds a persistent channel to the service bot on the given network and namespace.
-    - `try_join` determines whether the service bot should try to join the channel immediately; you can disable this if you prefer to manage by yourself.
+    - `try_join` determines whether the service bot should try to join the channel immediately; you can disable this if you prefer to manage joins by yourself.
 - `myservice.remove_persistent_channel(irc, namespace, channel, try_part=True, part_reason='')`: Removes a persistent channel from the service bot on the given network and namespace.
     - `try_part` determines whether a part should be requested from the channel immediately. (`part_reason` is ignored if this is False)
 - `myservice.get_persistent_channels(irc, namespace=None)`: Returns a set of persistent channels for the IRC network, optionally filtering by namespace is one is given. The channels defined in the network's server block are also included because they are always treated as persistent.
 - `myservice.clear_persistent_channels(irc, namespace, try_part=True, part_reason='')`: Clears all the persistent channels defined by a namespace. `irc` can also be `None` to clear persistent channels for all networks in this namespace.
-- `myservice.join(irc, channels, ignore_empty=True)`: Joins the given service bot to the given channel(s). "channels" can be an iterable of channel names or the name of a single channel (type `str`).
-    - The `ignore_empty` option sets whether we should skip joining empty channels and join them later when we see someone else join (if it is marked persistent). This option is automatically *disabled* on networks where we cannot monitor channels that we are not in (e.g. on Clientbot).
+- `myservice.join(irc, channels, ignore_empty=True)`: Joins the given service bot to the given channel(s). `channels` can be an iterable of channel names or the name of a single channel (type `str`).
+    - The `ignore_empty` option sets whether we should skip joining empty channels and join them later when we see someone else join (if it is marked persistent). This option is automatically *disabled* on networks where we cannot monitor channels we're not in (e.g. on Clientbot).
     - Before 2.0-alpha3, this function implicitly marks channels it receives to be persistent - this is no longer the case!
 - `myservice.part(irc, channels, reason='')`: Requests a part from the given channel(s) - that is, leave only if no other plugins still register it as a persistent channel.
-    - `channels` can be an iterable of channel names or the name of a single channel (type `str'`).
+    - `channels` can be an iterable of channel names or the name of a single channel (type `str`).
 
 ### A note on dynamicness
 
-As of PyLink 2.0-alpha3, persistent channels are also "dynamic" in the sense that PyLink service bots will part channels marked persistent when they become empty, and rejoin when it is recreated. This feature will hopefully be more fine-tunable in future releases.
+As of PyLink 2.0-alpha3, persistent channels are also "dynamic" in the sense that PyLink service bots will part channels marked persistent when they become empty, and rejoin when they are recreated. This feature will hopefully be more fine-tunable in future releases.
 
-Dynamic channels are disabled on networks with the `visible-state-only` [protocol capability](pmodule-spec.md#pylink-protocol-capabilities) (e.g. Clientbot), where it is impossible to monitor the state of channels the bot is not in.
+Dynamic channels are disabled on networks with the [`visible-state-only` protocol capability](pmodule-spec.md#pylink-protocol-capabilities) (e.g. Clientbot), where it is impossible to monitor the state of channels the bot is not in.
 
 ## Service bots and commands
 
