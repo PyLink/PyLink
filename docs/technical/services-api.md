@@ -1,6 +1,6 @@
 # PyLink Services Bot API
 
-The goal of PyLink's Services API is to make writing custom services easier. It is able to automatically spawn service bots on connect, handle rejoins on kill and kick, and expose a way for plugins to bind commands to various services bots. It also handles U-line servprotect modes when enabled and supported on a particular network (the `protect_services` option).
+The goal of PyLink's Services API is to make writing custom services easier. It is able to automatically spawn service bots on connect, handle rejoins on kill and kick, and expose a way for plugins to bind commands to various services bots. It also handles U-line servprotect modes when enabled and supported on a particular network (i.e. the `protect_services` option).
 
 ## Basic service creation
 
@@ -98,4 +98,4 @@ myservice.add_cmd(functwo, aliases=('abc',))
 myservice.add_cmd(somefunc, aliases=('command1', 'command2'))
 ```
 
-Note: use `(variable,)` to define a one length tuple to [prevent it from being parsed as a single string](https://wiki.python.org/moin/TupleSyntax).
+Note: use `(variable,)` when defining one length tuples to [prevent them from being parsed as a single string](https://wiki.python.org/moin/TupleSyntax).
