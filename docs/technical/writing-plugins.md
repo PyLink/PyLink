@@ -41,7 +41,8 @@ Commands are registered by calling `utils.add_cmd()` with one or two arguments. 
 - `utils.add_cmd(testcommand, "hello")` registers a function named `testcommand` as the command handler for `hello` (i.e. `/msg PyLink hello`)
 - `utils.add_cmd(testcommand)` registers a function named `testcommand` as the command handler for `testcommand`.
 
-Decorator syntax (`@utils.add_cmd`) can also be used for the second case.
+`utils.add_cmd(...)` also takes some keyword arguments, described in the [services API guide](services-api.md#service-bots-and-commands) (replace `myservice.add_cmd` with `utils.add_cmd`). Decorator syntax (`@utils.add_cmd`) can also be used for the second example above.
+
 
 Each command handler function takes 3 arguments: `irc, source, args`.
 - **irc**: The network object where the command was called.
