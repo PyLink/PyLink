@@ -79,8 +79,8 @@ See the [Permissions API documentation](permissions-api.md) on how to restrict c
 
 The following functions can also be defined in the body of a plugin to hook onto plugin loading / unloading.
 
-`main(irc=None)`: Called on plugin load. `irc` is only defined when the plugin is being reloaded from a network: otherwise, it means that PyLink has just been started.
-`die(irc=None)`: Called on plugin unload or daemon shutdown. `irc` is only defined when the shutdown or unload was called from an IRC network.
+- `main(irc=None)`: Called on plugin load. `irc` is only defined when the plugin is being reloaded from a network: otherwise, it means that PyLink has just been started.
+- `die(irc=None)`: Called on plugin unload or daemon shutdown. `irc` is only defined when the shutdown or unload was called from an IRC network.
 
 ## Other tips
 
@@ -91,10 +91,10 @@ Use PyLink's [global logger](https://docs.python.org/3/library/logging.html) (`f
 ### Some useful attributes
 
 - **`world.networkobjects`** provides a dict mapping network names (case sensitive) to their corresponding network objects/protocol module instances.
-- **`irc.connected` is a [`threading.Event()`](https://docs.python.org/3/library/threading.html#event-objects) object that is set when a network finishes bursting.
-- **`world.started` is a [`threading.Event()`](https://docs.python.org/3/library/threading.html#event-objects) object that is set when all networks have been initialized.
-- **`world.plugins` provides a dict mapping loaded plugins' names (case sensitive) to their module objects. This is the preferred way to call another plugins's methods if need be (while of course, forcing you to check whether the other plugin is already loaded).
-- **`world.services` provides a dict mapping service bot names to their `utils.ServiceBot` instances.
+- **`irc.connected`** is a [`threading.Event()`](https://docs.python.org/3/library/threading.html#event-objects) object that is set when a network finishes bursting.
+- `world.started` is a [`threading.Event()`](https://docs.python.org/3/library/threading.html#event-objects) object that is set when all networks have been initialized.
+- `world.plugins` provides a dict mapping loaded plugins' names (case sensitive) to their module objects. This is the preferred way to call another plugins's methods if need be (while of course, forcing you to check whether the other plugin is already loaded).
+- `world.services` provides a dict mapping service bot names to their `utils.ServiceBot` instances.
 
 ### Useful modules
 
