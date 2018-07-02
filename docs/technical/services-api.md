@@ -28,7 +28,7 @@ myservice = utils.register_service("myservice", desc=desc)
 - `manipulatable` - Determines whether the bot is marked manipulatable. Only manipulatable clients can be force joined, etc. using PyLink commands. Defaults to False.
 - `desc` - Sets the command description of the service. This is shown in the default HELP command if enabled.
 
-**NOTE**: It is a good practice for the SERVICE name in `utils.registerService("SERVICE")` to match your plugin name, as the service bot API implicitly loads [configuration options](../advanced-services-config.md) from config blocks named `SERVICE:`.
+**NOTE**: It is a good practice for the SERVICE name in `utils.register_service("SERVICE")` to match your plugin name, as the service bot API implicitly loads [configuration options](../advanced-services-config.md) from config blocks named `SERVICE:`.
 
 ### Getting the UID of a bot
 
@@ -45,8 +45,8 @@ However, plugins can persistently join service bots to specific channels by call
 All plugins using the services API **MUST** have a `die()` function that unregisters all service bots that they've created. A simple example would be in the `games` plugin:
 
 ```python
-def die(irc):
-    utils.unregisterService('games')
+def die(irc=None):
+    utils.unregister_service('games')
 ```
 
 ## Service bots and commands
