@@ -153,11 +153,15 @@ class ServiceBot():
     def join(self, irc, channels, ignore_empty=True):
         """
         Joins the given service bot to the given channel(s). "channels" can be
-        an iterable of channel names or the name of a single channel (str).
+        an iterable of channel names or the name of a single channel (type 'str').
 
         The ignore_empty option sets whether we should skip joining empty
-        channels and join them later when we see someone else join. This is
-        option is disabled on networks where we cannot monitor channel state.
+        channels and join them later when we see someone else join (for channels
+        marked persistent). This option is automatically *disabled* on networks
+        where we cannot monitor channels that we're not in (e.g. Clientbot).
+
+        Before PyLink 2.0-alpha3, this function implicitly marks channels i
+        receives to be persistent - this is no longer the case!
         """
         uid = self.uids.get(irc.name)
         if uid is None:
@@ -201,7 +205,7 @@ class ServiceBot():
         still register it as a persistent dynamic channel.
 
         "channels" can be an iterable of channel names or the name of a single
-        channel (str).
+        channel (type 'str').
         """
         uid = self.uids.get(irc.name)
         if uid is None:
