@@ -21,7 +21,7 @@ When writing new protocol modules, it is recommended to subclass from one of the
 To use `classes.IRCNetwork`, the following functions must be defined:
 
 - `handle_events(self, data)`: given a line of text containing an IRC command, parse it and return a hook payload as specified in the [PyLink hooks reference](hooks-reference.md).
-    - In all of the official PyLink modules so far, handling for specific commands is delegated into submethods via [`getattr()`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/protocols/ircs2s_common.py#L409-L412), and unknown commands are ignored.
+    - In all of the official PyLink modules so far, handling for specific commands is delegated into submethods via [`getattr()`](https://github.com/jlu5/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/protocols/ircs2s_common.py#L409-L412), and unknown commands are ignored.
 - `post_connect(self)`: This method sends the server introduction commands to the uplink IRC server. This method replaces the `connect()` function defined by protocol modules prior to PyLink 2.x.
 - `_ping_uplink(self)`: Sends a ping command to the uplink. No return value is expected / used.
 
@@ -53,7 +53,7 @@ For protocols that are closely related to existing ones, it may be wise to subcl
 
 The methods defined below are integral to any protocol module, as they are needed by plugins to communicate with the rest of the world.
 
-Unless otherwise noted, the camel-case variants of command functions (e.g. "`spawnClient`) are supported but deprecated. Protocol modules do *not* need to implement these aliases themselves; attempts to missing camel case functions are automatically coersed into their snake case variants via the [`structures.CamelCaseToSnakeCase`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/structures.py#L172-L197) wrapper.
+Unless otherwise noted, the camel-case variants of command functions (e.g. "`spawnClient`) are supported but deprecated. Protocol modules do *not* need to implement these aliases themselves; attempts to missing camel case functions are automatically coersed into their snake case variants via the [`structures.CamelCaseToSnakeCase`](https://github.com/jlu5/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/structures.py#L172-L197) wrapper.
 
 - **`spawn_client`**`(self, nick, ident='null', host='null', realhost=None, modes=set(), server=None, ip='0.0.0.0', realname=None, ts=None, opertype=None, manipulatable=False)` - Spawns a client on the PyLink server. No nick collision / valid nickname checks are done by protocol modules, as it is up to plugins to make sure they don't introduce anything invalid.
     - `modes` is a list or set of `(mode char, mode arg)` tuples in the [PyLink mode format](#mode-formats).
@@ -111,7 +111,7 @@ A protocol module should also set the following variables in each instance:
 
 - `self.casemapping`: a string (`'rfc1459'` or `'ascii'`) to determine which case mapping the IRCd uses.
 - `self.hook_map`: this is a `dict`, which maps non-standard command names sent by the IRCd to those used by [PyLink hooks](hooks-reference.md).
-    - Examples exist in the [UnrealIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/unreal.py#L24-L27) and [InspIRCd](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/inspircd.py#L25-L28) modules.
+    - Examples exist in the [UnrealIRCd](https://github.com/jlu5/PyLink/blob/1.0-beta1/protocols/unreal.py#L24-L27) and [InspIRCd](https://github.com/jlu5/PyLink/blob/1.0-beta1/protocols/inspircd.py#L25-L28) modules.
 - `self.conf_keys`: a set of strings determining which server configuration options a protocol module needs to function; see the [Configuration key validation](#configuration-key-validation) section below.
 - `self.cmodes` / `self.umodes`: These are mappings of named IRC modes (e.g. `inviteonly` or `moderated`) to a string list of mode letters, that should be either set during link negotiation or hardcoded into the protocol module. There are also special keys: `*A`, `*B`, `*C`, and `*D`, which **must** be set properly with a list of mode characters for that type of mode.
     - Types of modes are defined as follows (from http://www.irc.org/tech_docs/005.html):
@@ -119,8 +119,8 @@ A protocol module should also set the following variables in each instance:
         - B = Mode that changes a setting and always has a parameter.
         - C = Mode that changes a setting and only has a parameter when set.
         - D = Mode that changes a setting and never has a parameter.
-    - If not defined, these will default to modes defined by RFC 1459: https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L127-L152
-    - An example of mode mapping hardcoding can be found here: https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/ts6.py#L259-L311
+    - If not defined, these will default to modes defined by RFC 1459: https://github.com/jlu5/PyLink/blob/1.0-beta1/classes.py#L127-L152
+    - An example of mode mapping hardcoding can be found here: https://github.com/jlu5/PyLink/blob/1.0-beta1/protocols/ts6.py#L259-L311
     - You can find a list of supported (named) channel modes [here](channel-modes.csv), and a list of user modes [here](user-modes.csv).
 - `self.prefixmodes`: This defines a mapping of prefix modes (+o, +v, etc.) to their respective mode prefix. This will default to `{'o': '@', 'v': '+'}` (the standard op and voice) if not defined.
     - Example: `self.prefixmodes = {'o': '@', 'h': '%', 'v': '+'}`
@@ -164,11 +164,11 @@ PyLink defines classes named `Server`, `User`, and `Channel` in the `classes` mo
 
 - `self.servers` is a dictionary mapping server IDs (SIDs) to `Server` objects. If a protocol module does not use SIDs, servers are stored by server name instead.
 
-- `self.users` is a dictionary mapping user IDs (UIDs) to `User` objects. If a protocol module does not use UIDs, a pseudo UID (PUID) generator such as [`classes.PUIDGenerator`](https://github.com/GLolol/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/classes.py#L1710-L1726) *must* be used instead.
+- `self.users` is a dictionary mapping user IDs (UIDs) to `User` objects. If a protocol module does not use UIDs, a pseudo UID (PUID) generator such as [`classes.PUIDGenerator`](https://github.com/jlu5/PyLink/blob/3922d44173593e4bcceae1218bbc6f267caa9fc1/classes.py#L1710-L1726) *must* be used instead.
     - The rationale behind this is because plugins tracking user lists are not designed to remove and re-add users when they change their nicks.
-    - When sending text back to the protocol module, it may be helpful to use the [`_expandPUID()`](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/classes.py#L1213-L1231) function in `PyLinkNetworkCoreWithUtils` to expand these pseudo-UIDs back to regular nicks.
+    - When sending text back to the protocol module, it may be helpful to use the [`_expandPUID()`](https://github.com/jlu5/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/classes.py#L1213-L1231) function in `PyLinkNetworkCoreWithUtils` to expand these pseudo-UIDs back to regular nicks.
 
-- `self._channels` and `self.channels` are [IRC case-insensitive dictionaries](https://github.com/GLolol/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/structures.py#L114-L116) mapping channel names to Channel objects.
+- `self._channels` and `self.channels` are [IRC case-insensitive dictionaries](https://github.com/jlu5/PyLink/blob/4a363aee509c5a0488a38b9e60f93ec59a274c3c/structures.py#L114-L116) mapping channel names to Channel objects.
     - The key difference between these two dictionaries is that `_channels` is powered by `classes.ChannelState` and creates new channels *automatically* when they are accessed by index. This makes writing protocol modules easier, as they can assume that the channels they wish to modify always exist (no chance of `KeyError`!).
     - `self.channels`, on the other hand, does *not* implicitly create channels and is thus better suited for plugins.
 
@@ -206,7 +206,7 @@ Modes are stored not stored as strings, but lists of mode pairs in order to ease
 
 Afterwords, a parsed mode list can be applied to channel name or UID using `self.apply_modes(target, parsed_modelist)`.
 
-**Note**: for protocols that accept or reject mode changes based on TS (i.e. practically every IRCd), you will want to use [`updateTS(...)`](https://github.com/GLolol/PyLink/blob/master/classes.py#L1484-L1487) instead to only apply the modes if the source TS is lower.
+**Note**: for protocols that accept or reject mode changes based on TS (i.e. practically every IRCd), you will want to use [`updateTS(...)`](https://github.com/jlu5/PyLink/blob/master/classes.py#L1484-L1487) instead to only apply the modes if the source TS is lower.
 
 Internally, modes are stored in `Channel` and `User` objects as sets, **with the `+` prefixing each mode character omitted**. These sets are accessed via the `modes` attribute:
 
@@ -230,13 +230,13 @@ When a certain mode (e.g. owner) isn't supported on a network, the key still exi
 
 When receiving or sending topics, there is a `topicset` attribute in the `Channel` object that should be set to **True**. This boolean denotes that a topic has been set in the channel at least once; Relay uses it to know not to overwrite topics with empty ones during startup, when topics have not been received from all networks yet.
 
-*Caveat:* Topic handlers on the current protocol modules do not follow TS rules (which vary by IRCd), and blindly accept data. See issue https://github.com/GLolol/PyLink/issues/277
+*Caveat:* Topic handlers on the current protocol modules do not follow TS rules (which vary by IRCd), and blindly accept data. See issue https://github.com/jlu5/PyLink/issues/277
 
 ## Configuration key validation
 
-Starting with PyLink 1.x, protocol modules can specify which config values within a server block they need in order to work. This is done by adjusting the `self.conf_keys` attribute, usually in the protocol module's `__init__()` method. The default set, defined in [`Classes.Protocol`](https://github.com/GLolol/PyLink/blob/1.0-beta1/classes.py#L1202-L1204), includes `{'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass', 'recvpass'}`. Should any of these keys be missing from a server block, PyLink will bail with a configuration error.
+Starting with PyLink 1.x, protocol modules can specify which config values within a server block they need in order to work. This is done by adjusting the `self.conf_keys` attribute, usually in the protocol module's `__init__()` method. The default set, defined in [`Classes.Protocol`](https://github.com/jlu5/PyLink/blob/1.0-beta1/classes.py#L1202-L1204), includes `{'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass', 'recvpass'}`. Should any of these keys be missing from a server block, PyLink will bail with a configuration error.
 
-As an example, one protocol module that tweaks this is [`Clientbot`](https://github.com/GLolol/PyLink/blob/1.0-beta1/protocols/clientbot.py#L17-L18), which removes all options except `ip`, `protocol`, and `port`.
+As an example, one protocol module that tweaks this is [`Clientbot`](https://github.com/jlu5/PyLink/blob/1.0-beta1/protocols/clientbot.py#L17-L18), which removes all options except `ip`, `protocol`, and `port`.
 
 ## The final checklist
 

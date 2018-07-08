@@ -46,7 +46,7 @@ def randint(irc, source, args):
     #   as distinct lines in IRC.
 
     # Note: you shouldn't make any one paragraph too long, since they may get cut off. Automatic
-    # word-wrap may be added in the future; see https://github.com/GLolol/PyLink/issues/153
+    # word-wrap may be added in the future; see https://github.com/jlu5/PyLink/issues/153
     """[<min> <max>]
 
     Returns a random number between <min> and <max>. <min> and <max> default to 1 and 10

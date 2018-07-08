@@ -24,7 +24,7 @@ PyLink and any bundled software are licensed under the Mozilla Public License, v
 
 **When upgrading between major versions, remember to read the [release notes](RELNOTES.md) for any breaking changes!**
 
-Please report any bugs you find to the [issue tracker](https://github.com/GLolol/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
+Please report any bugs you find to the [issue tracker](https://github.com/jlu5/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
 You can also find support via our IRC channel at `#PyLink @ irc.overdrivenetworks.com `([webchat][webchatlink]). Ask your questions and be patient for a response.
 
@@ -47,7 +47,7 @@ If you are a developer and want to help make PyLink more portable, patches are h
     * *For enhanced cron support (by removing stale PID files): psutil (`pip3 install psutil`)
     * *For the servprotect plugin*: expiringdict (`pip3 install expiringdict`)
 
-2) Clone the repository: `git clone https://github.com/GLolol/PyLink && cd PyLink`
+2) Clone the repository: `git clone https://github.com/jlu5/PyLink && cd PyLink`
 
 3) Pick your branch.
     * By default you'll be on the **master** branch, which contains the latest stable code. This branch is recommended for production networks that don't require new features or intensive bug fixes as they are developed.
@@ -62,7 +62,7 @@ If you are a developer and want to help make PyLink more portable, patches are h
 
 2) Run `pip3 install pylinkirc` to download and install PyLink. pip will automatically resolve dependencies.
 
-3) Download or copy https://github.com/GLolol/PyLink/blob/master/example-conf.yml for an example configuration.
+3) Download or copy https://github.com/jlu5/PyLink/blob/master/example-conf.yml for an example configuration.
 
 ### Installing via Ubuntu PPA (14.04/Trusty and above)
 

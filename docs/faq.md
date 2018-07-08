@@ -4,7 +4,7 @@
 
 ### I get errors like "ImportError: No module named 'yaml'" when I start PyLink
 
-You are missing dependencies - re-read https://github.com/GLolol/PyLink/blob/master/README.md#installation
+You are missing dependencies - re-read https://github.com/jlu5/PyLink/blob/master/README.md#installation
 
 ### I get errors like "yaml.scanner.ScannerError: while scanning for the next token, found character '\t' that cannot start any token"
 
@@ -66,7 +66,7 @@ If these steps haven't helped you so far, maybe you've found a bug...?
 
 ### My networks keep disconnecting with SSL errors!
 
-See https://github.com/GLolol/PyLink/issues/463 - the problem appears to be caused somewhere in Python's SSL stack and/or OpenSSL, and not directly by our code.
+See https://github.com/jlu5/PyLink/issues/463 - the problem appears to be caused somewhere in Python's SSL stack and/or OpenSSL, and not directly by our code.
 
 Unfortunately, the only workarounds so far are to either disable SSL/TLS, or wrap a plain IRC connection in an external service (stunnel, OpenVPN, etc.)
 
@@ -80,7 +80,7 @@ PyLink does not support inbound connections - much like regular services such as
 
 **No!** Only the PyLink administrator needs to host a PyLink instance with the `relay` plugin loaded, as each instance can connect to multiple networks. Everyone else only needs to add a link block on their IRCd.
 
-InterJanus-style links between PyLink daemons are not supported yet; see https://github.com/GLolol/PyLink/issues/99 for any progress regarding that.
+InterJanus-style links between PyLink daemons are not supported yet; see https://github.com/jlu5/PyLink/issues/99 for any progress regarding that.
 
 ### What are PyLink's advantages over Janus?
 
@@ -99,10 +99,10 @@ However, if the nick mentioned is legal on IRC, this issue is likely caused by a
 
 ### Clientbot doesn't relay both ways!
 
-Load the `relay_clientbot` plugin. https://github.com/GLolol/PyLink/blob/1.3-beta1/example-conf.yml#L465-L468
+Load the `relay_clientbot` plugin. https://github.com/jlu5/PyLink/blob/1.3-beta1/example-conf.yml#L465-L468
 
 ### How do I turn off colors in Clientbot?
-See https://github.com/GLolol/PyLink/blob/master/docs/advanced-relay-config.md#custom-clientbot-styles, especially the section "Disabling Colors/Control Codes".
+See https://github.com/jlu5/PyLink/blob/master/docs/advanced-relay-config.md#custom-clientbot-styles, especially the section "Disabling Colors/Control Codes".
 
 ### Relay is occasionally dropping users from channels!
 
@@ -115,4 +115,4 @@ This usually indicates a serious bug in either Relay or PyLink's protocol module
 
 This indicates either a bug in PyLink's protocol module or (less commonly) a bug in your IRCd. Hint: ENDBURST is likely not being sent or received properly, which causes service bot spawning to never trigger.
 
-Make sure you're using an [officially supported IRCd](https://github.com/GLolol/PyLink#supported-ircds) before requesting help, as custom IRCd code can potentially trigger S2S bugs and is not something we can support.
+Make sure you're using an [officially supported IRCd](https://github.com/jlu5/PyLink#supported-ircds) before requesting help, as custom IRCd code can potentially trigger S2S bugs and is not something we can support.

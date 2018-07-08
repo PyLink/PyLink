@@ -16,13 +16,13 @@ from pylinkirc.coremods import permissions
 
 Individual functions check for permissions using the `permissions.checkPermissions(irc, source, ['perm.1', 'perm.2'])` function, where the last argument is an OR'ed list of permissions matched against a list of permission string globs that a user may have. If the user has any of the permissions in the permission list, they will be allowed to call the command. This function returns `True` when a permission check passes, and raises `utils.NotAuthorizedError` when a check fails, automatically aborting the execution of the command function.
 
-`utils.NotAuthorizedError` can be treated like any other exception, so it's possible to wrap it around `try:` / `except:` for more complex access checking ([example in the Automode plugin](https://github.com/GLolol/PyLink/blob/1.1.1/plugins/automode.py#L64-L68)).
+`utils.NotAuthorizedError` can be treated like any other exception, so it's possible to wrap it around `try:` / `except:` for more complex access checking ([example in the Automode plugin](https://github.com/jlu5/PyLink/blob/1.1.1/plugins/automode.py#L64-L68)).
 
 ## Assigning default permissions
 
 Plugins are also allowed to assign default permissions to their commands, though this should be used sparingly to ensure maximum configurability (explicitly removing permissions isn't supported yet). Default permissions are specified as a `dict` mapping targets to permission lists.
 
-Example of this in [Automode](https://github.com/GLolol/PyLink/blob/1.1-alpha1/plugins/automode.py#L38-L39):
+Example of this in [Automode](https://github.com/jlu5/PyLink/blob/1.1-alpha1/plugins/automode.py#L38-L39):
 
 ```python
 # The default set of Automode permissions.

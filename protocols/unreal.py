@@ -16,7 +16,7 @@ SJOIN_PREFIXES = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+', 'b': '&', 'e
 
 class UnrealProtocol(TS6BaseProtocol):
     # I'm not sure what the real limit is, but the text posted at
-    # https://github.com/GLolol/PyLink/issues/378 suggests 427 characters.
+    # https://github.com/jlu5/PyLink/issues/378 suggests 427 characters.
     # https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
     # also help. (but why BUFSIZE-*80*?) -GL
     S2S_BUFSIZE = 427
@@ -179,7 +179,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         sjoin_prefix += " :"
         # Wrap arguments to the max supported S2S line length to prevent cutoff
-        # (https://github.com/GLolol/PyLink/issues/378)
+        # (https://github.com/jlu5/PyLink/issues/378)
         for line in utils.wrap_arguments(sjoin_prefix, itemlist, self.S2S_BUFSIZE):
             self.send(line)
 

@@ -497,7 +497,7 @@ class ServiceBot():
                     _reply(args_desc.strip())
                     if not shortform:
                         # Note: we handle newlines in docstrings a bit differently. Per
-                        # https://github.com/GLolol/PyLink/issues/307, only double newlines (and
+                        # https://github.com/jlu5/PyLink/issues/307, only double newlines (and
                         # combinations of more) have the effect of showing a new line on IRC.
                         # Single newlines are stripped so that word wrap can be applied in source
                         # code without affecting the output on IRC.

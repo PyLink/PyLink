@@ -34,4 +34,4 @@ See the [Permissions Reference](permissions-reference.md#automode) for a list of
 
 ## Caveats
 
-- Service bot joining and Relay don't always behave consistently: see https://github.com/GLolol/PyLink/issues/265
+- Service bot joining and Relay don't always behave consistently: see https://github.com/jlu5/PyLink/issues/265
