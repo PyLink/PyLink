@@ -1915,7 +1915,7 @@ def handle_kill(irc, numeric, command, args):
         origirc = world.networkobjects[realuser[0]]
 
         # If we're allowed to forward kills, then do so.
-        if _has_common_pool(irc.name, realuser[0], 'kill_share_pools'):
+        if _has_common_pool(irc.name, realuser[0], 'kill_share_pools') and numeric in irc.users:
             def _relay_kill_loop(irc, remoteirc):
                 if remoteirc == origirc:
                     # Don't bother with get_orig_user when we relay onto the target's home net
@@ -1939,7 +1939,7 @@ def handle_kill(irc, numeric, command, args):
 
                 if localchan:
                     # Forward kills as kicks in all channels that the sender has CLAIM access to.
-                    if check_claim(irc, localchan, numeric):
+                    if check_claim(irc, localchan, numeric) and numeric in irc.users:
                         target_nick = origirc.get_friendly_name(realuser[1])
 
                         def _relay_kill_to_kick(origirc, remoteirc, rtarget):
