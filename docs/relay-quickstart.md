@@ -13,18 +13,18 @@ How is this relevant to an operator? Firstly, it means that you **cannot ban use
 ## Services compatibility
 While PyLink is generally able to run independently of individual networks's services, there are some gotchas. This list briefly details services features that have been known to cause problems with Relay. **Using any of these features in conjunction with Relay is *not* supported.**
 
-- Anope, Atheme: **Clones prevention should be DISABLED** (or at the latest, set to use G/KLINE instead of KILL)
-	- Rationale: it is common for a person to want to connect to multiple networks in a relay instance, because they are still independent entities. You can still use IRCd-side clones prevention, which sanely blocks connections instead of killing / banning everyone affected.
+- Anope, Atheme: **Clones prevention should be DISABLED** (or at a minimum, set to use G/KLINE instead of KILL)
+    - Rationale: it is common for a person to want to connect to multiple networks in a relay instance, because they are still independent entities. You can still use IRCd-side clones prevention, which sanely blocks connections instead of killing / banning everyone involved.
 - Anope: **SQLINE nicks should NOT be used**
-	- Rationale: Anope falls back to killing target clients matching a SQLINE, which will obviously cause conflicts with other services.
+    - Rationale: Anope falls back to killing target clients matching a SQLINE, which will obviously cause conflicts with other services.
 - *Any*: **Do NOT register a relayed channel on multiple networks**
-	- Rationale: It is very easy for this to start kick or mode wars. (Bad akick mask? Secure ops enabled?)
+    - Rationale: It is very easy for this to start kick or mode wars. (Bad akick mask? Secure ops enabled?)
 - *Any*: **Do NOT jupe virtual relay servers** (e.g. `net.relay`)
-	- Rationale: This will just make PyLink split off - you should instead [delink any problem networks / channels](#dealing-with-disputes-and-emergencies).
+    - Rationale: This will just make PyLink split off - you should instead [delink any problem networks / channels](#dealing-with-disputes-and-emergencies).
 - Multiple PyLink Relay instances:
-	- **Do NOT connect a network twice to any PyLink instance**.
-	- **Do NOT connect a network to 2+ separate PyLink instances if there is another network already acting as a hub for them**.
-	- Not following these rules means that it's very easy for the Relay instances to go in a loop, whcih will hammer your CPU and seriously spam your channels.
+    - **Do NOT connect a network twice to any PyLink instance**.
+    - **Do NOT connect a network to 2+ separate PyLink instances if there is another network already acting as a hub for them**.
+    - Not following these rules means that it's very easy for the Relay instances to go in a loop, whcih will hammer your CPU and seriously spam your channels.
 
 ## Relay commands
 The concept of relay channels in PyLink is greatly inspired by Janus, though with a few differences in command syntax.
