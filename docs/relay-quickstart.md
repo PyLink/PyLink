@@ -52,7 +52,7 @@ Then, to list all available channels:
 
 ### Claiming channels
 
-Channel claims are a feature which prevents oper override (MODE, KICK, TOPIC, KILL, OJOIN, ...) from working on channels not owned by or whitelisting a network. By default, CLAIM is enabled for all new channels, though this can be configured in 2.0+ via the [`relay::enable_default_claim` option](https://github.com/jlu5/PyLink/blob/2.0-beta1/example-conf.yml#L771-L774). Unless the claimed network list of a channel is EMPTY, oper override will only be allowed from networks on that list.
+Channel claims are a feature which prevents oper override (MODE, KICK, TOPIC, KILL, OJOIN, ...) from working on channels not owned by or whitelisting a network. By default, CLAIM is enabled for all new channels, though this can be configured in PyLink 2.0+ via the [`relay::enable_default_claim` option](https://github.com/jlu5/PyLink/blob/2.0-beta1/example-conf.yml#L771-L774). Unless the claimed network list of a channel is EMPTY, oper override will only be allowed from networks on that list.
 
 To set a claim (note: for these commands, you must be on the network which created the channel in question!):
 - `/msg PyLink claim #channel yournet,net2,net3` (the last parameter is a case-sensitive comma-separated list of networks)
@@ -80,7 +80,7 @@ To remove a network from the whitelist **OR** add a network to the blacklist:
 - `/msg PyLink linkacl #channel deny goodnet`
 
 ### Adding channel descriptions
-Starting with 2.0, you can annotate your channels with a description to use in LINKED:
+Starting with PyLink 2.0, you can annotate your channels with a description to use in LINKED:
 
 To view the description for a channel:
 - `/msg PyLink chandesc #channel`
@@ -96,7 +96,7 @@ To remove the description for a channel:
 The best thing to do in the event of a dispute is to delink the problem networks / channels. KILLs and network bans (K/G/ZLINE) will most often *not* behave the way you expect it to.
 
 ### Kill handling
-Special kill handling was introduced in 2.0, while in previous versions they were always rejected:
+Special kill handling was introduced in PyLink 2.0, while in previous versions they were always rejected:
 
 1) If the sender was a server and not a client, reject the kill.
 2) If the target and source networks are both in a(ny) [kill share pool](https://github.com/jlu5/PyLink/blob/2.0-beta1/example-conf.yml#L725-L735), relay the kill as-is.
