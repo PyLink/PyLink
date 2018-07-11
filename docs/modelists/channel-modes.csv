@@ -2,6 +2,7 @@ Channel Mode / IRCd,rfc1459,hybrid,inspircd,ngircd,p10/ircu,p10/nefarious,p10/sn
 admin,,,"a (m_customprefix, m_chanprotect)",a,,,,,a (when enabled),a (when enabled),,a
 adminonly,,,,,,a,,A (ext/chm_adminonly),A (ext/chm_adminonly),A (ext/chm_adminonly.so),,
 allowinvite,,,A (m_allowinvite),,,,,g,g,g,,
+auditorium,,,u (m_auditorium),,,,,,,,,
 autoop,,,w (m_autoop),,,,,,,,,
 ban,b,b,b,b,b,b,b,b,b,b,b,b
 banexception,,e,e (m_banexception),e,,e,,e,e,e,e,e
