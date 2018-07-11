@@ -109,6 +109,32 @@ See https://github.com/jlu5/PyLink/blob/master/docs/advanced-relay-config.md#cus
 This usually indicates a serious bug in either Relay or PyLink's protocol modules, and should be reported as an issue. When asking for help, please state which IRCds your PyLink instance is linking to: specifically, which IRCd the missing users are *from* and which IRCd the users are missing *on*. Also, be prepared to send debug logs as you reproduce the issue!
 - Another tip in debugging this is to run `showchan` on the affected channels. If PyLink shows users in `showchan` that aren't in the actual user list, this is most likely a protocol module issue. If `showchan`'s output is correct, it is instead probably a relay issue where users aren't spawning correctly.
 
+### Does relay support mode +R, +M, etc.? How does relay handle modes supported on one IRCd but not on another?
+Essentially, PyLink maps IRCd modes together by name, so modes that use different characters on different IRCds can be recognized as the same "mode". Tables of supported channel modes, user modes, and extbans (in 2.0+) can be found at https://github.com/jlu5/PyLink/tree/devel/docs/modelists. Note that third party/contrib modules implementing modes are generally *not* tested / supported.
+
+Relay in particular uses whitelists to determine which modes are safe to relay: for 2.0.0, this is https://github.com/jlu5/PyLink/blob/71a24b8/plugins/relay.py#L903-L969. **Most *channel* modes recognized by PyLink are whitelisted and usable with Relay**, with the following exceptions:
+
+- "registered" channel / user modes (InspIRCd, UnrealIRCd **+r**) - this is to prevent conflicts with local networks's services.
+- "permanent" channel modes (commonly **+P**) - it's not necessary for remote networks' channels to also be permanent locally.
+- Flood protection modes are only relayed between networks running the same IRCd (UnrealIRCd <-> UnrealIRCd or InspIRCd <-> InspIRCd).
+- Modes and extbans that specify a forwarding channel - mangling channel names between networks is far too complicated and desync prone.
+- InspIRCd's m_ojoin **+Y** and m_operprefix **+y** are ignored by Relay.
+- auditorium (InspIRCd **+u**), delayjoin (UnrealIRCd, P10, InspIRCd **+D**), and any other modes affecting join visibilites are not supported.
+
+Support for user modes is not as complete:
+- Filter type modes such as callerid (**+g**), regonly (**+R**), noctcp (UnrealIRCd **+T**) are *not yet* supported by Relay.
+- Service protection modes (UnrealIRCD **+S**, InspIRCd **+k**, etc.) are not forwarded by Relay to prevent abuse.
+
+### How does Relay handle kills?
+See https://github.com/jlu5/PyLink/blob/devel/docs/relay-quickstart.md#kill-handling
+
+### How does Relay handle KLINE/GLINE/ZLINE?
+
+It doesn't. https://github.com/jlu5/PyLink/issues/521#issuecomment-352316396 explains my reasons for skipping over this:
+
+* The weakest link, whether this be a malicious/compromised/mistaken oper or a misconfigured services instance, can easily wreak havoc by banning something they shouldn't.
+* KLINE relaying goes against the concept of partial network links and creates serious animosity when opers disagree on policy. If KLINEs are shared, opers are essentially shared as well, and this is not the goal of Relay.
+
 ## Services issues
 
 ### Service bots aren't spawning on my network, even though PyLink connects
