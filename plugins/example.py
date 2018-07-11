@@ -44,9 +44,7 @@ def randint(irc, source, args):
     #   line, even though it is physically written on two.
     # - Double line breaks are treated as breaks between two paragraphs, and will be shown
     #   as distinct lines in IRC.
-
-    # Note: you shouldn't make any one paragraph too long, since they may get cut off. Automatic
-    # word-wrap may be added in the future; see https://github.com/jlu5/PyLink/issues/153
+    # As of PyLink 2.0, long paragraphs are automatically word-wrapped by irc.reply().
     """[<min> <max>]
 
     Returns a random number between <min> and <max>. <min> and <max> default to 1 and 10
