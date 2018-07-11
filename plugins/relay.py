@@ -959,10 +959,11 @@ WHITELISTED_UMODES = {
      'hideidle',
      'hideoper',
      'invisible',
-     'noctcp',
+     # XXX: filter-type umodes don't work consistently across IRCds
+     #'noctcp',
      'oper',
-     'regdeaf',
-     'stripcolor',
+     #'regdeaf',
+     #'stripcolor',
      'wallops'
 }
 CLIENTBOT_WHITELISTED_CMODES = {'admin', 'ban', 'banexception', 'halfop', 'invex', 'op', 'owner', 'voice'}
