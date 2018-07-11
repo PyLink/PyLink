@@ -91,11 +91,11 @@ PyLink provides, in no particular order:
     - Better support for channel modes such as +fjMOR, etc.
     - Proper support for nick length limits with relayed users.
 
-### My IRCd SQUITs the relay server with errors like "Bad nickname introduced"!
+### My IRCd SQUITs the Relay server with errors like "Bad nickname introduced"!
 
 First, check whether the SQUIT message includes the nick that triggered the netsplit. If this nick includes any characters not allowed in regular IRC, such as the slash ("/"), or is otherwise an invalid nick (e.g. beginning with a hyphen or number), this likely indicates a bug in PyLink Relay. These problems should be reported on the issue tracker.
 
-However, if the nick mentioned is legal on IRC, this issue is likely caused by a max nick length misconfiguration: i.e. the relay server is introducing nicks too long for the target network. This can be fixed by setting the `maxnicklen` option in the affected network's PyLink `server:` block to the same value as that network's `005` `NICKLEN` (that is, the `NICKLEN=<num>` value in `/raw version`).
+However, if the nick mentioned is legal on IRC, this issue is likely caused by a max nick length misconfiguration: i.e. the Relay server is introducing nicks too long for the target network. This can be fixed by setting the `maxnicklen` option in the affected network's PyLink `server:` block to the same value as that network's `005` `NICKLEN` (that is, the `NICKLEN=<num>` value in `/raw version`).
 
 ### Clientbot doesn't relay both ways!
 
@@ -107,9 +107,9 @@ See https://github.com/jlu5/PyLink/blob/master/docs/advanced-relay-config.md#cus
 ### Relay is occasionally dropping users from channels!
 
 This usually indicates a serious bug in either Relay or PyLink's protocol modules, and should be reported as an issue. When asking for help, please state which IRCds your PyLink instance is linking to: specifically, which IRCd the missing users are *from* and which IRCd the users are missing *on*. Also, be prepared to send debug logs as you reproduce the issue!
-- Another tip in debugging this is to run `showchan` on the affected channels. If PyLink shows users in `showchan` that aren't in the actual user list, this is most likely a protocol module issue. If `showchan`'s output is correct, it is instead probably a relay issue where users aren't spawning correctly.
+- Another tip in debugging this is to run `showchan` on the affected channels. If PyLink shows users in `showchan` that aren't in the actual user list, this is most likely a protocol module issue. If `showchan`'s output is correct, it is instead probably a Relay issue where users aren't spawning correctly.
 
-### Does relay support mode +R, +M, etc.? How does relay handle modes supported on one IRCd but not on another?
+### Does Relay support mode +R, +M, etc.? How does Relay handle modes supported on one IRCd but not on another?
 Essentially, PyLink maps IRCd modes together by name, so modes that use different characters on different IRCds can be recognized as the same "mode". Tables of supported channel modes, user modes, and extbans (in 2.0+) can be found at https://github.com/jlu5/PyLink/tree/devel/docs/modelists. Note that third party/contrib modules implementing modes are generally *not* tested / supported.
 
 Relay in particular uses whitelists to determine which modes are safe to relay: for 2.0.0, this is https://github.com/jlu5/PyLink/blob/71a24b8/plugins/relay.py#L903-L969. **Most *channel* modes recognized by PyLink are whitelisted and usable with Relay**, with the following exceptions:

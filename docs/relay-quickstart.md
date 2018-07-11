@@ -6,7 +6,7 @@ This guide goes over some of the basic commands in Relay, as well as all the mus
 
 ## How nick suffixing work
 
-The default relay configuration in will automatically tag users from other networks with a suffix such as `/net`. The purpose of this is to prevent confusing nick collisions if the same nick is used on multiple linked networks, and ensure that remote networks' nicks effectively use their own namespace.
+The default Relay configuration in will automatically tag users from other networks with a suffix such as `/net`. The purpose of this is to prevent confusing nick collisions if the same nick is used on multiple linked networks, and ensure that remote networks' nicks effectively use their own namespace.
 
 How is this relevant to an operator? Firstly, it means that you **cannot ban users** using banmasks such as `*/net1!*@*`! The nick suffix is something PyLink adds artificially; on `net1`'s IRCd, which check the bans locally, the nick suffix doesn't exist and will therefore *not* match anyone.
 
@@ -14,12 +14,12 @@ How is this relevant to an operator? Firstly, it means that you **cannot ban use
 While PyLink is generally able to run independently of individual networks's services, there are some gotchas. This list briefly details services features that have been known to cause problems with Relay. **Using any of these features in conjunction with Relay is *not* supported.**
 
 - Anope, Atheme: **Clones prevention should be DISABLED** (or at a minimum, set to use G/KLINE instead of KILL)
-    - Rationale: it is common for a person to want to connect to multiple networks in a relay instance, because they are still independent entities. You can still use IRCd-side clones prevention, which sanely blocks connections instead of killing / banning everyone involved.
+    - Rationale: it is common for a person to want to connect to multiple networks in a Relay instance, because they are still independent entities. You can still use IRCd-side clones prevention, which sanely blocks connections instead of killing / banning everyone involved.
 - Anope: **SQLINE nicks should NOT be used**
     - Rationale: Anope falls back to killing target clients matching a SQLINE, which will obviously cause conflicts with other services.
 - *Any*: **Do NOT register a relayed channel on multiple networks**
     - Rationale: It is very easy for this to start kick or mode wars. (Bad akick mask? Secure ops enabled?)
-- *Any*: **Do NOT jupe virtual relay servers** (e.g. `net.relay`)
+- *Any*: **Do NOT jupe virtual Relay servers** (e.g. `net.relay`)
     - Rationale: This will just make PyLink split off - you should instead [delink any problem networks / channels](#dealing-with-disputes-and-emergencies).
 - Multiple PyLink Relay instances:
     - **Do NOT connect a network twice to any PyLink instance**.
