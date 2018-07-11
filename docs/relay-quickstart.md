@@ -68,7 +68,7 @@ LINKACL allows you to blacklist or whitelist networks from linking to your chann
 
 To change between blacklist and whitelist mode:
 - `/msg PyLink linkacl whitelist #channel true/false`
-- Note that when you switch between LINKACL modes, the LINKACL entries from the previous mode are stored and stashed away. This means that you will get an empty LINKACL list in the new mode if you haven't used it already, and that you can reload the previous mode's entries by switching back to it at any point.
+- Note that when you switch between LINKACL modes, the LINKACL entries from the previous mode are stored and stashed away. This means that you will get an empty LINKACL list in the new LINKACL mode if you haven't used it already, and that you can reload the previous LINKACL mode's entries by switching back to it at any point.
 
 To view the LINKACL networks for a channel:
 - `/msg PyLink linkacl #channel list`
@@ -96,7 +96,7 @@ To remove the description for a channel:
 The best thing to do in the event of a dispute is to delink the problem networks / channels. KILLs and network bans (K/G/ZLINE) will most often *not* behave the way you expect it to.
 
 ### Kill handling
-Special kills was introduced in 2.0, while in previous versions they were always rejected:
+Special kill handling was introduced in 2.0, while in previous versions they were always rejected:
 
 1) If the sender was a server and not a client, reject the kill.
 2) If the target and source networks are both in a(ny) [kill share pool](https://github.com/jlu5/PyLink/blob/2.0-beta1/example-conf.yml#L725-L735), relay the kill as-is.
