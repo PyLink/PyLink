@@ -1,6 +1,6 @@
 # PyLink hooks reference
 
-***Last updated for 2.0-alpha2 (2018-01-13).***
+***Last updated for 2.0.0 (2018-07-11).***
 
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
 Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
@@ -161,6 +161,8 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
 At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
 
 ## Changes
+* 2018-07-11 (2.0.0)
+   - Version bump for 2.0 stable release; no meaningful content changes.
 * 2018-01-13 (2.0-alpha2)
    - Replace `IrcChannel`, `IrcUser`, and `IrcServer` with their new class names (`classes.Channel`, `classes.User`, and `classes.Server`)
    - Replace `irc.fullVersion()` with `irc.version()`

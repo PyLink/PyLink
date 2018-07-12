@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.0-beta1 (2018-06-26).***
+***Last updated for 2.0.0 (2018-07-11).***
 
 Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
@@ -257,6 +257,8 @@ In short, protocol modules have some very important jobs. If any of these aren't
 7) Declare the correct set of protocol module capabilities to prevent confusing PyLink's plugins.
 
 ## Changes to this document
+* 2018-07-11 (2.0.0)
+   - Version bump for 2.0 stable release; no meaningful content changes.
 * 2018-06-26 (2.0-beta1)
    - Added documentation for PyLink protocol capabilities
    - Wording tweaks, restructured headings
