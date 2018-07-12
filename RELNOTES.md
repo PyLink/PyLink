@@ -1,3 +1,17 @@
+# PyLink 2.0-rc1 (unreleased)
+
+#### Bug fixes
+- relay: CHANDESC permissions are now given to opers if the `relay::allow_free_oper_links` option is true.
+- Relay no longer forwards kills from servers, preventing extraneous kills for nick collisions and the like.
+- bots: the `join` command now correctly uses `bots.join` as its permission name (keeping it consistent with the command name).
+    - The previous name `bots.joinclient` is still supported for compatibility reasons.
+
+#### Documentation updates
+- Rewrote the Relay Quick Start Guide. [issue#619](https://github.com/jlu5/PyLink/issues/619)
+- FAQ: expanded Relay section with common questions regarding Relay mechanics (i.e. kill, mode, and server bans handling)
+- docs/technical, docs/permissions-reference: many updates to bring up to date with PyLink 2.0
+- various: updated the GitHub repository address
+
 # PyLink 2.0-beta1 (2018-06-27)
 
 This release contains all changes from 2.0-alpha3 as well as the following:
