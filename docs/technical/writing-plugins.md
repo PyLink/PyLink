@@ -31,7 +31,16 @@ The following return values are supported so far:
 Hook handlers may raise exceptions without blocking the event from reaching further handlers; these are caught by PyLink and logged appropriately.
 
 ### Hook priorities
-TODO
+The `priority` option in `utils.add_hook()` allows setting a hook handler's priority when binding it. When multiple modules bind to one hook command, handlers are called in order of decreasing priority (i.e. highest first).
+
+There is no standard for hook priorities as of 2.0; instead they are declared as necessary. Some priority values used in 2.0 are shown here for reference:
+
+| Module            | Commands        | Priority | Description |
+|-------------------|-----------------|----------|-------------|
+| `service_support` | ENDBURST        | 500      | This sets up services bots before plugins run so that they can assume their presence when initializing. |
+| `antispam`        | PRIVMSG, NOTICE | 990-1000 | This allows `antispam` to filter away spam before it can reach other handlers. |
+| `relay`           | PRIVMSG, NOTICE | 200      | Fixes https://github.com/jlu5/PyLink/issues/123. Essentially, this lets Relay forward messages calling commands before letting the command handler work (and then relaying its responses). |
+| `ctcp`            | PRIVMSG         | 200      | The `ctcp` plugin processes CTCPs and blocks them from reaching the services command handler, preventing extraneous "unknown command" errors. |
 
 ### Bot commands
 
