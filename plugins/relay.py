@@ -29,7 +29,7 @@ db = datastore.store
 default_permissions = {"*!*@*": ['relay.linked'],
                        "$ircop": ['relay.linkacl*']}
 default_oper_permissions = {"$ircop": ['relay.create', 'relay.destroy', 'relay.link',
-                                       'relay.delink', 'relay.claim']}
+                                       'relay.delink', 'relay.claim', 'relay.chandesc*']}
 
 ### INTERNAL FUNCTIONS
 
