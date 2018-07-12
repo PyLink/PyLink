@@ -59,6 +59,7 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `exec.exec` - Allows access to the `exec` command.
 - `exec.eval` - Allows access to the `eval` command.
 - `exec.inject` - Allows access to the `inject` command.
+- `exec.threadinfo` - Allows access to the `threadinfo` command.
 
 ## Global
 - `global.global` - Allows access to the `global` command.
@@ -79,6 +80,10 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `opercmds.chghost` - Allows access to the `chghost` command.
 - `opercmds.chgident` - Allows access to the `chgident` command.
 - `opercmds.chgname` - Allows access to the `chgname` command.
+- `opercmds.checkban` - Allows access to the `checkban` command.
+- `opercmds.checkban.re` - Allows access to the `checkbanre` command **if** the caller also has `opercmds.checkban`.
+- `opercmds.massban` - Allows access to the `massban` command.
+- `opercmds.massban.re` - Allows access to the `massbanre` command **if** the caller also has `opercmds.massban`.
 
 ## Raw
 - `raw.raw` - Allows access to the `raw` command. `exec.raw` is equivalent to this and retained for compatibility with PyLink 1.x.
@@ -93,10 +98,12 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `relay.linkacl` - Allows access to the `linkacl` command. **With the default permissions set, this is granted to all opers.**
 - `relay.linkacl.view` - Allows access to the `view` command. **With the default permissions set, this is granted to all opers.**
 - `relay.link` - Allows access to the `link` command. **With the default permissions set, this is granted to all opers.**
-- `relay.link.force` - Allows access to the `--force` option in the `link` command (skip TS and target network is connected checks).
+- `relay.link.force_ts` - Allows access to the `link` command's `--force-ts` option (skip TS and target network is connected checks).
 - `relay.linked` - Allows access to the `link` command. **With the default permissions set, this is granted to all users.**
 - `relay.purge` - Allows access to the `purge` command.
 - `relay.savedb` - Allows access to the `savedb` command.
+- `relay.chandesc.remove` - Allows removing channel descriptions via the `chandesc` command.
+- `relay.chandesc.set` - Allows setting / updating channel descriptions via the `chandesc` command.
 
 ## Servermaps
 - `servermaps.localmap` - Allows access to the `localmap` command.
@@ -104,3 +111,4 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 
 ## Stats
 - `stats.uptime` - Allows access to the `stats` command.
+- `stats.c`, `stats.o`, `stats.u` - Grants access to remote `/stats` calls with the corresponding letter.
