@@ -543,7 +543,6 @@ plugins:
 
     # Antispam plugin: catches and punishes spammers locally and across relays as necessary.
     # You *will need* to configure it via the "antispam:" configuration block below.
-    # Note: Antispam is in ALPHA stages as of 2.0-alpha3 and some options may not work yet.
     #- antispam
 
     # Servprotect plugin: disconnects from networks if too many kills or nick collisions to
@@ -892,8 +891,6 @@ stats:
     # networks.
     # Antispam also integrates with relay by punishing users locally (so that bans, kills, etc.
     # are not bounced by relay) and not relaying messages marked as spam.
-
-    # IMPORTANT: Antispam is in ALPHA stages as of 2.0-alpha3 and some options may not work yet.
 
     # Determines the minimum level of channel access needed to be exempt from Antispam.
     # Note: opers are automatically exempt.
