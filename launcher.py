@@ -14,37 +14,14 @@ try:
 except ImportError:
     psutil = None
 
-def main():
-    import argparse
+args = {}
 
-    parser = argparse.ArgumentParser(description='Starts an instance of PyLink IRC Services.')
-    parser.add_argument('config', help='specifies the path to the config file (defaults to pylink.yml)', nargs='?', default='pylink.yml')
-    parser.add_argument("-v", "--version", help="displays the program version and exits", action='store_true')
-    parser.add_argument("-c", "--check-pid", help="no-op; kept for compatibility with PyLink <= 1.2.x", action='store_true')
-    parser.add_argument("-n", "--no-pid", help="skips generating and checking PID files", action='store_true')
-    parser.add_argument("-r", "--restart", help="restarts the PyLink instance with the given config file", action='store_true')
-    parser.add_argument("-s", "--stop", help="stops the PyLink instance with the given config file", action='store_true')
-    parser.add_argument("-R", "--rehash", help="rehashes the PyLink instance with the given config file", action='store_true')
-    parser.add_argument("-d", "--daemonize", help="[experimental] daemonizes the PyLink instance on POSIX systems", action='store_true')
-    args = parser.parse_args()
-
-    if args.version:  # Display version and exit
-        print('PyLink %s (in VCS: %s)' % (__version__, real_version))
-        sys.exit()
-
-    # XXX: repetitive
-    elif args.no_pid and (args.restart or args.stop or args.rehash):
-        print('ERROR: --no-pid cannot be combined with --restart or --stop')
-        sys.exit(1)
-    elif args.rehash and os.name != 'posix':
-        print('ERROR: Rehashing via the command line is not supported outside Unix.')
-        sys.exit(1)
-
+def _main():
     # FIXME: we can't pass logging on to conf until we set up the config...
-    conf.loadConf(args.config)
+    conf.load_conf(args.config)
 
     from pylinkirc.log import log
-    from pylinkirc import classes, utils, coremods
+    from pylinkirc import classes, utils, coremods, selectdriver
 
     # Write and check for an existing PID file unless specifically told not to.
     if not args.no_pid:
@@ -146,11 +123,11 @@ def main():
 
     # Load configured plugins
     to_load = conf.conf['plugins']
-    utils.resetModuleDirs()
+    utils._reset_module_dirs()
 
     for plugin in to_load:
         try:
-            world.plugins[plugin] = pl = utils.loadPlugin(plugin)
+            world.plugins[plugin] = pl = utils._load_plugin(plugin)
         except Exception as e:
             log.exception('Failed to load plugin %r: %s: %s', plugin, type(e).__name__, str(e))
         else:
@@ -167,11 +144,12 @@ def main():
         else:
             # Fetch the correct protocol module.
             try:
-                proto = utils.getProtocolModule(protoname)
+                proto = utils._get_protocol_module(protoname)
 
                 # Create and connect the network.
+                world.networkobjects[network] = irc = proto.Class(network)
                 log.debug('Connecting to network %r', network)
-                world.networkobjects[network] = classes.Irc(network, proto, conf.conf)
+                irc.connect()
             except:
                 log.exception('(%s) Failed to connect to network %r, skipping it...',
                               network, network)
@@ -179,6 +157,43 @@ def main():
 
     world.started.set()
     log.info("Loaded plugins: %s", ', '.join(sorted(world.plugins.keys())))
+    selectdriver.start()
 
-    from pylinkirc import coremods
-    coremods.permissions.resetPermissions()  # Future note: this is moved to run on import in 2.0
+def main():
+    import argparse
+
+    global args
+
+    parser = argparse.ArgumentParser(description='Starts an instance of PyLink IRC Services.')
+    parser.add_argument('config', help='specifies the path to the config file (defaults to pylink.yml)', nargs='?', default='pylink.yml')
+    parser.add_argument("-v", "--version", help="displays the program version and exits", action='store_true')
+    parser.add_argument("-c", "--check-pid", help="no-op; kept for compatibility with PyLink <= 1.2.x", action='store_true')
+    parser.add_argument("-n", "--no-pid", help="skips generating and checking PID files", action='store_true')
+    parser.add_argument("-r", "--restart", help="restarts the PyLink instance with the given config file", action='store_true')
+    parser.add_argument("-s", "--stop", help="stops the PyLink instance with the given config file", action='store_true')
+    parser.add_argument("-R", "--rehash", help="rehashes the PyLink instance with the given config file", action='store_true')
+    parser.add_argument("-d", "--daemonize", help="[experimental] daemonizes the PyLink instance on POSIX systems", action='store_true')
+    parser.add_argument("-t", "--trace", help="traces through running Python code; useful for debugging", action='store_true')
+    parser.add_argument('--trace-ignore-mods', help='comma-separated list of extra modules to ignore when tracing', action='store', default='')
+    parser.add_argument('--trace-ignore-dirs', help='comma-separated list of extra directories to ignore when tracing', action='store', default='')
+    args = parser.parse_args()
+
+    if args.version:  # Display version and exit
+        print('PyLink %s (in VCS: %s)' % (__version__, real_version))
+        sys.exit()
+
+    # XXX: repetitive
+    elif args.no_pid and (args.restart or args.stop or args.rehash):
+        print('ERROR: --no-pid cannot be combined with --restart or --stop')
+        sys.exit(1)
+    elif args.rehash and os.name != 'posix':
+        print('ERROR: Rehashing via the command line is not supported outside Unix.')
+        sys.exit(1)
+
+    if args.trace:
+        import trace
+        tracer = trace.Trace(ignoremods=args.trace_ignore_mods.split(','),
+                             ignoredirs=args.trace_ignore_dirs.split(','))
+        tracer.runctx('_main()', globals=globals(), locals=locals())
+    else:
+        _main()

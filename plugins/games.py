@@ -1,17 +1,14 @@
 """
-games.py: Create a bot that provides game functionality (dice, 8ball, etc).
+games.py: Creates a bot providing a few simple games.
 """
 import random
-import urllib.request
-import urllib.error
-from xml.etree import ElementTree
 
 from pylinkirc import utils
 from pylinkirc.log import log
 
 mydesc = "The \x02Games\x02 plugin provides simple games for IRC."
 
-gameclient = utils.registerService("Games", manipulatable=True, desc=mydesc)
+gameclient = utils.register_service("Games", default_nick="Games", manipulatable=True, desc=mydesc)
 reply = gameclient.reply  # TODO find a better syntax for ServiceBot.reply()
 error = gameclient.error  # TODO find a better syntax for ServiceBot.error()
 # commands
@@ -43,8 +40,7 @@ def dice(irc, source, args):
     s = 'You rolled %s: %s (total: %s)' % (args[0], ' '.join([str(x) for x in results]), sum(results))
     reply(irc, s)
 
-gameclient.add_cmd(dice, 'd')
-gameclient.add_cmd(dice, featured=True)
+gameclient.add_cmd(dice, aliases=('d'), featured=True)
 
 eightball_responses = ["It is certain.",
              "It is decidedly so.",
@@ -72,55 +68,7 @@ def eightball(irc, source, args):
     Asks the Magic 8-ball a question.
     """
     reply(irc, random.choice(eightball_responses))
-gameclient.add_cmd(eightball, featured=True)
-gameclient.add_cmd(eightball, '8ball')
-gameclient.add_cmd(eightball, '8b')
-
-def fml(irc, source, args):
-    """[<id>]
-
-    Displays an entry from fmylife.com. If <id> is not given, fetch a random entry from the API."""
-    try:
-        query = args[0]
-    except IndexError:
-        # Get a random FML from the API.
-        query = 'random'
-
-    # TODO: configurable language?
-    url = ('http://api.betacie.com/view/%s/nocomment'
-          '?key=4be9c43fc03fe&language=en' % query)
-    try:
-        data = urllib.request.urlopen(url).read()
-    except urllib.error as e:
-        error(irc, '%s' % e)
-        return
-
-    tree = ElementTree.fromstring(data.decode('utf-8'))
-    tree = tree.find('items/item')
-
-    try:
-        category = tree.find('category').text
-        text = tree.find('text').text
-        fmlid = tree.attrib['id']
-        url = tree.find('short_url').text
-    except AttributeError as e:
-        log.debug("games.FML: Error fetching FML %s from URL %s: %s",
-                  query, url, e)
-        error(irc, "That FML does not exist or there was an error "
-                   "fetching data from the API.")
-        return
-
-    if not fmlid:
-        error(irc, "That FML does not exist.")
-        return
-
-    # TODO: customizable formatting
-    votes = "\x02[Agreed: %s / Deserved: %s]\x02" % \
-            (tree.find('agree').text, tree.find('deserved').text)
-    s = '\x02#%s [%s]\x02: %s - %s \x02<\x0311%s\x03>\x02' % \
-        (fmlid, category, text, votes, url)
-    reply(irc, s)
-gameclient.add_cmd(fml, featured=True)
+gameclient.add_cmd(eightball, featured=True, aliases=('8ball', '8b'))
 
 def die(irc=None):
-    utils.unregisterService('games')
+    utils.unregister_service('games')

@@ -22,17 +22,22 @@ exttarget_handlers = {}
 
 # Trigger to be set when all IRC objects are initially created.
 started = threading.Event()
+
+# Global daemon starting time.
 start_ts = time.time()
 
+# Trigger to set on shutdown.
+shutting_down = threading.Event()
+
 # Source address.
-source = "https://github.com/GLolol/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
+source = "https://github.com/jlu5/PyLink"  # CHANGE THIS IF YOU'RE FORKING!!
 
 # Fallback hostname used in various places internally when hostname isn't configured.
 fallback_hostname = 'pylink.int'
 
 # Defines messages to be logged as soon as the log system is set up, for modules like conf that are
 # initialized before log. This is processed (and then not used again) when the log module loads.
-log_queue = deque()
+_log_queue = deque()
 
 # Determines whether we have a PID file that needs to be removed.
 _should_remove_pid = False

@@ -11,9 +11,10 @@ import importlib
 import os
 import collections
 import argparse
+import ipaddress
 
 from .log import log
-from . import world, conf
+from . import world, conf, structures
 
 # Load the protocol and plugin packages.
 from pylinkirc import protocols, plugins
@@ -33,186 +34,76 @@ class InvalidArgumentsError(TypeError):
     Exception raised (by IRCParser and potentially others) when a bot command is given invalid arguments.
     """
 
-class IncrementalUIDGenerator():
+class ProtocolError(RuntimeError):
     """
-    Incremental UID Generator module, adapted from InspIRCd source:
-    https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156
+    Exception raised when a network protocol violation is encountered in some way.
     """
-
-    def __init__(self, sid):
-        if not (hasattr(self, 'allowedchars') and hasattr(self, 'length')):
-             raise RuntimeError("Allowed characters list not defined. Subclass "
-                                "%s by defining self.allowedchars and self.length "
-                                "and then calling super().__init__()." % self.__class__.__name__)
-        self.uidchars = [self.allowedchars[0]]*self.length
-        self.sid = str(sid)
-
-    def increment(self, pos=None):
-        """
-        Increments the UID generator to the next available UID.
-        """
-        # Position starts at 1 less than the UID length.
-        if pos is None:
-            pos = self.length - 1
-
-        # If we're at the last character in the list of allowed ones, reset
-        # and increment the next level above.
-        if self.uidchars[pos] == self.allowedchars[-1]:
-            self.uidchars[pos] = self.allowedchars[0]
-            self.increment(pos-1)
-        else:
-            # Find what position in the allowed characters list we're currently
-            # on, and add one.
-            idx = self.allowedchars.find(self.uidchars[pos])
-            self.uidchars[pos] = self.allowedchars[idx+1]
-
-    def next_uid(self):
-        """
-        Returns the next unused UID for the server.
-        """
-        uid = self.sid + ''.join(self.uidchars)
-        self.increment()
-        return uid
-
-class PUIDGenerator():
-    """
-    Pseudo UID Generator module, using a prefix and a simple counter.
-    """
-
-    def __init__(self, prefix):
-        self.prefix = prefix
-        self.counter = 0
-
-    def next_uid(self, prefix=''):
-        """
-        Generates the next PUID.
-        """
-        uid = '%s@%s' % (prefix or self.prefix, self.counter)
-        self.counter += 1
-        return uid
-    next_sid = next_uid
 
 def add_cmd(func, name=None, **kwargs):
     """Binds an IRC command function to the given command name."""
     world.services['pylink'].add_cmd(func, name=name, **kwargs)
     return func
 
-def add_hook(func, command):
-    """Binds a hook function to the given command name."""
+def add_hook(func, command, priority=100):
+    """
+    Binds a hook function to the given command name.
+
+    A custom priority can also be given (defaults to 100), and hooks with
+    higher priority values will be called first."""
     command = command.upper()
-    world.hooks[command].append(func)
+    world.hooks[command].append((priority, func))
+    world.hooks[command].sort(key=lambda pair: pair[0], reverse=True)
     return func
 
-_nickregex = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
-def isNick(s, nicklen=None):
-    """Returns whether the string given is a valid nick."""
-    if nicklen and len(s) > nicklen:
-        return False
-    return bool(re.match(_nickregex, s))
-
-def isChannel(s):
-    """Returns whether the string given is a valid channel name."""
-    return str(s).startswith('#')
-
-def _isASCII(s):
-    """Returns whether the string given is valid ASCII."""
-    chars = string.ascii_letters + string.digits + string.punctuation
-    return all(char in chars for char in s)
-
-def isServerName(s):
-    """Returns whether the string given is a valid IRC server name."""
-    return _isASCII(s) and '.' in s and not s.startswith('.')
-
-hostmaskRe = re.compile(r'^\S+!\S+@\S+$')
-def isHostmask(text):
-    """Returns whether the given text is a valid hostmask."""
-    # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
-    return hostmaskRe.match(text) and '#' not in text
-
-def parseModes(irc, target, args):
-    """Parses a modestring list into a list of (mode, argument) tuples.
-    ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
-
-    This method is deprecated. Use irc.parseModes() instead.
-    """
-    log.warning("(%s) utils.parseModes is deprecated. Use irc.parseModes() instead!", irc.name)
-    return irc.parseModes(target, args)
-
-def applyModes(irc, target, changedmodes):
-    """Takes a list of parsed IRC modes, and applies them on the given target.
-
-    The target can be either a channel or a user; this is handled automatically.
-
-    This method is deprecated. Use irc.applyModes() instead.
-    """
-    log.warning("(%s) utils.applyModes is deprecated. Use irc.applyModes() instead!", irc.name)
-    return irc.applyModes(target, changedmodes)
-
-def expandpath(path):
+def expand_path(path):
     """
     Returns a path expanded with environment variables and home folders (~) expanded, in that order."""
     return os.path.expanduser(os.path.expandvars(path))
+expandpath = expand_path  # Consistency with os.path
 
-def resetModuleDirs():
+def _reset_module_dirs():
     """
     (Re)sets custom protocol module and plugin directories to the ones specified in the config.
     """
     # Note: This assumes that the first element of the package path is the default one.
-    plugins.__path__ = [plugins.__path__[0]] + [expandpath(path) for path in conf.conf['bot'].get('plugin_dirs', [])]
-    log.debug('resetModuleDirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
-    protocols.__path__ = [protocols.__path__[0]] + [expandpath(path) for path in conf.conf['bot'].get('protocol_dirs', [])]
-    log.debug('resetModuleDirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
+    plugins.__path__ = [plugins.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('plugin_dirs', [])]
+    log.debug('_reset_module_dirs: new pylinkirc.plugins.__path__: %s', plugins.__path__)
+    protocols.__path__ = [protocols.__path__[0]] + [expandpath(path) for path in conf.conf['pylink'].get('protocol_dirs', [])]
+    log.debug('_reset_module_dirs: new pylinkirc.protocols.__path__: %s', protocols.__path__)
+resetModuleDirs = _reset_module_dirs
 
-def loadPlugin(name):
+def _load_plugin(name):
     """
     Imports and returns the requested plugin.
     """
     return importlib.import_module(PLUGIN_PREFIX + name)
+loadPlugin = _load_plugin
 
-def getProtocolModule(name):
+def _get_protocol_module(name):
     """
     Imports and returns the protocol module requested.
     """
     return importlib.import_module(PROTOCOL_PREFIX + name)
+getProtocolModule = _get_protocol_module
 
-def getDatabaseName(dbname):
-    """
-    Returns a database filename with the given base DB name appropriate for the
-    current PyLink instance.
-
-    This returns '<dbname>.db' if the running config name is PyLink's default
-    (pylink.yml), and '<dbname>-<config name>.db' for anything else. For example,
-    if this is called from an instance running as './pylink testing.yml', it
-    would return '<dbname>-testing.db'."""
-    if conf.confname != 'pylink':
-        dbname += '-%s' % conf.confname
-    dbname += '.db'
-    return dbname
-
-def splitHostmask(mask):
+def split_hostmask(mask):
     """
     Returns a nick!user@host hostmask split into three fields: nick, user, and host.
     """
     nick, identhost = mask.split('!', 1)
     ident, host = identhost.split('@', 1)
     return [nick, ident, host]
+splitHostmask = split_hostmask
 
 class ServiceBot():
     """
     PyLink IRC Service class.
     """
 
-    def __init__(self, name, default_help=True, default_list=True,
-                 nick=None, ident=None, manipulatable=False, desc=None):
-        # Service name
+    def __init__(self, name, default_help=True, default_list=True, manipulatable=False, default_nick=None, desc=None):
+        # Service name and default nick
         self.name = name
-
-        # TODO: validate nick, ident, etc. on runtime as well
-        assert isNick(name), "Invalid service name %r" % name
-
-        # Nick/ident to take. Defaults to the same as the service name if not given.
-        self.nick = nick
-        self.ident = ident
+        self.default_nick = default_nick
 
         # Tracks whether the bot should be manipulatable by the 'bots' plugin and other commands.
         self.manipulatable = manipulatable
@@ -226,15 +117,20 @@ class ServiceBot():
         # spawned.
         self.uids = {}
 
-        # Track what channels other than those defined in the config
-        # that the bot should join by default.
-        self.extra_channels = collections.defaultdict(set)
+        # Track plugin-defined persistent channels. The bot will leave them if they're empty,
+        # and rejoin whenever someone else does.
+        # This is stored as a nested dictionary:
+        # {"plugin1": {"net1": IRCCaseInsensitiveSet({"#a", "#b"}), "net2": ...}, ...}
+        self.dynamic_channels = {}
 
         # Service description, used in the default help command if one is given.
         self.desc = desc
 
         # List of command names to "feature"
         self.featured_cmds = set()
+
+        # Maps command aliases to the respective primary commands
+        self.alias_cmds = {}
 
         if default_help:
             self.add_cmd(self.help)
@@ -250,60 +146,90 @@ class ServiceBot():
         # which is handled by coreplugin.
         if irc is None:
             for irc in world.networkobjects.values():
-                irc.callHooks([None, 'PYLINK_NEW_SERVICE', {'name': self.name}])
+                irc.call_hooks([None, 'PYLINK_NEW_SERVICE', {'name': self.name}])
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
-    def join(self, irc, channels, autojoin=True):
+    def join(self, irc, channels, ignore_empty=True):
         """
-        Joins the given service bot to the given channel(s).
+        Joins the given service bot to the given channel(s). "channels" can be
+        an iterable of channel names or the name of a single channel (type 'str').
+
+        The ignore_empty option sets whether we should skip joining empty
+        channels and join them later when we see someone else join (for channels
+        marked persistent). This option is automatically *disabled* on networks
+        where we cannot monitor channels that we're not in (e.g. Clientbot).
+
+        Before PyLink 2.0-alpha3, this function implicitly marks channels i
+        receives to be persistent - this is no longer the case!
         """
+        uid = self.uids.get(irc.name)
+        if uid is None:
+            return
 
-        if type(irc) == str:
-            netname = irc
-        else:
-            netname = irc.name
-
-        # Ensure type safety: pluralize strings if only one channel was given, then convert to set.
-        if type(channels) == str:
+        if isinstance(channels, str):
             channels = [channels]
-        channels = set(channels)
 
-        if autojoin:
-            log.debug('(%s/%s) Adding channels %s to autojoin', netname, self.name, channels)
-            self.extra_channels[netname] |= channels
-
-        # If the network was given as a string, look up the Irc object here.
-        try:
-            irc = world.networkobjects[netname]
-        except KeyError:
-            log.debug('(%s/%s) Skipping join(), IRC object not initialized yet', netname, self.name)
-            return
-
-        try:
-            u = self.uids[irc.name]
-        except KeyError:
-            log.debug('(%s/%s) Skipping join(), UID not initialized yet', irc.name, self.name)
-            return
+        if irc.has_cap('visible-state-only'):
+            # Disable dynamic channel joining on networks where we can't monitor channels for joins.
+            ignore_empty = False
 
         # Specify modes to join the services bot with.
-        joinmodes = irc.serverdata.get("%s_joinmodes" % self.name) or conf.conf.get(self.name, {}).get('joinmodes') or ''
+        joinmodes = irc.get_service_option(self.name, 'joinmodes', default='')
         joinmodes = ''.join([m for m in joinmodes if m in irc.prefixmodes])
 
-        for chan in channels:
-            if isChannel(chan):
-                if u in irc.channels[chan].users:
-                    log.debug('(%s) Skipping join of services %s to channel %s - it is already present', irc.name, self.name, chan)
+        for channel in channels:
+            if irc.is_channel(channel):
+                if channel in irc.channels:
+                    if uid in irc.channels[channel].users:
+                        log.debug('(%s/%s) Skipping join to %r - we are already present', irc.name, self.name, channel)
+                        continue
+                elif ignore_empty:
+                    log.debug('(%s/%s) Skipping joining empty channel %r', irc.name, self.name, channel)
                     continue
-                log.debug('(%s) Joining services %s to channel %s with modes %r', irc.name, self.name, chan, joinmodes)
-                if joinmodes:  # Modes on join were specified; use SJOIN to burst our service
-                    irc.proto.sjoin(irc.sid, chan, [(joinmodes, u)])
-                else:
-                    irc.proto.join(u, chan)
 
-                irc.callHooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': chan, 'users': [u]}])
+                log.debug('(%s/%s) Joining channel %s with modes %r', irc.name, self.name, channel, joinmodes)
+
+                if joinmodes:  # Modes on join were specified; use SJOIN to burst our service
+                    irc.sjoin(irc.sid, channel, [(joinmodes, uid)])
+                else:
+                    irc.join(uid, channel)
+
+                irc.call_hooks([irc.sid, 'PYLINK_SERVICE_JOIN', {'channel': channel, 'users': [uid]}])
             else:
-                log.warning('(%s) Ignoring invalid autojoin channel %r.', irc.name, chan)
+                log.warning('(%s/%s) Ignoring invalid channel %r', irc.name, self.name, channel)
+
+    def part(self, irc, channels, reason=''):
+        """
+        Parts the given service bot from the given channel(s) if no plugins
+        still register it as a persistent dynamic channel.
+
+        "channels" can be an iterable of channel names or the name of a single
+        channel (type 'str').
+        """
+        uid = self.uids.get(irc.name)
+        if uid is None:
+            return
+
+        if isinstance(channels, str):
+            channels = [channels]
+
+        to_part = []
+        persistent_channels = self.get_persistent_channels(irc)
+        for channel in channels:
+            if channel in irc.channels and uid in irc.channels[channel].users:
+                if channel in persistent_channels:
+                    log.debug('(%s/%s) Not parting %r because it is registered '
+                              'as a dynamic channel: %r', irc.name, self.name, channel,
+                              persistent_channels)
+                    continue
+                to_part.append(channel)
+                irc.part(uid, channel, reason)
+            else:
+                log.debug('(%s/%s) Ignoring part to %r, we are not there', irc.name, self.name, channel)
+                continue
+
+        irc.call_hooks([uid, 'PYLINK_SERVICE_PART', {'channels': to_part, 'text': reason}])
 
     def reply(self, irc, text, notice=None, private=None):
         """Replies to a message as the service in question."""
@@ -343,24 +269,24 @@ class ServiceBot():
             if cmd and show_unknown_cmds and not cmd.startswith('\x01'):
                 # Ignore empty commands and invalid command errors from CTCPs.
                 self.reply(irc, 'Error: Unknown command %r.' % cmd)
-            log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.getHostmask(source))
+            log.info('(%s/%s) Received unknown command %r from %s', irc.name, self.name, cmd, irc.get_hostmask(source))
             return
 
-        log.info('(%s/%s) Calling command %r for %s', irc.name, self.name, cmd, irc.getHostmask(source))
+        log.info('(%s/%s) Calling command %r for %s', irc.name, self.name, cmd, irc.get_hostmask(source))
         for func in self.commands[cmd]:
             try:
                 func(irc, source, cmd_args)
             except NotAuthorizedError as e:
                 self.reply(irc, 'Error: %s' % e)
                 log.warning('(%s) Denying access to command %r for %s; msg: %s', irc.name, cmd,
-                            irc.getHostmask(source), e)
+                            irc.get_hostmask(source), e)
             except InvalidArgumentsError as e:
                 self.reply(irc, 'Error: %s' % e)
             except Exception as e:
                 log.exception('Unhandled exception caught in command %r', cmd)
                 self.reply(irc, 'Uncaught exception in command %r: %s: %s' % (cmd, type(e).__name__, str(e)))
 
-    def add_cmd(self, func, name=None, featured=False):
+    def add_cmd(self, func, name=None, featured=False, aliases=None):
         """Binds an IRC command function to the given command name."""
         if name is None:
             name = func.__name__
@@ -370,8 +296,167 @@ class ServiceBot():
         if featured:
             self.featured_cmds.add(name)
 
+        # If this is an alias, store the primary command in the alias_cmds dict
+        if aliases is not None:
+            for alias in aliases:
+                if name == alias:
+                    log.error('Refusing to alias command %r (in plugin %r) to itself!', name, func.__module__)
+                    continue
+
+                self.add_cmd(func, name=alias)  # Bind the alias as well.
+                self.alias_cmds[alias] = name
+
         self.commands[name].append(func)
         return func
+
+    def get_nick(self, irc, fails=0):
+        """
+        If the 'fails' argument is set to zero, this method returns the preferred nick for this
+        service bot on the given network. The following fields are checked in order:
+        # 1) Network specific nick settings for this service (servers:<netname>:servicename_nick)
+        # 2) Global settings for this service (servicename:nick)
+        # 3) The service's hardcoded default nick.
+        # 4) The literal service name.
+
+        If the 'fails' argument is set to a non-zero value, a list of *alternate* (fallback) nicks
+        will be fetched from these fields in this order:
+        # 1) Network specific altnick settings for this service (servers:<netname>:servicename_altnicks)
+        # 2) Global altnick settings for this service (servicename:altnicks)
+
+        If such an alternate nicks list exists, an alternate nick will be chosen based on the value
+        of the 'fails' argument:
+        - If nick fetching fails once, return the 1st alternate nick from the list,
+        - If nick fetching fails twice, return the 2nd alternate nick from the list, ...
+
+        Otherwise, if the alternate nicks list doesn't exist, or if there is no corresponding value
+        for the current 'fails' value, the preferred nick plus the 'fails' number of underscores (_)
+        will be used instead.
+        - fails=1 => preferred_nick_
+        - fails=2 => preferred_nick__
+
+        If the resulting nick is too long for the given network, ProtocolError will be raised.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        nick = irc.serverdata.get("%s_nick" % self.name) or sbconf.get('nick') or self.default_nick or self.name
+
+        if fails >= 1:
+            altnicks = irc.serverdata.get("%s_altnicks" % self.name) or sbconf.get('altnicks') or []
+            try:
+                nick = altnicks[fails-1]
+            except IndexError:
+                nick += ('_' * fails)
+
+        if irc.maxnicklen > 0 and len(nick) > irc.maxnicklen:
+            raise ProtocolError("Nick %r too long for network (maxnicklen=%s)" % (nick, irc.maxnicklen))
+
+        assert nick
+        return nick
+
+    def get_ident(self, irc):
+        """
+        Returns the preferred ident for this service bot on the given network. The following fields are checked in order:
+        # 1) Network specific ident settings for this service (servers:<netname>:servicename_ident)
+        # 2) Global settings for this service (servicename:ident)
+        # 3) The service's hardcoded default nick.
+        # 4) The literal service name.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        return irc.serverdata.get("%s_ident" % self.name) or sbconf.get('ident') or self.default_nick or self.name
+
+    def get_host(self, irc):
+        """
+        Returns the preferred hostname for this service bot on the given network. The following fields are checked in order:
+        # 1) Network specific hostname settings for this service (servers:<netname>:servicename_host)
+        # 2) Global settings for this service (servicename:host)
+        # 3) The PyLink server hostname.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        return irc.serverdata.get("%s_host" % self.name) or sbconf.get('host') or irc.hostname()
+
+    def get_realname(self, irc):
+        """
+        Returns the preferred real name for this service bot on the given network. The following fields are checked in order:
+        # 1) Network specific realname settings for this service (servers:<netname>:servicename_realname)
+        # 2) Global settings for this service (servicename:realname)
+        # 3) The globally configured real name (pylink:realname).
+        # 4) The literal service name.
+        """
+        sbconf = conf.conf.get(self.name, {})
+        return irc.serverdata.get("%s_realname" % self.name) or sbconf.get('realname') or conf.conf['pylink'].get('realname') or self.name
+
+    def add_persistent_channel(self, irc, namespace, channel, try_join=True):
+        """
+        Adds a persistent channel to the service bot on the given network and namespace.
+        """
+        namespace = self.dynamic_channels.setdefault(namespace, {})
+        chanlist = namespace.setdefault(irc.name, structures.IRCCaseInsensitiveSet(irc))
+        chanlist.add(channel)
+
+        if try_join:
+            self.join(irc, [channel])
+
+    def remove_persistent_channel(self, irc, namespace, channel, try_part=True, part_reason=''):
+        """
+        Removes a persistent channel from the service bot on the given network and namespace.
+        """
+        chanlist = self.dynamic_channels[namespace][irc.name].remove(channel)
+
+        if try_part and irc.connected.is_set():
+            self.part(irc, [channel], reason=part_reason)
+
+    def get_persistent_channels(self, irc, namespace=None):
+        """
+        Returns a set of persistent channels for the IRC network, optionally filtering
+        by namespace is one is given.
+        """
+        channels = structures.IRCCaseInsensitiveSet(irc)
+        if namespace:
+            chanlist = self.dynamic_channels.get(namespace, {}).get(irc.name, set())
+            log.debug('(%s/%s) get_persistent_channels: adding channels '
+                      '%r from namespace %r (single)', irc.name, self.name,
+                      chanlist, namespace)
+            channels |= chanlist
+        else:
+            for dch_namespace, dch_data in self.dynamic_channels.items():
+                chanlist = dch_data.get(irc.name, set())
+                log.debug('(%s/%s) get_persistent_channels: adding channels '
+                          '%r from namespace %r', irc.name, self.name,
+                          chanlist, dch_namespace)
+                channels |= chanlist
+        channels |= set(irc.serverdata.get(self.name+'_channels', []))
+        channels |= set(irc.serverdata.get('channels', []))
+        return channels
+
+    def clear_persistent_channels(self, irc, namespace, try_part=True, part_reason=''):
+        """
+        Clears the persistent channels defined by a namespace.
+
+        irc can be None to clear persistent channels for all networks in this namespace.
+        """
+        dch_data = self.dynamic_channels.get(namespace, {})
+
+        if irc is not None:
+            if irc.name in dch_data:
+                chanlist = dch_data[irc.name]
+                log.debug('(%s/%s) Clearing persistent channels %r from namespace %r',
+                          irc.name, self.name, chanlist, namespace)
+
+                del dch_data[irc.name]
+
+                if try_part:
+                    self.part(irc, chanlist, reason=part_reason)
+
+
+        else:  # when irc is None
+            del self.dynamic_channels[namespace]
+
+            for netname, chanlist in dch_data.items():
+                log.debug('(%s/%s) Globally clearing persistent channels %r from namespace %r',
+                          netname, self.name, chanlist, namespace)
+                if try_part and netname in world.networkobjects:
+                    self.part(world.networkobjects[netname], chanlist,
+                              reason=part_reason)
+
 
     def _show_command_help(self, irc, command, private=False, shortform=False):
         """
@@ -394,6 +479,7 @@ class ServiceBot():
         if command not in self.commands:
             _reply('Error: Unknown command %r.' % command)
             return
+
         else:
             funcs = self.commands[command]
             if len(funcs) > 1:
@@ -411,12 +497,12 @@ class ServiceBot():
                     _reply(args_desc.strip())
                     if not shortform:
                         # Note: we handle newlines in docstrings a bit differently. Per
-                        # https://github.com/GLolol/PyLink/issues/307, only double newlines (and
+                        # https://github.com/jlu5/PyLink/issues/307, only double newlines (and
                         # combinations of more) have the effect of showing a new line on IRC.
                         # Single newlines are stripped so that word wrap can be applied in source
                         # code without affecting the output on IRC.
-                        # TODO: we should probably verify that the output line doesn't exceed IRC
-                        # line length limits...
+                        # (On the same topic, real line wrapping on IRC is done in irc.msg() as of
+                        #  2.0-beta1)
                         next_line = ''
                         for linenum, line in enumerate(lines[1:], 1):
                             stripped_line = line.strip()
@@ -437,10 +523,20 @@ class ServiceBot():
                                 _reply_format(next_line)
                                 next_line = ''  # Reset the next line buffer
                         else:
+                            # Show the last line.
                             _reply_format(next_line)
                 else:
                     _reply("Error: Command %r doesn't offer any help." % command)
-                    return
+
+                # Regardless of whether help text is available, mention aliases.
+                if not shortform:
+                    if command in self.alias_cmds:
+                        _reply(' ')
+                        _reply('This command is an alias for \x02%s\x02.' % self.alias_cmds[command])
+                    aliases = set(alias for alias, primary in self.alias_cmds.items() if primary == command)
+                    if aliases:
+                        _reply(' ')
+                        _reply('Available aliases: \x02%s\x02' % ', '.join(aliases))
 
     def help(self, irc, source, args):
         """<command>
@@ -472,8 +568,8 @@ class ServiceBot():
         except IndexError:
             plugin_filter = None
 
-        # Don't show CTCP handlers in the public command list.
-        cmds = sorted(cmd for cmd in self.commands.keys() if '\x01' not in cmd)
+        # Don't show CTCP handlers or aliases in the public command list.
+        cmds = sorted(cmd for cmd in self.commands.keys() if '\x01' not in cmd and cmd not in self.alias_cmds)
 
         if plugin_filter is not None:
             # Filter by plugin, if the option was given.
@@ -511,7 +607,7 @@ class ServiceBot():
                     self._show_command_help(irc, cmd, private=True, shortform=True)
             self.reply(irc, 'End of command listing.', private=True)
 
-def registerService(name, *args, **kwargs):
+def register_service(name, *args, **kwargs):
     """Registers a service bot."""
     name = name.lower()
     if name in world.services:
@@ -519,14 +615,15 @@ def registerService(name, *args, **kwargs):
 
     # Allow disabling service spawning either globally or by service.
     elif name != 'pylink' and not (conf.conf.get(name, {}).get('spawn_service',
-            conf.conf['bot'].get('spawn_services', True))):
+            conf.conf['pylink'].get('spawn_services', True))):
         return world.services['pylink']
 
     world.services[name] = sbot = ServiceBot(name, *args, **kwargs)
     sbot.spawn()
     return sbot
+registerService = register_service
 
-def unregisterService(name):
+def unregister_service(name):
     """Unregisters an existing service bot."""
     name = name.lower()
 
@@ -542,11 +639,12 @@ def unregisterService(name):
         if name == 'pylink':
             ircobj.pseudoclient = None
 
-        ircobj.proto.quit(uid, "Service unloaded.")
+        ircobj.quit(uid, "Service unloaded.")
 
     del world.services[name]
+unregisterService = unregister_service
 
-def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
+def wrap_arguments(prefix, args, length, separator=' ', max_args_per_line=0):
     """
     Takes a static prefix and a list of arguments, and returns a list of strings
     with the arguments wrapped across multiple lines. This is useful for breaking up
@@ -554,7 +652,7 @@ def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
     """
     strings = []
 
-    assert args, "wrapArguments: no arguments given"
+    assert args, "wrap_arguments: no arguments given"
 
     buf = prefix
 
@@ -562,7 +660,7 @@ def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
 
     while args:
         assert len(prefix+args[0]) <= length, \
-            "wrapArguments: Argument %r is too long for the given length %s" % (args[0], length)
+            "wrap_arguments: Argument %r is too long for the given length %s" % (args[0], length)
 
         # Add arguments until our buffer is up to the length limit.
         if (len(buf + args[0]) + 1) <= length and ((not max_args_per_line) or len(buf.split(' ')) < max_args_per_line):
@@ -577,6 +675,7 @@ def wrapArguments(prefix, args, length, separator=' ', max_args_per_line=0):
         strings.append(buf)
 
     return strings
+wrapArguments = wrap_arguments
 
 class IRCParser(argparse.ArgumentParser):
     """
@@ -595,18 +694,126 @@ class IRCParser(argparse.ArgumentParser):
     def exit(self, *args):
         return
 
-class DeprecatedAttributesObject():
-    """
-    Object implementing deprecated attributes and warnings on access.
-    """
-    def __init__(self):
-        self.deprecated_attributes = {}
+# From http://modern.ircdocs.horse/formatting.html
+_strip_color_regex = re.compile(r'\x03(\d{1,2}(,\d{1,2})?)?')
+_irc_formatting_chars = "\x02\x1D\x1F\x1E\x11\x16\x0F\x03"
 
-    def __getattribute__(self, attr):
-        # Note: "self.deprecated_attributes" calls this too, so the != check is
-        # needed to prevent a recursive loop!
-        if attr != 'deprecated_attributes' and attr in self.deprecated_attributes:
-            log.warning('Attribute %s.%s is deprecated: %s' % (self.__class__.__name__, attr,
-                        self.deprecated_attributes.get(attr)))
+def strip_irc_formatting(text):
+    """Returns text with IRC formatting (colors, underlines, bold, italics, reverse) removed."""
+    text = _strip_color_regex.sub('', text)
+    for char in _irc_formatting_chars:
+        text = text.replace(char, '')
+    return text
 
-        return object.__getattribute__(self, attr)
+_subrange_re = re.compile(r'(?P<start>(\d+))-(?P<end>(\d+))')
+def remove_range(rangestr, mylist):
+    """
+    Removes a range string of (one-indexed) items from the list.
+    Range strings are indices or ranges of them joined together with a ",":
+    e.g. "5", "2", "2-10", "1,3,5-8"
+
+    See test/test_utils.py for more complete examples.
+    """
+    if None in mylist:
+        raise ValueError("mylist must not contain None!")
+
+    # Split and filter out empty subranges
+    ranges = filter(None, rangestr.split(','))
+    if not ranges:
+        raise ValueError("Invalid range string %r" % rangestr)
+
+    for subrange in ranges:
+        match = _subrange_re.match(subrange)
+        if match:
+            start = int(match.group('start'))
+            end = int(match.group('end'))
+
+            if end <= start:
+                raise ValueError("Range start (%d) is <= end (%d) in range string %r" %
+                                 (start, end, rangestr))
+            elif 0 in (end, start):
+                raise ValueError("Got range index 0 in range string %r, this function is one-indexed" %
+                                 rangestr)
+
+            # For our purposes, make sure the start and end are within the list
+            mylist[start-1], mylist[end-1]
+
+            # Replace the entire range with None's
+            log.debug('utils.remove_range: removing items from %s to %s: %s', start, end, mylist[start-1:end])
+            mylist[start-1:end] = [None] * (end-(start-1))
+
+        elif subrange in string.digits:
+            index = int(subrange)
+            if index == 0:
+                raise ValueError("Got index 0 in range string %r, this function is one-indexed" %
+                                 rangestr)
+            log.debug('utils.remove_range: removing item %s: %s', index, mylist[index-1])
+            mylist[index-1] = None
+
+        else:
+            raise ValueError("Got invalid subrange %r in range string %r" %
+                             (subrange, rangestr))
+
+    return list(filter(lambda x: x is not None, mylist))
+
+def get_hostname_type(address):
+    """
+    Returns whether the given address is an IPv4 address (1), IPv6 address (2), or neither
+    (0; assumed to be a hostname instead).
+    """
+    try:
+        ip = ipaddress.ip_address(address)
+    except ValueError:
+        return 0
+    else:
+        if isinstance(ip, ipaddress.IPv4Address):
+            return 1
+        elif isinstance(ip, ipaddress.IPv6Address):
+            return 2
+        else:
+            raise ValueError("Got unknown value %r from ipaddress.ip_address()" % address)
+
+_duration_re = re.compile(r"^((?P<week>\d+)w)?((?P<day>\d+)d)?((?P<hour>\d+)h)?((?P<minute>\d+)m)?((?P<second>\d+)s)?$")
+def parse_duration(text):
+    """
+    Takes in a duration string and returns the equivalent amount of seconds.
+
+    Time strings are in the following format:
+    - '123'         => 123 seconds
+                       (positive integers are treated as # of seconds)
+    - '1w2d3h4m5s'  => 1 week, 2 days, 3 hours, 4 minutes, and 5 seconds
+                       (must be in decreasing order by unit)
+    - '72h'         => 72 hours
+    - '1h5s'        => 1 hour and 5 seconds
+    and so on...
+    """
+    # If we get an already valid number, just return it
+    if text.isdigit():
+        return int(text)
+
+    match = _duration_re.match(text)
+    if not match:
+        raise ValueError("Failed to parse duration string %r" % text)
+    result = 0
+    matched = 0
+
+    if match.group('week'):
+        result += int(match.group('week'))   *  7 * 24 * 60 * 60
+        matched += 1
+    if match.group('day'):
+        result += int(match.group('day'))    * 24 * 60 * 60
+        matched += 1
+    if match.group('hour'):
+        result += int(match.group('hour'))   * 60 * 60
+        matched += 1
+    if match.group('minute'):
+        result += int(match.group('minute')) * 60
+        matched += 1
+    if match.group('second'):
+        result += int(match.group('second'))
+        matched += 1
+
+    if not matched:
+        raise ValueError("Failed to parse duration string %r" % text)
+
+    return result

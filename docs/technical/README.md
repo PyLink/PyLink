@@ -1,15 +1,13 @@
 # PyLink Developer Documentation
 
-Please note that as PyLink is still in its development phase, its APIs are subject to change.
-Any documentation here is provided for reference only.
+This documentation is provided for reference only, and may not always be up to date as APIs change.
+Patches are welcome if something looks wrong or *is* wrong. In such cases, consulting the source code is probably your best bet.
 
-The docs are also really incomplete (contributors welcome!)
+The docs are also really incomplete (contributions are appreciated!)
 
 ## Introduction
 
 PyLink is an a modular, plugin-based IRC services framework. It uses swappable protocol modules and a hooks system for calling plugins, allowing them to function regardless of the IRCd used.
-
-<img src="core-structure.png" width="50%" height="50%"> <img src="protocol-modules.png" width="50%" height="50%">
 
 ## Contents
 
@@ -22,13 +20,9 @@ PyLink is an a modular, plugin-based IRC services framework. It uses swappable p
 ----
 
 - [PyLink protocol module specification](pmodule-spec.md)
-- [Supported named channel modes](channel-modes.csv)
-- [Supported named user modes](user-modes.csv)
 
 ----
 
 - [Release Process for PyLink](release-process.md)
 
-### Future topics (not yet available)
-- [Writing tests for PyLink modules](writing-tests.md)
-
+![Graph of protocol module inheritance tree](protocol-modules.svg)

@@ -22,7 +22,7 @@ os.makedirs(logdir, exist_ok=True)
 _format = '%(asctime)s [%(levelname)s] %(message)s'
 logformatter = logging.Formatter(_format)
 
-def getConsoleLogLevel():
+def _get_console_log_level():
     """
     Returns the configured console log level.
     """
@@ -32,7 +32,7 @@ def getConsoleLogLevel():
 # Set up logging to STDERR
 world.console_handler = logging.StreamHandler()
 world.console_handler.setFormatter(logformatter)
-world.console_handler.setLevel(getConsoleLogLevel())
+world.console_handler.setLevel(_get_console_log_level())
 
 # Get the main logger object; plugins can import this variable for convenience.
 log = logging.getLogger()
@@ -43,7 +43,7 @@ log.addHandler(world.console_handler)
 # the root logger. https://stackoverflow.com/questions/16624695
 log.setLevel(1)
 
-def makeFileLogger(filename, level=None):
+def _make_file_logger(filename, level=None):
     """
     Initializes a file logging target with the given filename and level.
     """
@@ -64,7 +64,7 @@ def makeFileLogger(filename, level=None):
     filelogger.setFormatter(logformatter)
 
     # If no log level is specified, use the same one as the console logger.
-    level = level or getConsoleLogLevel()
+    level = level or _get_console_log_level()
     filelogger.setLevel(level)
 
     log.addHandler(filelogger)
@@ -73,7 +73,7 @@ def makeFileLogger(filename, level=None):
 
     return filelogger
 
-def stopFileLoggers():
+def _stop_file_loggers():
     """
     De-initializes all file loggers.
     """
@@ -88,17 +88,17 @@ files = conf.conf['logging'].get('files')
 if files:
     for filename, config in files.items():
         if isinstance(config, dict):
-            makeFileLogger(filename, config.get('loglevel'))
+            _make_file_logger(filename, config.get('loglevel'))
         else:
             log.warning('Got invalid file logging pair %r: %r; are your indentation and block '
                         'commenting consistent?', filename, config)
 
-log.debug("log: Emptying log_queue")
+log.debug("log: Emptying _log_queue")
 # Process and empty the log queue
-while world.log_queue:
-    level, text = world.log_queue.popleft()
+while world._log_queue:
+    level, text = world._log_queue.popleft()
     log.log(level, text)
-log.debug("log: Emptied log_queue")
+log.debug("log: Emptied _log_queue")
 
 class PyLinkChannelLogger(logging.Handler):
     """
@@ -137,11 +137,9 @@ class PyLinkChannelLogger(logging.Handler):
         # 1) irc.pseudoclient must be initialized already
         # 2) IRC object must be finished bursting
         # 3) Target channel must exist
-        # 4) Main PyLink client must be in this target channel
-        # 5) This function hasn't been called already (prevents recursive loops).
+        # 4) This function hasn't been called already (prevents recursive loops).
         if self.irc.pseudoclient and self.irc.connected.is_set() \
-                and self.channel in self.irc.channels and self.irc.pseudoclient.uid in \
-                self.irc.channels[self.channel].users and not self.called:
+                and self.channel in self.irc.channels and not self.called:
 
             self.called = True
             msg = self.format(record)

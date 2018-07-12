@@ -32,7 +32,7 @@ def uptime(irc, source, args):
 
     Returns the uptime for PyLink and the given network's connection (or the current network if not specified).
     The --all argument can also be given to show the uptime for all networks."""
-    permissions.checkPermissions(irc, source, ['stats.uptime'])
+    permissions.check_permissions(irc, source, ['stats.uptime'])
 
     try:
         network = args[0]
@@ -69,4 +69,62 @@ def uptime(irc, source, args):
                   )
                  )
 
+def handle_stats(irc, source, command, args):
+    """/STATS handler. Currently supports the following:
 
+    c - link blocks
+    o - oper blocks (accounts)
+    u - shows uptime
+    """
+
+    stats_type = args['stats_type'][0].lower()  # stats_type shouldn't be more than 1 char anyways
+
+    perms = ['stats.%s' % stats_type]
+
+    if stats_type == 'u':
+        perms.append('stats.uptime')  # Consistency
+
+    try:
+        permissions.check_permissions(irc, source, perms)
+    except utils.NotAuthorizedError as e:
+        # Note, no irc.error() because this is not a command, but a handler
+        irc.msg(source, 'Error: %s' % e, notice=True)
+        return
+
+    log.info('(%s) /STATS %s requested by %s', irc.name, stats_type, irc.get_hostmask(source))
+
+    def _num(num, text):
+        irc.numeric(args['target'], num, source, text)
+
+    if stats_type == 'c':
+        # 213/RPL_STATSCLINE: "C <host> * <name> <port> <class>"
+        for netname, serverdata in sorted(conf.conf['servers'].items()):
+            # We're cramming as much as we can into the class field...
+            _num(213, "C %s * %s %s [%s:%s:%s]" %
+                 (serverdata.get('ip', '0.0.0.0'),
+                  netname,
+                  serverdata.get('port', 0),
+                  serverdata['protocol'],
+                  'ssl' if serverdata.get('ssl') else 'no-ssl',
+                  serverdata.get('encoding', 'utf-8'))
+                 )
+    elif stats_type == 'o':
+        # 243/RPL_STATSOLINE: "O <hostmask> * <nick> [:<info>]"
+        # New style accounts only!
+        for accountname, accountdata in conf.conf['login'].get('accounts', {}).items():
+            _num(243, "O %s * %s :network_filter:%s require_oper:%s" %
+                 (' '.join(accountdata.get('hosts', [])) or '*@*',
+                  accountname,
+                  ','.join(accountdata.get('networks', [])) or '*',
+                  bool(accountdata.get('require_oper'))
+                 )
+                )
+
+    elif stats_type == 'u':
+        # 242/RPL_STATSUPTIME: ":Server Up <days> days <hours>:<minutes>:<seconds>"
+        _num(242, ':Server Up %s' % timediff(world.start_ts, int(time.time())))
+
+    else:
+        log.info('(%s) Unknown /STATS type %r requested by %s', irc.name, stats_type, irc.get_hostmask(source))
+    _num(219, "%s :End of /STATS report" % stats_type)
+utils.add_hook(handle_stats, 'STATS')

@@ -1,5 +1,5 @@
 # commands.py: base PyLink commands
-from time import ctime
+import time
 
 from pylinkirc import utils, __version__, world, real_version
 from pylinkirc.log import log
@@ -12,24 +12,24 @@ default_permissions = {"*!*@*": ['commands.status', 'commands.showuser', 'comman
 def main(irc=None):
     """Commands plugin main function, called on plugin load."""
     # Register our permissions.
-    permissions.addDefaultPermissions(default_permissions)
+    permissions.add_default_permissions(default_permissions)
 
 def die(irc=None):
     """Commands plugin die function, called on plugin unload."""
-    permissions.removeDefaultPermissions(default_permissions)
+    permissions.remove_default_permissions(default_permissions)
 
 @utils.add_cmd
 def status(irc, source, args):
     """takes no arguments.
 
     Returns your current PyLink login status."""
-    permissions.checkPermissions(irc, source, ['commands.status'])
+    permissions.check_permissions(irc, source, ['commands.status'])
     identified = irc.users[source].account
     if identified:
         irc.reply('You are identified as \x02%s\x02.' % identified)
     else:
         irc.reply('You are not identified as anyone.')
-    irc.reply('Operator access: \x02%s\x02' % bool(irc.isOper(source)))
+    irc.reply('Operator access: \x02%s\x02' % bool(irc.is_oper(source)))
 
 _none = '\x1D(none)\x1D'
 @utils.add_cmd
@@ -37,16 +37,16 @@ def showuser(irc, source, args):
     """<user>
 
     Shows information about <user>."""
-    permissions.checkPermissions(irc, source, ['commands.showuser'])
+    permissions.check_permissions(irc, source, ['commands.showuser'])
     try:
         target = args[0]
     except IndexError:
         irc.error("Not enough arguments. Needs 1: nick.")
         return
-    u = irc.nickToUid(target) or target
+    u = irc.nick_to_uid(target) or target
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
-    verbose = irc.isOper(source) or u == source
+    verbose = irc.is_oper(source) or u == source
     if u not in irc.users:
         irc.error('Unknown user %r.' % target)
         return
@@ -57,17 +57,19 @@ def showuser(irc, source, args):
     f('Showing information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
       userobj.host, userobj.realname))
 
-    sid = irc.getServer(u)
+    sid = irc.get_server(u)
     serverobj = irc.servers[sid]
     ts = userobj.ts
 
-    # Show connected server & nick TS
-    f('\x02Home server\x02: %s (%s); \x02Nick TS:\x02 %s (%s)' % \
-      (serverobj.name, sid, ctime(float(ts)), ts))
+    # Show connected server & nick TS if available
+    serverinfo = '%s[%s]' % (serverobj.name, sid) \
+        if irc.has_cap('can-track-servers') else 'N/A'
+    tsinfo = '%s [UTC] (%s)' % (time.asctime(time.gmtime(int(ts))), ts) \
+        if irc.has_cap('has-ts') else 'N/A'
+    f('\x02Home server\x02: %s; \x02Nick TS:\x02 %s' % (serverinfo, tsinfo))
 
-    if verbose:  # Oper only data: user modes, channels on, account info, etc.
-
-        f('\x02User modes\x02: %s' % irc.joinModes(userobj.modes, sort=True))
+    if verbose:  # Oper/self only data: user modes, channels in, account info, etc.
+        f('\x02User modes\x02: %s' % irc.join_modes(userobj.modes, sort=True))
         f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
           (u, userobj.realhost, userobj.ip))
         channels = sorted(userobj.channels)
@@ -81,9 +83,9 @@ def showchan(irc, source, args):
     """<channel>
 
     Shows information about <channel>."""
-    permissions.checkPermissions(irc, source, ['commands.showchan'])
+    permissions.check_permissions(irc, source, ['commands.showchan'])
     try:
-        channel = irc.toLower(args[0])
+        channel = args[0]
     except IndexError:
         irc.error("Not enough arguments. Needs 1: channel.")
         return
@@ -95,7 +97,7 @@ def showchan(irc, source, args):
 
     c = irc.channels[channel]
     # Only show verbose info if caller is oper or is in the target channel.
-    verbose = source in c.users or irc.isOper(source)
+    verbose = source in c.users or irc.is_oper(source)
     secret = ('s', None) in c.modes
     if secret and not verbose:
         # Hide secret channels from normal users.
@@ -109,18 +111,20 @@ def showchan(irc, source, args):
         f('\x02Channel topic\x02: %s' % c.topic)
 
     # Mark TS values as untrusted on Clientbot and others (where TS is read-only or not trackable)
-    f('\x02Channel creation time\x02: %s (%s)%s' % (ctime(c.ts), c.ts,
-                                                    ' [UNTRUSTED]' if not irc.proto.hasCap('has-ts') else ''))
+    f('\x02Channel creation time\x02: %s (%s) [UTC]%s' %
+      (time.asctime(time.gmtime(int(c.ts))), c.ts,
+       ' [UNTRUSTED]' if not irc.has_cap('has-ts') else ''))
 
     # Show only modes that aren't list-style modes.
-    modes = irc.joinModes([m for m in c.modes if m[0] not in irc.cmodes['*A']], sort=True)
+    modes = irc.join_modes([m for m in c.modes if m[0] not in irc.cmodes['*A']], sort=True)
     f('\x02Channel modes\x02: %s' % modes)
     if verbose:
         nicklist = []
         # Iterate over the user list, sorted by nick.
         for user, nick in sorted(zip(c.users, nicks),
                                  key=lambda userpair: userpair[1].lower()):
-            for pmode in c.getPrefixModes(user):
+            # Note: reversed() is used here because we're adding prefixes onto the nick in reverse
+            for pmode in reversed(c.get_prefix_modes(user)):
                 # Show prefix modes in order from highest to lowest.
                 nick = irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '') + nick
             nicklist.append(nick)
@@ -142,7 +146,10 @@ def echo(irc, source, args):
     """<text>
 
     Echoes the text given."""
-    permissions.checkPermissions(irc, source, ['commands.echo'])
+    permissions.check_permissions(irc, source, ['commands.echo'])
+    if not args:
+        irc.error('No text to send!')
+        return
     irc.reply(' '.join(args))
 
 def _check_logout_access(irc, source, target, perms):
@@ -154,7 +161,7 @@ def _check_logout_access(irc, source, target, perms):
     assert source in irc.users, "Unknown source user"
     assert target in irc.users, "Unknown target user"
     try:
-        permissions.checkPermissions(irc, source, perms)
+        permissions.check_permissions(irc, source, perms)
     except utils.NotAuthorizedError:
         if irc.users[source].account and (irc.users[source].account == irc.users[target].account):
             return True
@@ -179,7 +186,7 @@ def logout(irc, source, args):
             irc.error("You are not logged in!")
             return
     else:
-        otheruid = irc.nickToUid(othernick)
+        otheruid = irc.nick_to_uid(othernick)
         if not otheruid:
             irc.error("Unknown user %s." % othernick)
             return
@@ -200,7 +207,7 @@ def loglevel(irc, source, args):
 
     Sets the log level to the given <level>. <level> must be either DEBUG, INFO, WARNING, ERROR, or CRITICAL.
     If no log level is given, shows the current one."""
-    permissions.checkPermissions(irc, source, ['commands.loglevel'])
+    permissions.check_permissions(irc, source, ['commands.loglevel'])
     try:
         level = args[0].upper()
         try:

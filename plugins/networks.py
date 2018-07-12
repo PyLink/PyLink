@@ -16,7 +16,7 @@ def disconnect(irc, source, args):
     Disconnects the network <network>. When all networks are disconnected, PyLink will automatically exit.
 
     To reconnect a network disconnected using this command, use REHASH to reload the networks list."""
-    permissions.checkPermissions(irc, source, ['networks.disconnect'])
+    permissions.check_permissions(irc, source, ['networks.disconnect'])
     try:
         netname = args[0]
         network = world.networkobjects[netname]
@@ -27,6 +27,7 @@ def disconnect(irc, source, args):
         irc.error('No such network "%s" (case sensitive).' % netname)
         return
     irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
+    log.info('Disconnecting network %r per %s', netname, irc.get_hostmask(source))
 
     control.remove_network(network)
 
@@ -36,7 +37,7 @@ def autoconnect(irc, source, args):
 
     Sets the autoconnect time for <network> to <seconds>.
     You can disable autoconnect for a network by setting <seconds> to a negative value."""
-    permissions.checkPermissions(irc, source, ['networks.autoconnect'])
+    permissions.check_permissions(irc, source, ['networks.autoconnect'])
     try:
         netname = args[0]
         seconds = float(args[1])
@@ -54,23 +55,34 @@ def autoconnect(irc, source, args):
     irc.reply("Done.")
 
 remote_parser = utils.IRCParser()
-remote_parser.add_argument('network')
 remote_parser.add_argument('--service', type=str, default='pylink')
+remote_parser.add_argument('network')
 remote_parser.add_argument('command', nargs=utils.IRCParser.REMAINDER)
 @utils.add_cmd
 def remote(irc, source, args):
-    """<network> [--service <service name>] <command>
+    """[--service <service name>] <network> <command>
 
     Runs <command> on the remote network <network>. Plugin responses sent using irc.reply() are
     supported and returned here, but others are dropped due to protocol limitations."""
-    permissions.checkPermissions(irc, source, ['networks.remote'])
-
     args = remote_parser.parse_args(args)
+    if not args.command:
+        irc.error('No command given!')
+        return
+
     netname = args.network
 
-    if not args.command:
-        irc.error("No command specified!")
-        return
+    permissions.check_permissions(irc, source, [
+        # Quite a few permissions are allowed. 'networks.remote' is the global permission,
+        'networks.remote',
+        # networks.remote.<network> allows running any command on a specific network,
+        'networks.remote.%s' % netname,
+        # networks.remote.<network>.<service> allows running any command on the given service on a
+        # specific network,
+        'networks.remote.%s.%s' % (netname, args.service),
+        # and networks.remote.<network>.<service>.<command> narrows this further into which command
+        # can be used.
+        'networks.remote.%s.%s.%s' % (netname, args.service, args.command[0])
+    ])
 
     # XXX: things like 'remote network1 remote network2 echo hi' will crash PyLink if the source network is network1...
     global REMOTE_IN_USE
@@ -99,6 +111,10 @@ def remote(irc, source, args):
         return
     elif not remoteirc.connected.is_set():
         irc.error('Network %r is not connected.' % netname)
+        REMOTE_IN_USE.clear()
+        return
+    elif not world.services[args.service].uids.get(netname):
+        irc.error('The requested service %r is not available on %r.' % (args.service, netname))
         REMOTE_IN_USE.clear()
         return
 
@@ -130,7 +146,7 @@ def remote(irc, source, args):
 
     old_reply = remoteirc._reply
 
-    with remoteirc.reply_lock:
+    with remoteirc._reply_lock:
         try:  # Remotely call the command (use the PyLink client as a dummy user).
             # Override the remote irc.reply() to send replies HERE.
             log.debug('(%s) networks.remote: overriding reply() of IRC object %s', irc.name, netname)
@@ -154,14 +170,14 @@ def reloadproto(irc, source, args):
     """<protocol module name>
 
     Reloads the given protocol module without restart. You will have to manually disconnect and reconnect any network using the module for changes to apply."""
-    permissions.checkPermissions(irc, source, ['networks.reloadproto'])
+    permissions.check_permissions(irc, source, ['networks.reloadproto'])
     try:
         name = args[0]
     except IndexError:
         irc.error('Not enough arguments (needs 1: protocol module name)')
         return
 
-    proto = utils.getProtocolModule(name)
+    proto = utils._get_protocol_module(name)
     importlib.reload(proto)
 
     irc.reply("Done. You will have to manually disconnect and reconnect any network using the %r module for changes to apply." % name)

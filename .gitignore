@@ -9,9 +9,11 @@
 env/
 build/
 __pycache__/
+.idea/
 *.py[cod]
 *.bak
 *~
+*#
 *.save*
 *.db
 *.pid
@@ -19,3 +21,4 @@ __pycache__/
 .eggs
 *.egg-info/
 dist/
+log/

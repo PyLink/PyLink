@@ -1,3 +1,258 @@
+# PyLink 2.0-rc1 (unreleased)
+
+#### Bug fixes
+- relay: CHANDESC permissions are now given to opers if the `relay::allow_free_oper_links` option is true.
+- Relay no longer forwards kills from servers, preventing extraneous kills for nick collisions and the like.
+- bots: the `join` command now correctly uses `bots.join` as its permission name (keeping it consistent with the command name).
+    - The previous name `bots.joinclient` is still supported for compatibility reasons.
+
+#### Documentation updates
+- Rewrote the Relay Quick Start Guide. [issue#619](https://github.com/jlu5/PyLink/issues/619)
+- FAQ: expanded Relay section with common questions regarding Relay mechanics (i.e. kill, mode, and server bans handling)
+- docs/technical, docs/permissions-reference: many updates to bring up to date with PyLink 2.0
+- various: updated the GitHub repository address
+
+# PyLink 2.0-beta1 (2018-06-27)
+
+This release contains all changes from 2.0-alpha3 as well as the following:
+
+#### New features
+- **Added TLS certificate verification, which is now enabled by default on Clientbot networks**. [issue#592](https://github.com/jlu5/PyLink/issues/592)
+    - This adds the options `ssl_validate_hostname` and `ssl_accept_invalid_certs` options which have defaults as follows:
+        - | Server type              | `ssl_validate_hostname`                             | `ssl_accept_invalid_certs` |
+          |--------------------------|-----------------------------------------------------|----------------------------|
+          | Full links (S2S)         | false (implied by `ssl_accept_invalid_certs: true`) | true                       |
+          | Clientbot networks (C2S) | true                                                | false                      |
+        - `ssl_validate_hostname` determines whether a network's TLS certificate will be checked for a matching hostname.
+        - `ssl_accept_invalid_certs` disables certificate checking entirely when enabled, and also turns off `ssl_validate_hostname`.
+        - The existing TLS certificate fingerprint options are unchanged by this and can be turned on and off regardless of these new options.
+- New Relay features:
+    - **LINKACL now supports whitelisting networks in addition to the original blacklist implementation** (see `help LINKACL`). [issue#394](https://github.com/jlu5/PyLink/issues/394)
+    - relay: The defaults for CLAIM (on or off) and LINKACL (whitelist or blacklist mode) can now be pre-configured for new channels. [issue#581](https://github.com/jlu5/PyLink/issues/581)
+    - You can now set descriptions for channels in `LINKED` via the `CHANDESC` command. [issue#576](https://github.com/jlu5/PyLink/issues/576)
+    - `relay_clientbot` now supports setting clientbot styles by network. [issue#455](https://github.com/jlu5/PyLink/issues/455)
+    - New `relay::allow_free_oper_links` option allows disabling oper access to `CREATE/LINK/DELINK/DESTROY/CLAIM` by default
+- New Antispam features (see the `antispam:` example block for configuration details):
+    - Antispam now supports text filtering with configured bad strings. [issue#359](https://github.com/jlu5/PyLink/issues/359)
+    - Added `block` as a punishment to only hide messages from other plugins like relay. [issue#616](https://github.com/jlu5/PyLink/issues/616)
+    - Antispam can now process PMs to PyLink clients for spam - this can be limited to service bots, enabled for all PyLink clients (including relay clones), or disabled entirely (the default).
+    - IRC formatting (bold, underline, colors, etc.) is now removed before processing text. [issue#615](https://github.com/jlu5/PyLink/issues/615)
+- IPv4/IPv6 address selection is now automatic, detecting when an IPv6 address or bindhost is given. [issue#212](https://github.com/jlu5/PyLink/issues/212)
+- Messages sent by most commands are now transparently word-wrapped to prevent cutoff. [issue#153](https://github.com/jlu5/PyLink/issues/153)
+- The Global plugin now supports configuring exempt channels. [issue#453](https://github.com/jlu5/PyLink/issues/453)
+- Automode now allows removing entries by entry numbers. [issue#506](https://github.com/jlu5/PyLink/issues/506)
+
+#### Feature changes
+- Relay feature changes:
+    - Relay IP sharing now uses a pool-based configuration scheme (`relay::ip_share_pools`), deprecating the `relay::show_ips` and `relay_no_ips` options.
+        - IPs and real hosts are shared bidirectionally between all networks in an ipshare pool, and masked as `0.0.0.0` when sending to a network not in a pool and when receiving those networks' users.
+    - **KILL handling received a major rework** ([issue#520](https://github.com/jlu5/PyLink/issues/520):
+        - Instead of always bouncing, kills to a relay client can now be forwarded between networks in a killshare pool (`relay::kill_share_pools`).
+        - If the sender and target's networks are not in a killshare pool, the kill is forwarded as a kick to all shared channels that the sender
+          has CLAIM access on (e.g. when they are the home network, whitelisted in `CLAIM`, and/or an op).
+- The PyLink service client no longer needs to be in channels to log to them.
+
+#### Bug fixes
+- Fixed ping timeout handling (this was broken sometime during the port to select).
+- relay: block networks not on the claim list from merging in modes when relinking (better support for modes set by e.g. services DEFCON).
+- Reworked relay+clientbot op checks on to [be more consistent](https://github.com/jlu5/PyLink/compare/fee64ece045ad9dc49a07d1b438caa019c90a778~...d4bf407).
+- inspircd: fix potential desyncs when sending a kill by removing the target immediately. [issue#607](https://github.com/jlu5/PyLink/issues/607)
+- UserMapping: fixed a missing reference to the parent `irc` instance causing errors on nick collisions.
+- clientbot: suppress warnings if `/mode #channel` doesn't show arguments to `+lk`, etc. [issue#537](https://github.com/jlu5/PyLink/issues/537)
+- Relay now removes service persistent channels on unload, and when the home network for a link disconnects.
+- relay: raise an error when trying to delink a leaf channel from another leaf network.
+    - Previously this would (confusingly) delink the channel from the network the command was called on instead of the intended target.
+- opercmds: forbid killing the main PyLink client.
+
+#### Internal changes
+- Login handling was rewritten and moved entirely from `coremods.corecommands` to `coremods.login`. [issue#590](https://github.com/jlu5/PyLink/issues/590)
+- New stuff for the core network classes:
+    - `is_privileged_service(entityid)` returns whether the given UID or SID belongs to a privileged service (IRC U:line).
+    - `User`, `Channel` TS values are now consistently stored as `int`. [issue#594](https://github.com/jlu5/PyLink/issues/594)
+    - `match_host()` was split into `match_host()` and `match_text()`; the latter is now preferred as a simple text matcher for IRC-style globs.
+- New stuff in utils:
+    - `remove_range()` removes a range string of (one-indexed) items from the list, where range strings are indices or ranges of them joined together with a "," (e.g. "5", "2", "2-10", "1,3,5-8") - [issue#506](https://github.com/jlu5/PyLink/issues/506)
+    - `get_hostname_type()` takes in an IP or hostname and returns an int representing the detected address type: 0 (none detected), 1 (IPv4), 2 (IPv6) - [issue#212](https://github.com/jlu5/PyLink/issues/212)
+    - `parse_duration()` takes in a duration string (in the form `1w2d3h4m5s`, etc.) and returns the equiv. amount of seconds - [issue#504](https://github.com/jlu5/PyLink/issues/504)
+- The TLS/SSL setup bits in `IRCNetwork` were broken into multiple functions: `_make_ssl_context()`, `_setup_ssl`, and `_verify_ssl()`
+- Removed deprecated attributes: `irc.botdata`, `irc.conf`, `utils.is*` methods, `PyLinkNetworkCoreWithUtils.check_authenticated()` - [issue#422](https://github.com/jlu5/PyLink/issues/422)
+- PyLinkNCWUtils: The `allowAuthed`, `allowOper` options in `is_oper()` are now deprecated no-ops (they are set to False and True respectively)
+
+# PyLink 2.0-alpha3 (2018-05-10)
+
+This release contains all changes from 1.3.0, as well as the following:
+
+#### New features
+- **Experimental daemonization support via `pylink -d`**. [issue#187](https://github.com/GLolol/PyLink/issues/187)
+- New (alpha-quality) `antispam` plugin targeting mass-highlight spam: it supports any combination of kick, ban, quiet (mute), and kill as punishment. [issue#359](https://github.com/GLolol/PyLink/issues/359)
+- Clientbot now supports expansions such as `$nick` in autoperform.
+- Relay now translates STATUSMSG messages (e.g. `@#channel` messages) for target networks instead of passing them on as-is. [issue#570](https://github.com/GLolol/PyLink/issues/570)
+- Relay endburst delay on InspIRCd networks is now configurable via the `servers::NETNAME::relay_endburst_delay` option.
+- The servermaps plugin now shows the uplink server name for Clientbot links
+- Added `--trace / -t` options to the launcher for integration with Python's `trace` module.
+
+#### Feature changes
+- **Reverted the commit making SIGHUP shutdown the PyLink daemon**. Now, SIGUSR1 and SIGHUP both trigger a rehash, while SIGTERM triggers a shutdown.
+- The `raw` command has been split into a new plugin (`plugins/raw.py`) with two permissions: `raw.raw` for Clientbot networks, and `raw.raw.unsupported_network` for other protocols. Using raw commands outside Clientbot is not supported. [issue#565](https://github.com/GLolol/PyLink/issues/565)
+- The servermaps plugin now uses two permissions for `map` and `localmap`: `servermaps.map` and `servermaps.localmap` respectively
+- `showuser` and `showchan` now consistently report times in UTC
+
+#### Bug fixes
+- protocols/clientbot: fix errors when connecting to networks with mixed-case server names (e.g. AfterNET)
+- relay: fix KeyError when a local client is kicked from a claimed channel. [issue#572](https://github.com/GLolol/PyLink/issues/572)
+- Fix `irc.parse_modes()` incorrectly mangling modes changes like `+b-b *!*@test.host *!*@test.host` into `+b *!*@test.host`. [issue#573](https://github.com/GLolol/PyLink/issues/573)
+- automode: fix handling of channels with multiple \#'s in them
+- launcher: prevent protocol module loading errors (e.g. non-existent protocol module) from blocking the setup of other networks.
+    - This fixes a side-effect which can cause relay to stop functioning (`world.started` is never set)
+- relay_clientbot: fix `STATUSMSG` (`@#channel`) notices from being relayed to channels that it shouldn't
+- Fixed various 2.0-alpha2 regressions:
+    - Relay now relays service client messages as PRIVMSG and P10 WALL\* commands as NOTICE
+    - protocols/inspircd: fix supported modules list being corrupted when an indirectly linked server shuts down. [issue#567](https://github.com/GLolol/PyLink/issues/567)
+- networks: `remote` now properly errors if the target service is not available on a network. [issue#554](https://github.com/GLolol/PyLink/issues/554)
+- commands: fix `showchan` displaying status prefixes in reverse
+- stats: route permission error replies to notice instead of PRIVMSG
+    - This prevents "Unknown command" flood loops with services which poll `/stats` on link.
+- clientbot: fixed sending duplicate JOIN hooks and AWAY status updates. [issue#551](https://github.com/GLolol/PyLink/issues/551)
+
+#### Internal improvements
+- **Reading from sockets now uses select instead of one thread per network.**
+    - This new code uses the Python selectors module, which automatically chooses the fastest polling backend available ([`epoll|kqueue|devpoll > poll > select`](https://github.com/python/cpython/blob/v3.6.5/Lib/selectors.py#L599-L601)).
+- **API Break: significantly reworked channel handling for service bots**. [issue#265](https://github.com/GLolol/PyLink/issues/265)
+    - The `ServiceBot.extra_channels` attribute in previous versions is replaced with `ServiceBot.dynamic_channels`, which is accessed indirectly via new functions `ServiceBot.add_persistent_channel()`, `ServiceBot.remove_persistent_channel()`, `ServiceBot.get_persistent_channels()`. This API also replaces `ServiceBot.join()` for most plugins, which now joins channels *non-persistently*.
+    - This API change provides plugins with a way of registering dynamic persistent channels, which are consistently rejoined on kick or kill.
+    - Persistent channels are also "dynamic" in the sense that PyLink service bots will now part channels marked persistent when they become empty, and rejoin when it is recreated.
+    - This new implementation is also plugin specific, as plugins must provide a namespace (usually the plugin name) when managing persistent channels using `ServiceBot.(add|remove)_persistent_channel()`.
+    - New abstraction: `ServiceBot.get_persistent_channels()` which fetches the list of all persistent channels on a network (i.e. *both* the config defined channels and what's registered in `dynamic_channels`).
+    - New abstraction: `ServiceBot.part()` sends a part request to channels and only succeeds if it is not marked persistent by any plugin. This effectively works around the long-standing issue of relay-services conflicts. [issue#265](https://github.com/GLolol/PyLink/issues/265)
+- Major optimizations to `irc.nick_to_uid`: `PyLinkNetworkCore.users` and `classes.User` now transparently maintain an index mapping nicks to UIDs instead of doing reverse lookup on every call.
+    - This is done via a new `UserMapping` class in `pylinkirc.classes`, which stores User objects by UID and provides a `bynick` attribute mapping case-normalized nicks to lists of UIDs.
+    - `classes.User.nick` is now a property, where the setter implicitly updates the `bynick` index with a pre-computed case-normalized version of the nick (also stored to `User.lower_nick`)
+- Various relay optimizations: reuse target SID when bursting joins, and only look up nick once in `normalize_nick`
+- Rewritten CTCP plugin, now extending to all service bots. [issue#468](https://github.com/GLolol/PyLink/issues/468), [issue#407](https://github.com/GLolol/PyLink/issues/407)
+- Relay no longer spams configured U-lines with "message dropped because you aren't in a common channel" errors
+- The `endburst_delay` option to `spawn_server()` was removed from the protocol spec, and replaced by a private API used by protocols/inspircd and relay.
+- New API: hook handlers can now filter messages from lower-priority handlers by returning `False`. [issue#547](https://github.com/GLolol/PyLink/issues/547)
+- New API: added `irc.get_server_option()` to fetch server-specific config variables and global settings as a fallback. [issue#574](https://github.com/GLolol/PyLink/issues/574)
+- automode: replace assert checks with proper exceptions
+- Renamed methods in log, utils, conf to snake case. [issue#523](https://github.com/GLolol/PyLink/issues/523)
+- Remove `structures.DeprecatedAttributesObject`; it's vastly inefficient for what it accomplishes
+- clientbot: removed unreliable pre-/WHO join bursting with `userhost-in-names`
+- API change: `kick` and `kill` command funcitons now raise `NotImplementedError` when not supported by a protocol
+- relay, utils: remove remaining references to deprecated `irc.proto`
+
+# PyLink 2.0-alpha2 (2018-01-16)
+This release includes all changes from 1.2.2-dev, plus the following:
+
+#### New features
+- relay_clientbot: add support for showing prefix modes in relay text, via a new `$mode_prefix` expansion. [issue#540](https://github.com/GLolol/PyLink/issues/540)
+- Added new modedelta feature to Relay:
+    - Modedelta allows specifying a list of (named) modes to only apply on leaf channels, which can be helpful to fight spam if leaf networks don't have adequate spam protection.
+- relay: added new option `server::<networkname>:relay_forcetag_nicks`, a per-network list of nick globs to always tag when introducing users onto a network. [issue#564](https://github.com/GLolol/PyLink/issues/564)
+- Added support for more channel modes in Relay:
+    * blockcaps: inspircd +B, elemental-ircd +G
+    * exemptchanops: inspircd +X
+    * filter: inspircd +g, unreal extban ~T:block ([issue#557](https://github.com/GLolol/PyLink/issues/557))
+    * hidequits: nefarious +Q, snircd +u
+    * history: inspircd +H
+    * largebanlist: ts6 +L
+    * noamsg: snircd/nefarious +T
+    * blockhighlight: inspircd +V (extras module)
+    * kicknorejoin: elemental-ircd +J ([issue#559](https://github.com/GLolol/PyLink/issues/559))
+    * kicknorejoin_insp: inspircd +J (with argument; [issue#559](https://github.com/GLolol/PyLink/issues/559))
+    * repeat: elemental-ircd +E ([issue#559](https://github.com/GLolol/PyLink/issues/559))
+    * repeat_insp: inspircd +K (with argument; [issue#559](https://github.com/GLolol/PyLink/issues/559))
+- Added support for UnrealIRCd extban `~T` in Relay. [issue#557](https://github.com/GLolol/PyLink/issues/557)
+- p10: added proper support for STATUSMSG notices (i.e. messages to `@#channel` and the like) via WALLCHOPS/WALLHOPS/WALLVOICES
+- p10: added outgoing /knock support by sending it as a notice
+- ts6: added incoming /knock handling
+- relay: added support for relaying /knock
+
+#### Backwards incompatible changes
+- **The ratbox protocol module has been merged into ts6**, with a new `ircd: ratbox` option introduced to declare Ratbox as the target IRCd. [issue#543](https://github.com/GLolol/PyLink/issues/543)
+
+#### Bug fixes
+- Fix default permissions not applying on startup (2.0-alpha1 regression). [issue#542](https://github.com/GLolol/PyLink/issues/542)
+- Fix rejoin-on-kill for the main PyLink bot not working (2.0-alpha1/[94e05a6](https://github.com/GLolol/PyLink/commit/94e05a623314e9b0607de4eb01fab28be2e0c7e1) regression).
+- Clientbot fixes:
+    - Fix desyncs caused by incomplete nick collision checking when a user on a Clientbot link changes their nick to match an existing virtual client. [issue#535](https://github.com/GLolol/PyLink/issues/535)
+    - Fix desync involving ghost users when a person leaves a channel, changes their nick, and rejoins. [issue#536](https://github.com/GLolol/PyLink/issues/536)
+    - Treat 0 as "no account" when parsing WHOX responses; this fixes incorrect "X is logged in as 0" output on WHOIS.
+- protocols/p10: fix the `use_hashed_cloaks` server option not being effective.
+- Fix long standing issues where relay would sometimes burst users multiple times on connect. [issue#529](https://github.com/GLolol/PyLink/issues/529)
+    - Also fix a regression from 2.0-alpha1 where users would not be joined if the hub link is down ([issue#548](https://github.com/GLolol/PyLink/issues/548))
+- Fix `$a:account` extbans being dropped by relay (they were being confused with `$a`). [issue#560](https://github.com/GLolol/PyLink/issues/560)
+- Fix corrupt arguments when mixing the `remote` and `mode` commands. [issue#538](https://github.com/GLolol/PyLink/issues/538)
+- Fix lingering queue threads when networks disconnect. [issue#558](https://github.com/GLolol/PyLink/issues/558)
+- The relay and global plugins now better handle empty / poorly formed config blocks.
+- bots: don't allow `spawnclient` on protocol modules with virtual clients (e.g. clientbot)
+- bots: fix KeyError when trying to join previously nonexistent channels
+
+#### Internal improvements
+- `Channel.sort_prefixes()` now consistently sorts modes from highest to lowest (i.e. from owner to voice). Also removed workaround code added to deal with the wonkiness of this function.
+- ircs2s_common: add handling for `nick@servername` messages.
+- `IRCNetwork` should no longer send multiple disconnect hooks for one disconnection.
+- protocols/ts6 no longer requires `SAVE` support from the uplink. [issue#545](https://github.com/GLolol/PyLink/issues/545)
+- ts6, hybrid: miscellaneous cleanup
+- protocols/inspircd now tracks module (un)loads for `m_chghost.so` and friends. [issue#555](https://github.com/GLolol/PyLink/issues/555)
+- Clientbot now logs failed attempts in joining channels. [issue#533](https://github.com/GLolol/PyLink/issues/533)
+
+# PyLink 2.0-alpha1 (2017-10-07)
+The "Eclectic" release. This release includes all changes from 1.2.1, plus the following:
+
+#### New features
+- **Login blocks can now be limited by network, user hostname, and IRCop status**: see the new "require_oper", "hosts", and "networks" options in the example config.
+- **Added support for ngIRCd, ChatIRCd, and beware-ircd** (via protocol modules `ngircd`, `ts6`, `p10` respectively)
+- **Add support for extbans in protocols and relay**: this is supported on UnrealIRCd, Charybdis (and derivatives), InspIRCd, and Nefarious P10.
+    - Yes, this means you can finally mute bothersome relay users.
+- Clientbot is now more featureful:
+    - Added support for IRCv3 caps `account-notify`, `account-tag`, `away-notify`, `chghost`, `extended-join`, and `userhost-in-names`
+    - Configurable alternate / fallback nicks are now supported: look for the `pylink_altnicks` option in the example config.
+    - Added support for WHOX, to complement IRCv3 `account-notify` and `account-tag`.
+    - Relay_clientbot can now relay mode changes as text.
+    - Clientbot can now optionally sync ban lists when it joins a channel, allowing Relay modesync to unset bans properly. See the `fetch_ban_lists` option in the example config.
+- PyLink received a new launcher, which now checks for stale PID files (when `psutil` is installed) and supports shutdown/restart/rehash via the command line.
+- New commands for the opercmds plugin, including:
+    - `chghost`, `chgident`, and `chgname`, for IRCds that don't expose them as commands.
+    - `massban`, `masskill`, `massbanre`, and `masskillre` - these commands allow setting kickbans, kills, or glines on users matching a PyLink mask (`n!u@h` mask/exttarget) or regular expression. The hope is that these tools can help opers actively fight botnets as they are connected, similar to atheme's `clearchan` and Anope's `chankill` commands.
+    - `checkbanre` - a companion to `checkban`, using regex matching
+- Better support for (pre-defined) U-lined services servers in relay:
+    - `CLAIM` restrictions are relaxed for service bots, which may now join with ops and set simple modes. This prevents mode floods when features such as `DEFCON` are enabled, and when a channel is accidentally registered on a network not on the CLAIM list.
+    - `DEFCON` modes set by services are ignored by Relay instead of bounced, and do not forward onto other networks unless the setting network is also in the channel's `CLAIM` list.
+    - To keep the spirit of `CLAIM` alive, opped services not in a channel's `CLAIM` list are still not allowed to kick remote users, set prefix modes (e.g. op) on others, or set list modes such as bans.
+- Service bots' hostnames and real names are now fully configurable, globally and per network.
+- Added per-network configuration of relay server suffixes.
+- Added IRC `/STATS` support via the `stats` plugin (`/stats c`, `u`, and `o` are supported so far)
+- PyLink's connection time is now displayed when WHOISing service bots. This info can be turned off using the `pylink:whois_show_startup_time` option.
+- More specific permissions for the `remote` command, which now allows assigning permissions by target network, service bot, and command.
+- New `$service` exttarget which matches service bots by name.
+
+#### Backwards incompatible changes
+- Signal handling on Unix was updated to use `SIGUSR1` for rehash and `SIGHUP` for shutdown - this changes PyLink to be more in line with foreground programs, which generally close with the owning terminal.
+- Some options were deprecated and renamed:
+    - The `p10_ircd` option for P10 servers is now named `ircd`, though the old option will still be read from.
+    - The `use_elemental_modes` setting on ts6 networks has been deprecated and replaced with an `ircd` option targeting charybdis, elemental-ircd, or chatircd. Supported values for `ircd` include `charybdis`, `elemental`, and `chatircd`.
+- PID file checking is now enabled by default, along with checks for stale PID files *only* when [`psutil`](https://pythonhosted.org/psutil/) is installed. Users upgrading from PyLink < 1.1-dev without `psutil` installed will need remove PyLink's PID files before starting the service.
+- The `fml` command in the `games` plugin was removed.
+
+#### Bug fixes
+- Relay should stop bursting channels multiple times on startup now. (`initialize_channel` now skips execution if another thread is currently initializing the same channel)
+- Fixed a long standing bug where fantasy responses would relay before a user's original command if the `fantasy` plugin was loaded before `relay`. (Bug #123)
+
+#### Internal changes
+- **API Break**: The protocol module layer is completely rewritten, with the `Irc` and `Protocol`-derived classes combining into one. Porting **will** be needed for old protocol modules and plugins targetting 1.x; see the [new (WIP) protocol specification](https://github.com/GLolol/PyLink/blob/devel/docs/technical/pmodule-spec.md) for details.
+- **API Break**: Channels are now stored in two linked dictionaries per IRC object: once in `irc._channels`, and again in `irc.channels`. The main difference is that `irc._channels` implicitly creates new channels when accessing them if they didn't previously exist (prefer this for protocol modules), while `irc.channels` does not raises and raises KeyError instead (prefer this for plugins).
+- **API Break**: Most methods in `utils` and `classes` were renamed from camel case to snake case. `log`, `conf`, and others will be ported too before the final 2.0 release.
+- **API Break**: IRC protocol modules' server introductions must now use **`post_connect()`** instead of **`connect()`** to prevent name collisions with the base connection handling code.
+- Channels are now stored case insensitively internally, so protocol modules and new plugins no longer need to manually coerse names to lowercase.
+- Plugins can now bind hooks as specific priorities via an optional `priority` option in `utils.add_hook`. Hooks with higher priorities will be called first; the default priority value us 500.
+- Commands can now be properly marked as aliases, so that duplicates don't show in the `list` command.
+- Added basic `GLINE/KLINE` support for most IRCds; work is ongoing to polish this off.
+- PyLink accounts are now implicitly matched: i.e. `user1` is now equivalent to `$pylinkacc:user1`
+- Added complete support for "Network Administrator" and "Network Service" as oper types on IRCds using user modes to denote them (e.g. UnrealIRCd, charybdis).
+- User and server hop counts are now tracked properly instead of being hardcoded as 1.
+- protocols/p10 now bursts IPv6 IPs to supported uplinks.
+- Fixed compatibility with ircd-hybrid trunk after commit 981c61e (EX and IE are no longer sent in the capability list)
+
 # PyLink 1.3.0 (2018-05-08)
 The 1.3 update focuses on backporting some commonly requested and useful features from the WIP 2.0 branch. This release includes all changes from 1.3-beta1, plus the following:
 
@@ -32,7 +287,7 @@ The 1.3 update focuses on backporting some commonly requested and useful feature
 - Significantly revised example-conf for wording and consistency.
 - protocols/unreal: bumped protocol version to 4017 (no changes needed)
 
-# PyLink 1.2.1
+# PyLink 1.2.1 (2017-09-19)
 The "Dancer" release. Changes from 1.2.0:
 
 #### Bug fixes
@@ -56,7 +311,7 @@ The "Dancer" release. Changes from 1.2.0:
     - Minor logging cleanup for relay and `Irc.matchHost()`.
     - Fix cmode `+p` mapping on TS6 networks.
 
-# PyLink 1.2.0
+# PyLink 1.2.0 (2017-08-14)
 The "Dragons" release. Changes since 1.2.0-rc1:
 
 #### Feature changes

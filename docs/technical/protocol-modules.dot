@@ -1,29 +1,47 @@
-/* Graph showing inheritance with the current PyLink protocol protocols:
- * Update using: dot -Tpng protocol-modules.dot > protocol-modules.png
+/* Graph showing inheritance with the current PyLink protocol modules:
+ * Update using: dot -Tsvg protocol-modules.dot > protocol-modules.svg
  */
 
 digraph G {
-	ratio = 0.8; /* make the graph wider than tall */
+
+	edge [ penwidth=0.75, color="#111111CC" ];
+	subgraph cluster_core {
+		label="Core classes (pylinkirc.classes)";
+		style="filled";
+		node [style="filled",color="white"];
+		color="#90EE90";
+
+		"PyLinkNetworkCore" -> "PyLinkNetworkCoreWithUtils" -> "IRCNetwork";
+	}
+
 	subgraph cluster_helper {
-		label="Protocol module helpers";
+		label="Protocol module helpers\n(pylinkirc.protocols.ircs2s_common)";
 		style="filled";
 		node [style="filled",color="white"];
 		color="lightblue";
 
-		"ircs2s_common.py" -> "ts6_common.py";
+		"IRCNetwork" -> "IRCCommonProtocol" -> "IRCS2SProtocol" -> "TS6BaseProtocol";
+
+		subgraph cluster_helper {
+			label="pylinkirc.protocols.ts6_common";
+			style="filled";
+			color="lightcyan";
+
+			"TS6BaseProtocol";
+		}
 	}
 
 	subgraph cluster_pluggable {
-		label="Pluggable (full) protocol modules";
+		label="Complete protocol modules (pylinkirc.protocols.*)";
 		style="filled";
 		node [style="filled",color="white"];
 		color="khaki";
 
-		"ircs2s_common.py" -> "p10.py";
-		"ts6_common.py" -> "ts6.py" -> "hybrid.py";
-		"ts6.py" -> "ratbox.py";
-		"ts6_common.py" -> "inspircd.py";
-		"ts6_common.py" -> "unreal.py";
-		"clientbot.py";
+		"IRCS2SProtocol" -> "p10";
+		"IRCS2SProtocol" -> "ngircd";
+		"TS6BaseProtocol" -> "ts6" -> "hybrid";
+		"TS6BaseProtocol" -> "inspircd";
+		"TS6BaseProtocol" -> "unreal";
+		"IRCCommonProtocol" -> "clientbot";
 	}
 }

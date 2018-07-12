@@ -44,7 +44,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
 
-    url='https://github.com/GLolol/PyLink',
+    url='https://github.com/jlu5/PyLink',
 
     # Author details
     author='James Lu',

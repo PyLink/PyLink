@@ -12,80 +12,255 @@ import time
 import socket
 import ssl
 import hashlib
-from copy import deepcopy
-import inspect
-import re
-from collections import defaultdict
 import ipaddress
 import queue
+import functools
+import string
+import re
+import collections
+import collections.abc
+import textwrap
 
 try:
     import ircmatch
 except ImportError:
     raise ImportError("PyLink requires ircmatch to function; please install it and try again.")
 
-from . import world, utils, structures, conf, __version__
+from . import world, utils, structures, conf, __version__, selectdriver
 from .log import *
-
-### Exceptions
-
-class ProtocolError(RuntimeError):
-    pass
+from .utils import ProtocolError  # Compatibility with PyLink 1.x
 
 ### Internal classes (users, servers, channels)
 
-class Irc(utils.DeprecatedAttributesObject):
-    """Base IRC object for PyLink."""
-    SOCKET_REPOLL_WAIT = 1.0
+class ChannelState(structures.IRCCaseInsensitiveDict):
+    """
+    A dictionary storing channels case insensitively. Channel objects are initialized on access.
+    """
+    def __getitem__(self, key):
+        key = self._keymangle(key)
 
-    def __init__(self, netname, proto, conf):
+        if key not in self._data:
+            log.debug('(%s) ChannelState: creating new channel %s in memory', self._irc.name, key)
+            self._data[key] = newchan = Channel(self._irc, key)
+            return newchan
+
+        return self._data[key]
+
+class TSObject():
+    """Base class for classes containing a type-normalized timestamp."""
+    def __init__(self, *args, **kwargs):
+        self._ts = int(time.time())
+
+    @property
+    def ts(self):
+        return self._ts
+
+    @ts.setter
+    def ts(self, value):
+        if (not isinstance(value, int)) and (not isinstance(value, float)):
+            log.warning('TSObject: Got bad type for TS, converting from %s to int',
+                        type(value), stack_info=True)
+            value = int(value)
+        self._ts = value
+
+class User(TSObject):
+    """PyLink IRC user class."""
+    def __init__(self, irc, nick, ts, uid, server, ident='null', host='null',
+                 realname='PyLink dummy client', realhost='null',
+                 ip='0.0.0.0', manipulatable=False, opertype='IRC Operator'):
+        super().__init__()
+        self._nick = nick
+        self.lower_nick = irc.to_lower(nick)
+
+        self.ts = ts
+        self.uid = uid
+        self.ident = ident
+        self.host = host
+        self.realhost = realhost
+        self.ip = ip
+        self.realname = realname
+        self.modes = set()  # Tracks user modes
+        self.server = server
+        self._irc = irc
+
+        # Tracks PyLink identification status
+        self.account = ''
+
+        # Tracks oper type (for display only)
+        self.opertype = opertype
+
+        # Tracks external services identification status
+        self.services_account = ''
+
+        # Tracks channels the user is in
+        self.channels = structures.IRCCaseInsensitiveSet(self._irc)
+
+        # Tracks away message status
+        self.away = ''
+
+        # This sets whether the client should be marked as manipulatable.
+        # Plugins like bots.py's commands should take caution against
+        # manipulating these "protected" clients, to prevent desyncs and such.
+        # For "serious" service clients, this should always be False.
+        self.manipulatable = manipulatable
+
+        # Cloaked host for IRCds that use it
+        self.cloaked_host = None
+
+        # Stores service bot name if applicable
+        self.service = None
+
+    @property
+    def nick(self):
+        return self._nick
+
+    @nick.setter
+    def nick(self, newnick):
+        oldnick = self.lower_nick
+        self._nick = newnick
+        self.lower_nick = self._irc.to_lower(newnick)
+
+        # Update the irc.users bynick index:
+        if oldnick in self._irc.users.bynick:
+            # Remove existing value -> key mappings.
+            self._irc.users.bynick[oldnick].remove(self.uid)
+
+            # Remove now-empty keys as well.
+            if not self._irc.users.bynick[oldnick]:
+                del self._irc.users.bynick[oldnick]
+
+        # Update the new nick.
+        self._irc.users.bynick.setdefault(self.lower_nick, []).append(self.uid)
+
+    def get_fields(self):
         """
-        Initializes an IRC object. This takes 3 variables: the network name
-        (a string), the name of the protocol module to use for this connection,
-        and a configuration object.
+        Returns all template/substitution-friendly fields for the User object in a read-only dictionary.
         """
-        self.deprecated_attributes = {
-            'conf': 'Deprecated since 1.2; consider switching to conf.conf',
-            'botdata': "Deprecated since 1.2; consider switching to conf.conf['bot']",
-        }
+        fields = self.__dict__.copy()
+
+        # These don't really make sense in text substitutions
+        for field in ('manipulatable', '_irc'):
+            del fields[field]
+
+        # Pre-format the channels list. FIXME: maybe this should be configurable somehow?
+        fields['channels'] = ','.join(sorted(self.channels))
+
+        # Swap SID and server name for convenience
+        fields['sid'] = self.server
+        try:
+            fields['server'] = self._irc.get_friendly_name(self.server)
+        except KeyError:
+            pass  # Keep it as is (i.e. as the SID) if grabbing the server name fails
+
+        # Network name
+        fields['netname'] = self._irc.name
+
+        # Join umodes together
+        fields['modes'] = self._irc.join_modes(self.modes)
+
+        # Add the nick attribute; this isn't in __dict__ because it's a property
+        fields['nick'] = self._nick
+
+        return fields
+
+    def __repr__(self):
+        return 'User(%s/%s)' % (self.uid, self.nick)
+IrcUser = User
+
+# Bidirectional dict based off https://stackoverflow.com/a/21894086
+class UserMapping(collections.abc.MutableMapping, structures.CopyWrapper):
+    """
+    A mapping storing User objects by UID, as well as UIDs by nick via
+    the 'bynick' attribute
+    """
+    def __init__(self, irc, data=None):
+        if data is not None:
+            assert isinstance(data, dict)
+            self._data = data
+        else:
+            self._data = {}
+        self.bynick = collections.defaultdict(list)
+        self._irc = irc
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __setitem__(self, key, userobj):
+        assert hasattr(userobj, 'lower_nick'), "Cannot add object without lower_nick attribute to UserMapping"
+        if key in self._data:
+            log.warning('(%s) Attempting to replace User object for %r: %r -> %r', self._irc.name,
+                        key, self._data.get(key), userobj)
+
+        self._data[key] = userobj
+        self.bynick.setdefault(userobj.lower_nick, []).append(key)
+
+    def __delitem__(self, key):
+        # Remove this entry from the bynick index
+        if self[key].lower_nick in self.bynick:
+            self.bynick[self[key].lower_nick].remove(key)
+
+            if not self.bynick[self[key].lower_nick]:
+                del self.bynick[self[key].lower_nick]
+
+        del self._data[key]
+
+    # Generic container methods. XXX: consider abstracting this out in structures?
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __contains__(self, key):
+        return self._data.__contains__(key)
+
+    def __copy__(self):
+        return self.__class__(self._irc, data=self._data.copy())
+
+class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
+    """Base IRC object for PyLink."""
+
+    def __init__(self, netname):
 
         self.loghandlers = []
         self.name = netname
-        self.conf = conf
+        self.conf = conf.conf
         self.sid = None
-        self.serverdata = conf['servers'][netname]
-        self.botdata = conf['bot']
-        self.protoname = proto.__name__.split('.')[-1]  # Remove leading pylinkirc.protocols.
-        self.proto = proto.Class(self)
+        self.serverdata = conf.conf['servers'][netname]
+
+        self.protoname = self.__class__.__module__.split('.')[-1]  # Remove leading pylinkirc.protocols.
+        self.proto = self.irc = self  # Backwards compat
+
+        # Protocol stuff
+        self.casemapping = 'rfc1459'
+        self.hook_map = {}
+
+        # Lists required conf keys for the server block.
+        self.conf_keys = {'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass',
+                          'recvpass'}
+
+        # Defines a set of PyLink protocol capabilities
+        self.protocol_caps = set()
 
         # These options depend on self.serverdata from above to be set.
         self.encoding = None
-        self.pingfreq = self.serverdata.get('pingfreq') or 90
-        self.pingtimeout = self.pingfreq * 2
-
-        self.queue = None
 
         self.connected = threading.Event()
-        self.aborted = threading.Event()
-        self.reply_lock = threading.RLock()
-
-        self.pingTimer = None
+        self._aborted = threading.Event()
+        self._aborted_send = threading.Event()
+        self._reply_lock = threading.RLock()
 
         # Sets the multiplier for autoconnect delay (grows with time).
         self.autoconnect_active_multiplier = 1
 
-        self.initVars()
+        self.was_successful = False
 
-        if world.testing:
-            # HACK: Don't thread if we're running tests.
-            self.connect()
-        else:
-            self.connection_thread = threading.Thread(target=self.connect,
-                                                      name="Listener for %s" %
-                                                      self.name)
-            self.connection_thread.start()
+        self._init_vars()
 
-    def logSetup(self):
+    def log_setup(self):
         """
         Initializes any channel loggers defined for the current network.
         """
@@ -117,20 +292,15 @@ class Irc(utils.DeprecatedAttributesObject):
                 self.loghandlers.append(handler)
                 log.addHandler(handler)
 
-    def initVars(self):
+    def _init_vars(self):
         """
         (Re)sets an IRC object to its default state. This should be called when
         an IRC object is first created, and on every reconnection to a network.
         """
         self.encoding = self.serverdata.get('encoding') or 'utf-8'
-        self.pingfreq = self.serverdata.get('pingfreq') or 90
-        self.pingtimeout = self.pingfreq * 3
 
+        # Tracks the main PyLink client's UID.
         self.pseudoclient = None
-        self.lastping = time.time()
-
-        self.maxsendq = self.serverdata.get('maxsendq', 4096)
-        self.queue = queue.Queue(self.maxsendq)
 
         # Internal variable to set the place and caller of the last command (in PM
         # or in a channel), used by fantasy command support.
@@ -138,11 +308,16 @@ class Irc(utils.DeprecatedAttributesObject):
         self.called_in = None
 
         # Intialize the server, channel, and user indexes to be populated by
-        # our protocol module. For the server index, we can add ourselves right
-        # now.
+        # our protocol module.
         self.servers = {}
-        self.users = {}
-        self.channels = structures.KeyedDefaultdict(IrcChannel)
+        self.users = UserMapping(self)
+
+        # Two versions of the channels index exist in PyLink 2.0, and they are joined together
+        # - irc._channels which implicitly creates channels on access (mostly used
+        #   in protocol modules)
+        # - irc.channels which does not (recommended for use by plugins)
+        self._channels = ChannelState(self)
+        self.channels = structures.IRCCaseInsensitiveDict(self, data=self._channels._data)
 
         # This sets the list of supported channel and user modes: the default
         # RFC1459 modes are implied. Named modes are used here to make
@@ -166,10 +341,15 @@ class Irc(utils.DeprecatedAttributesObject):
                        '*A': 'b',
                        '*B': 'k',
                        '*C': 'l',
-                       '*D': 'imnpstr'}
+                       '*D': 'imnpst'}
         self.umodes = {'invisible': 'i', 'snomask': 's', 'wallops': 'w',
                        'oper': 'o',
                        '*A': '', '*B': '', '*C': '', '*D': 'iosw'}
+
+        # Acting extbans such as +b m:n!u@h on InspIRCd
+        self.extbans_acting = {}
+        # Matching extbans such as R:account on InspIRCd and $a:account on TS6.
+        self.extbans_matching = {}
 
         # This max nick length starts off as the config value, but may be
         # overwritten later by the protocol module if such information is
@@ -184,312 +364,30 @@ class Irc(utils.DeprecatedAttributesObject):
         self.start_ts = int(time.time())
 
         # Set up channel logging for the network
-        self.logSetup()
+        self.log_setup()
 
-    def processQueue(self):
-        """Loop to process outgoing queue data."""
-        while True:
-            throttle_time = self.serverdata.get('throttle_time', 0.005)
-            if not self.aborted.wait(throttle_time):
-                data = self.queue.get()
-                if data is None:
-                    log.debug('(%s) Stopping queue thread due to getting None as item', self.name)
-                    break
-                elif self not in world.networkobjects.values():
-                    log.debug('(%s) Stopping stale queue thread; no longer matches world.networkobjects', self.name)
-                    break
-                elif data:
-                    self._send(data)
-            else:
-                break
+    def __repr__(self):
+        return "<%s object for network %r>" % (self.__class__.__name__, self.name)
+
+    ## Stubs
+    def validate_server_conf(self):
+        return
 
     def connect(self):
-        """
-        Runs the connect loop for the IRC object. This is usually called by
-        __init__ in a separate thread to allow multiple concurrent connections.
-        """
-        while True:
-
-            self.aborted.clear()
-            self.initVars()
-
-            try:
-                self.proto.validateServerConf()
-            except AssertionError as e:
-                log.exception("(%s) Configuration error: %s", self.name, e)
-                return
-
-            ip = self.serverdata["ip"]
-            port = self.serverdata["port"]
-            checks_ok = True
-            try:
-                # Set the socket type (IPv6 or IPv4).
-                stype = socket.AF_INET6 if self.serverdata.get("ipv6") else socket.AF_INET
-
-                # Creat the socket.
-                self.socket = socket.socket(stype)
-                self.socket.setblocking(0)
-
-                # Set the socket bind if applicable.
-                if 'bindhost' in self.serverdata:
-                    self.socket.bind((self.serverdata['bindhost'], 0))
-
-                # Set the connection timeouts. Initial connection timeout is a
-                # lot smaller than the timeout after we've connected; this is
-                # intentional.
-                self.socket.settimeout(self.pingfreq)
-
-                # Resolve hostnames if it's not an IP address already.
-                old_ip = ip
-                ip = socket.getaddrinfo(ip, port, stype)[0][-1][0]
-                log.debug('(%s) Resolving address %s to %s', self.name, old_ip, ip)
-
-                # Enable SSL if set to do so.
-                self.ssl = self.serverdata.get('ssl')
-                if self.ssl:
-                    log.info('(%s) Attempting SSL for this connection...', self.name)
-                    certfile = self.serverdata.get('ssl_certfile')
-                    keyfile = self.serverdata.get('ssl_keyfile')
-
-                    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                    # Disable SSLv2 and SSLv3 - these are insecure
-                    context.options |= ssl.OP_NO_SSLv2
-                    context.options |= ssl.OP_NO_SSLv3
-
-                    # Cert and key files are optional, load them if specified.
-                    if certfile and keyfile:
-                        try:
-                            context.load_cert_chain(certfile, keyfile)
-                        except OSError:
-                             log.exception('(%s) Caught OSError trying to '
-                                           'initialize the SSL connection; '
-                                           'are "ssl_certfile" and '
-                                           '"ssl_keyfile" set correctly?',
-                                           self.name)
-                             checks_ok = False
-
-                    self.socket = context.wrap_socket(self.socket)
-
-                log.info("Connecting to network %r on %s:%s", self.name, ip, port)
-                self.socket.connect((ip, port))
-                self.socket.settimeout(self.pingtimeout)
-
-                # If SSL was enabled, optionally verify the certificate
-                # fingerprint for some added security. I don't bother to check
-                # the entire certificate for validity, since most IRC networks
-                # self-sign their certificates anyways.
-                if self.ssl and checks_ok:
-                    peercert = self.socket.getpeercert(binary_form=True)
-
-                    # Hash type is configurable using the ssl_fingerprint_type
-                    # value, and defaults to sha256.
-                    hashtype = self.serverdata.get('ssl_fingerprint_type', 'sha256').lower()
-
-                    try:
-                        hashfunc = getattr(hashlib, hashtype)
-                    except AttributeError:
-                        log.error('(%s) Unsupported SSL certificate fingerprint type %r given, disconnecting...',
-                                  self.name, hashtype)
-                        checks_ok = False
-                    else:
-                        fp = hashfunc(peercert).hexdigest()
-                        expected_fp = self.serverdata.get('ssl_fingerprint')
-
-                        if expected_fp and checks_ok:
-                            if fp != expected_fp:
-                                # SSL Fingerprint doesn't match; break.
-                                log.error('(%s) Uplink\'s SSL certificate '
-                                          'fingerprint (%s) does not match the '
-                                          'one configured: expected %r, got %r; '
-                                          'disconnecting...', self.name, hashtype,
-                                          expected_fp, fp)
-                                checks_ok = False
-                            else:
-                                log.info('(%s) Uplink SSL certificate fingerprint '
-                                         '(%s) verified: %r', self.name, hashtype,
-                                         fp)
-                        else:
-                            log.info('(%s) Uplink\'s SSL certificate fingerprint (%s) '
-                                     'is %r. You can enhance the security of your '
-                                     'link by specifying this in a "ssl_fingerprint"'
-                                     ' option in your server block.', self.name,
-                                     hashtype, fp)
-
-                if checks_ok:
-
-                    self.queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
-                                                         target=self.processQueue, daemon=True)
-                    self.queue_thread.start()
-
-                    self.sid = self.serverdata.get("sid")
-                    # All our checks passed, get the protocol module to connect and run the listen
-                    # loop. This also updates any SID values should the protocol module do so.
-                    self.proto.connect()
-
-                    log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
-                    host = self.hostname()
-
-                    self.servers[self.sid] = IrcServer(None, host, internal=True,
-                            desc=self.serverdata.get('serverdesc')
-                            or conf.conf['bot']['serverdesc'])
-
-                    log.info('(%s) Starting ping schedulers....', self.name)
-                    self.schedulePing()
-                    log.info('(%s) Server ready; listening for data.', self.name)
-                    self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
-                    self.run()
-                else:  # Configuration error :(
-                    log.error('(%s) A configuration error was encountered '
-                              'trying to set up this connection. Please check'
-                              ' your configuration file and try again.',
-                              self.name)
-            # self.run() or the protocol module it called raised an exception, meaning we've disconnected!
-            # Note: socket.error, ConnectionError, IOError, etc. are included in OSError since Python 3.3,
-            # so we don't need to explicitly catch them here.
-            # We also catch SystemExit here as a way to abort out connection threads properly, and stop the
-            # IRC connection from freezing instead.
-            except (OSError, RuntimeError, SystemExit) as e:
-                log.exception('(%s) Disconnected from IRC:', self.name)
-
-            self.disconnect()
-
-            # If autoconnect is enabled, loop back to the start. Otherwise,
-            # return and stop.
-            autoconnect = self.serverdata.get('autoconnect')
-
-            # Sets the autoconnect growth multiplier (e.g. a value of 2 multiplies the autoconnect
-            # time by 2 on every failure, etc.)
-            autoconnect_multiplier = self.serverdata.get('autoconnect_multiplier', 2)
-            autoconnect_max = self.serverdata.get('autoconnect_max', 1800)
-            # These values must at least be 1.
-            autoconnect_multiplier = max(autoconnect_multiplier, 1)
-            autoconnect_max = max(autoconnect_max, 1)
-
-            log.debug('(%s) Autoconnect delay set to %s seconds.', self.name, autoconnect)
-            if autoconnect is not None and autoconnect >= 1:
-                log.debug('(%s) Multiplying autoconnect delay %s by %s.', self.name, autoconnect, self.autoconnect_active_multiplier)
-                autoconnect *= self.autoconnect_active_multiplier
-                # Add a cap on the max. autoconnect delay, so that we don't go on forever...
-                autoconnect = min(autoconnect, autoconnect_max)
-
-                log.info('(%s) Going to auto-reconnect in %s seconds.', self.name, autoconnect)
-                # Continue when either self.aborted is set or the autoconnect time passes.
-                # Compared to time.sleep(), this allows us to stop connections quicker if we
-                # break while while for autoconnect.
-                self.aborted.clear()
-                self.aborted.wait(autoconnect)
-
-                # Store in the local state what the autoconnect multiplier currently is.
-                self.autoconnect_active_multiplier *= autoconnect_multiplier
-
-                if self not in world.networkobjects.values():
-                    log.debug('Stopping stale connect loop for old connection %r', self.name)
-                    return
-
-            else:
-                log.info('(%s) Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
-                return
+        raise NotImplementedError
 
     def disconnect(self):
-        """Handle disconnects from the remote server."""
-        was_successful = self.connected.is_set()
-        log.debug('(%s) disconnect: got %s for was_successful state', self.name, was_successful)
+        raise NotImplementedError
 
-        log.debug('(%s) disconnect: Clearing self.connected state.', self.name)
-        self.connected.clear()
-
-        log.debug('(%s) disconnect: Setting self.aborted to True.', self.name)
-        self.aborted.set()
-
-        log.debug('(%s) Removing channel logging handlers due to disconnect.', self.name)
-        while self.loghandlers:
-            log.removeHandler(self.loghandlers.pop())
-
-        try:
-            log.debug('(%s) disconnect: Shutting down socket.', self.name)
-            self.socket.shutdown(socket.SHUT_RDWR)
-        except Exception as e:  # Socket timed out during creation; ignore
-            log.debug('(%s) error on socket shutdown: %s: %s', self.name, type(e).__name__, e)
-
-        self.socket.close()
-
-        # Stop the queue thread.
-        if self.queue:
-            # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
-            self.queue.queue.appendleft(None)
-
-        # Stop the ping timer.
-        if self.pingTimer:
-            log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
-            self.pingTimer.cancel()
-
-        # Internal hook signifying that a network has disconnected.
-        self.callHooks([None, 'PYLINK_DISCONNECT', {'was_successful': was_successful}])
-
-        log.debug('(%s) disconnect: Clearing state via initVars().', self.name)
-        self.initVars()
-
-    def run(self):
-        """Main IRC loop which listens for messages."""
-        buf = b""
-        data = b""
-        while not self.aborted.is_set():
-            try:
-                data = self.socket.recv(2048)
-            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
-                log.debug('(%s) No data to read, trying again later...', self.name)
-                if self.aborted.wait(self.SOCKET_REPOLL_WAIT):
-                    return
-                continue
-            except OSError:
-                # Suppress socket read warnings from lingering recv() calls if
-                # we've been told to shutdown.
-                if self.aborted.is_set():
-                    return
-                raise
-
-            buf += data
-            if not data:
-                log.error('(%s) No data received, disconnecting!', self.name)
-                return
-            elif (time.time() - self.lastping) > self.pingtimeout:
-                log.error('(%s) Connection timed out.', self.name)
-                return
-
-            while b'\n' in buf:
-                line, buf = buf.split(b'\n', 1)
-                line = line.strip(b'\r')
-                line = line.decode(self.encoding, "replace")
-                self.runline(line)
-
-    def runline(self, line):
-        """Sends a command to the protocol module."""
-        log.debug("(%s) <- %s", self.name, line)
-        try:
-            hook_args = self.proto.handle_events(line)
-        except Exception:
-            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
-            log.error('(%s) The offending line was: <- %s', self.name, line)
-            self.aborted.set()
-            return
-        # Only call our hooks if there's data to process. Handlers that support
-        # hooks will return a dict of parsed arguments, which can be passed on
-        # to plugins and the like. For example, the JOIN handler will return
-        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
-        # 'UID3']}, etc.
-        if hook_args is not None:
-            self.callHooks(hook_args)
-
-        return hook_args
-
-    def callHooks(self, hook_args):
+    ## General utility functions
+    def call_hooks(self, hook_args):
         """Calls a hook function with the given hook args."""
         numeric, command, parsed_args = hook_args
         # Always make sure TS is sent.
         if 'ts' not in parsed_args:
             parsed_args['ts'] = int(time.time())
         hook_cmd = command
-        hook_map = self.proto.hook_map
+        hook_map = self.hook_map
 
         # If the hook name is present in the protocol module's hook_map, then we
         # should set the hook name to the name that points to instead.
@@ -508,11 +406,18 @@ class Irc(utils.DeprecatedAttributesObject):
                   command, hook_cmd)
 
         # Iterate over registered hook functions, catching errors accordingly.
-        for hook_func in world.hooks[hook_cmd]:
+        for hook_pair in world.hooks[hook_cmd].copy():
+            hook_func = hook_pair[1]
             try:
                 log.debug('(%s) Calling hook function %s from plugin "%s"', self.name,
                           hook_func, hook_func.__module__)
-                hook_func(self, numeric, command, parsed_args)
+                retcode = hook_func(self, numeric, command, parsed_args)
+
+                if retcode is False:
+                    log.debug('(%s) Stopping hook loop for %r (command=%r)', self.name,
+                              hook_func, command)
+                    break
+
             except Exception:
                 # We don't want plugins to crash our servers...
                 log.exception('(%s) Unhandled exception caught in hook %r from plugin "%s"',
@@ -521,55 +426,14 @@ class Irc(utils.DeprecatedAttributesObject):
                           hook_args)
                 continue
 
-    def _send(self, data):
-        """Sends raw text to the uplink server."""
-        # Safeguard against newlines in input!! Otherwise, each line gets
-        # treated as a separate command, which is particularly nasty.
-        data = data.replace('\n', ' ')
-        encoded_data = data.encode(self.encoding, 'replace') + b"\n"
-
-        log.debug("(%s) -> %s", self.name, data)
-
-        try:
-            self.socket.send(encoded_data)
-        except (OSError, AttributeError):
-            log.exception("(%s) Failed to send message %r; did the network disconnect?", self.name, data)
-
-    def send(self, data, queue=True):
-        """send() wrapper with optional queueing support."""
-        if self.aborted.is_set():
-            log.debug('(%s) refusing to queue data %r as self.aborted is set', self.name, data)
-            return
-        if queue:
-            # XXX: we don't really know how to handle blocking queues yet, so
-            # it's better to not expose that yet.
-            self.queue.put_nowait(data)
-        else:
-            self._send(data)
-
-    def schedulePing(self):
-        """Schedules periodic pings in a loop."""
-        self.proto.ping()
-
-        self.pingTimer = threading.Timer(self.pingfreq, self.schedulePing)
-        self.pingTimer.daemon = True
-        self.pingTimer.name = 'Ping timer loop for %s' % self.name
-        self.pingTimer.start()
-
-        log.debug('(%s) Ping scheduled at %s', self.name, time.time())
-
-    def __repr__(self):
-        return "<classes.Irc object for %r>" % self.name
-
-    ### General utility functions
-    def callCommand(self, source, text):
+    def call_command(self, source, text):
         """
         Calls a PyLink bot command. source is the caller's UID, and text is the
         full, unparsed text of the message.
         """
         world.services['pylink'].call_cmd(self, source, text)
 
-    def msg(self, target, text, notice=None, source=None, loopback=True):
+    def msg(self, target, text, notice=None, source=None, loopback=True, wrap=True):
         """Handy function to send messages/notices to clients. Source
         is optional, and defaults to the main PyLink client if not specified."""
         if not text:
@@ -580,27 +444,35 @@ class Irc(utils.DeprecatedAttributesObject):
             return
         source = source or self.pseudoclient.uid
 
-        if notice:
-            self.proto.notice(source, target, text)
-            cmd = 'PYLINK_SELF_NOTICE'
-        else:
-            self.proto.message(source, target, text)
-            cmd = 'PYLINK_SELF_PRIVMSG'
+        def _msg(text):
+            if notice:
+                self.notice(source, target, text)
+                cmd = 'PYLINK_SELF_NOTICE'
+            else:
+                self.message(source, target, text)
+                cmd = 'PYLINK_SELF_PRIVMSG'
 
-        if loopback:
-            # Determines whether we should send a hook for this msg(), to relay things like services
+            # Determines whether we should send a hook for this msg(), to forward things like services
             # replies across relay.
-            self.callHooks([source, cmd, {'target': target, 'text': text}])
+            if loopback:
+                self.call_hooks([source, cmd, {'target': target, 'text': text}])
+
+        # Optionally wrap the text output.
+        if wrap:
+            for line in self.wrap_message(source, target, text):
+                _msg(line)
+        else:
+            _msg(text)
 
     def _reply(self, text, notice=None, source=None, private=None, force_privmsg_in_private=False,
-            loopback=True):
+            loopback=True, wrap=True):
         """
         Core of the reply() function - replies to the last caller in the right context
         (channel or PM).
         """
         if private is None:
             # Allow using private replies as the default, if no explicit setting was given.
-            private = conf.conf['bot'].get("prefer_private_replies")
+            private = conf.conf['pylink'].get("prefer_private_replies")
 
         # Private reply is enabled, or the caller was originally a PM
         if private or (self.called_in in self.users):
@@ -613,7 +485,7 @@ class Irc(utils.DeprecatedAttributesObject):
         else:
             target = self.called_in
 
-        self.msg(target, text, notice=notice, source=source, loopback=loopback)
+        self.msg(target, text, notice=notice, source=source, loopback=loopback, wrap=wrap)
 
     def reply(self, *args, **kwargs):
         """
@@ -622,7 +494,7 @@ class Irc(utils.DeprecatedAttributesObject):
         This function wraps around _reply() and can be monkey-patched in a thread-safe manner
         to temporarily redirect plugin output to another target.
         """
-        with self.reply_lock:
+        with self._reply_lock:
             self._reply(*args, **kwargs)
 
     def error(self, text, **kwargs):
@@ -630,52 +502,293 @@ class Irc(utils.DeprecatedAttributesObject):
         # This is a stub to alias error to reply
         self.reply("Error: %s" % text, **kwargs)
 
-    def toLower(self, text):
-        """Returns a lowercase representation of text based on the IRC object's
-        casemapping (rfc1459 or ascii)."""
-        if self.proto.casemapping == 'rfc1459':
+    ## Configuration-based lookup functions.
+    def version(self):
+        """
+        Returns a detailed version string including the PyLink daemon version,
+        the protocol module in use, and the server hostname.
+        """
+        fullversion = 'PyLink-%s. %s :[protocol:%s, encoding:%s]' % (__version__, self.hostname(), self.protoname, self.encoding)
+        return fullversion
+
+    def hostname(self):
+        """
+        Returns the server hostname used by PyLink on the given server.
+        """
+        return self.serverdata.get('hostname', world.fallback_hostname)
+
+    def get_full_network_name(self):
+        """
+        Returns the full network name (as defined by the "netname" option), or the
+        short network name if that isn't defined.
+        """
+        return self.serverdata.get('netname', self.name)
+
+    def get_service_option(self, servicename, option, default=None, global_option=None):
+        """
+        Returns the value of the requested service bot option on the current network, or the
+        global value if it is not set for this network. This function queries and returns:
+
+        1) If present, the value of the config option servers::<NETNAME>::<SERVICENAME>_<OPTION>
+        2) If present, the value of the config option <SERVICENAME>::<GLOBAL_OPTION>, where
+           <GLOBAL_OPTION> is either the 'global_option' keyword argument or <OPTION>.
+        3) The default value given in the 'keyword' argument.
+
+        While service bot and config option names can technically be uppercase or mixed case,
+        the convention is to define them in all lowercase characters.
+        """
+        netopt = self.serverdata.get('%s_%s' % (servicename, option))
+        if netopt is not None:
+            return netopt
+
+        if global_option is not None:
+            option = global_option
+        globalopt = conf.conf.get(servicename, {}).get(option)
+        if globalopt is not None:
+            return globalopt
+
+        return default
+
+    def has_cap(self, capab):
+        """
+        Returns whether this protocol module instance has the requested capability.
+        """
+        return capab.lower() in self.protocol_caps
+
+    ## Shared helper functions
+    def _pre_connect(self):
+        """
+        Implements triggers called before a network connects.
+        """
+        self._aborted_send.clear()
+        self._aborted.clear()
+        self._init_vars()
+
+        try:
+            self.validate_server_conf()
+        except Exception as e:
+            log.error("(%s) Configuration error: %s", self.name, e)
+            raise
+
+    def _run_autoconnect(self):
+        """Blocks for the autoconnect time and returns True if autoconnect is enabled."""
+        if world.shutting_down.is_set():
+            log.debug('(%s) _run_autoconnect: aborting autoconnect attempt since we are shutting down.', self.name)
+            return
+
+        autoconnect = self.serverdata.get('autoconnect')
+
+        # Sets the autoconnect growth multiplier (e.g. a value of 2 multiplies the autoconnect
+        # time by 2 on every failure, etc.)
+        autoconnect_multiplier = self.serverdata.get('autoconnect_multiplier', 2)
+        autoconnect_max = self.serverdata.get('autoconnect_max', 1800)
+        # These values must at least be 1.
+        autoconnect_multiplier = max(autoconnect_multiplier, 1)
+        autoconnect_max = max(autoconnect_max, 1)
+
+        log.debug('(%s) _run_autoconnect: Autoconnect delay set to %s seconds.', self.name, autoconnect)
+        if autoconnect is not None and autoconnect >= 1:
+            log.debug('(%s) _run_autoconnect: Multiplying autoconnect delay %s by %s.', self.name, autoconnect, self.autoconnect_active_multiplier)
+            autoconnect *= self.autoconnect_active_multiplier
+            # Add a cap on the max. autoconnect delay, so that we don't go on forever...
+            autoconnect = min(autoconnect, autoconnect_max)
+
+            log.info('(%s) _run_autoconnect: Going to auto-reconnect in %s seconds.', self.name, autoconnect)
+            # Continue when either self._aborted is set or the autoconnect time passes.
+            # Compared to time.sleep(), this allows us to stop connections quicker if we
+            # break while while for autoconnect.
+            self._aborted.clear()
+            self._aborted.wait(autoconnect)
+
+            # Store in the local state what the autoconnect multiplier currently is.
+            self.autoconnect_active_multiplier *= autoconnect_multiplier
+
+            if self not in world.networkobjects.values():
+                log.debug('(%s) _run_autoconnect: Stopping stale connect loop', self.name)
+                return
+            return True
+
+        else:
+            log.debug('(%s) _run_autoconnect: Stopping connect loop (autoconnect value %r is < 1).', self.name, autoconnect)
+            return
+
+    def _pre_disconnect(self):
+        """
+        Implements triggers called before a network disconnects.
+        """
+        self._aborted.set()
+        self.was_successful = self.connected.is_set()
+        log.debug('(%s) _pre_disconnect: got %s for was_successful state', self.name, self.was_successful)
+
+        log.debug('(%s) _pre_disconnect: Clearing self.connected state.', self.name)
+        self.connected.clear()
+
+        log.debug('(%s) _pre_disconnect: Removing channel logging handlers due to disconnect.', self.name)
+        while self.loghandlers:
+            log.removeHandler(self.loghandlers.pop())
+
+    def _post_disconnect(self):
+        """
+        Implements triggers called after a network disconnects.
+        """
+        # Internal hook signifying that a network has disconnected.
+        self.call_hooks([None, 'PYLINK_DISCONNECT', {'was_successful': self.was_successful}])
+
+        # Clear the to_lower cache.
+        self.to_lower.cache_clear()
+
+    def _remove_client(self, numeric):
+        """Internal function to remove a client from our internal state."""
+        for c, v in self.channels.copy().items():
+            v.remove_user(numeric)
+            # Clear empty non-permanent channels.
+            if not (self.channels[c].users or ((self.cmodes.get('permanent'), None) in self.channels[c].modes)):
+                del self.channels[c]
+
+        sid = self.get_server(numeric)
+        try:
+            del self.users[numeric]
+            self.servers[sid].users.discard(numeric)
+        except KeyError:
+            log.debug('(%s) Skipping removing client %s that no longer exists', self.name, numeric,
+                      exc_info=True)
+        else:
+            log.debug('(%s) Removing client %s from user + server state', self.name, numeric)
+
+    ## State checking functions
+    def nick_to_uid(self, nick):
+        """Looks up the UID of a user with the given nick, if one is present."""
+        nick = self.to_lower(nick)
+
+        uids = self.users.bynick.get(nick, [])
+        if len(uids) > 1:
+            log.warning('(%s) Multiple UIDs found for nick %r: %r; using the last one!', self.name, nick, uids)
+        try:
+            return uids[-1]
+        except IndexError:
+            return None
+
+    def is_internal_client(self, numeric):
+        """
+        Returns whether the given client numeric (UID) is a PyLink client.
+        """
+        sid = self.get_server(numeric)
+        if sid and self.servers[sid].internal:
+            return True
+        return False
+
+    def is_internal_server(self, sid):
+        """Returns whether the given SID is an internal PyLink server."""
+        return (sid in self.servers and self.servers[sid].internal)
+
+    def get_server(self, numeric):
+        """Finds the SID of the server a user is on."""
+        userobj = self.users.get(numeric)
+        if userobj:
+            return userobj.server
+
+    def is_manipulatable_client(self, uid):
+        """
+        Returns whether the given user is marked as an internal, manipulatable
+        client. Usually, automatically spawned services clients should have this
+        set True to prevent interactions with opers (like mode changes) from
+        causing desyncs.
+        """
+        return self.is_internal_client(uid) and self.users[uid].manipulatable
+
+    def get_service_bot(self, uid):
+        """
+        Checks whether the given UID is a registered service bot. If True,
+        returns the cooresponding ServiceBot object.
+        """
+        userobj = self.users.get(uid)
+        if not userobj:
+            return False
+
+        # Look for the "service" attribute in the User object,sname = userobj.service
+        # Warn if the service name we fetched isn't a registered service.
+        sname = userobj.service
+        if sname is not None and sname not in world.services.keys():
+            log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
+                        "exist (%s)!", self.name, uid, userobj.nick, sname)
+        return world.services.get(sname)
+
+structures._BLACKLISTED_COPY_TYPES.append(PyLinkNetworkCore)
+
+class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Lock for updateTS to make sure only one thread can change the channel TS at one time.
+        self._ts_lock = threading.Lock()
+
+    @functools.lru_cache(maxsize=8192)
+    def to_lower(self, text):
+        if not text:
+            return text
+        if self.casemapping == 'rfc1459':
             text = text.replace('{', '[')
             text = text.replace('}', ']')
             text = text.replace('|', '\\')
             text = text.replace('~', '^')
         # Encode the text as bytes first, and then lowercase it so that only ASCII characters are
-        # changed. Unicode in channel names, etc. is case sensitive because IRC is just that old of
-        # a protocol!!!
+        # changed. Unicode in channel names, etc. *is* case sensitive!
         return text.encode().lower().decode()
 
-    def parseModes(self, target, args):
-        """Parses a modestring list into a list of (mode, argument) tuples.
-        ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
-        """
-        # http://www.irc.org/tech_docs/005.html
-        # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
-        # B = Mode that changes a setting and always has a parameter.
-        # C = Mode that changes a setting and only has a parameter when set.
-        # D = Mode that changes a setting and never has a parameter.
+    _NICK_REGEX = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
+    @classmethod
+    def is_nick(cls, s, nicklen=None):
+        """Returns whether the string given is a valid IRC nick."""
 
-        if type(args) == str:
+        if nicklen and len(s) > nicklen:
+            return False
+        return bool(re.match(cls._NICK_REGEX, s))
+
+    @staticmethod
+    def is_channel(s):
+        """Returns whether the string given is a valid IRC channel name."""
+        return str(s).startswith('#')
+
+    @staticmethod
+    def _isASCII(s):
+        """Returns whether the given string only contains non-whitespace ASCII characters."""
+        chars = string.ascii_letters + string.digits + string.punctuation
+        return all(char in chars for char in s)
+
+    @classmethod
+    def is_server_name(cls, s):
+        """Returns whether the string given is a valid IRC server name."""
+        return cls._isASCII(s) and '.' in s and not s.startswith('.')
+
+    _HOSTMASK_RE = re.compile(r'^\S+!\S+@\S+$')
+    @classmethod
+    def is_hostmask(cls, text):
+        """Returns whether the given text is a valid IRC hostmask (nick!user@host)."""
+        # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
+        return bool(cls._HOSTMASK_RE.match(text) and '#' not in text)
+
+    def _parse_modes(self, args, existing, supported_modes, is_channel=False, prefixmodes=None,
+                     ignore_missing_args=False):
+        """
+        parse_modes() core.
+
+        args: A mode string or a mode string split by space (type list)
+        existing: A set or iterable of existing modes
+        supported_modes: a dict of PyLink supported modes (mode names mapping
+                         to mode chars, with *ABCD keys)
+        prefixmodes: a dict of prefix modes (irc.prefixmodes style)
+        """
+        prefix = ''
+        if isinstance(args, str):
             # If the modestring was given as a string, split it into a list.
             args = args.split()
 
         assert args, 'No valid modes were supplied!'
-        usermodes = not utils.isChannel(target)
-        prefix = ''
         modestring = args[0]
         args = args[1:]
-        if usermodes:
-            log.debug('(%s) Using self.umodes for this query: %s', self.name, self.umodes)
 
-            if target not in self.users:
-                log.debug('(%s) Possible desync! Mode target %s is not in the users index.', self.name, target)
-                return []  # Return an empty mode list
+        existing = set(existing)
 
-            supported_modes = self.umodes
-            oldmodes = self.users[target].modes
-        else:
-            log.debug('(%s) Using self.cmodes for this query: %s', self.name, self.cmodes)
-
-            supported_modes = self.cmodes
-            oldmodes = self.channels[target].modes
         res = []
         for mode in modestring:
             if mode in '+-':
@@ -686,13 +799,12 @@ class Irc(utils.DeprecatedAttributesObject):
                 arg = None
                 log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
                 try:
-                    if mode in self.prefixmodes and not usermodes:
+                    if prefixmodes and mode in self.prefixmodes:
                         # We're setting a prefix mode on someone (e.g. +o user1)
                         log.debug('Mode %s: This mode is a prefix mode.', mode)
                         arg = args.pop(0)
-                        # Convert nicks to UIDs implicitly; most IRCds will want
-                        # this already.
-                        arg = self.nickToUid(arg) or arg
+                        # Convert nicks to UIDs implicitly
+                        arg = self.nick_to_uid(arg) or arg
                         if arg not in self.users:  # Target doesn't exist, skip it.
                             log.debug('(%s) Skipping setting mode "%s %s"; the '
                                       'target doesn\'t seem to exist!', self.name,
@@ -709,17 +821,17 @@ class Irc(utils.DeprecatedAttributesObject):
                                 # as a single "*".
                                 # We'd need to know the real argument of +k for us to
                                 # be able to unset the mode.
-                                oldarg = dict(oldmodes).get(mode)
+                                oldarg = dict(existing).get(mode)
                                 if oldarg:
                                     # Set the arg to the old one on the channel.
                                     arg = oldarg
                                     log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
 
-                            log.debug('(%s) parseModes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, oldmodes)
+                            log.debug('(%s) parse_modes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, existing)
 
-                            if (mode, arg) not in oldmodes:
+                            if (mode, arg) not in existing:
                                 # Ignore attempts to unset bans that don't exist.
-                                log.debug("(%s) parseModes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
+                                log.debug("(%s) parse_modes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
                                 continue
 
                     elif prefix == '+' and mode in supported_modes['*C']:
@@ -727,77 +839,107 @@ class Irc(utils.DeprecatedAttributesObject):
                         log.debug('Mode %s: Only has parameter when setting.', mode)
                         arg = args.pop(0)
                 except IndexError:
-                    log.warning('(%s/%s) Error while parsing mode %r: mode requires an '
-                                'argument but none was found. (modestring: %r)',
-                                self.name, target, mode, modestring)
+                    logfunc = log.debug if ignore_missing_args else log.warning
+                    logfunc('(%s) Error while parsing mode %r: mode requires an '
+                            'argument but none was found. (modestring: %r)',
+                            self.name, mode, modestring)
                     continue  # Skip this mode; don't error out completely.
-                res.append((prefix + mode, arg))
+                newmode = (prefix + mode, arg)
+                res.append(newmode)
+
+                # Tentatively apply the new mode to the "existing" mode list.
+                existing = self._apply_modes(existing, [newmode], is_channel=is_channel)
+
         return res
 
-    def applyModes(self, target, changedmodes):
-        """Takes a list of parsed IRC modes, and applies them on the given target.
+    def parse_modes(self, target, args, ignore_missing_args=False):
+        """Parses a modestring list into a list of (mode, argument) tuples.
+        ['+mitl-o', '3', 'person'] => [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')]
+        """
+        # http://www.irc.org/tech_docs/005.html
+        # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
+        # B = Mode that changes a setting and always has a parameter.
+        # C = Mode that changes a setting and only has a parameter when set.
+        # D = Mode that changes a setting and never has a parameter.
 
-        The target can be either a channel or a user; this is handled automatically."""
-        usermodes = not utils.isChannel(target)
-        log.debug('(%s) Using usermodes for this query? %s', self.name, usermodes)
+        is_channel = self.is_channel(target)
+        if not is_channel:
+            log.debug('(%s) Using self.umodes for this query: %s', self.name, self.umodes)
 
-        try:
-            if usermodes:
-                old_modelist = self.users[target].modes
-                supported_modes = self.umodes
-            else:
-                old_modelist = self.channels[target].modes
-                supported_modes = self.cmodes
-        except KeyError:
-            log.warning('(%s) Possible desync? Mode target %s is unknown.', self.name, target)
-            return
+            if target not in self.users:
+                log.debug('(%s) Possible desync! Mode target %s is not in the users index.', self.name, target)
+                return []  # Return an empty mode list
 
+            supported_modes = self.umodes
+            oldmodes = self.users[target].modes
+            prefixmodes = None
+        else:
+            log.debug('(%s) Using self.cmodes for this query: %s', self.name, self.cmodes)
+
+            supported_modes = self.cmodes
+            oldmodes = self._channels[target].modes
+            prefixmodes = self._channels[target].prefixmodes
+
+        return self._parse_modes(args, oldmodes, supported_modes, is_channel=is_channel,
+                                 prefixmodes=prefixmodes, ignore_missing_args=ignore_missing_args)
+
+    def _apply_modes(self, old_modelist, changedmodes, is_channel=False,
+                     prefixmodes=None):
+        """
+        Takes a list of parsed IRC modes, and applies them onto the given target mode list.
+        """
         modelist = set(old_modelist)
-        log.debug('(%s) Applying modes %r on %s (initial modelist: %s)', self.name, changedmodes, target, modelist)
+
+        if is_channel:
+            supported_modes = self.cmodes
+        else:
+            supported_modes = self.umodes
+
         for mode in changedmodes:
-            # Chop off the +/- part that parseModes gives; it's meaningless for a mode list.
+            # Chop off the +/- part that parse_modes gives; it's meaningless for a mode list.
             try:
                 real_mode = (mode[0][1], mode[1])
             except IndexError:
                 real_mode = mode
 
-            if not usermodes:
-                # We only handle +qaohv for now. Iterate over every supported mode:
-                # if the IRCd supports this mode and it is the one being set, add/remove
-                # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
-                # for ops).
-                for pmode, pmodelist in self.channels[target].prefixmodes.items():
-                    if pmode in self.cmodes and real_mode[0] == self.cmodes[pmode]:
-                        log.debug('(%s) Initial prefixmodes list: %s', self.name, pmodelist)
-                        if mode[0][0] == '+':
-                            pmodelist.add(mode[1])
-                        else:
-                            pmodelist.discard(mode[1])
+            if is_channel:
+                if prefixmodes is not None:
+                    # We only handle +qaohv for now. Iterate over every supported mode:
+                    # if the IRCd supports this mode and it is the one being set, add/remove
+                    # the person from the corresponding prefix mode list (e.g. c.prefixmodes['op']
+                    # for ops).
+                    for pmode, pmodelist in prefixmodes.items():
+                        if pmode in supported_modes and real_mode[0] == supported_modes[pmode]:
+                            log.debug('(%s) Initial prefixmodes list (%s): %s', self.name, pmode, pmodelist)
+                            if mode[0][0] == '+':
+                                pmodelist.add(mode[1])
+                            else:
+                                pmodelist.discard(mode[1])
 
-                        log.debug('(%s) Final prefixmodes list: %s', self.name, pmodelist)
+                            log.debug('(%s) Final prefixmodes list (%s): %s', self.name, pmode, pmodelist)
 
                 if real_mode[0] in self.prefixmodes:
-                    # Don't add prefix modes to IrcChannel.modes; they belong in the
+                    # Don't add prefix modes to Channel.modes; they belong in the
                     # prefixmodes mapping handled above.
-                    log.debug('(%s) Not adding mode %s to IrcChannel.modes because '
+                    log.debug('(%s) Not adding mode %s to Channel.modes because '
                               'it\'s a prefix mode.', self.name, str(mode))
                     continue
 
             if mode[0][0] != '-':
+                log.debug('(%s) Adding mode %r on %s', self.name, real_mode, modelist)
                 # We're adding a mode
                 existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
-                if existing and real_mode[1] and real_mode[0] not in self.cmodes['*A']:
+                if existing and real_mode[1] and real_mode[0] not in supported_modes['*A']:
                     # The mode we're setting takes a parameter, but is not a list mode (like +beI).
                     # Therefore, only one version of it can exist at a time, and we must remove
                     # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
                     # for example, someone sets mode "+l 30" on a channel already set "+l 25".
-                    log.debug('(%s) Old modes for mode %r exist on %s, removing them: %s',
-                              self.name, real_mode, target, str(existing))
+                    log.debug('(%s) Old modes for mode %r exist in %s, removing them: %s',
+                              self.name, real_mode, modelist, str(existing))
                     [modelist.discard(oldmode) for oldmode in existing]
                 modelist.add(real_mode)
-                log.debug('(%s) Adding mode %r on %s', self.name, real_mode, target)
             else:
-                log.debug('(%s) Removing mode %r on %s', self.name, real_mode, target)
+                log.debug('(%s) Removing mode %r from %s', self.name, real_mode, modelist)
                 # We're removing a mode
                 if real_mode[1] is None:
                     # We're removing a mode that only takes arguments when setting.
@@ -809,18 +951,41 @@ class Irc(utils.DeprecatedAttributesObject):
                 else:
                     modelist.discard(real_mode)
         log.debug('(%s) Final modelist: %s', self.name, modelist)
+        return modelist
+
+    def apply_modes(self, target, changedmodes):
+        """Takes a list of parsed IRC modes, and applies them on the given target.
+
+        The target can be either a channel or a user; this is handled automatically."""
+        is_channel = self.is_channel(target)
+
+        prefixmodes = None
         try:
-            if usermodes:
-                self.users[target].modes = modelist
+            if is_channel:
+                c = self._channels[target]
+                old_modelist = c.modes
+                prefixmodes = c.prefixmodes
             else:
-                self.channels[target].modes = modelist
+                old_modelist = self.users[target].modes
         except KeyError:
-            log.warning("(%s) Invalid MODE target %s (usermodes=%s)", self.name, target, usermodes)
+            log.warning('(%s) Possible desync? Mode target %s is unknown.', self.name, target)
+            return
+
+        modelist = self._apply_modes(old_modelist, changedmodes, is_channel=is_channel,
+                                     prefixmodes=prefixmodes)
+
+        try:
+            if is_channel:
+                self._channels[target].modes = modelist
+            else:
+                self.users[target].modes = modelist
+        except KeyError:
+            log.warning("(%s) Invalid MODE target %s (is_channel=%s)", self.name, target, is_channel)
 
     @staticmethod
     def _flip(mode):
         """Flips a mode character."""
-        # Make it a list first, strings don't support item assignment
+        # Make it a list first; strings don't support item assignment
         mode = list(mode)
         if mode[0] == '-':  # Query is something like "-n"
             mode[0] = '+'  # Change it to "+n"
@@ -830,8 +995,8 @@ class Irc(utils.DeprecatedAttributesObject):
             mode.insert(0, '-')
         return ''.join(mode)
 
-    def reverseModes(self, target, modes, oldobj=None):
-        """Reverses/Inverts the mode string or mode list given.
+    def reverse_modes(self, target, modes, oldobj=None):
+        """Reverses/inverts the mode string or mode list given.
 
         Optionally, an oldobj argument can be given to look at an earlier state of
         a channel/user object, e.g. for checking the op status of a mode setter
@@ -844,13 +1009,14 @@ class Irc(utils.DeprecatedAttributesObject):
              => {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
             {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
         """
-        origtype = type(modes)
+        origstring = isinstance(modes, str)
+
         # If the query is a string, we have to parse it first.
-        if origtype == str:
-            modes = self.parseModes(target, modes.split(" "))
+        if origstring:
+            modes = self.parse_modes(target, modes.split(" "))
         # Get the current mode list first.
-        if utils.isChannel(target):
-            c = oldobj or self.channels[target]
+        if self.is_channel(target):
+            c = oldobj or self._channels[target]
             oldmodes = c.modes.copy()
             possible_modes = self.cmodes.copy()
             # For channels, this also includes the list of prefix modes.
@@ -864,7 +1030,7 @@ class Irc(utils.DeprecatedAttributesObject):
             oldmodes = self.users[target].modes
             possible_modes = self.umodes
         newmodes = []
-        log.debug('(%s) reverseModes: old/current mode list for %s is: %s', self.name,
+        log.debug('(%s) reverse_modes: old/current mode list for %s is: %s', self.name,
                    target, oldmodes)
         for char, arg in modes:
             # Mode types:
@@ -874,9 +1040,9 @@ class Irc(utils.DeprecatedAttributesObject):
             # D = Mode that changes a setting and never has a parameter.
             mchar = char[-1]
             if mchar in possible_modes['*B'] + possible_modes['*C']:
-                # We need to find the current mode list, so we can reset arguments
-                # for modes that have arguments. For example, setting +l 30 on a channel
-                # that had +l 50 set should give "+l 30", not "-l".
+                # We need to look at the current mode list to reset modes that take arguments
+                # For example, trying to bounce +l 30 on a channel that had +l 50 set should
+                # give "+l 50" and not "-l".
                 oldarg = [m for m in oldmodes if m[0] == mchar]
                 if oldarg:  # Old mode argument for this mode existed, use that.
                     oldarg = oldarg[0]
@@ -890,27 +1056,27 @@ class Irc(utils.DeprecatedAttributesObject):
                 mpair = (self._flip(char), arg)
             if char[0] != '-' and (mchar, arg) in oldmodes:
                 # Mode is already set.
-                log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since we're "
+                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since we're "
                           "setting a mode that's already set.", self.name, char, arg, mpair)
                 continue
             elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
-                # We're unsetting a prefixmode that was never set - don't set it in response!
-                # Charybdis lacks verification for this server-side.
-                log.debug("(%s) reverseModes: skipping reversing '%s %s' with %s since it "
+                # We're unsetting a prefix mode that was never set - don't set it in response!
+                # TS6 IRCds lacks server-side verification for this and can cause annoying mode floods.
+                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
                           "wasn't previously set.", self.name, char, arg, mpair)
                 continue
             newmodes.append(mpair)
 
-        log.debug('(%s) reverseModes: new modes: %s', self.name, newmodes)
-        if origtype == str:
+        log.debug('(%s) reverse_modes: new modes: %s', self.name, newmodes)
+        if origstring:
             # If the original query is a string, send it back as a string.
-            return self.joinModes(newmodes)
+            return self.join_modes(newmodes)
         else:
             return set(newmodes)
 
     @staticmethod
-    def joinModes(modes, sort=False):
-        """Takes a list of (mode, arg) tuples in parseModes() format, and
+    def join_modes(modes, sort=False):
+        """Takes a list of (mode, arg) tuples in parse_modes() format, and
         joins them into a string.
 
         See testJoinModes in tests/test_utils.py for some examples."""
@@ -929,12 +1095,12 @@ class Irc(utils.DeprecatedAttributesObject):
                 # If the mode has a prefix, use that.
                 curr_prefix, mode = mode
             except ValueError:
-                # If not, the current prefix stays the same; move on to the next
-                # modepair.
+                # If not, the current prefix stays the same as the last mode pair; move on
+                # to the next one.
                 pass
             else:
-                # If the prefix of this mode isn't the same as the last one, add
-                # the prefix to the modestring. This prevents '+nt-lk' from turning
+                # Only when the prefix of this mode isn't the same as the last one do we add
+                # the prefix to the mode string. This prevents '+nt-lk' from turning
                 # into '+n+t-l-k' or '+ntlk'.
                 if prefix != curr_prefix:
                     modelist += curr_prefix
@@ -951,7 +1117,7 @@ class Irc(utils.DeprecatedAttributesObject):
         return modelist
 
     @classmethod
-    def wrapModes(cls, modes, limit, max_modes_per_msg=0):
+    def wrap_modes(cls, modes, limit, max_modes_per_msg=0):
         """
         Takes a list of modes and wraps it across multiple lines.
         """
@@ -967,9 +1133,8 @@ class Irc(utils.DeprecatedAttributesObject):
         modes = list(modes)
         while modes:
             # PyLink mode lists come in the form [('+t', None), ('-b', '*!*@someone'), ('+l', 3)]
-            # The +/- part is optional depending on context, and should either:
-            # 1) The prefix of the last mode.
-            # 2) + (adding modes), if no prefix was ever given
+            # The +/- part is optional and is treated as the prefix of the last mode if not given,
+            # or + (adding modes) if it is the first mode in the list.
             next_mode = modes.pop(0)
 
             modechar, arg = next_mode
@@ -977,19 +1142,19 @@ class Irc(utils.DeprecatedAttributesObject):
             if prefix not in '+-':
                 prefix = last_prefix
                 # Explicitly add the prefix to the mode character to prevent
-                # ambiguity when passing it to joinModes().
+                # ambiguity when passing it to e.g. join_modes().
                 modechar = prefix + modechar
-                # XXX: because tuples are immutable, we have to replace the entire modepair..
+                # XXX: because tuples are immutable, we have to replace the entire modepair...
                 next_mode = (modechar, arg)
 
             # Figure out the length that the next mode will add to the buffer. If we're changing
-            # from + to - (setting to removing modes) or vice versa, we'll need two characters
-            # ("+" or "-") plus the mode char itself.
+            # from + to - (setting to removing modes) or vice versa, we'll need two characters:
+            # the "+" or "-" as well as the actual mode char.
             next_length = 1
             if prefix != last_prefix:
                 next_length += 1
 
-            # Replace the last_prefix with the current one for the next iteration.
+            # Replace the last mode prefix with the current one for the next iteration.
             last_prefix = prefix
 
             if arg:
@@ -998,102 +1163,32 @@ class Irc(utils.DeprecatedAttributesObject):
                 next_length += len(arg)
 
             assert next_length <= limit, \
-                "wrapModes: Mode %s is too long for the given length %s" % (next_mode, limit)
+                "wrap_modes: Mode %s is too long for the given length %s" % (next_mode, limit)
 
             # Check both message length and max. modes per msg if enabled.
             if (next_length + total_length) <= limit and ((not max_modes_per_msg) or len(queued_modes) < max_modes_per_msg):
                 # We can fit this mode in the next message; add it.
                 total_length += next_length
-                log.debug('wrapModes: Adding mode %s to queued modes', str(next_mode))
+                log.debug('wrap_modes: Adding mode %s to queued modes', str(next_mode))
                 queued_modes.append(next_mode)
-                log.debug('wrapModes: queued modes: %s', queued_modes)
+                log.debug('wrap_modes: queued modes: %s', queued_modes)
             else:
-                # Otherwise, create a new message by joining the previous queue.
-                # Then, add our current mode.
-                strings.append(cls.joinModes(queued_modes))
+                # Otherwise, create a new message by joining the previous queued modes into a message.
+                # Then, create a new message with our current mode.
+                strings.append(cls.join_modes(queued_modes))
                 queued_modes.clear()
 
-                log.debug('wrapModes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
+                log.debug('wrap_modes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
                 queued_modes.append(next_mode)
                 total_length = next_length
         else:
             # Everything fit in one line, so just use that.
-            strings.append(cls.joinModes(queued_modes))
+            strings.append(cls.join_modes(queued_modes))
 
-        log.debug('wrapModes: returning %s for %s', strings, orig_modes)
+        log.debug('wrap_modes: returning %s for %s', strings, orig_modes)
         return strings
 
-    def version(self):
-        """
-        Returns a detailed version string including the PyLink daemon version,
-        the protocol module in use, and the server hostname.
-        """
-        fullversion = 'PyLink-%s. %s :[protocol:%s, encoding:%s]' % (__version__, self.hostname(), self.protoname, self.encoding)
-        return fullversion
-
-    def hostname(self):
-        """
-        Returns the server hostname used by PyLink on the given server.
-        """
-        return self.serverdata.get('hostname', world.fallback_hostname)
-
-    ### State checking functions
-    def nickToUid(self, nick):
-        """Looks up the UID of a user with the given nick, if one is present."""
-        nick = self.toLower(nick)
-        for k, v in self.users.copy().items():
-            if self.toLower(v.nick) == nick:
-                return k
-
-    def isInternalClient(self, numeric):
-        """
-        Returns whether the given client numeric (UID) is a PyLink client.
-        """
-        sid = self.getServer(numeric)
-        if sid and self.servers[sid].internal:
-            return True
-        return False
-
-    def isInternalServer(self, sid):
-        """Returns whether the given SID is an internal PyLink server."""
-        return (sid in self.servers and self.servers[sid].internal)
-
-    def getServer(self, numeric):
-        """Finds the SID of the server a user is on."""
-        userobj = self.users.get(numeric)
-        if userobj:
-            return userobj.server
-
-    def isManipulatableClient(self, uid):
-        """
-        Returns whether the given user is marked as an internal, manipulatable
-        client. Usually, automatically spawned services clients should have this
-        set True to prevent interactions with opers (like mode changes) from
-        causing desyncs.
-        """
-        return self.isInternalClient(uid) and self.users[uid].manipulatable
-
-    def getServiceBot(self, uid):
-        """
-        Checks whether the given UID is a registered service bot. If True,
-        returns the cooresponding ServiceBot object.
-        """
-        userobj = self.users.get(uid)
-        if not userobj:
-            return False
-
-        # Look for the "service" attribute in the IrcUser object, if one exists.
-        try:
-            sname = userobj.service
-            # Warn if the service name we fetched isn't a registered service.
-            if sname not in world.services.keys():
-                log.warning("(%s) User %s / %s had a service bot record to a service that doesn't "
-                            "exist (%s)!", self.name, uid, userobj.nick, sname)
-            return world.services.get(sname)
-        except AttributeError:
-            return False
-
-    def getHostmask(self, user, realhost=False, ip=False):
+    def get_hostmask(self, user, realhost=False, ip=False):
         """
         Returns the hostmask of the given user, if present. If the realhost option
         is given, return the real host of the user instead of the displayed host.
@@ -1123,55 +1218,50 @@ class Irc(utils.DeprecatedAttributesObject):
 
         return '%s!%s@%s' % (nick, ident, host)
 
-    def getFriendlyName(self, entityid):
+    def get_friendly_name(self, entityid):
         """
-        Returns the friendly name of a SID or UID (server name for SIDs, nick for UID).
+        Returns the friendly name of a SID (the server name), UID (the nick), or channel (returned as-is).
         """
         if entityid in self.servers:
             return self.servers[entityid].name
         elif entityid in self.users:
             return self.users[entityid].nick
+        # Return channels as-is. Remember to strip any STATUSMSG prefixes like from @#channel
+        elif self.is_channel(entityid.lstrip(''.join(self.prefixmodes.values()))):
+            return entityid
         else:
             raise KeyError("Unknown UID/SID %s" % entityid)
 
-    def getFullNetworkName(self):
+    def is_privileged_service(self, entityid):
         """
-        Returns the full network name (as defined by the "netname" option), or the
-        short network name if that isn't defined.
+        Returns whether the given UID and SID belongs to a privileged service (IRC U:line).
         """
-        return self.serverdata.get('netname', self.name)
+        ulines = self.serverdata.get('ulines', [])
 
-    def isOper(self, uid, allowAuthed=True, allowOper=True):
+        if entityid in self.users:
+            sid = self.get_server(entityid)
+        else:
+            sid = entityid
+
+        return self.get_friendly_name(sid) in ulines
+
+    def is_oper(self, uid, **kwargs):
         """
-        Returns whether the given user has operator status on PyLink. This can be achieved
-        by either identifying to PyLink as admin (if allowAuthed is True),
-        or having user mode +o set (if allowOper is True). At least one of
-        allowAuthed or allowOper must be True for this to give any meaningful
-        results.
+        Returns whether the given user has operator status. For IRC, this checks usermode +o.
+
+        The allowAuthed and allowOper keyword arguments are deprecated since PyLink 2.0-alpha4.
         """
-        if uid in self.users:
-            if allowOper and ("o", None) in self.users[uid].modes:
-                return True
-            elif allowAuthed and self.users[uid].account:
-                return True
+        if 'allowAuthed' in kwargs or 'allowOper' in kwargs:
+            log.warning('(%s) is_oper: the "allowAuthed" and "allowOper" options are deprecated as '
+                        'of PyLink 2.0-alpha4 and now imply False and True respectively. To check for'
+                        'PyLink account status, instead check the User.account attribute directly.',
+                        self.name)
+
+        if uid in self.users and ("o", None) in self.users[uid].modes:
+            return True
         return False
 
-    def checkAuthenticated(self, uid, allowAuthed=True, allowOper=True):
-        """
-        Checks whether the given user has operator status on PyLink, raising
-        NotAuthorizedError and logging the access denial if not.
-        """
-        log.warning("(%s) Irc.checkAuthenticated() is deprecated as of PyLink 1.2 and may be "
-                    "removed in a future relase. Consider migrating to the PyLink Permissions API.",
-                    self.name)
-        lastfunc = inspect.stack()[1][3]
-        if not self.isOper(uid, allowAuthed=allowAuthed, allowOper=allowOper):
-            log.warning('(%s) Access denied for %s calling %r', self.name,
-                        self.getHostmask(uid), lastfunc)
-            raise utils.NotAuthorizedError("You are not authenticated!")
-        return True
-
-    def matchHost(self, glob, target, ip=True, realhost=True):
+    def match_host(self, glob, target, ip=True, realhost=True):
         """
         Checks whether the given host, or given UID's hostmask matches the given nick!user@host
         glob.
@@ -1184,13 +1274,13 @@ class Irc(utils.DeprecatedAttributesObject):
         range.
         """
         # Get the corresponding casemapping value used by ircmatch.
-        if self.proto.casemapping == 'rfc1459':
+        if self.casemapping == 'rfc1459':
             casemapping = 0
         else:
             casemapping = 1
 
         # Try to convert target into a UID. If this fails, it's probably a hostname.
-        target = self.nickToUid(target) or target
+        target = self.nick_to_uid(target) or target
 
         # Allow queries like !$exttarget to invert the given match.
         invert = glob.startswith('!')
@@ -1199,14 +1289,25 @@ class Irc(utils.DeprecatedAttributesObject):
 
         def match_host_core():
             """
-            Core processor for matchHost(), minus the inversion check.
+            Core processor for match_host(), minus the inversion check.
             """
-            # Work with variables in the matchHost() scope, from
+            # Work with variables in the match_host() scope, from
             # http://stackoverflow.com/a/8178808
             nonlocal glob
 
             # Prepare a list of hosts to check against.
             if target in self.users:
+
+                if not self.is_hostmask(glob):
+                    for specialchar in '$:()':
+                        # XXX: we should probably add proper rules on what's a valid account name
+                        if specialchar in glob:
+                            break
+                    else:
+                        # Implicitly convert matches for *sane* account names to "$pylinkacc:accountname".
+                        log.debug('(%s) Using target $pylinkacc:%s instead of raw string %r', self.name, glob, glob)
+                        glob = '$pylinkacc:' + glob
+
                 if glob.startswith('$'):
                     # Exttargets start with $. Skip regular ban matching and find the matching ban handler.
                     glob = glob.lstrip('$')
@@ -1216,18 +1317,18 @@ class Irc(utils.DeprecatedAttributesObject):
                     if handler:
                         # Handler exists. Return what it finds.
                         result = handler(self, glob, target)
-                        log.debug('(%s) Got %s from exttarget %s in matchHost() glob $%s for target %s',
+                        log.debug('(%s) Got %s from exttarget %s in match_host() glob $%s for target %s',
                                   self.name, result, exttargetname, glob, target)
                         return result
                     else:
-                        log.debug('(%s) Unknown exttarget %s in matchHost() glob $%s', self.name,
+                        log.debug('(%s) Unknown exttarget %s in match_host() glob $%s', self.name,
                                   exttargetname, glob)
                         return False
 
-                hosts = {self.getHostmask(target)}
+                hosts = {self.get_hostmask(target)}
 
                 if ip:
-                    hosts.add(self.getHostmask(target, ip=True))
+                    hosts.add(self.get_hostmask(target, ip=True))
 
                     # HACK: support CIDR hosts in the hosts portion
                     try:
@@ -1246,7 +1347,7 @@ class Irc(utils.DeprecatedAttributesObject):
                         pass
 
                 if realhost:
-                    hosts.add(self.getHostmask(target, realhost=True))
+                    hosts.add(self.get_hostmask(target, realhost=True))
 
             else:  # We were given a host, use that.
                 hosts = [target]
@@ -1263,233 +1364,64 @@ class Irc(utils.DeprecatedAttributesObject):
             result = not result
         return result
 
-class IrcUser():
-    """PyLink IRC user class."""
-    def __init__(self, nick, ts, uid, server, ident='null', host='null',
-                 realname='PyLink dummy client', realhost='null',
-                 ip='0.0.0.0', manipulatable=False, opertype='IRC Operator'):
-        self.nick = nick
-        self.ts = ts
-        self.uid = uid
-        self.ident = ident
-        self.host = host
-        self.realhost = realhost
-        self.ip = ip
-        self.realname = realname
-        self.modes = set()  # Tracks user modes
-        self.server = server
-
-        # Tracks PyLink identification status
-        self.account = ''
-
-        # Tracks oper type (for display only)
-        self.opertype = opertype
-
-        # Tracks external services identification status
-        self.services_account = ''
-
-        # Tracks channels the user is in
-        self.channels = set()
-
-        # Tracks away message status
-        self.away = ''
-
-        # This sets whether the client should be marked as manipulatable.
-        # Plugins like bots.py's commands should take caution against
-        # manipulating these "protected" clients, to prevent desyncs and such.
-        # For "serious" service clients, this should always be False.
-        self.manipulatable = manipulatable
-
-    def __repr__(self):
-        return 'IrcUser(%s/%s)' % (self.uid, self.nick)
-
-class IrcServer():
-    """PyLink IRC server class.
-
-    uplink: The SID of this IrcServer instance's uplink. This is set to None
-            for the main PyLink PseudoServer!
-    name: The name of the server.
-    internal: Whether the server is an internal PyLink PseudoServer.
-    """
-
-    def __init__(self, uplink, name, internal=False, desc="(None given)"):
-        self.uplink = uplink
-        self.users = set()
-        self.internal = internal
-        self.name = name.lower()
-        self.desc = desc
-
-    def __repr__(self):
-        return 'IrcServer(%s)' % self.name
-
-class IrcChannel():
-    """PyLink IRC channel class."""
-    def __init__(self, name=None):
-        # Initialize variables, such as the topic, user list, TS, who's opped, etc.
-        self.users = set()
-        self.modes = set()
-        self.topic = ''
-        self.ts = int(time.time())
-        self.prefixmodes = {'op': set(), 'halfop': set(), 'voice': set(),
-                            'owner': set(), 'admin': set()}
-
-        # Determines whether a topic has been set here or not. Protocol modules
-        # should set this.
-        self.topicset = False
-
-        # Saves the channel name (may be useful to plugins, etc.)
-        self.name = name
-
-    def __repr__(self):
-        return 'IrcChannel(%s)' % self.name
-
-    def removeuser(self, target):
-        """Removes a user from a channel."""
-        for s in self.prefixmodes.values():
-            s.discard(target)
-        self.users.discard(target)
-
-    def deepcopy(self):
-        """Returns a deep copy of the channel object."""
-        return deepcopy(self)
-
-    def isVoice(self, uid):
-        """Returns whether the given user is voice in the channel."""
-        return uid in self.prefixmodes['voice']
-
-    def isHalfop(self, uid):
-        """Returns whether the given user is halfop in the channel."""
-        return uid in self.prefixmodes['halfop']
-
-    def isOp(self, uid):
-        """Returns whether the given user is op in the channel."""
-        return uid in self.prefixmodes['op']
-
-    def isAdmin(self, uid):
-        """Returns whether the given user is admin (&) in the channel."""
-        return uid in self.prefixmodes['admin']
-
-    def isOwner(self, uid):
-        """Returns whether the given user is owner (~) in the channel."""
-        return uid in self.prefixmodes['owner']
-
-    def isVoicePlus(self, uid):
-        """Returns whether the given user is voice or above in the channel."""
-        # If the user has any prefix mode, it has to be voice or greater.
-        return bool(self.getPrefixModes(uid))
-
-    def isHalfopPlus(self, uid):
-        """Returns whether the given user is halfop or above in the channel."""
-        for mode in ('halfop', 'op', 'admin', 'owner'):
-            if uid in self.prefixmodes[mode]:
-                return True
-        return False
-
-    def isOpPlus(self, uid):
-        """Returns whether the given user is op or above in the channel."""
-        for mode in ('op', 'admin', 'owner'):
-            if uid in self.prefixmodes[mode]:
-                return True
-        return False
-
-    @staticmethod
-    def sortPrefixes(key):
+    def match_text(self, glob, text):
         """
-        Implements a sorted()-compatible sorter for prefix modes, giving each one a
-        numeric value.
+        Returns whether the given glob matches the given text under the network's
+        current case mapping.
         """
-        values = {'owner': 100, 'admin': 10, 'op': 5, 'halfop': 4, 'voice': 3}
+        # Get the corresponding casemapping value used by ircmatch.
+        if self.casemapping == 'rfc1459':
+            casemapping = 0
+        else:
+            casemapping = 1
 
-        # Default to highest value (1000) for unknown modes, should we choose to
-        # support them.
-        return values.get(key, 1000)
+        return ircmatch.match(casemapping, glob, text)
 
-    def getPrefixModes(self, uid, prefixmodes=None):
-        """Returns a list of all named prefix modes the given user has in the channel.
-
-        Optionally, a prefixmodes argument can be given to look at an earlier state of
-        the channel's prefix modes mapping, e.g. for checking the op status of a mode
-        setter before their modes are processed and added to the channel state.
+    def match_all(self, banmask, channel=None):
         """
-
-        if uid not in self.users:
-            raise KeyError("User %s does not exist or is not in the channel" % uid)
-
-        result = []
-        prefixmodes = prefixmodes or self.prefixmodes
-
-        for mode, modelist in prefixmodes.items():
-            if uid in modelist:
-                result.append(mode)
-
-        return sorted(result, key=self.sortPrefixes)
-
-class Protocol():
-    """Base Protocol module class for PyLink."""
-    def __init__(self, irc):
-        self.irc = irc
-        self.casemapping = 'rfc1459'
-        self.hook_map = {}
-
-        # Lock for updateTS to make sure only one thread can change the channel TS at one time.
-        self.ts_lock = threading.Lock()
-
-        # Lists required conf keys for the server block.
-        self.conf_keys = {'ip', 'port', 'hostname', 'sid', 'sidrange', 'protocol', 'sendpass',
-                          'recvpass'}
-
-        # Defines a set of PyLink protocol capabilities
-        self.protocol_caps = set()
-
-    def validateServerConf(self):
-        """Validates that the server block given contains the required keys."""
-        for k in self.conf_keys:
-            assert k in self.irc.serverdata, "Missing option %r in server block for network %s." % (k, self.irc.name)
-
-        port = self.irc.serverdata['port']
-        assert type(port) == int and 0 < port < 65535, "Invalid port %r for network %s" % (port, self.irc.name)
-
-    @staticmethod
-    def parseArgs(args):
+        Returns all users matching the target hostmask/exttarget. Users can also be filtered by channel.
         """
-        Parses a string or list of of RFC1459-style arguments, where ":" may
-        be used for multi-word arguments that last until the end of a line.
+        if channel:
+            banmask = "$and:(%s+$channel:%s)" % (banmask, channel)
+
+        for uid, userobj in self.users.copy().items():
+            if self.match_host(banmask, uid) and uid in self.users:
+                yield uid
+
+    def match_all_re(self, re_mask, channel=None):
         """
-        if isinstance(args, str):
-            args = args.split(' ')
-
-        real_args = []
-        for idx, arg in enumerate(args):
-            if arg.startswith(':') and idx != 0:
-                # ":" is used to begin multi-word arguments that last until the end of the message.
-                # Use list splicing here to join them into one argument, and then add it to our list of args.
-                joined_arg = ' '.join(args[idx:])[1:]  # Cut off the leading : as well
-                real_args.append(joined_arg)
-                break
-            real_args.append(arg)
-
-        return real_args
-
-    def hasCap(self, capab):
+        Returns all users whose "nick!user@host [gecos]" mask matches the given regular expression. Users can also be filtered by channel.
         """
-        Returns whether this protocol module instance has the requested capability.
-        """
-        return capab.lower() in self.protocol_caps
+        regexp = re.compile(re_mask)
+        for uid, userobj in self.users.copy().items():
+            target = '%s [%s]' % (self.get_hostmask(uid), userobj.realname)
+            if regexp.fullmatch(target) and ((not channel) or channel in userobj.channels):
+                yield uid
 
-    def removeClient(self, numeric):
-        """Internal function to remove a client from our internal state."""
-        for c, v in self.irc.channels.copy().items():
-            v.removeuser(numeric)
-            # Clear empty non-permanent channels.
-            if not (self.irc.channels[c].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[c].modes)):
-                del self.irc.channels[c]
-            assert numeric not in v.users, "IrcChannel's removeuser() is broken!"
+    def make_channel_ban(self, uid, ban_type='ban'):
+        """Creates a hostmask-based ban for the given user.
 
-        sid = self.irc.getServer(numeric)
-        log.debug('Removing client %s from self.irc.users', numeric)
-        del self.irc.users[numeric]
-        log.debug('Removing client %s from self.irc.servers[%s].users', numeric, sid)
-        self.irc.servers[sid].users.discard(numeric)
+        Ban exceptions, invite exceptions quiets, and extbans are also supported by setting ban_type
+        to the appropriate PyLink named mode (e.g. "ban", "banexception", "invex", "quiet", "ban_nonick")."""
+        assert uid in self.users, "Unknown user %s" % uid
+
+        # FIXME: verify that this is a valid mask.
+        # XXX: support slicing hosts so things like *!ident@*.isp.net are possible. This is actually
+        #      more annoying to do than it appears because of vHosts using /, IPv6 addresses
+        #      (cloaked and uncloaked), etc.
+        ban_style = self.serverdata.get('ban_style') or conf.conf['pylink'].get('ban_style') or \
+            '*!*@$host'
+
+        template = string.Template(ban_style)
+        banhost = template.safe_substitute(ban_style, **self.users[uid].__dict__)
+        assert self.is_hostmask(banhost), "Ban mask %r is not a valid hostmask!" % banhost
+
+        if ban_type in self.cmodes:
+            return ('+%s' % self.cmodes[ban_type], banhost)
+        elif ban_type in self.extbans_acting:  # Handle extbans, which are generally "+b prefix:banmask"
+            return ('+%s' % self.cmodes['ban'], self.extbans_acting[ban_type]+banhost)
+        else:
+            raise ValueError("ban_type %r is not available on IRCd %r" % (ban_type, self.protoname))
 
     def updateTS(self, sender, channel, their_ts, modes=None):
         """
@@ -1506,162 +1438,702 @@ class Protocol():
             modes = []
 
         def _clear():
-            log.debug("(%s) Clearing local modes from channel %s due to TS change", self.irc.name,
+            log.debug("(%s) Clearing local modes from channel %s due to TS change", self.name,
                       channel)
-            self.irc.channels[channel].modes.clear()
-            for p in self.irc.channels[channel].prefixmodes.values():
+            self._channels[channel].modes.clear()
+            for p in self._channels[channel].prefixmodes.values():
                 for user in p.copy():
-                    if not self.irc.isInternalClient(user):
+                    if not self.is_internal_client(user):
                         p.discard(user)
 
         def _apply():
             if modes:
-                log.debug("(%s) Applying modes on channel %s (TS ok)", self.irc.name,
+                log.debug("(%s) Applying modes on channel %s (TS ok)", self.name,
                           channel)
-                self.irc.applyModes(channel, modes)
+                self.apply_modes(channel, modes)
 
         # Use a lock so only one thread can change a channel's TS at once: this prevents race
-        # conditions from desyncing the channel list.
-        with self.ts_lock:
-            our_ts = self.irc.channels[channel].ts
-            assert type(our_ts) == int, "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
-            assert type(their_ts) == int, "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
+        # conditions that would otherwise desync channel modes.
+        with self._ts_lock:
+            our_ts = self._channels[channel].ts
+            assert isinstance(our_ts, int), "Wrong type for our_ts (expected int, got %s)" % type(our_ts)
+            assert isinstance(their_ts, int), "Wrong type for their_ts (expected int, got %s)" % type(their_ts)
 
             # Check if we're the mode sender based on the UID / SID given.
-            our_mode = self.irc.isInternalClient(sender) or self.irc.isInternalServer(sender)
+            our_mode = self.is_internal_client(sender) or self.is_internal_server(sender)
 
-            log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.irc.name,
+            log.debug("(%s/%s) our_ts: %s; their_ts: %s; is the mode origin us? %s", self.name,
                       channel, our_ts, their_ts, our_mode)
 
             if their_ts == our_ts:
                 log.debug("(%s/%s) remote TS of %s is equal to our %s; mode query %s",
-                          self.irc.name, channel, their_ts, our_ts, modes)
+                          self.name, channel, their_ts, our_ts, modes)
                 # Their TS is equal to ours. Merge modes.
                 _apply()
 
             elif (their_ts < our_ts):
                 if their_ts < 750000:
-                    log.warning('(%s) Possible desync? Not setting bogus TS %s on channel %s', self.irc.name, their_ts, channel)
+                    log.warning('(%s) Possible desync? Not setting bogus TS %s on channel %s', self.name, their_ts, channel)
                 else:
                     log.debug('(%s) Resetting channel TS of %s from %s to %s (remote has lower TS)',
-                              self.irc.name, channel, our_ts, their_ts)
-                    self.irc.channels[channel].ts = their_ts
+                              self.name, channel, our_ts, their_ts)
+                    self._channels[channel].ts = their_ts
 
                 # Remote TS was lower and we're receiving modes. Clear the modelist and apply theirs.
 
                 _clear()
                 _apply()
 
-    def _getSid(self, sname):
-        """Returns the SID of a server with the given name, if present."""
-        name = sname.lower()
-        for k, v in self.irc.servers.items():
-            if v.name.lower() == name:
-                return k
-        else:
-            return sname  # Fall back to given text instead of None
+    def _check_nick_collision(self, nick):
+        """
+        Nick collision checker.
+        """
+        uid = self.nick_to_uid(nick)
+        # If there is a nick collision, we simply alert plugins. Relay will purposely try to
+        # lose fights and tag nicks instead, while other plugins can choose how to handle this.
+        if uid:
+            log.info('(%s) Nick collision on %s/%s, forwarding this to plugins', self.name,
+                     uid, nick)
+            self.call_hooks([self.sid, 'SAVE', {'target': uid}])
 
-    def _getUid(self, target):
-        """Converts a nick argument to its matching UID. This differs from irc.nickToUid()
-        in that it returns the original text instead of None, if no matching nick is found."""
-        target = self.irc.nickToUid(target) or target
-        return target
+    def _expandPUID(self, uid):
+        """
+        Returns the nick or server name for the given UID/SID. This method helps support protocol
+        modules that use PUIDs internally, as they must convert them to talk with the uplink.
+        """
+        log.debug('(%s) _expandPUID: got uid %s', self.name, uid)
+        # TODO: stop hardcoding @ as separator
+        if uid and '@' in uid:
+            if uid in self.users:
+                # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
+                # Return this user's nick accordingly.
+                nick = self.users[uid].nick
+                log.debug('(%s) Mangling target PUID %s to nick %s', self.name, uid, nick)
+                return nick
+            elif uid in self.servers:
+                # Ditto for servers
+                sname = self.servers[uid].name
+                log.debug('(%s) Mangling target PSID %s to server name %s', self.name, uid, sname)
+                return sname
+        return uid  # Regular UID, no change
 
-    @classmethod
-    def parsePrefixedArgs(cls, args):
-        """Similar to parseArgs(), but stripping leading colons from the first argument
-        of a line (usually the sender field)."""
-        args = cls.parseArgs(args)
-        args[0] = args[0].split(':', 1)[1]
-        return args
+    def wrap_message(self, source, target, command, text):
+        """
+        Wraps the given message text into multiple lines (length depends on how much the protocol
+        allows), and returns these as a list.
+        """
+        # This is protocol specific, so stub it here in the base class.
+        raise NotImplementedError
 
-    def _squit(self, numeric, command, args):
-        """Handles incoming SQUITs."""
+# When this many pings in a row are missed, the ping timer loop will force a disconnect on the
+# next cycle. Effectively the ping timeout is: pingfreq * (KEEPALIVE_MAX_MISSED + 1)
+KEEPALIVE_MAX_MISSED = 2
 
-        split_server = self._getSid(args[0])
+class IRCNetwork(PyLinkNetworkCoreWithUtils):
+    S2S_BUFSIZE = 510
 
-        # Normally we'd only need to check for our SID as the SQUIT target, but Nefarious
-        # actually uses the uplink server as the SQUIT target.
-        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
-        if split_server in (self.irc.sid, self.irc.uplink):
-            raise ProtocolError('SQUIT received: (reason: %s)' % args[-1])
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        affected_users = []
-        affected_nicks = defaultdict(list)
-        log.debug('(%s) Splitting server %s (reason: %s)', self.irc.name, split_server, args[-1])
+        self._queue = None
+        self._ping_timer = None
+        self._socket = None
+        self._selector_key = None
+        self._buffer = b''
+        self._reconnect_thread = None
+        self._queue_thread = None
 
-        if split_server not in self.irc.servers:
-            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.irc.name, split_server)
+    def _init_vars(self, *args, **kwargs):
+        super()._init_vars(*args, **kwargs)
+
+        # Set IRC specific variables for ping checking and queuing
+        self.lastping = time.time()  # This actually tracks the last message received as of 2.0-alpha4
+        self.pingfreq = self.serverdata.get('pingfreq') or 90
+
+        self.maxsendq = self.serverdata.get('maxsendq', 4096)
+        self._queue = queue.Queue(self.maxsendq)
+
+    def _schedule_ping(self):
+        """Schedules periodic pings in a loop."""
+        self._ping_uplink()
+
+        if self._aborted.is_set():
             return
 
-        # Prevent RuntimeError: dictionary changed size during iteration
-        old_servers = self.irc.servers.copy()
-        old_channels = self.irc.channels.copy()
+        elapsed = time.time() - self.lastping
+        if elapsed > (self.pingfreq * KEEPALIVE_MAX_MISSED):
+            log.error('(%s) Disconnected from IRC: Ping timeout (%d secs)', self.name, elapsed)
+            self.disconnect()
+            return
 
-        # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
-        # remove them and all their users too.
-        for sid, data in old_servers.items():
-            if data.uplink == split_server:
-                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
-                # Recursively run SQUIT on any other hubs this server may have been connected to.
-                args = self._squit(sid, 'SQUIT', [sid, "0",
-                                   "PyLink: Automatically splitting leaf servers of %s" % sid])
-                affected_users += args['users']
+        self._ping_timer = threading.Timer(self.pingfreq, self._schedule_ping)
+        self._ping_timer.daemon = True
+        self._ping_timer.name = 'Ping timer loop for %s' % self.name
+        self._ping_timer.start()
 
-        for user in self.irc.servers[split_server].users.copy():
-            affected_users.append(user)
-            nick = self.irc.users[user].nick
+        log.debug('(%s) Ping scheduled at %s', self.name, time.time())
 
-            # Nicks affected is channel specific for SQUIT:. This makes Clientbot's SQUIT relaying
-            # much easier to implement.
-            for name, cdata in old_channels.items():
-                if user in cdata.users:
-                    affected_nicks[name].append(nick)
+    def _log_connection_error(self, *args, **kwargs):
+        # Log connection errors to ERROR unless were shutting down (in which case,
+        # the given text goes to DEBUG).
+        if self._aborted.is_set() or world.shutting_down.is_set():
+            log.debug(*args, **kwargs)
+        else:
+            log.error(*args, **kwargs)
 
-            log.debug('Removing client %s (%s)', user, nick)
-            self.removeClient(user)
-
-        serverdata = self.irc.servers[split_server]
-        sname = serverdata.name
-        uplink = serverdata.uplink
-
-        del self.irc.servers[split_server]
-        log.debug('(%s) Netsplit affected users: %s', self.irc.name, affected_users)
-
-        return {'target': split_server, 'users': affected_users, 'name': sname,
-                'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
-                'channeldata': old_channels}
-
-    @staticmethod
-    def parseCapabilities(args, fallback=''):
+    def _make_ssl_context(self):
         """
-        Parses a string of capabilities in the 005 / RPL_ISUPPORT format.
+        Returns a ssl.SSLContext instance appropriate for this connection.
         """
+        context = ssl.create_default_context()
 
-        if type(args) == str:
-            args = args.split(' ')
+        # Use the ssl-should-verify protocol capability to determine whether we should
+        # accept invalid certs by default. Generally, cert validation is OFF for server protocols
+        # and ON for client-based protocols like clientbot
+        if self.serverdata.get('ssl_accept_invalid_certs', not self.has_cap("ssl-should-verify")):
+            # Note: check_hostname has to be off to set verify_mode to CERT_NONE,
+            # since it's possible for the remote link to not provide a cert at all
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        else:
+            # Otherwise, only check cert hostname if the target is a hostname OR we have
+            # ssl-should-verify defined
+            context.check_hostname = self.serverdata.get('ssl_validate_hostname',
+                self.has_cap("ssl-should-verify") or
+                utils.get_hostname_type(self.serverdata['ip']) is 0)
 
-        caps = {}
-        for cap in args:
+        return context
+
+    def _setup_ssl(self):
+        """
+        Initializes SSL/TLS for this network.
+        """
+        log.info('(%s) Using TLS/SSL for this connection...', self.name)
+        certfile = self.serverdata.get('ssl_certfile')
+        keyfile = self.serverdata.get('ssl_keyfile')
+
+        context = self._make_ssl_context()
+
+        # Cert and key files are optional, load them if specified.
+        if certfile and keyfile:
             try:
-                # Try to split it as a KEY=VALUE pair.
-                key, value = cap.split('=', 1)
-            except ValueError:
-                key = cap
-                value = fallback
-            caps[key] = value
+                context.load_cert_chain(certfile, keyfile)
+            except OSError:
+                 log.exception('(%s) Caught OSError trying to initialize the SSL connection; '
+                               'are "ssl_certfile" and "ssl_keyfile" set correctly?',
+                               self.name)
+                 raise
 
-        return caps
+        self._socket = context.wrap_socket(self._socket, server_hostname=self.serverdata.get('ip'))
+
+    def _verify_ssl(self):
+        """
+        Implements additional SSL/TLS verifications (so far, only certificate fingerprints when enabled).
+        """
+        peercert = self._socket.getpeercert(binary_form=True)
+
+        # Hash type is configurable using the ssl_fingerprint_type
+        # value, and defaults to sha256.
+        hashtype = self.serverdata.get('ssl_fingerprint_type', 'sha256').lower()
+
+        try:
+            hashfunc = getattr(hashlib, hashtype)
+        except AttributeError:
+            raise conf.ConfigurationError('Unsupported or invalid TLS/SSL certificate fingerprint type %r',
+                                          hashtype)
+        else:
+            expected_fp = self.serverdata.get('ssl_fingerprint')
+            if expected_fp and peercert is None:
+                raise ssl.CertificateError('TLS/SSL certificate fingerprint checking is enabled but the uplink '
+                                           'did not provide a certificate')
+
+            fp = hashfunc(peercert).hexdigest()
+
+            if expected_fp:
+                if fp != expected_fp:
+                    # SSL Fingerprint doesn't match; break.
+                    raise ssl.CertificateError('Uplink TLS/SSL certificate fingerprint (%s: %r) does not '
+                                               'match the one configured (%s: %r)' % (hashtype, fp, hashtype, expected_fp))
+                else:
+                    log.info('(%s) Uplink TLS/SSL certificate fingerprint '
+                             'verified (%s: %r)', self.name, hashtype, fp)
+            elif hasattr(self._socket, 'context') and self._socket.context.verify_mode == ssl.CERT_NONE:
+                log.info('(%s) Uplink\'s TLS/SSL certificate fingerprint (%s) '
+                         'is %r. You can enhance the security of your '
+                         'link by specifying this in a "ssl_fingerprint"'
+                         ' option in your server block.', self.name,
+                         hashtype, fp)
+
+    def _connect(self):
+        """
+        Connects to the network.
+        """
+        self._pre_connect()
+
+        ip = self.serverdata["ip"]
+        port = self.serverdata["port"]
+        try:
+            # Set the socket type (IPv6 or IPv4), auto detecting it if not specified.
+            isipv6 = self.serverdata.get("ipv6", utils.get_hostname_type(ip) == 2)
+
+            if (not isipv6) and 'bindhost' in self.serverdata:
+                # Also try detecting the socket type from the bindhost if specified.
+                isipv6 = utils.get_hostname_type(self.serverdata['bindhost']) == 2
+
+            stype = socket.AF_INET6 if isipv6 else socket.AF_INET
+
+            # Creat the socket.
+            self._socket = socket.socket(stype)
+
+            # Set the socket bind if applicable.
+            if 'bindhost' in self.serverdata:
+                self._socket.bind((self.serverdata['bindhost'], 0))
+
+            # Resolve hostnames if it's not an IP address already.
+            old_ip = ip
+            ip = socket.getaddrinfo(ip, port, stype)[0][-1][0]
+            log.debug('(%s) Resolving address %s to %s', self.name, old_ip, ip)
+
+            # Enable SSL if set to do so.
+            self.ssl = self.serverdata.get('ssl')
+            if self.ssl:
+                self._setup_ssl()
+            elif not ipaddress.ip_address(ip).is_loopback:
+                log.warning('(%s) This connection will be made via plain text, which is vulnerable '
+                            'to man-in-the-middle (MITM) attacks and passive eavesdropping. Consider '
+                            'enabling TLS/SSL with either certificate validation or fingerprint '
+                            'pinning to better secure your network traffic.', self.name)
+
+            log.info("Connecting to network %r on %s:%s", self.name, ip, port)
+
+            self._socket.settimeout(self.pingfreq)
+
+            # Start the actual connection
+            self._socket.connect((ip, port))
+
+            if self not in world.networkobjects.values():
+                log.debug("(%s) _connect: disconnecting socket %s as the network was removed",
+                          self.name, self._socket)
+                try:
+                    self._socket.shutdown(socket.SHUT_RDWR)
+                finally:
+                    self._socket.close()
+                return
+
+            # Make sure future reads never block, since select doesn't always guarantee this.
+            self._socket.setblocking(False)
+
+            self._selector_key = selectdriver.register(self)
+
+            if self.ssl:
+                self._verify_ssl()
+
+            self._queue_thread = threading.Thread(name="Queue thread for %s" % self.name,
+                                                 target=self._process_queue, daemon=True)
+            self._queue_thread.start()
+
+            self.sid = self.serverdata.get("sid")
+            # All our checks passed, get the protocol module to connect and run the listen
+            # loop. This also updates any SID values should the protocol module do so.
+            self.post_connect()
+
+            log.info('(%s) Enumerating our own SID %s', self.name, self.sid)
+            host = self.hostname()
+
+            self.servers[self.sid] = Server(self, None, host, internal=True,
+                                            desc=self.serverdata.get('serverdesc')
+                                            or conf.conf['pylink']['serverdesc'])
+
+            log.info('(%s) Starting ping schedulers....', self.name)
+            self._schedule_ping()
+            log.info('(%s) Server ready; listening for data.', self.name)
+            self.autoconnect_active_multiplier = 1  # Reset any extra autoconnect delays
+
+        # _run_irc() or the protocol module it called raised an exception, meaning we've disconnected
+        except:
+            self._log_connection_error('(%s) Disconnected from IRC:', self.name, exc_info=True)
+            if not self._aborted.is_set():
+                self.disconnect()
+
+    def connect(self):
+        """
+        Starts a thread to connect the network.
+        """
+        connect_thread = threading.Thread(target=self._connect, daemon=True,
+                                          name="Connect thread for %s" %
+                                          self.name)
+        connect_thread.start()
+
+    def disconnect(self):
+        """Handle disconnects from the remote server."""
+        if self._aborted.is_set():
+            return
+
+        self._pre_disconnect()
+
+        # Stop the queue thread.
+        if self._queue is not None:
+            try:
+                # XXX: queue.Queue.queue isn't actually documented, so this is probably not reliable in the long run.
+                with self._queue.mutex:
+                    self._queue.queue[0] = None
+            except IndexError:
+                self._queue.put(None)
+
+        if self._socket is not None:
+            try:
+                selectdriver.unregister(self)
+            except KeyError:
+                pass
+            try:
+                log.debug('(%s) disconnect: shutting down read half of socket %s', self.name, self._socket)
+                self._socket.shutdown(socket.SHUT_RD)
+            except:
+                log.debug('(%s) Error on socket shutdown:', self.name, exc_info=True)
+
+            log.debug('(%s) disconnect: waiting for write half of socket %s to shutdown', self.name, self._socket)
+            # Wait for the write half to shut down when applicable.
+            if self._queue_thread is None or self._aborted_send.wait(10):
+                log.debug('(%s) disconnect: closing socket %s', self.name, self._socket)
+                self._socket.close()
+
+        # Stop the ping timer.
+        if self._ping_timer:
+            log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
+            self._ping_timer.cancel()
+        self._buffer = b''
+        self._post_disconnect()
+
+        # Clear old sockets.
+        self._socket = None
+
+        self._start_reconnect()
+
+    def _start_reconnect(self):
+        """Schedules a reconnection to the network."""
+        def _reconnect():
+            # _run_autoconnect() will block and return True after the autoconnect
+            # delay has passed, if autoconnect is disabled. We do not want it to
+            # block whatever is calling disconnect() though, so we run it in a new
+            # thread.
+            if self._run_autoconnect():
+                self.connect()
+
+        if self not in world.networkobjects.values():
+            log.debug('(%s) _start_reconnect: Stopping reconnect timer as the network was removed', self.name)
+            return
+        elif self._reconnect_thread is None or not self._reconnect_thread.is_alive():
+            self._reconnect_thread = threading.Thread(target=_reconnect, name="Reconnecting network %s" % self.name)
+            self._reconnect_thread.start()
+        else:
+            log.debug('(%s) Ignoring attempt to reschedule reconnect as one is in progress.', self.name)
+
+    def handle_events(self, line):
+        raise NotImplementedError
+
+    def parse_irc_command(self, line):
+        """Sends a command to the protocol module."""
+        log.debug("(%s) <- %s", self.name, line)
+        try:
+            hook_args = self.handle_events(line)
+        except Exception:
+            log.exception('(%s) Caught error in handle_events, disconnecting!', self.name)
+            log.error('(%s) The offending line was: <- %s', self.name, line)
+            self.disconnect()
+            return
+        # Only call our hooks if there's data to process. Handlers that support
+        # hooks will return a dict of parsed arguments, which can be passed on
+        # to plugins and the like. For example, the JOIN handler will return
+        # something like: {'channel': '#whatever', 'users': ['UID1', 'UID2',
+        # 'UID3']}, etc.
+        if hook_args is not None:
+            self.call_hooks(hook_args)
+
+        return hook_args
+
+    def _run_irc(self):
+        """
+        Message handler, called when select() has data to read.
+        """
+        if self._socket is None:
+            log.debug('(%s) Ignoring attempt to read data because self._socket is None', self.name)
+            return
+
+        data = b''
+        try:
+            data = self._socket.recv(2048)
+        except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            log.debug('(%s) No data to read, trying again later...', self.name, exc_info=True)
+            return
+        except OSError:
+            # Suppress socket read warnings from lingering recv() calls if
+            # we've been told to shutdown.
+            if self._aborted.is_set():
+                return
+            raise
+
+        self._buffer += data
+        if not data:
+            self._log_connection_error('(%s) Connection lost, disconnecting.', self.name)
+            self.disconnect()
+            return
+
+        while b'\n' in self._buffer:
+            line, self._buffer = self._buffer.split(b'\n', 1)
+            line = line.strip(b'\r')
+            line = line.decode(self.encoding, "replace")
+            self.parse_irc_command(line)
+
+        # Update the last message received time
+        self.lastping = time.time()
+
+    def _send(self, data):
+        """Sends raw text to the uplink server."""
+        if self._aborted.is_set():
+            log.debug("(%s) Not sending message %r since the connection is dead", self.name, data)
+            return
+
+        # Safeguard against newlines in input!! Otherwise, each line gets
+        # treated as a separate command, which is particularly nasty.
+        data = data.replace('\n', ' ')
+        encoded_data = data.encode(self.encoding, 'replace')
+        if self.S2S_BUFSIZE > 0:  # Apply message cutoff as needed
+            encoded_data = encoded_data[:self.S2S_BUFSIZE]
+        encoded_data += b"\r\n"
+
+        log.debug("(%s) -> %s", self.name, data)
+
+        try:
+            self._socket.send(encoded_data)
+        except:
+            log.exception("(%s) Failed to send message %r; aborting!", self.name, data)
+            self.disconnect()
+
+    def send(self, data, queue=True):
+        """send() wrapper with optional queueing support."""
+        if self._aborted.is_set():
+            log.debug('(%s) refusing to queue data %r as self._aborted is set', self.name, data)
+            return
+        if queue:
+            # XXX: we don't really know how to handle blocking queues yet, so
+            # it's better to not expose that yet.
+            self._queue.put_nowait(data)
+        else:
+            self._send(data)
+
+    def _process_queue(self):
+        """Loop to process outgoing queue data."""
+        while True:
+            throttle_time = self.serverdata.get('throttle_time', 0.005)
+            if not self._aborted.wait(throttle_time):
+                data = self._queue.get()
+                if data is None:
+                    log.debug('(%s) Stopping queue thread due to getting None as item', self.name)
+                    break
+                elif self not in world.networkobjects.values():
+                    log.debug('(%s) Stopping stale queue thread; no longer matches world.networkobjects', self.name)
+                    break
+                elif self._aborted.is_set():
+                    # The _aborted flag may have changed while we were waiting for an item,
+                    # so check for it again.
+                    log.debug('(%s) Stopping queue thread since the connection is dead', self.name)
+                    break
+                elif data:
+                    self._send(data)
+            else:
+                break
+
+        # Once we're done here, shut down the write part of the socket.
+        if self._socket:
+            log.debug('(%s) _process_queue: shutting down write half of socket %s', self.name, self._socket)
+            self._socket.shutdown(socket.SHUT_WR)
+        self._aborted_send.set()
+
+    def wrap_message(self, source, target, text):
+        """
+        Wraps the given message text into multiple lines, and returns these as a list.
+
+        For IRC, the maximum length of one message is calculated as S2S_BUFSIZE (default to 510)
+        minus the length of ":sender-nick!sender-user@sender-host PRIVMSG #target :"
+        """
+        # We explicitly want wrapping (e.g. for messages eventually making its way to a user), so
+        # use the default bufsize of 510 even if the IRCd's S2S protocol allows infinitely long
+        # long messages.
+        bufsize = self.S2S_BUFSIZE or IRCNetwork.S2S_BUFSIZE
+        try:
+            target = self.get_friendly_name(target)
+        except KeyError:
+            log.warning('(%s) Possible desync? Error while expanding wrap_message target %r '
+                        '(source=%s)', self.name, target, source, exc_info=True)
+
+        prefixstr = ":%s PRIVMSG %s :" % (self.get_hostmask(source), target)
+        maxlen = bufsize - len(prefixstr)
+
+        log.debug('(%s) wrap_message: length of prefix %r is %s, bufsize=%s, maxlen=%s',
+                  self.name, prefixstr, len(prefixstr), bufsize, maxlen)
+
+        if maxlen <= 0:
+            log.error('(%s) Got invalid maxlen %s for wrap_message (%s -> %s)', self.name, maxlen,
+                      source, target)
+            return [text]
+
+        return textwrap.wrap(text, width=maxlen)
+
+Irc = IRCNetwork
+
+class Server():
+    """PyLink IRC server class.
+
+    irc: the protocol/network object this Server instance is attached to.
+    uplink: The SID of this Server instance's uplink. This is set to None
+            for **both** the main PyLink server and our uplink.
+    name: The name of the server.
+    internal: Boolean, whether the server is an internal PyLink server.
+    desc: Sets the server description if relevant.
+    """
+
+    def __init__(self, irc, uplink, name, internal=False, desc="(None given)"):
+        self.uplink = uplink
+        self.users = set()
+        self.internal = internal
+        self.name = name.lower()
+        self.desc = desc
+        self._irc = irc
+
+        assert uplink is None or uplink in self._irc.servers, "Unknown uplink %s" % uplink
+
+        if uplink is None:
+            self.hopcount = 1
+        else:
+            self.hopcount = self._irc.servers[uplink].hopcount + 1
+
+        # Has the server finished bursting yet?
+        self.has_eob = False
+
+    def __repr__(self):
+        return 'Server(%s)' % self.name
+
+IrcServer = Server
+
+class Channel(TSObject, structures.CamelCaseToSnakeCase, structures.CopyWrapper):
+    """PyLink IRC channel class."""
+
+    def __init__(self, irc, name=None):
+        super().__init__()
+        # Initialize variables, such as the topic, user list, TS, who's opped, etc.
+        self.users = set()
+        self.modes = set()
+        self.topic = ''
+        self.prefixmodes = {'op': set(), 'halfop': set(), 'voice': set(),
+                            'owner': set(), 'admin': set()}
+        self._irc = irc
+
+        # Determines whether a topic has been set here or not. Protocol modules
+        # should set this.
+        self.topicset = False
+
+        # Saves the channel name (may be useful to plugins, etc.)
+        self.name = name
+
+    def __repr__(self):
+        return 'Channel(%s)' % self.name
+
+    def remove_user(self, target):
+        """Removes a user from a channel."""
+        for s in self.prefixmodes.values():
+            s.discard(target)
+        self.users.discard(target)
+    removeuser = remove_user
+
+    def is_voice(self, uid):
+        """Returns whether the given user is voice in the channel."""
+        return uid in self.prefixmodes['voice']
+
+    def is_halfop(self, uid):
+        """Returns whether the given user is halfop in the channel."""
+        return uid in self.prefixmodes['halfop']
+
+    def is_op(self, uid):
+        """Returns whether the given user is op in the channel."""
+        return uid in self.prefixmodes['op']
+
+    def is_admin(self, uid):
+        """Returns whether the given user is admin (&) in the channel."""
+        return uid in self.prefixmodes['admin']
+
+    def is_owner(self, uid):
+        """Returns whether the given user is owner (~) in the channel."""
+        return uid in self.prefixmodes['owner']
+
+    def is_voice_plus(self, uid):
+        """Returns whether the given user is voice or above in the channel."""
+        # If the user has any prefix mode, it has to be voice or greater.
+        return bool(self.getPrefixModes(uid))
+
+    def is_halfop_plus(self, uid):
+        """Returns whether the given user is halfop or above in the channel."""
+        for mode in ('halfop', 'op', 'admin', 'owner'):
+            if uid in self.prefixmodes[mode]:
+                return True
+        return False
+
+    def is_op_plus(self, uid):
+        """Returns whether the given user is op or above in the channel."""
+        for mode in ('op', 'admin', 'owner'):
+            if uid in self.prefixmodes[mode]:
+                return True
+        return False
 
     @staticmethod
-    def parsePrefixes(args):
+    def sort_prefixes(key):
         """
-        Separates prefixes field like "(qaohv)~&@%+" into a dict mapping mode characters to mode
-        prefixes.
-        """
-        prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', args)
-        return dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
+        Returns a numeric value for a named prefix mode: higher ranks have lower values
+        (sorted first), and lower ranks have higher values (sorted last).
 
-    def handle_error(self, numeric, command, args):
-        """Handles ERROR messages - these mean that our uplink has disconnected us!"""
-        raise ProtocolError('Received an ERROR, disconnecting!')
+        This function essentially implements a sorted() key function for named prefix modes.
+        """
+        values = {'owner': 0, 'admin': 100, 'op': 200, 'halfop': 300, 'voice': 500}
+
+        # Default to highest value (1000) for unknown modes, should they appear.
+        return values.get(key, 1000)
+
+    def get_prefix_modes(self, uid, prefixmodes=None):
+        """
+        Returns a list of all named prefix modes the user has in the channel, in
+        decreasing order from owner to voice.
+
+        Optionally, a prefixmodes argument can be given to look at an earlier state of
+        the channel's prefix modes mapping, e.g. for checking the op status of a mode
+        setter before their modes are processed and added to the channel state.
+        """
+
+        if uid not in self.users:
+            raise KeyError("User %s does not exist or is not in the channel" % uid)
+
+        result = []
+        prefixmodes = prefixmodes or self.prefixmodes
+
+        for mode, modelist in prefixmodes.items():
+            if uid in modelist:
+                result.append(mode)
+
+        return sorted(result, key=self.sort_prefixes)
+IrcChannel = Channel
+
+class PUIDGenerator():
+    """
+    Pseudo UID Generator module, using a prefix and a simple counter.
+    """
+
+    def __init__(self, prefix, start=0):
+        self.prefix = prefix
+        self.counter = start
+
+    def next_uid(self, prefix=''):
+        """
+        Generates the next PUID.
+        """
+        uid = '%s@%s' % (prefix or self.prefix, self.counter)
+        self.counter += 1
+        return uid
+    next_sid = next_uid

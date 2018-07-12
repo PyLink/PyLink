@@ -5,13 +5,18 @@ This module contains custom data structures that may be useful in various situat
 """
 
 import collections
+import collections.abc
 import json
 import pickle
 import os
 import threading
+from copy import copy, deepcopy
+import string
 
 from .log import log
 from . import conf
+
+_BLACKLISTED_COPY_TYPES = []
 
 class KeyedDefaultdict(collections.defaultdict):
     """
@@ -24,6 +29,161 @@ class KeyedDefaultdict(collections.defaultdict):
         else:
             value = self[key] = self.default_factory(key)
             return value
+
+class CopyWrapper():
+    """
+    Base container class implementing copy methods.
+    """
+
+    def copy(self):
+        """Returns a shallow copy of this object instance."""
+        return copy(self)
+
+    def __deepcopy__(self, memo):
+        """Returns a deep copy of the channel object."""
+        newobj = copy(self)
+        log.debug('CopyWrapper: _BLACKLISTED_COPY_TYPES = %s', _BLACKLISTED_COPY_TYPES)
+        for attr, val in self.__dict__.items():
+            # We can't pickle IRCNetwork, so just return a reference of it.
+            if not isinstance(val, tuple(_BLACKLISTED_COPY_TYPES)):
+                log.debug('CopyWrapper: copying attr %r', attr)
+                setattr(newobj, attr, deepcopy(val))
+
+        memo[id(self)] = newobj
+
+        return newobj
+
+    def deepcopy(self):
+        """Returns a deep copy of this object instance."""
+        return deepcopy(self)
+
+class CaseInsensitiveFixedSet(collections.abc.Set, CopyWrapper):
+    """
+    Implements a fixed set storing items case-insensitively.
+    """
+
+    def __init__(self, *, data=None):
+        if data is not None:
+            assert isinstance(data, set)
+            self._data = data
+        else:
+            self._data = set()
+
+    @staticmethod
+    def _keymangle(key):
+        """Converts the given key to lowercase."""
+        if isinstance(key, str):
+            return key.lower()
+        return key
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __contains__(self, key):
+        return self._data.__contains__(self._keymangle(key))
+
+    def __copy__(self):
+        return self.__class__(data=self._data.copy())
+
+class CaseInsensitiveDict(collections.abc.MutableMapping, CaseInsensitiveFixedSet):
+    """
+    A dictionary storing items case insensitively.
+    """
+    def __init__(self, *, data=None):
+        if data is not None:
+            assert isinstance(data, dict)
+            self._data = data
+        else:
+            self._data = {}
+
+    def __getitem__(self, key):
+        key = self._keymangle(key)
+
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[self._keymangle(key)] = value
+
+    def __delitem__(self, key):
+        del self._data[self._keymangle(key)]
+
+class IRCCaseInsensitiveDict(CaseInsensitiveDict):
+    """
+    A dictionary storing items case insensitively, using IRC case mappings.
+    """
+    def __init__(self, irc, *, data=None):
+        super().__init__(data=data)
+        self._irc = irc
+
+    def _keymangle(self, key):
+        """Converts the given key to lowercase."""
+        if isinstance(key, str):
+            return self._irc.to_lower(key)
+        return key
+
+    def __copy__(self):
+        return self.__class__(self._irc, data=self._data.copy())
+
+class CaseInsensitiveSet(collections.abc.MutableSet, CaseInsensitiveFixedSet):
+    """
+    A mutable set storing items case insensitively.
+    """
+
+    def add(self, key):
+        self._data.add(self._keymangle(key))
+
+    def discard(self, key):
+        self._data.discard(self._keymangle(key))
+
+class IRCCaseInsensitiveSet(CaseInsensitiveSet):
+    """
+    A set storing items case insensitively, using IRC case mappings.
+    """
+    def __init__(self, irc, *, data=None):
+        super().__init__(data=data)
+        self._irc = irc
+
+    def _keymangle(self, key):
+        """Converts the given key to lowercase."""
+        if isinstance(key, str):
+            return self._irc.to_lower(key)
+        return key
+
+    def __copy__(self):
+        return self.__class__(self._irc, data=self._data.copy())
+
+class CamelCaseToSnakeCase():
+    """
+    Class which automatically converts missing attributes from camel case to snake case.
+    """
+
+    def __getattr__(self, attr):
+        """
+        Attribute fetching fallback function which normalizes camel case attributes to snake case.
+        """
+        assert isinstance(attr, str), "Requested attribute %r is not a string!" % attr
+
+        normalized_attr = ''  # Start off with the first letter, which is ignored when processing
+        for char in attr:
+            if char in string.ascii_uppercase:
+                char = '_' + char.lower()
+            normalized_attr += char
+
+        classname = self.__class__.__name__
+        if normalized_attr == attr:
+            # __getattr__ only fires if normal attribute fetching fails, so we can assume that
+            # the attribute was tried already and failed.
+            raise AttributeError('%s object has no attribute with normalized name %r' % (classname, attr))
+
+        target = getattr(self, normalized_attr)
+        log.warning('%s.%s is deprecated, considering migrating to %s.%s!', classname, attr, classname, normalized_attr)
+        return target
 
 class DataStore:
     """
@@ -38,7 +198,7 @@ class DataStore:
         log.debug('(DataStore:%s) using implementation %s', self.name, self.__class__.__name__)
         log.debug('(DataStore:%s) database path set to %s', self.name, self.filename)
 
-        self.save_frequency = save_frequency or conf.conf['bot'].get('save_delay', 300)
+        self.save_frequency = save_frequency or conf.conf['pylink'].get('save_delay', 300)
         log.debug('(DataStore:%s) saving every %s seconds', self.name, self.save_frequency)
 
         if default_db is not None:

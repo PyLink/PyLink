@@ -7,11 +7,9 @@ import threading
 import sys
 import atexit
 
-from pylinkirc import world, utils, conf, classes
-from pylinkirc.log import log, makeFileLogger, stopFileLoggers, getConsoleLogLevel
+from pylinkirc import world, utils, conf  # Do not import classes, it'll import loop
+from pylinkirc.log import log, _make_file_logger, _stop_file_loggers, _get_console_log_level
 from . import permissions
-
-tried_shutdown = False
 
 def remove_network(ircobj):
     """Removes a network object from the pool."""
@@ -21,7 +19,7 @@ def remove_network(ircobj):
     del world.networkobjects[ircobj.name]
 
 def _print_remaining_threads():
-    log.debug('_shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
+    log.debug('shutdown(): Remaining threads: %s', ['%s/%s' % (t.name, t.ident) for t in threading.enumerate()])
 
 def _remove_pid():
     pidfile = "%s.pid" % conf.confname
@@ -46,7 +44,7 @@ def _kill_plugins(irc=None):
         if hasattr(plugin, 'die'):
             log.debug('coremods.control: Running die() on plugin %s due to shutdown.', name)
             try:
-                plugin.die(irc)
+                plugin.die(irc=irc)
             except:  # But don't allow it to crash the server.
                 log.exception('coremods.control: Error occurred in die() of plugin %s, skipping...', name)
 
@@ -55,22 +53,21 @@ def _kill_plugins(irc=None):
 atexit.register(_remove_pid)
 atexit.register(_kill_plugins)
 
-def _shutdown(irc=None):
+def shutdown(irc=None):
     """Shuts down the Pylink daemon."""
-    global tried_shutdown
-    if tried_shutdown:  # We froze on shutdown last time, so immediately abort.
+    if world.shutting_down.is_set():  # We froze on shutdown last time, so immediately abort.
         _print_remaining_threads()
         raise KeyboardInterrupt("Forcing shutdown.")
 
-    tried_shutdown = True
+    world.shutting_down.set()
 
     # HACK: run the _kill_plugins trigger with the current IRC object. XXX: We should really consider removing this
     # argument, since no plugins actually use it to do anything.
     atexit.unregister(_kill_plugins)
-    _kill_plugins(irc)
+    _kill_plugins(irc=irc)
 
     # Remove our main PyLink bot as well.
-    utils.unregisterService('pylink')
+    utils.unregister_service('pylink')
 
     for ircobj in world.networkobjects.copy().values():
         # Disconnect all our networks.
@@ -82,35 +79,31 @@ def _shutdown(irc=None):
 
     # Done.
 
-def sigterm_handler(signo, stack_frame):
+def _sigterm_handler(signo, stack_frame):
     """Handles SIGTERM and SIGINT gracefully by shutting down the PyLink daemon."""
     log.info("Shutting down on signal %s." % signo)
-    _shutdown()
+    shutdown()
 
-signal.signal(signal.SIGTERM, sigterm_handler)
-signal.signal(signal.SIGINT, sigterm_handler)
+signal.signal(signal.SIGTERM, _sigterm_handler)
+signal.signal(signal.SIGINT, _sigterm_handler)
 
-def _rehash():
+def rehash():
     """Rehashes the PyLink daemon."""
     log.info('Reloading PyLink configuration...')
     old_conf = conf.conf.copy()
     fname = conf.fname
-    new_conf = conf.loadConf(fname, errors_fatal=False, logger=log)
+    new_conf = conf.load_conf(fname, errors_fatal=False, logger=log)
     conf.conf = new_conf
 
     # Reset any file logger options.
-    stopFileLoggers()
+    _stop_file_loggers()
     files = new_conf['logging'].get('files')
     if files:
         for filename, config in files.items():
-            makeFileLogger(filename, config.get('loglevel'))
+            _make_file_logger(filename, config.get('loglevel'))
 
     log.debug('rehash: updating console log level')
-    world.console_handler.setLevel(getConsoleLogLevel())
-
-    # Reset permissions.
-    log.debug('rehash: resetting permissions')
-    permissions.resetPermissions()
+    world.console_handler.setLevel(_get_console_log_level())
 
     for network, ircobj in world.networkobjects.copy().items():
         # Server was removed from the config file, disconnect them.
@@ -120,25 +113,31 @@ def _rehash():
             remove_network(ircobj)
         else:
             # XXX: we should really just add abstraction to Irc to update config settings...
-            ircobj.conf = new_conf
             ircobj.serverdata = new_conf['servers'][network]
-            ircobj.botdata = new_conf['bot']
+
             ircobj.autoconnect_active_multiplier = 1
 
             # Clear the IRC object's channel loggers and replace them with
-            # new ones by re-running logSetup().
+            # new ones by re-running log_setup().
             while ircobj.loghandlers:
                 log.removeHandler(ircobj.loghandlers.pop())
 
-            ircobj.logSetup()
+            ircobj.log_setup()
 
-    utils.resetModuleDirs()
+    utils._reset_module_dirs()
 
     for network, sdata in new_conf['servers'].items():
         # Connect any new networks or disconnected networks if they aren't already.
-        if (network not in world.networkobjects) or (not world.networkobjects[network].connection_thread.is_alive()):
-            proto = utils.getProtocolModule(sdata['protocol'])
-            world.networkobjects[network] = classes.Irc(network, proto, new_conf)
+        if network not in world.networkobjects:
+            try:
+                proto = utils._get_protocol_module(sdata['protocol'])
+
+                # API note: 2.0.x style of starting network connections
+                world.networkobjects[network] = newirc = proto.Class(network)
+                newirc.connect()
+            except:
+                log.exception('Failed to initialize network %r, skipping it...', network)
+
     log.info('Finished reloading PyLink configuration.')
 
 if os.name == 'posix':
@@ -146,7 +145,7 @@ if os.name == 'posix':
     def _sighup_handler(signo, _stack_frame):
         """Handles SIGHUP/SIGUSR1 by rehashing the PyLink daemon."""
         log.info("Signal %s received, reloading config." % signo)
-        _rehash()
+        rehash()
 
     signal.signal(signal.SIGHUP, _sighup_handler)
     signal.signal(signal.SIGUSR1, _sighup_handler)

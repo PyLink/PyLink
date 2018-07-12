@@ -1,5 +1,5 @@
 """
-unreal.py: UnrealIRCd 4.0 protocol module for PyLink.
+unreal.py: UnrealIRCd 4.x protocol module for PyLink.
 """
 
 import time
@@ -14,15 +14,15 @@ from pylinkirc.protocols.ts6_common import *
 
 SJOIN_PREFIXES = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+', 'b': '&', 'e': '"', 'I': "'"}
 
-# I'm not sure what the real limit is, but the text posted at
-# https://github.com/GLolol/PyLink/issues/378 suggests 427 characters.
-# https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
-# also help. (but why BUFSIZE-*80*?) -GL
-S2S_BUFSIZE = 427
-
 class UnrealProtocol(TS6BaseProtocol):
-    def __init__(self, irc):
-        super().__init__(irc)
+    # I'm not sure what the real limit is, but the text posted at
+    # https://github.com/jlu5/PyLink/issues/378 suggests 427 characters.
+    # https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
+    # also help. (but why BUFSIZE-*80*?) -GL
+    S2S_BUFSIZE = 427
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.protocol_caps |= {'slash-in-nicks', 'underscore-in-hosts'}
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example)
         self.casemapping = 'ascii'
@@ -34,29 +34,16 @@ class UnrealProtocol(TS6BaseProtocol):
                          'EOS': 'ENDBURST'}
 
         self.caps = []
-        self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
+        self.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
 
         self.needed_caps = ["VL", "SID", "CHANMODES", "NOQUIT", "SJ3", "NICKIP", "UMODE2", "SJOIN"]
 
-        # Some command aliases
+        # Command aliases to handlers defined in parent modules
         self.handle_svskill = self.handle_kill
-
-    def _expandPUID(self, uid):
-        """
-        Returns the outgoing nick for the given UID. For PUIDs (used to store UID-less
-        3.2 users), this will change the PUID given to the actual user's nick,
-        so that that the older IRCds can understand it.
-        """
-        if uid in self.irc.users and '@' in uid:
-            # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
-            # Return this user's nick accordingly.
-            nick = self.irc.users[uid].nick
-            log.debug('(%s) Mangling target PUID %s to nick %s', self.irc.name, uid, nick)
-            return nick
-        return uid
+        self.topic_burst = self.topic
 
     ### OUTGOING COMMAND FUNCTIONS
-    def spawnClient(self, nick, ident='null', host='null', realhost=None, modes=set(),
+    def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),
             server=None, ip='0.0.0.0', realname=None, ts=None, opertype='IRC Operator',
             manipulatable=False):
         """
@@ -65,8 +52,8 @@ class UnrealProtocol(TS6BaseProtocol):
         Note: No nick collision / valid nickname checks are done here; it is
         up to plugins to make sure they don't introduce anything invalid.
         """
-        server = server or self.irc.sid
-        if not self.irc.isInternalServer(server):
+        server = server or self.sid
+        if not self.is_internal_server(server):
             raise ValueError('Server %r is not a PyLink server!' % server)
 
         # Unreal 4.0 uses TS6-style UIDs. They don't start from AAAAAA like other IRCd's
@@ -74,18 +61,18 @@ class UnrealProtocol(TS6BaseProtocol):
         uid = self.uidgen[server].next_uid()
 
         ts = ts or int(time.time())
-        realname = realname or conf.conf['bot']['realname']
+        realname = realname or conf.conf['pylink']['realname']
         realhost = realhost or host
 
         # Add +xt so that vHost cloaking always works.
         modes = set(modes)  # Ensure type safety
         modes |= {('+x', None), ('+t', None)}
 
-        raw_modes = self.irc.joinModes(modes)
-        u = self.irc.users[uid] = IrcUser(nick, ts, uid, server, ident=ident, host=host, realname=realname,
+        raw_modes = self.join_modes(modes)
+        u = self.users[uid] = User(self,  nick, ts, uid, server, ident=ident, host=host, realname=realname,
             realhost=realhost, ip=ip, manipulatable=manipulatable, opertype=opertype)
-        self.irc.applyModes(uid, modes)
-        self.irc.servers[server].users.add(uid)
+        self.apply_modes(uid, modes)
+        self.servers[server].users.add(uid)
 
         # UnrealIRCd requires encoding the IP by first packing it into a binary format,
         # and then encoding the binary with Base64.
@@ -106,22 +93,22 @@ class UnrealProtocol(TS6BaseProtocol):
             encoded_ip = encoded_ip.strip().decode()
 
         # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
-        self._send(server, "UID {nick} 0 {ts} {ident} {realhost} {uid} 0 {modes} "
-                           "{host} * {ip} :{realname}".format(ts=ts, host=host,
-                                nick=nick, ident=ident, uid=uid,
-                                modes=raw_modes, realname=realname,
-                                realhost=realhost, ip=encoded_ip))
+        self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {ident} {realhost} {uid} 0 {modes} "
+                               "{host} * {ip} :{realname}".format(ts=ts, host=host,
+                               nick=nick, ident=ident, uid=uid,
+                               modes=raw_modes, realname=realname,
+                               realhost=realhost, ip=encoded_ip,
+                               hopcount=self.servers[server].hopcount))
 
         return u
 
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
-        channel = self.irc.toLower(channel)
-        if not self.irc.isInternalClient(client):
+        if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
-        self._send(client, "JOIN %s" % channel)
-        self.irc.channels[channel].users.add(client)
-        self.irc.users[client].channels.add(channel)
+        self._send_with_prefix(client, "JOIN %s" % channel)
+        self._channels[channel].users.add(client)
+        self.users[client].channels.add(channel)
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
@@ -132,17 +119,16 @@ class UnrealProtocol(TS6BaseProtocol):
 
         Example uses:
             sjoin('100', '#test', [('', '100AAABBC'), ('o', 100AAABBB'), ('v', '100AAADDD')])
-            sjoin(self.irc.sid, '#test', [('o', self.irc.pseudoclient.uid)])
+            sjoin(self.sid, '#test', [('o', self.pseudoclient.uid)])
         """
         # <- :001 SJOIN 1444361345 #test :*@+1JJAAAAAB %2JJAAAA4C 1JJAAAADS
-        channel = self.irc.toLower(channel)
-        server = server or self.irc.sid
+        server = server or self.sid
         assert users, "sjoin: No users sent?"
         if not server:
             raise LookupError('No such PyLink server exists.')
 
-        changedmodes = set(modes or self.irc.channels[channel].modes)
-        orig_ts = self.irc.channels[channel].ts
+        changedmodes = set(modes or self._channels[channel].modes)
+        orig_ts = self._channels[channel].ts
         ts = ts or orig_ts
         uids = []
         itemlist = []
@@ -163,17 +149,17 @@ class UnrealProtocol(TS6BaseProtocol):
             uids.append(user)
 
             try:
-                self.irc.users[user].channels.add(channel)
+                self.users[user].channels.add(channel)
             except KeyError:  # Not initialized yet?
-                log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.irc.name, channel, user)
+                log.debug("(%s) sjoin: KeyError trying to add %r to %r's channel list?", self.name, channel, user)
 
         # Track simple modes separately.
         simplemodes = set()
         for modepair in modes:
-            if modepair[0][-1] in self.irc.cmodes['*A']:
+            if modepair[0][-1] in self.cmodes['*A']:
                 # Bans, exempts, invex get expanded to forms like "&*!*@some.host" in SJOIN.
 
-                if (modepair[0][-1], modepair[1]) in self.irc.channels[channel].modes:
+                if (modepair[0][-1], modepair[1]) in self._channels[channel].modes:
                     # Mode is already set; skip it.
                     continue
 
@@ -189,61 +175,62 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Modes are optional; add them if they exist
         if modes:
-            sjoin_prefix += " %s" % self.irc.joinModes(simplemodes)
+            sjoin_prefix += " %s" % self.join_modes(simplemodes)
 
         sjoin_prefix += " :"
         # Wrap arguments to the max supported S2S line length to prevent cutoff
-        # (https://github.com/GLolol/PyLink/issues/378)
-        for line in utils.wrapArguments(sjoin_prefix, itemlist, S2S_BUFSIZE):
-            self.irc.send(line)
+        # (https://github.com/jlu5/PyLink/issues/378)
+        for line in utils.wrap_arguments(sjoin_prefix, itemlist, self.S2S_BUFSIZE):
+            self.send(line)
 
-        self.irc.channels[channel].users.update(uids)
+        self._channels[channel].users.update(uids)
 
         self.updateTS(server, channel, ts, changedmodes)
 
-    def ping(self, source=None, target=None):
-        """Sends a PING to a target server. Periodic PINGs are sent to our uplink
-        automatically by the Irc() internals; plugins shouldn't have to use this."""
-        source = source or self.irc.sid
-        target = target or self.irc.uplink
-        if not (target is None or source is None):
-            self._send(source, 'PING %s %s' % (self.irc.servers[source].name, self.irc.servers[target].name))
+    def _ping_uplink(self):
+        """Sends a PING to the uplink."""
+        if self.sid and self.uplink:
+            self._send_with_prefix(self.sid, 'PING %s %s' % (self.get_friendly_name(self.sid), self.get_friendly_name(self.uplink)))
 
     def mode(self, numeric, target, modes, ts=None):
         """
         Sends mode changes from a PyLink client/server. The mode list should be
-        a list of (mode, arg) tuples, i.e. the format of utils.parseModes() output.
+        a list of (mode, arg) tuples, i.e. the format of utils.parse_modes() output.
         """
         # <- :unreal.midnight.vpn MODE #test +ntCo GL 1444361345
 
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
+        if (not self.is_internal_client(numeric)) and \
+                (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
-        self.irc.applyModes(target, modes)
+        self.apply_modes(target, modes)
 
-        if utils.isChannel(target):
+        if self.is_channel(target):
+
+            # Fix assignment TypeError in the expandPUID bit (sets can't be
+            # assigned to by index).
+            modes = list(modes)
 
             modes = list(modes)  # Needed for indexing
             # Make sure we expand any PUIDs when sending outgoing modes...
             for idx, mode in enumerate(modes):
-                if mode[0][-1] in self.irc.prefixmodes:
-                    log.debug('(%s) mode: expanding PUID of mode %s', self.irc.name, str(mode))
+                if mode[0][-1] in self.prefixmodes:
+                    log.debug('(%s) mode: expanding PUID of mode %s', self.name, str(mode))
                     modes[idx] = (mode[0], self._expandPUID(mode[1]))
 
             # The MODE command is used for channel mode changes only
-            ts = ts or self.irc.channels[self.irc.toLower(target)].ts
+            ts = ts or self._channels[target].ts
 
             # 7 characters for "MODE", the space between MODE and the target, the space between the
             # target and mode list, and the space between the mode list and TS.
-            bufsize = S2S_BUFSIZE - 7
+            bufsize = self.S2S_BUFSIZE - 7
 
             # Subtract the length of the TS and channel arguments
             bufsize -= len(str(ts))
             bufsize -= len(target)
 
             # Subtract the prefix (":SID " for servers or ":SIDAAAAAA " for servers)
-            bufsize -= (5 if self.irc.isInternalServer(numeric) else 11)
+            bufsize -= (5 if self.is_internal_server(numeric) else 11)
 
             # There is also an (undocumented) 15 args per line limit for MODE. The target, mode
             # characters, and TS take up three args, so we're left with 12 spaces for parameters.
@@ -252,30 +239,42 @@ class UnrealProtocol(TS6BaseProtocol):
             # * *** Warning! Possible desynch: MODE for channel #test ('+bbbbbbbbbbbb *!*@0.1 *!*@1.1 *!*@2.1 *!*@3.1 *!*@4.1 *!*@5.1 *!*@6.1 *!*@7.1 *!*@8.1 *!*@9.1 *!*@10.1 *!*@11.1') has fishy timestamp (12) (from pylink.local/pylink.local)
 
             # Thanks to kevin and Jobe for helping me debug this!
-            for modestring in self.irc.wrapModes(modes, bufsize, max_modes_per_msg=12):
-                self._send(numeric, 'MODE %s %s %s' % (target, modestring, ts))
+            for modestring in self.wrap_modes(modes, bufsize, max_modes_per_msg=12):
+                self._send_with_prefix(numeric, 'MODE %s %s %s' % (target, modestring, ts))
         else:
             # For user modes, the only way to set modes (for non-U:Lined servers)
             # is through UMODE2, which sets the modes on the caller.
             # U:Lines can use SVSMODE/SVS2MODE, but I won't expect people to
             # U:Line a PyLink daemon...
-            if not self.irc.isInternalClient(target):
+            if not self.is_internal_client(target):
                 raise ProtocolError('Cannot force mode change on external clients!')
 
             # XXX: I don't expect usermode changes to ever get cut off, but length
             # checks could be added just to be safe...
-            joinedmodes = self.irc.joinModes(modes)
-            self._send(target, 'UMODE2 %s' % joinedmodes)
+            joinedmodes = self.join_modes(modes)
+            self._send_with_prefix(target, 'UMODE2 %s' % joinedmodes)
 
-    def topicBurst(self, numeric, target, text):
-        """Sends a TOPIC change from a PyLink server."""
-        if not self.irc.isInternalServer(numeric):
-            raise LookupError('No such PyLink server exists.')
-        self._send(numeric, 'TOPIC %s :%s' % (target, text))
-        self.irc.channels[target].topic = text
-        self.irc.channels[target].topicset = True
+    def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
+        """
+        Sets a server ban.
+        """
+        # Permanent:
+        # <- :unreal.midnight.vpn TKL + G ident host.net james!james@localhost 0 1500303745 :no reason
+        # Temporary:
+        # <- :unreal.midnight.vpn TKL + G * everyone james!james@localhost 1500303702 1500303672 :who needs reasons, do people even read them?
+        assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
 
-    def updateClient(self, target, field, text):
+        if source in self.users:
+            # GLINEs are always forwarded from the server as far as I can tell.
+            real_source = self.get_server(source)
+        else:
+            real_source = source
+
+        setter = self.get_hostmask(source) if source in self.users else self.get_friendly_name(source)
+        currtime = int(time.time())
+        self._send_with_prefix(real_source, 'TKL + G %s %s %s %s %s :%s' % (user, host, setter, currtime+duration if duration != 0 else 0, currtime, reason))
+
+    def update_client(self, target, field, text):
         """Updates the ident, host, or realname of any connected client."""
         field = field.upper()
 
@@ -283,68 +282,62 @@ class UnrealProtocol(TS6BaseProtocol):
             raise NotImplementedError("Changing field %r of a client is "
                                       "unsupported by this protocol." % field)
 
-        if self.irc.isInternalClient(target):
+        if self.is_internal_client(target):
             # It is one of our clients, use SETIDENT/HOST/NAME.
             if field == 'IDENT':
-                self.irc.users[target].ident = text
-                self._send(target, 'SETIDENT %s' % text)
+                self.users[target].ident = text
+                self._send_with_prefix(target, 'SETIDENT %s' % text)
             elif field == 'HOST':
-                self.irc.users[target].host = text
-                self._send(target, 'SETHOST %s' % text)
+                self.users[target].host = text
+                self._send_with_prefix(target, 'SETHOST %s' % text)
             elif field in ('REALNAME', 'GECOS'):
-                self.irc.users[target].realname = text
-                self._send(target, 'SETNAME :%s' % text)
+                self.users[target].realname = text
+                self._send_with_prefix(target, 'SETNAME :%s' % text)
         else:
             # It is a client on another server, use CHGIDENT/HOST/NAME.
             if field == 'IDENT':
-                self.irc.users[target].ident = text
-                self._send(self.irc.sid, 'CHGIDENT %s %s' % (target, text))
+                self.users[target].ident = text
+                self._send_with_prefix(self.sid, 'CHGIDENT %s %s' % (target, text))
 
                 # Send hook payloads for other plugins to listen to.
-                self.irc.callHooks([self.irc.sid, 'CHGIDENT',
+                self.call_hooks([self.sid, 'CHGIDENT',
                                    {'target': target, 'newident': text}])
 
             elif field == 'HOST':
-                self.irc.users[target].host = text
-                self._send(self.irc.sid, 'CHGHOST %s %s' % (target, text))
+                self.users[target].host = text
+                self._send_with_prefix(self.sid, 'CHGHOST %s %s' % (target, text))
 
-                self.irc.callHooks([self.irc.sid, 'CHGHOST',
+                self.call_hooks([self.sid, 'CHGHOST',
                                    {'target': target, 'newhost': text}])
 
             elif field in ('REALNAME', 'GECOS'):
-                self.irc.users[target].realname = text
-                self._send(self.irc.sid, 'CHGNAME %s :%s' % (target, text))
+                self.users[target].realname = text
+                self._send_with_prefix(self.sid, 'CHGNAME %s :%s' % (target, text))
 
-                self.irc.callHooks([self.irc.sid, 'CHGNAME',
+                self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
-
-    def invite(self, numeric, target, channel):
-        """Sends an INVITE from a PyLink client.."""
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._send(numeric, 'INVITE %s %s' % (target, channel))
 
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
         # KNOCKs in UnrealIRCd are actually just specially formatted NOTICEs,
         # sent to all ops in a channel.
         # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by GL|!gl@hidden-1C620195 (test)
-        assert utils.isChannel(target), "Can only knock on channels!"
-        sender = self.irc.getServer(numeric)
-        s = '[Knock] by %s (%s)' % (self.irc.getHostmask(numeric), text)
-        self._send(sender, 'NOTICE @%s :%s' % (target, s))
+        assert self.is_channel(target), "Can only knock on channels!"
+        sender = self.get_server(numeric)
+        s = '[Knock] by %s (%s)' % (self.get_hostmask(numeric), text)
+        self._send_with_prefix(sender, 'NOTICE @%s :%s' % (target, s))
 
     ### HANDLERS
 
-    def connect(self):
+    def post_connect(self):
         """Initializes a connection to a server."""
-        ts = self.irc.start_ts
-        self.irc.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
+        ts = self.start_ts
+        self.prefixmodes = {'q': '~', 'a': '&', 'o': '@', 'h': '%', 'v': '+'}
 
         # Track usages of legacy (Unreal 3.2) nicks.
-        self.legacy_uidgen = utils.PUIDGenerator('U32user')
+        self.legacy_uidgen = PUIDGenerator('U32user')
 
-        self.irc.umodes.update({'deaf': 'd', 'invisible': 'i', 'hidechans': 'p',
+        self.umodes.update({'deaf': 'd', 'invisible': 'i', 'hidechans': 'p',
                                 'protected': 'q', 'registered': 'r',
                                 'snomask': 's', 'vhost': 't', 'wallops': 'w',
                                 'bot': 'B', 'cloak': 'x', 'ssl': 'z',
@@ -353,10 +346,10 @@ class UnrealProtocol(TS6BaseProtocol):
                                 'noctcp': 'T', 'showwhois': 'W',
                                 '*A': '', '*B': '', '*C': '', '*D': 'dipqrstwBxzGHIRSTW'})
 
-        f = self.irc.send
-        host = self.irc.serverdata["hostname"]
+        f = self.send
+        host = self.serverdata["hostname"]
 
-        f('PASS :%s' % self.irc.serverdata["sendpass"])
+        f('PASS :%s' % self.serverdata["sendpass"])
         # https://github.com/unrealircd/unrealircd/blob/2f8cb55e/doc/technical/protoctl.txt
         # We support the following protocol features:
         # SJOIN - supports SJOIN for user introduction
@@ -375,14 +368,23 @@ class UnrealProtocol(TS6BaseProtocol):
         #       not work for any UnrealIRCd 3.2 users.
         # ESVID - Supports account names in services stamps instead of just the signon time.
         #         AFAIK this doesn't actually affect services' behaviour?
-        f('PROTOCTL SJOIN SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.irc.serverdata["hostname"], self.irc.sid))
-        sdesc = self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
-        f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.irc.sid, sdesc))
-        f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.irc.start_ts, self.proto_ver, self.irc.serverdata.get("netname", self.irc.name)))
-        self._send(self.irc.sid, 'EOS')
+        f('PROTOCTL SJOIN SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.serverdata["hostname"], self.sid))
+        sdesc = self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
+        f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.sid, sdesc))
+        f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.start_ts, self.proto_ver, self.serverdata.get("netname", self.name)))
+        self._send_with_prefix(self.sid, 'EOS')
+
+        # Extban definitions
+        self.extbans_acting = {'quiet': '~q:', 'ban_nonick': '~n:', 'ban_nojoins': '~j:',
+                               'filter': '~T:block:', 'filter_censor': '~T:censor:'}
+        self.extbans_matching = {'ban_account': '~a:', 'ban_inchannel': '~c:', 'ban_opertype': '~O:',
+                                 'ban_realname': '~r:', 'ban_account_legacy': '~R:', 'ban_certfp': '~S:'}
 
     def handle_eos(self, numeric, command, args):
         """EOS is used to denote end of burst."""
+        self.servers[numeric].has_eob = True
+        if numeric == self.uplink:
+            self.connected.set()
         return {}
 
     def handle_uid(self, numeric, command, args):
@@ -391,8 +393,9 @@ class UnrealProtocol(TS6BaseProtocol):
         # arguments: nick, hopcount?, ts, ident, real-host, UID, services account (0 if none), modes,
         #            displayed host, cloaked (+x) host, base64-encoded IP, and realname
         nick = args[0]
-        self.check_nick_collision(nick)
+        self._check_nick_collision(nick)
         ts, ident, realhost, uid, accountname, modestring, host = args[2:9]
+        ts = int(ts)
 
         if host == '*':
             # A single * means that there is no displayed/virtual host, and
@@ -419,32 +422,30 @@ class UnrealProtocol(TS6BaseProtocol):
 
         realname = args[-1]
 
-        self.irc.users[uid] = IrcUser(nick, ts, uid, numeric, ident, host, realname, realhost, ip)
-        self.irc.servers[numeric].users.add(uid)
+        self.users[uid] = User(self, nick, ts, uid, numeric, ident, host, realname, realhost, ip)
+        self.servers[numeric].users.add(uid)
 
         # Handle user modes
-        parsedmodes = self.irc.parseModes(uid, [modestring])
-        self.irc.applyModes(uid, parsedmodes)
+        parsedmodes = self.parse_modes(uid, [modestring])
+        self.apply_modes(uid, parsedmodes)
 
         # The cloaked (+x) host is completely separate from the displayed host
         # and real host in that it is ONLY shown if the user is +x (cloak mode
         # enabled) but NOT +t (vHost set).
-        self.irc.users[uid].cloaked_host = args[9]
+        self.users[uid].cloaked_host = args[9]
 
-        if ('+o', None) in parsedmodes:
-            # If +o being set, call the CLIENT_OPERED internal hook.
-            self.irc.callHooks([uid, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
+        self._check_oper_status_change(uid, parsedmodes)
 
         if ('+x', None) not in parsedmodes:
             # If +x is not set, update to use the person's real host.
-            self.irc.users[uid].host = realhost
+            self.users[uid].host = realhost
 
         # Set the account name if present: if this is a number, set it to the user nick.
         if ('+r', None) in parsedmodes and accountname.isdigit():
             accountname = nick
 
         if not accountname.isdigit():
-            self.irc.callHooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+            self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
         # parse_as is used here to prevent legacy user introduction from being confused
         # with a nick change.
@@ -453,19 +454,19 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_pass(self, numeric, command, args):
         # <- PASS :abcdefg
-        if args[0] != self.irc.serverdata['recvpass']:
-            raise ProtocolError("Error: RECVPASS from uplink does not match configuration!")
+        if args[0] != self.serverdata['recvpass']:
+            raise ProtocolError("RECVPASS from uplink does not match configuration!")
 
     def handle_ping(self, numeric, command, args):
-        if numeric == self.irc.uplink:
-            self.irc.send('PONG %s :%s' % (self.irc.serverdata['hostname'], args[-1]), queue=False)
+        if numeric == self.uplink:
+            self.send('PONG %s :%s' % (self.serverdata['hostname'], args[-1]), queue=False)
 
     def handle_server(self, numeric, command, args):
         """Handles the SERVER command, which is used for both authentication and
         introducing legacy (non-SID) servers."""
         # <- SERVER unreal.midnight.vpn 1 :U3999-Fhin6OoEM UnrealIRCd test server
         sname = args[0]
-        if numeric == self.irc.uplink and not self.irc.connected.is_set():  # We're doing authentication
+        if self.uplink not in self.servers:  # We're doing authentication
             for cap in self.needed_caps:
                 if cap not in self.caps:
                     raise ProtocolError("Not all required capabilities were met "
@@ -489,35 +490,12 @@ class UnrealProtocol(TS6BaseProtocol):
             if protover < self.min_proto_ver:
                 raise ProtocolError("Protocol version too old! (needs at least %s "
                                     "(Unreal 4.x), got %s)" % (self.min_proto_ver, protover))
-            self.irc.servers[numeric] = IrcServer(None, sname, desc=sdesc)
+            self.servers[numeric] = Server(self, None, sname, desc=sdesc)
 
-            # Set irc.connected to True, meaning that protocol negotiation passed.
-            log.debug('(%s) self.irc.connected set!', self.irc.name)
-            self.irc.connected.set()
         else:
             # Legacy (non-SID) servers can still be introduced using the SERVER command.
             # <- :services.int SERVER a.bc 2 :(H) [GL] a
-            servername = args[0].lower()
-            sdesc = args[-1]
-            self.irc.servers[servername] = IrcServer(numeric, servername, desc=sdesc)
-            return {'name': servername, 'sid': None, 'text': sdesc}
-
-    def handle_sid(self, numeric, command, args):
-        """Handles the SID command, used for introducing remote servers by our uplink."""
-        # <- SID services.int 2 00A :Shaltúre IRC Services
-        sname = args[0].lower()
-        sid = args[2]
-        sdesc = args[-1]
-        self.irc.servers[sid] = IrcServer(numeric, sname, desc=sdesc)
-        return {'name': sname, 'sid': sid, 'text': sdesc}
-
-    def handle_squit(self, numeric, command, args):
-        """Handles the SQUIT command."""
-        # <- SQUIT services.int :Read error
-        # Convert the server name to a SID...
-        args[0] = self._getSid(args[0])
-        # Then, use the SQUIT handler in TS6BaseProtocol as usual.
-        return super().handle_squit(numeric, 'SQUIT', args)
+            return super().handle_server(numeric, command, args)
 
     def handle_protoctl(self, numeric, command, args):
         """Handles protocol negotiation."""
@@ -538,18 +516,18 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- PROTOCTL CHANMODES=beI,k,l,psmntirzMQNRTOVKDdGPZSCc NICKCHARS= SID=001 MLOCK TS=1441314501 EXTSWHOIS
         for cap in args:
             if cap.startswith('SID'):
-                self.irc.uplink = cap.split('=', 1)[1]
+                self.uplink = cap.split('=', 1)[1]
             elif cap.startswith('CHANMODES'):
                 # Parse all the supported channel modes.
                 supported_cmodes = cap.split('=', 1)[1]
-                self.irc.cmodes['*A'], self.irc.cmodes['*B'], self.irc.cmodes['*C'], self.irc.cmodes['*D'] = supported_cmodes.split(',')
+                self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] = supported_cmodes.split(',')
                 for namedmode, modechar in cmodes.items():
                     if modechar in supported_cmodes:
-                        self.irc.cmodes[namedmode] = modechar
-                self.irc.cmodes['*B'] += 'f'  # Add +f to the list too, dunno why it isn't there.
+                        self.cmodes[namedmode] = modechar
+                self.cmodes['*B'] += 'f'  # Add +f to the list too, dunno why it isn't there.
 
         # Add in the supported prefix modes.
-        self.irc.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
+        self.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
                                 'op': 'o', 'voice': 'v'})
 
     def handle_join(self, numeric, command, args):
@@ -557,38 +535,34 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :GL JOIN #pylink,#test
         if args[0] == '0':
             # /join 0; part the user from all channels
-            oldchans = self.irc.users[numeric].channels.copy()
+            oldchans = self.users[numeric].channels.copy()
             log.debug('(%s) Got /join 0 from %r, channel list is %r',
-                      self.irc.name, numeric, oldchans)
+                      self.name, numeric, oldchans)
             for ch in oldchans:
-                self.irc.channels[ch].users.discard(numeric)
-                self.irc.users[numeric].channels.discard(ch)
+                self._channels[ch].users.discard(numeric)
+                self.users[numeric].channels.discard(ch)
             return {'channels': oldchans, 'text': 'Left all channels.', 'parse_as': 'PART'}
 
         else:
             for channel in args[0].split(','):
-                # Normalize channel case.
-                channel = self.irc.toLower(channel)
-
-                c = self.irc.channels[channel]
-
-                self.irc.users[numeric].channels.add(channel)
-                self.irc.channels[channel].users.add(numeric)
+                c = self._channels[channel]
+                self.users[numeric].channels.add(channel)
+                self._channels[channel].users.add(numeric)
                 # Call hooks manually, because one JOIN command in UnrealIRCd can
                 # have multiple channels...
-                self.irc.callHooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
+                self.call_hooks([numeric, command, {'channel': channel, 'users': [numeric], 'modes':
                                                        c.modes, 'ts': c.ts}])
 
     def handle_sjoin(self, numeric, command, args):
         """Handles the UnrealIRCd SJOIN command."""
         # <- :001 SJOIN 1444361345 #test :001AAAAAA @001AAAAAB +001AAAAAC
         # <- :001 SJOIN 1483250129 #services +nt :+001OR9V02 @*~001DH6901 &*!*@test "*!*@blah.blah '*!*@yes.no
-        channel = self.irc.toLower(args[1])
-        chandata = self.irc.channels[channel].deepcopy()
+        channel = args[1]
+        chandata = self._channels[channel].deepcopy()
         userlist = args[-1].split()
 
         namelist = []
-        log.debug('(%s) handle_sjoin: got userlist %r for %r', self.irc.name, userlist, channel)
+        log.debug('(%s) handle_sjoin: got userlist %r for %r', self.name, userlist, channel)
 
         modestring = ''
 
@@ -603,7 +577,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 # Strip extra spaces between the mode argument and the user list, if
                 # there are any. XXX: report this as a bug in unreal's s2s protocol?
                 modestring = [m for m in modestring if m]
-                parsedmodes = self.irc.parseModes(channel, modestring)
+                parsedmodes = self.parse_modes(channel, modestring)
                 changedmodes = set(parsedmodes)
         except IndexError:
             pass
@@ -628,28 +602,28 @@ class UnrealProtocol(TS6BaseProtocol):
                     # <- :002 SJOIN 1486361658 #idlerpg :@
                     continue
 
-                user = self._getUid(user)  # Normalize nicks to UIDs for Unreal 3.2 links
+                user = self._get_UID(user)  # Normalize nicks to UIDs for Unreal 3.2 links
                 # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
                 # and +a is ~ instead of &.
                 modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
                 finalprefix = ''
 
-                log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.irc.name, modeprefix, user)
+                log.debug('(%s) handle_sjoin: got modeprefix %r for user %r', self.name, modeprefix, user)
                 for m in modeprefix:
                     # Iterate over the mapping of prefix chars to prefixes, and
                     # find the characters that match.
-                    for char, prefix in self.irc.prefixmodes.items():
+                    for char, prefix in self.prefixmodes.items():
                         if m == prefix:
                             finalprefix += char
                 namelist.append(user)
-                self.irc.users[user].channels.add(channel)
+                self.users[user].channels.add(channel)
 
                 # Only merge the remote's prefix modes if their TS is smaller or equal to ours.
                 changedmodes |= {('+%s' % mode, user) for mode in finalprefix}
 
-                self.irc.channels[channel].users.add(user)
+                self._channels[channel].users.add(user)
 
-        our_ts = self.irc.channels[channel].ts
+        our_ts = self._channels[channel].ts
         their_ts = int(args[0])
         self.updateTS(numeric, channel, their_ts, changedmodes)
 
@@ -670,7 +644,7 @@ class UnrealProtocol(TS6BaseProtocol):
             #   <- NICK GL32 2 1470699865 gl localhost unreal32.midnight.vpn GL +iowx hidden-1C620195 AAAAAAAAAAAAAAAAAAAAAQ== :realname
             # to this:
             #   <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * hidden-1C620195 fwAAAQ== :realname
-            log.debug('(%s) got legacy NICK args: %s', self.irc.name, ' '.join(args))
+            log.debug('(%s) got legacy NICK args: %s', self.name, ' '.join(args))
 
             new_args = args[:]  # Clone the old args list
             servername = new_args[5].lower()  # Get the name of the users' server.
@@ -686,7 +660,7 @@ class UnrealProtocol(TS6BaseProtocol):
             # hosts from UnrealIRCd 3.2 users. Otherwise, +x host cloaking won't work!
             new_args.insert(-2, args[4])
 
-            log.debug('(%s) translating legacy NICK args to: %s', self.irc.name, ' '.join(new_args))
+            log.debug('(%s) translating legacy NICK args to: %s', self.name, ' '.join(new_args))
 
             return self.handle_uid(servername, 'UID_LEGACY', new_args)
         else:
@@ -708,12 +682,12 @@ class UnrealProtocol(TS6BaseProtocol):
         # send 0 as a TS argument (which should be ignored unless breaking the internal channel TS is desired).
 
         # Also, we need to get rid of that extra space following the +f argument. :|
-        if utils.isChannel(args[0]):
-            channel = self.irc.toLower(args[0])
-            oldobj = self.irc.channels[channel].deepcopy()
+        if self.is_channel(args[0]):
+            channel = args[0]
+            oldobj = self._channels[channel].deepcopy()
 
             modes = [arg for arg in args[1:] if arg]  # normalize whitespace
-            parsedmodes = self.irc.parseModes(channel, modes)
+            parsedmodes = self.parse_modes(channel, modes)
 
             if parsedmodes:
                 if parsedmodes[0][0] == '+&':
@@ -721,28 +695,29 @@ class UnrealProtocol(TS6BaseProtocol):
                     # attempt to set modes by us was rejected for some reason (usually due to
                     # timestamps). Drop the mode change to prevent mode floods.
                     log.debug("(%s) Received mode bounce %s in channel %s! Our TS: %s",
-                              self.irc.name, modes, channel, self.irc.channels[channel].ts)
+                              self.name, modes, channel, self._channels[channel].ts)
                     return
 
-                self.irc.applyModes(channel, parsedmodes)
+                self.apply_modes(channel, parsedmodes)
 
-            if numeric in self.irc.servers and args[-1].isdigit():
+            if numeric in self.servers and args[-1].isdigit():
                 # Sender is a server AND last arg is number. Perform TS updates.
                 their_ts = int(args[-1])
                 if their_ts > 0:
                     self.updateTS(numeric, channel, their_ts)
             return {'target': channel, 'modes': parsedmodes, 'channeldata': oldobj}
         else:
-            # User mode change: pass those on to handle_umode2()
-            self.handle_umode2(numeric, 'MODE', args[1:])
+            # User mode change
+            target = self._get_UID(args[0])
+            return self._handle_umode(target, self.parse_modes(target, args[1:]))
 
-    def checkCloakChange(self, uid, parsedmodes):
+    def _check_cloak_change(self, uid, parsedmodes):
         """
         Checks whether +x/-x was set in the mode query, and changes the
         hostname of the user given to or from their cloaked host if True.
         """
 
-        userobj = self.irc.users[uid]
+        userobj = self.users[uid]
         final_modes = userobj.modes
         oldhost = userobj.host
 
@@ -767,32 +742,24 @@ class UnrealProtocol(TS6BaseProtocol):
 
         if newhost != oldhost:
             # Only send a payload if the old and new hosts are different.
-            self.irc.callHooks([uid, 'SETHOST',
+            self.call_hooks([uid, 'SETHOST',
                                {'target': uid, 'newhost': newhost}])
 
     def handle_svsmode(self, numeric, command, args):
         """Handles SVSMODE, used by services for setting user modes on others."""
         # <- :source SVSMODE target +usermodes
-        target = self._getUid(args[0])
-        modes = args[1:]
+        target = self._get_UID(args[0])
 
-        parsedmodes = self.irc.parseModes(target, modes)
-        self.irc.applyModes(target, parsedmodes)
-
-        # If +x/-x is being set, update cloaked host info.
-        self.checkCloakChange(target, parsedmodes)
-
-        return {'target': target, 'modes': parsedmodes}
+        return self._handle_umode(target, self.parse_modes(target, args[1:]))
 
     def handle_svs2mode(self, sender, command, args):
         """
         Handles SVS2MODE, which sets services login information on the given target.
         """
-        # Once again this syntax is inconsistent and poorly documented. +d sets a
-        # "services stamp" that some services packages use as an account name field,
-        # while others simply use for tracking the login time? In a nutshell: check
-        # for the +d argument: if it's an integer, ignore it and set accountname to
-        # the user's nick. Otherwise, treat the parameter as a nick.
+        # In a nutshell: check for the +d argument: if it's an integer, ignore
+        # it and set the user's account name to their nick. Otherwise, treat the
+        # parameter as the new account name (this is known as logging in AS some account,
+        # which is supported by atheme and Anope 2.x).
 
         # Logging in (with account info, atheme):
         # <- :NickServ SVS2MODE GL +rd GL
@@ -821,8 +788,8 @@ class UnrealProtocol(TS6BaseProtocol):
         # <- :NickServ SVS2MODE 001SALZ01 +d GL
         # <- :NickServ SVS2MODE 001SALZ01 +r
 
-        target = self._getUid(args[0])
-        parsedmodes = self.irc.parseModes(target, args[1:])
+        target = self._get_UID(args[0])
+        parsedmodes = self.parse_modes(target, args[1:])
 
         if ('+r', None) in parsedmodes:
             # Umode +r is being set (log in)
@@ -832,19 +799,19 @@ class UnrealProtocol(TS6BaseProtocol):
             except IndexError:
                 # If one doesn't exist, make it the same as the nick, but only if the account name
                 # wasn't set already.
-                if not self.irc.users[target].services_account:
-                    account = self.irc.getFriendlyName(target)
+                if not self.users[target].services_account:
+                    account = self.get_friendly_name(target)
                 else:
                     return
             else:
                 if account.isdigit():
                     # If the +d argument is a number, ignore it and set the account name to the nick.
-                    account = self.irc.getFriendlyName(target)
+                    account = self.get_friendly_name(target)
 
         elif ('-r', None) in parsedmodes:
             # Umode -r being set.
 
-            if not self.irc.users[target].services_account:
+            if not self.users[target].services_account:
                 # User already has no account; ignore.
                 return
 
@@ -857,34 +824,41 @@ class UnrealProtocol(TS6BaseProtocol):
         else:
             return
 
-        self.irc.callHooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+        self.call_hooks([target, 'CLIENT_SERVICES_LOGIN', {'text': account}])
+        # The internal mode +d used for services stamps clashes with the DEAF mode, so don't parse it as
+        # an actual mode mode parsing.
+        return self._handle_umode(target, [mode for mode in parsedmodes if mode[0][-1] != 'd'])
 
-    def handle_umode2(self, numeric, command, args):
+    def _handle_umode(self, target, parsedmodes):
+        """Internal helper function to parse umode changes."""
+        if not parsedmodes:
+            return
+
+        self.apply_modes(target, parsedmodes)
+
+        self._check_oper_status_change(target, parsedmodes)
+        self._check_cloak_change(target, parsedmodes)
+
+        return {'target': target, 'modes': parsedmodes}
+
+    def handle_umode2(self, source, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
         # <- :GL UMODE2 +W
-        parsedmodes = self.irc.parseModes(numeric, args)
-        self.irc.applyModes(numeric, parsedmodes)
-
-        if ('+o', None) in parsedmodes:
-            # If +o being set, call the CLIENT_OPERED internal hook.
-            self.irc.callHooks([numeric, 'CLIENT_OPERED', {'text': 'IRC Operator'}])
-
-        self.checkCloakChange(numeric, parsedmodes)
-
-        return {'target': numeric, 'modes': parsedmodes}
+        target = self._get_UID(source)
+        return self._handle_umode(target, self.parse_modes(target, args))
 
     def handle_topic(self, numeric, command, args):
         """Handles the TOPIC command."""
         # <- GL TOPIC #services GL 1444699395 :weeee
         # <- TOPIC #services devel.relay 1452399682 :test
-        channel = self.irc.toLower(args[0])
+        channel = args[0]
         topic = args[-1]
         setter = args[1]
         ts = args[2]
 
-        oldtopic = self.irc.channels[channel].topic
-        self.irc.channels[channel].topic = topic
-        self.irc.channels[channel].topicset = True
+        oldtopic = self._channels[channel].topic
+        self._channels[channel].topic = topic
+        self._channels[channel].topicset = True
 
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic,
                 'oldtopic': oldtopic}
@@ -892,76 +866,57 @@ class UnrealProtocol(TS6BaseProtocol):
     def handle_setident(self, numeric, command, args):
         """Handles SETIDENT, used for self ident changes."""
         # <- :70MAAAAAB SETIDENT test
-        self.irc.users[numeric].ident = newident = args[0]
+        self.users[numeric].ident = newident = args[0]
         return {'target': numeric, 'newident': newident}
 
     def handle_sethost(self, numeric, command, args):
         """Handles CHGHOST, used for self hostname changes."""
         # <- :70MAAAAAB SETIDENT some.host
-        self.irc.users[numeric].host = newhost = args[0]
+        self.users[numeric].host = newhost = args[0]
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
         # target.
-        self.irc.applyModes(numeric, [('+x', None), ('+t', None)])
+        self.apply_modes(numeric, [('+x', None), ('+t', None)])
 
         return {'target': numeric, 'newhost': newhost}
 
     def handle_setname(self, numeric, command, args):
         """Handles SETNAME, used for self real name/gecos changes."""
         # <- :70MAAAAAB SETNAME :afdsafasf
-        self.irc.users[numeric].realname = newgecos = args[0]
+        self.users[numeric].realname = newgecos = args[0]
         return {'target': numeric, 'newgecos': newgecos}
 
     def handle_chgident(self, numeric, command, args):
         """Handles CHGIDENT, used for denoting ident changes."""
         # <- :GL CHGIDENT GL test
-        target = self._getUid(args[0])
-        self.irc.users[target].ident = newident = args[1]
+        target = self._get_UID(args[0])
+        self.users[target].ident = newident = args[1]
         return {'target': target, 'newident': newident}
 
     def handle_chghost(self, numeric, command, args):
         """Handles CHGHOST, used for denoting hostname changes."""
         # <- :GL CHGHOST GL some.host
-        target = self._getUid(args[0])
-        self.irc.users[target].host = newhost = args[1]
+        target = self._get_UID(args[0])
+        self.users[target].host = newhost = args[1]
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
         # target.
-        self.irc.applyModes(target, [('+x', None), ('+t', None)])
+        self.apply_modes(target, [('+x', None), ('+t', None)])
 
         return {'target': target, 'newhost': newhost}
 
     def handle_chgname(self, numeric, command, args):
         """Handles CHGNAME, used for denoting real name/gecos changes."""
         # <- :GL CHGNAME GL :afdsafasf
-        target = self._getUid(args[0])
-        self.irc.users[target].realname = newgecos = args[1]
+        target = self._get_UID(args[0])
+        self.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
-
-    def handle_invite(self, numeric, command, args):
-        """Handles incoming INVITEs."""
-        # <- :GL INVITE PyLink-devel :#a
-        target = self._getUid(args[0])
-        channel = self.irc.toLower(args[1])
-        # We don't actually need to process this; it's just something plugins/hooks can use
-        return {'target': target, 'channel': channel}
-
-    def handle_kill(self, numeric, command, args):
-        """Handles incoming KILLs."""
-        # <- :GL| KILL GLolol :hidden-1C620195!GL| (test)
-        # Use ts6_common's handle_kill, but coerse UIDs to nicks first.
-
-        new_args = [self._getUid(args[0])]
-        new_args.extend(args[1:])
-
-        return super().handle_kill(numeric, command, new_args)
 
     def handle_tsctl(self, source, command, args):
         """Handles /TSCTL alltime requests."""
         # <- :GL TSCTL alltime
 
         if args[0] == 'alltime':
-            # XXX: We override notice() here because that abstraction doesn't allow messages from servers.
-            self._send(self.irc.sid, 'NOTICE %s :*** Server=%s time()=%d' % (source, self.irc.hostname(), time.time()))
+            self._send_with_prefix(self.sid, 'NOTICE %s :*** Server=%s time()=%d' % (source, self.hostname(), time.time()))
 
 Class = UnrealProtocol

@@ -13,84 +13,14 @@ from pylinkirc.log import log
 # Essential, core commands go here so that the "commands" plugin with less-important,
 # but still generic functions can be reloaded.
 
-def _login(irc, source, username):
-    """Internal function to process logins."""
-    # Mangle case before we start checking for login data.
-    accounts = {k.lower(): v for k, v in conf.conf['login'].get('accounts', {}).items()}
-
-    logindata = accounts.get(username.lower(), {})
-    network_filter = logindata.get('networks')
-    require_oper = logindata.get('require_oper', False)
-    hosts_filter = logindata.get('hosts', [])
-
-    if network_filter and irc.name not in network_filter:
-        irc.error("You are not authorized to log in to %r on this network." % username)
-        log.warning("(%s) Failed login to %r from %s (wrong network: networks filter says %r but we got %r)", irc.name, username, irc.getHostmask(source), ', '.join(network_filter), irc.name)
-        return
-
-    elif require_oper and not irc.isOper(source, allowAuthed=False):
-        irc.error("You must be opered to log in to %r." % username)
-        log.warning("(%s) Failed login to %r from %s (needs oper)", irc.name, username, irc.getHostmask(source))
-        return
-
-    elif hosts_filter and not any(irc.matchHost(host, source) for host in hosts_filter):
-        irc.error("Failed to log in to %r: hostname mismatch." % username)
-        log.warning("(%s) Failed login to %r from %s (hostname mismatch)", irc.name, username, irc.getHostmask(source))
-        return
-
-    irc.users[source].account = username
-    irc.reply('Successfully logged in as %s.' % username)
-    log.info("(%s) Successful login to %r by %s",
-             irc.name, username, irc.getHostmask(source))
-
-def _loginfail(irc, source, username):
-    """Internal function to process login failures."""
-    irc.error('Incorrect credentials.')
-    log.warning("(%s) Failed login to %r from %s", irc.name, username, irc.getHostmask(source))
-
-@utils.add_cmd
-def identify(irc, source, args):
-    """<username> <password>
-
-    Logs in to PyLink using the configured administrator account."""
-    if utils.isChannel(irc.called_in):
-        irc.reply('Error: This command must be sent in private. '
-                '(Would you really type a password inside a channel?)')
-        return
-    try:
-        username, password = args[0], args[1]
-    except IndexError:
-        irc.reply('Error: Not enough arguments.')
-        return
-
-    # Process new-style accounts.
-    if login.checkLogin(username, password):
-        _login(irc, source, username)
-        return
-
-    # Process legacy logins (login:user).
-    if username.lower() == conf.conf['login'].get('user', '').lower() and password == conf.conf['login'].get('password'):
-        realuser = conf.conf['login']['user']
-        _login(irc, source, realuser)
-    else:
-        # Username not found.
-        _loginfail(irc, source, username)
-
-
 @utils.add_cmd
 def shutdown(irc, source, args):
     """takes no arguments.
 
     Exits PyLink by disconnecting all networks."""
-
-    permissions.checkPermissions(irc, source, ['core.shutdown'])
-
-    u = irc.users[source]
-
-    log.info('(%s) SHUTDOWN requested by "%s!%s@%s", exiting...', irc.name, u.nick,
-             u.ident, u.host)
-
-    control._shutdown(irc)
+    permissions.check_permissions(irc, source, ['core.shutdown'])
+    log.info('(%s) SHUTDOWN requested by %s, exiting...', irc.name, irc.get_hostmask(source))
+    control.shutdown(irc=irc)
 
 @utils.add_cmd
 def load(irc, source, args):
@@ -99,7 +29,7 @@ def load(irc, source, args):
     Loads a plugin from the plugin folder."""
     # Note: reload capability is acceptable here, because all it actually does is call
     # load after unload.
-    permissions.checkPermissions(irc, source, ['core.load', 'core.reload'])
+    permissions.check_permissions(irc, source, ['core.load', 'core.reload'])
 
     try:
         name = args[0]
@@ -109,9 +39,9 @@ def load(irc, source, args):
     if name in world.plugins:
         irc.reply("Error: %r is already loaded." % name)
         return
-    log.info('(%s) Loading plugin %r for %s', irc.name, name, irc.getHostmask(source))
+    log.info('(%s) Loading plugin %r for %s', irc.name, name, irc.get_hostmask(source))
     try:
-        world.plugins[name] = pl = utils.loadPlugin(name)
+        world.plugins[name] = pl = utils._load_plugin(name)
     except ImportError as e:
         if str(e) == ('No module named %r' % name):
             log.exception('Failed to load plugin %r: The plugin could not be found.', name)
@@ -129,7 +59,7 @@ def unload(irc, source, args):
     """<plugin name>.
 
     Unloads a currently loaded plugin."""
-    permissions.checkPermissions(irc, source, ['core.unload', 'core.reload'])
+    permissions.check_permissions(irc, source, ['core.unload', 'core.reload'])
 
     try:
         name = args[0]
@@ -142,7 +72,7 @@ def unload(irc, source, args):
     modulename = utils.PLUGIN_PREFIX + name
 
     if name in world.plugins:
-        log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.getHostmask(source))
+        log.info('(%s) Unloading plugin %r for %s', irc.name, name, irc.get_hostmask(source))
         pl = world.plugins[name]
         log.debug('sys.getrefcount of plugin %s is %s', pl, sys.getrefcount(pl))
 
@@ -162,12 +92,14 @@ def unload(irc, source, args):
                         del world.services['pylink'].commands[cmdname]
 
         # Remove any command hooks set by the plugin.
-        for hookname, hookfuncs in world.hooks.copy().items():
-            for hookfunc in hookfuncs:
+        for hookname, hookpairs in world.hooks.copy().items():
+            for hookpair in hookpairs:
+                hookfunc = hookpair[1]
                 if hookfunc.__module__ == modulename:
-                    world.hooks[hookname].remove(hookfunc)
+                    log.debug('Trying to remove hook func %s (%s) from plugin %s', hookfunc, hookname, modulename)
+                    world.hooks[hookname].remove(hookpair)
                     # If the hookfuncs list is empty, remove it.
-                    if not hookfuncs:
+                    if not hookpairs:
                         del world.hooks[hookname]
 
         # Call the die() function in the plugin, if present.
@@ -215,11 +147,10 @@ def rehash(irc, source, args):
     Reloads the configuration file for PyLink, (dis)connecting added/removed networks.
 
     Note: plugins must be manually reloaded."""
-    permissions.checkPermissions(irc, source, ['core.rehash'])
+    permissions.check_permissions(irc, source, ['core.rehash'])
     try:
-        control._rehash()
+        control.rehash()
     except Exception as e:  # Something went wrong, abort.
-        log.exception("Error REHASHing config: ")
         irc.reply("Error loading configuration file: %s: %s" % (type(e).__name__, e))
         return
     else:
@@ -230,5 +161,5 @@ def clearqueue(irc, source, args):
     """takes no arguments.
 
     Clears the outgoing text queue for the current connection."""
-    permissions.checkPermissions(irc, source, ['core.clearqueue'])
-    irc.queue.queue.clear()
+    permissions.check_permissions(irc, source, ['core.clearqueue'])
+    irc._queue.queue.clear()

@@ -14,7 +14,9 @@ a:
 
 ### Custom Clientbot Styles
 
-Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::<event name>`. See below for a list of supported events and their default values (as of 1.3.0).
+Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::<event name>`. As of 2.0-beta1, you can also set this per-network by defining options in the form `servers::<network name>::relay_clientbot_styles::<event names>` (Note: defining Clientbot styles locally will override the global `clientbot_styles` block and cause all values under it to be ignored for that network).
+
+See below for a list of supported events and their default values (as of 2.0-beta1).
 
 A common use case for this feature is to turn off or adjust colors/formatting; this is explicitly documented [below](#disabling-colorscontrol-codes).
 
@@ -31,6 +33,7 @@ These options take template strings as documented here: https://docs.python.org/
 - For events that have a `$channel` field attached (e.g. JOIN, PART):
     - `$local_channel`: the *local* channel name (i.e. the channel on the clientbot network)
     - `$channel`: the real channel name on the sender's network
+    - `$mode_prefix`: the highest prefix mode of the sender, if they are a user. This is normally either empty or one of (common prefix modes) `~&!@%+`.
 - For SJOIN, SQUIT:
     - `$nicks`: a comma-joined list of nicks that were bursted
     - `$colored_nicks`: a comma-joined list of each bursted nick, color hashed
@@ -85,3 +88,4 @@ This is a example clientbot_styles config block, which you can copy *into* your 
 ### Misc. options
 - `relay::clientbot_startup_delay`: Defines the amount of seconds Clientbot should wait after startup, before relaying any non-PRIVMSG events. This is used to prevent excess floods when the bot connects. Defaults to 5 seconds.
 - `servers::NETNAME::relay_force_slashes`: This network specific option forces Relay to use `/` in nickname separators. You should only use this option on TS6 or P10 variants that are less strict with nickname validation, as **it will cause protocol violations** on most IRCds. UnrealIRCd and InspIRCd users do not need to set this either, as `/` in nicks is automatically enabled.
+- `servers::NETNAME::relay_endburst_delay`: InspIRCd networks only: sets the endburst delay for relay subservers. If relay server bursts are causing +j (join flood) protection to trigger, raising this value can work around the issue.

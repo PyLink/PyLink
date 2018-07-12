@@ -10,62 +10,68 @@ from pylinkirc.coremods import permissions
 def spawnclient(irc, source, args):
     """<nick> <ident> <host>
 
-    Admin-only. Spawns the specified client on the PyLink server.
+    Spawns the specified client on the PyLink server.
     Note: this doesn't check the validity of any fields you give it!"""
-    permissions.checkPermissions(irc, source, ['bots.spawnclient'])
+
+    if not irc.has_cap('can-spawn-clients'):
+        irc.error("This network does not support client spawning.")
+        return
+
+    permissions.check_permissions(irc, source, ['bots.spawnclient'])
     try:
         nick, ident, host = args[:3]
     except ValueError:
         irc.error("Not enough arguments. Needs 3: nick, user, host.")
         return
-    irc.proto.spawnClient(nick, ident, host, manipulatable=True)
+    irc.spawn_client(nick, ident, host, manipulatable=True)
     irc.reply("Done.")
 
 @utils.add_cmd
 def quit(irc, source, args):
     """<target> [<reason>]
 
-    Admin-only. Quits the PyLink client with nick <target>, if one exists."""
-    permissions.checkPermissions(irc, source, ['bots.quit'])
+    Quits the PyLink client with nick <target>, if one exists."""
+    permissions.check_permissions(irc, source, ['bots.quit'])
 
     try:
         nick = args[0]
     except IndexError:
         irc.error("Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
-    if irc.pseudoclient.uid == irc.nickToUid(nick):
+
+    u = irc.nick_to_uid(nick)
+
+    if irc.pseudoclient.uid == u:
         irc.error("Cannot quit the main PyLink client!")
         return
 
-    u = irc.nickToUid(nick)
-
     quitmsg =  ' '.join(args[1:]) or 'Client Quit'
 
-    if not irc.isManipulatableClient(u):
+    if not irc.is_manipulatable_client(u):
         irc.error("Cannot force quit a protected PyLink services client.")
         return
 
-    irc.proto.quit(u, quitmsg)
+    irc.quit(u, quitmsg)
     irc.reply("Done.")
-    irc.callHooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
+    irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_QUIT', {'text': quitmsg, 'parse_as': 'QUIT'}])
 
 def joinclient(irc, source, args):
     """[<target>] <channel1>[,<channel2>,<channel3>,...]
 
-    Admin-only. Joins <target>, the nick of a PyLink client, to a comma-separated list of channels.
+    Joins <target>, the nick of a PyLink client, to a comma-separated list of channels.
     If <target> is not given, it defaults to the main PyLink client.
 
     For the channel arguments, prefixes can also be specified to join the given client with
     (e.g. @#channel will join the client with op, while ~@#channel will join it with +qo.
     """
-    permissions.checkPermissions(irc, source, ['bots.joinclient'])
+    permissions.check_permissions(irc, source, ['bots.join', 'bots.joinclient'])
 
     try:
         # Check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the channels being joined.
-        u = irc.nickToUid(args[0])
+        u = irc.nick_to_uid(args[0])
 
-        if not irc.isInternalClient(u):  # First argument isn't one of our clients
+        if not irc.is_internal_client(u):  # First argument isn't one of our clients
             raise IndexError
 
         clist = args[1]
@@ -82,7 +88,7 @@ def joinclient(irc, source, args):
         irc.error("No valid channels given.")
         return
 
-    if not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
+    if not (irc.is_manipulatable_client(u) or irc.get_service_bot(u)):
         irc.error("Cannot force join a protected PyLink services client.")
         return
 
@@ -93,20 +99,24 @@ def joinclient(irc, source, args):
         prefixes = channel[:len(channel)-len(real_channel)]
         joinmodes = ''.join(prefix_to_mode[prefix] for prefix in prefixes)
 
-        if not utils.isChannel(real_channel):
+        if not irc.is_channel(real_channel):
             irc.error("Invalid channel name %r." % real_channel)
             return
 
         # join() doesn't support prefixes.
         if prefixes:
-            irc.proto.sjoin(irc.sid, real_channel, [(joinmodes, u)])
+            irc.sjoin(irc.sid, real_channel, [(joinmodes, u)])
         else:
-            irc.proto.join(u, real_channel)
+            irc.join(u, real_channel)
+
+        try:
+            modes = irc.channels[real_channel].modes
+        except KeyError:
+            modes = []
 
         # Call a join hook manually so other plugins like relay can understand it.
-        irc.callHooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
-                                                     'modes': irc.channels[real_channel].modes,
-                                                     'parse_as': 'JOIN'}])
+        irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
+                                                     'modes': modes, 'parse_as': 'JOIN'}])
     irc.reply("Done.")
 utils.add_cmd(joinclient, name='join')
 
@@ -114,9 +124,9 @@ utils.add_cmd(joinclient, name='join')
 def nick(irc, source, args):
     """[<target>] <newnick>
 
-    Admin-only. Changes the nick of <target>, a PyLink client, to <newnick>. If <target> is not given, it defaults to the main PyLink client."""
+    Changes the nick of <target>, a PyLink client, to <newnick>. If <target> is not given, it defaults to the main PyLink client."""
 
-    permissions.checkPermissions(irc, source, ['bots.nick'])
+    permissions.check_permissions(irc, source, ['bots.nick'])
 
     try:
         nick = args[0]
@@ -128,30 +138,30 @@ def nick(irc, source, args):
         except IndexError:
             irc.error("Not enough arguments. Needs 1-2: nick (optional), newnick.")
             return
-    u = irc.nickToUid(nick)
+    u = irc.nick_to_uid(nick)
 
     if newnick in ('0', u):  # Allow /nick 0 to work
         newnick = u
 
-    elif not utils.isNick(newnick):
+    elif not irc.is_nick(newnick):
         irc.error('Invalid nickname %r.' % newnick)
         return
 
-    elif not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
+    elif not (irc.is_manipulatable_client(u) or irc.get_service_bot(u)):
         irc.error("Cannot force nick changes for a protected PyLink services client.")
         return
 
-    irc.proto.nick(u, newnick)
+    irc.nick(u, newnick)
     irc.reply("Done.")
     # Ditto above: manually send a NICK change hook payload to other plugins.
-    irc.callHooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
+    irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
 @utils.add_cmd
 def part(irc, source, args):
     """[<target>] <channel1>,[<channel2>],... [<reason>]
 
-    Admin-only. Parts <target>, the nick of a PyLink client, from a comma-separated list of channels. If <target> is not given, it defaults to the main PyLink client."""
-    permissions.checkPermissions(irc, source, ['bots.part'])
+    Parts <target>, the nick of a PyLink client, from a comma-separated list of channels. If <target> is not given, it defaults to the main PyLink client."""
+    permissions.check_permissions(irc, source, ['bots.part'])
 
     try:
         nick = args[0]
@@ -161,8 +171,8 @@ def part(irc, source, args):
 
         # First, check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the channels being parted.
-        u = irc.nickToUid(nick)
-        if not irc.isInternalClient(u):  # First argument isn't one of our clients
+        u = irc.nick_to_uid(nick)
+        if not irc.is_internal_client(u):  # First argument isn't one of our clients
             raise IndexError
 
     except IndexError:  # No nick was given; shift arguments one to the left.
@@ -180,25 +190,24 @@ def part(irc, source, args):
         irc.error("No valid channels given.")
         return
 
-    if not (irc.isManipulatableClient(u) or irc.getServiceBot(u)):
+    if not (irc.is_manipulatable_client(u) or irc.get_service_bot(u)):
         irc.error("Cannot force part a protected PyLink services client.")
         return
 
     for channel in clist:
-        if not utils.isChannel(channel):
+        if not irc.is_channel(channel):
             irc.error("Invalid channel name %r." % channel)
             return
-        irc.proto.part(u, channel, reason)
+        irc.part(u, channel, reason)
 
     irc.reply("Done.")
-    irc.callHooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
+    irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_PART', {'channels': clist, 'text': reason, 'parse_as': 'PART'}])
 
-@utils.add_cmd
 def msg(irc, source, args):
     """[<source>] <target> <text>
 
-    Admin-only. Sends message <text> from <source>, where <source> is the nick of a PyLink client. If <source> is not given, it defaults to the main PyLink client."""
-    permissions.checkPermissions(irc, source, ['bots.msg'])
+    Sends message <text> from <source>, where <source> is the nick of a PyLink client. If <source> is not given, it defaults to the main PyLink client."""
+    permissions.check_permissions(irc, source, ['bots.msg'])
 
     # Because we want the source nick to be optional, this argument parsing gets a bit tricky.
     try:
@@ -208,8 +217,8 @@ def msg(irc, source, args):
 
         # First, check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the message TARGET.
-        sourceuid = irc.nickToUid(msgsource)
-        if not irc.isInternalClient(sourceuid):  # First argument isn't one of our clients
+        sourceuid = irc.nick_to_uid(msgsource)
+        if not irc.is_internal_client(sourceuid):  # First argument isn't one of our clients
             raise IndexError
 
         if not text:
@@ -227,16 +236,16 @@ def msg(irc, source, args):
         irc.error('No text given.')
         return
 
-    if not utils.isChannel(target):
+    if not irc.is_channel(target):
         # Convert nick of the message target to a UID, if the target isn't a channel
-        real_target = irc.nickToUid(target)
+        real_target = irc.nick_to_uid(target)
         if real_target is None:  # Unknown target user, if target isn't a valid channel name
             irc.error('Unknown user %r.' % target)
             return
     else:
         real_target = target
 
-    irc.proto.message(sourceuid, real_target, text)
+    irc.message(sourceuid, real_target, text)
     irc.reply("Done.")
-    irc.callHooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
-utils.add_cmd(msg, 'say')
+    irc.call_hooks([sourceuid, 'PYLINK_BOTSPLUGIN_MSG', {'target': real_target, 'text': text, 'parse_as': 'PRIVMSG'}])
+utils.add_cmd(msg, aliases=('say',))

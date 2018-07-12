@@ -56,7 +56,6 @@ class TS6SIDGenerator():
                 self.output[idx] = self.allowedchars[idx][0]
                 next(self.iters[idx])
 
-
     def increment(self, pos=2):
         """
         Increments the SID generator to the next available SID.
@@ -85,7 +84,7 @@ class TS6SIDGenerator():
         sid = ''.join(self.output)
         return sid
 
-class TS6UIDGenerator(utils.IncrementalUIDGenerator):
+class TS6UIDGenerator(IncrementalUIDGenerator):
      """Implements an incremental TS6 UID Generator."""
 
      def __init__(self, sid):
@@ -99,65 +98,27 @@ class TS6UIDGenerator(utils.IncrementalUIDGenerator):
          super().__init__(sid)
 
 class TS6BaseProtocol(IRCS2SProtocol):
-
-    def __init__(self, irc):
-        super().__init__(irc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Dictionary of UID generators (one for each server).
         self.uidgen = structures.KeyedDefaultdict(TS6UIDGenerator)
 
         # SID generator for TS6.
-        self.sidgen = TS6SIDGenerator(irc)
+        self.sidgen = TS6SIDGenerator(self)
 
-    def _send(self, source, msg, **kwargs):
-        """Sends a TS6-style raw command from a source numeric to the self.irc connection given."""
-        self.irc.send(':%s %s' % (source, msg), **kwargs)
-
-    def _expandPUID(self, uid):
-        """
-        Returns the outgoing nick for the given UID. In the base ts6_common implementation,
-        this does nothing, but other modules subclassing this can override it.
-        For example, this can be used to turn PUIDs (used to store legacy, UID-less users)
-        to actual nicks in outgoing messages, so that a remote IRCd can understand it.
-        """
-        return uid
+        # Most TS6 variations (unreal, inspircd, charybdis) support this. For
+        # pure TS6, we also require the CHW capability which explicitly declares
+        # support.
+        self.protocol_caps |= {'has-statusmsg'}
 
     ### OUTGOING COMMANDS
-
-    def numeric(self, source, numeric, target, text):
-        """Sends raw numerics from a server to a remote client, used for WHOIS
-        replies."""
-        # Mangle the target for IRCds that require it.
-        target = self._expandPUID(target)
-
-        self._send(source, '%s %s %s' % (numeric, target, text))
-
-    def kick(self, numeric, channel, target, reason=None):
-        """Sends kicks from a PyLink client/server."""
-
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
-        channel = self.irc.toLower(channel)
-        if not reason:
-            reason = 'No reason given'
-
-        # Mangle kick targets for IRCds that require it.
-        real_target = self._expandPUID(target)
-
-        self._send(numeric, 'KICK %s %s :%s' % (channel, real_target, reason))
-
-        # We can pretend the target left by its own will; all we really care about
-        # is that the target gets removed from the channel userlist, and calling
-        # handle_part() does that just fine.
-        self.handle_part(target, 'KICK', [channel])
 
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
 
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
+        if (not self.is_internal_client(numeric)) and \
+                (not self.is_internal_server(numeric)):
             raise LookupError('No such PyLink client/server exists.')
 
         # From TS6 docs:
@@ -168,155 +129,98 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # the kill followed by a space and a parenthesized reason. To avoid overflow,
         # it is recommended not to add anything to the path.
 
-        assert target in self.irc.users, "Unknown target %r for kill()!" % target
+        assert target in self.users, "Unknown target %r for kill()!" % target
 
-        if numeric in self.irc.users:
+        if numeric in self.users:
             # Killer was an user. Follow examples of setting the path to be "killer.host!killer.nick".
-            userobj = self.irc.users[numeric]
+            userobj = self.users[numeric]
             killpath = '%s!%s' % (userobj.host, userobj.nick)
-        elif numeric in self.irc.servers:
+        elif numeric in self.servers:
             # Sender was a server; killpath is just its name.
-            killpath = self.irc.servers[numeric].name
+            killpath = self.servers[numeric].name
         else:
             # Invalid sender?! This shouldn't happen, but make the killpath our server name anyways.
             log.warning('(%s) Invalid sender %s for kill(); using our server name instead.',
-                        self.irc.name, numeric)
-            killpath = self.irc.servers[self.irc.sid].name
+                        self.name, numeric)
+            killpath = self.servers[self.sid].name
 
-        self._send(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
-        self.removeClient(target)
+        self._send_with_prefix(numeric, 'KILL %s :%s (%s)' % (target, killpath, reason))
+        self._remove_client(target)
 
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
+        if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
 
-        self._send(numeric, 'NICK %s %s' % (newnick, int(time.time())))
+        self._send_with_prefix(numeric, 'NICK %s %s' % (newnick, int(time.time())))
 
-        self.irc.users[numeric].nick = newnick
+        self.users[numeric].nick = newnick
 
         # Update the NICK TS.
-        self.irc.users[numeric].ts = int(time.time())
+        self.users[numeric].ts = int(time.time())
 
-    def part(self, client, channel, reason=None):
-        """Sends a part from a PyLink client."""
-        channel = self.irc.toLower(channel)
-        if not self.irc.isInternalClient(client):
-            log.error('(%s) Error trying to part %r from %r (no such client exists)', self.irc.name, client, channel)
-            raise LookupError('No such PyLink client exists.')
-        msg = "PART %s" % channel
-        if reason:
-            msg += " :%s" % reason
-        self._send(client, msg)
-        self.handle_part(client, 'PART', [channel])
-
-    def quit(self, numeric, reason):
-        """Quits a PyLink client."""
-        if self.irc.isInternalClient(numeric):
-            self._send(numeric, "QUIT :%s" % reason)
-            self.removeClient(numeric)
-        else:
-            raise LookupError("No such PyLink client exists.")
-
-    def message(self, numeric, target, text):
-        """Sends a PRIVMSG from a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-
-        # Mangle message targets for IRCds that require it.
-        target = self._expandPUID(target)
-
-        self._send(numeric, 'PRIVMSG %s :%s' % (target, text))
-
-    def notice(self, numeric, target, text):
-        """Sends a NOTICE from a PyLink client or server."""
-        if (not self.irc.isInternalClient(numeric)) and \
-                (not self.irc.isInternalServer(numeric)):
-            raise LookupError('No such PyLink client/server exists.')
-
-        # Mangle message targets for IRCds that require it.
-        target = self._expandPUID(target)
-
-        self._send(numeric, 'NOTICE %s :%s' % (target, text))
-
-    def topic(self, numeric, target, text):
-        """Sends a TOPIC change from a PyLink client."""
-        if not self.irc.isInternalClient(numeric):
-            raise LookupError('No such PyLink client exists.')
-        self._send(numeric, 'TOPIC %s :%s' % (target, text))
-        self.irc.channels[target].topic = text
-        self.irc.channels[target].topicset = True
-
-    def spawnServer(self, name, sid=None, uplink=None, desc=None, endburst_delay=0):
+    def spawn_server(self, name, sid=None, uplink=None, desc=None):
         """
         Spawns a server off a PyLink server. desc (server description)
         defaults to the one in the config. uplink defaults to the main PyLink
         server, and sid (the server ID) is automatically generated if not
         given.
-
-        Note: TS6 doesn't use a specific ENDBURST command, so the endburst_delay
-        option will be ignored if given.
         """
         # -> :0AL SID test.server 1 0XY :some silly pseudoserver
-        uplink = uplink or self.irc.sid
+        uplink = uplink or self.sid
         name = name.lower()
-        desc = desc or self.irc.serverdata.get('serverdesc') or conf.conf['bot']['serverdesc']
+        desc = desc or self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
+
         if sid is None:  # No sid given; generate one!
             sid = self.sidgen.next_sid()
         assert len(sid) == 3, "Incorrect SID length"
-        if sid in self.irc.servers:
+        if sid in self.servers:
             raise ValueError('A server with SID %r already exists!' % sid)
-        for server in self.irc.servers.values():
+        for server in self.servers.values():
             if name == server.name:
                 raise ValueError('A server named %r already exists!' % name)
-        if not self.irc.isInternalServer(uplink):
+        if not self.is_internal_server(uplink):
             raise ValueError('Server %r is not a PyLink server!' % uplink)
-        if not utils.isServerName(name):
+        if not self.is_server_name(name):
             raise ValueError('Invalid server name %r' % name)
-        self._send(uplink, 'SID %s 1 %s :%s' % (name, sid, desc))
-        self.irc.servers[sid] = IrcServer(uplink, name, internal=True, desc=desc)
-        return sid
 
-    def squit(self, source, target, text='No reason given'):
-        """SQUITs a PyLink server."""
-        # -> SQUIT 9PZ :blah, blah
-        log.debug('source=%s, target=%s', source, target)
-        self._send(source, 'SQUIT %s :%s' % (target, text))
-        self.handle_squit(source, 'SQUIT', [target, text])
+        self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
+        self._send_with_prefix(uplink, 'SID %s %s %s :%s' % (name, self.servers[sid].hopcount, sid, desc))
+        return sid
 
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
         if text:
-            self._send(source, 'AWAY :%s' % text)
+            self._send_with_prefix(source, 'AWAY :%s' % text)
         else:
-            self._send(source, 'AWAY')
-        self.irc.users[source].away = text
+            self._send_with_prefix(source, 'AWAY')
+        self.users[source].away = text
 
     ### HANDLERS
-    def handle_kick(self, source, command, args):
-        """Handles incoming KICKs."""
-        # :70MAAAAAA KICK #test 70MAAAAAA :some reason
-        channel = self.irc.toLower(args[0])
-        kicked = self._getUid(args[1])
 
+    def handle_knock(self, numeric, command, args):
+        """Handles channel KNOCKs."""
+        # InspIRCd:
+        # <- :70MAAAAAA ENCAP * KNOCK #blah :abcdefg
+        # Charybdis:
+        # <- :42XAAAAAC KNOCK #endlessvoid
+        # UnrealIRCd propagates knocks as a channel notice to all ops, so this handler is not used there.
+        channel = args[0]
         try:
-            reason = args[2]
+            text = args[1]
         except IndexError:
-            reason = ''
-
-        log.debug('(%s) Removing kick target %s from %s', self.irc.name, kicked, channel)
-        self.handle_part(kicked, 'KICK', [channel, reason])
-        return {'channel': channel, 'target': kicked, 'text': reason}
+            text = ''
+        return {'channel': channel, 'text': text}
 
     def handle_nick(self, numeric, command, args):
         """Handles incoming NICK changes."""
         # <- :70MAAAAAA NICK GL-devel 1434744242
-        oldnick = self.irc.users[numeric].nick
-        newnick = self.irc.users[numeric].nick = args[0]
+        oldnick = self.users[numeric].nick
+        newnick = self.users[numeric].nick = args[0]
 
         # Update the nick TS.
-        self.irc.users[numeric].ts = ts = int(args[1])
+        self.users[numeric].ts = ts = int(args[1])
 
         return {'newnick': newnick, 'oldnick': oldnick, 'ts': ts}
 
@@ -331,47 +235,32 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # -> :0AL000001 NICK Derp_ 1433728673
         # <- :70M SAVE 0AL000001 1433728673
         user = args[0]
-        oldnick = self.irc.users[user].nick
-        self.irc.users[user].nick = user
+        oldnick = self.users[user].nick
+        self.users[user].nick = user
 
         # TS6 SAVE sets nick TS to 100. This is hardcoded in InspIRCd and
         # charybdis.
-        self.irc.users[user].ts = 100
+        self.users[user].ts = 100
 
         return {'target': user, 'ts': 100, 'oldnick': oldnick}
 
-    def handle_topic(self, numeric, command, args):
-        """Handles incoming TOPIC changes from clients. For topic bursts,
-        TB (TS6/charybdis) and FTOPIC (InspIRCd) are used instead."""
-        # <- :70MAAAAAA TOPIC #test :test
-        channel = self.irc.toLower(args[0])
-        topic = args[1]
+    def handle_server(self, numeric, command, args):
+        """Handles the SERVER command, used for introducing older (TS5) servers."""
+        # <- :services.int SERVER a.bc 2 :(H) [GL] test jupe
+        servername = args[0].lower()
+        sdesc = args[-1]
+        self.servers[servername] = Server(self, numeric, servername, desc=sdesc)
+        return {'name': servername, 'sid': None, 'text': sdesc}
 
-        oldtopic = self.irc.channels[channel].topic
-        self.irc.channels[channel].topic = topic
-        self.irc.channels[channel].topicset = True
-
-        return {'channel': channel, 'setter': numeric, 'text': topic,
-                'oldtopic': oldtopic}
-
-    def handle_part(self, source, command, args):
-        """Handles incoming PART commands."""
-        channels = self.irc.toLower(args[0]).split(',')
-        for channel in channels:
-            # We should only get PART commands for channels that exist, right??
-            self.irc.channels[channel].removeuser(source)
-            try:
-                self.irc.users[source].channels.discard(channel)
-            except KeyError:
-                log.debug("(%s) handle_part: KeyError trying to remove %r from %r's channel list?", self.irc.name, channel, source)
-            try:
-                reason = args[1]
-            except IndexError:
-                reason = ''
-            # Clear empty non-permanent channels.
-            if not (self.irc.channels[channel].users or ((self.irc.cmodes.get('permanent'), None) in self.irc.channels[channel].modes)):
-                del self.irc.channels[channel]
-        return {'channels': channels, 'text': reason}
+    def handle_sid(self, numeric, command, args):
+        """Handles the SID command, used for introducing remote servers by our uplink."""
+        # <- SID services.int 2 00A :Shaltúre IRC Services
+        # parameters: server name, hopcount, sid, server description
+        sname = args[0].lower()
+        sid = args[2]
+        sdesc = args[-1]
+        self.servers[sid] = Server(self, numeric, sname, desc=sdesc)
+        return {'name': sname, 'sid': sid, 'text': sdesc}
 
     def handle_svsnick(self, source, command, args):
         """Handles SVSNICK (forced nickname change attempts)."""
@@ -381,4 +270,4 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
         # UnrealIRCd:
         # <- :services.midnight.vpn SVSNICK GL Guest87795 1468303726
-        return {'target': self._getUid(args[0]), 'newnick': args[1]}
+        return {'target': self._get_UID(args[0]), 'newnick': args[1]}

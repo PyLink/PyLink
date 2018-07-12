@@ -1,8 +1,8 @@
 # Exttargets Guide
 
-In PyLink, **extended targets** or **exttargets** *replace* regular hostmasks with conditional matching based on specific situations. PyLink exttargets are supported by most plugins in the place of `nick!user@host` masks (provided they use the `Irc.matchHost()` API with a user object).
+In PyLink, **extended targets** or **exttargets** *replace* regular hostmasks with conditional matching based on specific situations. PyLink exttargets are supported by most plugins in the place of `nick!user@host` masks (provided they use the `IRCNetwork.match_host()` API with a user object).
 
-Exttargets were introduced in PyLink 0.9 alongside [Automode](automode.md), with the goal of making user/ACL matching more versatile. As of PyLink 1.2-alpha2, the following exttargets are supported:
+Exttargets were introduced in PyLink 0.9 alongside [Automode](automode.md), with the goal of making user/ACL matching more versatile. As of PyLink 2.0-dev, the following exttargets are supported:
 
 ### The "$account" target (PyLink 0.9+)
 Used to match users by their services account.
@@ -59,3 +59,14 @@ Used to match users logged in to *PyLink* (i.e. via the `identify` command).
 
 - `$pylinkacc` -> Returns True if the target is logged in to PyLink.
 - `$pylinkacc:accountname` -> Returns True if the target's PyLink login matches the one given (case insensitive).
+
+### The "$realname" target (PyLink 2.0+)
+Used to match users with certain realnames.
+
+- `$realname:*James*`: matches anyone with "James" in their real name (case insensitive).
+
+### The "$service" target (PyLink 2.0+)
+Used to match service bots. This exttarget takes one optional argument: a glob, which is compared case-insensitively to the target user's service name if present.
+
+- `$service`: matches any PyLink service bot.
+- `$service:automode`: matches the Automode service bot.

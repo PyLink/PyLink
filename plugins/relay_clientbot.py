@@ -7,16 +7,17 @@ from pylinkirc.log import log
 
 # Clientbot default styles:
 # These use template strings as documented @ https://docs.python.org/3/library/string.html#template-strings
-default_styles = {'MESSAGE': '\x02[$netname]\x02 <$colored_sender> $text',
+default_styles = {'MESSAGE': '\x02[$netname]\x02 <$mode_prefix$colored_sender> $text',
                   'KICK': '\x02[$netname]\x02 - $colored_sender$sender_identhost has kicked $target_nick from $channel ($text)',
                   'PART': '\x02[$netname]\x02 - $colored_sender$sender_identhost has left $channel ($text)',
                   'JOIN': '\x02[$netname]\x02 - $colored_sender$sender_identhost has joined $channel',
                   'NICK': '\x02[$netname]\x02 - $colored_sender$sender_identhost is now known as $newnick',
                   'QUIT': '\x02[$netname]\x02 - $colored_sender$sender_identhost has quit ($text)',
-                  'ACTION': '\x02[$netname]\x02 * $colored_sender $text',
-                  'NOTICE': '\x02[$netname]\x02 - Notice from $colored_sender: $text',
+                  'ACTION': '\x02[$netname]\x02 * $mode_prefix$colored_sender $text',
+                  'NOTICE': '\x02[$netname]\x02 - Notice from $mode_prefix$colored_sender: $text',
                   'SQUIT': '\x02[$netname]\x02 - Netsplit lost users: $colored_nicks',
                   'SJOIN': '\x02[$netname]\x02 - Netjoin gained users: $colored_nicks',
+                  'MODE': '\x02[$netname]\x02 - $colored_sender$sender_identhost sets mode $modes on $channel',
                   'PM': 'PM from $sender on $netname: $text',
                   'PNOTICE': '<$sender> $text',
                   }
@@ -42,14 +43,14 @@ def cb_relay_core(irc, source, command, args):
 
     if irc.pseudoclient and relay:
         try:
-            sourcename = irc.getFriendlyName(source)
+            sourcename = irc.get_friendly_name(source)
         except KeyError:  # User has left due to /quit
             sourcename = args['userdata'].nick
 
-        relay_conf = conf.conf.get('relay', {})
+        relay_conf = conf.conf.get('relay') or {}
 
         # Be less floody on startup: don't relay non-PRIVMSGs for the first X seconds after connect.
-        startup_delay = relay_conf.get('clientbot_startup_delay', 5)
+        startup_delay = relay_conf.get('clientbot_startup_delay', 20)
 
         # Special case for CTCPs.
         if real_command == 'MESSAGE':
@@ -59,13 +60,7 @@ def cb_relay_core(irc, source, command, args):
 
                 real_command = 'ACTION'
 
-            # We only handle # channels - this skips utils.isChannel() so that
-            # @#channel messages aren't incorrectly interpreted as non-channel
-            # specific.
-            # A more thorough fix for this bug exists in 2.0[1] but depends on
-            # somewhat invasive changes to how relay handles STATUSMSG entirely.
-            # [1]: https://github.com/GLolol/PyLink/commit/57334183
-            elif '#' not in args['target']:
+            elif not irc.is_channel(args['target'].lstrip(''.join(irc.prefixmodes.values()))):
                 # Target is a user; handle this accordingly.
                 if relay_conf.get('allow_clientbot_pms'):
                     real_command = 'PNOTICE' if args.get('is_notice') else 'PM'
@@ -85,16 +80,17 @@ def cb_relay_core(irc, source, command, args):
         # Try to fetch the format for the given command from the relay:clientbot_styles:$command
         # key, falling back to one defined in default_styles above, and then nothing if not found
         # there.
-        text_template = relay_conf.get('clientbot_styles', {}).get(real_command,
-                        default_styles.get(real_command, ''))
+        text_template = irc.get_service_option('relay', 'clientbot_styles', {}).get(
+                            real_command, default_styles.get(real_command, ''))
         text_template = string.Template(text_template)
 
         if text_template:
-            if irc.getServiceBot(source):
+            if irc.get_service_bot(source):
                 # HACK: service bots are global and lack the relay state we look for.
                 # just pretend the message comes from the current network.
                 log.debug('(%s) relay_cb_core: Overriding network origin to local (source=%s)', irc.name, source)
                 sourcenet = irc.name
+                realsource = source
             else:
                 # Get the original client that the relay client source was meant for.
                 log.debug('(%s) relay_cb_core: Trying to find original sender (user) for %s', irc.name, source)
@@ -103,12 +99,13 @@ def cb_relay_core(irc, source, command, args):
                 except (AttributeError, KeyError):
                     log.debug('(%s) relay_cb_core: Trying to find original sender (server) for %s. serverdata=%s', irc.name, source, args.get('serverdata'))
                     try:
-                        origuser = ((args.get('serverdata') or irc.servers[source]).remote,)
+                        localsid = args.get('serverdata') or irc.servers[source]
+                        origuser = (localsid.remote, world.networkobjects[localsid.remote].uplink)
                     except (AttributeError, KeyError):
                         return
 
                 log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
-                sourcenet = origuser[0]
+                sourcenet, realsource = origuser
 
             try:  # Try to get the full network name
                 netname = conf.conf['servers'][sourcenet]['netname']
@@ -116,8 +113,12 @@ def cb_relay_core(irc, source, command, args):
                 netname = sourcenet
 
             # Figure out where the message is destined to.
-            target = args.get('channel') or args.get('target')
-            if target is None or not ('#' in target or private):
+            stripped_target = target = args.get('channel') or args.get('target')
+            if target is not None:
+                # HACK: cheap fix to prevent @#channel messages from interpreted as non-channel specific
+                stripped_target = target.lstrip(''.join(irc.prefixmodes.values()))
+
+            if target is None or not (irc.is_channel(stripped_target) or private):
                 # Non-channel specific message (e.g. QUIT or NICK). If this isn't a PM, figure out
                 # all channels that the sender shares over the relay, and relay them to those
                 # channels.
@@ -126,34 +127,58 @@ def cb_relay_core(irc, source, command, args):
                     # No user data given. This was probably some other global event such as SQUIT.
                     userdata = irc.pseudoclient
 
-                targets = [channel for channel in userdata.channels if relay.get_relay((irc.name, channel))]
+                targets = [channel for channel in userdata.channels if relay.get_relay(irc, channel)]
             else:
                 # Pluralize the channel so that we can iterate over it.
                 targets = [target]
+                args['channel'] = stripped_target
             log.debug('(%s) relay_cb_core: Relaying event %s to channels: %s', irc.name, real_command, targets)
 
+            identhost = ''
             if source in irc.users:
                 try:
-                    identhost = irc.getHostmask(source).split('!')[-1]
+                    identhost = irc.get_hostmask(source).split('!')[-1]
                 except KeyError:  # User got removed due to quit
                     identhost = '%s@%s' % (args['olduser'].ident, args['olduser'].host)
                 # This is specifically spaced so that ident@host is only shown for users that have
                 # one, and not servers.
                 identhost = ' (%s)' % identhost
-            else:
-                identhost = ''
 
             # $target_nick: Convert the target for kicks, etc. from a UID to a nick
             if args.get("target") in irc.users:
-                args["target_nick"] = irc.getFriendlyName(args['target'])
+                args["target_nick"] = irc.get_friendly_name(args['target'])
 
-            args.update({'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
-                         'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname)})
+            # Join up modes from their list form
+            if args.get('modes'):
+                args['modes'] = irc.join_modes(args['modes'])
+
+            mode_prefix = ''
             if 'channel' in args:
-                # Display the real channel instead of the local name, if applicable
+                # Display the real (remote) channel name instead of the local one, if applicable.
                 args['local_channel'] = args['channel']
-                args['channel'] = relay.get_remote_channel(irc, world.networkobjects[sourcenet], args['channel'])
                 log.debug('(%s) relay_clientbot: coersing $channel from %s to %s', irc.name, args['local_channel'], args['channel'])
+
+                sourceirc = world.networkobjects.get(sourcenet)
+                log.debug('(%s) relay_clientbot: Checking prefix modes for %s on %s (relaying to %s)',
+                          irc.name, realsource, sourcenet, args['channel'])
+                if sourceirc:
+                    args['channel'] = remotechan = relay.get_remote_channel(irc, sourceirc, args['channel'])
+                    if source in irc.users and remotechan in sourceirc.channels and \
+                            realsource in sourceirc.channels[remotechan].users:
+                        # Fetch the prefixmode prefixes (e.g. ~@%) for the sender, if available.
+                        prefixmodes = sourceirc.channels[remotechan].get_prefix_modes(realsource)
+                        log.debug('(%s) relay_clientbot: got prefix modes %s for %s on %s@%s',
+                                  irc.name, prefixmodes, realsource, remotechan, sourcenet)
+                        if prefixmodes:
+                            # Only pick the highest prefix.
+                            mode_prefix = sourceirc.prefixmodes.get(
+                                sourceirc.cmodes.get(prefixmodes[0]))
+
+            args.update({
+                'netname': netname, 'sender': sourcename, 'sender_identhost': identhost,
+                'colored_sender': color_text(sourcename), 'colored_netname': color_text(netname),
+                'mode_prefix': mode_prefix
+            })
 
             for target in targets:
                 cargs = args.copy()  # Copy args list to manipulate them in a channel specific way
@@ -164,7 +189,6 @@ def cb_relay_core(irc, source, command, args):
                 # still have to be relayed as such.
                 nicklist = args.get('nicks')
                 if nicklist:
-
                     # Get channel-specific nick list if relevent.
                     if isinstance(nicklist, dict):
                         nicklist = nicklist.get(target, [])
@@ -191,6 +215,7 @@ utils.add_hook(cb_relay_core, 'CLIENTBOT_QUIT')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_NICK')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_SJOIN')
 utils.add_hook(cb_relay_core, 'CLIENTBOT_SQUIT')
+utils.add_hook(cb_relay_core, 'RELAY_RAW_MODE')
 
 @utils.add_cmd
 def rpm(irc, source, args):
@@ -207,7 +232,7 @@ def rpm(irc, source, args):
         return
 
     relay = world.plugins.get('relay')
-    if irc.proto.hasCap('can-spawn-clients'):
+    if irc.has_cap('can-spawn-clients'):
         irc.error('This command is only supported on Clientbot networks. Try /msg %s <text>' % target)
         return
     elif relay is None:
@@ -221,15 +246,15 @@ def rpm(irc, source, args):
                   'administratively disabled.')
         return
 
-    uid = irc.nickToUid(target)
+    uid = irc.nick_to_uid(target)
     if not uid:
         irc.error('Unknown user %s.' % target)
         return
-    elif not relay.isRelayClient(irc, uid):
+    elif not relay.is_relay_client(irc, uid):
         irc.error('%s is not a relay user.' % target)
         return
     else:
-        assert not irc.isInternalClient(source), "rpm is not allowed from PyLink bots"
+        assert not irc.is_internal_client(source), "rpm is not allowed from PyLink bots"
         # Send the message through relay by faking a hook for its handler.
         relay.handle_messages(irc, source, 'RELAY_CLIENTBOT_PRIVMSG', {'target': uid, 'text': text})
         irc.reply('Message sent.')

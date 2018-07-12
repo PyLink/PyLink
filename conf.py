@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from . import world
 
-class ConfigValidationError(Exception):
+class ConfigurationError(RuntimeError):
     """Error when config conditions aren't met."""
 
 conf = {'bot':
@@ -50,19 +50,19 @@ conf['pylink'] = conf['bot']
 confname = 'unconfigured'
 
 def validate(condition, errmsg):
-    """Convenience function to validate conditions in validateConf()."""
+    """Raises ConfigurationError with errmsg unless the given condition is met."""
     if not condition:
-        raise ConfigValidationError(errmsg)
+        raise ConfigurationError(errmsg)
 
 def _log(level, text, *args, logger=None, **kwargs):
     if logger:
         logger.log(level, text, *args, **kwargs)
     else:
-        world.log_queue.append((level, text))
+        world._log_queue.append((level, text))
 
-def validateConf(conf, logger=None):
+def _validate_conf(conf, logger=None):
     """Validates a parsed configuration dict."""
-    validate(type(conf) == dict,
+    validate(isinstance(conf, dict),
             "Invalid configuration given: should be type dict, not %s."
             % type(conf).__name__)
 
@@ -88,13 +88,13 @@ def validateConf(conf, logger=None):
         _log(logging.WARNING, "The 'login:user' and 'login:password' options are deprecated since PyLink 1.1. "
              "Please switch to the new 'login:accounts' format as outlined in the example config.", logger=logger)
 
-    old_login_valid = type(conf['login'].get('password')) == type(conf['login'].get('user')) == str
+    old_login_valid = isinstance(conf['login'].get('password'), str) and isinstance(conf['login'].get('user'), str)
     newlogins = conf['login'].get('accounts', {})
 
     validate(old_login_valid or newlogins, "No accounts were set, aborting!")
     for account, block in newlogins.items():
-        validate(type(account) == str, "Bad username format %s" % account)
-        validate(type(block.get('password')) == str, "Bad password %s for account %s" % (block.get('password'), account))
+        validate(isinstance(account, str), "Bad username format %s" % account)
+        validate(isinstance(block.get('password'), str), "Bad password %s for account %s" % (block.get('password'), account))
 
     validate(conf['login'].get('password') != "changeme", "You have not set the login details correctly!")
 
@@ -108,8 +108,7 @@ def validateConf(conf, logger=None):
 
     return conf
 
-
-def loadConf(filename, errors_fatal=True, logger=None):
+def load_conf(filename, errors_fatal=True, logger=None):
     """Loads a PyLink configuration file from the filename given."""
     global confname, conf, fname
     # Note: store globally the last loaded conf filename, for REHASH in coremods/control.
@@ -119,13 +118,32 @@ def loadConf(filename, errors_fatal=True, logger=None):
     try:
         with open(filename, 'r') as f:
             conf = yaml.safe_load(f)
-            conf = validateConf(conf, logger=logger)
+            conf = _validate_conf(conf, logger=logger)
     except Exception as e:
-        print('ERROR: Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e), file=sys.stderr)
-        print('       Users upgrading from users < 0.9-alpha1 should note that the default configuration has been renamed to *pylink.yml*, not *config.yml*', file=sys.stderr)
+        e = 'Failed to load config from %r: %s: %s' % (filename, type(e).__name__, e)
+
+        if logger:  # Prefer using the Python logger when available
+            logger.exception(e)
+        else:  # Otherwise, fall back to a print() call.
+            print('ERROR: %s' % e, file=sys.stderr)
 
         if errors_fatal:
             sys.exit(1)
+
         raise
     else:
         return conf
+
+def get_database_name(dbname):
+    """
+    Returns a database filename with the given base DB name appropriate for the
+    current PyLink instance.
+
+    This returns '<dbname>.db' if the running config name is PyLink's default
+    (pylink.yml), and '<dbname>-<config name>.db' for anything else. For example,
+    if this is called from an instance running as './pylink testing.yml', it
+    would return '<dbname>-testing.db'."""
+    if confname != 'pylink':
+        dbname += '-%s' % confname
+    dbname += '.db'
+    return dbname

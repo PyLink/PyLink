@@ -3,7 +3,7 @@ This version of the document targets the current stable branch of PyLink, and ma
 
 # PyLink hooks reference
 
-***Last updated for 1.2-dev (2017-02-24).***
+***Last updated for 2.0.0 (2018-07-11).***
 
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
 Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
@@ -32,16 +32,7 @@ Some hooks, like MODE, are more complex and can include the entire state of a ch
 ['001ZJZW01',
  'MODE',
  {'modes': [('+o', '38QAAAAAA')],
-  'channeldata': IrcChannel({'modes': set(),
-                             'prefixmodes': {'admin': set(),
-                                             'halfop': set(),
-                                             'op': set(),
-                                             'owner': set(),
-                                             'voice': set()},
-                             'topic': '',
-                             'topicset': False,
-                             'ts': 1451169448,
-                             'users': {'38QAAAAAA', '001ZJZW01'}}),
+  'channeldata': Channel(...),
   'target': '#chat',
   'ts': 1451174702}]
 ```
@@ -71,51 +62,51 @@ The following hooks represent regular IRC commands sent between servers.
     - `modes` returns a list of parsed modes: `(mode character, mode argument)` tuples, where the mode argument is either `None` (for modes without arguments), or a string.
     - The sender of this hook payload is IRCd-dependent, and is determined by whether the command was originally a SJOIN or regular JOIN - SJOIN is only sent by servers, and JOIN is only sent by users.
     - For IRCds that support joining multiple channels in one command (`/join #channel1,#channel2`), consecutive JOIN hook payloads of this format will be sent (one per channel).
-    - For SJOIN, the `channeldata` key may also be sent, with a copy of the `IrcChannel` object BEFORE any mode changes from this burst command were processed.
+    - For SJOIN, the `channeldata` key may also be sent, with a copy of the `classes.Channel` object *before* any mode changes from this burst command were processed.
 
 - **KICK**: `{'channel': '#channel', 'target': 'UID1', 'text': 'some reason'}`
     - `text` refers to the kick reason. The `target` and `channel` fields send the target's UID and the channel they were kicked from, and the sender of the hook payload is the kicker.
 
-- **KILL**: `{'target': killed, 'text': args[1], 'userdata': data}`
+- **KILL**: `{'target': killed, 'text': 'Killed (james (absolutely not))', 'userdata': data}`
     - `text` refers to the kill reason. `target` is the target's UID.
-    - The `userdata` key may include an `IrcUser` instance, depending on the IRCd. On IRCds where QUITs are explicitly sent (InspIRCd), `userdata` will be `None`. Other IRCds do not explicitly send QUIT messages for KILLed clients, so the daemon must assume that they've quit, and deliver their last state to plugins that require this info.
+    - The `userdata` key may include an `classes.User` instance, depending on the IRCd. On IRCds where QUITs are explicitly sent (e.g InspIRCd), `userdata` will be `None`. Other IRCds do not explicitly send QUIT messages for killed clients, so the daemon must assume that they've quit, and deliver their last state to plugins that require this info.
 
-- **MODE**: `{'target': '#channel', 'modes': [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')], 'channeldata': IrcChannel(...)}`
-    - `target` is the target the mode is being set on: it may be either a channel (for channel modes) OR a UID (for user modes).
+- **MODE**: `{'target': '#channel', 'modes': [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')], 'channeldata': Channel(...)}`
+    - `target` is the target the mode is being set on: it may be either a channel (for channel modes) *or* a UID (for user modes).
     - `modes` is a list of prefixed parsed modes: `(mode character, mode argument)` tuples, but with `+/-` prefixes to denote whether each mode is being set or unset.
-    - For channels, the `channeldata` key is also sent, with a copy of the `IrcChannel` BEFORE this MODE hook was processed.
+    - For channels, the `channeldata` key is also sent, with a copy of the `classes.Channel` object *before* this MODE hook was processed.
         - One use for this is to prevent oper-override hacks: checks for whether a sender is opped have to be done before the MODE is processed; otherwise, someone can simply op themselves and circumvent this detection.
 
 - **NICK**: `{'newnick': 'Alakazam', 'oldnick': 'Abracadabra', 'ts': 1234567890}`
 
 - **NOTICE**: `{'target': 'UID3', 'text': 'hi there!'}`
-    - *Note:* `target` can not only be a channel or a UID, but also a channel with a prefix attached (e.g. `@#lounge`). These cases should not be overlooked!
+    - STATUSMSG targets (e.g. `@#lounge`) are also allowed here.
 
 - **PART**: `{'channels': ['#channel1', '#channel2'], 'text': 'some reason'}`
     - `text` can also be an empty string, as part messages are *optional* on IRC.
-    - Unlike the JOIN hook, multiple channels can be specified in a list for PART. This means that a user PARTing one channel will cause a payload to be sent with `channels` as a one-length *list* with the channel name.
+    - Unlike the JOIN hook, multiple channels can be specified in a list for PART. This means that a user parting one channel will cause a payload to be sent with `channels` as a one-length *list* with the channel name.
 
 - **PRIVMSG**: `{'target': 'UID3', 'text': 'hi there!'}`
-    - Ditto with NOTICE: `target` can be a channel or a UID, or a channel with a prefix attached (e.g. `@#lounge`).
+    - Ditto with NOTICE: STATUSMSG targets (e.g. `@#lounge`) are also allowed here.
 
 - **QUIT**: `{'text': 'Quit: Bye everyone!'}`
     - `text` corresponds to the quit reason.
 
-- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X', 'nicks': {'#channel1: ['tester1', 'tester2'], '#channel3': ['somebot']}, 'serverdata': IrcServer(...)`
+- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X', 'nicks': {'#channel1: ['tester1', 'tester2'], '#channel3': ['somebot']}, 'serverdata': Server(...)`
     - `target` is the SID of the server being split, while `name` is the server's name.
     - `users` is a list of all UIDs affected by the netsplit. `nicks` maps channels to lists of nicks affected.
-    - `serverdata` provides the `IrcServer` object of the server that was split.
+    - `serverdata` provides the `classes.Server` object of the server that split off.
     - `channeldata` provides the channel index of the network before the netsplit was processed, allowing plugins to track who was affected by a netsplit in a channel specific way.
 
 - **TOPIC**: `{'channel': channel, 'setter': numeric, 'text': 'Welcome to #Lounge!, 'oldtopic': 'Welcome to#Lounge!'}`
     - `oldtopic` denotes the original topic, and `text` indicates the new one being set.
-    - `setter` is the raw sender field given to us by the IRCd; it may be a `nick!user@host`, a UID, a SID, a server name, or a nick. This is not processed any further.
+    - `setter` is the raw sender field given to us by the IRCd; it may be a `nick!user@host`, a UID, a SID, a server name, or a nick. This is not processed at the protocol level.
 
 - **UID**: `{'uid': 'UID1', 'ts': 1234567891, 'nick': 'supercoder', 'realhost': 'localhost', 'host': 'admin.testnet.local', 'ident': ident, 'ip': '127.0.0.1'}`
     - This command is used to introduce users; the sender of the message should be the server bursting or announcing the connection.
     - `ts` refers to the user's signon time.
 
-### Extra commands (where supported by the IRCd)
+### Extra commands (where supported)
 
 - **AWAY**: `{'text': text}`
     - `text` denotes the away reason. It is an empty string (`''`) when a user is unsetting their away status.
@@ -129,9 +120,9 @@ The following hooks represent regular IRC commands sent between servers.
 - **CHGNAME**: `{'target': 'UID2', 'newgecos': "I ain't telling you!"}`
     - SETNAME and CHGNAME commands, where available, both share this hook name.
 
-- **INVITE**: `{'target': 'UID3', 'channel': '#myroom'}`
+- **INVITE**: `{'target': 'UID3', 'channel': '#hello'}`
 
-- **KNOCK**: `{'text': 'let me in please!', 'channel': '#myroom'}`
+- **KNOCK**: `{'text': 'let me in please!', 'channel': '#hello'}`
     - This is not actually implemented by any protocol module as of writing.
 
 - **SAVE**: `{'target': 'UID8', 'ts': 1234567892, 'oldnick': 'Abracadabra'}`
@@ -144,7 +135,7 @@ The following hooks represent regular IRC commands sent between servers.
 
 - **VERSION**: `{}`
     - This is used for protocols that send VERSION requests between servers when a client requests it (e.g. `/raw version pylink.local`).
-    - `coremods/handlers.py` automatically handles this by responding with a 351 numeric, with the data being the output of `irc.fullVersion()`.
+    - `coremods/handlers.py` automatically handles this by responding with a 351 numeric, with the data being the output of `irc.version()`.
 
 - **WHOIS**: `{'target': 'UID1'}`
     - On protocols supporting it (everything except InspIRCd), the WHOIS command is sent between servers for remote WHOIS requests.
@@ -166,12 +157,18 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
 
 - **PYLINK_CUSTOM_WHOIS**: `{'target': UID1, 'server': SID1}`
     - This hook is called by `coremods/handlers.py` during its WHOIS handling process, to allow plugins to provide custom WHOIS information. The `target` field represents the target UID, while the `server` field represents the SID that should be replying to the WHOIS request. The source of the payload is the user using `/whois`.
-    - Plugins wishing to implement this should use the standard WHOIS numerics, using `irc.proto.numeric()` to reply to the source from the given server.
-    - This hook replaces the pre-0.8.x fashion of defining custom WHOIS handlers, which was non-standard and poorly documented.
+    - Plugins wishing to implement this should use the standard WHOIS numerics, using `irc.numeric()` to reply to the source from the given server.
+    - This hook replaces the pre-0.8.x fashion of defining custom WHOIS handlers, which was never standardized and poorly documented.
 
 ## Commands handled WITHOUT hooks
 At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
 
 ## Changes
+* 2018-07-11 (2.0.0)
+   - Version bump for 2.0 stable release; no meaningful content changes.
+* 2018-01-13 (2.0-alpha2)
+   - Replace `IrcChannel`, `IrcUser`, and `IrcServer` with their new class names (`classes.Channel`, `classes.User`, and `classes.Server`)
+   - Replace `irc.fullVersion()` with `irc.version()`
+   - Various minor wording tweaks.
 * 2017-02-24 (1.2-dev)
    - The `was_successful` key was added to PYLINK_DISCONNECT.

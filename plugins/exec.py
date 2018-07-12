@@ -2,14 +2,14 @@
 exec.py: Provides commands for executing raw code and debugging PyLink.
 """
 import pprint
+import threading
 
-from pylinkirc import utils, world
+from pylinkirc import *
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
 # These imports are not strictly necessary, but make the following modules
 # easier to access through eval and exec.
-import threading
 import re
 import time
 import pylinkirc
@@ -25,7 +25,7 @@ def _exec(irc, source, args, locals_dict=None):
     Admin-only. Executes <code> in the current PyLink instance. This command performs backslash escaping of characters, so things like \\n and \\ will work.
 
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
-    permissions.checkPermissions(irc, source, ['exec.exec'])
+    permissions.check_permissions(irc, source, ['exec.exec'])
 
     # Allow using \n in the code, while escaping backslashes correctly otherwise.
     args = bytes(' '.join(args), 'utf-8').decode("unicode_escape")
@@ -34,7 +34,7 @@ def _exec(irc, source, args, locals_dict=None):
         return
 
     log.info('(%s) Executing %r for %s', irc.name, args,
-             irc.getHostmask(source))
+             irc.get_hostmask(source))
     if locals_dict is None:
         locals_dict = locals()
     else:
@@ -69,7 +69,7 @@ def _eval(irc, source, args, locals_dict=None, pretty_print=False):
     Admin-only. Evaluates the given Python expression and returns the result.
 
     \x02**WARNING: THIS CAN BE DANGEROUS IF USED IMPROPERLY!**\x02"""
-    permissions.checkPermissions(irc, source, ['exec.eval'])
+    permissions.check_permissions(irc, source, ['exec.eval'])
 
     args = ' '.join(args)
     if not args.strip():
@@ -86,7 +86,7 @@ def _eval(irc, source, args, locals_dict=None, pretty_print=False):
         locals_dict['args'] = args
 
     log.info('(%s) Evaluating %r for %s', irc.name, args,
-             irc.getHostmask(source))
+             irc.get_hostmask(source))
 
     result = eval(args, globals(), locals_dict)
 
@@ -97,7 +97,9 @@ def _eval(irc, source, args, locals_dict=None, pretty_print=False):
         if len(lines) > PPRINT_MAX_LINES:
             irc.reply('Suppressing %s more line(s) of output.' % (len(lines) - PPRINT_MAX_LINES))
     else:
-        irc.reply(repr(result))
+        # Purposely disable text wrapping so results are cut instead of potentially flooding;
+        # 'peval' is specifically designed to work around that.
+        irc.reply(repr(result), wrap=False)
 
 utils.add_cmd(_eval, 'eval')
 
@@ -136,33 +138,13 @@ def pieval(irc, source, args):
     _eval(irc, source, args, locals_dict=exec_locals_dict, pretty_print=True)
 
 @utils.add_cmd
-def raw(irc, source, args):
-    """<text>
-
-    Admin-only. Sends raw text to the uplink IRC server.
-
-    \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
-    permissions.checkPermissions(irc, source, ['exec.raw'])
-
-    args = ' '.join(args)
-    if not args.strip():
-        irc.reply('No text entered!')
-        return
-
-    log.debug('(%s) Sending raw text %r to IRC for %s', irc.name, args,
-              irc.getHostmask(source))
-    irc.send(args)
-
-    irc.reply("Done.")
-
-@utils.add_cmd
 def inject(irc, source, args):
     """<text>
 
     Admin-only. Injects raw text into the running PyLink protocol module, replying with the hook data returned.
 
     \x02**WARNING: THIS CAN BREAK YOUR NETWORK IF USED IMPROPERLY!**\x02"""
-    permissions.checkPermissions(irc, source, ['exec.inject'])
+    permissions.check_permissions(irc, source, ['exec.inject'])
 
     args = ' '.join(args)
     if not args.strip():
@@ -170,5 +152,25 @@ def inject(irc, source, args):
         return
 
     log.info('(%s) Injecting raw text %r into protocol module for %s', irc.name,
-             args, irc.getHostmask(source))
-    irc.reply(irc.runline(args))
+             args, irc.get_hostmask(source))
+    irc.reply(repr(irc.parse_irc_command(args)))
+
+@utils.add_cmd
+def threadinfo(irc, source, args):
+    """takes no arguments.
+
+    Lists all threads currently present in this PyLink instance."""
+    permissions.check_permissions(irc, source, ['exec.threadinfo'])
+
+    for t in sorted(threading.enumerate(), key=lambda t: t.name.lower()):
+        name = t.name
+        # Unnamed threads are something we want to avoid throughout PyLink.
+        if name.startswith('Thread-'):
+            name = '\x0305%s\x03' % t.name
+        # Also VERY bad: remaining threads for networks not in the networks index anymore!
+        elif name.startswith(('Listener for', 'Ping timer loop for', 'Queue thread for')) and name.rsplit(" ", 1)[-1] not in world.networkobjects:
+            name = '\x0304%s\x03' % t.name
+
+        irc.reply('\x02%s\x02[%s]: daemon=%s; alive=%s' % (name, t.ident, t.daemon, t.is_alive()), private=True)
+
+    irc.reply("Total of %s threads." % threading.active_count())

@@ -11,10 +11,10 @@ def handle_whois(irc, source, command, args):
     target = args['target']
     user = irc.users.get(target)
 
-    f = lambda num, source, text: irc.proto.numeric(irc.sid, num, source, text)
+    f = lambda num, source, text: irc.numeric(irc.sid, num, source, text)
 
     # Get the server that the target is on.
-    server = irc.getServer(target)
+    server = irc.get_server(target)
 
     if user is None:  # User doesn't exist
         # <- :42X 401 7PYAAAAAB GL- :No such nick/channel
@@ -22,8 +22,8 @@ def handle_whois(irc, source, command, args):
         f(401, source, "%s :No such nick/channel" % nick)
     else:
         nick = user.nick
-        sourceisOper = ('o', None) in irc.users[source].modes
-        sourceisBot = (irc.umodes.get('bot'), None) in irc.users[source].modes
+        source_is_oper = ('o', None) in irc.users[source].modes
+        source_is_bot = (irc.umodes.get('bot'), None) in irc.users[source].modes
 
         # Get the full network name.
         netname = irc.serverdata.get('netname', irc.name)
@@ -35,7 +35,7 @@ def handle_whois(irc, source, command, args):
         # 319: RPL_WHOISCHANNELS; Show public channels of the target, respecting
         # hidechans umodes for non-oper callers.
         isHideChans = (irc.umodes.get('hidechans'), None) in user.modes
-        if (not isHideChans) or (isHideChans and sourceisOper):
+        if (not isHideChans) or (isHideChans and source_is_oper):
             public_chans = []
             for chan in user.channels:
                 c = irc.channels[chan]
@@ -44,13 +44,13 @@ def handle_whois(irc, source, command, args):
 
                 if ((irc.cmodes.get('secret'), None) in c.modes or \
                     (irc.cmodes.get('private'), None) in c.modes) \
-                    and not (sourceisOper or source in c.users):
+                    and not (source_is_oper or source in c.users):
                         continue
 
                 # Show the highest prefix mode like a regular IRCd does, if there are any.
-                prefixes = c.getPrefixModes(target)
+                prefixes = c.get_prefix_modes(target)
                 if prefixes:
-                    highest = prefixes[-1]
+                    highest = prefixes[0]
 
                     # Fetch the prefix mode letter from the named mode.
                     modechar = irc.cmodes[highest]
@@ -74,19 +74,27 @@ def handle_whois(irc, source, command, args):
             # 2) +H is set, but the caller is oper
             # 3) +H is set, but whois_use_hideoper is disabled in config
             isHideOper = (irc.umodes.get('hideoper'), None) in user.modes
-            if (not isHideOper) or (isHideOper and sourceisOper) or \
-                    (isHideOper and not conf.conf['bot'].get('whois_use_hideoper', True)):
+            if (not isHideOper) or (isHideOper and source_is_oper) or \
+                    (isHideOper and not conf.conf['pylink'].get('whois_use_hideoper', True)):
+                opertype = user.opertype
+
                 # Let's be gramatically correct. (If the opertype starts with a vowel,
                 # write "an Operator" instead of "a Operator")
-                n = 'n' if user.opertype[0].lower() in 'aeiou' else ''
+                n = 'n' if opertype[0].lower() in 'aeiou' else ''
 
-                f(313, source, "%s :is a%s %s" % (nick, n, user.opertype))
+                # Remove the "(on $network)" bit in relay oper types if the target network is the
+                # same - this prevents duplicate text such as "GL/ovd is a Network Administrator
+                # (on OVERdrive-IRC) on OVERdrive-IRC" from showing.
+                # XXX: does this post-processing really belong here?
+                opertype = opertype.replace(' (on %s)' % irc.get_full_network_name(), '')
+
+                f(313, source, "%s :is a%s %s" % (nick, n, opertype))
 
         # 379: RPL_WHOISMODES, used by UnrealIRCd and InspIRCd to show user modes.
         # Only show this to opers!
-        if sourceisOper:
+        if source_is_oper:
             f(378, source, "%s :is connecting from %s@%s %s" % (nick, user.ident, user.realhost, user.ip))
-            f(379, source, '%s :is using modes %s' % (nick, irc.joinModes(user.modes, sort=True)))
+            f(379, source, '%s :is using modes %s' % (nick, irc.join_modes(user.modes, sort=True)))
 
         # 301: used to show away information if present
         away_text = user.away
@@ -98,10 +106,14 @@ def handle_whois(irc, source, command, args):
             # Show botmode info in WHOIS.
             f(335, source, "%s :is a bot" % nick)
 
+        # :charybdis.midnight.vpn 317 GL GL 1946 1499867833 :seconds idle, signon time
+        if irc.get_service_bot(target) and conf.conf['pylink'].get('whois_show_startup_time', True):
+            f(317, source, "%s 0 %s :seconds idle (placeholder), signon time" % (nick, irc.start_ts))
+
         # Call custom WHOIS handlers via the PYLINK_CUSTOM_WHOIS hook, unless the
         # caller is marked a bot and the whois_show_extensions_to_bots option is False
-        if (sourceisBot and conf.conf['bot'].get('whois_show_extensions_to_bots')) or (not sourceisBot):
-            irc.callHooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
+        if (source_is_bot and conf.conf['pylink'].get('whois_show_extensions_to_bots')) or (not source_is_bot):
+            irc.call_hooks([source, 'PYLINK_CUSTOM_WHOIS', {'target': target, 'server': server}])
         else:
             log.debug('(%s) coremods.handlers.handle_whois: skipping custom whois handlers because '
                       'caller %s is marked as a bot', irc.name, source)
@@ -116,15 +128,15 @@ def handle_mode(irc, source, command, args):
     modes = args['modes']
     # If the sender is not a PyLink client, and the target IS a protected
     # client, revert any forced deoper attempts.
-    if irc.isInternalClient(target) and not irc.isInternalClient(source):
-        if ('-o', None) in modes and (target == irc.pseudoclient.uid or not irc.isManipulatableClient(target)):
-            irc.proto.mode(irc.sid, target, {('+o', None)})
+    if irc.is_internal_client(target) and not irc.is_internal_client(source):
+        if ('-o', None) in modes and (target == irc.pseudoclient.uid or not irc.is_manipulatable_client(target)):
+            irc.mode(irc.sid, target, {('+o', None)})
 utils.add_hook(handle_mode, 'MODE')
 
 def handle_operup(irc, source, command, args):
     """Logs successful oper-ups on networks."""
     otype = args.get('text', 'IRC Operator')
-    log.debug("(%s) Successful oper-up (opertype %r) from %s", irc.name, otype, irc.getHostmask(source))
+    log.debug("(%s) Successful oper-up (opertype %r) from %s", irc.name, otype, irc.get_hostmask(source))
     irc.users[source].opertype = otype
 
 utils.add_hook(handle_operup, 'CLIENT_OPERED')
@@ -143,11 +155,58 @@ def handle_version(irc, source, command, args):
     """Handles requests for the PyLink server version."""
     # 351 syntax is usually "<server version>. <server hostname> :<anything else you want to add>
     fullversion = irc.version()
-    irc.proto.numeric(irc.sid, 351, source, fullversion)
+    irc.numeric(irc.sid, 351, source, fullversion)
 utils.add_hook(handle_version, 'VERSION')
 
 def handle_time(irc, source, command, args):
     """Handles requests for the PyLink server time."""
     timestring = time.ctime()
-    irc.proto.numeric(irc.sid, 391, source, '%s :%s' % (irc.hostname(), timestring))
+    irc.numeric(irc.sid, 391, source, '%s :%s' % (irc.hostname(), timestring))
 utils.add_hook(handle_time, 'TIME')
+
+def _state_cleanup_core(irc, source, channel):
+    """
+    Handles PART and KICK on clientbot-like networks (where only the users and channels we see are available)
+    by deleting channels when we leave and users when they leave all shared channels.
+    """
+    if irc.has_cap('visible-state-only'):
+        # Delete channels that we were removed from.
+        if irc.pseudoclient and source == irc.pseudoclient.uid:
+            log.debug('(%s) state_cleanup: removing channel %s since we have left', irc.name, channel)
+            del irc._channels[channel]
+
+        # Delete users no longer sharing a channel with us.
+        if not irc.users[source].channels:
+            log.debug('(%s) state_cleanup: removing user %s/%s who no longer shares a channel with us',
+                      irc.name, source, irc.users[source].nick)
+            irc._remove_client(source)
+
+    # Clear empty non-permanent channels.
+    if channel in irc.channels and not (irc._channels[channel].users or ((irc.cmodes.get('permanent'), None) \
+            in irc._channels[channel].modes)):
+        log.debug('(%s) state_cleanup: removing empty channel %s', irc.name, channel)
+        del irc._channels[channel]
+
+def _state_cleanup_part(irc, source, command, args):
+    for channel in args['channels']:
+        _state_cleanup_core(irc, source, channel)
+utils.add_hook(_state_cleanup_part, 'PART', priority=-100)
+
+def _state_cleanup_kick(irc, source, command, args):
+    _state_cleanup_core(irc, args['target'], args['channel'])
+utils.add_hook(_state_cleanup_kick, 'KICK', priority=-100)
+
+def _state_cleanup_mode(irc, source, command, args):
+    """
+    Cleans up and removes empty channels when -P (permanent mode) is removed from them.
+    """
+    target = args['target']
+    if target in irc.channels and 'permanent' in irc.cmodes:
+        c = irc.channels[target]
+        mode = '-%s' % irc.cmodes['permanent']
+
+        if (not c.users) and (mode, None) in args['modes']:
+            log.debug('(%s) _state_cleanup_mode: deleting empty channel %s as %s was set', irc.name, target, mode)
+            del irc._channels[target]
+            return False  # Block further hooks from running
+utils.add_hook(_state_cleanup_mode, 'MODE', priority=10000)

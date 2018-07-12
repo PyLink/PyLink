@@ -19,7 +19,7 @@ def _changehost(irc, target, args):
 
     if target not in irc.users:
         return
-    elif irc.isInternalClient(target):
+    elif irc.is_internal_client(target):
         log.debug('(%s) Skipping changehost on internal client %s', irc.name, target)
         return
 
@@ -48,7 +48,7 @@ def _changehost(irc, target, args):
 
     for host_glob, host_template in changehost_hosts.items():
         log.debug('(%s) Changehost: checking mask %s', irc.name, host_glob)
-        if irc.matchHost(host_glob, target, ip=match_ip, realhost=match_realhosts):
+        if irc.match_host(host_glob, target, ip=match_ip, realhost=match_realhosts):
             log.debug('(%s) Changehost matched mask %s', irc.name, host_glob)
             # This uses template strings for simple substitution:
             # https://docs.python.org/3/library/string.html#template-strings
@@ -78,7 +78,7 @@ def _changehost(irc, target, args):
                 if char not in allowed_chars:
                     new_host = new_host.replace(char, '-')
 
-            irc.proto.updateClient(target, 'HOST', new_host)
+            irc.update_client(target, 'HOST', new_host)
 
             # Only operate on the first match.
             break
@@ -103,20 +103,20 @@ def handle_chghost(irc, sender, command, args):
 
     target = args['target']
 
-    if (not irc.isInternalClient(sender)) and (not irc.isInternalServer(sender)):
+    if (not irc.is_internal_client(sender)) and (not irc.is_internal_server(sender)):
         if irc.name in changehost_conf.get('enforced_nets', []):
             log.debug('(%s) Enforce for network is on, re-checking host for target %s/%s',
-                      irc.name, target, irc.getFriendlyName(target))
+                      irc.name, target, irc.get_friendly_name(target))
 
             for ex in changehost_conf.get("enforce_exceptions", []):
-                if irc.matchHost(ex, target):
+                if irc.match_host(ex, target):
                     log.debug('(%s) Skipping host change for target %s; they are exempted by mask %s',
                               irc.name, target, ex)
                     return
 
-            userdata = irc.users.get(target)
-            if userdata:
-                _changehost(irc, target, userdata.__dict__)
+            userobj = irc.users.get(target)
+            if userobj:
+                _changehost(irc, target, userobj.get_fields())
 
 utils.add_hook(handle_chghost, 'CHGHOST')
 
@@ -126,7 +126,7 @@ def applyhosts(irc, sender, args):
 
     Applies all configured hosts for users on the given network, or the current network if none is specified."""
 
-    permissions.checkPermissions(irc, sender, ['changehost.applyhosts'])
+    permissions.check_permissions(irc, sender, ['changehost.applyhosts'])
 
     try:  # Try to get network from the command line.
         network = world.networkobjects[args[0]]

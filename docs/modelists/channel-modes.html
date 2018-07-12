@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<meta name=viewport content="width=device-width, initial-scale=1">
+
+<head>
+<title>Supported Channel Modes for PyLink</title>
+<style>
+
+html {
+    background-color: white;
+}
+
+.note {
+    color: #555555;
+}
+
+/* (╮°-°)╮┳━┳ */
+table, th, td {
+    border: 1px solid black;
+}
+
+td, th {
+    text-align: center;
+    padding: 3px;
+}
+
+td:first-child, th[scope="row"] {
+    text-align: left;
+}
+
+/* Table cells */
+.tablecell-yes {
+    background-color: #A7F2A5
+}
+
+.tablecell-no {
+    background-color: #F08496
+}
+
+.tablecell-na {
+    background-color: #F0F0F0
+}
+
+.tablecell-planned, .tablecell-yes2 {
+    background-color: #92E8DF
+}
+
+.tablecell-partial {
+    background-color: #EDE8A4
+}
+
+.tablecell-special {
+    background-color: #DCB1FC
+}
+
+.tablecell-caveats {
+    background-color: #F0C884
+}
+
+.tablecell-caveats2 {
+    background-color: #ED9A80
+}
+
+.tablecell-no-padding {
+    padding: initial;
+}
+</style>
+
+</head>
+
+<body>
+<table><tr>
+<th scope="col">Channel Mode / IRCd</th>
+<th scope="col">rfc1459</th>
+<th scope="col">hybrid</th>
+<th scope="col">inspircd</th>
+<th scope="col">ngircd</th>
+<th scope="col">p10/ircu</th>
+<th scope="col">p10/nefarious</th>
+<th scope="col">p10/snircd</th>
+<th scope="col">ts6/charybdis</th>
+<th scope="col">ts6/chatircd</th>
+<th scope="col">ts6/elemental</th>
+<th scope="col">ts6/ratbox</th>
+<th scope="col">unreal</th>
+</tr>
+<tr>
+<th scope="row">admin</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+a<br><span class="note">(m_customprefix, m_chanprotect)</span></td><td class="tablecell-yes">+a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+a<br><span class="note">(when enabled)</span></td><td class="tablecell-special">+a<br><span class="note">(when enabled)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+a</td></tr>
+<tr>
+<th scope="row">adminonly</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+A<br><span class="note">(ext/chm_adminonly)</span></td><td class="tablecell-special">+A<br><span class="note">(ext/chm_adminonly)</span></td><td class="tablecell-special">+A<br><span class="note">(ext/chm_adminonly.so)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">allowinvite</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+A<br><span class="note">(m_allowinvite)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-yes">+g</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">auditorium</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+u<br><span class="note">(m_auditorium)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">autoop</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+w<br><span class="note">(m_autoop)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">ban</th>
+<td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td><td class="tablecell-yes">+b</td></tr>
+<tr>
+<th scope="row">banexception</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+e</td><td class="tablecell-special">+e<br><span class="note">(m_banexception)</span></td><td class="tablecell-yes">+e</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+e</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+e</td><td class="tablecell-yes">+e</td><td class="tablecell-yes">+e</td><td class="tablecell-yes">+e</td><td class="tablecell-yes">+e</td></tr>
+<tr>
+<th scope="row">blockcaps</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+B<br><span class="note">(m_blockcaps)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+G<br><span class="note">(ext/chm_nocaps.so)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">blockcolor</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+c</td><td class="tablecell-special">+c<br><span class="note">(m_blockcolor)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+c</td><td class="tablecell-yes">+c</td><td class="tablecell-yes">+c</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+c</td></tr>
+<tr>
+<th scope="row">blockhighlight</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+V<br><span class="note">(extras/m_blockhighlight)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">delayjoin</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+D<br><span class="note">(m_delayjoin)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+D</td><td class="tablecell-yes">+D</td><td class="tablecell-yes">+D</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+D</td></tr>
+<tr>
+<th scope="row">exemptchanops</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+X<br><span class="note">(m_exemptchanops)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">filter</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+g<br><span class="note">(m_filter)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">flood</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+f<br><span class="note">(m_messageflood)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">flood_unreal</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+f</td></tr>
+<tr>
+<th scope="row">freetarget</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+F</td><td class="tablecell-yes">+F</td><td class="tablecell-yes">+F</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">had_delayjoin</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+d</td><td class="tablecell-yes">+d</td><td class="tablecell-yes">+d</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">halfop</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+h</td><td class="tablecell-special">+h<br><span class="note">(m_customprefix, m_halfop)</span></td><td class="tablecell-yes">+h</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+h<br><span class="note">(when enabled)</span></td><td class="tablecell-special">+h<br><span class="note">(when enabled)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+h</td></tr>
+<tr>
+<th scope="row">hiddenbans</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+u</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">hidequits</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+Q</td><td class="tablecell-yes">+u</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">history</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+H<br><span class="note">(m_chanhistory)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">invex</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+I</td><td class="tablecell-special">+I<br><span class="note">(m_inviteexception)</span></td><td class="tablecell-yes">+I</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+I</td><td class="tablecell-yes">+I</td><td class="tablecell-yes">+I</td><td class="tablecell-yes">+I</td><td class="tablecell-yes">+I</td></tr>
+<tr>
+<th scope="row">inviteonly</th>
+<td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td><td class="tablecell-yes">+i</td></tr>
+<tr>
+<th scope="row">issecure</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+Z</td></tr>
+<tr>
+<th scope="row">joinflood</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+j<br><span class="note">(m_joinflood)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+j</td><td class="tablecell-yes">+j</td><td class="tablecell-yes">+j</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">key</th>
+<td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td><td class="tablecell-yes">+k</td></tr>
+<tr>
+<th scope="row">kicknorejoin</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+J</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">kicknorejoin_insp</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+J<br><span class="note">(m_kicknorejoin)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">largebanlist</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+L</td><td class="tablecell-yes">+L</td><td class="tablecell-yes">+L</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">limit</th>
+<td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td><td class="tablecell-yes">+l</td></tr>
+<tr>
+<th scope="row">moderated</th>
+<td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td><td class="tablecell-yes">+m</td></tr>
+<tr>
+<th scope="row">netadminonly</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+N<br><span class="note">(ext/chm_netadminonly)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">nickflood</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+F<br><span class="note">(m_nickflood)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">noamsg</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+T</td><td class="tablecell-yes">+T</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">noctcp</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+C</td><td class="tablecell-special">+C<br><span class="note">(m_noctcp)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+C</td><td class="tablecell-yes">+C</td><td class="tablecell-yes">+C</td><td class="tablecell-yes">+C</td><td class="tablecell-yes">+C</td><td class="tablecell-yes">+C</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+C</td></tr>
+<tr>
+<th scope="row">noextmsg</th>
+<td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+n</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td><td class="tablecell-yes">+n</td></tr>
+<tr>
+<th scope="row">noforwards</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+Q</td><td class="tablecell-yes">+Q</td><td class="tablecell-yes">+Q</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">noinvite</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+V</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+V</td></tr>
+<tr>
+<th scope="row">nokick</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+Q<br><span class="note">(m_nokicks)</span></td><td class="tablecell-yes">+Q</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+E</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+Q</td></tr>
+<tr>
+<th scope="row">noknock</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes2">+p*</td><td class="tablecell-special">+K<br><span class="note">(m_knock)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes">+K</td></tr>
+<tr>
+<th scope="row">nonick</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+N<br><span class="note">(m_nonicks)</span></td><td class="tablecell-yes">+N</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+d</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+N</td></tr>
+<tr>
+<th scope="row">nonotice</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+T<br><span class="note">(m_nonotice)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+N</td><td class="tablecell-yes">+N</td><td class="tablecell-special">+T<br><span class="note">(ext/chm_nonotice)</span></td><td class="tablecell-special">+T<br><span class="note">(ext/chm_nonotice)</span></td><td class="tablecell-yes">+T</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+T</td></tr>
+<tr>
+<th scope="row">official-join</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+Y<br><span class="note">(m_ojoin)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">op</th>
+<td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td><td class="tablecell-yes">+o</td></tr>
+<tr>
+<th scope="row">operonly</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+O</td><td class="tablecell-special">+O<br><span class="note">(m_operchans)</span></td><td class="tablecell-yes">+O</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+O</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+O<br><span class="note">(ext/chm_operonly)</span></td><td class="tablecell-special">+O<br><span class="note">(ext/chm_operonly)</span></td><td class="tablecell-special">+O<br><span class="note">(ext/chm_operonly.so)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+O</td></tr>
+<tr>
+<th scope="row">oplevel_apass</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+A</td><td class="tablecell-yes">+A</td><td class="tablecell-yes">+A</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">oplevel_upass</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+U</td><td class="tablecell-yes">+U</td><td class="tablecell-yes">+U</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">opmoderated</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+U<br><span class="note">(extras/m_opmoderated)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+z</td><td class="tablecell-yes">+z</td><td class="tablecell-yes">+z</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">owner</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+q<br><span class="note">(m_customprefix, m_chanprotect)</span></td><td class="tablecell-yes">+q</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+y<br><span class="note">(when enabled)</span></td><td class="tablecell-special">+y<br><span class="note">(when enabled)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+q</td></tr>
+<tr>
+<th scope="row">paranoia</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes2">+p*</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">permanent</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+P<br><span class="note">(m_permchannels)</span></td><td class="tablecell-yes">+P</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+z</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+P</td><td class="tablecell-yes">+P</td><td class="tablecell-yes">+P</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+P</td></tr>
+<tr>
+<th scope="row">private</th>
+<td class="tablecell-yes">+p</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes">+p</td><td class="tablecell-yes">+p</td><td class="tablecell-yes">+p</td><td class="tablecell-yes">+p</td><td class="tablecell-yes">+p</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes2">+p*</td><td class="tablecell-yes">+p</td></tr>
+<tr>
+<th scope="row">quiet</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-partial">(via extban m:)</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-partial">(via extban ~q:)</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+q</td><td class="tablecell-yes">+q</td><td class="tablecell-yes">+q</td><td class="tablecell-na note">n/a</td><td class="tablecell-partial">(via extban ~q:)</td></tr>
+<tr>
+<th scope="row">redirect</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+L<br><span class="note">(m_redirect)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+L</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+f</td><td class="tablecell-yes">+f</td><td class="tablecell-yes">+f</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+L</td></tr>
+<tr>
+<th scope="row">registered</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+r</td><td class="tablecell-special">+r<br><span class="note">(m_services_account)</span></td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+R</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+r</td></tr>
+<tr>
+<th scope="row">regmoderated</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+M</td><td class="tablecell-special">+M<br><span class="note">(m_services_account)</span></td><td class="tablecell-yes">+M</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+M</td><td class="tablecell-yes">+M</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+M</td></tr>
+<tr>
+<th scope="row">regonly</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+R</td><td class="tablecell-special">+R<br><span class="note">(m_services_account)</span></td><td class="tablecell-yes">+R</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+r</td><td class="tablecell-yes">+R</td></tr>
+<tr>
+<th scope="row">repeat</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+K<br><span class="note">(ext/chm_norepeat.c)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">repeat_insp</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+E<br><span class="note">(m_repeat)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td></tr>
+<tr>
+<th scope="row">secret</th>
+<td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td><td class="tablecell-yes">+s</td></tr>
+<tr>
+<th scope="row">sslonly</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-yes">+S</td><td class="tablecell-special">+z<br><span class="note">(m_sslmodes)</span></td><td class="tablecell-yes">+z</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+S<br><span class="note">(ext/chm_sslonly)</span></td><td class="tablecell-special">+S<br><span class="note">(ext/chm_sslonly)</span></td><td class="tablecell-special">+S<br><span class="note">(ext/chm_sslonly.c)</span></td><td class="tablecell-yes">+S</td><td class="tablecell-yes">+z</td></tr>
+<tr>
+<th scope="row">stripcolor</th>
+<td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-special">+S<br><span class="note">(m_stripcolor)</span></td><td class="tablecell-na note">n/a</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+S</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+c</td><td class="tablecell-yes">+c</td><td class="tablecell-yes">+c</td><td class="tablecell-na note">n/a</td><td class="tablecell-yes">+S</td></tr>
+<tr>
+<th scope="row">topiclock</th>
+<td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td><td class="tablecell-yes">+t</td></tr>
+<tr>
+<th scope="row">voice</th>
+<td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td><td class="tablecell-yes">+v</td></tr>
+<p>* Mode +p corresponds to both “noknock” and “private” on TS6 IRCds, as well as “paranoia” on hybrid.</p>
+
+</table>
+</body>
+</html>

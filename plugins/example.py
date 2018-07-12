@@ -18,9 +18,9 @@ def hook_privmsg(irc, source, command, args):
     channel = args['target']
     text = args['text']
 
-    # irc.pseudoclient stores the IrcUser object of the main PyLink client.
+    # irc.pseudoclient stores the User object of the main PyLink client.
     # (i.e. the user defined in the bot: section of the config)
-    if utils.isChannel(channel) and irc.pseudoclient.nick in text:
+    if irc.is_channel(channel) and irc.pseudoclient.nick in text:
         irc.msg(channel, 'hi there!')
         # log.debug, log.info, log.warning, log.error, log.exception (within except: clauses)
         # and log.critical are supported here.
@@ -31,7 +31,8 @@ utils.add_hook(hook_privmsg, 'PRIVMSG')
 
 # Example command function. @utils.add_cmd binds it to an IRC command of the same name,
 # but you can also use a different name by specifying a second 'name' argument (see below).
-@utils.add_cmd
+#@utils.add_cmd
+
 # irc: The IRC object where the command was called.
 # source: The UID/numeric of the calling user.
 # args: A list of command args (excluding the command name) that the command was called with.
@@ -43,9 +44,7 @@ def randint(irc, source, args):
     #   line, even though it is physically written on two.
     # - Double line breaks are treated as breaks between two paragraphs, and will be shown
     #   as distinct lines in IRC.
-
-    # Note: you shouldn't make any one paragraph too long, since they may get cut off. Automatic
-    # word-wrap may be added in the future; see https://github.com/GLolol/PyLink/issues/153
+    # As of PyLink 2.0, long paragraphs are automatically word-wrapped by irc.reply().
     """[<min> <max>]
 
     Returns a random number between <min> and <max>. <min> and <max> default to 1 and 10
@@ -64,6 +63,5 @@ def randint(irc, source, args):
     # it will send replies into the channel instead of in your PM.
     irc.reply(str(n))
 
-# You can also bind a command function multiple times, and/or to different command names via a
-# second argument.
-utils.add_cmd(randint, "random")
+# You can bind a command function to multiple names using the 'aliases' option.
+utils.add_cmd(randint, "random", aliases=("randint", "getrandint"))
