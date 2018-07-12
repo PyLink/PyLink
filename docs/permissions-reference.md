@@ -3,12 +3,12 @@
 Below is a list of all the permissions defined by PyLink and its official plugins. For instructions on how to fine-tune permissions, see [example-permissions.yml](../example-permissions.yml).
 
 ## PyLink Core
-- `core.clearqueue` - Allows access to the `clearqueue` command.
-- `core.load` - Allows access to the `load` command.
-- `core.rehash` - Allows access to the `rehash` command.
-- `core.reload` - Allows access to the `reload`, `load`, and `unload` commands. (This implies access to `load` and `unload` because `reload` is really just those two commands combined.)
-- `core.shutdown` - Allows access to the `shutdown` command.
-- `core.unload` - Allows access to the `unload` command.
+- `core.clearqueue` - Grants access to the `clearqueue` command.
+- `core.load` - Grants access to the `load` command.
+- `core.rehash` - Grants access to the `rehash` command.
+- `core.reload` - Grants access to the `reload`, `load`, and `unload` commands. (This implies access to `load` and `unload` because `reload` is really just those two commands combined.)
+- `core.shutdown` - Grants access to the `shutdown` command.
+- `core.unload` - Grants access to the `unload` command.
 
 ## Automode
 
@@ -36,56 +36,56 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 
 ## Bots
 
-- `bots.joinclient` - Allows access to the `joinclient` command.
-- `bots.msg` - Allows access to the `msg` command.
-- `bots.nick` - Allows access to the `nick` command.
-- `bots.part` - Allows access to the `part` command.
-- `bots.quit` - Allows access to the `quit` command.
-- `bots.spawnclient` - Allows access to the `spawnclient` command.
+- `bots.joinclient` - Grants access to the `joinclient` command.
+- `bots.msg` - Grants access to the `msg` command.
+- `bots.nick` - Grants access to the `nick` command.
+- `bots.part` - Grants access to the `part` command.
+- `bots.quit` - Grants access to the `quit` command.
+- `bots.spawnclient` - Grants access to the `spawnclient` command.
 
 ## Changehost
 
-- `changehost.applyhosts` - Allows access to the `applyhosts` command.
+- `changehost.applyhosts` - Grants access to the `applyhosts` command.
 
 ## Commands
-- `commands.echo` - Allows access to the `echo` command.
-- `commands.loglevel` - Allows access to the `loglevel` command.
+- `commands.echo` - Grants access to the `echo` command.
+- `commands.loglevel` - Grants access to the `loglevel` command.
 - `commands.logout.force` - Allows forcing logouts on other users via the `logout` command.
-- `commands.showchan` - Allows access to the `showchan` command. **With the default permissions set, this is granted to all users.**
-- `commands.showuser` - Allows access to the `showuser` command. **With the default permissions set, this is granted to all users.**
-- `commands.status` - Allows access to the `status` command. **With the default permissions set, this is granted to all users.**
+- `commands.showchan` - Grants access to the `showchan` command. **With the default permissions set, this is granted to all users.**
+- `commands.showuser` - Grants access to the `showuser` command. **With the default permissions set, this is granted to all users.**
+- `commands.status` - Grants access to the `status` command. **With the default permissions set, this is granted to all users.**
 
 ## Exec
-- `exec.exec` - Allows access to the `exec` command.
-- `exec.eval` - Allows access to the `eval` command.
-- `exec.inject` - Allows access to the `inject` command.
-- `exec.threadinfo` - Allows access to the `threadinfo` command.
+- `exec.exec` - Grants access to the `exec` command.
+- `exec.eval` - Grants access to the `eval` command.
+- `exec.inject` - Grants access to the `inject` command.
+- `exec.threadinfo` - Grants access to the `threadinfo` command.
 
 ## Global
-- `global.global` - Allows access to the `global` command.
+- `global.global` - Grants access to the `global` command.
 
 ## Networks
-- `networks.autoconnect` - Allows access to the `autoconnect` command.
-- `networks.disconnect` - Allows access to the `disconnect` command.
-- `networks.reloadproto` - Allows access to the `reloadproto` command.
-- `networks.remote` - Allows access to the `remote` command.
+- `networks.autoconnect` - Grants access to the `autoconnect` command.
+- `networks.disconnect` - Grants access to the `disconnect` command.
+- `networks.reloadproto` - Grants access to the `reloadproto` command.
+- `networks.remote` - Grants access to the `remote` command.
 
 ## Opercmds
-- `opercmds.checkban` - Allows access to the `checkban` command.
-- `opercmds.checkban.re` - Allows access to the `checkbanre` command **if** the caller also has `opercmds.checkban`.
-- `opercmds.chghost` - Allows access to the `chghost` command.
-- `opercmds.chgident` - Allows access to the `chgident` command.
-- `opercmds.chgname` - Allows access to the `chgname` command.
-- `opercmds.jupe` - Allows access to the `jupe` command.
-- `opercmds.kick` - Allows access to the `kick` command.
-- `opercmds.kill` - Allows access to the `kill` command.
-- `opercmds.massban` - Allows access to the `massban` command.
-- `opercmds.massban.re` - Allows access to the `massbanre` command **if** the caller also has `opercmds.massban`.
-- `opercmds.mode` - Allows access to the `mode` command.
-- `opercmds.topic` - Allows access to the `topic` command.
+- `opercmds.checkban` - Grants access to the `checkban` command.
+- `opercmds.checkban.re` - Grants access to the `checkbanre` command **if** the caller also has `opercmds.checkban`.
+- `opercmds.chghost` - Grants access to the `chghost` command.
+- `opercmds.chgident` - Grants access to the `chgident` command.
+- `opercmds.chgname` - Grants access to the `chgname` command.
+- `opercmds.jupe` - Grants access to the `jupe` command.
+- `opercmds.kick` - Grants access to the `kick` command.
+- `opercmds.kill` - Grants access to the `kill` command.
+- `opercmds.massban` - Grants access to the `massban` command.
+- `opercmds.massban.re` - Grants access to the `massbanre` command **if** the caller also has `opercmds.massban`.
+- `opercmds.mode` - Grants access to the `mode` command.
+- `opercmds.topic` - Grants access to the `topic` command.
 
 ## Raw
-- `raw.raw` - Allows access to the `raw` command. `exec.raw` is equivalent to this and retained for compatibility with PyLink 1.x.
+- `raw.raw` - Grants access to the `raw` command. `exec.raw` is equivalent to this and retained for compatibility with PyLink 1.x.
 - `raw.raw.unsupported_network` - Allows use of the `raw` command on servers other than Clientbot.
 
 ## Relay
@@ -93,11 +93,11 @@ These permissions are granted to all opers when the `relay::allow_free_oper_link
 
 - `relay.chandesc.remove` - Allows removing channel descriptions via the `chandesc` command.
 - `relay.chandesc.set` - Allows setting / updating channel descriptions via the `chandesc` command.
-- `relay.claim` - Allows access to the `claim` command.
-- `relay.create` - Allows access to the `create` command.
-- `relay.delink` - Allows access to the `delink` command.
-- `relay.destroy` - Allows access to the `destroy` command.
-- `relay.link` - Allows access to the `link` command.
+- `relay.claim` - Grants access to the `claim` command.
+- `relay.create` - Grants access to the `create` command.
+- `relay.delink` - Grants access to the `delink` command.
+- `relay.destroy` - Grants access to the `destroy` command.
+- `relay.link` - Grants access to the `link` command.
 
 These permissions are always granted to all opers:
 - `relay.linkacl` - Allows managing LINKACL entries via the `linkacl` command.
@@ -105,15 +105,15 @@ These permissions are always granted to all opers:
 
 These permissions are not granted to anyone by default:
 - `relay.destroy.remote` - Allows destroying remote channels.
-- `relay.link.force_ts` - Allows access to the `link` command's `--force-ts` option (skip TS and target network is connected checks).
-- `relay.linked` - Allows access to the `link` command. **With the default permissions set, this is granted to all users.**
-- `relay.purge` - Allows access to the `purge` command.
-- `relay.savedb` - Allows access to the `savedb` command.
+- `relay.link.force_ts` - Grants access to the `link` command's `--force-ts` option (skip TS and target network is connected checks).
+- `relay.linked` - Grants access to the `link` command. **With the default permissions set, this is granted to all users.**
+- `relay.purge` - Grants access to the `purge` command.
+- `relay.savedb` - Grants access to the `savedb` command.
 
 ## Servermaps
-- `servermaps.localmap` - Allows access to the `localmap` command.
-- `servermaps.map` - Allows access to the `map` command.
+- `servermaps.localmap` - Grants access to the `localmap` command.
+- `servermaps.map` - Grants access to the `map` command.
 
 ## Stats
 - `stats.c`, `stats.o`, `stats.u` - Grants access to remote `/stats` calls with the corresponding letter.
-- `stats.uptime` - Allows access to the `stats` command.
+- `stats.uptime` - Grants access to the `stats` command.
