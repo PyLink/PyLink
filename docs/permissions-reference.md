@@ -4,11 +4,11 @@ Below is a list of all the permissions defined by PyLink and its official plugin
 
 ## PyLink Core
 - `core.clearqueue` - Allows access to the `clearqueue` command.
-- `core.shutdown` - Allows access to the `shutdown` command.
 - `core.load` - Allows access to the `load` command.
-- `core.unload` - Allows access to the `unload` command.
-- `core.reload` - Allows access to the `reload`, `load`, and `unload` commands. (This implies access to `load` and `unload` because `reload` is really just those two commands combined.)
 - `core.rehash` - Allows access to the `rehash` command.
+- `core.reload` - Allows access to the `reload`, `load`, and `unload` commands. (This implies access to `load` and `unload` because `reload` is really just those two commands combined.)
+- `core.shutdown` - Allows access to the `shutdown` command.
+- `core.unload` - Allows access to the `unload` command.
 
 ## Automode
 
@@ -36,24 +36,24 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 
 ## Bots
 
-- `bots.spawnclient` - Allows access to the `spawnclient` command.
-- `bots.quit` - Allows access to the `quit` command.
 - `bots.joinclient` - Allows access to the `joinclient` command.
+- `bots.msg` - Allows access to the `msg` command.
 - `bots.nick` - Allows access to the `nick` command.
 - `bots.part` - Allows access to the `part` command.
-- `bots.msg` - Allows access to the `msg` command.
+- `bots.quit` - Allows access to the `quit` command.
+- `bots.spawnclient` - Allows access to the `spawnclient` command.
 
 ## Changehost
 
 - `changehost.applyhosts` - Allows access to the `applyhosts` command.
 
 ## Commands
-- `commands.status` - Allows access to the `status` command. **With the default permissions set, this is granted to all users.**
-- `commands.showuser` - Allows access to the `showuser` command. **With the default permissions set, this is granted to all users.**
-- `commands.showchan` - Allows access to the `showchan` command. **With the default permissions set, this is granted to all users.**
 - `commands.echo` - Allows access to the `echo` command.
-- `commands.logout.force` - Allows forcing logouts on other users via the `logout` command.
 - `commands.loglevel` - Allows access to the `loglevel` command.
+- `commands.logout.force` - Allows forcing logouts on other users via the `logout` command.
+- `commands.showchan` - Allows access to the `showchan` command. **With the default permissions set, this is granted to all users.**
+- `commands.showuser` - Allows access to the `showuser` command. **With the default permissions set, this is granted to all users.**
+- `commands.status` - Allows access to the `status` command. **With the default permissions set, this is granted to all users.**
 
 ## Exec
 - `exec.exec` - Allows access to the `exec` command.
@@ -65,25 +65,24 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `global.global` - Allows access to the `global` command.
 
 ## Networks
-- `networks.disconnect` - Allows access to the `disconnect` command.
 - `networks.autoconnect` - Allows access to the `autoconnect` command.
-- `networks.remote` - Allows access to the `remote` command.
+- `networks.disconnect` - Allows access to the `disconnect` command.
 - `networks.reloadproto` - Allows access to the `reloadproto` command.
+- `networks.remote` - Allows access to the `remote` command.
 
 ## Opercmds
 - `opercmds.checkban` - Allows access to the `checkban` command.
-- `opercmds.jupe` - Allows access to the `jupe` command.
-- `opercmds.kick` - Allows access to the `kick` command.
-- `opercmds.kill` - Allows access to the `kill` command.
-- `opercmds.mode` - Allows access to the `mode` command.
-- `opercmds.topic` - Allows access to the `topic` command.
+- `opercmds.checkban.re` - Allows access to the `checkbanre` command **if** the caller also has `opercmds.checkban`.
 - `opercmds.chghost` - Allows access to the `chghost` command.
 - `opercmds.chgident` - Allows access to the `chgident` command.
 - `opercmds.chgname` - Allows access to the `chgname` command.
-- `opercmds.checkban` - Allows access to the `checkban` command.
-- `opercmds.checkban.re` - Allows access to the `checkbanre` command **if** the caller also has `opercmds.checkban`.
+- `opercmds.jupe` - Allows access to the `jupe` command.
+- `opercmds.kick` - Allows access to the `kick` command.
+- `opercmds.kill` - Allows access to the `kill` command.
 - `opercmds.massban` - Allows access to the `massban` command.
 - `opercmds.massban.re` - Allows access to the `massbanre` command **if** the caller also has `opercmds.massban`.
+- `opercmds.mode` - Allows access to the `mode` command.
+- `opercmds.topic` - Allows access to the `topic` command.
 
 ## Raw
 - `raw.raw` - Allows access to the `raw` command. `exec.raw` is equivalent to this and retained for compatibility with PyLink 1.x.
@@ -116,5 +115,5 @@ These permissions are not granted to anyone by default:
 - `servermaps.map` - Allows access to the `map` command.
 
 ## Stats
-- `stats.uptime` - Allows access to the `stats` command.
 - `stats.c`, `stats.o`, `stats.u` - Grants access to remote `/stats` calls with the corresponding letter.
+- `stats.uptime` - Allows access to the `stats` command.
