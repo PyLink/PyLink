@@ -90,20 +90,26 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `raw.raw.unsupported_network` - Allows use of the `raw` command on servers other than Clientbot.
 
 ## Relay
+These permissions are granted to all opers when the `relay::allow_free_oper_links` option is set (this is the default):
+
+- `relay.chandesc.remove` - Allows removing channel descriptions via the `chandesc` command.
+- `relay.chandesc.set` - Allows setting / updating channel descriptions via the `chandesc` command.
 - `relay.claim` - Allows access to the `claim` command.
-- `relay.create` - Allows access to the `create` command. **With the default permissions set, this is granted to all opers.**
-- `relay.delink` - Allows access to the `delink` command. **With the default permissions set, this is granted to all opers.**
-- `relay.destroy` - Allows access to the `destroy` command. **With the default permissions set, this is granted to all opers.**
-- `relay.destroy.remote` - Allows access to the `remote` command.
-- `relay.linkacl` - Allows access to the `linkacl` command. **With the default permissions set, this is granted to all opers.**
-- `relay.linkacl.view` - Allows access to the `view` command. **With the default permissions set, this is granted to all opers.**
-- `relay.link` - Allows access to the `link` command. **With the default permissions set, this is granted to all opers.**
+- `relay.create` - Allows access to the `create` command.
+- `relay.delink` - Allows access to the `delink` command.
+- `relay.destroy` - Allows access to the `destroy` command.
+- `relay.link` - Allows access to the `link` command.
+
+These permissions are always granted to all opers:
+- `relay.linkacl` - Allows managing LINKACL entries via the `linkacl` command.
+- `relay.linkacl.view` - Allows viewing LINKACL entries via the `linkacl` command.
+
+These permissions are not granted to anyone by default:
+- `relay.destroy.remote` - Allows destroying remote channels.
 - `relay.link.force_ts` - Allows access to the `link` command's `--force-ts` option (skip TS and target network is connected checks).
 - `relay.linked` - Allows access to the `link` command. **With the default permissions set, this is granted to all users.**
 - `relay.purge` - Allows access to the `purge` command.
 - `relay.savedb` - Allows access to the `savedb` command.
-- `relay.chandesc.remove` - Allows removing channel descriptions via the `chandesc` command.
-- `relay.chandesc.set` - Allows setting / updating channel descriptions via the `chandesc` command.
 
 ## Servermaps
 - `servermaps.localmap` - Allows access to the `localmap` command.
