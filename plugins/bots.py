@@ -64,7 +64,7 @@ def joinclient(irc, source, args):
     For the channel arguments, prefixes can also be specified to join the given client with
     (e.g. @#channel will join the client with op, while ~@#channel will join it with +qo.
     """
-    permissions.check_permissions(irc, source, ['bots.joinclient'])
+    permissions.check_permissions(irc, source, ['bots.join', 'bots.joinclient'])
 
     try:
         # Check if the first argument is an existing PyLink client. If it is not,

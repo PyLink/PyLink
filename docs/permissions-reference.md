@@ -36,7 +36,7 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 
 ## Bots
 
-- `bots.joinclient` - Grants access to the `joinclient` command.
+- `bots.join` - Grants access to the `join` command. `bots.joinclient` is a deprecated alias for this, retained for compatibility with PyLink < 2.0-rc1.
 - `bots.msg` - Grants access to the `msg` command.
 - `bots.nick` - Grants access to the `nick` command.
 - `bots.part` - Grants access to the `part` command.
