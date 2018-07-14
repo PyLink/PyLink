@@ -17,6 +17,8 @@ While PyLink is generally able to run independently of individual networks's ser
     - Rationale: it is common for a person to want to connect to multiple networks in a Relay instance, because they are still independent entities. You can still use IRCd-side clones prevention, which sanely blocks connections instead of killing / banning everyone involved.
 - Anope: **SQLINE nicks should NOT be used**
     - Rationale: Anope falls back to killing target clients matching a SQLINE, which will obviously cause conflicts with other services.
+- Atheme: **The ChanFix service should be disabled**
+    - Rationale: ChanFix is incompatible with Relay CLAIM because it overrides ops on relay channels whenever they appear "opless". This basic op check is unable to consider the case of remote channel services not being set to join channels, and will instead cause join/message/part spam as CLAIM reverts the ChanFix service's mode changes.
 - *Any*: **Do NOT register a relayed channel on multiple networks**
     - Rationale: It is very easy for this to start kick or mode wars. (Bad akick mask? Secure ops enabled?)
 - *Any*: **Do NOT jupe virtual Relay servers** (e.g. `net.relay`)
