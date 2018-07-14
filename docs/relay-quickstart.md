@@ -26,7 +26,7 @@ While PyLink is generally able to run independently of individual networks's ser
 - Multiple PyLink Relay instances:
     - **Do NOT connect a network twice to any PyLink instance**.
     - **Do NOT connect a network to 2+ separate PyLink instances if there is another network already acting as a hub for them**.
-    - Not following these rules means that it's very easy for the Relay instances to go in a loop, whcih will hammer your CPU and seriously spam your channels.
+    - Not following these rules means that it's very easy for the Relay instances to go in a loop should an operator run the wrong command, which will hammer your CPU and relentlessly spam your channels.
 
 ## Relay commands
 The concept of relay channels in PyLink is greatly inspired by Janus, though with a few differences in command syntax.
