@@ -1,5 +1,79 @@
 # PyLink 2.0-rc1 (unreleased)
 
+PyLink 2.0 comes with a ton of new features, refinements, and optimizations. Here is a summary of the most interesting changes - for detailed changelogs, consult the release notes for individual snapshots below.
+
+This release does *not* preserve compatibility with third-party plugins written for PyLink 1.x!
+
+#### New features
+- **Added support for ngIRCd, ChatIRCd, and beware-ircd** (via protocol modules `ngircd`, `ts6`, and `p10` respectively)
+- **Add support for extbans** on UnrealIRCd, Charybdis (and derivatives), InspIRCd, and Nefarious.
+- **U-lined services servers can now be configured for use with Relay**:
+    - `CLAIM` restrictions are relaxed for service bots, which may now join with ops and set simple modes. This prevents mode floods when features such as `DEFCON` are enabled, and when a channel is accidentally registered on a network not on the CLAIM list.
+    - `DEFCON` modes set by services are ignored by Relay instead of bounced, and do not forward onto other networks unless the setting network is also in the channel's `CLAIM` list.
+    - To keep the spirit of `CLAIM`, opped services not in a channel's `CLAIM` list are still not allowed to kick remote users, set prefix modes (e.g. op) on others, or modify list modes such as bans.
+- **New Antispam plugin, with the ability to kill / kick / block mass-highlight spam and configured "spam" strings.**
+- **Added TLS certificate verification, which is enabled by default on Clientbot networks**. [issue#592](https://github.com/jlu5/PyLink/issues/592)
+    - This adds the options `ssl_validate_hostname` and `ssl_accept_invalid_certs` options which have defaults as follows:
+        - | Server type              | `ssl_validate_hostname`                             | `ssl_accept_invalid_certs` |
+          |--------------------------|-----------------------------------------------------|----------------------------|
+          | Full links (S2S)         | false (implied by `ssl_accept_invalid_certs: true`) | true                       |
+          | Clientbot networks (C2S) | true                                                | false                      |
+        - `ssl_validate_hostname` determines whether a network's TLS certificate will be checked for a matching hostname.
+        - `ssl_accept_invalid_certs` disables certificate checking entirely when enabled, and also turns off `ssl_validate_hostname`.
+        - The existing TLS certificate fingerprint options are unchanged and can be turned on and off regardless of these new options.
+- New Relay features:
+    - LINKACL now supports whitelisting networks in addition to the original blacklist implementation (see `help LINKACL`). [issue#394](https://github.com/jlu5/PyLink/issues/394)
+    - Relay IP sharing now uses a pool-based configuration scheme (`relay::ip_share_pools`), deprecating the `relay::show_ips` and `relay_no_ips` options.
+        - IPs and real hosts are shared bidirectionally between all networks in an ipshare pool, and masked as `0.0.0.0` when sending to a network not in a pool and when receiving those networks' users.
+    - KILL handling received a major rework ([issue#520](https://github.com/jlu5/PyLink/issues/520):
+        - Instead of always bouncing, kills to a relay client can now be forwarded between networks in a killshare pool (`relay::kill_share_pools`).
+        - If the sender and target's networks are not in a killshare pool, the kill is forwarded as a kick to all shared channels that the sender
+          has CLAIM access on (e.g. when they are the home network, whitelisted in `CLAIM`, and/or an op).
+    - `relay_clientbot` now supports setting clientbot styles by network. [issue#455](https://github.com/jlu5/PyLink/issues/455)
+    - The defaults for CLAIM (on or off) and LINKACL (whitelist or blacklist mode) can now be pre-configured for new channels. [issue#581](https://github.com/jlu5/PyLink/issues/581)
+    - New `relay::allow_free_oper_links` option allows disabling oper access to `CREATE/LINK/DELINK/DESTROY/CLAIM` by default
+    - relay_clientbot: add support for showing prefix modes in relay text, via a new `$mode_prefix` expansion. [issue#540](https://github.com/jlu5/PyLink/issues/540)
+- Clientbot is now more featureful:
+    - Added support for IRCv3 caps `account-notify`, `account-tag`, `away-notify`, `chghost`, `extended-join`, and `userhost-in-names`
+    - Clientbot now supports expansions such as `$nick` in autoperform.
+    - Configurable alternate / fallback nicks are now supported: look for the `pylink_altnicks` option in the example config.
+    - Added support for WHOX.
+    - Clientbot can now optionally sync ban lists when it joins a channel, allowing Relay modesync to unset bans properly. See the `fetch_ban_lists` option in the example config.
+    - Failed attempts to join channels are now logged to warning. [issue#533](https://github.com/jlu5/PyLink/issues/533)
+- New commands for the opercmds plugin, including:
+    - `chghost`, `chgident`, and `chgname`, for IRCds that don't expose them as commands.
+    - `massban`, `masskill`, `massbanre`, and `masskillre`, which allow setting mass bans/kills/G/KLINEs on users matching a `nick!user@host` mask, exttarget, or regular expression. The hope is that these tools can help opers actively fight botnets as they are connected, similar to atheme's `clearchan` and Anope's `chankill` commands.
+    - `checkban` and `checkbanre`, which return the users matching a target
+- Messages sent by most commands are now transparently word-wrapped to prevent cutoff. [issue#153](https://github.com/jlu5/PyLink/issues/153)
+- PyLink accounts are now implicitly matched: i.e. `user1` is now equivalent to `$pylinkacc:user1`.
+- PyLink now responds to remote `/STATS` requests (`/stats c`, `u`, and `o`) if the `stats` plugin is loaded.
+- The PyLink service client no longer needs to be in channels to log to them.
+
+#### Feature changes
+
+- **The ratbox protocol module has been merged into ts6**, with a new `ircd: ratbox` option introduced to declare Ratbox as the target IRCd. [issue#543](https://github.com/jlu5/PyLink/issues/543)
+- The `raw` command has been split into a new plugin (`plugins/raw.py`) with two permissions: `raw.raw` for Clientbot networks, and `raw.raw.unsupported_network` for other protocols. Using raw commands outside Clientbot is not supported. [issue#565](https://github.com/jlu5/PyLink/issues/565)
+- Some options were deprecated and renamed:
+    - The `p10_ircd` option for P10 servers is now named `ircd`, though the old option will still be read from.
+    - The `use_elemental_modes` setting on ts6 networks has been deprecated and replaced with an `ircd` option targeting charybdis, elemental-ircd, or chatircd. Supported values for `ircd` include `charybdis`, `elemental`, and `chatircd`.
+- The `fml` command in the `games` plugin was removed.
+
+#### Bug fixes
+- clientbot: fix errors when connecting to networks with mixed-case server names (e.g. AfterNET)
+- Fix `irc.parse_modes()` incorrectly mangling modes changes like `+b-b *!*@test.host *!*@test.host` into `+b *!*@test.host`. [issue#573](https://github.com/jlu5/PyLink/issues/573)
+- clientbot: fixed sending duplicate JOIN hooks and AWAY status updates. [issue#551](https://github.com/jlu5/PyLink/issues/551)
+
+#### Internal improvements
+- Reading from sockets now uses a select-based backend instead of one thread per network.
+- Major optimizations to to user tracking that lets PyLink handle Relay networks of 500+ users.
+- Service bot handling was completely redone to minimize desyncs when mixing Relay and services. [issue#265](https://github.com/jlu5/PyLink/issues/265)
+    - This is done via a new `UserMapping` class in `pylinkirc.classes`, which stores User objects by UID and provides a `bynick` attribute mapping case-normalized nicks to lists of UIDs.
+    - `classes.User.nick` is now a property, where the setter implicitly updates the `bynick` index with a pre-computed case-normalized version of the nick (also stored to `User.lower_nick`)
+
+### Changes in this RC build
+
+From 2.0-beta1:
+
 #### Bug fixes
 - relay: CHANDESC permissions are now given to opers if the `relay::allow_free_oper_links` option is true.
 - Relay no longer forwards kills from servers, preventing extraneous kills for nick collisions and the like.
