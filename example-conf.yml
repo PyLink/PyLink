@@ -547,7 +547,7 @@ plugins:
     #- opercmds
 
     # Automode plugin: allows assigning channel access to specific hostmasks or
-    # exttargets. See https://github.com/GLolol/PyLink/blob/master/docs/automode.md
+    # exttargets. See docs/automode.md
     # for a usage guide.
     #- automode
 
@@ -682,7 +682,7 @@ changehost:
         # Here are some examples. Note that to keep your users' details
         # private, you should probably refrain from using $ip or $realhost,
         # in these hostmasks, unless cloaking is already disabled.
-        "*!GLolol@*.yournet.com": "$nick.opers.yournet.com"
+        "*!yourname@*.yournet.com": "$nick.opers.yournet.com"
         "*!*@localhost": "some-server.hostname"
 
         # Freenode-style masks are possible with this (though without the
