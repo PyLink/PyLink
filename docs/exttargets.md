@@ -1,8 +1,8 @@
 # Exttargets Guide
 
-In PyLink, **extended targets** or **exttargets** *replace* regular hostmasks with conditional matching based on specific situations. PyLink exttargets are supported by most plugins in the place of `nick!user@host` masks (provided they use the `IRCNetwork.match_host()` API with a user object).
+**Extended targets** or **exttargets** extend regular hostmask matching by checking users against specific conditions. PyLink exttargets are supported by most plugins in the place of `nick!user@host` masks (provided they use `IRCNetwork.match_host()` as their backend).
 
-Exttargets were introduced in PyLink 0.9 alongside [Automode](automode.md), with the goal of making user/ACL matching more versatile. As of PyLink 2.0-dev, the following exttargets are supported:
+Exttargets were introduced in PyLink 0.9 alongside [Automode](automode.md), with the goal of making user/ACL matching more versatile. As of PyLink 2.0, the following exttargets are supported:
 
 ### The "$account" target (PyLink 0.9+)
 Used to match users by their services account.
@@ -55,7 +55,7 @@ Used to match users on specific IRC servers.
 - `$server:1XY` -> Returns True if the target's is connected on the server with the given SID. Note: SIDs ARE case sensitive.
 
 ### The "$pylinkacc" target (PyLink 0.9+)
-Used to match users logged in to *PyLink* (i.e. via the `identify` command).
+Used to match users logged in to *PyLink* (i.e. via the `identify` command). **As of PyLink 2.0, The "$pylinkirc:" prefix is implied if you specify a PyLink account name without it.**
 
 - `$pylinkacc` -> Returns True if the target is logged in to PyLink.
 - `$pylinkacc:accountname` -> Returns True if the target's PyLink login matches the one given (case insensitive).

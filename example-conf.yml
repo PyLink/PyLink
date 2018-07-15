@@ -106,7 +106,8 @@ login:
 permissions:
     # Permissions blocks in PyLink are define as a mapping of PyLink targets (i.e. hostmasks or
     # exttargets) to lists of permission nodes. You can find a list of permissions that PyLink and
-    # its plugins define in docs/permissions-reference.md.
+    # its plugins define in docs/permissions-reference.md. Exttargets (extended targets) are
+    # documented further in docs/exttargets.md
 
     # Permissions blocks look something like this:
     #"*!user@host":
@@ -114,8 +115,9 @@ permissions:
     #    - "permission.node.2"
     #    - "someplugin.*"  # Wildcards are also supported in names
 
-    # Replace ABC123 with your PyLink account name (configured above)
-    # in order to give yourself admin access.
+    # Replace ABC123 with your PyLink account name (configured above in order to give yourself admin
+    # access. As of PyLink 2.0, specifying a bare account name is synonymous with
+    # "$pylinkirc:<accountname>" (i.e. the "$pylinkirc:" prefix is implied).
     "ABC123":
         - "*"
 
