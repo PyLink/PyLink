@@ -115,7 +115,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - For KLINE support to work, a `shared{}` block should also be added for PyLink on all servers.
 * [ircd-ratbox](http://www.ratbox.org/) (3.x) - module `ts6`
     - Host changing is not supported.
-    - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is a cloaked relay client: if you're paranoid about this, turn off Relay IP forwarding by setting the `relay_no_ips` option in the ratbox network's `server:` block.
+    - On ircd-ratbox, all known IPs of users will be shown in `/whois`, even if the client is e.g. a cloaked relay client. If you're paranoid about this, turn off Relay IP forwarding on the ratbox network(s).
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [IRCu](http://coder-com.undernet.org/) (u2.10.12.16+) - module `p10`
     - Host changing is not supported.
