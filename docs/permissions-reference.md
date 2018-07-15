@@ -1,6 +1,6 @@
 # PyLink Permissions Reference
 
-Below is a list of all the permissions defined by PyLink and its official plugins. For instructions on how to fine-tune permissions, see [example-permissions.yml](../example-permissions.yml).
+Below is a list of all the permissions defined by PyLink and its official plugins.
 
 ## PyLink Core
 - `core.clearqueue` - Grants access to the `clearqueue` command.

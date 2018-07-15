@@ -104,13 +104,28 @@ login:
             #hosts: ["*!*@localhost", "*!*@trusted.isp"]
 
 permissions:
-    # Permissions are described in more detail in example-permissions.yml, if you want to
-    # customize permissions further.
+    # Permissions blocks in PyLink are define as a mapping of PyLink targets (i.e. hostmasks or
+    # exttargets) to lists of permission nodes. You can find a list of permissions that PyLink and
+    # its plugins define in docs/permissions-reference.md.
+
+    # Permissions blocks look something like this:
+    #"*!user@host":
+    #    - "permission.node.1"
+    #    - "permission.node.2"
+    #    - "someplugin.*"  # Wildcards are also supported in names
 
     # Replace ABC123 with your PyLink account name (configured above)
     # in order to give yourself admin access.
     "ABC123":
         - "*"
+
+# This option determines whether plugin-determined default permissions should be enabled.
+# You should generally only disable this if you need to configure permissions in a specific way,
+# because it WILL break features people expect to work (e.g. access to Relay commands) unless you
+# configure that in.
+# See docs/permissions-reference.md for a list of permissions defined by PyLink's stock plugins.
+# This defaults to true if not set.
+#permissions_merge_defaults: true
 
 servers:
     # Please note: these are only EXAMPLE link blocks. You should edit them and
