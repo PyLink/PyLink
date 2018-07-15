@@ -34,7 +34,7 @@ You can also find support via our IRC channel at `#PyLink @ irc.overdrivenetwork
 * CPython 3.4 or above (other intepreters are untested and unsupported)
 * A Unix-like operating system: PyLink is actively developed on Linux only, so we cannot guarantee that things will work properly on other systems.
 
-If you are a developer and want to help make PyLink more portable, patches are highly appreciated. Talk to us!
+If you are a developer and want to help make PyLink more portable, patches are welcome.
 
 ### Installing from source
 
@@ -44,7 +44,7 @@ If you are a developer and want to help make PyLink more portable, patches are h
     * PyYAML (`pip3 install pyyaml`)
     * ircmatch (`pip3 install ircmatch`)
     * *For password encryption*: Passlib (`pip3 install passlib`)
-    * *For enhanced cron support (by removing stale PID files): psutil (`pip3 install psutil`)
+    * *For better PID file tracking (i.e. removing stale PID files in the case of a crash)*: psutil (`pip3 install psutil`)
     * *For the servprotect plugin*: expiringdict (`pip3 install expiringdict`)
 
 2) Clone the repository: `git clone https://github.com/jlu5/PyLink && cd PyLink`
