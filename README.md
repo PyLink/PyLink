@@ -64,15 +64,6 @@ If you are a developer and want to help make PyLink more portable, patches are w
 
 3) Download or copy https://github.com/jlu5/PyLink/blob/master/example-conf.yml for an example configuration.
 
-### Installing via Ubuntu PPA (14.04/Trusty and above)
-
-Unofficial Ubuntu packages for PyLink are available via two PPAs for Ubuntu 14.04 LTS (trusty) and above.
-
-Upon installing the `pylink` package, example configuration and docs will be in `/usr/share/doc/pylink/examples` and `/usr/share/doc/pylink/docs` respectively. You can also install a local copy of the [PyLink API reference](https://pylink.github.io/) through the `pylink-doc` package.
-
-- Stable releases: [PyLink Stable PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink)
-- Nightly builds (of the devel branch): [PyLink Nightly Builds PPA](https://launchpad.net/~tacocat/+archive/ubuntu/pylink-nightly) - Only supported on Ubuntu 16.04 and higher
-
 ## Configuration
 
 1) Rename `example-conf.yml` to `pylink.yml` (or a similarly named `.yml` file) and configure your instance there. Note that the configuration format isn't finalized yet - this means that your configuration may break in an update!
