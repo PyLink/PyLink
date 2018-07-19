@@ -1946,6 +1946,8 @@ def handle_kill(irc, numeric, command, args):
                         def _relay_kill_to_kick(origirc, remoteirc, rtarget):
                             # Forward as a kick to each present relay client
                             remotechan = get_remote_channel(origirc, remoteirc, homechan)
+                            if not remotechan:
+                                return
                             rsender = get_relay_server_sid(remoteirc, irc, spawn_if_missing=False) or \
                                       remoteirc.sid
                             log.debug('(%s) relay.handle_kill: forwarding kill to %s/%s@%s as '
