@@ -175,9 +175,9 @@ def _state_cleanup_core(irc, source, channel):
             log.debug('(%s) state_cleanup: removing channel %s since we have left', irc.name, channel)
             del irc._channels[channel]
 
-        # Delete users no longer sharing a channel with us.
-        if not irc.users[source].channels:
-            log.debug('(%s) state_cleanup: removing user %s/%s who no longer shares a channel with us',
+        # Delete external users no longer sharing a channel with us.
+        if (not irc.users[source].channels) and (not irc.is_internal_client(source)):
+            log.debug('(%s) state_cleanup: removing external user %s/%s who no longer shares a channel with us',
                       irc.name, source, irc.users[source].nick)
             irc._remove_client(source)
 
