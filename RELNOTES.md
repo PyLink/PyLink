@@ -1,4 +1,4 @@
-# PyLink 2.0-rc1 (unreleased)
+# PyLink 2.0-rc1 (2018-07-18)
 
 PyLink 2.0 comes with a ton of new features, refinements, and optimizations. Here is a summary of the most interesting changes - for detailed changelogs, consult the release notes for individual snapshots below.
 
