@@ -287,6 +287,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
 
         # Only parts for the main PyLink client are actually forwarded. Others are ignored.
         if self.pseudoclient and source == self.pseudoclient.uid:
+            self._channels[channel]._clientbot_part_requested = True
             self.send('PART %s :%s' % (channel, reason))
         else:
             self.call_hooks([source, 'CLIENTBOT_PART', {'channel': channel, 'text': reason}])
@@ -1041,7 +1042,21 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self._channels[channel].remove_user(source)
         self.users[source].channels -= set(channels)
 
-        return {'channels': channels, 'text': reason}
+        # Only send the PART hook for parts not initiated by us - this is for consistency with other
+        # protocols
+        notify_channels = []
+        for channel in channels:
+            is_part_requested = getattr(self._channels[channel], '_clientbot_part_requested', False)
+            if is_part_requested:
+                log.debug('(%s) clientbot.handle_part: not forwarding part hook for %s since we requested it', self.name, channel)
+                self._channels[channel]._clientbot_part_requested = False
+                continue
+            else:
+                notify_channels.append(channel)
+
+        if notify_channels:
+            log.debug('(%s) clientbot.handle_part: returning part hook for %s (original: %s)', self.name, notify_channels, channels)
+            return {'channels': notify_channels, 'text': reason}
 
     def handle_ping(self, source, command, args):
         """
