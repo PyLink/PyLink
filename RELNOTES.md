@@ -1,3 +1,15 @@
+# PyLink 2.0.0 (2018-07-31)
+
+Changes since 2.0-rc1:
+
+- Fixed various bugs affecting Relay and Clientbot:
+    - handlers: don't delete the PyLink service UID if it leaves all cahnnels
+    - Relay sometimes sent an empty channel to kick() when relaying kills to kick
+    - Fix "Relay plugin unloaded" parts on Clientbot links causing a flood of "Clientbot was force parted" kicks
+- setup.py: Work around TypeError in distutils.util.rfc822_escape() when installing on Python 3.4
+
+For a summary of changes since 1.3.x, consult the release notes for PyLink 2.0-rc1 below.
+
 # PyLink 2.0-rc1 (2018-07-18)
 
 PyLink 2.0 comes with a ton of new features, refinements, and optimizations. Here is a summary of the most interesting changes - for detailed changelogs, consult the release notes for individual snapshots below.
