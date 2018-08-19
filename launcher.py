@@ -25,7 +25,7 @@ def _main():
     # Write and check for an existing PID file unless specifically told not to.
     if not args.no_pid:
         pidfile = '%s.pid' % conf.confname
-        has_pid = False
+        pid_exists = False
         pid = None
         if os.path.exists(pidfile):
             try:
@@ -34,22 +34,22 @@ def _main():
             except OSError:
                 log.exception("Could not read PID file %s:", pidfile)
             else:
-                has_pid = True
+                pid_exists = True
 
             if psutil is not None and os.name == 'posix':
                 # FIXME: Haven't tested this on other platforms, so not turning it on by default.
                 try:
                     proc = psutil.Process(pid)
                 except psutil.NoSuchProcess:  # Process doesn't exist!
-                    has_pid = False
+                    pid_exists = False
                     log.info("Ignoring stale PID %s from PID file %r: no such process exists.", pid, pidfile)
                 else:
                     # This PID got reused for something that isn't us?
                     if not any('pylink' in arg.lower() for arg in proc.cmdline()):
                         log.info("Ignoring stale PID %s from PID file %r: process command line %r is not us", pid, pidfile, proc.cmdline())
-                        has_pid = False
+                        pid_exists = False
 
-        if pid and has_pid:
+        if pid and pid_exists:
             if args.rehash:
                 os.kill(pid, signal.SIGUSR1)
                 log.info('OK, rehashed PyLink instance %s (config %r)', pid, args.config)
