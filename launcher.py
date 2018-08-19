@@ -17,7 +17,6 @@ except ImportError:
 args = {}
 
 def _main():
-    # FIXME: we can't pass logging on to conf until we set up the config...
     conf.load_conf(args.config)
 
     from pylinkirc.log import log
@@ -29,24 +28,28 @@ def _main():
         has_pid = False
         pid = None
         if os.path.exists(pidfile):
+            try:
+                with open(pidfile) as f:
+                    pid = int(f.read())
+            except OSError:
+                log.exception("Could not read PID file %s:", pidfile)
+            else:
+                has_pid = True
 
-            has_pid = True
             if psutil is not None and os.name == 'posix':
                 # FIXME: Haven't tested this on other platforms, so not turning it on by default.
-                with open(pidfile) as f:
-                    try:
-                        pid = int(f.read())
-                        proc = psutil.Process(pid)
-                    except psutil.NoSuchProcess:  # Process doesn't exist!
+                try:
+                    proc = psutil.Process(pid)
+                except psutil.NoSuchProcess:  # Process doesn't exist!
+                    has_pid = False
+                    log.info("Ignoring stale PID %s from PID file %r: no such process exists.", pid, pidfile)
+                else:
+                    # This PID got reused for something that isn't us?
+                    if not any('pylink' in arg.lower() for arg in proc.cmdline()):
+                        log.info("Ignoring stale PID %s from PID file %r: process command line %r is not us", pid, pidfile, proc.cmdline())
                         has_pid = False
-                        log.info("Ignoring stale PID %s from PID file %r: no such process exists.", pid, pidfile)
-                    else:
-                        # This PID got reused for something that isn't us?
-                        if not any('pylink' in arg.lower() for arg in proc.cmdline()):
-                            log.info("Ignoring stale PID %s from PID file %r: process command line %r is not us", pid, pidfile, proc.cmdline())
-                            has_pid = False
 
-        if has_pid:
+        if pid and has_pid:
             if args.rehash:
                 os.kill(pid, signal.SIGUSR1)
                 log.info('OK, rehashed PyLink instance %s (config %r)', pid, args.config)
@@ -79,7 +82,7 @@ def _main():
                 world._should_remove_pid = True
                 log.error('Cannot stop/rehash PyLink: no process with PID %s exists.', pid)
             else:
-                log.error('Cannot stop/rehash PyLink: PID file %r does not exist.', pidfile)
+                log.error('Cannot stop/rehash PyLink: PID file %r does not exist or cannot be read.', pidfile)
             sys.exit(1)
 
         world._should_remove_pid = True
