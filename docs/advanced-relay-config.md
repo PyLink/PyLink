@@ -44,16 +44,17 @@ To disable relaying for any specific event, set the template string to an empty 
 
 |Event name|Default value|
 | :---: | :--- |
-MESSAGE  | \x02[$colored\_netname]\x02 <$colored\_sender> $text
-KICK     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has kicked $target_nick from $channel ($text)
-PART     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has left $channel ($text)
-JOIN     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has joined $channel
-NICK     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost is now known as $newnick
-QUIT     | \x02[$colored\_netname]\x02 - $colored_sender$sender\_identhost has quit ($text)
-ACTION   | \x02[$colored\_netname]\x02 * $colored\_sender $text
-NOTICE   | \x02[$colored\_netname]\x02 - Notice from $colored\_sender: $text
-SQUIT    | \x02[$colored\_netname]\x02 - Netsplit lost users: $colored\_nicks
-SJOIN    | \x02[$colored\_netname]\x02 - Netjoin gained users: $colored\_nicks
+MESSAGE  | \x02[$netname]\x02 <$colored\_sender> $text
+KICK     | \x02[$netname]\x02 - $colored_sender$sender\_identhost has kicked $target_nick from $channel ($text)
+PART     | \x02[$netname]\x02 - $colored_sender$sender\_identhost has left $channel ($text)
+JOIN     | \x02[$netname]\x02 - $colored_sender$sender\_identhost has joined $channel
+NICK     | \x02[$netname]\x02 - $colored_sender$sender\_identhost is now known as $newnick
+QUIT     | \x02[$netname]\x02 - $colored_sender$sender\_identhost has quit ($text)
+ACTION   | \x02[$netname]\x02 * $colored\_sender $text
+NOTICE   | \x02[$netname]\x02 - Notice from $colored\_sender: $text
+SQUIT    | \x02[$netname]\x02 - Netsplit lost users: $colored\_nicks
+SJOIN    | \x02[$netname]\x02 - Netjoin gained users: $colored\_nicks
+MODE     | \x02[$netname]\x02 - $colored_sender$sender_identhost sets mode $modes on $channel
 PM       | PM from $sender on $netname: $text
 PNOTICE  | <$sender> $text
 
@@ -75,6 +76,7 @@ This is a example clientbot_styles config block, which you can copy *into* your 
         JOIN: "[$netname] - $sender$sender_identhost has joined $channel"
         KICK: "[$netname] - $sender$sender_identhost has kicked $target_nick from $channel ($text)"
         MESSAGE: "[$netname] <$sender> $text"
+        MODE: "[$netname] - $sender$sender_identhost sets mode $modes on $channel"
         NICK: "[$netname] - $sender$sender_identhost is now known as $newnick"
         NOTICE: "[$netname] - Notice from $sender: $text"
         PART: "[$netname] - $sender$sender_identhost has left $channel ($text)"
