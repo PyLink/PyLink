@@ -3,7 +3,8 @@ import importlib
 import types
 import threading
 
-from pylinkirc import utils, world, conf, classes
+import pylinkirc
+from pylinkirc import utils, world
 from pylinkirc.log import log
 from pylinkirc.coremods import control, permissions
 
@@ -177,7 +178,17 @@ def reloadproto(irc, source, args):
         irc.error('Not enough arguments (needs 1: protocol module name)')
         return
 
+    # Reload the dependency libraries first
+    importlib.reload(pylinkirc.classes)
+    log.debug('networks.reloadproto: reloading %s', pylinkirc.classes)
+
+    for common_name in pylinkirc.protocols.common_modules:
+        module = utils._get_protocol_module(common_name)
+        log.debug('networks.reloadproto: reloading %s', module)
+        importlib.reload(module)
+
     proto = utils._get_protocol_module(name)
+    log.debug('networks.reloadproto: reloading %s', proto)
     importlib.reload(proto)
 
     irc.reply("Done. You will have to manually disconnect and reconnect any network using the %r module for changes to apply." % name)
