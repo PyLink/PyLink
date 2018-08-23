@@ -1474,7 +1474,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             elif (their_ts < our_ts):
                 if their_ts < 750000:
                     if their_ts != 0:  # Sometimes unreal sends SJOIN with 0, don't warn for those
-                        log.warning('(%s) Possible desync? Not setting bogus TS %s on channel %s', self.name, their_ts, channel)
+                        if self.serverdata.get('ignore_ts_errors'):
+                            log.debug('(%s) Silently ignoring bogus TS %s on channel %s', self.name, their_ts, channel)
+                        else:
+                            log.warning('(%s) Possible desync? Not setting bogus TS %s on channel %s', self.name, their_ts, channel)
                 else:
                     log.debug('(%s) Resetting channel TS of %s from %s to %s (remote has lower TS)',
                               self.name, channel, our_ts, their_ts)
