@@ -1,6 +1,3 @@
-### Version Warning
-This version of the document targets the current stable branch of PyLink, and may be considerably outdated when compared to the **devel** branch where active development takes place. When developing new plugins or protocol modules, we highly recommend targeting the devel branch.
-
 # Writing plugins for PyLink
 
 Most features in PyLink (Relay, Automode, etc.) are implemented as plugins, which can be mix-and-matched on any particular instance. Without any plugins loaded, PyLink can connect to servers but won't accomplish anything useful.
