@@ -77,10 +77,10 @@ This release does *not* preserve compatibility with third-party plugins written 
 
 #### Internal improvements
 - Reading from sockets now uses a select-based backend instead of one thread per network.
-- Major optimizations to to user tracking that lets PyLink handle Relay networks of 500+ users.
-- Service bot handling was completely redone to minimize desyncs when mixing Relay and services. [issue#265](https://github.com/jlu5/PyLink/issues/265)
+- Major optimizations to user tracking that lets PyLink handle Relay networks of 500+ users.
     - This is done via a new `UserMapping` class in `pylinkirc.classes`, which stores User objects by UID and provides a `bynick` attribute mapping case-normalized nicks to lists of UIDs.
     - `classes.User.nick` is now a property, where the setter implicitly updates the `bynick` index with a pre-computed case-normalized version of the nick (also stored to `User.lower_nick`)
+- Service bot handling was completely redone to minimize desyncs when mixing Relay and services. [issue#265](https://github.com/jlu5/PyLink/issues/265)
 
 ### Changes in this RC build
 
