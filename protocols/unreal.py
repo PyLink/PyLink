@@ -106,9 +106,14 @@ class UnrealProtocol(TS6BaseProtocol):
         """Joins a PyLink client to a channel."""
         if not self.is_internal_client(client):
             raise LookupError('No such PyLink client exists.')
-        self._send_with_prefix(client, "JOIN %s" % channel)
-        self._channels[channel].users.add(client)
-        self.users[client].channels.add(channel)
+
+        # Forward this on to SJOIN, as using JOIN in Unreal S2S seems to cause TS corruption bugs.
+        # This seems to be what Unreal itself does anyways.
+        if channel not in self.channels and prefix == '':
+            prefix = 'o'  # Create new channels with the first joiner as op
+        else:
+            prefix = ''
+        self.sjoin(self.sid, channel, [(prefix, client)])
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
