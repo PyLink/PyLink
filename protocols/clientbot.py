@@ -182,7 +182,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         log.debug('(%s) kick: checking if target %s (nick: %s) is an internal client? %s',
                   self.name, target, self.get_friendly_name(target),
                   self.is_internal_client(target))
-        if self.is_internal_client(target):
+        if self.is_internal_client(target) and (self.pseudoclient and source != self.pseudoclient.uid):
             # Target was one of our virtual clients. Just remove them from the state.
             self.handle_part(target, 'KICK', [channel, reason])
 
@@ -938,9 +938,11 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         except KeyError:
             pass
 
-        if (not self.is_internal_client(source)) and not self.is_internal_server(source):
-            # Don't repeat hooks if we're the kicker.
-            return {'channel': channel, 'target': target, 'text': reason}
+        # Don't repeat hooks if we're the kicker, unless we're also the target.
+        if self.is_internal_client(source) or self.is_internal_server(source):
+            if self.pseudoclient and target != self.pseudoclient.uid:
+                return
+        return {'channel': channel, 'target': target, 'text': reason}
 
     def handle_mode(self, source, command, args):
         """Handles MODE changes."""
