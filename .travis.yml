@@ -10,7 +10,7 @@ python:
 install: python3 setup.py install
 script:
   - python3 -m compileall .
-  - cd test/ && python3 -m unittest *.py
+  - python3 -m unittest discover test/ --verbose
 
 deploy:
   provider: pypi
@@ -26,6 +26,9 @@ deploy:
     # Only deploy on tags that don't have -alpha, -beta, etc. suffixes attached
     condition: $(python3 -c 'import re,os; print(bool(re.match(r"^(\d+\.){2,}\d+$", os.environ.get("TRAVIS_TAG", ""))))') == "True"
     python: '3.6'
+
+  # Because our __init__.py is generated at build-time!
+  skip_cleanup: true
 
 notifications:
   email: false
