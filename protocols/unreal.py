@@ -26,8 +26,11 @@ class UnrealProtocol(TS6BaseProtocol):
         self.protocol_caps |= {'slash-in-nicks', 'underscore-in-hosts', 'slash-in-hosts'}
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example)
         self.casemapping = 'ascii'
-        self.proto_ver = 4017
+
+        # Unreal protocol version
+        self.proto_ver = 4019
         self.min_proto_ver = 4000
+
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
                          'SVS2MODE': 'MODE', 'SJOIN': 'JOIN', 'SETHOST': 'CHGHOST',
                          'SETIDENT': 'CHGIDENT', 'SETNAME': 'CHGNAME',
