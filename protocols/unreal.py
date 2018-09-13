@@ -23,7 +23,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.protocol_caps |= {'slash-in-nicks', 'underscore-in-hosts'}
+        self.protocol_caps |= {'slash-in-nicks', 'underscore-in-hosts', 'slash-in-hosts'}
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example)
         self.casemapping = 'ascii'
         self.proto_ver = 4017
