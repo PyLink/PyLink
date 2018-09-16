@@ -214,12 +214,8 @@ class UnrealProtocol(TS6BaseProtocol):
         self.apply_modes(target, modes)
 
         if self.is_channel(target):
-
-            # Fix assignment TypeError in the expandPUID bit (sets can't be
-            # assigned to by index).
-            modes = list(modes)
-
             modes = list(modes)  # Needed for indexing
+
             # Make sure we expand any PUIDs when sending outgoing modes...
             for idx, mode in enumerate(modes):
                 if mode[0][-1] in self.prefixmodes:
