@@ -1751,28 +1751,31 @@ def handle_mode(irc, numeric, command, args):
                 get_relay_server_sid(remoteirc, irc) or remoteirc.sid
 
             if not remoteirc.has_cap('can-spawn-clients'):
-                friendly_modes = []
+                if numeric in irc.servers and not irc.servers[numeric].has_eob:
+                    log.debug('(%s) Not relaying modes from server %s/%s to %s as it has not finished bursting',
+                              irc.name, numeric, irc.get_friendly_name(numeric), remoteirc.name)
+                else:
+                    friendly_modes = []
+                    for modepair in modes:
+                        modechar = modepair[0][-1]
+                        if modechar in irc.prefixmodes:
+                            orig_user = get_orig_user(irc, modepair[1])
+                            if orig_user and orig_user[0] == remoteirc.name:
+                                # Don't display prefix mode changes for someone on the target clientbot
+                                # link; this will either be relayed via modesync or ignored.
+                                continue
 
-                for modepair in modes:
-                    modechar = modepair[0][-1]
-                    if modechar in irc.prefixmodes:
-                        orig_user = get_orig_user(irc, modepair[1])
-                        if orig_user and orig_user[0] == remoteirc.name:
-                            # Don't display prefix mode changes for someone on the target clientbot
-                            # link; this will either be relayed via modesync or ignored.
+                            # Convert UIDs to nicks when relaying this to clientbot.
+                            modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
+                        elif modechar in irc.cmodes['*A'] and irc.is_hostmask(modepair[1]) and \
+                                conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower() != 'none':
+                            # Don't show bans if the ban is a simple n!u@h and modesync is enabled
                             continue
+                        friendly_modes.append(modepair)
 
-                        # Convert UIDs to nicks when relaying this to clientbot.
-                        modepair = (modepair[0], irc.get_friendly_name(modepair[1]))
-                    elif modechar in irc.cmodes['*A'] and irc.is_hostmask(modepair[1]) and \
-                            conf.conf.get('relay', {}).get('clientbot_modesync', 'none').lower() != 'none':
-                        # Don't show bans if the ban is a simple n!u@h and modesync is enabled
-                        continue
-                    friendly_modes.append(modepair)
-
-                if friendly_modes:
-                    # Call hooks, this is used for clientbot relay.
-                    remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': remotechan, 'modes': friendly_modes}])
+                    if friendly_modes:
+                        # Call hooks, this is used for clientbot relay.
+                        remoteirc.call_hooks([remotesender, 'RELAY_RAW_MODE', {'channel': remotechan, 'modes': friendly_modes}])
 
             if supported_modes:
                 remoteirc.mode(remotesender, remotechan, supported_modes)
