@@ -112,7 +112,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
         # Forward this on to SJOIN, as using JOIN in Unreal S2S seems to cause TS corruption bugs.
         # This seems to be what Unreal itself does anyways.
-        if channel not in self.channels and prefix == '':
+        if channel not in self.channels:
             prefix = 'o'  # Create new channels with the first joiner as op
         else:
             prefix = ''
