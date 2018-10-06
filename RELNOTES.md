@@ -1,3 +1,21 @@
+# PyLink 2.0.1 (2018-10-06)
+
+Changes since 2.0.0:
+
+#### Feature changes
+- Slashes (`/`) in hosts is now supported on UnrealIRCd
+- Added an `ignore_ts_errors` server option to suppress bogus TS warnings
+
+#### Bug fixes
+- clientbot: fix desync when the bot is told to kick itself ([issue#377](https://github.com/jlu5/PyLink/issues/377))
+- launcher: fix PID files not being read if psutil isn't installed
+- relay_clientbot no longer relays list modes being set when a server bursts ([issue#627](https://github.com/jlu5/PyLink/issues/627))
+- Fixed stray "bogus TS 0" warnings on some UnrealIRCd mode commands
+
+#### Internal improvements
+- unreal: bump protocol version to 4200 (UnrealIRCd 4.2.0)
+- unreal: use SJOIN in `join()` to work around non-deterministic TS when forwarding to other servers
+
 # PyLink 2.0.0 (2018-07-31)
 
 Changes since 2.0-rc1:
