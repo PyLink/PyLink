@@ -28,7 +28,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.casemapping = 'ascii'
 
         # Unreal protocol version
-        self.proto_ver = 4019
+        self.proto_ver = 4200
         self.min_proto_ver = 4000
 
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
