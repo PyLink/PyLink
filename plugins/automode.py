@@ -231,7 +231,7 @@ def setacc(irc, source, args):
     reply(irc, "Done. \x02%s\x02 now has modes \x02+%s\x02 in \x02%s\x02." % (mask, modes, channel))
 
     # Join the Automode bot to the channel persistently.
-    modebot.add_persistent_channel(irc, 'automode', channel)
+    modebot.add_persistent_channel(ircobj, 'automode', channel)
 
 modebot.add_cmd(setacc, aliases=('setaccess', 'set'), featured=True)
 
@@ -285,7 +285,7 @@ def delacc(irc, source, args):
     if not dbentry:
         log.debug("Automode: purging empty channel pair %s/%s", ircobj.name, channel)
         del db[ircobj.name+channel]
-        modebot.remove_persistent_channel(irc, 'automode', channel)
+        modebot.remove_persistent_channel(ircobj, 'automode', channel)
 
 modebot.add_cmd(delacc, aliases=('delaccess', 'del'), featured=True)
 
@@ -365,7 +365,7 @@ def clearacc(irc, source, args):
         del db[ircobj.name+channel]
         log.info('(%s) %s cleared modes on %s', ircobj.name, irc.get_hostmask(source), channel)
         reply(irc, "Done. Removed all Automode access entries for \x02%s\x02." % channel)
-        modebot.remove_persistent_channel(irc, 'automode', channel)
+        modebot.remove_persistent_channel(ircobj, 'automode', channel)
     else:
         error(irc, "No Automode access entries exist for \x02%s\x02." % channel)
 
