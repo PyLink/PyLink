@@ -9,9 +9,6 @@ from pylinkirc import utils, world, conf, structures
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
-# Sets the timeout to wait for as individual servers / the PyLink daemon to start up.
-TCONDITION_TIMEOUT = 2
-
 CHANNEL_DELINKED_MSG = "Channel delinked."
 RELAY_UNLOADED_MSG = "Relay plugin unloaded."
 
@@ -297,13 +294,12 @@ def get_relay_server_sid(irc, remoteirc, spawn_if_missing=True):
 
     log.debug('(%s) Grabbing spawnlocks_servers[%s] from thread %r in function %r', irc.name, irc.name,
               threading.current_thread().name, inspect.currentframe().f_code.co_name)
-    if spawnlocks_servers[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
+    with spawnlocks_servers[irc.name]:
         try:
             sid = relayservers[irc.name][remoteirc.name]
         except KeyError:
             if not spawn_if_missing:
                 log.debug('(%s) get_relay_server_sid: %s.relay doesn\'t have a known SID, ignoring.', irc.name, remoteirc.name)
-                spawnlocks_servers[irc.name].release()
                 return
 
             log.debug('(%s) get_relay_server_sid: %s.relay doesn\'t have a known SID, spawning.', irc.name, remoteirc.name)
@@ -315,7 +311,6 @@ def get_relay_server_sid(irc, remoteirc, spawn_if_missing=True):
             return
 
         log.debug('(%s) get_relay_server_sid: got %s for %s.relay (round 2)', irc.name, sid, remoteirc.name)
-        spawnlocks_servers[irc.name].release()
         return sid
 
 def _has_common_pool(sourcenet, targetnet, namespace):
@@ -433,7 +428,7 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0,
 
         log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
                   threading.current_thread().name, inspect.currentframe().f_code.co_name)
-        if spawnlocks[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
+        with spawnlocks[irc.name]:
             # Be sort-of thread safe: lock the user spawns for the current net first.
             u = None
             try:
@@ -455,8 +450,6 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0,
                 log.warning('(%s) Possible desync? Got invalid relay UID %s for %s on %s',
                             irc.name, u, irc.get_friendly_name(user), remoteirc.name)
                 u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged)
-
-            spawnlocks[irc.name].release()
 
             return u
     else:
@@ -1293,7 +1286,7 @@ def handle_quit(irc, numeric, command, args):
     log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
               threading.current_thread().name, inspect.currentframe().f_code.co_name)
 
-    if spawnlocks[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
+    with spawnlocks[irc.name]:
 
         def _handle_quit_func(irc, remoteirc, user):
             try:  # Try to quit the client. If this fails because they're missing, bail.
@@ -1303,7 +1296,6 @@ def handle_quit(irc, numeric, command, args):
 
         iterate_all_present(irc, numeric, _handle_quit_func)
         del relayusers[(irc.name, numeric)]
-        spawnlocks[irc.name].release()
 
 utils.add_hook(handle_quit, 'QUIT')
 
@@ -2026,19 +2018,17 @@ def handle_disconnect(irc, numeric, command, args):
     # them from our relay clients index.
     log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
               threading.current_thread().name, inspect.currentframe().f_code.co_name)
-    if spawnlocks[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
+    with spawnlocks[irc.name]:
         for k, v in relayusers.copy().items():
             if irc.name in v:
                 del relayusers[k][irc.name]
             if k[0] == irc.name:
                 del relayusers[k]
-        spawnlocks[irc.name].release()
-
     # SQUIT all relay pseudoservers spawned for us, and remove them
     # from our relay subservers index.
     log.debug('(%s) Grabbing spawnlocks_servers[%s] from thread %r in function %r', irc.name, irc.name,
               threading.current_thread().name, inspect.currentframe().f_code.co_name)
-    if spawnlocks_servers[irc.name].acquire(timeout=TCONDITION_TIMEOUT):
+    with spawnlocks_servers[irc.name]:
 
         def _handle_disconnect_loop(irc, remoteirc):
             name = remoteirc.name
@@ -2059,8 +2049,6 @@ def handle_disconnect(irc, numeric, command, args):
             del relayservers[irc.name]
         except KeyError:  # Already removed; ignore.
             pass
-
-        spawnlocks_servers[irc.name].release()
 
     # Announce the disconnects to every leaf channel where the disconnected network is the owner
     announcement = conf.conf.get('relay', {}).get('disconnect_announcement')
