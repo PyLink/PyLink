@@ -695,16 +695,7 @@ def get_supported_umodes(irc, remoteirc, modes):
 
 def is_relay_client(irc, user):
     """Returns whether the given user is a relay client."""
-    try:
-        if irc.users[user].remote:
-            # Is the .remote attribute set? If so, don't relay already
-            # relayed clients; that'll trigger an endless loop!
-            return True
-    except AttributeError:  # Nope, it isn't.
-        pass
-    except KeyError:  # The user doesn't exist?!?
-        return True
-    return False
+    return user in irc.users and hasattr(irc.users[user], 'remote')
 isRelayClient = is_relay_client
 
 def iterate_all(origirc, func, extra_args=(), kwargs=None):
