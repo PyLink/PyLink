@@ -14,6 +14,7 @@ import ssl
 import hashlib
 import ipaddress
 import queue
+QUEUE_FULL = queue.Full
 import functools
 import string
 import re
@@ -1921,7 +1922,12 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         if queue:
             # XXX: we don't really know how to handle blocking queues yet, so
             # it's better to not expose that yet.
-            self._queue.put_nowait(data)
+            try:
+                self._queue.put_nowait(data)
+            except QUEUE_FULL:
+                log.error('(%s) Max SENDQ exceeded (%s), disconnecting!', self.name, self._queue.maxsize)
+                self.disconnect()
+                raise
         else:
             self._send(data)
 
