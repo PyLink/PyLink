@@ -2942,3 +2942,24 @@ def chandesc(irc, source, args):
             irc.reply('Done. Updated the description for \x02%s\x02.' % channel)
     else:
         irc.reply('Description for \x02%s\x02: %s' % (channel, db[relay].get('description') or  '\x1D(none)\x1D'))
+
+@utils.add_cmd
+def forcetag(irc, source, args):
+    """<nick>
+
+    Attempts to forcetag the given nick, if it is a relay client.
+    """
+    try:
+        nick = args[0]
+    except IndexError:
+        irc.error("Not enough arguments. Needs 1: target nick.")
+        return
+
+    permissions.check_permissions(irc, source, ['relay.forcetag'])
+
+    uid = irc.nick_to_uid(nick) or nick
+    result = forcetag_nick(irc, uid)
+    if result:
+        irc.reply('Done. Forcetagged %s to %s' % (nick, result))
+    else:
+        irc.error('User %s is already tagged or not a relay client.' % nick)
