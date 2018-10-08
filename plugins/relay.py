@@ -48,13 +48,9 @@ def initialize_all(irc):
                 if network == irc.name:
                     initialize_channel(irc, channel)
 
-    # Wait for all IRC objects to be created first. This prevents
-    # relay servers from being spawned too early (before server authentication),
-    # which would break connections.
-    if world.started.wait(TCONDITION_TIMEOUT):
-        t = threading.Thread(target=_initialize_all, daemon=True,
-                             name='relay initialize_all thread from network %r' % irc.name)
-        t.start()
+    t = threading.Thread(target=_initialize_all, daemon=True,
+                         name='relay initialize_all thread from network %r' % irc.name)
+    t.start()
 
 def main(irc=None):
     """Main function, called during plugin loading at start."""
