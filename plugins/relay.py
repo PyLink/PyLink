@@ -2100,20 +2100,37 @@ def handle_disconnect(irc, numeric, command, args):
 
 utils.add_hook(handle_disconnect, "PYLINK_DISCONNECT")
 
-def nick_collide(irc, target):
+def forcetag_nick(irc, target):
     """
-    Handles nick collisions on relay clients and attempts to fix nicks.
-    """
-    remotenet, remoteuser = get_orig_user(irc, target)
-    remoteirc = world.networkobjects[remotenet]
+    Force tags the target UID's nick, if it is a relay client.
 
-    nick = remoteirc.users[remoteuser].nick
+    This method is used to handle nick collisions between relay clients and outside ones.
+
+    Returns the new nick if the operation succeeded; otherwise returns False.
+    """
+    remote = get_orig_user(irc, target)
+    if remote is None:
+        return False
+
+    remotenet, remoteuser = remote
+    try:
+        remoteirc = world.networkobjects[remotenet]
+        nick = remoteirc.users[remoteuser].nick
+    except KeyError:
+        return False
 
     # Force a tagged nick by setting times_tagged to 1.
     newnick = normalize_nick(irc, remotenet, nick, times_tagged=1)
-    log.debug('(%s) relay.nick_collide: Fixing nick of relay client %r (%s) to %s',
+    log.debug('(%s) relay.forcetag_nick: Fixing nick of relay client %r (%s) to %s',
               irc.name, target, nick, newnick)
+
+    if nick == newnick:
+        log.debug('(%s) relay.forcetag_nick: New nick %s for %r matches old nick %s',
+                  irc.name, newnick, target, nick)
+        return False
+
     irc.nick(target, newnick)
+    return newnick
 
 def handle_save(irc, numeric, command, args):
     target = args['target']
@@ -2122,7 +2139,7 @@ def handle_save(irc, numeric, command, args):
         # Nick collision!
         # It's one of our relay clients; try to fix our nick to the next
         # available normalized nick.
-        nick_collide(irc, target)
+        forcetag_nick(irc, target)
     else:
         # Somebody else on the network (not a PyLink client) had a nick collision;
         # relay this as a nick change appropriately.
@@ -2137,7 +2154,7 @@ def handle_svsnick(irc, numeric, command, args):
     target = args['target']
 
     if is_relay_client(irc, target):
-        nick_collide(irc, target)
+        forcetag_nick(irc, target)
 
 utils.add_hook(handle_svsnick, "SVSNICK")
 
