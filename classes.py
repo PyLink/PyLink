@@ -911,13 +911,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                     # for ops).
                     for pmode, pmodelist in prefixmodes.items():
                         if pmode in supported_modes and real_mode[0] == supported_modes[pmode]:
-                            log.debug('(%s) Initial prefixmodes list (%s): %s', self.name, pmode, pmodelist)
                             if mode[0][0] == '+':
                                 pmodelist.add(mode[1])
                             else:
                                 pmodelist.discard(mode[1])
-
-                            log.debug('(%s) Final prefixmodes list (%s): %s', self.name, pmode, pmodelist)
 
                 if real_mode[0] in self.prefixmodes:
                     # Don't add prefix modes to Channel.modes; they belong in the
