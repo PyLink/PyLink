@@ -737,6 +737,9 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
     def _relay_joins_loop(irc, remoteirc, channel, users, ts, burst=True):
         queued_users = []
 
+        if not remoteirc.connected.is_set():
+            return  # Remote network is not ready yet.
+
         remotechan = get_remote_channel(irc, remoteirc, channel)
         if remotechan is None:
             # If there is no link on the current network for the channel in question,
