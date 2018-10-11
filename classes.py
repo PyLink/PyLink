@@ -1931,7 +1931,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def _process_queue(self):
         """Loop to process outgoing queue data."""
         while True:
-            throttle_time = self.serverdata.get('throttle_time', 0.005)
+            throttle_time = self.serverdata.get('throttle_time', 0)
             if not self._aborted.wait(throttle_time):
                 data = self._queue.get()
                 if data is None:
