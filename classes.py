@@ -1396,7 +1396,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             if regexp.fullmatch(target) and ((not channel) or channel in userobj.channels):
                 yield uid
 
-    def make_channel_ban(self, uid, ban_type='ban'):
+    def make_channel_ban(self, uid, ban_type='ban', ban_style=None):
         """Creates a hostmask-based ban for the given user.
 
         Ban exceptions, invite exceptions quiets, and extbans are also supported by setting ban_type
@@ -1407,8 +1407,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # XXX: support slicing hosts so things like *!ident@*.isp.net are possible. This is actually
         #      more annoying to do than it appears because of vHosts using /, IPv6 addresses
         #      (cloaked and uncloaked), etc.
-        ban_style = self.serverdata.get('ban_style') or conf.conf['pylink'].get('ban_style') or \
-            '*!*@$host'
+        ban_style = ban_style or self.serverdata.get('ban_style') or \
+            conf.conf['pylink'].get('ban_style') or '*!*@$host'
 
         template = string.Template(ban_style)
         banhost = template.safe_substitute(self.users[uid].get_fields())
