@@ -46,6 +46,14 @@ pylink:
     # be merged into that of the main PyLink service bot.
     #spawn_services: true
 
+    # Determines the default ban style that PyLink should use for setting bans (e.g. in Antispam)
+    # $ident, $host, $realhost, $ip, and $nick are among the supported substitutions here.
+    # This defaults to "*!*@$host" if not set.
+    # You should take extra caution that 1) the resulting mask is a valid nick!user@host
+    #                                    2) generated bans actually match the target user
+    #ban_style: "*!*@$host"
+    #ban_style: "*!$ident@$host"  # A possible alternative
+
     # Defines extra directories to look up plugins and protocol modules in.
     # Environment variables (e.g. $HOME) and home folders (~) are expanded here, in that order.
     #plugin_dirs: ["~/my-plugins", "~/pylink-contrib-modules/plugins"]
