@@ -1411,7 +1411,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             '*!*@$host'
 
         template = string.Template(ban_style)
-        banhost = template.safe_substitute(ban_style, **self.users[uid].__dict__)
+        banhost = template.safe_substitute(self.users[uid].get_fields())
         assert self.is_hostmask(banhost), "Ban mask %r is not a valid hostmask!" % banhost
 
         if ban_type in self.cmodes:
