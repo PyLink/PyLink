@@ -951,8 +951,12 @@ stats:
         # Sets the punishment that Antispam's text spamfilter should use.
         # Valid values include "kill", "kick", "ban", "quiet", and combinations of these strung
         # together with "+" (e.g. "kick+ban"). Defaults to "kick+ban+block" if not set.
-        # If you want Antispam to also monitor PM spam, you will want to change this to something
-        # not channel-specific (such as "kill" or "block").
+        # If you want to use Antispam with PM monitoring (see the "watch_pms" option below), you
+        # will want to include at least one punishment that is not channel-specific
+        # ("kill" or "block").
+        # Punishments not supported in a context or network (e.g. kicking for PM spam or "quiet"
+        # on a network that doesn't support it) will be silently dropped if others succeed.
+        # If no punishments succeed, then a warning will be logged.
         #punishment: kick+ban+block
 
         # Sets the kick / kill message used when the text spamfilter is triggered.
