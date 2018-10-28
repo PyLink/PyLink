@@ -150,7 +150,7 @@ class ServiceBot():
         else:
             raise NotImplementedError("Network specific plugins not supported yet.")
 
-    def join(self, irc, channels, ignore_empty=True):
+    def join(self, irc, channels, ignore_empty=None):
         """
         Joins the given service bot to the given channel(s). "channels" can be
         an iterable of channel names or the name of a single channel (type 'str').
@@ -160,8 +160,8 @@ class ServiceBot():
         marked persistent). This option is automatically *disabled* on networks
         where we cannot monitor channels that we're not in (e.g. Clientbot).
 
-        Before PyLink 2.0-alpha3, this function implicitly marks channels i
-        receives to be persistent - this is no longer the case!
+        Before PyLink 2.0-alpha3, this function implicitly marked channels it
+        receives to be persistent. This behaviour is no longer the case.
         """
         uid = self.uids.get(irc.name)
         if uid is None:
@@ -173,6 +173,10 @@ class ServiceBot():
         if irc.has_cap('visible-state-only'):
             # Disable dynamic channel joining on networks where we can't monitor channels for joins.
             ignore_empty = False
+        elif ignore_empty is None:
+            ignore_empty = not (irc.serverdata.get('join_empty_channels',
+                                                   conf.conf['pylink'].get('join_empty_channels',
+                                                                           False)))
 
         # Specify modes to join the services bot with.
         joinmodes = irc.get_service_option(self.name, 'joinmodes', default='')

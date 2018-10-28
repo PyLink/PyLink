@@ -141,6 +141,8 @@ def _services_dynamic_part(irc, channel):
     if irc.has_cap('visible-state-only'):
         # No-op on bot-only servers.
         return
+    if irc.serverdata.get('join_empty_channels', conf.conf['pylink'].get('join_empty_channels', False)):
+        return
 
     # If all remaining users in the channel are service bots, make them all part.
     if all(irc.get_service_bot(u) for u in irc.channels[channel].users):

@@ -80,6 +80,11 @@ pylink:
     # of all database-enabled plugins to take effect.
     #save_delay: 300
 
+    # Determines whether that service bots should join preconfigured channels even if they are empty.
+    # This can also be overriden per-network via the "join_empty_channels" variable.
+    # This defaults to False if not set.
+    #join_empty_channels: false
+
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
     # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
