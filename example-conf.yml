@@ -59,7 +59,8 @@ pylink:
     #plugin_dirs: ["~/my-plugins", "~/pylink-contrib-modules/plugins"]
     #protocol_dirs: ["~/pylink-contrib-modules/protocols"]
 
-    # Determines whether we should show unknown command errors for service bots. Defaults to True.
+    # Determines whether service bots should return unknown command errors. Defaults to true if not
+    # speciifed.
     #show_unknown_commands: true
 
     # Determines whether hideoper modes should be respected in WHOIS replies.
