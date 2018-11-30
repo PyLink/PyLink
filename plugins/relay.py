@@ -2847,7 +2847,8 @@ def modedelta(irc, source, args):
 
         if modes:
             old_modes = db[relay].get('modedelta', [])
-            db[relay]['modedelta'] = target_modes = modes
+            db[relay]['modedelta'] = modes
+            target_modes = modes.copy()
             log.debug('channel: %s', str(channel))
             irc.reply('Set the mode delta for \x02%s\x02 to: %s' % (channel, modes))
         else: # No modes given, so show the list.
@@ -2867,8 +2868,7 @@ def modedelta(irc, source, args):
             continue
 
         remote_modes = []
-        # For each leaf channel, unset the old mode delta and set the new one
-        # if applicable.
+        # For each leaf channel, unset the old mode delta and set the new one if applicable.
         log.debug('(%s) modedelta target modes for %s/%s: %s', irc.name, remotenet, remotechan, target_modes)
         for modepair in target_modes:
             modeprefix = modepair[0][0]
