@@ -1,6 +1,6 @@
 # PyLink hooks reference
 
-***Last updated for 2.0.0 (2018-07-11).***
+***Last updated for 2.1-dev (2018-12-27).***
 
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
 Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
@@ -89,7 +89,7 @@ The following hooks represent regular IRC commands sent between servers.
 - **QUIT**: `{'text': 'Quit: Bye everyone!'}`
     - `text` corresponds to the quit reason.
 
-- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X', 'nicks': {'#channel1: ['tester1', 'tester2'], '#channel3': ['somebot']}, 'serverdata': Server(...)`
+- **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X', 'nicks': {'#channel1: ['tester1', 'tester2'], '#channel3': ['somebot']}, 'serverdata': Server(...), 'affected_servers': ['SID1', 'SID2', 'SID3']`
     - `target` is the SID of the server being split, while `name` is the server's name.
     - `users` is a list of all UIDs affected by the netsplit. `nicks` maps channels to lists of nicks affected.
     - `serverdata` provides the `classes.Server` object of the server that split off.
@@ -161,6 +161,8 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
 At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
 
 ## Changes
+* 2018-12-27 (2.1-dev)
+   - Add the `affected_servers` argument to SQUIT hooks.
 * 2018-07-11 (2.0.0)
    - Version bump for 2.0 stable release; no meaningful content changes.
 * 2018-01-13 (2.0-alpha2)

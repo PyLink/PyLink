@@ -142,6 +142,7 @@ class IRCCommonProtocol(IRCNetwork):
             raise ProtocolError('SQUIT received: (reason: %s)' % args[-1])
 
         affected_users = []
+        affected_servers = [split_server]
         affected_nicks = defaultdict(list)
         log.debug('(%s) Splitting server %s (reason: %s)', self.name, split_server, args[-1])
 
@@ -162,6 +163,7 @@ class IRCCommonProtocol(IRCNetwork):
                 args = self._squit(sid, 'SQUIT', [sid, "0",
                                    "PyLink: Automatically splitting leaf servers of %s" % sid])
                 affected_users += args['users']
+                affected_servers += args['affected_servers']
 
         for user in self.servers[split_server].users.copy():
             affected_users.append(user)
@@ -185,7 +187,7 @@ class IRCCommonProtocol(IRCNetwork):
 
         return {'target': split_server, 'users': affected_users, 'name': sname,
                 'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
-                'channeldata': old_channels}
+                'channeldata': old_channels, 'affected_servers': affected_servers}
 
     @staticmethod
     def parse_isupport(args, fallback=''):
