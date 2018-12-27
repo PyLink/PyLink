@@ -15,8 +15,8 @@ RELAY_UNLOADED_MSG = "Relay plugin unloaded."
 ### GLOBAL (statekeeping) VARIABLES
 relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
-spawnlocks = defaultdict(threading.RLock)
-spawnlocks_servers = defaultdict(threading.RLock)
+spawnlocks = defaultdict(threading.Lock)
+spawnlocks_servers = defaultdict(threading.Lock)
 channels_init_in_progress = defaultdict(threading.Event)
 
 dbname = conf.get_database_name('pylinkrelay')
@@ -351,7 +351,7 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
         # Try to get the oper type, adding an "(on <networkname>)" suffix similar to what
         # Janus does.
         if hasattr(userobj, 'opertype'):
-            log.debug('(%s) relay.get_remote_user: setting OPERTYPE of client for %r to %s',
+            log.debug('(%s) spawn_relay_user: setting OPERTYPE of client for %r to %s',
                       irc.name, user, userobj.opertype)
             opertype = userobj.opertype
         else:
@@ -440,22 +440,11 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0,
                 if spawn_if_missing:
                     u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged, reuse_sid=reuse_sid)
 
-            # This is a sanity check to make sure netsplits and other state resets
-            # don't break the relayer. If it turns out there was a client in our relayusers
-            # cache for the requested UID, but it doesn't match the request,
-            # assume it was a leftover from the last split and replace it with a new one.
-            # XXX: this technically means that PyLink is desyncing somewhere, and that we should
-            # fix this in core properly...
-            if u and ((u not in remoteirc.users) or remoteirc.users[u].remote != (irc.name, user)):
-                log.warning('(%s) Possible desync? Got invalid relay UID %s for %s on %s',
-                            irc.name, u, irc.get_friendly_name(user), remoteirc.name)
-                u = spawn_relay_user(irc, remoteirc, user, times_tagged=times_tagged)
-
             return u
     else:
         log.debug('(%s) skipping spawn_relay_user(%s, %s, %s, ...); the local server (%s) is not ready yet',
                   irc.name, irc.name, remoteirc.name, user, irc.name)
-        log.debug('(%s) spawn_relay_user: current thread is %s',
+        log.debug('(%s) get_remote_user: current thread is %s',
                   irc.name, threading.current_thread().name)
 
 def get_orig_user(irc, user, targetirc=None):
