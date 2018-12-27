@@ -33,7 +33,7 @@ Hook handlers may raise exceptions without blocking the event from reaching furt
 ### Hook priorities
 The `priority` option in `utils.add_hook()` allows setting a hook handler's priority when binding it. When multiple modules bind to one hook command, handlers are called in order of decreasing priority (i.e. highest first).
 
-There is no standard for hook priorities as of 2.0; instead they are declared as necessary. Some priority values used in 2.0 are shown here for reference:
+There is no standard for hook priorities as of 2.0; instead they are declared as necessary. Some priority values used in 2.0 are shown here for reference (the default priority for handlers is **100**):
 
 | Module            | Commands        | Priority | Description |
 |-------------------|-----------------|----------|-------------|
