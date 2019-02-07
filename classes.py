@@ -1111,7 +1111,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             modelist = '+' + modelist
         if args:
             # Add the args if there are any.
-            modelist += ' %s' % ' '.join(args)
+            modelist += ' '
+            modelist += ' '.join((str(arg) for arg in args))
         return modelist
 
     @classmethod
