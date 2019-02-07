@@ -112,13 +112,13 @@ def handle_stats(irc, source, command, args):
         # 243/RPL_STATSOLINE: "O <hostmask> * <nick> [:<info>]"
         # New style accounts only!
         for accountname, accountdata in conf.conf['login'].get('accounts', {}).items():
-            _num(243, "O %s * %s :network_filter:%s require_oper:%s" %
-                 (' '.join(accountdata.get('hosts', [])) or '*@*',
-                  accountname,
-                  ','.join(accountdata.get('networks', [])) or '*',
-                  bool(accountdata.get('require_oper'))
+            networks = accountdata.get('networks', [])
+            if irc.name in networks or not networks:
+                _num(243, "O %s * %s :%s" %
+                     ' '.join(accountdata.get('hosts', ['*@*']),
+                     accountname,
+                     'needoper' if accountdata.get('require_oper') else '')
                  )
-                )
 
     elif stats_type == 'u':
         # 242/RPL_STATSUPTIME: ":Server Up <days> days <hours>:<minutes>:<seconds>"
