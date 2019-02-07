@@ -1410,9 +1410,10 @@ def handle_messages(irc, numeric, command, args):
     avail_prefixes = {v: k for k, v in irc.prefixmodes.items()}
     prefixes = []
     # Split up @#channel prefixes and the like into their prefixes and target components
-    while target and target[0] in avail_prefixes:
-        prefixes.append(avail_prefixes[target[0]])
-        target = target[1:]
+    if isinstance(target, str):
+        while target and target[0] in avail_prefixes:
+            prefixes.append(avail_prefixes[target[0]])
+            target = target[1:]
 
     log.debug('(%s) relay.handle_messages: splitting target %r into prefixes=%r, target=%r',
               irc.name, args['target'], prefixes, target)

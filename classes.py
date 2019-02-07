@@ -725,7 +725,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     @functools.lru_cache(maxsize=8192)
     def to_lower(self, text):
-        if not text:
+        if (not text) or (not isinstance(text, str)):
             return text
         if self.casemapping == 'rfc1459':
             text = text.replace('{', '[')
@@ -754,7 +754,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     def _isASCII(s):
         """Returns whether the given string only contains non-whitespace ASCII characters."""
         chars = string.ascii_letters + string.digits + string.punctuation
-        return all(char in chars for char in s)
+        return all(char in chars for char in str(s))
 
     @classmethod
     def is_server_name(cls, s):

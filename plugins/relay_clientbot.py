@@ -26,6 +26,8 @@ def color_text(s):
     """
     Returns a colorized version of the given text based on a simple hash algorithm.
     """
+    if not s:
+        return s
     colors = ('03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '15')
     hash_output = hash(s.encode())
     num = hash_output % len(colors)
