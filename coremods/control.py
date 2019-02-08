@@ -108,6 +108,10 @@ def rehash():
     for network, ircobj in world.networkobjects.copy().items():
         # Server was removed from the config file, disconnect them.
         log.debug('rehash: checking if %r is in new conf still.', network)
+        if hasattr(ircobj, 'virtual_parent'):
+            log.debug('rehash: not removing network object %r since it has a virtual parent.', network)
+            continue
+
         if network not in new_conf['servers']:
             log.debug('rehash: removing connection to %r (removed from config).', network)
             remove_network(ircobj)
