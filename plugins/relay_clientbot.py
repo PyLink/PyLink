@@ -54,7 +54,7 @@ def cb_relay_core(irc, source, command, args):
         # Be less floody on startup: don't relay non-PRIVMSGs for the first X seconds after connect.
         startup_delay = relay_conf.get('clientbot_startup_delay', 20)
 
-        target = args['target']
+        target = args.get('target')
         if isinstance(target, str):
             # Remove STATUSMSG prefixes (e.g. @#channel) before checking whether target is a channel
             target = target.lstrip(''.join(irc.prefixmodes.values()))
