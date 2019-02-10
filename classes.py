@@ -1507,7 +1507,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         """
         log.debug('(%s) _expandPUID: got uid %s', self.name, uid)
         # TODO: stop hardcoding @ as separator
-        if uid and '@' in uid:
+        if uid and isinstance(uid, str) and '@' in uid:
             if uid in self.users:
                 # UID exists and has a @ in it, meaning it's a PUID (orignick@counter style).
                 # Return this user's nick accordingly.
