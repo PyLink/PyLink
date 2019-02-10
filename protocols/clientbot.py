@@ -21,17 +21,210 @@ FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 IRCV3_CAPABILITIES = {'multi-prefix', 'sasl', 'away-notify', 'userhost-in-names', 'chghost', 'account-notify',
                       'account-tag', 'extended-join'}
 
-class ClientbotWrapperProtocol(IRCCommonProtocol):
+class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts',
-                              'ssl-should-verify'}
-
-        self.has_eob = False
+        self.protocol_caps = {'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
         # Remove conf key checks for those not needed for Clientbot.
         self.conf_keys -= {'recvpass', 'sendpass', 'sid', 'sidrange', 'hostname'}
+
+    def _check_puid_collision(self, nick):
+        """
+        Checks to make sure a nick doesn't clash with a PUID.
+        """
+        if nick in self.users or nick in self.servers:
+            raise ProtocolError("Got bad nick %s from uplink which clashes with a PUID. Is someone trying to spoof users?" % nick)
+
+    def _get_UID(self, nick, ident=None, host=None):
+        """
+        Fetches the UID for the given nick, creating one if it does not already exist.
+
+        Limited (internal) nick collision checking is done here to prevent Clientbot users from
+        being confused with virtual clients, and vice versa."""
+        self._check_puid_collision(nick)
+
+        idsource = self.nick_to_uid(nick)
+
+        if self.is_internal_client(idsource) and self.pseudoclient and idsource != self.pseudoclient.uid:
+            # We got a message from a client with the same nick as an internal client.
+            # Fire a virtual nick collision to prevent mixing senders.
+            log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
+            self.call_hooks([self.sid, 'SAVE', {'target': idsource}])
+
+            # Clear the UID for this nick and spawn a new client for the nick that was just freed.
+            idsource = None
+
+        if idsource is None:
+            # If this sender doesn't already exist, spawn a new client.
+            idsource = self.spawn_client(nick, ident or 'unknown', host or 'unknown',
+                                        server=self.uplink, realname=FALLBACK_REALNAME).uid
+        return idsource
+
+    def away(self, source, text):
+        """STUB: sets away messages for internal clients."""
+        log.debug('(%s) away: target is %s, internal client? %s', self.name, source, self.is_internal_client(source))
+
+        if self.users[source].away != text:
+            if not self.is_internal_client(source):
+                log.debug('(%s) away: sending AWAY hook from %s with text %r', self.name, source, text)
+                self.call_hooks([source, 'AWAY', {'text': text}])
+
+            self.users[source].away = text
+
+    def join(self, client, channel):
+        """STUB: sends a virtual join (CLIENTBOT_JOIN) from the client to channel."""
+        self._channels[channel].users.add(client)
+        self.users[client].channels.add(channel)
+
+        if self.pseudoclient and client != self.pseudoclient:
+            log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.name, client,
+                      self.get_friendly_name(client), channel)
+            self.call_hooks([client, 'CLIENTBOT_JOIN', {'channel': channel}])
+
+    def kick(self, source, channel, target, reason=''):
+        """STUB: rejoins users on kick attempts, for server transports where kicking users from channels is not implemented."""
+        if self.is_internal_client(target):
+            log.info("(%s) Rejoining user %s to %s since kicks are not supported here.", self.name, target, channel)
+            self.join(target, channel)
+        elif channel in self.channels:
+            self.channels[channel].remove_user(target)
+            self.users[target].channels.discard(channel)
+            self.call_hooks([source, 'CLIENTBOT_KICK', {'channel': channel, 'target': target, 'text': reason}])
+        else:
+            log.warning('(%s) Possible desync? Tried to kick() on non-existent channel %s', self.name, channel)
+
+    def message(self, source, target, text, notice=False):
+        """STUB: Sends messages to the target."""
+        if self.pseudoclient and self.pseudoclient.uid != source:
+            self.call_hooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
+
+    def nick(self, source, newnick):
+        """STUB: sends a virtual nick change (CLIENTBOT_NICK)."""
+        assert source, "No source given?"
+        self.call_hooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
+        self.users[source].nick = newnick
+
+    def notice(self, source, target, text):
+        """Sends notices to the target."""
+        # Wrap around message(), which does all the text formatting for us.
+        self.message(source, target, text, notice=True)
+
+    def sjoin(self, server, channel, users, ts=None, modes=set()):
+        """STUB: bursts joins from a server."""
+        # This stub only updates the state internally with the users given. modes and TS are currently ignored.
+        puids = {u[-1] for u in users}
+        for user in puids:
+            self.users[user].channels.add(channel)
+
+        self._channels[channel].users |= puids
+        nicks = {self.get_friendly_name(u) for u in puids}
+        self.call_hooks([server, 'CLIENTBOT_SJOIN', {'channel': channel, 'nicks': nicks}])
+
+    # Note: clientbot clients are initialized with umode +i by default
+    def spawn_client(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
+            server=None, ip='0.0.0.0', realname='', ts=None, opertype=None,
+            manipulatable=False):
+        """
+        STUB: Pretends to spawn a new client with a subset of the given options.
+        """
+
+        server = server or self.sid
+        uid = self.uidgen.next_uid(prefix=nick)
+
+        ts = ts or int(time.time())
+
+        log.debug('(%s) spawn_client stub called, saving nick %s as PUID %s', self.name, nick, uid)
+        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
+                                   manipulatable=manipulatable, realhost=realhost, ip=ip)
+        self.servers[server].users.add(uid)
+
+        self.apply_modes(uid, modes)
+
+        return u
+
+    def spawn_server(self, name, sid=None, uplink=None, desc=None, internal=True):
+        """
+        STUB: Pretends to spawn a new server with a subset of the given options.
+        """
+        if internal:
+            # Use a custom pseudo-SID format for internal servers to prevent any server name clashes
+            sid = self.sidgen.next_sid(prefix=name)
+        else:
+            # For others servers, just use the server name as the SID.
+            sid = name
+
+        self.servers[sid] = Server(self, uplink, name, internal=internal)
+        return sid
+
+    def squit(self, source, target, text):
+        """STUB: SQUITs a server."""
+        # What this actually does is just handle the SQUIT internally: i.e.
+        # Removing pseudoclients and pseudoservers.
+        squit_data = self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
+
+        if squit_data and squit_data.get('nicks'):
+            self.call_hooks([source, 'CLIENTBOT_SQUIT', squit_data])
+
+    def part(self, source, channel, reason=''):
+        """STUB: Parts a user from a channel."""
+        self._channels[channel].remove_user(source)
+        self.users[source].channels.discard(channel)
+        self.call_hooks([source, 'CLIENTBOT_PART', {'channel': channel, 'text': reason}])
+
+    def quit(self, source, reason):
+        """STUB: Quits a client."""
+        userdata = self.users[source]
+        self._remove_client(source)
+        self.call_hooks([source, 'CLIENTBOT_QUIT', {'text': reason, 'userdata': userdata}])
+
+    def _stub(self, *args):
+        """Stub outgoing command function (does nothing)."""
+        return
+    # Note: invite() and mode() are implemented in ClientbotWrapperProtocol below
+    invite = mode = topic = topic_burst = _stub  # XXX: incomplete
+
+    def _stub_raise(self, *args):
+        """Stub outgoing command function (raises an error)."""
+        raise NotImplementedError("Not supported on Clientbot")
+    kill = knock = numeric = _stub_raise
+
+    def update_client(self, target, field, text):
+        """Updates the known ident, host, or realname of a client."""
+        if target not in self.users:
+            log.warning("(%s) Unknown target %s for update_client()", self.name, target)
+            return
+
+        u = self.users[target]
+
+        if field == 'IDENT' and u.ident != text:
+            u.ident = text
+            if not self.is_internal_client(target):
+                # We're updating the host of an external client in our state, so send the appropriate
+                # hook payloads.
+                self.call_hooks([self.sid, 'CHGIDENT',
+                                   {'target': target, 'newident': text}])
+        elif field == 'HOST' and u.host != text:
+            u.host = text
+            if not self.is_internal_client(target):
+                self.call_hooks([self.sid, 'CHGHOST',
+                                   {'target': target, 'newhost': text}])
+        elif field in ('REALNAME', 'GECOS') and u.realname != text:
+            u.realname = text
+            if not self.is_internal_client(target):
+                self.call_hooks([self.sid, 'CHGNAME',
+                                   {'target': target, 'newgecos': text}])
+        else:
+            return  # Nothing changed
+
+class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.protocol_caps |= {'visible-state-only', 'ssl-should-verify'}
+
+        self.has_eob = False
 
         # This is just a fallback. Actual casemapping is fetched by handle_005()
         self.casemapping = 'ascii'
@@ -109,52 +302,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                                  ident=ident, realname=realname, host=self.hostname())
         self.users[self.pseudoclient.uid] = self.pseudoclient
 
-    # Note: clientbot clients are initialized with umode +i by default
-    def spawn_client(self, nick, ident='unknown', host='unknown.host', realhost=None, modes={('i', None)},
-            server=None, ip='0.0.0.0', realname='', ts=None, opertype=None,
-            manipulatable=False):
-        """
-        STUB: Pretends to spawn a new client with a subset of the given options.
-        """
-
-        server = server or self.sid
-        uid = self.uidgen.next_uid(prefix=nick)
-
-        ts = ts or int(time.time())
-
-        log.debug('(%s) spawn_client stub called, saving nick %s as PUID %s', self.name, nick, uid)
-        u = self.users[uid] = User(self, nick, ts, uid, server, ident=ident, host=host, realname=realname,
-                                   manipulatable=manipulatable, realhost=realhost, ip=ip)
-        self.servers[server].users.add(uid)
-
-        self.apply_modes(uid, modes)
-
-        return u
-
-    def spawn_server(self, name, sid=None, uplink=None, desc=None, internal=True):
-        """
-        STUB: Pretends to spawn a new server with a subset of the given options.
-        """
-        if internal:
-            # Use a custom pseudo-SID format for internal servers to prevent any server name clashes
-            sid = self.sidgen.next_sid(prefix=name)
-        else:
-            # For others servers, just use the server name as the SID.
-            sid = name
-
-        self.servers[sid] = Server(self, uplink, name, internal=internal)
-        return sid
-
-    def away(self, source, text):
-        """STUB: sets away messages for clients internally."""
-        log.debug('(%s) away: target is %s, internal client? %s', self.name, source, self.is_internal_client(source))
-
-        if self.users[source].away != text:
-            if not self.is_internal_client(source):
-                log.debug('(%s) away: sending AWAY hook from %s with text %r', self.name, source, text)
-                self.call_hooks([source, 'AWAY', {'text': text}])
-
-            self.users[source].away = text
 
     def invite(self, client, target, channel):
         """Invites a user to a channel."""
@@ -169,12 +316,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if self.pseudoclient and client == self.pseudoclient.uid:
             self.send('JOIN %s' % channel)
         else:
-            self._channels[channel].users.add(client)
-            self.users[client].channels.add(channel)
-
-            log.debug('(%s) join: faking JOIN of client %s/%s to %s', self.name, client,
-                      self.get_friendly_name(client), channel)
-            self.call_hooks([client, 'CLIENTBOT_JOIN', {'channel': channel}])
+            # Pass on a virtual JOIN as a hook
+            super().join(client, channel)
 
     def kick(self, source, channel, target, reason=''):
         """Sends channel kicks."""
@@ -191,7 +334,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             return
 
         self.send('KICK %s %s :<%s> %s' % (channel, self._expandPUID(target),
-                      self.get_friendly_name(source), reason))
+                  self.get_friendly_name(source), reason))
 
         # Don't update our state here: wait for the IRCd to send an acknowledgement instead.
         # There is essentially a 3 second wait to do this, as we send NAMES with a delay
@@ -215,7 +358,8 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         if self.pseudoclient and self.pseudoclient.uid == source:
             self.send('%s %s :%s' % (command, self._expandPUID(target), text))
         else:
-            self.call_hooks([source, 'CLIENTBOT_MESSAGE', {'target': target, 'is_notice': notice, 'text': text}])
+            # Pass the message on as a hook
+            super().message(source, target, text, notice=notice)
 
     def mode(self, source, channel, modes, ts=None):
         """Sends channel MODE changes."""
@@ -254,20 +398,12 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self.send('NICK :%s' % newnick)
             # No state update here: the IRCd will respond with a NICK acknowledgement if the change succeeds.
         else:
-            assert source, "No source given?"
-            # Check that the new nick exists and isn't the same client as the sender
-            # (for changing nick case)
+            # Check that the new nick exists and isn't the same client as the sender (for changing nick case)
             nick_uid = self.nick_to_uid(newnick)
             if nick_uid and nick_uid != source:
                 log.warning('(%s) Blocking attempt from virtual client %s to change nick to %s (nick in use)', self.name, source, newnick)
                 return
-            self.call_hooks([source, 'CLIENTBOT_NICK', {'newnick': newnick}])
-            self.users[source].nick = newnick
-
-    def notice(self, source, target, text):
-        """Sends notices to the target."""
-        # Wrap around message(), which does all the text formatting for us.
-        self.message(source, target, text, notice=True)
+            super().nick(source, newnick)
 
     def _ping_uplink(self):
         """
@@ -290,13 +426,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             self._channels[channel]._clientbot_part_requested = True
             self.send('PART %s :%s' % (channel, reason))
         else:
-            self.call_hooks([source, 'CLIENTBOT_PART', {'channel': channel, 'text': reason}])
-
-    def quit(self, source, reason):
-        """STUB: Quits a client."""
-        userdata = self.users[source]
-        self._remove_client(source)
-        self.call_hooks([source, 'CLIENTBOT_QUIT', {'text': reason, 'userdata': userdata}])
+            super().part(source, channel, reason=reason)
 
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """STUB: bursts joins from a server."""
@@ -314,78 +444,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         self._channels[channel].users |= puids
         nicks = {self.get_friendly_name(u) for u in puids}
         self.call_hooks([server, 'CLIENTBOT_SJOIN', {'channel': channel, 'nicks': nicks}])
-
-    def squit(self, source, target, text):
-        """STUB: SQUITs a server."""
-        # What this actually does is just handle the SQUIT internally: i.e.
-        # Removing pseudoclients and pseudoservers.
-        squit_data = self._squit(source, 'CLIENTBOT_VIRTUAL_SQUIT', [target, text])
-
-        if squit_data and squit_data.get('nicks'):
-            self.call_hooks([source, 'CLIENTBOT_SQUIT', squit_data])
-
-    def _stub(self, *args):
-        """Stub outgoing command function (does nothing)."""
-        return
-    topic = topic_burst = _stub  # XXX: incomplete
-
-    def _stub_raise(self, *args):
-        """Stub outgoing command function (raises an error)."""
-        raise NotImplementedError("Not supported on Clientbot")
-    kill = knock = numeric = _stub_raise
-
-    def update_client(self, target, field, text):
-        """Updates the known ident, host, or realname of a client."""
-        if target not in self.users:
-            log.warning("(%s) Unknown target %s for update_client()", self.name, target)
-            return
-
-        u = self.users[target]
-
-        if field == 'IDENT' and u.ident != text:
-            u.ident = text
-            if not self.is_internal_client(target):
-                # We're updating the host of an external client in our state, so send the appropriate
-                # hook payloads.
-                self.call_hooks([self.sid, 'CHGIDENT',
-                                   {'target': target, 'newident': text}])
-        elif field == 'HOST' and u.host != text:
-            u.host = text
-            if not self.is_internal_client(target):
-                self.call_hooks([self.sid, 'CHGHOST',
-                                   {'target': target, 'newhost': text}])
-        elif field in ('REALNAME', 'GECOS') and u.realname != text:
-            u.realname = text
-            if not self.is_internal_client(target):
-                self.call_hooks([self.sid, 'CHGNAME',
-                                   {'target': target, 'newgecos': text}])
-        else:
-            return  # Nothing changed
-
-    def _get_UID(self, nick, ident=None, host=None):
-        """
-        Fetches the UID for the given nick, creating one if it does not already exist.
-
-        Limited (internal) nick collision checking is done here to prevent Clientbot users from
-        being confused with virtual clients, and vice versa."""
-        self._check_puid_collision(nick)
-
-        idsource = self.nick_to_uid(nick)
-
-        if self.is_internal_client(idsource) and self.pseudoclient and idsource != self.pseudoclient.uid:
-            # We got a message from a client with the same nick as an internal client.
-            # Fire a virtual nick collision to prevent mixing senders.
-            log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
-            self.call_hooks([self.sid, 'SAVE', {'target': idsource}])
-
-            # Clear the UID for this nick and spawn a new client for the nick that was just freed.
-            idsource = None
-
-        if idsource is None:
-            # If this sender doesn't already exist, spawn a new client.
-            idsource = self.spawn_client(nick, ident or 'unknown', host or 'unknown',
-                                        server=self.uplink, realname=FALLBACK_REALNAME).uid
-        return idsource
 
     def parse_message_tags(self, data):
         """
@@ -725,13 +783,6 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
                       self.irc.name, channel)
             return {'channel': channel, 'users': names, 'modes': self._channels[channel].modes,
                     'parse_as': "JOIN"}
-
-    def _check_puid_collision(self, nick):
-        """
-        Checks to make sure a nick doesn't clash with a PUID.
-        """
-        if nick in self.users or nick in self.servers:
-            raise ProtocolError("Got bad nick %s from IRC which clashes with a PUID. Is someone trying to spoof users?" % nick)
 
     def _send_who(self, channel):
         """Sends /WHO to a channel, with WHOX args if that is supported."""
