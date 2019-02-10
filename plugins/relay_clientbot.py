@@ -54,15 +54,19 @@ def cb_relay_core(irc, source, command, args):
         # Be less floody on startup: don't relay non-PRIVMSGs for the first X seconds after connect.
         startup_delay = relay_conf.get('clientbot_startup_delay', 20)
 
+        target = args['target']
+        if isinstance(target, str):
+            # Remove STATUSMSG prefixes (e.g. @#channel) before checking whether target is a channel
+            target = target.lstrip(''.join(irc.prefixmodes.values()))
+
         # Special case for CTCPs.
         if real_command == 'MESSAGE':
             # CTCP action, format accordingly
             if (not args.get('is_notice')) and args['text'].startswith('\x01ACTION ') and args['text'].endswith('\x01'):
                 args['text'] = args['text'][8:-1]
-
                 real_command = 'ACTION'
 
-            elif not irc.is_channel(args['target'].lstrip(''.join(irc.prefixmodes.values()))):
+            elif not irc.is_channel(target):
                 # Target is a user; handle this accordingly.
                 if relay_conf.get('allow_clientbot_pms'):
                     real_command = 'PNOTICE' if args.get('is_notice') else 'PM'
@@ -116,7 +120,7 @@ def cb_relay_core(irc, source, command, args):
 
             # Figure out where the message is destined to.
             stripped_target = target = args.get('channel') or args.get('target')
-            if target is not None:
+            if isinstance(target, str):
                 # HACK: cheap fix to prevent @#channel messages from interpreted as non-channel specific
                 stripped_target = target.lstrip(''.join(irc.prefixmodes.values()))
 
