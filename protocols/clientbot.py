@@ -85,9 +85,10 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
 
     def kick(self, source, channel, target, reason=''):
         """STUB: rejoins users on kick attempts, for server transports where kicking users from channels is not implemented."""
-        if self.is_internal_client(target):
+        if not self.is_internal_client(target):
             log.info("(%s) Rejoining user %s to %s since kicks are not supported here.", self.name, target, channel)
             self.join(target, channel)
+            self.call_hooks([None, 'JOIN', {'channel': channel, 'users': [target], 'modes': []}])
         elif channel in self.channels:
             self.channels[channel].remove_user(target)
             self.users[target].channels.discard(channel)
