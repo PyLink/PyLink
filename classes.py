@@ -1521,7 +1521,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 return sname
         return uid  # Regular UID, no change
 
-    def wrap_message(self, source, target, command, text):
+    def wrap_message(self, source, target, text):
         """
         Wraps the given message text into multiple lines (length depends on how much the protocol
         allows), and returns these as a list.
