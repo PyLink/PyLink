@@ -12,6 +12,14 @@ from pylinkirc.coremods import permissions
 CHANNEL_DELINKED_MSG = "Channel delinked."
 RELAY_UNLOADED_MSG = "Relay plugin unloaded."
 
+try:
+    import unidecode
+except ImportError:
+    log.info('relay: unidecode not found; disabling unicode nicks support')
+    USE_UNIDECODE = False
+else:
+    USE_UNIDECODE = conf.conf.get('relay', {}).get('use_unidecode', True)
+
 ### GLOBAL (statekeeping) VARIABLES
 relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
@@ -111,8 +119,9 @@ def die(irc=None):
     except KeyError:
         log.debug('relay.die: failed to clear persistent channels:', exc_info=True)
 
-allowed_chars = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
-fallback_separator = '|'
+IRC_ASCII_ALLOWED_CHARS = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
+FALLBACK_SEPARATOR = '|'
+FALLBACK_CHARACTER = '-'
 def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     """
     Creates a normalized nickname for the given nick suitable for introduction to a remote network
@@ -121,6 +130,14 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     UID is optional for checking regular nick changes, to make sure that the sender doesn't get
     marked as nick-colliding with itself.
     """
+    is_unicode_capable = irc.casemapping in ('utf8', 'utf-8', 'rfc7700')
+    if USE_UNIDECODE and not is_unicode_capable:
+        nick = unidecode.unidecode(nick)
+        netname = unidecode.unidecode(netname)
+
+    # Normalize spaces to hyphens
+    nick = nick.replace(' ', FALLBACK_CHARACTER)
+    netname = netname.replace(' ', FALLBACK_CHARACTER)
 
     # Get the nick/net separator
     separator = irc.serverdata.get('separator') or \
@@ -154,8 +171,8 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
         irc.serverdata.get('relay_force_slashes')
 
     if '/' not in separator or not protocol_allows_slashes:
-        separator = separator.replace('/', fallback_separator)
-        nick = nick.replace('/', fallback_separator)
+        separator = separator.replace('/', FALLBACK_SEPARATOR)
+        nick = nick.replace('/', FALLBACK_SEPARATOR)
 
     if nick.startswith(tuple(string.digits+'-')):
         # On TS6 IRCds, nicks that start with 0-9 are only allowed if
@@ -182,9 +199,15 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
 
     # Loop over every character in the nick, making sure that it only contains valid
     # characters.
-    for char in nick:
-        if char not in allowed_chars:
-            nick = nick.replace(char, fallback_separator)
+    if not is_unicode_capable:
+        for char in nick:
+            if char not in IRC_ASCII_ALLOWED_CHARS:
+                nick = nick.replace(char, FALLBACK_CHARACTER)
+    else:
+        # UnrealIRCd 4's forbidden nick chars, from
+        # https://github.com/unrealircd/unrealircd/blob/02d69e7d8/src/modules/charsys.c#L152-L163
+        for char in """!+%@&~#$:'\"?*,.""":
+            nick = nick.replace(char, FALLBACK_CHARACTER)
 
     while irc.nick_to_uid(nick) not in (None, uid):
         # The nick we want exists: Increase the separator length by 1 if the user was already
