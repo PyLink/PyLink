@@ -768,6 +768,89 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
         return bool(cls._HOSTMASK_RE.match(text) and '#' not in text)
 
+    # TODO: these wrappers really need to be standardized
+    def _get_SID(self, sname):
+        """Returns the SID of a server with the given name, if present."""
+        name = sname.lower()
+
+        if name in self.servers:
+            return name
+
+        for k, v in self.servers.items():
+            if v.name.lower() == name:
+                return k
+        else:
+            return sname  # Fall back to given text instead of None
+
+    def _get_UID(self, target):
+        """Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
+        in that it returns the original text instead of None, if no matching nick is found."""
+
+        if target in self.users:
+            return target
+
+        target = self.nick_to_uid(target) or target
+        return target
+
+    def _squit(self, numeric, command, args):
+        """Handles incoming SQUITs."""
+
+        split_server = self._get_SID(args[0])
+
+        # Normally we'd only need to check for our SID as the SQUIT target, but Nefarious
+        # actually uses the uplink server as the SQUIT target.
+        # <- ABAAE SQ nefarious.midnight.vpn 0 :test
+        if split_server in (self.sid, self.uplink):
+            raise ProtocolError('SQUIT received: (reason: %s)' % args[-1])
+
+        affected_users = []
+        affected_servers = [split_server]
+        affected_nicks = collections.defaultdict(list)
+        log.debug('(%s) Splitting server %s (reason: %s)', self.name, split_server, args[-1])
+
+        if split_server not in self.servers:
+            log.warning("(%s) Tried to split a server (%s) that didn't exist!", self.name, split_server)
+            return
+
+        # Prevent RuntimeError: dictionary changed size during iteration
+        old_servers = self.servers.copy()
+        old_channels = self._channels.copy()
+
+        # Cycle through our list of servers. If any server's uplink is the one that is being SQUIT,
+        # remove them and all their users too.
+        for sid, data in old_servers.items():
+            if data.uplink == split_server:
+                log.debug('Server %s also hosts server %s, removing those users too...', split_server, sid)
+                # Recursively run SQUIT on any other hubs this server may have been connected to.
+                args = self._squit(sid, 'SQUIT', [sid, "0",
+                                   "PyLink: Automatically splitting leaf servers of %s" % sid])
+                affected_users += args['users']
+                affected_servers += args['affected_servers']
+
+        for user in self.servers[split_server].users.copy():
+            affected_users.append(user)
+            nick = self.users[user].nick
+
+            # Nicks affected is channel specific for SQUIT:. This makes Clientbot's SQUIT relaying
+            # much easier to implement.
+            for name, cdata in old_channels.items():
+                if user in cdata.users:
+                    affected_nicks[name].append(nick)
+
+            log.debug('Removing client %s (%s)', user, nick)
+            self._remove_client(user)
+
+        serverdata = self.servers[split_server]
+        sname = serverdata.name
+        uplink = serverdata.uplink
+
+        del self.servers[split_server]
+        log.debug('(%s) Netsplit affected users: %s', self.name, affected_users)
+
+        return {'target': split_server, 'users': affected_users, 'name': sname,
+                'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
+                'channeldata': old_channels, 'affected_servers': affected_servers}
+
     def _parse_modes(self, args, existing, supported_modes, is_channel=False, prefixmodes=None,
                      ignore_missing_args=False):
         """
