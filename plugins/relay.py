@@ -4,6 +4,7 @@ import threading
 import string
 from collections import defaultdict
 import inspect
+import base64
 
 from pylinkirc import utils, world, conf, structures
 from pylinkirc.log import log
@@ -132,8 +133,16 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     """
     is_unicode_capable = irc.casemapping in ('utf8', 'utf-8', 'rfc7700')
     if USE_UNIDECODE and not is_unicode_capable:
-        nick = unidecode.unidecode(nick)
-        netname = unidecode.unidecode(netname)
+        decoded_nick = unidecode.unidecode(nick).strip()
+        netname = unidecode.unidecode(netname).strip()
+        if decoded_nick:
+            nick = decoded_nick
+        else:
+            # XXX: The decoded version of the nick is empty, YUCK!
+            # Base64 the nick for now, since (interestingly) we don't enforce UIDs to always be
+            # ASCII strings.
+            nick = base64.b64encode(nick.encode(irc.encoding, 'replace'), altchars=b'-_')
+            nick = nick.decode()
 
     # Normalize spaces to hyphens
     nick = nick.replace(' ', FALLBACK_CHARACTER)
