@@ -123,6 +123,14 @@ def die(irc=None):
 IRC_ASCII_ALLOWED_CHARS = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
 FALLBACK_SEPARATOR = '|'
 FALLBACK_CHARACTER = '-'
+
+def _sanitize(text):
+    """Replaces characters not in IRC_ASCII_ALLOWED_CHARS with FALLBACK_CHARACTER."""
+    for char in text:
+        if char not in IRC_ASCII_ALLOWED_CHARS:
+            text = text.replace(char, FALLBACK_CHARACTER)
+    return text
+
 def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     """
     Creates a normalized nickname for the given nick suitable for introduction to a remote network
@@ -209,9 +217,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     # Loop over every character in the nick, making sure that it only contains valid
     # characters.
     if not is_unicode_capable:
-        for char in nick:
-            if char not in IRC_ASCII_ALLOWED_CHARS:
-                nick = nick.replace(char, FALLBACK_CHARACTER)
+        nick = _sanitize(nick)
     else:
         # UnrealIRCd 4's forbidden nick chars, from
         # https://github.com/unrealircd/unrealircd/blob/02d69e7d8/src/modules/charsys.c#L152-L163
@@ -372,7 +378,8 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
 
     nick = normalize_nick(remoteirc, irc.name, userobj.nick, times_tagged=times_tagged)
     # Truncate idents at 10 characters, because TS6 won't like them otherwise!
-    ident = userobj.ident[:10]
+    ident = _sanitize(userobj.ident)
+    ident = ident[:10]
     # Normalize hostnames
     host = normalize_host(remoteirc, userobj.host)
     realname = userobj.realname
