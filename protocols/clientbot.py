@@ -25,7 +25,7 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps = {'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
+        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
         # Remove conf key checks for those not needed for Clientbot.
         self.conf_keys -= {'recvpass', 'sendpass', 'sid', 'sidrange', 'hostname'}
@@ -223,7 +223,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps |= {'visible-state-only', 'ssl-should-verify'}
+        self.protocol_caps |= {'ssl-should-verify'}
 
         self.has_eob = False
 
