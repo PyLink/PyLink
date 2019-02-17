@@ -524,7 +524,7 @@ def get_relay(irc, channel):
     """Finds the matching relay entry name for the given network, channel
     pair, if one exists."""
 
-    chanpair = (irc.name, irc.to_lower(channel))
+    chanpair = (irc.name, irc.to_lower(str(channel)))
 
     if chanpair in db:  # This chanpair is a shared channel; others link to it
         return chanpair
@@ -2241,14 +2241,14 @@ def create(irc, source, args):
     creator = irc.get_hostmask(source)
     # Create the relay database entry with the (network name, channel name)
     # pair - this is just a dict with various keys.
-    db[(irc.name, channel)] = {'links': set(),
-                               'blocked_nets': set(),
-                               'creator': creator,
-                               'ts': time.time(),
-                               'use_whitelist': irc.get_service_option('relay', 'linkacl_use_whitelist', False),
-                               'allowed_nets': set(),
-                               'claim': [irc.name] if irc.get_service_option('relay', 'enable_default_claim', True)
-                                        else []}
+    db[(irc.name, str(channel))] = {'links': set(),
+                                    'blocked_nets': set(),
+                                    'creator': creator,
+                                    'ts': time.time(),
+                                    'use_whitelist': irc.get_service_option('relay', 'linkacl_use_whitelist', False),
+                                    'allowed_nets': set(),
+                                    'claim': [irc.name] if irc.get_service_option('relay', 'enable_default_claim', True)
+                                             else []}
     log.info('(%s) relay: Channel %s created by %s.', irc.name, channel, creator)
     initialize_channel(irc, channel)
     irc.reply('Done.')
@@ -2350,14 +2350,13 @@ def link(irc, source, args):
     args = link_parser.parse_args(args)
 
     # Normalize channel case
-    channel = irc.to_lower(args.channel)
-    localchan = irc.to_lower(args.localchannel or args.channel)
+    channel = irc.to_lower(str(args.channel))
+    localchan = irc.to_lower(str(args.localchannel or args.channel))
     remotenet = args.remotenet
 
-    for c in (channel, localchan):
-        if not irc.is_channel(c):
-            irc.error('Invalid channel %r.' % c)
-            return
+    if not irc.is_channel(localchan):
+        irc.error('Invalid channel %r.' % c)
+        return
 
     if remotenet == irc.name:
         irc.error('Cannot link two channels on the same network.')
