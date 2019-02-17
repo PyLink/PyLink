@@ -2088,7 +2088,10 @@ class Server():
         self.uplink = uplink
         self.users = set()
         self.internal = internal
-        self.name = name.lower()
+        if isinstance(name, str):
+            self.name = name.lower()
+        else:
+            self.name = name
         self.desc = desc
         self._irc = irc
 
