@@ -60,7 +60,7 @@ def _make_file_logger(filename, level=None):
     # Defaults to 5.
     backups = logrotconf.get('backup_count', 5)
 
-    filelogger = logging.handlers.RotatingFileHandler(target, maxBytes=maxbytes, backupCount=backups)
+    filelogger = logging.handlers.RotatingFileHandler(target, maxBytes=maxbytes, backupCount=backups, encoding='utf-8')
     filelogger.setFormatter(logformatter)
 
     # If no log level is specified, use the same one as the console logger.
