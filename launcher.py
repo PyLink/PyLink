@@ -120,9 +120,10 @@ def _main():
         elif os.name == 'posix':
             sys.stdout.write("\x1b]2;PyLink %s\x07" % __version__)
 
-    # Write the PID file only after forking.
-    with open(pidfile, 'w') as f:
-        f.write(str(os.getpid()))
+    if not args.no_pid:
+        # Write the PID file only after forking.
+        with open(pidfile, 'w') as f:
+            f.write(str(os.getpid()))
 
     # Load configured plugins
     to_load = conf.conf['plugins']
