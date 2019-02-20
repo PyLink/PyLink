@@ -229,8 +229,11 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         self.loghandlers = []
         self.name = netname
         self.conf = conf.conf
-        self.sid = None
-        self.serverdata = conf.conf['servers'][netname]
+        if not hasattr(self, 'sid'):
+            self.sid = None
+        # serverdata may be overridden as a property on some protocols
+        if netname in conf.conf['servers'] and not hasattr(self, 'serverdata'):
+            self.serverdata = conf.conf['servers'][netname]
 
         self.protoname = self.__class__.__module__.split('.')[-1]  # Remove leading pylinkirc.protocols.
         self.proto = self.irc = self  # Backwards compat
