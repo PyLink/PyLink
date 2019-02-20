@@ -737,6 +737,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             text = text.replace('~', '^')
         # Encode the text as bytes first, and then lowercase it so that only ASCII characters are
         # changed. Unicode in channel names, etc. *is* case sensitive!
+        # Interesting, a quick emperical test found that this method is actually faster than str.translate()?!
         return text.encode().lower().decode()
 
     _NICK_REGEX = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'

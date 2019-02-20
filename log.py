@@ -35,7 +35,7 @@ world.console_handler.setFormatter(logformatter)
 world.console_handler.setLevel(_get_console_log_level())
 
 # Get the main logger object; plugins can import this variable for convenience.
-log = logging.getLogger()
+log = logging.getLogger('pylinkirc')
 log.addHandler(world.console_handler)
 
 # This is confusing, but we have to set the root logger to accept all events. Only this way
