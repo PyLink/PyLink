@@ -607,6 +607,11 @@ class UnrealProtocol(TS6BaseProtocol):
                     continue
 
                 user = self._get_UID(user)  # Normalize nicks to UIDs for Unreal 3.2 links
+                if user not in self.users:
+                    # Work around a potential race when sending kills on join
+                    log.debug("(%s) Ignoring user %s in SJOIN to %s, they don't exist anymore", self.name, user, channel)
+                    continue
+
                 # Unreal uses slightly different prefixes in SJOIN. +q is * instead of ~,
                 # and +a is ~ instead of &.
                 modeprefix = (r.group(1) or '').replace("~", "&").replace("*", "~")
