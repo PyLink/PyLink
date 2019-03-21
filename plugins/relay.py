@@ -289,8 +289,8 @@ def spawn_relay_server(irc, remoteirc):
     if irc.connected.is_set():
         try:
             suffix = irc.serverdata.get('relay_server_suffix', conf.conf.get('relay', {}).get('server_suffix', 'relay'))
-            # Strip any leading or trailing .'s
-            suffix = suffix.strip('.')
+            # Strip any leading .'s
+            suffix = suffix.lstrip('.')
 
             # On some IRCds (e.g. InspIRCd), we have to delay endburst to prevent triggering
             # join flood protections that are counted locally.
