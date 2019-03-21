@@ -191,12 +191,24 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
         separator = separator.replace('/', FALLBACK_SEPARATOR)
         nick = nick.replace('/', FALLBACK_SEPARATOR)
 
-    if nick.startswith(tuple(string.digits+'-')):
+    # Loop over every character in the nick, making sure that it only contains valid
+    # characters.
+    if not is_unicode_capable:
+        nick = _sanitize(nick)
+    else:
+        # UnrealIRCd 4's forbidden nick chars, from
+        # https://github.com/unrealircd/unrealircd/blob/02d69e7d8/src/modules/charsys.c#L152-L163
+        for char in """!+%@&~#$:'\"?*,.""":
+            nick = nick.replace(char, FALLBACK_CHARACTER)
+
+    if nick.startswith(tuple(string.digits)):
         # On TS6 IRCds, nicks that start with 0-9 are only allowed if
         # they match the UID of the originating server. Otherwise, you'll
         # get nasty protocol violation SQUITs!
-        # Nicks starting with - are likewise not valid.
         nick = '_' + nick
+    elif nick.startswith('-'):
+        # Nicks starting with - are likewise not valid.
+        nick = '_' + nick[1:]
 
     # Maximum allowed length that relay nicks may have, minus the /network tag if used.
     allowedlength = maxnicklen
@@ -213,16 +225,6 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     nick = nick[:allowedlength]
     if times_tagged >= 1:
         nick += suffix
-
-    # Loop over every character in the nick, making sure that it only contains valid
-    # characters.
-    if not is_unicode_capable:
-        nick = _sanitize(nick)
-    else:
-        # UnrealIRCd 4's forbidden nick chars, from
-        # https://github.com/unrealircd/unrealircd/blob/02d69e7d8/src/modules/charsys.c#L152-L163
-        for char in """!+%@&~#$:'\"?*,.""":
-            nick = nick.replace(char, FALLBACK_CHARACTER)
 
     while irc.nick_to_uid(nick) not in (None, uid):
         # The nick we want exists: Increase the separator length by 1 if the user was already
