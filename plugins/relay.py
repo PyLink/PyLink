@@ -124,10 +124,11 @@ IRC_ASCII_ALLOWED_CHARS = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
 FALLBACK_SEPARATOR = '|'
 FALLBACK_CHARACTER = '-'
 
-def _sanitize(text):
+def _sanitize(text, extrachars=''):
     """Replaces characters not in IRC_ASCII_ALLOWED_CHARS with FALLBACK_CHARACTER."""
+    whitelist = IRC_ASCII_ALLOWED_CHARS + extrachars
     for char in text:
-        if char not in IRC_ASCII_ALLOWED_CHARS:
+        if char not in whitelist:
             text = text.replace(char, FALLBACK_CHARACTER)
     return text
 
@@ -379,9 +380,13 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
         return
 
     nick = normalize_nick(remoteirc, irc.name, userobj.nick, times_tagged=times_tagged)
+
+    # Sanitize UTF8 for networks that don't support it
+    ident = _sanitize(userobj.ident, extrachars='~')
+
     # Truncate idents at 10 characters, because TS6 won't like them otherwise!
-    ident = _sanitize(userobj.ident)
     ident = ident[:10]
+
     # Normalize hostnames
     host = normalize_host(remoteirc, userobj.host)
     realname = userobj.realname
