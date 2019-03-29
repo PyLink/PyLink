@@ -71,7 +71,10 @@ def shutdown(irc=None):
 
     for ircobj in world.networkobjects.copy().values():
         # Disconnect all our networks.
-        remove_network(ircobj)
+        try:
+            remove_network(ircobj)
+        except NotImplementedError:
+            continue
 
     log.info("Waiting for remaining threads to stop; this may take a few seconds. If PyLink freezes "
              "at this stage, press Ctrl-C to force a shutdown.")
