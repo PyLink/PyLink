@@ -472,6 +472,14 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0,
         if sbot:
             return sbot.uids.get(remoteirc.name)
 
+        # Ignore invisible users - used to skip joining users who are offline or invisible on
+        # external transports
+        hide = getattr(irc.users[user], '_invisible', False)
+        if hide:
+            log.debug('(%s) get_remote_user: ignoring user %s since they are marked invisible', irc.name,
+                      user)
+            return
+
         log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
                   threading.current_thread().name, inspect.currentframe().f_code.co_name)
         with spawnlocks[irc.name]:
@@ -1998,8 +2006,8 @@ def handle_kill(irc, numeric, command, args):
 
     # Target user was local.
     else:
-        # IMPORTANT: some IRCds (charybdis) don't send explicit QUIT messages
-        # for locally killed clients, while others (inspircd) do!
+        # Note: some IRCds (charybdis) don't send explicit QUIT messages
+        # for locally killed clients, while others (inspircd) do
         # If we receive a user object in 'userdata' instead of None, it means
         # that the KILL hasn't been handled by a preceding QUIT message.
         if userdata:
@@ -2010,7 +2018,23 @@ utils.add_hook(handle_kill, 'KILL')
 def handle_away(irc, numeric, command, args):
     iterate_all_present(irc, numeric,
                         lambda irc, remoteirc, user:
-                            remoteirc.away(user, args['text']))
+                        remoteirc.away(user, args['text']))
+
+    # Check invisible flag, used by external transports to hide offline users
+    if not irc.is_internal_client(numeric):
+        invisible = args.get('now_invisible')
+        log.debug('(%s) relay.handle_away: invisible flag: %s', irc.name, invisible)
+        if invisible:
+            # User is now invisible - quit them
+            log.debug('(%s) relay.handle_away: quitting user %s due to invisible flag', irc.name, numeric)
+            handle_quit(irc, numeric, 'AWAY_NOW_INVISIBLE', {'text': "User has gone offline"})
+        elif invisible is False:
+            # User is no longer invisible - join them to all channels
+            log.debug('(%s) relay.handle_away: rejoining user %s due to invisible flag', irc.name, numeric)
+            for channel in irc.users[numeric].channels:
+                c = irc.channels[channel]
+                relay_joins(irc, channel, [numeric], c.ts, burst=True)
+
 utils.add_hook(handle_away, 'AWAY')
 
 def handle_invite(irc, source, command, args):
