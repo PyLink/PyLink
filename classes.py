@@ -140,11 +140,8 @@ class User(TSObject):
         fields = self.__dict__.copy()
 
         # These don't really make sense in text substitutions
-        for field in ('manipulatable', '_irc'):
+        for field in ('manipulatable', '_irc', 'channels', 'modes'):
             del fields[field]
-
-        # Pre-format the channels list. FIXME: maybe this should be configurable somehow?
-        fields['channels'] = ','.join(sorted(self.channels))
 
         # Swap SID and server name for convenience
         fields['sid'] = self.server
@@ -155,9 +152,6 @@ class User(TSObject):
 
         # Network name
         fields['netname'] = self._irc.name
-
-        # Join umodes together
-        fields['modes'] = self._irc.join_modes(self.modes)
 
         # Add the nick attribute; this isn't in __dict__ because it's a property
         fields['nick'] = self._nick
