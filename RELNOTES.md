@@ -1,3 +1,21 @@
+# PyLink 2.0.2 (2019-03-31)
+
+Changes since 2.0.1:
+
+#### Feature changes
+- Antispam now supports filtering away Unicode lookalike characters when processing text
+- Allow disabling dynamic channels via a new "join_empty_channels" option
+- relay: add an explicit `forcetag` command, since IRC kills are now relayed between networks
+
+#### Bug fixes
+- launcher: fix crash when --no-pid is set
+- relay: fix DB corruption when editing modedelta modes
+- automode: fix sending joins to the wrong network when editing remote channels
+
+#### Internal improvements
+- relay: minor optimizations and cleanup
+- Disable throttling on S2S links by default, since it usually isn't necessary there
+
 # PyLink 2.0.1 (2018-10-06)
 
 Changes since 2.0.0:
