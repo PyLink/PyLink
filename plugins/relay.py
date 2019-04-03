@@ -474,11 +474,12 @@ def get_remote_user(irc, remoteirc, user, spawn_if_missing=True, times_tagged=0,
 
         # Ignore invisible users - used to skip joining users who are offline or invisible on
         # external transports
-        hide = getattr(irc.users[user], '_invisible', False)
-        if hide:
-            log.debug('(%s) get_remote_user: ignoring user %s since they are marked invisible', irc.name,
-                      user)
-            return
+        if user in irc.users:
+            hide = getattr(irc.users[user], '_invisible', False)
+            if hide:
+                log.debug('(%s) get_remote_user: ignoring user %s since they are marked invisible', irc.name,
+                          user)
+                return
 
         log.debug('(%s) Grabbing spawnlocks[%s] from thread %r in function %r', irc.name, irc.name,
                   threading.current_thread().name, inspect.currentframe().f_code.co_name)
