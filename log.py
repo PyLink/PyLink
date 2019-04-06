@@ -53,8 +53,8 @@ def _make_file_logger(filename, level=None):
 
     logrotconf = conf.conf.get('logging', {}).get('filerotation', {})
 
-    # Max amount of bytes per file, before rotation is done. Defaults to 50 MiB.
-    maxbytes = logrotconf.get('max_bytes', 52428800)
+    # Max amount of bytes per file, before rotation is done. Defaults to 20 MiB.
+    maxbytes = logrotconf.get('max_bytes', 20971520)
 
     # Amount of backups to make (e.g. pylink-debug.log, pylink-debug.log.1, pylink-debug.log.2, ...)
     # Defaults to 5.

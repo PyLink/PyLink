@@ -652,8 +652,8 @@ logging:
         # in the format pylink-commands.log, pylink-commands.log.1, pylink-commands.log.2, etc.
         # If either max_bytes or backup_count is 0, log rotation will be disabled.
 
-        # Max amount of bytes per file, before rotation is done. Defaults to 50 MiB (52428800 bytes).
-        #max_bytes: 52428800
+        # Max amount of bytes per file before rotation is done. Defaults to 20 MiB (20971520 bytes).
+        #max_bytes: 20971520
 
         # Amount of backups to make. Defaults to 5.
         #backup_count: 5
