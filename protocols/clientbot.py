@@ -681,14 +681,19 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
         prefix_to_mode = {v:k for k, v in self.prefixmodes.items()}
         prefixes = ''.join(self.prefixmodes.values())
 
-        for name in args[-1].split():
+        # N.B. only split on spaces because of color in hosts nonsense...
+        # str.split() by default treats \x1f as whitespace
+        for name in args[-1].split(' '):
             nick = name.lstrip(prefixes)
 
             # Handle userhost-in-names where available.
+            ident = host = None
             if 'userhost-in-names' in self.ircv3_caps:
-                nick, ident, host = utils.split_hostmask(nick)
-            else:
-                ident = host = None
+                try:
+                    nick, ident, host = utils.split_hostmask(nick)
+                except ValueError:
+                    log.exception('(%s) Failed to split hostmask %r from /names reply on %s', self.name, nick, channel)
+                    # If error, leave nick unsplit
 
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user.
