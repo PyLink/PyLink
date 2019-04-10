@@ -43,10 +43,22 @@ def showuser(irc, source, args):
     except IndexError:
         irc.error("Not enough arguments. Needs 1: nick.")
         return
+
     u = irc.nick_to_uid(target) or target
+
+    # Some protocol modules store UIDs as ints; make sure we check for that.
+    try:
+        int_u = int(u)
+    except ValueError:
+        pass
+    else:
+        if int_u in irc.users:
+            u = int_u
+
     # Only show private info if the person is calling 'showuser' on themselves,
     # or is an oper.
     verbose = irc.is_oper(source) or u == source
+
     if u not in irc.users:
         irc.error('Unknown user %r.' % target)
         return
@@ -73,7 +85,7 @@ def showuser(irc, source, args):
         f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
           (u, userobj.realhost, userobj.ip))
         channels = sorted(userobj.channels)
-        f('\x02Channels\x02: %s' % (' '.join(channels) or _none))
+        f('\x02Channels\x02: %s' % (' '.join(map(str, channels)) or _none))
         f('\x02PyLink identification\x02: %s; \x02Services account\x02: %s; \x02Away status\x02: %s' % \
           ((userobj.account or _none), (userobj.services_account or _none), userobj.away or _none))
 
