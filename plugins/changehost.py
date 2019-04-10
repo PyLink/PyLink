@@ -41,6 +41,13 @@ def _changehost(irc, target, args):
         return
 
     args = args.copy()
+
+    # $host is explicitly forbidden by default because it can cause recursive
+    # loops when IP or real host masks are used to match a target. vHost
+    # updates do not affect these fields, so any further host application will
+    # cause the vHost to grow rapidly in size.
+    # That said, it is possible to get away with this expansion if you're
+    # careful enough, and that's why this hidden option exists.
     if not changehost_conf.get('force_host_expansion'):
        del args['host']
 
@@ -57,16 +64,6 @@ def _changehost(irc, target, args):
             # Substitute using the fields provided the hook data. This means
             # that the following variables are available for substitution:
             # $uid, $ts, $nick, $realhost, $ident, and $ip.
-
-            # $host is explicitly forbidden by default because it can cause
-            # recursive loops when IP or real host masks are used to match a
-            # target. vHost updates do not affect these fields, so any further
-            # execution of 'applyhosts' will cause $host to expand again to
-            # the user's new host, causing the vHost to grow rapidly in size.
-            # That said, it is possible to get away with this expansion if
-            # you're careful with what you're doing, and that is why this
-            # hidden option exists. -GLolol
-
             try:
                 new_host = template.substitute(args)
             except KeyError as e:
@@ -78,7 +75,9 @@ def _changehost(irc, target, args):
                 if char not in allowed_chars:
                     new_host = new_host.replace(char, '-')
 
-            irc.update_client(target, 'HOST', new_host)
+            # Only send a host change if something has changed
+            if new_host != irc.users[target].host:
+                irc.update_client(target, 'HOST', new_host)
 
             # Only operate on the first match.
             break
