@@ -751,7 +751,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
                 try:
                     nick, ident, host = utils.split_hostmask(nick)
                 except ValueError:
-                    log.exception('(%s) Failed to split hostmask %r from /names reply on %s', self.name, nick, channel)
+                    log.exception('(%s) Failed to split hostmask %r from /names reply on %s; args=%s', self.name, nick, channel, args)
                     # If error, leave nick unsplit
 
             # Get the PUID for the given nick. If one doesn't exist, spawn
