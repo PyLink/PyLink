@@ -742,7 +742,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
 
         # N.B. only split on spaces because of color in hosts nonsense...
         # str.split() by default treats \x1f as whitespace
-        for name in args[-1].split(' '):
+        for name in args[-1].strip().split(' '):
             nick = name.lstrip(prefixes)
 
             # Handle userhost-in-names where available.
@@ -753,6 +753,9 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
                 except ValueError:
                     log.exception('(%s) Failed to split hostmask %r from /names reply on %s; args=%s', self.name, nick, channel, args)
                     # If error, leave nick unsplit
+
+            if not nick:
+                continue
 
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user.
