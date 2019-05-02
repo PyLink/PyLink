@@ -14,6 +14,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     S2S_BUFSIZE = 0  # InspIRCd allows infinitely long S2S messages, so set bufsize to infinite
 
+    MIN_PROTO_VER = 1202  # anything below is error
+    MAX_PROTO_VER = 1205  # anything above warns (not officially supported)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -30,9 +33,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC',
                     'SAKICK': 'KICK'}
 
-        self.min_proto_ver = 1202
         self.proto_ver = 1202
-        self.max_proto_ver = 1202  # Anything above should warn (not officially supported)
 
         # Track the modules supported by the uplink.
         self._modsupport = set()
@@ -508,13 +509,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # Check the protocol version
             self.remote_proto_ver = protocol_version = int(caps['PROTOCOL'])
 
-            if protocol_version < self.min_proto_ver:
+            if protocol_version < self.MIN_PROTO_VER:
                 raise ProtocolError("Remote protocol version is too old! "
                                     "At least %s (InspIRCd 2.0.x) is "
                                     "needed. (got %s)" % (self.min_proto_ver,
                                                           protocol_version))
-            elif protocol_version > self.max_proto_ver:
-                log.warning("(%s) PyLink support for InspIRCd 2.2+ is experimental, "
+            elif protocol_version > self.MAX_PROTO_VER:
+                log.warning("(%s) PyLink support for InspIRCd > 3.0 is experimental, "
                             "and should not be relied upon for anything important.",
                             self.name)
 
