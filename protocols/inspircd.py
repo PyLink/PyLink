@@ -13,6 +13,8 @@ from pylinkirc.protocols.ts6_common import *
 class InspIRCdProtocol(TS6BaseProtocol):
 
     S2S_BUFSIZE = 0  # InspIRCd allows infinitely long S2S messages, so set bufsize to infinite
+    SUPPORTED_IRCDS = ['insp20', 'insp3']
+    DEFAULT_IRCD = SUPPORTED_IRCDS[0]
 
     MIN_PROTO_VER = 1202  # anything below is error
     MAX_PROTO_VER = 1205  # anything above warns (not officially supported)
@@ -33,7 +35,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC',
                     'SAKICK': 'KICK'}
 
-        self.proto_ver = 1202
+        ircd_target = self.serverdata.get('target_version', 'insp20').lower()
+        if ircd_target == 'insp20':
+            self.proto_ver = 1202
+        elif ircd_target == 'insp3':
+            self.proto_ver = 1205
+        else:
+            raise ProtocolError("Unsupported target_version %r: supported values include %s" % (ircd_target, self.SUPPORTED_IRCDS))
+        log.debug('(%s) inspircd: using protocol version %s for target_version %r', self.name, self.proto_ver, ircd_target)
 
         # Track the modules supported by the uplink.
         self._modsupport = set()
