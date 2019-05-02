@@ -1,5 +1,5 @@
 """
-inspircd.py: InspIRCd 2.x protocol module for PyLink.
+inspircd.py: InspIRCd 2.0, 3.0 protocol module for PyLink.
 """
 
 import time
@@ -40,9 +40,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
             self.proto_ver = 1202
         elif ircd_target == 'insp3':
             self.proto_ver = 1205
+            log.debug('(%s) inspircd: clearing cmodes, umodes defs %r %r', self.name, self.cmodes, self.umodes)
         else:
             raise ProtocolError("Unsupported target_version %r: supported values include %s" % (ircd_target, self.SUPPORTED_IRCDS))
         log.debug('(%s) inspircd: using protocol version %s for target_version %r', self.name, self.proto_ver, ircd_target)
+
+        # Track prefix mode levels on InspIRCd 3
+        self._prefix_levels = {}
 
         # Track the modules supported by the uplink.
         self._modsupport = set()
@@ -472,32 +476,86 @@ class InspIRCdProtocol(TS6BaseProtocol):
                             self.name)
             log.debug("(%s) inspircd: got remote protocol version %s", self.name, protocol_version)
 
-        if args[0] == 'CHANMODES':
+            if protocol_version >= 1205:
+                # Clear mode lists, they will be negotiated during burst
+                self.cmodes = {'*A': '', '*B': '', '*C': '', '*D': ''}
+                self.umodes = {'*A': '', '*B': '', '*C': '', '*D': ''}
+                self.prefixmodes.clear()
+
+        if args[0] in {'CHANMODES', 'USERMODES'}:
+            # insp20:
             # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b
-            # banexception=e blockcolor=c c_registered=r exemptchanops=X
-            # filter=g flood=f halfop=%h history=H invex=I inviteonly=i
-            # joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F
-            # noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T
-            # official-join=!Y op=@o operonly=O opmoderated=U owner=~q
-            # permanent=P private=p redirect=L reginvite=R regmoderated=M
-            # secret=s sslonly=z stripcolor=S topiclock=t voice=+v
+            #    banexception=e blockcolor=c c_registered=r exemptchanops=X
+            #    filter=g flood=f halfop=%h history=H invex=I inviteonly=i
+            #    joinflood=j key=k kicknorejoin=J limit=l moderated=m nickflood=F
+            #    noctcp=C noextmsg=n nokick=Q noknock=K nonick=N nonotice=T
+            #    official-join=!Y op=@o operonly=O opmoderated=U owner=~q
+            #    permanent=P private=p redirect=L reginvite=R regmoderated=M
+            #    secret=s sslonly=z stripcolor=S topiclock=t voice=+v
+            # <- CAPAB USERMODES :bot=B callerid=g cloak=x deaf_commonchan=c
+            #    helpop=h hidechans=I hideoper=H invisible=i oper=o regdeaf=R
+            #    servprotect=k showwhois=W snomask=s u_registered=r u_stripcolor=S
+            #    wallops=w
+
+            # insp3:
+            # <- CAPAB CHANMODES :list:autoop=w list:ban=b list:banexception=e list:filter=g list:invex=I
+            #    list:namebase=Z param-set:anticaps=B param-set:flood=f param-set:joinflood=j param-set:kicknorejoin=J
+            #    param-set:limit=l param-set:nickflood=F param-set:redirect=L param:key=k prefix:10000:voice=+v
+            #    prefix:20000:halfop=%h prefix:30000:op=@o prefix:40000:admin=&a prefix:50000:founder=~q
+            #    prefix:9000000:official-join=!Y simple:allowinvite=A simple:auditorium=u simple:blockcolor=c
+            #    simple:c_registered=r simple:censor=G simple:inviteonly=i simple:moderated=m simple:noctcp=C
+            #    simple:noextmsg=n simple:nokick=Q simple:noknock=K simple:nonick=N simple:nonotice=T
+            #    simple:operonly=O simple:permanent=P simple:private=p simple:reginvite=R simple:regmoderated=M
+            #    simple:secret=s simple:sslonly=z simple:stripcolor=S simple:topiclock=t
+            # <- CAPAB USERMODES :param-set:snomask=s simple:antiredirect=L simple:bot=B simple:callerid=g simple:cloak=x
+            #    simple:deaf_commonchan=c simple:helpop=h simple:hidechans=I simple:hideoper=H simple:invisible=i
+            #    simple:oper=o simple:regdeaf=R simple:u_censor=G simple:u_registered=r simple:u_stripcolor=S
+            #    simple:wallops=w
+
+            mydict = self.cmodes if args[0] == 'CHANMODES' else self.umodes
 
             # Named modes are essential for a cross-protocol IRC service. We
             # can use InspIRCd as a model here and assign a similar mode map to
             # our cmodes list.
             for modepair in args[-1].split():
-                name, char = modepair.split('=')
+                name, char = modepair.rsplit('=', 1)
 
-                # Strip c_ prefixes to be consistent with other protocols.
+                if self.remote_proto_ver >= 1205:
+                    # Detect mode types from the mode type tag
+                    parts = name.split(':')
+                    modetype = parts[0]
+                    name = parts[-1]
+
+                    # Modes are divided into A, B, C, and D classes
+                    # See http://www.irc.org/tech_docs/005.html
+                    if modetype == 'simple':       # No parameter
+                        mydict['*D'] += char
+                    elif modetype == 'param-set':  # Only parameter when setting (e.g. cmode +l)
+                        mydict['*C'] += char
+                    elif modetype == 'param':      # Always has parameter (e.g. cmode +k)
+                        mydict['*B'] += char
+                    elif modetype == 'list':       # List modes like ban, except, invex, ...
+                        mydict['*A'] += char
+                    elif modetype == 'prefix':     # prefix:30000:op=@o
+                        if args[0] != 'CHANMODES':  # This should never happen...
+                            log.warning("(%s) Possible desync? Got a prefix type modepair %r but not for channel modes", self.name, modepair)
+                        else:
+                            # We don't do anything with prefix levels yet, let's just store them for future use
+                            self._prefix_levels[name] = int(parts[1])
+
+                            # Map mode names to their prefixes
+                            self.prefixmodes[char[-1]] = char[0]
+
+                # Strip c_, u_ prefixes to be consistent with other protocols.
                 name = name.lstrip('c_')
+                name = name.lstrip('u_')
 
                 if name == 'reginvite':  # Reginvite? That's an odd name.
                     name = 'regonly'
 
                 if name == 'founder':  # Channel mode +q
-                    # Founder, owner; same thing. m_customprefix allows you to
-                    # name it anything you like. The former is config default,
-                    # but I personally prefer the latter.
+                    # Founder, owner; same thing. m_customprefix allows you to name it anything you like,
+                    # but PyLink uses the latter in its definitions
                     name = 'owner'
 
                 if name in ('repeat', 'kicknorejoin'):
@@ -505,65 +563,45 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     # be safely relayed.
                     name += '_insp'
 
-                # We don't care about mode prefixes; just the mode char.
-                self.cmodes[name] = char[-1]
-
-
-        elif args[0] == 'USERMODES':
-            # <- CAPAB USERMODES :bot=B callerid=g cloak=x deaf_commonchan=c
-            # helpop=h hidechans=I hideoper=H invisible=i oper=o regdeaf=R
-            # servprotect=k showwhois=W snomask=s u_registered=r u_stripcolor=S
-            # wallops=w
-
-            # Ditto above.
-            for modepair in args[-1].split():
-                name, char = modepair.split('=')
-                # Strip u_ prefixes to be consistent with other protocols.
-                name = name.lstrip('u_')
-                self.umodes[name] = char
+                # Add the mode char to our table
+                mydict[name] = char[-1]
 
         elif args[0] == 'CAPABILITIES':
+            # Insp 2
             # <- CAPAB CAPABILITIES :NICKMAX=21 CHANMAX=64 MAXMODES=20
             # IDENTMAX=11 MAXQUIT=255 MAXTOPIC=307 MAXKICK=255 MAXGECOS=128
             # MAXAWAY=200 IP6SUPPORT=1 PROTOCOL=1202 PREFIX=(Yqaohv)!~&@%+
             # CHANMODES=IXbegw,k,FHJLfjl,ACKMNOPQRSTUcimnprstz
             # USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
 
+            # Insp 3
+            # CAPAB CAPABILITIES :NICKMAX=30 CHANMAX=64 MAXMODES=20 IDENTMAX=10 MAXQUIT=255 MAXTOPIC=307
+            # MAXKICK=255 MAXREAL=128 MAXAWAY=200 MAXHOST=64 CHALLENGE=xxxxxxxxx CASEMAPPING=ascii GLOBOPS=1
+
             # First, turn the arguments into a dict
             caps = self.parse_isupport(args[-1])
             log.debug("(%s) capabilities list: %s", self.name, caps)
 
-            # Check the protocol version
-            self.remote_proto_ver = protocol_version = int(caps['PROTOCOL'])
-
-            if protocol_version < self.MIN_PROTO_VER:
-                raise ProtocolError("Remote protocol version is too old! "
-                                    "At least %s (InspIRCd 2.0.x) is "
-                                    "needed. (got %s)" % (self.min_proto_ver,
-                                                          protocol_version))
-            elif protocol_version > self.MAX_PROTO_VER:
-                log.warning("(%s) PyLink support for InspIRCd > 3.0 is experimental, "
-                            "and should not be relied upon for anything important.",
-                            self.name)
-
             # Store the max nick and channel lengths
-            self.maxnicklen = int(caps['NICKMAX'])
-            self.maxchanlen = int(caps['CHANMAX'])
+            if 'NICKMAX' in caps:
+                self.maxnicklen = int(caps['NICKMAX'])
+            if 'CHANMAX' in caps:
+                self.maxchanlen = int(caps['CHANMAX'])
 
-            # Modes are divided into A, B, C, and D classes
-            # See http://www.irc.org/tech_docs/005.html
-
-            # FIXME: Find a neater way to assign/store this.
-            self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] \
-                = caps['CHANMODES'].split(',')
-            self.umodes['*A'], self.umodes['*B'], self.umodes['*C'], self.umodes['*D'] \
-                = caps['USERMODES'].split(',')
-
-            # Separate the prefixes field (e.g. "(Yqaohv)!~&@%+") into a
-            # dict mapping mode characters to mode prefixes.
-            self.prefixmodes = self.parse_isupport_prefixes(caps['PREFIX'])
-            log.debug('(%s) self.prefixmodes set to %r', self.name,
-                      self.prefixmodes)
+            # InspIRCd 2 only: mode & prefix definitions are sent as CAPAB CAPABILITIES CHANMODES/USERMODES/PREFIX
+            if self.remote_proto_ver < 1205:
+                if 'CHANMODES' in caps:
+                    self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] \
+                        = caps['CHANMODES'].split(',')
+                if 'USERMODES' in caps:
+                    self.umodes['*A'], self.umodes['*B'], self.umodes['*C'], self.umodes['*D'] \
+                        = caps['USERMODES'].split(',')
+                if 'PREFIX' in caps:
+                    # Separate the prefixes field (e.g. "(Yqaohv)!~&@%+") into a
+                    # dict mapping mode characters to mode prefixes.
+                    self.prefixmodes = self.parse_isupport_prefixes(caps['PREFIX'])
+                    log.debug('(%s) self.prefixmodes set to %r', self.name,
+                              self.prefixmodes)
 
         elif args[0] == 'MODSUPPORT':
             # <- CAPAB MODSUPPORT :m_alltime.so m_check.so m_chghost.so m_chgident.so m_chgname.so m_fullversion.so m_gecosban.so m_knock.so m_muteban.so m_nicklock.so m_nopartmsg.so m_opmoderated.so m_sajoin.so m_sanick.so m_sapart.so m_serverban.so m_services_account.so m_showwhois.so m_silence.so m_swhois.so m_uninvite.so m_watch.so
