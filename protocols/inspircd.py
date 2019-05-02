@@ -451,8 +451,26 @@ class InspIRCdProtocol(TS6BaseProtocol):
         """
         # 6 CAPAB commands are usually sent on connect: CAPAB START, MODULES,
         # MODSUPPORT, CHANMODES, USERMODES, and CAPABILITIES.
-        # The only ones of interest to us are CHANMODES, USERMODES,
-        # CAPABILITIES, and MODSUPPORT.
+        # We check just about everything except MODULES
+
+        if args[0] == 'START':
+            # Check the protocol version
+            # insp20:
+            # <- CAPAB START 1202
+            # insp3:
+            # <- CAPAB START 1205
+            self.remote_proto_ver = protocol_version = int(args[1])
+
+            if protocol_version < self.MIN_PROTO_VER:
+                raise ProtocolError("Remote protocol version is too old! "
+                                    "At least %s (InspIRCd 2.0.x) is "
+                                    "needed. (got %s)" % (self.min_proto_ver,
+                                                          protocol_version))
+            elif protocol_version > self.MAX_PROTO_VER:
+                log.warning("(%s) PyLink support for InspIRCd > 3.0 is experimental, "
+                            "and should not be relied upon for anything important.",
+                            self.name)
+            log.debug("(%s) inspircd: got remote protocol version %s", self.name, protocol_version)
 
         if args[0] == 'CHANMODES':
             # <- CAPAB CHANMODES :admin=&a allowinvite=A autoop=w ban=b
