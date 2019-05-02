@@ -136,6 +136,29 @@ class IRCCommonProtocol(IRCNetwork):
         prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', args)
         return dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
 
+    def parse_message_tags(self, data):
+        """
+        Parses IRCv3.2 message tags from a message, as described at http://ircv3.net/specs/core/message-tags-3.2.html
+
+        data is a list of command arguments, split by spaces.
+        """
+        # Example query:
+        # @aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello
+        if data[0].startswith('@'):
+            tagdata = data[0].lstrip('@').split(';')
+            for idx, tag in enumerate(tagdata):
+                tag = tag.replace(r'\s', ' ')
+                tag = tag.replace(r'\\', '\\')
+                tag = tag.replace(r'\r', '\r')
+                tag = tag.replace(r'\n', '\n')
+                tag = tag.replace(r'\:', ';')
+                tagdata[idx] = tag
+
+            results = self.parse_isupport(tagdata, fallback=None)
+            log.debug('(%s) parsed message tags %s', self.name, results)
+            return results
+        return {}
+
     def handle_away(self, source, command, args):
         """Handles incoming AWAY messages."""
         # TS6:
@@ -270,6 +293,12 @@ class IRCS2SProtocol(IRCCommonProtocol):
         the SID of the uplink server.
         """
         data = data.split(" ")
+
+        tags = self.parse_message_tags(data)
+        if tags:
+            # If we have message tags, split off the first argument.
+            data = data[1:]
+
         args = self.parse_args(data)
 
         sender = args[0]
@@ -318,6 +347,8 @@ class IRCS2SProtocol(IRCCommonProtocol):
         else:
             parsed_args = func(sender, command, args)
             if parsed_args is not None:
+                if tags:
+                    parsed_args['tags'] = tags  # Add message tags to this hook payload.
                 return [sender, command, parsed_args]
 
     def invite(self, source, target, channel):

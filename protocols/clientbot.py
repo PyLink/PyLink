@@ -446,27 +446,6 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         nicks = {self.get_friendly_name(u) for u in puids}
         self.call_hooks([server, 'CLIENTBOT_SJOIN', {'channel': channel, 'nicks': nicks}])
 
-    def parse_message_tags(self, data):
-        """
-        Parses a message with IRC v3.2 message tags, as described at http://ircv3.net/specs/core/message-tags-3.2.html
-        """
-        # Example query:
-        # @aaa=bbb;ccc;example.com/ddd=eee :nick!ident@host.com PRIVMSG me :Hello
-        if data[0].startswith('@'):
-            tagdata = data[0].lstrip('@').split(';')
-            for idx, tag in enumerate(tagdata):
-                tag = tag.replace(r'\s', ' ')
-                tag = tag.replace(r'\\', '\\')
-                tag = tag.replace(r'\r', '\r')
-                tag = tag.replace(r'\n', '\n')
-                tag = tag.replace(r'\:', ';')
-                tagdata[idx] = tag
-
-            results = self.parse_isupport(tagdata, fallback=None)
-            log.debug('(%s) parsed message tags %s', self.name, results)
-            return results
-        return {}
-
     def _set_account_name(self, uid, account):
         """
         Updates the user's account metadata.
