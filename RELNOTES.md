@@ -1,3 +1,33 @@
+# PyLink 2.1-alpha1 (2019-05-02)
+
+This release focuses on internal improvements to better integrate with [pylink-discord](https://github.com/PyLink/pylink-discord). It includes all fixes from 2.0.2, plus the following:
+
+#### Feature changes
+- Various Relay improvements:
+    - Relay now sanitizes UTF-8 nicks and idents where not supported, optionally using the [unidecode](https://github.com/avian2/unidecode) module to decode Unicode names more cleanly to ASCII
+        - This introduces a new option `relay::use_unidecode` which is enabled by default when the module is installed
+    - The fallback character to replace invalid nick characters is now `-` instead of `|`
+    - Add protocol-level support for hiding users in Relay - this is used by pylink-discord to optionally hide invisible/offline users
+- Decrease default log file size from 50 MiB to 20 MiB
+
+#### Bug fixes
+- changehost: only send a host change if new host != original
+    - This prevents duplicate host changes on InspIRCd, since it echoes back successful host changes
+- clientbot: fix /names parsing errors on networks supporting colors in hosts. [issue#641](https://github.com/jlu5/PyLink/issues/641)
+- inspircd: disallow `_` in hosts since CHGHOST does not treat it as valid
+- relay: allow trailing .'s in subserver names (e.g. `relay.` is now an accepted server suffix)
+- stats: hide login blocks in `/stats O` when not relevant to the caller's network
+- unreal: work around a potential race when sending kills on join
+
+#### Internal improvements
+- log: use pylinkirc as logger name; this prevents other libraries' debug output from making it to the PyLink log by default
+- clientbot: properly bounce kicks on networks not implementing them
+- classes: remove channels, modes substitutions from `User.get_fields()`
+- various: type-safety fixes to support numeric channel, server, and user IDs (they were previously always strings)
+- SQUIT hooks now track a list of affected servers (SIDs) in the `affected_servers` field
+- relay: minor optimizations
+
+
 # PyLink 2.0.1 (2018-10-06)
 
 Changes since 2.0.0:
