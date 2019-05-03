@@ -35,12 +35,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC',
                     'SAKICK': 'KICK'}
 
-        ircd_target = self.serverdata.get('target_version', 'insp20').lower()
+        ircd_target = self.serverdata.get('target_version', self.DEFAULT_IRCD).lower()
         if ircd_target == 'insp20':
             self.proto_ver = 1202
         elif ircd_target == 'insp3':
             self.proto_ver = 1205
-            log.debug('(%s) inspircd: clearing cmodes, umodes defs %r %r', self.name, self.cmodes, self.umodes)
         else:
             raise ProtocolError("Unsupported target_version %r: supported values include %s" % (ircd_target, self.SUPPORTED_IRCDS))
         log.debug('(%s) inspircd: using protocol version %s for target_version %r', self.name, self.proto_ver, ircd_target)
