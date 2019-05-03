@@ -433,7 +433,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         self._send_with_prefix(self.sid, 'BURST %s' % ts)
         # InspIRCd sends VERSION data on link, instead of whenever requested by a client.
-        self._send_with_prefix(self.sid, 'VERSION :%s' % self.version())
+        if self.proto_ver >= 1205:
+            for version_type in {'version', 'fullversion', 'rawversion'}:
+                self._send_with_prefix(self.sid, 'SINFO %s :%s' % (version_type, self.version()))
+        else:
+            self._send_with_prefix(self.sid, 'VERSION :%s' % self.version())
         self._send_with_prefix(self.sid, 'ENDBURST')
 
         # Extban definitions
