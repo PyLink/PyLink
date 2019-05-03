@@ -16,8 +16,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     SUPPORTED_IRCDS = ['insp20', 'insp3']
     DEFAULT_IRCD = SUPPORTED_IRCDS[0]
 
-    MIN_PROTO_VER = 1202  # anything below is error
-    MAX_PROTO_VER = 1205  # anything above warns (not officially supported)
+    MAX_PROTO_VER = 1205  # anything above this warns (not officially supported)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -465,11 +464,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # <- CAPAB START 1205
             self.remote_proto_ver = protocol_version = int(args[1])
 
-            if protocol_version < self.MIN_PROTO_VER:
+            if protocol_version < self.proto_ver:
                 raise ProtocolError("Remote protocol version is too old! "
-                                    "At least %s (InspIRCd 2.0.x) is "
-                                    "needed. (got %s)" % (self.min_proto_ver,
-                                                          protocol_version))
+                                    "At least %s is needed. (got %s)" %
+                                    (self.proto_ver, protocol_version))
             elif protocol_version > self.MAX_PROTO_VER:
                 log.warning("(%s) PyLink support for InspIRCd > 3.0 is experimental, "
                             "and should not be relied upon for anything important.",
