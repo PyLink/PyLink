@@ -30,9 +30,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # non-standard names to our hook handlers, so command handlers' outputs
         # are called with the right hooks.
         self.hook_map = {'FJOIN': 'JOIN', 'RSQUIT': 'SQUIT', 'FMODE': 'MODE',
-                    'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
-                    'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC',
-                    'SAKICK': 'KICK'}
+                         'FTOPIC': 'TOPIC', 'OPERTYPE': 'MODE', 'FHOST': 'CHGHOST',
+                         'FIDENT': 'CHGIDENT', 'FNAME': 'CHGNAME', 'SVSTOPIC': 'TOPIC',
+                         'SAKICK': 'KICK', 'IJOIN': 'JOIN'}
 
         ircd_target = self.serverdata.get('target_version', self.DEFAULT_IRCD).lower()
         if ircd_target == 'insp20':
@@ -605,6 +605,16 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # <- CAPAB MODSUPPORT :m_alltime.so m_check.so m_chghost.so m_chgident.so m_chgname.so m_fullversion.so m_gecosban.so m_knock.so m_muteban.so m_nicklock.so m_nopartmsg.so m_opmoderated.so m_sajoin.so m_sanick.so m_sapart.so m_serverban.so m_services_account.so m_showwhois.so m_silence.so m_swhois.so m_uninvite.so m_watch.so
             self._modsupport |= set(args[-1].split())
 
+    def handle_kick(self, source, command, args):
+        """Handles incoming KICKs."""
+        # InspIRCD 3 adds membership IDs to KICK messages when forwarding across servers
+        # <- :3INAAAAAA KICK #endlessvoid 3INAAAAAA :test (local)
+        # <- :3INAAAAAA KICK #endlessvoid 7PYAAAAAA 0 :test (remote)
+        if self.remote_proto_ver >= 1205 and len(args) > 3:
+            del args[2]
+
+        return super().handle_kick(source, command, args)
+
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands, so we don't time out."""
         # <- :70M PING 70M 0AL
@@ -616,7 +626,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
-        # :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
+        # insp2:
+        # <- :70M FJOIN #chat 1423790411 +AFPfjnt 6:5 7:5 9:5 :o,1SRAABIT4 v,1IOAAF53R <...>
+        # insp3:
+        # <- :3IN FJOIN #test 1556842195 +nt :o,3INAAAAAA:4
         channel = args[0]
         chandata = self._channels[channel].deepcopy()
         # InspIRCd sends each channel's users in the form of 'modeprefix(es),UID'
@@ -631,6 +644,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         for user in userlist:
             modeprefix, user = user.split(',', 1)
+
+            if self.remote_proto_ver >= 1205:
+                # XXX: we don't handle membership IDs yet
+                user = user.split(':', 1)[0]
 
             # Don't crash when we get an invalid UID.
             if user not in self.users:
@@ -658,6 +675,18 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         return {'channel': channel, 'users': namelist, 'modes': parsedmodes, 'ts': their_ts,
                 'channeldata': chandata}
+
+    def handle_ijoin(self, source, command, args):
+        """Handles InspIRCd 3 joins with membership ID."""
+        # insp3:
+        # <- :3INAAAAAA IJOIN #valhalla 6
+        # For now we don't care about the membership ID
+        channel = args[0]
+        self.users[source].channels.add(channel)
+        self._channels[channel].users.add(source)
+
+        return {'channel': channel, 'users': [source], 'modes':
+                self._channels[channel].modes}
 
     def handle_uid(self, numeric, command, args):
         """Handles incoming UID commands (user introduction)."""
