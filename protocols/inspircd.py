@@ -251,13 +251,29 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         self._remove_client(target)
 
-    def topic_burst(self, numeric, target, text):
+    def topic(self, source, target, text):
+        """Sends a topic change from a PyLink client."""
+        if not self.is_internal_client(source):
+            raise LookupError('No such PyLink client exists.')
+
+        if self.remote_proto_ver >= 1205:
+            self._send_with_prefix(source, 'FTOPIC %s %s %s :%s' % (target, self._channels[target].ts, int(time.time()), text))
+        else:
+            return super().topic(source, target, text)
+
+    def topic_burst(self, source, target, text):
         """Sends a topic change from a PyLink server. This is usually used on burst."""
-        if not self.is_internal_server(numeric):
+        if not self.is_internal_server(source):
             raise LookupError('No such PyLink server exists.')
-        ts = int(time.time())
-        servername = self.servers[numeric].name
-        self._send_with_prefix(numeric, 'FTOPIC %s %s %s :%s' % (target, ts, servername, text))
+
+        topic_ts = int(time.time())
+        servername = self.servers[source].name
+
+        if self.remote_proto_ver >= 1205:
+            self._send_with_prefix(source, 'FTOPIC %s %s %s %s :%s' % (target, self._channels[target].ts, topic_ts, servername, text))
+        else:
+            self._send_with_prefix(source, 'FTOPIC %s %s %s :%s' % (target, topic_ts, servername, text))
+
         self._channels[target].topic = text
         self._channels[target].topicset = True
 
@@ -769,12 +785,28 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # First arg = source, second = signon time, third = idle time
         self._send_with_prefix(target, 'IDLE %s %s 0' % (source, start_time))
 
-    def handle_ftopic(self, numeric, command, args):
+    def handle_ftopic(self, source, command, args):
         """Handles incoming FTOPIC (sets topic on burst)."""
+        # insp2 (only used for server senders):
         # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
+
+        # insp3 (used for server AND user senders):
+        # <- :3IN FTOPIC #qwerty 1556828864 1556844505 GL!gl@midnight-umk.of4.0.127.IP :1234abcd
+        # <- :3INAAAAAA FTOPIC #qwerty 1556828864 1556844248 :topic text
+        #           chan creation time ^          ^ topic set time (the one we want)
         channel = args[0]
-        ts = args[1]
-        setter = args[2]
+
+        if self.remote_proto_ver >= 1205:
+            ts = args[2]
+            if source in self.users:
+                setter = source
+            else:
+                setter = args[3]
+        else:
+            ts = args[1]
+            setter = args[2]
+        ts = int(ts)
+
         topic = args[-1]
         self._channels[channel].topic = topic
         self._channels[channel].topicset = True
