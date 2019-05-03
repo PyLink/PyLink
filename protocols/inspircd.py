@@ -327,11 +327,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # given user.
         # <- :70M PUSH 0ALAAAAAA ::midnight.vpn 422 PyLink-devel :Message of the day file is missing.
 
-        # Note: InspIRCd 2.2 uses a new NUM command in this format:
-        # :<sid> NUM <numeric source sid> <target uuid> <3 digit number> <params>
-        # Take this into consideration if we ever target InspIRCd 2.2, even though m_spanningtree
-        # does provide backwards compatibility for commands like this. -GLolol
-        self._send_with_prefix(self.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
+        # InspIRCd 3 uses a new NUM command in this format:
+        # -> NUM <numeric source sid> <target uuid> <numeric ID> <params>
+        if self.remote_proto_ver >= 1205:
+            self._send('NUM %s %s %s %s' % (source, target, numeric, text))
+        else:
+            self._send_with_prefix(self.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
 
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
@@ -567,14 +568,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 mydict[name] = char[-1]
 
         elif args[0] == 'CAPABILITIES':
-            # Insp 2
+            # insp20:
             # <- CAPAB CAPABILITIES :NICKMAX=21 CHANMAX=64 MAXMODES=20
             # IDENTMAX=11 MAXQUIT=255 MAXTOPIC=307 MAXKICK=255 MAXGECOS=128
             # MAXAWAY=200 IP6SUPPORT=1 PROTOCOL=1202 PREFIX=(Yqaohv)!~&@%+
             # CHANMODES=IXbegw,k,FHJLfjl,ACKMNOPQRSTUcimnprstz
             # USERMODES=,,s,BHIRSWcghikorwx GLOBOPS=1 SVSPART=1
 
-            # Insp 3
+            # insp3:
             # CAPAB CAPABILITIES :NICKMAX=30 CHANMAX=64 MAXMODES=20 IDENTMAX=10 MAXQUIT=255 MAXTOPIC=307
             # MAXKICK=255 MAXREAL=128 MAXAWAY=200 MAXHOST=64 CHALLENGE=xxxxxxxxx CASEMAPPING=ascii GLOBOPS=1
 
