@@ -546,6 +546,10 @@ plugins:
     # Ctcp plugin: handles basic CTCP replies (VERSION, etc) towards service bots.
     - ctcp
 
+    # Servprotect plugin: disconnects from networks if too many kills or nick collisions to
+    # PyLink clients are received. Requires the cachetools Python library.
+    - servprotect
+
     # Relay plugin: Transparent server-side relay between channels (like Janus). See
     # the relay: block below for configuration.
     #- relay
@@ -575,10 +579,6 @@ plugins:
     # Antispam plugin: catches and punishes spammers locally and across relays as necessary.
     # You *will need* to configure it via the "antispam:" configuration block below.
     #- antispam
-
-    # Servprotect plugin: disconnects from networks if too many kills or nick collisions to
-    # PyLink clients are received.
-    #- servprotect
 
     # Global plugin: Janus-style global plugin; announces messages to all channels the PyLink
     # client is in.
