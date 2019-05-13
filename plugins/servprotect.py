@@ -1,16 +1,27 @@
 # servprotect.py: Protects against KILL and nick collision floods
-from expiringdict import ExpiringDict
+
+import threading
 
 from pylinkirc import utils, conf
 from pylinkirc.log import log
+
+try:
+    from cachetools import TTLCache
+except ImportError:
+    log.warning('servprotect: expiringdict support is deprecated as of PyLink 2.1; consider installing cachetools instead')
+    from expiringdict import ExpiringDict as TTLCache
 
 # check for definitions
 servprotect_conf = conf.conf.get('servprotect', {})
 length = servprotect_conf.get('length', 10)
 age = servprotect_conf.get('age', 10)
 
-savecache = ExpiringDict(max_len=length, max_age_seconds=age)
-killcache = ExpiringDict(max_len=length, max_age_seconds=age)
+def _new_cache_dict():
+    return TTLCache(length, age)
+
+savecache = _new_cache_dict()
+killcache = _new_cache_dict()
+lock = threading.Lock()
 
 def handle_kill(irc, numeric, command, args):
     """
@@ -19,12 +30,13 @@ def handle_kill(irc, numeric, command, args):
     """
 
     if (args['userdata'] and irc.is_internal_server(args['userdata'].server)) or irc.is_internal_client(args['target']):
-        if killcache.setdefault(irc.name, 1) >= length:
-            log.error('(%s) servprotect: Too many kills received, aborting!', irc.name)
-            irc.disconnect()
+        with lock:
+            if killcache.setdefault(irc.name, 1) >= length:
+                log.error('(%s) servprotect: Too many kills received, aborting!', irc.name)
+                irc.disconnect()
 
-        log.debug('(%s) servprotect: Incrementing killcache by 1', irc.name)
-        killcache[irc.name] += 1
+            log.debug('(%s) servprotect: Incrementing killcache by 1', irc.name)
+            killcache[irc.name] += 1
 
 utils.add_hook(handle_kill, 'KILL')
 
@@ -34,11 +46,12 @@ def handle_save(irc, numeric, command, args):
     automatically disconnects from the network.
     """
     if irc.is_internal_client(args['target']):
-        if savecache.setdefault(irc.name, 0) >= length:
-            log.error('(%s) servprotect: Too many nick collisions, aborting!', irc.name)
-            irc.disconnect()
+        with lock:
+            if savecache.setdefault(irc.name, 0) >= length:
+                log.error('(%s) servprotect: Too many nick collisions, aborting!', irc.name)
+                irc.disconnect()
 
-        log.debug('(%s) servprotect: Incrementing savecache by 1', irc.name)
-        savecache[irc.name] += 1
+            log.debug('(%s) servprotect: Incrementing savecache by 1', irc.name)
+            savecache[irc.name] += 1
 
 utils.add_hook(handle_save, 'SAVE')
