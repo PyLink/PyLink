@@ -566,8 +566,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
                             self.prefixmodes[char[-1]] = char[0]
 
                 # Strip c_, u_ prefixes to be consistent with other protocols.
-                name = name.lstrip('c_')
-                name = name.lstrip('u_')
+                if name.startswith(('c_', 'u_')):
+                    name = name[2:]
 
                 if name == 'reginvite':  # Reginvite? That's an odd name.
                     name = 'regonly'
