@@ -352,7 +352,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
                 return [sender, command, parsed_args]
 
     def invite(self, source, target, channel):
-        """Sends an INVITE from a PyLink client.."""
+        """Sends an INVITE from a PyLink client."""
         if not self.is_internal_client(source):
             raise LookupError('No such PyLink client exists.')
 

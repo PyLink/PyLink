@@ -346,6 +346,18 @@ class InspIRCdProtocol(TS6BaseProtocol):
         else:
             self._send_with_prefix(self.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
 
+    def invite(self, source, target, channel):
+        """Sends an INVITE from a PyLink client."""
+        if not self.is_internal_client(source):
+            raise LookupError('No such PyLink client exists.')
+
+        if self.proto_ver >= 1205:  # insp3
+            # Note: insp3 supports optionally sending an invite expiration (after the TS argument),
+            # but we don't use / expose that feature yet.
+            self._send_with_prefix(source, 'INVITE %s %s %d' % (target, channel, self._channels[channel].ts))
+        else:  # insp2
+            self._send_with_prefix(source, 'INVITE %s %s' % (target, channel))
+
     def away(self, source, text):
         """Sends an AWAY message from a PyLink client. <text> can be an empty string
         to unset AWAY status."""
