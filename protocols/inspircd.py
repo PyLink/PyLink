@@ -697,11 +697,24 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_ijoin(self, source, command, args):
         """Handles InspIRCd 3 joins with membership ID."""
         # insp3:
+        # EX: regular /join on an existing channel
         # <- :3INAAAAAA IJOIN #valhalla 6
+
+        # EX: /ojoin on an existing channel
+        # <- :3INAAAAAA IJOIN #valhalla 7 1559348434 Yo
+
+        # From insp3 source:
+        # <- :<uid> IJOIN <chan> <membid> [<ts> [<flags>]]
+        #   args idx:      0      1         2     3
+
         # For now we don't care about the membership ID
         channel = args[0]
         self.users[source].channels.add(channel)
         self._channels[channel].users.add(source)
+
+        # Apply prefix modes if they exist and the TS check passes
+        if len(args) >= 4 and int(args[2]) <= self._channels[channel].ts:
+            self.apply_modes(source, {('+%s' % mode, source) for mode in args[3]})
 
         return {'channel': channel, 'users': [source], 'modes':
                 self._channels[channel].modes}
