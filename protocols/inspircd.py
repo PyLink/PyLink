@@ -199,10 +199,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
                   self.name, target)
         userobj.opertype = otype
 
-        # InspIRCd 2.x uses _ in OPERTYPE to denote spaces, while InspIRCd 3.x does not. This is not
-        # backwards compatible: spaces in InspIRCd 2.x will cause the oper type to get cut off at
-        # the first word, while underscores in InspIRCd 3.x are shown literally as _.
-        # We can do the underscore fixing based on the version of our uplink:
+        # InspIRCd 2.x uses _ in OPERTYPE to denote spaces, while InspIRCd 3.x does not.
+        # This is one of the few things not fixed by 2.0/3.0 link compat, so here's a workaround
         if self.remote_proto_ver < 1205:
             otype = otype.replace(" ", "_")
         else:
@@ -256,7 +254,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         if not self.is_internal_client(source):
             raise LookupError('No such PyLink client exists.')
 
-        if self.remote_proto_ver >= 1205:
+        if self.proto_ver >= 1205:
             self._send_with_prefix(source, 'FTOPIC %s %s %s :%s' % (target, self._channels[target].ts, int(time.time()), text))
         else:
             return super().topic(source, target, text)
@@ -269,7 +267,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         topic_ts = int(time.time())
         servername = self.servers[source].name
 
-        if self.remote_proto_ver >= 1205:
+        if self.proto_ver >= 1205:
             self._send_with_prefix(source, 'FTOPIC %s %s %s %s :%s' % (target, self._channels[target].ts, topic_ts, servername, text))
         else:
             self._send_with_prefix(source, 'FTOPIC %s %s %s :%s' % (target, topic_ts, servername, text))
@@ -343,7 +341,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         # InspIRCd 3 uses a new NUM command in this format:
         # -> NUM <numeric source sid> <target uuid> <numeric ID> <params>
-        if self.remote_proto_ver >= 1205:
+        if self.proto_ver >= 1205:
             self._send('NUM %s %s %s %s' % (source, target, numeric, text))
         else:
             self._send_with_prefix(self.sid, 'PUSH %s ::%s %s %s %s' % (target, source, numeric, target, text))
@@ -494,7 +492,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                             self.name)
             log.debug("(%s) inspircd: got remote protocol version %s", self.name, protocol_version)
 
-            if protocol_version >= 1205:
+            if self.proto_ver >= 1205:
                 # Clear mode lists, they will be negotiated during burst
                 self.cmodes = {'*A': '', '*B': '', '*C': '', '*D': ''}
                 self.umodes = {'*A': '', '*B': '', '*C': '', '*D': ''}
@@ -538,7 +536,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             for modepair in args[-1].split():
                 name, char = modepair.rsplit('=', 1)
 
-                if self.remote_proto_ver >= 1205:
+                if self.proto_ver >= 1205:
                     # Detect mode types from the mode type tag
                     parts = name.split(':')
                     modetype = parts[0]
@@ -607,7 +605,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 self.maxchanlen = int(caps['CHANMAX'])
 
             # InspIRCd 2 only: mode & prefix definitions are sent as CAPAB CAPABILITIES CHANMODES/USERMODES/PREFIX
-            if self.remote_proto_ver < 1205:
+            if self.proto_ver < 1205:
                 if 'CHANMODES' in caps:
                     self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] \
                         = caps['CHANMODES'].split(',')
@@ -630,7 +628,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # InspIRCD 3 adds membership IDs to KICK messages when forwarding across servers
         # <- :3INAAAAAA KICK #endlessvoid 3INAAAAAA :test (local)
         # <- :3INAAAAAA KICK #endlessvoid 7PYAAAAAA 0 :test (remote)
-        if self.remote_proto_ver >= 1205 and len(args) > 3:
+        if self.proto_ver >= 1205 and len(args) > 3:
             del args[2]
 
         return super().handle_kick(source, command, args)
@@ -665,7 +663,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         for user in userlist:
             modeprefix, user = user.split(',', 1)
 
-            if self.remote_proto_ver >= 1205:
+            if self.proto_ver >= 1205:
                 # XXX: we don't handle membership IDs yet
                 user = user.split(':', 1)[0]
 
@@ -796,7 +794,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         #           chan creation time ^          ^ topic set time (the one we want)
         channel = args[0]
 
-        if self.remote_proto_ver >= 1205:
+        if self.proto_ver >= 1205:
             ts = args[2]
             if source in self.users:
                 setter = source
