@@ -446,10 +446,13 @@ class InspIRCdProtocol(TS6BaseProtocol):
           sdesc=self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']))
 
         self._send_with_prefix(self.sid, 'BURST %s' % ts)
-        # InspIRCd sends VERSION data on link, instead of whenever requested by a client.
+
+        # InspIRCd sends VERSION data on link, instead of when requested by a client.
         if self.proto_ver >= 1205:
-            for version_type in {'version', 'fullversion', 'rawversion'}:
-                self._send_with_prefix(self.sid, 'SINFO %s :%s' % (version_type, self.version()))
+            verstr = self.version()
+            for version_type in {'version', 'rawversion'}:
+                self._send_with_prefix(self.sid, 'SINFO %s :%s' % (version_type, verstr.split(' ', 1)[0]))
+            self._send_with_prefix(self.sid, 'SINFO fullversion :%s' % verstr)
         else:
             self._send_with_prefix(self.sid, 'VERSION :%s' % self.version())
         self._send_with_prefix(self.sid, 'ENDBURST')
