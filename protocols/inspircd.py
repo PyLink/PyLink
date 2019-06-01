@@ -934,8 +934,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_metadata(self, numeric, command, args):
         """
-        Handles the METADATA command, used by servers to send metadata (services
-        login name, certfp data, etc.) for clients.
+        Handles the METADATA command, used by servers to send metadata for various objects.
         """
         uid = args[0]
 
@@ -943,8 +942,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # <- :00A METADATA 1MLAAAJET accountname :
             # <- :00A METADATA 1MLAAAJET accountname :tester
             # Sets the services login name of the client.
-
             self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': args[-1]}])
+
         elif args[1] == 'modules' and numeric == self.uplink:
             # Note: only handle METADATA from our uplink; otherwise leaf servers unloading modules
             # while shutting down will corrupt the state.
