@@ -738,32 +738,38 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self.servers[numeric].users.add(uid)
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
 
-    def handle_server(self, numeric, command, args):
+    def handle_server(self, source, command, args):
         """Handles incoming SERVER commands (introduction of servers)."""
 
-        # Initial SERVER command on connect.
         if self.uplink is None:
             # <- SERVER whatever.net abcdefgh 0 10X :some server description
             servername = args[0].lower()
-            numeric = args[3]
+            source = args[3]
 
             if args[1] != self.serverdata['recvpass']:
                  # Check if recvpass is correct
                  raise ProtocolError('recvpass from uplink server %s does not match configuration!' % servername)
 
             sdesc = args[-1]
-            self.servers[numeric] = Server(self, None, servername, desc=sdesc)
-            self.uplink = numeric
+            self.servers[source] = Server(self, None, servername, desc=sdesc)
+            self.uplink = source
+            log.debug('(%s) inspircd: found uplink %s', self.name, self.uplink)
             return
 
         # Other server introductions.
+        # insp20:
         # <- :00A SERVER test.server * 1 00C :testing raw message syntax
+        # insp3:
+        # <- :3IN SERVER services.abc.local 0SV :Some server
         servername = args[0].lower()
-        sid = args[3]
+        if self.proto_ver >= 1205:
+            sid = args[1]  # insp3
+        else:
+            sid = args[3]  # insp20
         sdesc = args[-1]
-        self.servers[sid] = Server(self, numeric, servername, desc=sdesc)
+        self.servers[sid] = Server(self, source, servername, desc=sdesc)
 
-        return {'name': servername, 'sid': args[3], 'text': sdesc}
+        return {'name': servername, 'sid': sid, 'text': sdesc}
 
     def handle_fmode(self, numeric, command, args):
         """Handles the FMODE command, used for channel mode changes."""
