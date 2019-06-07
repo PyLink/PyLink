@@ -31,7 +31,7 @@ You can also find support via our IRC channel at `#PyLink @ irc.overdrivenetwork
 ## Installation
 
 ### Pre-requisites
-* CPython 3.4 or above (other intepreters are untested and unsupported)
+* CPython 3.5 or above (other intepreters are untested and unsupported)
 * A Unix-like operating system: PyLink is actively developed on Linux only, so we cannot guarantee that things will work properly on other systems.
 
 If you are a developer and want to help make PyLink more portable, patches are welcome.
