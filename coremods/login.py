@@ -5,18 +5,30 @@ login.py - Implement core login abstraction.
 from pylinkirc import conf, utils, world
 from pylinkirc.log import log
 
-try:
-    from passlib.context import CryptContext
-except ImportError:
-    CryptContext = None
-    log.warning("Hashed passwords are disabled because passlib is not installed. Please install "
-                "it (pip3 install passlib) and restart for this feature to work.")
-
+# PyLink's global password context
 pwd_context = None
-if CryptContext:
-    pwd_context = CryptContext(["sha512_crypt", "sha256_crypt"],
-                               sha256_crypt__default_rounds=180000,
-                               sha512_crypt__default_rounds=90000)
+
+_DEFAULT_CRYPTCONTEXT_SETTINGS = {
+    'schemes': ["pbkdf2_sha256", "sha512_crypt"]
+}
+def _make_cryptcontext():
+    try:
+        from passlib.context import CryptContext
+    except ImportError:
+        log.warning("Hashed passwords are disabled because passlib is not installed. Please install "
+                    "it (pip3 install passlib) and rehash for this feature to work.")
+        return
+
+    context_settings = conf.conf.get('login', {}).get('cryptcontext_settings') or _DEFAULT_CRYPTCONTEXT_SETTINGS
+    global pwd_context
+    if pwd_context is None:
+        log.debug("Initialized new CryptContext with settings: %s", context_settings)
+        pwd_context = CryptContext(**context_settings)
+    else:
+        log.debug("Updated CryptContext with settings: %s", context_settings)
+        pwd_context.update(**context_settings)
+
+_make_cryptcontext()  # This runs at startup and in rehash (control.py)
 
 def _get_account(accountname):
     """
