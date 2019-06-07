@@ -502,9 +502,14 @@ class InspIRCdProtocol(TS6BaseProtocol):
                                     "At least %s is needed. (got %s)" %
                                     (self.proto_ver, protocol_version))
             elif protocol_version > self.MAX_PROTO_VER:
-                log.warning("(%s) PyLink support for InspIRCd > 3.0 is experimental, "
+                log.warning("(%s) PyLink support for InspIRCd > 3.x is experimental, "
                             "and should not be relied upon for anything important.",
                             self.name)
+            elif protocol_version >= 1205 > self.proto_ver:
+                log.info("(%s) PyLink 2.1 introduces native support for InspIRCd 3.0. "
+                         "You can enable this by setting the 'target_version' option in your "
+                         "InspIRCd server block to 'insp3'.", self.name)
+                log.info("(%s) Falling back to InspIRCd 2.0 (compatibility) mode.", self.name)
             log.debug("(%s) inspircd: got remote protocol version %s", self.name, protocol_version)
 
             if self.proto_ver >= 1205:
