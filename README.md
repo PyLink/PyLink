@@ -78,7 +78,9 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 
 * [charybdis](https://github.com/charybdis-ircd/charybdis) (3.5+) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
-* [InspIRCd](http://www.inspircd.org/) 2.0.x - module `inspircd`
+* [InspIRCd](http://www.inspircd.org/) 2.0, 3.x [BETA] - module `inspircd`
+    - Both InspIRCd 2.0 and 3.x are supported by this module.
+      Set the `target_version` option to `insp3` to target InspIRCd 3.x, or `insp20` to target InspIRCd 2.0 (currently the default).
     - For vHost setting to work, `m_chghost.so` must be loaded. For ident and realname changing support, `m_chgident.so` and `m_chgname.so` must be loaded respectively.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
 * [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `p10`
@@ -99,8 +101,6 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
 * [Elemental-IRCd](https://github.com/Elemental-IRCd/elemental-ircd) (6.6.x / git master) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
-* [InspIRCd](http://www.inspircd.org/) 3.0.x (git master) - module `inspircd`
-    - The same notes for InspIRCd 2.x apply here as well.
 * [IRCd-Hybrid](http://www.ircd-hybrid.org/) (8.2.x / svn trunk) - module `hybrid`
     - For host changing support and optimal functionality, a `service{}` block / U-line should be added for PyLink on every IRCd across your network.
     - For KLINE support to work, a `shared{}` block should also be added for PyLink on all servers.

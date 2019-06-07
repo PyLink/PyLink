@@ -152,7 +152,6 @@ servers:
     # CHANGE THIS to some abbreviation representing your network; usually
     # something 3-5 characters should be good.
     inspnet:
-
         # Server IP, port, and passwords. The ip: field also supports resolving
         # hostnames.
         ip: 127.0.0.1
@@ -185,6 +184,15 @@ servers:
         # Sets the protocol module to use for this network - see the README for a list of supported
         # IRCds.
         protocol: "inspircd"
+
+        # InspIRCd specific option: sets the target InspIRCd protocol version.
+        # Valid values include:
+        #  "insp20" - InspIRCd 2.0.x (1202) [DEFAULT†]
+        #  "insp3"  - InspIRCd 3.x   (1205) [BETA]
+        #target_version: insp20
+        #target_version: insp3
+        # † InspIRCd 2.0 servers can link to InspIRCd 3.0 via built-in link compatibility, but some
+        #   new features may not work correctly.
 
         # Sets the max nick length for the network. It is important that this is set correctly, or
         # PyLink might introduce a nick that is too long and cause netsplits!
