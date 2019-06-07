@@ -199,33 +199,32 @@ servers:
         # This defaults to 30 if not set.
         maxnicklen: 30
 
-        # Toggles SSL for this network - you should seriously consider using TLS in all server links
+        # Toggles TLS/SSL for this network - you should seriously consider using TLS in all server links
         # for optimal security. Defaults to False if not specified.
         ssl: true
 
-        # Optional SSL cert/key to pass to the uplink server.
+        # Optional TLS cert/key to pass to the uplink server.
         #ssl_certfile: pylink-cert.pem
         #ssl_keyfile: pylink-key.pem
 
-        # New in 2.0: Determines whether the target server's TLS certificate hostnames should be
+        # New in PyLink 2.0: Determines whether the target server's TLS certificate hostnames should be
         # checked against the hostname we're set to connect to. This defaults to true for Clientbot
         # networks and others linked to via a hostname. It depends on ssl_accept_invalid_certs being
         # *disabled* to take effect.
         #ssl_validate_hostname: true
 
-        # New in 2.0: When enabled, this disables TLS certificate validation on the target network.
+        # New in PyLink 2.0: When enabled, this disables TLS certificate validation on the target network.
         # This defaults to false (bad certs are rejected) on Clientbot and true for server protocols
-        # (where bad certs are accepted). This disables the ssl_validate_hostname option,
-        # effectively forcing it to be false.
+        # (where bad certs are accepted). This disables the ssl_validate_hostname option, forcing it to
+        # be false.
         #ssl_accept_invalid_certs: false
 
-        # Optionally, you can set this option to verify the SSL certificate fingerprint of your
-        # uplink. This check works regardless of whether ssl_validate_hostname and
-        # ssl_accept_invalid_certs are enabled.
+        # Optionally, you can set this option to verify the TLS certificate fingerprint of your
+        # uplink. This check works independently of ssl_validate_hostname and ssl_accept_invalid_certs.
         #ssl_fingerprint: "e0fee1adf795c84eec4735f039503eb18d9c35cc"
 
-        # This sets the hash type for the fingerprint (md5, sha1, sha256, etc.)
-        # Valid values include md5 and sha1-sha512, though others may be supported depending on
+        # This sets the hash type for the above TLS certificate fingerprint.
+        # Valid values include md5 and sha1-sha512, and others that may be supported depending on
         # your system: see https://docs.python.org/3/library/hashlib.html
         # This defaults to sha256 if not set.
         #ssl_fingerprint_type: sha256
