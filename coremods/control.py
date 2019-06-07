@@ -9,7 +9,7 @@ import atexit
 
 from pylinkirc import world, utils, conf  # Do not import classes, it'll import loop
 from pylinkirc.log import log, _make_file_logger, _stop_file_loggers, _get_console_log_level
-from . import permissions
+from . import permissions, login
 
 def remove_network(ircobj):
     """Removes a network object from the pool."""
@@ -107,6 +107,7 @@ def rehash():
 
     log.debug('rehash: updating console log level')
     world.console_handler.setLevel(_get_console_log_level())
+    login._make_cryptcontext()  # refresh password hashing settings
 
     for network, ircobj in world.networkobjects.copy().items():
         # Server was removed from the config file, disconnect them.
