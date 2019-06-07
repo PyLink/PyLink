@@ -43,7 +43,7 @@ If you are a developer and want to help make PyLink more portable, patches are w
     * Setuptools (`pip3 install setuptools`)
     * PyYAML (`pip3 install pyyaml`)
     * ircmatch (`pip3 install ircmatch`)
-    * *For hashed password support*: Passlib (`pip3 install passlib`)
+    * *For hashed password support*: Passlib >= 1.7.0 (`pip3 install passlib`)
     * *For better PID file tracking (i.e. removing stale PID files after a crash)*: psutil (`pip3 install psutil`)
     * *For the servprotect plugin*: cachetools (`pip3 install cachetools`)
 

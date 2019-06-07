@@ -23,4 +23,4 @@ if __name__ == '__main__':
 
     password = password.strip()
     assert password, "Password cannot be empty!"
-    print(pwd_context.encrypt(password))
+    print(pwd_context.hash(password))

@@ -85,7 +85,7 @@ setup(
     install_requires=['pyyaml', 'ircmatch'],
 
     extras_require={
-        'password-hashing': ['passlib'],
+        'password-hashing': ['passlib>=1.7.0'],
         'cron-support': ['psutil'],
         'servprotect': ['expiringdict>=1.1.4'],
     },
