@@ -170,6 +170,8 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
 
     def part(self, source, channel, reason=''):
         """STUB: Parts a user from a channel."""
+        if self.pseudoclient and source == self.pseudoclient.uid:
+            raise NotImplementedError("Explicitly leaving channels is not supported here.")
         self._channels[channel].remove_user(source)
         self.users[source].channels.discard(channel)
         self.call_hooks([source, 'CLIENTBOT_PART', {'channel': channel, 'text': reason}])
