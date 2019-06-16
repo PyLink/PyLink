@@ -654,17 +654,27 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
             log.debug('(%s) Removing client %s from user + server state', self.name, numeric)
 
     ## State checking functions
-    def nick_to_uid(self, nick):
-        """Looks up the UID of a user with the given nick, if one is present."""
+    def nick_to_uid(self, nick, multi=False, filterfunc=None):
+        """Looks up the UID of a user with the given nick, or return None if no such nick exists.
+
+        If multi is given, return all matches for nick instead of just the last result. (Return an empty list if no matches)
+        If filterfunc is given, filter matched users by the given function first."""
         nick = self.to_lower(nick)
 
         uids = self.users.bynick.get(nick, [])
-        if len(uids) > 1:
-            log.warning('(%s) Multiple UIDs found for nick %r: %r; using the last one!', self.name, nick, uids)
-        try:
-            return uids[-1]
-        except IndexError:
-            return None
+
+        if filterfunc:
+            uids = list(filter(filterfunc, uids))
+
+        if multi:
+            return uids
+        else:
+            if len(uids) > 1:
+                log.warning('(%s) Multiple UIDs found for nick %r: %r; using the last one!', self.name, nick, uids)
+            try:
+                return uids[-1]
+            except IndexError:
+                return None
 
     def is_internal_client(self, numeric):
         """
