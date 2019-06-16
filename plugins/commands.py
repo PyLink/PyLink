@@ -32,20 +32,8 @@ def status(irc, source, args):
     irc.reply('Operator access: \x02%s\x02' % bool(irc.is_oper(source)))
 
 _none = '\x1D(none)\x1D'
-@utils.add_cmd
-def showuser(irc, source, args):
-    """<user>
-
-    Shows information about <user>."""
-    permissions.check_permissions(irc, source, ['commands.showuser'])
-    try:
-        target = args[0]
-    except IndexError:
-        irc.error("Not enough arguments. Needs 1: nick.")
-        return
-
-    u = irc.nick_to_uid(target) or target
-
+def _do_showuser(irc, source, u):
+    """Helper function for showuser."""
     # Some protocol modules store UIDs as ints; make sure we check for that.
     try:
         int_u = int(u)
@@ -60,7 +48,7 @@ def showuser(irc, source, args):
     verbose = irc.is_oper(source) or u == source
 
     if u not in irc.users:
-        irc.error('Unknown user %r.' % target)
+        irc.error('Unknown user %r.' % u)
         return
 
     f = lambda s: irc.reply(s, private=True)
@@ -89,6 +77,22 @@ def showuser(irc, source, args):
         f('\x02PyLink identification\x02: %s; \x02Services account\x02: %s; \x02Away status\x02: %s' % \
           ((userobj.account or _none), (userobj.services_account or _none), userobj.away or _none))
 
+@utils.add_cmd
+def showuser(irc, source, args):
+    """<user>
+
+    Shows information about <user>."""
+    permissions.check_permissions(irc, source, ['commands.showuser'])
+    try:
+        target = args[0]
+    except IndexError:
+        irc.error("Not enough arguments. Needs 1: nick.")
+        return
+
+    users = irc.nick_to_uid(target, multi=True) or [target]
+
+    for user in users:
+        _do_showuser(irc, source, user)
 
 @utils.add_cmd
 def showchan(irc, source, args):
