@@ -145,9 +145,7 @@ def showchan(irc, source, args):
                 nick = irc.prefixmodes.get(irc.cmodes.get(pmode, ''), '') + nick
             nicklist.append(nick)
 
-        while nicklist[:20]:  # 20 nicks per line to prevent message cutoff.
-            f('\x02User list\x02: %s' % ' '.join(nicklist[:20]))
-            nicklist = nicklist[20:]
+        f('\x02User list\x02: %s' % ' '.join(nicklist))
 
 @utils.add_cmd
 def version(irc, source, args):
