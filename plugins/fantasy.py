@@ -41,10 +41,9 @@ def handle_fantasy(irc, source, command, args):
                             conf.conf['pylink'].get('prefixes', {}).get(botname))]
 
                 # If responding to nick is enabled, add variations of the current nick
-                # to the prefix list: "<nick>," and "<nick>:"
+                # to the prefix list: "<nick>,", "<nick>:", and "@<nick>" (for Discord and other protocols)
                 nick = irc.to_lower(irc.users[servuid].nick)
-
-                nick_prefixes = [nick+',', nick+':']
+                nick_prefixes = [nick+',', nick+':', '@'+nick]
                 if respondtonick:
                     prefixes += nick_prefixes
 
