@@ -77,6 +77,35 @@ def _do_showuser(irc, source, u):
         f('\x02PyLink identification\x02: %s; \x02Services account\x02: %s; \x02Away status\x02: %s' % \
           ((userobj.account or _none), (userobj.services_account or _none), userobj.away or _none))
 
+    # Show relay user data if available
+    relay = world.plugins.get('relay')
+    if relay:
+        try:
+            userpair = relay.get_orig_user(irc, u) or (irc.name, u)
+            remoteusers = relay.relayusers[userpair].items()
+        except KeyError:
+            pass
+        else:
+            nicks = []
+            if remoteusers:
+                # Display all of the user's relay subclients, if there are any
+                nicks.append('%s:\x02%s\x02' % (userpair[0],
+                             world.networkobjects[userpair[0]].users[userpair[1]].nick))
+                for r in remoteusers:
+                    remotenet, remoteuser = r
+                    remoteirc = world.networkobjects[remotenet]
+                    nicks.append('%s:\x02%s\x02' % (remotenet, remoteirc.users[remoteuser].nick))
+                irc.reply("\x02Relay nicks\x02: %s" % ', '.join(nicks), private=True)
+        if verbose:
+            # Show the relay channels the user is in, if applicable
+            relaychannels = []
+            for ch in irc.users[u].channels:
+                relayentry = relay.get_relay(irc, ch)
+                if relayentry:
+                    relaychannels.append(''.join(relayentry))
+            if relaychannels and verbose:
+                irc.reply("\x02Relay channels\x02: %s" % ' '.join(relaychannels), private=True)
+
 @utils.add_cmd
 def showuser(irc, source, args):
     """<user>
@@ -146,6 +175,15 @@ def showchan(irc, source, args):
             nicklist.append(nick)
 
         f('\x02User list\x02: %s' % ' '.join(nicklist))
+
+        # Show relay info, if applicable
+        relay = world.plugins.get('relay')
+        if relay:
+            relayentry = relay.get_relay(irc, channel)
+            if relayentry:
+                relays = ['\x02%s\x02' % ''.join(relayentry)]
+                relays += [''.join(link) for link in relay.db[relayentry]['links']]
+                f('\x02Relayed channels:\x02 %s' % (' '.join(relays)))
 
 @utils.add_cmd
 def version(irc, source, args):
