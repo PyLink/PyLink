@@ -150,7 +150,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
             # XXX: The decoded version of the nick is empty, YUCK!
             # Base64 the nick for now, since (interestingly) we don't enforce UIDs to always be
             # ASCII strings.
-            nick = base64.b64encode(nick.encode(irc.encoding, 'replace'), altchars=b'-_')
+            nick = base64.b64encode(nick.encode(irc.encoding, 'replace'), altchars=b'[]')
             nick = nick.decode()
 
     # Normalize spaces to hyphens
