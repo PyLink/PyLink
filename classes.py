@@ -676,11 +676,13 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
             except IndexError:
                 return None
 
-    def is_internal_client(self, numeric):
+    def is_internal_client(self, uid):
         """
-        Returns whether the given client numeric (UID) is a PyLink client.
+        Returns whether the given UID is a PyLink client.
+
+        This returns False if the numeric doesn't exist.
         """
-        sid = self.get_server(numeric)
+        sid = self.get_server(uid)
         if sid and self.servers[sid].internal:
             return True
         return False
@@ -689,25 +691,25 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         """Returns whether the given SID is an internal PyLink server."""
         return (sid in self.servers and self.servers[sid].internal)
 
-    def get_server(self, numeric):
-        """Finds the SID of the server a user is on."""
-        userobj = self.users.get(numeric)
+    def get_server(self, uid):
+        """Finds the ID of the server a user is on. Return None if the user does not exist."""
+        userobj = self.users.get(uid)
         if userobj:
             return userobj.server
 
     def is_manipulatable_client(self, uid):
         """
-        Returns whether the given user is marked as an internal, manipulatable
-        client. Usually, automatically spawned services clients should have this
-        set True to prevent interactions with opers (like mode changes) from
-        causing desyncs.
+        Returns whether the given client is marked manipulatable for interactions
+        such as force-JOIN.
         """
         return self.is_internal_client(uid) and self.users[uid].manipulatable
 
     def get_service_bot(self, uid):
         """
-        Checks whether the given UID is a registered service bot. If True,
-        returns the cooresponding ServiceBot object.
+        Checks whether the given UID exists and is a registered service bot.
+
+        If True, returns the corresponding ServiceBot object.
+        Otherwise, return False.
         """
         userobj = self.users.get(uid)
         if not userobj:
