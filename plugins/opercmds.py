@@ -333,6 +333,29 @@ def jupe(irc, source, args):
 
     irc.reply("Done.")
 
+def _try_find_target(irc, nick):
+    """
+    Tries to find the target UID for the given nick, raising LookupError if it doesn't exist or is ambiguous.
+    """
+    try:
+        int_u = int(nick)
+    except:
+        int_u = None
+
+    if int_u and int_u in irc.users:
+        return int_u  # Some protocols use numeric UIDs
+    elif nick in irc.users:
+        return nick
+
+    potential_targets = irc.nick_to_uid(nick, multi=True)
+    if not potential_targets:
+        # Whatever we were told to kick doesn't exist!
+        raise LookupError("No such target %r." % nick)
+    elif len(potential_targets) > 1:
+        raise LookupError("Multiple users with the nick %r found: please select the right UID: %s" % (nick, str(potential_targets)))
+    else:
+        return potential_targets[0]
+
 @utils.add_cmd
 def kick(irc, source, args):
     """<channel> <user> [<reason>]
@@ -347,16 +370,11 @@ def kick(irc, source, args):
         irc.error("Not enough arguments. Needs 2-3: channel, target, reason (optional).")
         return
 
-    targetu = irc.nick_to_uid(target)
-
     if channel not in irc.channels:  # KICK only works on channels that exist.
         irc.error("Unknown channel %r." % channel)
         return
 
-    if not targetu:
-        # Whatever we were told to kick doesn't exist!
-        irc.error("No such target nick %r." % target)
-        return
+    targetu = _try_find_target(irc, target)
 
     sender = irc.pseudoclient.uid
     irc.kick(sender, channel, targetu, reason)
@@ -379,16 +397,14 @@ def kill(irc, source, args):
 
     # Convert the source and target nicks to UIDs.
     sender = irc.pseudoclient.uid
-    targetu = irc.nick_to_uid(target)
-    userdata = irc.users.get(targetu)
 
-    if targetu not in irc.users:
-        # Whatever we were told to kick doesn't exist!
-        irc.error("No such nick %r." % target)
-        return
-    elif irc.pseudoclient.uid == targetu:
+    targetu = _try_find_target(irc, target)
+
+    if irc.pseudoclient.uid == targetu:
         irc.error("Cannot kill the main PyLink client!")
         return
+
+    userdata = irc.users.get(targetu)
 
     # Deliver a more complete kill reason if our target is a non-PyLink client.
     # We skip this for PyLink clients so that relayed kills don't get
@@ -473,23 +489,24 @@ def chghost(irc, source, args):
     """<user> <new host>
 
     Changes the visible host of the target user."""
-    chgfield(irc, source, args, 'host')
+    _chgfield(irc, source, args, 'host')
 
 @utils.add_cmd
 def chgident(irc, source, args):
     """<user> <new ident>
 
     Changes the ident of the target user."""
-    chgfield(irc, source, args, 'ident')
+    _chgfield(irc, source, args, 'ident')
 
 @utils.add_cmd
 def chgname(irc, source, args):
     """<user> <new name>
 
     Changes the GECOS (realname) of the target user."""
-    chgfield(irc, source, args, 'name', 'GECOS')
+    _chgfield(irc, source, args, 'name', 'GECOS')
 
-def chgfield(irc, source, args, human_field, internal_field=None):
+def _chgfield(irc, source, args, human_field, internal_field=None):
+    """Helper function for chghost/chgident/chgname."""
     permissions.check_permissions(irc, source, ['opercmds.chg' + human_field])
     try:
         target = args[0]
@@ -499,10 +516,7 @@ def chgfield(irc, source, args, human_field, internal_field=None):
         return
 
     # Find the user
-    targetu = irc.nick_to_uid(target)
-    if targetu not in irc.users:
-        irc.error("No such nick %r." % target)
-        return
+    targetu = _try_find_target(irc, target)
 
     internal_field = internal_field or human_field.upper()
     irc.update_client(targetu, internal_field, new)

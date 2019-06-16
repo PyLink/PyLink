@@ -39,13 +39,16 @@ def quit(irc, source, args):
         irc.error("Not enough arguments. Needs 1-2: nick, reason (optional).")
         return
 
-    u = irc.nick_to_uid(nick)
+    u = irc.nick_to_uid(nick, filterfunc=irc.is_internal_client)
+    if u is None:
+        irc.error("Unknown user %r" % nick)
+        return
 
     if irc.pseudoclient.uid == u:
         irc.error("Cannot quit the main PyLink client!")
         return
 
-    quitmsg =  ' '.join(args[1:]) or 'Client Quit'
+    quitmsg = ' '.join(args[1:]) or 'Client Quit'
 
     if not irc.is_manipulatable_client(u):
         irc.error("Cannot force quit a protected PyLink services client.")
@@ -69,13 +72,13 @@ def joinclient(irc, source, args):
     try:
         # Check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the channels being joined.
-        u = irc.nick_to_uid(args[0])
+        u = irc.nick_to_uid(args[0], filterfunc=irc.is_internal_client)
 
-        if not irc.is_internal_client(u):  # First argument isn't one of our clients
+        if u is None:  # First argument isn't one of our clients
             raise IndexError
 
         clist = args[1]
-    except IndexError:  # No nick was given; shift arguments one to the left.
+    except IndexError:  # No valid nick was given; shift arguments one to the left.
         u = irc.pseudoclient.uid
         try:
             clist = args[0]
@@ -114,7 +117,7 @@ def joinclient(irc, source, args):
         except KeyError:
             modes = []
 
-        # Call a join hook manually so other plugins like relay can understand it.
+        # Signal the join to other plugins
         irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_JOIN', {'channel': real_channel, 'users': [u],
                                                      'modes': modes, 'parse_as': 'JOIN'}])
     irc.reply("Done.")
@@ -138,7 +141,7 @@ def nick(irc, source, args):
         except IndexError:
             irc.error("Not enough arguments. Needs 1-2: nick (optional), newnick.")
             return
-    u = irc.nick_to_uid(nick)
+    u = irc.nick_to_uid(nick, filterfunc=irc.is_internal_client)
 
     if newnick in ('0', u):  # Allow /nick 0 to work
         newnick = u
@@ -153,7 +156,7 @@ def nick(irc, source, args):
 
     irc.nick(u, newnick)
     irc.reply("Done.")
-    # Ditto above: manually send a NICK change hook payload to other plugins.
+    # Signal the nick change to other plugins
     irc.call_hooks([u, 'PYLINK_BOTSPLUGIN_NICK', {'newnick': newnick, 'oldnick': nick, 'parse_as': 'NICK'}])
 
 @utils.add_cmd
@@ -171,8 +174,8 @@ def part(irc, source, args):
 
         # First, check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the channels being parted.
-        u = irc.nick_to_uid(nick)
-        if not irc.is_internal_client(u):  # First argument isn't one of our clients
+        u = irc.nick_to_uid(nick, filterfunc=irc.is_internal_client)
+        if u is None:  # First argument isn't one of our clients
             raise IndexError
 
     except IndexError:  # No nick was given; shift arguments one to the left.
@@ -217,12 +220,11 @@ def msg(irc, source, args):
 
         # First, check if the first argument is an existing PyLink client. If it is not,
         # then assume that the first argument was actually the message TARGET.
-        sourceuid = irc.nick_to_uid(msgsource)
-        if not irc.is_internal_client(sourceuid):  # First argument isn't one of our clients
+        sourceuid = irc.nick_to_uid(msgsource, filterfunc=irc.is_internal_client)
+
+        if sourceuid is None or not text:  # First argument isn't one of our clients
             raise IndexError
 
-        if not text:
-            raise IndexError
     except IndexError:
         try:
             sourceuid = irc.pseudoclient.uid
@@ -236,12 +238,26 @@ def msg(irc, source, args):
         irc.error('No text given.')
         return
 
-    if not irc.is_channel(target):
-        # Convert nick of the message target to a UID, if the target isn't a channel
-        real_target = irc.nick_to_uid(target)
-        if real_target is None:  # Unknown target user, if target isn't a valid channel name
+    try:
+        int_u = int(target)
+    except:
+        int_u = None
+
+    if int_u and int_u in irc.users:
+        real_target = int_u  # Some protocols use numeric UIDs
+    elif target in irc.users:
+        real_target = target
+    elif not irc.is_channel(target):
+        # Convert nick of the message target to a UID, if the target isn't a channel or UID
+        potential_targets = irc.nick_to_uid(target, multi=True)
+        if not potential_targets:  # Unknown target user, if target isn't a valid channel name
             irc.error('Unknown user %r.' % target)
             return
+        elif len(potential_targets) > 1:
+            irc.error('Multiple users with the nick %r found: please select the right UID: %s' % (target, str(potential_targets)))
+            return
+        else:
+            real_target = potential_targets[0]
     else:
         real_target = target
 
