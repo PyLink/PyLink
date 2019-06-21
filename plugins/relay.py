@@ -1356,14 +1356,18 @@ def handle_join(irc, numeric, command, args):
                       irc.name, user, channel, modediff, oldmodes, newmodes)
             for modename in modediff:
                 modechar = irc.cmodes.get(modename)
-                # Special case for U-lined servers: allow them to join with ops,
-                # but don't forward this mode change on.
+                # Special case for U-lined servers: allow them to join with ops, but don't forward this mode change on.
                 if modechar and not irc.is_privileged_service(numeric):
                     modes.append(('-%s' % modechar, user))
 
-        if modes and _claim_should_bounce(irc, channel):
-            log.debug('(%s) relay.handle_join: reverting modes on BURST: %s', irc.name, irc.join_modes(modes))
-            irc.mode(irc.sid, channel, modes)
+        if modes:
+            if _claim_should_bounce(irc, channel):
+                log.debug('(%s) relay.handle_join: reverting modes on BURST: %s', irc.name, irc.join_modes(modes))
+                irc.mode(irc.sid, channel, modes)
+            else:
+                # HACK: pretend we managed to deop the caller, so that they can't bypass claim entirely
+                log.debug('(%s) relay.handle_join: fake reverting modes on BURST: %s', irc.name, irc.join_modes(modes))
+                irc.apply_modes(channel, modes)
 
     relay_joins(irc, channel, users, ts, burst=False)
 utils.add_hook(handle_join, 'JOIN')
