@@ -82,7 +82,7 @@ setup(
     ],
 
     keywords='IRC services relay',
-    install_requires=['pyyaml', 'ircmatch'],
+    install_requires=['pyyaml'],
 
     extras_require={
         'password-hashing': ['passlib>=1.7.0'],
