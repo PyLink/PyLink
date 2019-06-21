@@ -7,10 +7,6 @@ from pylinkirc.coremods import permissions
 
 import string
 
-# ircmatch library from https://github.com/mammon-ircd/ircmatch
-# (pip install ircmatch)
-import ircmatch
-
 # Characters allowed in a hostname.
 allowed_chars = string.ascii_letters + '-./:' + string.digits
 

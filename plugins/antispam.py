@@ -1,7 +1,5 @@
 # antispam.py: Basic services-side spamfilters for IRC
 
-import ircmatch
-
 from pylinkirc import utils, world, conf
 from pylinkirc.log import log
 
@@ -355,7 +353,7 @@ def handle_textfilter(irc, source, command, args):
 
     punished = False
     for filterglob in txf_globs:
-        if ircmatch.match(1, filterglob, text):
+        if utils.match_text(filterglob, text):
             log.info("(%s) antispam: punishing %s => %s for text filter %r",
                      irc.name,
                      irc.get_friendly_name(source),
