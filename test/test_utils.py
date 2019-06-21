@@ -187,6 +187,70 @@ class UtilsTestCase(unittest.TestCase):
             utils.parse_duration("4s3d")
             utils.parse_duration("1m5w")
 
+    def test_match_text(self):
+        f = utils.match_text  # glob, target
+
+        # Base cases
+        self.assertTrue(f("", ""))
+        self.assertFalse(f("test", ""))
+        self.assertFalse(f("", "abcdef"))
+        self.assertFalse(f("", "*"))  # specified the wrong way
+        self.assertFalse(f("", "?"))
+        self.assertTrue(f("foo", "foo"))
+        self.assertFalse(f("foo", "bar"))
+        self.assertFalse(f("foo", "food"))
+
+        # Test use of *
+        self.assertTrue(f("*", "b"))
+        self.assertTrue(f("*", "abc"))
+        self.assertTrue(f("*", ""))
+        self.assertTrue(f("*!*@*", "nick!user@host"))
+        self.assertTrue(f("*@*", "rick!user@lost"))
+        self.assertTrue(f("ni*!*@*st", "nick!user@roast"))
+        self.assertFalse(f("nick!*abcdef*@*st*", "nick!user@roast"))
+        self.assertTrue(f("*!*@*.overdrive.pw", "abc!def@abc.users.overdrive.pw"))
+
+        # Test use of ?
+        self.assertTrue(f("?", "b"))
+        self.assertFalse(f("?", "abc"))
+        self.assertTrue(f("Guest?????!???irc@users.overdrive.pw", "Guest12567!webirc@users.overdrive.pw"))
+        self.assertFalse(f("Guest????!webirc@users.overdrive.pw", "Guest23457!webirc@users.overdrive.pw"))
+
+    def test_match_text_complex(self):
+        f = utils.match_text  # glob, target
+
+        # Test combination of * and ?
+        for glob in {"*?", "?*"}:
+            self.assertTrue(f(glob, "a"))
+            self.assertTrue(f(glob, "ab"))
+            self.assertFalse(f(glob, ""))
+
+        self.assertTrue(f("ba*??*ll", "basketball"))
+        self.assertFalse(f("ba*??*ll", "ball"))
+        self.assertFalse(f("ba*??*ll", "basketballs"))
+
+        self.assertTrue(f("**", "fooBarBaz"))
+        self.assertTrue(f("*?*?*?*", "cat"))
+        self.assertTrue(f("*??****?*", "cat"))
+        self.assertFalse(f("*??****?*?****", "MAP"))
+
+    def test_match_text_casemangle(self):
+        f = utils.match_text  # glob, target, manglefunc
+
+        # We are case insensitive by default
+        self.assertTrue(f("Test", "TEST"))
+        self.assertTrue(f("ALPHA*", "alphabet"))
+
+        # But we can override this preference
+        self.assertFalse(f("Test", "TEST", None))
+        self.assertFalse(f("*for*", "BEForE", None))
+        self.assertTrue(f("*corn*", "unicorns", None))
+
+        # Or specify some other filter func
+        self.assertTrue(f('005', '5', lambda s: s.zfill(3)))
+        self.assertTrue(f('*0*', '14', lambda s: s.zfill(6)))
+        self.assertFalse(f('*9*', '14', lambda s: s.zfill(13)))
+        self.assertTrue(f('*chin*', 'machine', str.upper))
 
 if __name__ == '__main__':
     unittest.main()

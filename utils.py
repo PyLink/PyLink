@@ -12,6 +12,7 @@ import os
 import collections
 import argparse
 import ipaddress
+import functools
 
 from .log import log
 from . import world, conf, structures
@@ -821,3 +822,30 @@ def parse_duration(text):
         raise ValueError("Failed to parse duration string %r" % text)
 
     return result
+
+@functools.lru_cache(maxsize=1024)
+def _glob2re(glob):
+    """Converts an IRC-style glob to a regular expression."""
+    patt = ['^']
+
+    for char in glob:
+        if char == '*' and patt[-1] != '*':  # Collapse ** into *
+            patt.append('.*')
+        elif char == '?':
+            patt.append('.')
+        else:
+            patt.append(re.escape(char))
+
+    patt.append('$')
+    return ''.join(patt)
+
+def match_text(glob, text, filterfunc=str.lower):
+    """
+    Returns whether glob matches text. If filterfunc is specified, run filterfunc on glob and text
+    before preforming matches.
+    """
+    if filterfunc:
+        glob = filterfunc(glob)
+        text = filterfunc(text)
+
+    return re.match(_glob2re(glob), text)
