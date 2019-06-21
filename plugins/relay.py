@@ -26,7 +26,6 @@ relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.Lock)
 spawnlocks_servers = defaultdict(threading.Lock)
-channels_init_in_progress = defaultdict(threading.Event)
 
 dbname = conf.get_database_name('pylinkrelay')
 datastore = structures.PickleDataStore('pylinkrelay', dbname)
