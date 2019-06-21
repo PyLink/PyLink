@@ -1884,23 +1884,22 @@ def handle_mode(irc, numeric, command, args):
                                                  for named_modepair in modedelta_modes]))
 
         if not check_claim(irc, target, numeric, chanobj=oldchan):
-            if _claim_should_bounce(irc, target):
-                # Mode change blocked by CLAIM.
-                reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
+            # Mode change blocked by CLAIM.
+            reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
 
-                if irc.is_privileged_service(numeric):
-                    # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
-                    # attempts to op its own clients (trying to change status for others
-                    # SHOULD be reverted).
-                    # This is for compatibility with Anope's DEFCON for the most part, as well as
-                    # silly people who try to register a channel multiple times via relay.
-                    reversed_modes = [modepair for modepair in reversed_modes if
-                                      # Include prefix modes if target isn't also U-lined
-                                      ((modepair[0][-1] in irc.prefixmodes and not
-                                        irc.is_privileged_service(modepair[1]))
-                                      # Include all list modes (bans, etc.)
-                                       or modepair[0][-1] in irc.cmodes['*A'])
-                                     ]
+            if irc.is_privileged_service(numeric):
+                # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
+                # attempts to op its own clients (trying to change status for others
+                # SHOULD be reverted).
+                # This is for compatibility with Anope's DEFCON for the most part, as well as
+                # silly people who try to register a channel multiple times via relay.
+                reversed_modes = [modepair for modepair in reversed_modes if
+                                  # Include prefix modes if target isn't also U-lined
+                                  ((modepair[0][-1] in irc.prefixmodes and not
+                                    irc.is_privileged_service(modepair[1]))
+                                  # Include all list modes (bans, etc.)
+                                   or modepair[0][-1] in irc.cmodes['*A'])
+                                 ]
             modes.clear()  # Clear the mode list so nothing is relayed below
 
         for modepair in modes.copy():
@@ -1931,9 +1930,14 @@ def handle_mode(irc, numeric, command, args):
                               irc.name, str(modepair), target)
 
     if reversed_modes:
-        log.debug('(%s) relay.handle_mode: Reversing mode changes of %r with %r.',
-                  irc.name, args['modes'], reversed_modes)
-        irc.mode(irc.sid, target, reversed_modes)
+        if _claim_should_bounce(irc, target):
+            log.debug('(%s) relay.handle_mode: Reversing mode changes %r on %s with %r.',
+                      irc.name, args['modes'], target, reversed_modes)
+            irc.mode(irc.sid, target, reversed_modes)
+        else:
+            log.debug('(%s) relay.handle_mode: Fake reversing mode changes %r on %s with %r.',
+                      irc.name, args['modes'], target, reversed_modes)
+            irc.apply_modes(target, reversed_modes)
 
     if modes:
         iterate_all(irc, _handle_mode_loop, extra_args=(numeric, command, target, modes))
