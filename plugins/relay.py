@@ -14,6 +14,11 @@ CHANNEL_DELINKED_MSG = "Channel delinked."
 RELAY_UNLOADED_MSG = "Relay plugin unloaded."
 
 try:
+    import cachetools
+except ImportError as e:
+    raise ImportError("PyLink Relay requires cachetools as of PyLink 2.1: https://pypi.org/project/cachetools/") from e
+
+try:
     import unidecode
 except ImportError:
     log.info('relay: unidecode not found; disabling unicode nicks support')
@@ -26,6 +31,11 @@ relayusers = defaultdict(dict)
 relayservers = defaultdict(dict)
 spawnlocks = defaultdict(threading.Lock)
 spawnlocks_servers = defaultdict(threading.Lock)
+
+# Claim bounce cache to prevent kick/mode/topic loops
+__claim_bounce_timeout = conf.conf.get('relay', {}).get('claim_bounce_timeout', 5)
+claim_bounce_cache = cachetools.TTLCache(float('inf'), __claim_bounce_timeout)
+claim_bounce_cache_lock = threading.Lock()
 
 dbname = conf.get_database_name('pylinkrelay')
 datastore = structures.PickleDataStore('pylinkrelay', dbname)
@@ -646,9 +656,32 @@ def remove_channel(irc, channel):
                         del relayusers[remoteuser][irc.name]
                         irc.quit(user, 'Left all shared channels.')
 
+def _claim_should_bounce(irc, channel):
+    """
+    Returns whether we should bounce the next action that fails CLAIM.
+    This is used to prevent kick/mode/topic wars with services.
+    """
+    with claim_bounce_cache_lock:
+        if irc.name not in claim_bounce_cache:  # Nothing in the cache to worry about
+            return True
+
+        limit = irc.get_service_option('relay', 'claim_bounce_limit', default=15)
+        if limit < 0:  # Disabled
+            return True
+        elif limit < 5:  # Anything below this is just asking for desyncs...
+            log.warning('(%s) relay: the minimum supported value for relay::claim_bounce_limit is 5.', irc.name)
+            limit = 5
+
+        success = claim_bounce_cache[irc.name] <= limit
+        ttl = claim_bounce_cache.ttl
+        if not success:
+            log.warning("(%s) relay: %s received more than %s claim bounces in %s seconds - your channel may be desynced!",
+                        irc.name, channel, limit, ttl)
+        return success
+
 def check_claim(irc, channel, sender, chanobj=None):
     """
-    Checks whether the sender of a kick/mode change passes CLAIM checks for
+    Checks whether the sender of a kick/mode/topic change passes CLAIM checks for
     a given channel. This returns True if any of the following criteria are met:
 
     1) No relay exists for the channel in question.
@@ -669,12 +702,22 @@ def check_claim(irc, channel, sender, chanobj=None):
     log.debug('(%s) relay.check_claim: sender modes (%s/%s) are %s (mlist=%s)', irc.name,
               sender, channel, sender_modes, mlist)
     # XXX: stop hardcoding modes to check for and support mlist in isHalfopPlus and friends
-    return (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
+    success = (not relay) or irc.name == relay[0] or not db[relay]['claim'] or \
         irc.name in db[relay]['claim'] or \
-        (any([mode in sender_modes for mode in ('y', 'q', 'a', 'o', 'h')])
+        (any([mode in sender_modes for mode in {'y', 'q', 'a', 'o', 'h'}])
          and not irc.is_privileged_service(sender)) \
         or irc.is_internal_client(sender) or \
         irc.is_internal_server(sender)
+
+    # Increment claim_bounce_cache, checked in _claim_should_bounce()
+    if not success:
+        with claim_bounce_cache_lock:
+            if irc.name not in claim_bounce_cache:
+                claim_bounce_cache[irc.name] = 1
+            else:
+                claim_bounce_cache[irc.name] += 1
+
+    return success
 
 def get_supported_umodes(irc, remoteirc, modes):
     """Given a list of user modes, filters out all of those not supported by the
@@ -1318,7 +1361,7 @@ def handle_join(irc, numeric, command, args):
                 if modechar and not irc.is_privileged_service(numeric):
                     modes.append(('-%s' % modechar, user))
 
-        if modes:
+        if modes and _claim_should_bounce(irc, channel):
             log.debug('(%s) relay.handle_join: reverting modes on BURST: %s', irc.name, irc.join_modes(modes))
             irc.mode(irc.sid, channel, modes)
 
@@ -1695,32 +1738,31 @@ def handle_kick(irc, source, command, args):
             del relayusers[(irc.name, target)][remoteirc.name]
             remoteirc.quit(real_target, 'Left all shared channels.')
 
+    # Kick was a relay client but sender does not pass CLAIM restrictions. Bounce a rejoin unless we've reached our limit.
     if is_relay_client(irc, target) and not check_claim(irc, channel, kicker):
-        homenet, real_target = get_orig_user(irc, target)
-        homeirc = world.networkobjects.get(homenet)
-        homenick = homeirc.users[real_target].nick if homeirc else '<ghost user>'
-        homechan = get_remote_channel(irc, homeirc, channel)
+        if _claim_should_bounce(irc, channel):
+            homenet, real_target = get_orig_user(irc, target)
+            homeirc = world.networkobjects.get(homenet)
+            homenick = homeirc.users[real_target].nick if homeirc else '<ghost user>'
+            homechan = get_remote_channel(irc, homeirc, channel)
 
-        log.debug('(%s) relay.handle_kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
-        # Home network is not in the channel's claim AND the kicker is not
-        # opped. We won't propograte the kick then.
-        # TODO: make the check slightly more advanced: i.e. halfops can't
-        # kick ops, admins can't kick owners, etc.
-        modes = get_prefix_modes(homeirc, irc, homechan, real_target)
+            log.debug('(%s) relay.handle_kick: kicker %s is not opped... We should rejoin the target user %s', irc.name, kicker, real_target)
+            # FIXME: make the check slightly more advanced: i.e. halfops can't kick ops, admins can't kick owners, etc.
+            modes = get_prefix_modes(homeirc, irc, homechan, real_target)
 
-        # Join the kicked client back with its respective modes.
-        irc.sjoin(irc.sid, channel, [(modes, target)])
-        if kicker in irc.users:
-            log.info('(%s) relay: Blocked KICK (reason %r) from %s/%s to %s/%s on %s.',
-                     irc.name, args['text'], irc.users[source].nick, irc.name,
-                     homenick, homenet, channel)
-            irc.msg(kicker, "This channel is claimed; your kick to "
-                            "%s has been blocked because you are not "
-                            "(half)opped." % channel, notice=True)
-        else:
-            log.info('(%s) relay: Blocked KICK (reason %r) from server %s to %s/%s on %s.',
-                     irc.name, args['text'], irc.servers[source].name ,
-                     homenick, homenet, channel)
+            # Join the kicked client back with its respective modes.
+            irc.sjoin(irc.sid, channel, [(modes, target)])
+            if kicker in irc.users:
+                log.info('(%s) relay: Blocked KICK (reason %r) from %s/%s to %s/%s on %s.',
+                         irc.name, args['text'], irc.users[source].nick, irc.name,
+                         homenick, homenet, channel)
+                irc.msg(kicker, "This channel is claimed; your kick to "
+                                "%s has been blocked because you are not "
+                                "(half)opped." % channel, notice=True)
+            else:
+                log.info('(%s) relay: Blocked KICK (reason %r) from server %s to %s/%s on %s.',
+                         irc.name, args['text'], irc.servers[source].name ,
+                         homenick, homenet, channel)
         return
 
     iterate_all(irc, _handle_kick_loop, extra_args=(source, command, args))
@@ -1838,22 +1880,23 @@ def handle_mode(irc, numeric, command, args):
                                                  for named_modepair in modedelta_modes]))
 
         if not check_claim(irc, target, numeric, chanobj=oldchan):
-            # Mode change blocked by CLAIM.
-            reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
+            if _claim_should_bounce(irc, target):
+                # Mode change blocked by CLAIM.
+                reversed_modes = irc.reverse_modes(target, modes, oldobj=oldchan)
 
-            if irc.is_privileged_service(numeric):
-                # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
-                # attempts to op u-lined clients (trying to change status for others
-                # SHOULD be reverted).
-                # This is for compatibility with Anope's DEFCON for the most part, as well as
-                # silly people who try to register a channel multiple times via relay.
-                reversed_modes = [modepair for modepair in reversed_modes if
-                                  # Mode is a prefix mode but target isn't ulined, revert
-                                  ((modepair[0][-1] in irc.prefixmodes and not
-                                    irc.is_privileged_service(modepair[1]))
-                                  # Tried to set a list mode, revert
-                                   or modepair[0][-1] in irc.cmodes['*A'])
-                                 ]
+                if irc.is_privileged_service(numeric):
+                    # Special hack for "U-lined" servers - ignore changes to SIMPLE modes and
+                    # attempts to op its own clients (trying to change status for others
+                    # SHOULD be reverted).
+                    # This is for compatibility with Anope's DEFCON for the most part, as well as
+                    # silly people who try to register a channel multiple times via relay.
+                    reversed_modes = [modepair for modepair in reversed_modes if
+                                      # Include prefix modes if target isn't also U-lined
+                                      ((modepair[0][-1] in irc.prefixmodes and not
+                                        irc.is_privileged_service(modepair[1]))
+                                      # Include all list modes (bans, etc.)
+                                       or modepair[0][-1] in irc.cmodes['*A'])
+                                     ]
             modes.clear()  # Clear the mode list so nothing is relayed below
 
         for modepair in modes.copy():
@@ -1920,7 +1963,7 @@ def handle_topic(irc, numeric, command, args):
                 remoteirc.topic_burst(rsid, remotechan, topic)
         iterate_all(irc, _handle_topic_loop, extra_args=(numeric, command, args))
 
-    elif oldtopic:  # Topic change blocked by claim.
+    elif oldtopic and _claim_should_bounce(irc, channel):  # Topic change blocked by claim.
         irc.topic_burst(irc.sid, channel, oldtopic)
 
 utils.add_hook(handle_topic, 'TOPIC')
