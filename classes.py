@@ -22,11 +22,6 @@ import collections
 import collections.abc
 import textwrap
 
-try:
-    import ircmatch
-except ImportError:
-    raise ImportError("PyLink requires ircmatch to function; please install it and try again.")
-
 from . import world, utils, structures, conf, __version__, selectdriver
 from .log import *
 from .utils import ProtocolError  # Compatibility with PyLink 1.x
@@ -1365,11 +1360,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         and the 'ip' option is enabled, the host portion of the glob is also matched as a CIDR
         range.
         """
-        # Get the corresponding casemapping value used by ircmatch.
-        if self.casemapping == 'rfc1459':
-            casemapping = 0
-        else:
-            casemapping = 1
 
         # Try to convert target into a UID. If this fails, it's probably a hostname.
         target = self.nick_to_uid(target) or target
@@ -1444,9 +1434,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             else:  # We were given a host, use that.
                 hosts = [target]
 
-            # Iterate over the hosts to match using ircmatch.
+            # Iterate over the hosts to match, since we may have multiple (check IP/real host)
             for host in hosts:
-                if ircmatch.match(casemapping, glob, host):
+                if self.match_text(glob, host):
                     return True
 
             return False
@@ -1461,13 +1451,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         Returns whether the given glob matches the given text under the network's
         current case mapping.
         """
-        # Get the corresponding casemapping value used by ircmatch.
-        if self.casemapping == 'rfc1459':
-            casemapping = 0
-        else:
-            casemapping = 1
-
-        return ircmatch.match(casemapping, glob, text)
+        return utils.match_text(glob, text, filterfunc=self.to_lower)
 
     def match_all(self, banmask, channel=None):
         """
