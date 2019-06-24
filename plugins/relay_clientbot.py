@@ -110,19 +110,8 @@ def cb_relay_core(irc, source, command, args):
                     except (AttributeError, KeyError):
                         return
 
-                sourcenet, realsource = origuser
                 log.debug('(%s) relay_cb_core: Original sender found as %s', irc.name, origuser)
-                if 'newnick' not in args: # XXX: we can't really normalize sender names for nick changes, because we'll always see the new nick
-                    try:
-                        sourcename = world.networkobjects[sourcenet].get_friendly_name(realsource)
-                    except LookupError:
-                        # Fallbacks for users that have just quit / servers that have just split
-                        if args.get('serverdata'):
-                            sourcename = args['serverdata'].name
-                        elif args.get('userdata'):
-                            sourcename = args['userdata'].nick
-                        else:
-                            log.debug('(%s) relay_cb_core: could not get original name of sender %s/%s', irc.name, realsource, sourcenet, exc_info=True)
+                sourcenet, realsource = origuser
 
             try:  # Try to get the full network name
                 netname = conf.conf['servers'][sourcenet]['netname']
@@ -154,7 +143,7 @@ def cb_relay_core(irc, source, command, args):
             identhost = ''
             if source in irc.users:
                 try:
-                    identhost = irc.get_hostmask(source).split('!', 1)[-1]
+                    identhost = irc.get_hostmask(source).split('!')[-1]
                 except KeyError:  # User got removed due to quit
                     identhost = '%s@%s' % (args['userdata'].ident, args['userdata'].host)
                 # This is specifically spaced so that ident@host is only shown for users that have
