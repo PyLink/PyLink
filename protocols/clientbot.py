@@ -25,41 +25,25 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
+        self.protocol_caps = {'visible-state-only', 'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts',
+                              'freeform-nicks'}
 
         # Remove conf key checks for those not needed for Clientbot.
         self.conf_keys -= {'recvpass', 'sendpass', 'sid', 'sidrange', 'hostname'}
 
-    def _check_puid_collision(self, nick):
+    def _get_UID(self, nick, ident=None, host=None, spawn_new=True):
         """
-        Checks to make sure a nick doesn't clash with a PUID.
+        Fetches the UID for the given nick, creating one if it does not already exist and spawn_new is True.
+
+        To prevent message spoofing, this will only return an external (non-PyLink) client or the PyLink bot itself.
         """
-        if nick in self.users or nick in self.servers:
-            raise ProtocolError("Got bad nick %s from uplink which clashes with a PUID. Is someone trying to spoof users?" % nick)
+        #log.debug('(%s) _get_UID: searching for nick %s', self.name, nick, stack_info=True)
+        idsource = self.nick_to_uid(nick, filterfunc=lambda uid: uid == self.pseudoclient.uid or not self.is_internal_client(uid))
 
-    def _get_UID(self, nick, ident=None, host=None):
-        """
-        Fetches the UID for the given nick, creating one if it does not already exist.
-
-        Limited (internal) nick collision checking is done here to prevent Clientbot users from
-        being confused with virtual clients, and vice versa."""
-        self._check_puid_collision(nick)
-
-        idsource = self.nick_to_uid(nick)
-
-        if self.is_internal_client(idsource) and self.pseudoclient and idsource != self.pseudoclient.uid:
-            # We got a message from a client with the same nick as an internal client.
-            # Fire a virtual nick collision to prevent mixing senders.
-            log.debug('(%s) Nick-colliding virtual client %s/%s', self.name, idsource, nick)
-            self.call_hooks([self.sid, 'SAVE', {'target': idsource}])
-
-            # Clear the UID for this nick and spawn a new client for the nick that was just freed.
-            idsource = None
-
-        if idsource is None:
+        if idsource is None and spawn_new:
             # If this sender doesn't already exist, spawn a new client.
             idsource = self.spawn_client(nick, ident or 'unknown', host or 'unknown',
-                                        server=self.uplink, realname=FALLBACK_REALNAME).uid
+                                         server=self.uplink, realname=FALLBACK_REALNAME).uid
         return idsource
 
     def away(self, source, text):
@@ -195,6 +179,9 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
 
     def update_client(self, target, field, text):
         """Updates the known ident, host, or realname of a client."""
+        # Note: unlike other protocol modules, this function is also called as a helper to
+        # update data for external clients.
+        # Following this, we only want to send hook payloads if the target is an external client.
         if target not in self.users:
             log.warning("(%s) Unknown target %s for update_client()", self.name, target)
             return
@@ -204,8 +191,6 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
         if field == 'IDENT' and u.ident != text:
             u.ident = text
             if not self.is_internal_client(target):
-                # We're updating the host of an external client in our state, so send the appropriate
-                # hook payloads.
                 self.call_hooks([self.sid, 'CHGIDENT',
                                    {'target': target, 'newident': text}])
         elif field == 'HOST' and u.host != text:
@@ -401,11 +386,6 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
             self.send('NICK :%s' % newnick)
             # No state update here: the IRCd will respond with a NICK acknowledgement if the change succeeds.
         else:
-            # Check that the new nick exists and isn't the same client as the sender (for changing nick case)
-            nick_uid = self.nick_to_uid(newnick)
-            if nick_uid and nick_uid != source:
-                log.warning('(%s) Blocking attempt from virtual client %s to change nick to %s (nick in use)', self.name, source, newnick)
-                return
             super().nick(source, newnick)
 
     def _ping_uplink(self):
@@ -805,8 +785,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         if command == '352':
             realname = realname.split(' ', 1)[-1]
 
-        self._check_puid_collision(nick)
-        uid = self.nick_to_uid(nick)
+        uid = self._get_UID(nick, spawn_new=False)
 
         if uid is None:
             log.debug("(%s) Ignoring extraneous /WHO info for %s", self.name, nick)
@@ -954,7 +933,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         """
         # <- :GL!~gl@127.0.0.1 KICK #whatever GL| :xd
         channel = args[0]
-        target = self.nick_to_uid(args[1])
+        target = self._get_UID(args[1], spawn_new=False)
 
         try:
             reason = args[2]
@@ -993,7 +972,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         if self.is_channel(target):
             oldobj = self._channels[target].deepcopy()
         else:
-            target = self.nick_to_uid(target)
+            target = self._get_UID(target, spawn_new=False)
             oldobj = None
         modes = args[1:]
         changedmodes = self.parse_modes(target, modes)
@@ -1064,8 +1043,6 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
 
         oldnick = self.users[source].nick
 
-        # Check for any nick collisions with existing virtual clients.
-        self._check_nick_collision(newnick)
         self.users[source].nick = newnick
 
         return {'newnick': newnick, 'oldnick': oldnick}
@@ -1119,7 +1096,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
 
         real_target = target.lstrip(''.join(self.prefixmodes.values()))
         if not self.is_channel(real_target):
-            target = self.nick_to_uid(target)
+            target = self._get_UID(target, spawn_new=False)
 
         if target:
             return {'target': target, 'text': args[1]}
