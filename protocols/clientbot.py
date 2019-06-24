@@ -244,7 +244,7 @@ class ClientbotWrapperProtocol(IRCCommonProtocol):
             log.debug('(%s) mode: filtered modes for %s: %s', self.name, channel, extmodes)
             if extmodes:
                 bufsize = self.S2S_BUFSIZE - len(':%s MODE %s ' % (self.get_hostmask(self.pseudoclient.uid), channel))
-                for msg in self.wrap_modes(extmodes, bufsize, max_modes_per_msg=int(self._caps.get('MODES', 0))):
+                for msg in self.wrap_modes(extmodes, bufsize, max_modes_per_msg=int(self._caps.get('MODES') or 0)):
                     self.send('MODE %s %s' % (channel, msg))
                     # Don't update the state here: the IRCd sill respond with a MODE reply if successful.
 
