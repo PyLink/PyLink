@@ -1360,10 +1360,6 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         and the 'ip' option is enabled, the host portion of the glob is also matched as a CIDR
         range.
         """
-
-        # Try to convert target into a UID. If this fails, it's probably a hostname.
-        target = self.nick_to_uid(target) or target
-
         # Allow queries like !$exttarget to invert the given match.
         invert = glob.startswith('!')
         if invert:
