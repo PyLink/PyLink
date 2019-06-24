@@ -149,6 +149,9 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     UID is optional for checking regular nick changes, to make sure that the sender doesn't get
     marked as nick-colliding with itself.
     """
+    if irc.has_cap('freeform-nicks'):  # ☺
+        return nick
+
     is_unicode_capable = irc.casemapping in ('utf8', 'utf-8', 'rfc7700')
     if USE_UNIDECODE and not is_unicode_capable:
         decoded_nick = unidecode.unidecode(nick).strip()
