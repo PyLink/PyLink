@@ -27,10 +27,14 @@ def disconnect(irc, source, args):
     except KeyError:  # Unknown network.
         irc.error('No such network "%s" (case sensitive).' % netname)
         return
-    irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
-    log.info('Disconnecting network %r per %s', netname, irc.get_hostmask(source))
 
+    if network.has_cap('virtual-server'):
+        irc.error('"%s" is a virtual server and cannot be directly disconnected.' % netname)
+        return
+
+    log.info('Disconnecting network %r per %s', netname, irc.get_hostmask(source))
     control.remove_network(network)
+    irc.reply("Done. If you want to reconnect this network, use the 'rehash' command.")
 
 @utils.add_cmd
 def autoconnect(irc, source, args):
