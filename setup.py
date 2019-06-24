@@ -82,12 +82,12 @@ setup(
     ],
 
     keywords='IRC services relay',
-    install_requires=['pyyaml'],
+    install_requires=['pyyaml', 'cachetools'],
 
     extras_require={
         'password-hashing': ['passlib>=1.7.0'],
         'cron-support': ['psutil'],
-        'servprotect': ['cachetools'],
+        'relay-unicode': ['unidecode'],
     },
 
     # Folders (packages of code)

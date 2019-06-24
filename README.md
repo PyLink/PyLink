@@ -42,9 +42,10 @@ If you are a developer and want to help make PyLink more portable, patches are w
 
     * Setuptools (`pip3 install setuptools`)
     * PyYAML (`pip3 install pyyaml`)
+    * cachetools (`pip3 install cachetools`)
     * *For hashed password support*: Passlib >= 1.7.0 (`pip3 install passlib`)
-    * *For better PID file tracking (i.e. removing stale PID files after a crash)*: psutil (`pip3 install psutil`)
-    * *For the servprotect plugin*: cachetools (`pip3 install cachetools`)
+    * *For Unicode support in Relay*: unidecode (`pip3 install Unidecode`)
+    * *For extended PID file tracking (i.e. removing stale PID files after a crash)*: psutil (`pip3 install psutil`)
 
 2) Clone the repository: `git clone https://github.com/jlu5/PyLink && cd PyLink`
 
