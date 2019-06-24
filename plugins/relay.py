@@ -133,6 +133,14 @@ IRC_ASCII_ALLOWED_CHARS = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
 FALLBACK_SEPARATOR = '|'
 FALLBACK_CHARACTER = '-'
 
+def _replace_special(text):
+    """
+    Replaces brackets and spaces by similar IRC-representable characters.
+    """
+    for pair in {('(', '['), (')', ']'), (' ', FALLBACK_CHARACTER), ('<', '['), ('>', ']')}:
+        text = text.replace(pair[0], pair[1])
+    return text
+
 def _sanitize(text, extrachars=''):
     """Replaces characters not in IRC_ASCII_ALLOWED_CHARS with FALLBACK_CHARACTER."""
     whitelist = IRC_ASCII_ALLOWED_CHARS + extrachars
@@ -165,9 +173,9 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
             nick = base64.b64encode(nick.encode(irc.encoding, 'replace'), altchars=b'[]')
             nick = nick.decode()
 
-    # Normalize spaces to hyphens
-    nick = nick.replace(' ', FALLBACK_CHARACTER)
-    netname = netname.replace(' ', FALLBACK_CHARACTER)
+    # Normalize spaces to hyphens, () => []
+    nick = _replace_special(nick)
+    netname = _replace_special(netname)
 
     # Get the nick/net separator
     separator = irc.serverdata.get('separator') or \
