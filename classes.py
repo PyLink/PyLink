@@ -788,8 +788,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             return sname  # Fall back to given text instead of None
 
     def _get_UID(self, target):
-        """Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
-        in that it returns the original text instead of None, if no matching nick is found."""
+        """
+        Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
+        in that it returns the original text instead of None, if no matching nick is found.
+
+        Subclasses like Clientbot may override this to tweak the nick lookup behaviour,
+        e.g. by filtering virtual clients out.
+        """
 
         if target in self.users:
             return target
@@ -893,7 +898,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                         log.debug('Mode %s: This mode is a prefix mode.', mode)
                         arg = args.pop(0)
                         # Convert nicks to UIDs implicitly
-                        arg = self.nick_to_uid(arg) or arg
+                        arg = self._get_UID(arg)
                         if arg not in self.users:  # Target doesn't exist, skip it.
                             log.debug('(%s) Skipping setting mode "%s %s"; the '
                                       'target doesn\'t seem to exist!', self.name,
