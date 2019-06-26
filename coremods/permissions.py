@@ -32,7 +32,8 @@ def check_permissions(irc, uid, perms, also_show=[]):
     """
     # For old (< 1.1 login blocks):
     # If the user is logged in, they automatically have all permissions.
-    if irc.match_host('$pylinkacc', uid) and conf.conf['login'].get('user'):
+    olduser = conf.conf['login'].get('user')
+    if olduser and irc.match_host('$pylinkacc:%s' % olduser, uid):
         log.debug('permissions: overriding permissions check for old-style admin user %s',
                   irc.get_hostmask(uid))
         return True
