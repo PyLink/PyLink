@@ -403,7 +403,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
             raise ValueError('Invalid server name %r' % name)
 
         self.servers[sid] = Server(self, uplink, name, internal=True, desc=desc)
-        self._send_with_prefix(uplink, 'SERVER %s * %s %s :%s' % (name, self.servers[sid].hopcount, sid, desc))
+        if self.proto_ver >= 1205:
+            # <- :3IN SERVER services.abc.local 0SV :Some server
+            self._send_with_prefix(uplink, 'SERVER %s %s :%s' % (name, sid, desc))
+        else:
+            # <- :00A SERVER test.server * 1 00C :test
+            self._send_with_prefix(uplink, 'SERVER %s * %s %s :%s' % (name, self.servers[sid].hopcount, sid, desc))
 
         # Endburst delay clutter
 
