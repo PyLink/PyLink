@@ -52,6 +52,8 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `commands.loglevel` - Grants access to the `loglevel` command.
 - `commands.logout.force` - Allows forcing logouts on other users via the `logout` command.
 - `commands.showchan` - Grants access to the `showchan` command. **With the default permissions set, this is granted to all users.**
+- `commands.shownet` - Grants access to the `shownet` command (basic info including netname, protocol module, and encoding). **With the default permissions set, this is granted to all users.**
+- `commands.shownet.extended` - Grants access to extended info in `shownet`, including connected status, target IP:port, and configured PyLink hostname / SID.
 - `commands.showuser` - Grants access to the `showuser` command. **With the default permissions set, this is granted to all users.**
 - `commands.status` - Grants access to the `status` command. **With the default permissions set, this is granted to all users.**
 

@@ -1,13 +1,13 @@
 # commands.py: base PyLink commands
 import time
 
-from pylinkirc import utils, __version__, world, real_version
+from pylinkirc import conf, utils, __version__, world, real_version
 from pylinkirc.log import log
 from pylinkirc.coremods import permissions
 
 from pylinkirc.coremods.login import pwd_context
 
-default_permissions = {"*!*@*": ['commands.status', 'commands.showuser', 'commands.showchan']}
+default_permissions = {"*!*@*": ['commands.status', 'commands.showuser', 'commands.showchan', 'commands.shownet']}
 
 def main(irc=None):
     """Commands plugin main function, called on plugin load."""
@@ -122,6 +122,75 @@ def showuser(irc, source, args):
 
     for user in users:
         _do_showuser(irc, source, user)
+
+@utils.add_cmd
+def shownet(irc, source, args):
+    """[<network name>]
+
+    Shows information about <network name>, or the current network if no argument is given."""
+    permissions.check_permissions(irc, source, ['commands.shownet'])
+    try:
+        extended = permissions.check_permissions(irc, source, ['commands.shownet.extended'])
+    except utils.NotAuthorizedError:
+        extended = False
+
+    try:
+        target = args[0]
+    except IndexError:
+        target = irc.name
+
+    try:
+        netobj = world.networkobjects[target]
+        serverdata = netobj.serverdata
+    except KeyError:
+        netobj = None
+
+        # If we have extended access, also look for disconnected networks
+        if extended and target in conf.conf['servers']:
+            serverdata = conf.conf['servers'][target]
+        else:
+            irc.error('Unknown network %r' % target)
+            return
+
+    # Get extended protocol details: IRCd type, virtual server info
+    protocol_name = serverdata.get('protocol')
+    ircd_type = None
+
+    # A bit of hardcoding here :(
+    if protocol_name == 'ts6':
+        ircd_type = serverdata.get('ircd', 'charybdis[default]')
+    elif protocol_name == 'inspircd':
+        ircd_type = serverdata.get('target_version', 'insp20[default]')
+    elif protocol_name == 'p10':
+        ircd_type = serverdata.get('ircd') or serverdata.get('p10_ircd') or 'nefarious[default]'
+
+    if protocol_name and ircd_type:
+        protocol_name = '%s/%s' % (protocol_name, ircd_type)
+    elif netobj and not protocol_name:  # Show virtual server detail if applicable
+        try:
+            parent_name = netobj.virtual_parent.name
+        except AttributeError:
+            parent_name = None
+        protocol_name = 'none; virtual server defined by \x02%s\x02' % parent_name
+
+    irc.reply('Information on network \x02%s\x02: \x02%s\x02' %
+              (target, netobj.get_full_network_name() if netobj else '\x1dCurrently not connected\x1d'))
+
+    irc.reply('\x02PyLink protocol module\x02: %s; \x02Encoding\x02: %s' %
+              (protocol_name, netobj.encoding if netobj else serverdata.get('encoding', 'utf-8[default]')))
+
+    # Extended info: target host, defined hostname / SID
+    if extended:
+        connected = netobj and netobj.connected.is_set()
+        irc.reply('\x02Connected?\x02 %s' % ('\x0303true' if connected else '\x0304false'))
+
+        if serverdata.get('ip'):
+            irc.reply('\x02Server target\x02: \x1f%s:%s' % (serverdata['ip'], serverdata.get('port')))
+        if serverdata.get('hostname'):
+            irc.reply('\x02PyLink hostname\x02: %s; \x02SID:\x02 %s; \x02SID range:\x02 %s' %
+                      (serverdata.get('hostname') or _none,
+                        serverdata.get('sid') or _none,
+                        serverdata.get('sidrange') or _none))
 
 @utils.add_cmd
 def showchan(irc, source, args):
