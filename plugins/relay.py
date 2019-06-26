@@ -1766,10 +1766,19 @@ def handle_mode(irc, numeric, command, args):
             # Set hideoper on remote opers, to prevent inflating
             # /lusers and various /stats
             hideoper_mode = remoteirc.umodes.get('hideoper')
+            try:
+                use_hideoper = conf.conf['relay']['hideoper']
+            except KeyError:
+                use_hideoper = True
+
+            # If Relay oper hiding is enabled, don't allow unsetting +H
+            if use_hideoper and ('-%s' % hideoper_mode, None) in modes:
+                modes.remove(('-%s' % hideoper_mode, None))
+
             modes = get_supported_umodes(irc, remoteirc, modes)
 
             if hideoper_mode:
-                if ('+o', None) in modes:
+                if ('+o', None) in modes and use_hideoper:
                     modes.append(('+%s' % hideoper_mode, None))
                 elif ('-o', None) in modes:
                     modes.append(('-%s' % hideoper_mode, None))
