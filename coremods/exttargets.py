@@ -41,7 +41,7 @@ def account(irc, host, uid):
                           homenet, realuid)
             return False
 
-    slogin = irc.to_lower(userobj.services_account)
+    slogin = irc.to_lower(str(userobj.services_account))
 
     # Split the given exttarget host into parts, so we know how many to look for.
     groups = list(map(irc.to_lower, host.split(':')))
