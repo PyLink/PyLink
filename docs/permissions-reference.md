@@ -58,8 +58,8 @@ Remote versions of the `manage`, `list`, `sync`, and `clear` commands also exist
 - `commands.status` - Grants access to the `status` command. **With the default permissions set, this is granted to all users.**
 
 ## Exec
-- `exec.exec` - Grants access to the `exec` command.
-- `exec.eval` - Grants access to the `eval` command.
+- `exec.exec` - Grants access to the `exec` and `iexec` commands.
+- `exec.eval` - Grants access to the `eval`, `ieval`, `peval`, and `pieval` commands.
 - `exec.inject` - Grants access to the `inject` command.
 - `exec.threadinfo` - Grants access to the `threadinfo` command.
 
