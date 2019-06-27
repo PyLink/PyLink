@@ -949,7 +949,7 @@ stats:
 
     #masshighlight:
         # This block configures options for antispam's mass highlight blocking. It can also be
-        # overridden (as an entire block) per-network by copying its options under
+        # overridden (as an entire block) per-network by copying its options to:
         #   servers::<server name>::antispam_masshighlight
 
         # Determines whether mass highlight prevention should be enabled. Defaults to false if not
@@ -971,7 +971,7 @@ stats:
 
     #textfilter:
         # This block configures options for antispam's text spamfilters. It can also be overridden
-        # (as an entire block) per-network by copying its options under
+        # (as an entire block) per-network by copying its options to:
         #   servers::<server name>::antispam_textfilter
 
         # Determines whether text spamfilters should be enabled. Defaults to false if not set.
@@ -988,7 +988,7 @@ stats:
         # If no punishments succeed, then a warning will be logged.
         #punishment: kick+ban+block
 
-        # Sets the kick / kill message used when the text spamfilter is triggered.
+        # Sets the kick / kill message used when a message triggers the text spamfilter.
         #reason: "Spam is prohibited"
 
         # Determines whether PMs to PyLink clients should also be tracked to prevent spam.
@@ -1001,10 +1001,10 @@ stats:
         # This defaults to false if not set.
         #watch_pms: false
 
-    # Configures an (ASCII case-insensitive) list of bad strings to block in messages (PRIVMSG, NOTICE).
+    # Configures a case-insensitive list of bad strings to block in messages (PRIVMSG, NOTICE).
     # Globs are supported; use them to your advantage here.
     # You can also define server specific lists of bad strings by defining
-    #   servers::<server name>::antispam_textfilters_globs
+    #   servers::<server name>::antispam_textfilter_globs
     # the contents of which will be *merged* into the global list of bad strings specified below.
     #textfilter_globs:
         # - "*very bad don't say this*"
