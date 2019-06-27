@@ -1,5 +1,7 @@
 # Writing plugins for PyLink
 
+***Last updated for 2.1-alpha2 (2019-06-27).***
+
 Most features in PyLink (Relay, Automode, etc.) are implemented as plugins, which can be mix-and-matched on any particular instance. Without any plugins loaded, PyLink can connect to servers but won't accomplish anything useful.
 
 This guide, along with the sample plugin [`example.py`](../../plugins/example.py) aim to show the basics of writing plugins for PyLink.
@@ -21,7 +23,7 @@ Functions intended to be hook handlers therefore take in 4 arguments correspondi
 
 #### Return codes for hook handlers
 
-As of PyLink 2.0-alpha3, the return value of hook handlers are used to determine how the original event will be passed on to further handlers (that is, those created by plugins loaded later, or hook handlers registered with a lower priority).
+As of PyLink 2.0, the return value of hook handlers are used to determine how the original event will be passed on to further handlers (that is, those created by plugins loaded later, or hook handlers registered with a lower priority).
 
 The following return values are supported so far:
 
@@ -30,7 +32,14 @@ The following return values are supported so far:
 
 Hook handlers may raise exceptions without blocking the event from reaching further handlers; these are caught by PyLink and logged appropriately.
 
+#### Modifying a hook payload
+
+As of PyLink 2.1, it is acceptable to modify a hook event payload in any plugin handler. This can be used for filtering purposes, e.g. Antispam's part/quit message filtering.
+
+You should take extra caution not to corrupt hook payloads, especially ones that relate to state keeping. Otherwise, other plugins may fail to function correctly.
+
 ### Hook priorities
+
 The `priority` option in `utils.add_hook()` allows setting a hook handler's priority when binding it. When multiple modules bind to one hook command, handlers are called in order of decreasing priority (i.e. highest first).
 
 There is no standard for hook priorities as of 2.0; instead they are declared as necessary. Some priority values used in 2.0 are shown here for reference (the default priority for handlers is **100**):
