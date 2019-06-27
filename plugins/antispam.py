@@ -366,3 +366,44 @@ def handle_textfilter(irc, source, command, args):
 
 utils.add_hook(handle_textfilter, 'PRIVMSG', priority=999)
 utils.add_hook(handle_textfilter, 'NOTICE', priority=999)
+
+PARTQUIT_DEFAULTS = {
+    'watch_quits': True,
+    'watch_parts': True,
+    'part_filter_message': "Reason filtered",
+    'quit_filter_message': "Reason filtered",
+}
+def handle_partquit(irc, source, command, args):
+    """Antispam part/quit message filter."""
+    text = args.get('text')
+    pq_settings = irc.get_service_option('antispam', 'partquit',
+                                         PARTQUIT_DEFAULTS)
+
+    if not text:
+        return  # No text to match against
+    elif command == 'QUIT' and not pq_settings.get('watch_quits', True):
+        return  # Not enabled
+    elif command == 'PART' and not pq_settings.get('watch_parts', True):
+        return
+
+    # Merge together global and local partquit filter lists.
+    pq_globs = set(conf.conf.get('antispam', {}).get('partquit_globs', [])) | \
+               set(irc.serverdata.get('antispam_partquit_globs', []))
+    if not pq_globs:
+        return
+
+    for filterglob in pq_globs:
+        if utils.match_text(filterglob, text):
+            # For parts, also log the affected channels
+            if command == 'PART':
+                filtered_message = pq_settings.get('part_filter_message', PARTQUIT_DEFAULTS['part_filter_message'])
+                log.info('(%s) antispam: filtered part message from %s on %s due to part/quit filter glob %s',
+                         irc.name, irc.get_hostmask(source), ','.join(args['channels']), filterglob)
+            else:
+                filtered_message = pq_settings.get('quit_filter_message', PARTQUIT_DEFAULTS['quit_filter_message'])
+                log.info('(%s) antispam: filtered quit message from %s due to part/quit filter glob %s',
+                         irc.name, irc.get_hostmask(source), filterglob)
+            args['text'] = filtered_message
+            break
+utils.add_hook(handle_partquit, 'PART', priority=999)
+utils.add_hook(handle_partquit, 'QUIT', priority=999)

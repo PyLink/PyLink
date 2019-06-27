@@ -1009,3 +1009,25 @@ stats:
     #textfilter_globs:
         # - "*very bad don't say this*"
         # - "TWFkZSB5b3UgbG9vayE="
+
+    #partquit:
+        # This configures Antispam's part / quit message filter for plugins like Relay. It can also be
+        # overridden (as an entire block) per-network by copying its options to:
+        #   servers::<server name>::antispam_partquit
+
+        # Determines whether part and quit messages matching any text spamfilters will be filtered.
+        # These default to true if not set.
+        #watch_parts: false
+        #watch_quits: false
+
+        # Sets the message to use when a part or quit message is filtered.
+        #part_filter_message: Reason filtered
+        #quit_filter_message: Reason filtered
+
+    # Configures a case-insensitive list of bad strings to block in part and quit messages.
+    # Globs are supported; use them to your advantage here.
+    # You can also define server specific lists of bad strings by defining
+    #   servers::<server name>::antispam_partquit_globs
+    # the contents of which will be *merged* into the global list of bad strings specified below.
+    #partquit_globs:
+        # - "*some-spammy-site.xyz*"
