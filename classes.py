@@ -734,6 +734,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     @functools.lru_cache(maxsize=8192)
     def to_lower(self, text):
+        """
+        Returns the lowercase representation of text. This respects IRC casemappings defined by the protocol module.
+        """
         if (not text) or (not isinstance(text, str)):
             return text
         if self.casemapping == 'rfc1459':
@@ -749,16 +752,25 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     _NICK_REGEX = r'^[A-Za-z\|\\_\[\]\{\}\^\`][A-Z0-9a-z\-\|\\_\[\]\{\}\^\`]*$'
     @classmethod
     def is_nick(cls, s, nicklen=None):
-        """Returns whether the string given is a valid IRC nick."""
+        """
+        Returns whether the string given is a valid nick.
+
+        Other platforms SHOULD redefine this if their definition of a valid nick is different."""
 
         if nicklen and len(s) > nicklen:
             return False
         return bool(re.match(cls._NICK_REGEX, s))
 
     @staticmethod
-    def is_channel(s):
-        """Returns whether the string given is a valid IRC channel name."""
-        return str(s).startswith('#')
+    def is_channel(obj):
+        """
+        Returns whether the item given is a valid channel (for a mapping key).
+
+        For IRC, this checks if the item's name starts with a "#".
+
+        Other platforms SHOULD redefine this if they track channels by some other format (e.g. numerical IDs).
+        """
+        return str(obj).startswith('#')
 
     @staticmethod
     def _isASCII(s):
@@ -768,13 +780,18 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     @classmethod
     def is_server_name(cls, s):
-        """Returns whether the string given is a valid IRC server name."""
+        """Returns whether the string given is a valid server name."""
         return cls._isASCII(s) and '.' in s and not s.startswith('.')
 
     _HOSTMASK_RE = re.compile(r'^\S+!\S+@\S+$')
     @classmethod
     def is_hostmask(cls, text):
-        """Returns whether the given text is a valid IRC hostmask (nick!user@host)."""
+        """
+        Returns whether the given text is a valid hostmask (nick!user@host)
+
+        Other protocols may redefine this to meet their definition of hostmask
+        (i.e. some unique identifier for a user).
+        """
         # Band-aid patch here to prevent bad bans set by Janus forwarding people into invalid channels.
         return bool(cls._HOSTMASK_RE.match(text) and '#' not in text)
 
@@ -794,8 +811,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def _get_UID(self, target):
         """
-        Converts a nick argument to its matching UID. This differs from irc.nick_to_uid()
-        in that it returns the original text instead of None, if no matching nick is found.
+        Converts a nick argument to its matching UID. This differs from nick_to_uid()
+        in that it returns the original text instead of None if no matching nick is found.
 
         Subclasses like Clientbot may override this to tweak the nick lookup behaviour,
         e.g. by filtering virtual clients out.
@@ -1092,7 +1109,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         return ''.join(mode)
 
     def reverse_modes(self, target, modes, oldobj=None):
-        """Reverses/inverts the mode string or mode list given.
+        """
+        IRC specific: Reverses/inverts the mode string or mode list given.
 
         Optionally, an oldobj argument can be given to look at an earlier state of
         a channel/user object, e.g. for checking the op status of a mode setter
@@ -1172,10 +1190,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     @staticmethod
     def join_modes(modes, sort=False):
-        """Takes a list of (mode, arg) tuples in parse_modes() format, and
+        """
+        IRC specific: Takes a list of (mode, arg) tuples in parse_modes() format, and
         joins them into a string.
-
-        See testJoinModes in tests/test_utils.py for some examples."""
+        """
         prefix = '+'  # Assume we're adding modes unless told otherwise
         modelist = ''
         args = []
@@ -1216,7 +1234,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
     @classmethod
     def wrap_modes(cls, modes, limit, max_modes_per_msg=0):
         """
-        Takes a list of modes and wraps it across multiple lines.
+        IRC specific: Takes a list of modes and wraps it across multiple lines.
         """
         strings = []
 
@@ -1287,9 +1305,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def get_hostmask(self, user, realhost=False, ip=False):
         """
-        Returns the hostmask of the given user, if present. If the realhost option
-        is given, return the real host of the user instead of the displayed host.
-        If the ip option is given, return the IP address of the user (this overrides
+        Returns a representative hostmask / user friendly identifier for a user.
+        On IRC, this is nick!user@host; other platforms may choose to define a different
+        style for user hostmasks.
+
+        If the realhost option is given, prefer showing the real host of the user instead
+        of the displayed host.
+        If the ip option is given, prefering showing the IP address of the user (this overrides
         realhost)."""
         userobj = self.users.get(user)
 
@@ -1317,7 +1339,11 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def get_friendly_name(self, entityid):
         """
-        Returns the friendly name of a SID (the server name), UID (the nick), or channel (returned as-is).
+        Returns the display name of an entity:
+
+        For servers, this returns the server name given a SID.
+        For users, this returns a nick given the UID.
+        For channels, return the channel name (returned as-is for IRC).
         """
         if entityid in self.servers:
             return self.servers[entityid].name
@@ -1331,7 +1357,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def is_privileged_service(self, entityid):
         """
-        Returns whether the given UID and SID belongs to a privileged service (IRC U:line).
+        Returns whether the given UID and SID belongs to a privileged service.
+
+        For IRC, this reads the 'ulines' option in the server configuration. Other platforms
+        may override this to suit their needs.
         """
         ulines = self.serverdata.get('ulines', [])
 
@@ -1344,7 +1373,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def is_oper(self, uid, **kwargs):
         """
-        Returns whether the given user has operator status. For IRC, this checks usermode +o.
+        Returns whether the given user has operator / server administration status.
+        For IRC, this checks usermode +o. Other platforms may choose to define this another way.
 
         The allowAuthed and allowOper keyword arguments are deprecated since PyLink 2.0-alpha4.
         """
@@ -1360,15 +1390,14 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def match_host(self, glob, target, ip=True, realhost=True):
         """
-        Checks whether the given host, or given UID's hostmask matches the given nick!user@host
-        glob.
+        Checks whether the given host or given UID's hostmask matches the given glob
+        (nick!user@host for IRC). PyLink extended targets are also supported.
 
         If the target given is a UID, and the 'ip' or 'realhost' options are True, this will also
         match against the target's IP address and real host, respectively.
 
         This function respects IRC casemappings (rfc1459 and ascii). If the given target is a UID,
-        and the 'ip' option is enabled, the host portion of the glob is also matched as a CIDR
-        range.
+        and the 'ip' option is enabled, the host portion of the glob is also matched as a CIDR range.
         """
         # Allow queries like !$exttarget to invert the given match.
         invert = glob.startswith('!')
@@ -1454,8 +1483,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def match_text(self, glob, text):
         """
-        Returns whether the given glob matches the given text under the network's
-        current case mapping.
+        Returns whether the given glob matches the given text under the network's current case mapping.
         """
         return utils.match_text(glob, text, filterfunc=self.to_lower)
 
@@ -1491,6 +1519,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # XXX: support slicing hosts so things like *!ident@*.isp.net are possible. This is actually
         #      more annoying to do than it appears because of vHosts using /, IPv6 addresses
         #      (cloaked and uncloaked), etc.
+        # TODO: make this not specific to IRC
         ban_style = ban_style or self.serverdata.get('ban_style') or \
             conf.conf['pylink'].get('ban_style') or '*!*@$host'
 
@@ -1508,7 +1537,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def updateTS(self, sender, channel, their_ts, modes=None):
         """
-        Merges modes of a channel given the remote TS and a list of modes.
+        IRC specific: Merges modes of a channel given the remote TS and a list of modes.
         """
 
         # Okay, so the situation is that we have 6 possible TS/sender combinations:
@@ -1573,7 +1602,9 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
     def _check_nick_collision(self, nick):
         """
-        Nick collision checker.
+        IRC specific: Nick collision preprocessor for user introductions.
+
+        If the given nick matches an existing UID, send out a SAVE hook payload indicating a nick collision.
         """
         uid = self.nick_to_uid(nick)
         # If there is a nick collision, we simply alert plugins. Relay will purposely try to
