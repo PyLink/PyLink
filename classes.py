@@ -1657,7 +1657,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._ping_timer = None
         self._socket = None
         self._selector_key = None
-        self._buffer = b''
+        self._buffer = bytearray()
         self._reconnect_thread = None
         self._queue_thread = None
 
@@ -1919,7 +1919,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         if self._ping_timer:
             log.debug('(%s) Canceling pingTimer at %s due to disconnect() call', self.name, time.time())
             self._ping_timer.cancel()
-        self._buffer = b''
+        self._buffer.clear()
         self._post_disconnect()
 
         # Clear old sockets.
@@ -1977,7 +1977,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             log.debug('(%s) Ignoring attempt to read data because self._socket is None', self.name)
             return
 
-        data = b''
+        data = bytearray()
         try:
             data = self._socket.recv(2048)
         except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
