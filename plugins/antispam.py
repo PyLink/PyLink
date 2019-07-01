@@ -402,7 +402,7 @@ def handle_partquit(irc, source, command, args):
             else:
                 filtered_message = pq_settings.get('quit_filter_message', PARTQUIT_DEFAULTS['quit_filter_message'])
                 log.info('(%s) antispam: filtered quit message from %s due to part/quit filter glob %s',
-                         irc.name, irc.get_hostmask(source), filterglob)
+                         irc.name, args['userdata'].nick, filterglob)
             args['text'] = filtered_message
             break
 utils.add_hook(handle_partquit, 'PART', priority=999)
