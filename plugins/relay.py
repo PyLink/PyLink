@@ -2076,13 +2076,9 @@ def handle_kill(irc, numeric, command, args):
                         irc.sjoin(irc.sid, localchan, [(modes, client)])
 
     # Target user was local.
-    else:
-        # Note: some IRCds (charybdis) don't send explicit QUIT messages
-        # for locally killed clients, while others (inspircd) do
-        # If we receive a user object in 'userdata' instead of None, it means
-        # that the KILL hasn't been handled by a preceding QUIT message.
-        if userdata:
-            handle_quit(irc, target, 'KILL', {'text': args['text']})
+    elif userdata:
+        reason = 'Killed (%s (%s))' % (irc.get_friendly_name(numeric), args['text'])
+        handle_quit(irc, target, 'KILL', {'text': reason})
 
 utils.add_hook(handle_kill, 'KILL')
 
