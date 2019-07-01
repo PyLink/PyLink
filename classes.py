@@ -631,7 +631,10 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
         self.to_lower.cache_clear()
 
     def _remove_client(self, numeric):
-        """Internal function to remove a client from our internal state."""
+        """
+        Internal function to remove a client from our internal state.
+
+        If the removal was successful, return the User object for the given numeric (UID)."""
         for c, v in self.channels.copy().items():
             v.remove_user(numeric)
             # Clear empty non-permanent channels.
@@ -640,6 +643,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
 
         sid = self.get_server(numeric)
         try:
+            userobj = self.users[numeric]
             del self.users[numeric]
             self.servers[sid].users.discard(numeric)
         except KeyError:
@@ -647,6 +651,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
                       exc_info=True)
         else:
             log.debug('(%s) Removing client %s from user + server state', self.name, numeric)
+            return userobj
 
     ## State checking functions
     def nick_to_uid(self, nick, multi=False, filterfunc=None):

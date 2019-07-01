@@ -488,14 +488,15 @@ class IRCS2SProtocol(IRCCommonProtocol):
     def handle_kill(self, source, command, args):
         """Handles incoming KILLs."""
         killed = self._get_UID(args[0])
-        # Depending on whether the IRCd sends explicit QUIT messages for
-        # killed clients, the user may or may not have automatically been
-        # removed from our user list.
-        # If not, we have to assume that KILL = QUIT and remove them
-        # ourselves.
-        data = self.users.get(killed)
-        if data:
-            self._remove_client(killed)
+        # Some IRCds send explicit QUIT messages for their killed clients in addition to KILL,
+        # meaning that our target client may have been removed already. If this is the case,
+        # don't bother forwarding this message on.
+        # Generally, we only need to distinguish between KILL and QUIT if the target is
+        # one of our clients, in which case the above statement isn't really applicable.
+        if killed in self.users:
+            userdata = self._remove_client(killed)
+        else:
+            return
 
         # TS6-style kills look something like this:
         # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
@@ -526,9 +527,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
             # <- :GL KILL PyLink-devel :KILLed by GL: ?
             killmsg = args[1]
 
-        return {'target': killed, 'text': killmsg, 'userdata': data}
+        return {'target': killed, 'text': killmsg, 'userdata': userdata}
 
-    def _check_cloak_change(self, uid):
+    def _check_cloak_change(self, uid):  # Stub by default
         return
 
     def _check_umode_away_change(self, uid):
@@ -676,8 +677,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- :1SRAAGB4T QUIT :Quit: quit message goes here
         # P10:
         # <- ABAAB Q :Killed (GL_ (bangbang))
-        self._remove_client(numeric)
-        return {'text': args[0]}
+        userdata = self._remove_client(numeric)
+        if userdata:
+            return {'text': args[0], 'userdata': userdata}
 
     def handle_stats(self, numeric, command, args):
         """Handles the IRC STATS command."""

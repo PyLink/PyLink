@@ -162,8 +162,7 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
 
     def quit(self, source, reason):
         """STUB: Quits a client."""
-        userdata = self.users[source]
-        self._remove_client(source)
+        userdata = self._remove_client(source)
         self.call_hooks([source, 'CLIENTBOT_QUIT', {'text': reason, 'userdata': userdata}])
 
     def _stub(self, *args):
@@ -1107,9 +1106,13 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         if self.pseudoclient and source == self.pseudoclient.uid:
             # Someone faked a quit from us? We should abort.
             raise ProtocolError("Received QUIT from uplink (%s)" % args[0])
+        elif source not in self.users:
+            log.debug('(%s) Ignoring QUIT on non-existent user %s', self.name, source)
+            return
 
+        userdata = self.users[source]
         self.quit(source, args[0])
-        return {'text': args[0]}
+        return {'text': args[0], 'userdata': userdata}
 
     def handle_404(self, source, command, args):
         """

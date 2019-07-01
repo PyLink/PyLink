@@ -1,6 +1,6 @@
 # PyLink hooks reference
 
-***Last updated for 2.1-dev (2018-12-27).***
+***Last updated for 2.1-alpha2 (2019-07-01).***
 
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
 Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
@@ -64,9 +64,9 @@ The following hooks represent regular IRC commands sent between servers.
 - **KICK**: `{'channel': '#channel', 'target': 'UID1', 'text': 'some reason'}`
     - `text` refers to the kick reason. The `target` and `channel` fields send the target's UID and the channel they were kicked from, and the sender of the hook payload is the kicker.
 
-- **KILL**: `{'target': killed, 'text': 'Killed (james (absolutely not))', 'userdata': data}`
+- **KILL**: `{'target': killed, 'text': 'Killed (james (absolutely not))', 'userdata': User(...)}`
     - `text` refers to the kill reason. `target` is the target's UID.
-    - The `userdata` key may include an `classes.User` instance, depending on the IRCd. On IRCds where QUITs are explicitly sent (e.g InspIRCd), `userdata` will be `None`. Other IRCds do not explicitly send QUIT messages for killed clients, so the daemon must assume that they've quit, and deliver their last state to plugins that require this info.
+    - `userdata` includes a `classes.User` instance, containing the information of the killed user.
 
 - **MODE**: `{'target': '#channel', 'modes': [('+m', None), ('+i', None), ('+t', None), ('+l', '3'), ('-o', 'person')], 'channeldata': Channel(...)}`
     - `target` is the target the mode is being set on: it may be either a channel (for channel modes) *or* a UID (for user modes).
@@ -86,8 +86,9 @@ The following hooks represent regular IRC commands sent between servers.
 - **PRIVMSG**: `{'target': 'UID3', 'text': 'hi there!'}`
     - Ditto with NOTICE: STATUSMSG targets (e.g. `@#lounge`) are also allowed here.
 
-- **QUIT**: `{'text': 'Quit: Bye everyone!'}`
+- **QUIT**: `{'text': 'Quit: Bye everyone!', 'userdata': User(...)}`
     - `text` corresponds to the quit reason.
+    - `userdata` includes a `classes.User` instance, containing the information of the killed user.
 
 - **SQUIT**: `{'target': '800', 'users': ['UID1', 'UID2', 'UID6'], 'name': 'some.server', 'uplink': '24X', 'nicks': {'#channel1: ['tester1', 'tester2'], '#channel3': ['somebot']}, 'serverdata': Server(...), 'affected_servers': ['SID1', 'SID2', 'SID3']`
     - `target` is the SID of the server being split, while `name` is the server's name.
@@ -161,6 +162,9 @@ Some hooks do not map directly to IRC commands, but to events that protocol modu
 At this time, commands that are handled by protocol modules without returning any hook data include PING, PONG, and various commands sent during the initial server linking phase.
 
 ## Changes
+
+* 2019-07-01 (2.1-alpha2)
+   - KILL and QUIT hooks now always include a non-empty `userdata` key. Now, if a QUIT message for a killed user is received before the corresponding KILL (or vice versa), only the first message received will have the corresponding hook payload broadcasted.
 * 2018-12-27 (2.1-dev)
    - Add the `affected_servers` argument to SQUIT hooks.
 * 2018-07-11 (2.0.0)
