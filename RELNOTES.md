@@ -1,3 +1,44 @@
+# PyLink 2.1-alpha2 (*UNRELEASED*)
+
+**PyLink now requires Python 3.5 or later!**
+
+This release includes all changes from PyLink 2.0.3, plus the following:
+
+### Feature changes
+- **Added cachetools as a core runtime dependency** (relay and expiringdict)
+- **Added beta support for InspIRCd 3** ([issue#644](https://github.com/jlu5/PyLink/issues/644)):
+    - The target IRCd version can be configured via a `target_version` option, which supports `insp20` (InspIRCd 2.0, default) and `insp3`.
+- **Removed dependencies on ircmatch** ([issue#636](https://github.com/jlu5/PyLink/issues/636)) **and expiringdict** ([issue#445](https://github.com/jlu5/PyLink/issues/445))
+- Increased Passlib requirement to 1.7.0+ to remove deprecated calls
+    - pylink-mkpasswd: use `hash()` instead of `encrypt()`
+- Relay updates:
+    - Relay now tracks kill/mode/topic clashes and will stop relaying when it detects such a conflict ([issue#23](https://github.com/jlu5/PyLink/issues/23))
+    - Skip nick normalization on protocols where they aren't actually required (Clientbot, Discord)
+- Support `@servicenick` as a fantasy trigger prefix (useful on Discord)
+- commands: add a `shownet` command to show server info ([issue#578](https://github.com/jlu5/PyLink/issues/578))
+- antispam: added optional quit/part message filtering ([issue#617](https://github.com/jlu5/PyLink/issues/617))
+
+### Bug fixes
+- SECURITY: only whitelist permissions for the defined `login:user` if a legacy account is enabled
+- clientbot: fix crash when `MODES` is defined in ISUPPORT without a value (affects connections to Oragono)
+- relay: fix KILL message formatting (regression from [issue#520](https://github.com/jlu5/PyLink/issues/520))
+- relay: consistency fixes when handling hideoper mode changes ([issue#629](https://github.com/jlu5/PyLink/issues/629))
+- exttargets: coersce services_account to string before matching ([issue#639](https://github.com/jlu5/PyLink/issues/639))
+
+### Internal improvements
+- **API Break:** Reworked `PyLinkNetworkCore.nick_to_uid()` specification to support duplicate nicks and user filtering
+    - Reworked most plugins (`commands`, `bots`, `opercmds`) to deal with duplicate nicks more robustly
+- Revised handling of KILL and QUIT hooks: the `userdata` argument is now always defined
+    - If we receive both a KILL and a QUIT for any client, only the one received first will be sent as a hook.
+- Added new protocol module capabilities: `freeform-nicks`, `virtual-server`
+- Added `utils.match_text()`, a general glob matching function to replace ircmatch calls ([issue#636](https://github.com/jlu5/PyLink/issues/636))
+- Editing hook payloads is now officially supported in plugins hook handlers ([issue#452](https://github.com/jlu5/PyLink/issues/452))
+- ClientbotWrapperProtocol: override `_get_UID()` to only return non-virtual clients, ensuring separate namespaces between internal and external clients.
+- ClientbotBaseProtocol: disallow `part()` from the main pseudoclient by default, as this may cause desyncs
+- Moved IRCv3 message tags parser from `clientbot` to `ircs2s_common`
+- Merged relay's `showchan`, `showuser` commands into the `commands` plugin, for better tracking of errors and duplicate nicks
+
+
 # PyLink 2.1-alpha1 (2019-05-02)
 
 This release focuses on internal improvements to better integrate with [pylink-discord](https://github.com/PyLink/pylink-discord). It includes all fixes from 2.0.2, plus the following:
