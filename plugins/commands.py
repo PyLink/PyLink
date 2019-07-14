@@ -32,6 +32,7 @@ def status(irc, source, args):
     irc.reply('Operator access: \x02%s\x02' % bool(irc.is_oper(source)))
 
 _none = '\x1D(none)\x1D'
+_notavail = '\x1DN/A\x1D'
 def _do_showuser(irc, source, u):
     """Helper function for showuser."""
     # Some protocol modules store UIDs as ints; make sure we check for that.
@@ -51,11 +52,11 @@ def _do_showuser(irc, source, u):
         irc.error('Unknown user %r.' % u)
         return
 
-    f = lambda s: irc.reply(s, private=True)
+    f = lambda s: irc.reply('  ' + s, private=True)
 
     userobj = irc.users[u]
-    f('Showing information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
-      userobj.host, userobj.realname))
+    irc.reply('Showing information on user \x02%s\x02 (%s@%s): %s' % (userobj.nick, userobj.ident,
+               userobj.host, userobj.realname), private=True)
 
     sid = irc.get_server(u)
     serverobj = irc.servers[sid]
@@ -63,19 +64,20 @@ def _do_showuser(irc, source, u):
 
     # Show connected server & nick TS if available
     serverinfo = '%s[%s]' % (serverobj.name, sid) \
-        if irc.has_cap('can-track-servers') else 'N/A'
+        if irc.has_cap('can-track-servers') else None
     tsinfo = '%s [UTC] (%s)' % (time.asctime(time.gmtime(int(ts))), ts) \
-        if irc.has_cap('has-ts') else 'N/A'
-    f('\x02Home server\x02: %s; \x02Nick TS:\x02 %s' % (serverinfo, tsinfo))
+        if irc.has_cap('has-ts') else None
+    if tsinfo or serverinfo:
+        f('\x02Home server\x02: %s; \x02Nick TS:\x02 %s' % (serverinfo or _notavail, tsinfo or _notavail))
 
     if verbose:  # Oper/self only data: user modes, channels in, account info, etc.
-        f('\x02User modes\x02: %s' % irc.join_modes(userobj.modes, sort=True))
         f('\x02Protocol UID\x02: %s; \x02Real host\x02: %s; \x02IP\x02: %s' % \
-          (u, userobj.realhost, userobj.ip))
+          (u, userobj.realhost or _notavail, userobj.ip))
         channels = sorted(userobj.channels)
         f('\x02Channels\x02: %s' % (' '.join(map(str, channels)) or _none))
         f('\x02PyLink identification\x02: %s; \x02Services account\x02: %s; \x02Away status\x02: %s' % \
           ((userobj.account or _none), (userobj.services_account or _none), userobj.away or _none))
+        f('\x02User modes\x02: %s' % irc.join_modes(userobj.modes, sort=True))
 
     # Show relay user data if available
     relay = world.plugins.get('relay')
@@ -95,7 +97,7 @@ def _do_showuser(irc, source, u):
                     remotenet, remoteuser = r
                     remoteirc = world.networkobjects[remotenet]
                     nicks.append('%s:\x02%s\x02' % (remotenet, remoteirc.users[remoteuser].nick))
-                irc.reply("\x02Relay nicks\x02: %s" % ', '.join(nicks), private=True)
+                f("\x02Relay nicks\x02: %s" % ', '.join(nicks))
         if verbose:
             # Show the relay channels the user is in, if applicable
             relaychannels = []
@@ -104,7 +106,7 @@ def _do_showuser(irc, source, u):
                 if relayentry:
                     relaychannels.append(''.join(relayentry))
             if relaychannels and verbose:
-                irc.reply("\x02Relay channels\x02: %s" % ' '.join(relaychannels), private=True)
+                f("\x02Relay channels\x02: %s" % ' '.join(relaychannels))
 
 @utils.add_cmd
 def showuser(irc, source, args):
@@ -112,9 +114,9 @@ def showuser(irc, source, args):
 
     Shows information about <user>."""
     permissions.check_permissions(irc, source, ['commands.showuser'])
-    try:
-        target = args[0]
-    except IndexError:
+    target = ' '.join(args)
+
+    if not target:
         irc.error("Not enough arguments. Needs 1: nick.")
         return
 
