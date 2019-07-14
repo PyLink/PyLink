@@ -3,8 +3,9 @@ handlers.py - Implements miscellaneous IRC command handlers (WHOIS, services log
 """
 import time
 
-from pylinkirc import utils, conf
+from pylinkirc import conf, utils
 from pylinkirc.log import log
+
 
 def handle_whois(irc, source, command, args):
     """Handle WHOIS queries."""

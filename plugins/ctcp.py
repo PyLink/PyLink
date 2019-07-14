@@ -1,9 +1,10 @@
 # ctcp.py: Handles basic CTCP requests.
-import random
 import datetime
+import random
 
 from pylinkirc import utils
 from pylinkirc.log import log
+
 
 def handle_ctcp(irc, source, command, args):
     """

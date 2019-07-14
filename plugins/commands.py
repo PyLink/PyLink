@@ -1,11 +1,10 @@
 # commands.py: base PyLink commands
 import time
 
-from pylinkirc import conf, utils, __version__, world, real_version
-from pylinkirc.log import log
+from pylinkirc import __version__, conf, real_version, utils, world
 from pylinkirc.coremods import permissions
-
 from pylinkirc.coremods.login import pwd_context
+from pylinkirc.log import log
 
 default_permissions = {"*!*@*": ['commands.status', 'commands.showuser', 'commands.showchan', 'commands.shownet']}
 

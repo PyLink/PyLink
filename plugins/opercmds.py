@@ -4,8 +4,8 @@ opercmds.py: Provides a subset of network management commands.
 import argparse
 
 from pylinkirc import utils, world
-from pylinkirc.log import log
 from pylinkirc.coremods import permissions
+from pylinkirc.log import log
 
 # Having a hard limit here is sensible because otherwise it can flood the client or server off.
 CHECKBAN_MAX_RESULTS = 200

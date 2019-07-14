@@ -7,24 +7,26 @@ connections and objects used to represent IRC servers, users, and channels.
 Here be dragons.
 """
 
-import threading
-import time
-import socket
-import ssl
+import collections
+import collections.abc
+import functools
 import hashlib
 import ipaddress
 import queue
-QUEUE_FULL = queue.Full
-import functools
-import string
 import re
-import collections
-import collections.abc
+import socket
+import ssl
+import string
 import textwrap
+import threading
+import time
 
-from . import world, utils, structures, conf, __version__, selectdriver
+from . import __version__, conf, selectdriver, structures, utils, world
 from .log import *
 from .utils import ProtocolError  # Compatibility with PyLink 1.x
+
+QUEUE_FULL = queue.Full
+
 
 ### Internal classes (users, servers, channels)
 

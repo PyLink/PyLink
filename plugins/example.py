@@ -1,8 +1,8 @@
 # example.py: An example PyLink plugin.
+import random
+
 from pylinkirc import utils
 from pylinkirc.log import log
-
-import random
 
 # Example PRIVMSG hook that returns "hi there!" when PyLink's nick is mentioned
 # in a channel.

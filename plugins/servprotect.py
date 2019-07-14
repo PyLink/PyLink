@@ -2,7 +2,7 @@
 
 import threading
 
-from pylinkirc import utils, conf
+from pylinkirc import conf, utils
 from pylinkirc.log import log
 
 try:

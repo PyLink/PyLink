@@ -3,8 +3,8 @@
 import string
 
 from pylinkirc import conf, utils, world
-from pylinkirc.log import log
 from pylinkirc.coremods import permissions
+from pylinkirc.log import log
 
 DEFAULT_FORMAT = "[$sender@$fullnetwork] $text"
 

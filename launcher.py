@@ -4,10 +4,11 @@ PyLink IRC Services launcher.
 """
 
 import os
-import sys
 import signal
+import sys
 import time
-from pylinkirc import world, conf, __version__, real_version
+
+from pylinkirc import __version__, conf, real_version, world
 
 try:
     import psutil

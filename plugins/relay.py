@@ -1,14 +1,14 @@
 # relay.py: PyLink Relay plugin
-import time
-import threading
-import string
-from collections import defaultdict
-import inspect
 import base64
+import inspect
+import string
+import threading
+import time
+from collections import defaultdict
 
-from pylinkirc import utils, world, conf, structures
-from pylinkirc.log import log
+from pylinkirc import conf, structures, utils, world
 from pylinkirc.coremods import permissions
+from pylinkirc.log import log
 
 CHANNEL_DELINKED_MSG = "Channel delinked."
 RELAY_UNLOADED_MSG = "Relay plugin unloaded."

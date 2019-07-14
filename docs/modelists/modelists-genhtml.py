@@ -3,9 +3,9 @@
 Generates HTML versions of the mode list .csv definitions.
 """
 
+import csv
 import os
 import os.path
-import csv
 
 os.chdir(os.path.dirname(__file__))
 

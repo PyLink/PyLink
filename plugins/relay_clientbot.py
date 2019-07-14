@@ -1,9 +1,9 @@
 # relay_clientbot.py: Clientbot extensions for Relay
+import shlex
 import string
 import time
-import shlex
 
-from pylinkirc import utils, conf, world
+from pylinkirc import conf, utils, world
 from pylinkirc.log import log
 
 # Clientbot default styles:

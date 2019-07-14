@@ -6,14 +6,14 @@ clientbot.py: Clientbot (regular IRC bot) protocol module for PyLink.
 # that a regular server would have (e.g. spawning virtual users for things like Relay). Somehow it
 # works on most networks though!
 
-import time
-import threading
 import base64
+import threading
+import time
 
-from pylinkirc import utils, conf
+from pylinkirc import conf, utils
+from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
-from pylinkirc.classes import *
 
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 

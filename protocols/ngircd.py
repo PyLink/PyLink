@@ -7,13 +7,14 @@ ngircd.py: PyLink protocol module for ngIRCd.
 # and https://tools.ietf.org/html/rfc2813
 ##
 
-import time
 import re
+import time
 
-from pylinkirc import utils, conf, __version__
+from pylinkirc import __version__, conf, utils
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
+
 
 class NgIRCdProtocol(IRCS2SProtocol):
     def __init__(self, irc):

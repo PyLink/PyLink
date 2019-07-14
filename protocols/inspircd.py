@@ -2,13 +2,14 @@
 inspircd.py: InspIRCd 2.0, 3.0 protocol module for PyLink.
 """
 
-import time
 import threading
+import time
 
-from pylinkirc import utils, conf
+from pylinkirc import conf, utils
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
+
 
 class InspIRCdProtocol(TS6BaseProtocol):
 

@@ -5,20 +5,20 @@ This module contains various utility functions related to IRC and/or the PyLink
 framework.
 """
 
-import string
-import re
-import importlib
-import os
-import collections
 import argparse
-import ipaddress
+import collections
 import functools
-
-from .log import log
-from . import world, conf, structures
+import importlib
+import ipaddress
+import os
+import re
+import string
 
 # Load the protocol and plugin packages.
-from pylinkirc import protocols, plugins
+from pylinkirc import plugins, protocols
+
+from . import conf, structures, world
+from .log import log
 
 PLUGIN_PREFIX = plugins.__name__ + '.'
 PROTOCOL_PREFIX = protocols.__name__ + '.'

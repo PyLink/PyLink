@@ -1,6 +1,8 @@
 """Setup module for PyLink IRC Services."""
 
+import subprocess
 import sys
+from codecs import open
 
 if sys.version_info < (3, 4):
     raise RuntimeError("PyLink requires Python 3.4 or higher.")
@@ -9,8 +11,6 @@ try:
     from setuptools import setup, find_packages
 except ImportError:
     raise ImportError("Please install Setuptools and try again.")
-from codecs import open
-import subprocess
 
 with open('VERSION', encoding='utf-8') as f:
     version = f.read().strip()

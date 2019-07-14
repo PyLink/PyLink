@@ -2,9 +2,9 @@
 world.py: Stores global variables for PyLink, including lists of active IRC objects and plugins.
 """
 
-from collections import defaultdict, deque
 import threading
 import time
+from collections import defaultdict, deque
 
 # This indicates whether we're running in tests mode. What it actually does
 # though is control whether IRC connections should be threaded or not.

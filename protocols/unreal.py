@@ -2,12 +2,12 @@
 unreal.py: UnrealIRCd 4.x protocol module for PyLink.
 """
 
-import time
 import codecs
-import socket
 import re
+import socket
+import time
 
-from pylinkirc import utils, conf
+from pylinkirc import conf, utils
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *

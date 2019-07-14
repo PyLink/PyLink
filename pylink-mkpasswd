@@ -3,8 +3,9 @@
 Password hashing utility for PyLink IRC Services.
 """
 
-from pylinkirc.coremods.login import pwd_context
 import getpass
+
+from pylinkirc.coremods.login import pwd_context
 
 if __name__ == '__main__':
     import argparse

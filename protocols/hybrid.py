@@ -4,10 +4,11 @@ hybrid.py: IRCD-Hybrid protocol module for PyLink.
 
 import time
 
-from pylinkirc import utils, conf
-from pylinkirc.log import log
+from pylinkirc import conf, utils
 from pylinkirc.classes import *
+from pylinkirc.log import log
 from pylinkirc.protocols.ts6 import *
+
 
 # This protocol module inherits from the TS6 protocol.
 class HybridProtocol(TS6Protocol):

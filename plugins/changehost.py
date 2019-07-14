@@ -1,11 +1,11 @@
 """
 Changehost plugin - automatically changes the hostname of matching users.
 """
-from pylinkirc import utils, world, conf
-from pylinkirc.log import log
-from pylinkirc.coremods import permissions
-
 import string
+
+from pylinkirc import conf, utils, world
+from pylinkirc.coremods import permissions
+from pylinkirc.log import log
 
 # Characters allowed in a hostname.
 allowed_chars = string.ascii_letters + '-./:' + string.digits

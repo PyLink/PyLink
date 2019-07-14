@@ -1,19 +1,18 @@
 """
 exec.py: Provides commands for executing raw code and debugging PyLink.
 """
+import importlib
 import pprint
-import threading
-
-from pylinkirc import *
-from pylinkirc.log import log
-from pylinkirc.coremods import permissions
-
 # These imports are not strictly necessary, but make the following modules
 # easier to access through eval and exec.
 import re
+import threading
 import time
+
 import pylinkirc
-import importlib
+from pylinkirc import *
+from pylinkirc.coremods import permissions
+from pylinkirc.log import log
 
 exec_locals_dict = {}
 PPRINT_MAX_LINES = 20

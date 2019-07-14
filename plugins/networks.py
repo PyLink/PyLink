@@ -1,12 +1,12 @@
 """Networks plugin - allows you to manipulate connections to various configured networks."""
 import importlib
-import types
 import threading
+import types
 
 import pylinkirc
 from pylinkirc import utils, world
-from pylinkirc.log import log
 from pylinkirc.coremods import control, permissions
+from pylinkirc.log import log
 
 REMOTE_IN_USE = threading.Event()
 

@@ -4,9 +4,9 @@ hostmasks or exttargets.
 """
 import collections
 
-from pylinkirc import utils, conf, world, structures
-from pylinkirc.log import log
+from pylinkirc import conf, structures, utils, world
 from pylinkirc.coremods import permissions
+from pylinkirc.log import log
 
 mydesc = ("The \x02Automode\x02 plugin provides simple channel ACL management by giving prefix modes "
           "to users matching hostmasks or exttargets.")

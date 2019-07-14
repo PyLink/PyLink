@@ -2,14 +2,15 @@
 permissions.py - Permissions Abstraction for PyLink IRC Services.
 """
 
-from collections import defaultdict
 import threading
+from collections import defaultdict
+
+from pylinkirc import conf, utils
+from pylinkirc.log import log
 
 # Global variables: these store mappings of hostmasks/exttargets to lists of permissions each target has.
 default_permissions = defaultdict(set)
 
-from pylinkirc import conf, utils
-from pylinkirc.log import log
 
 def add_default_permissions(perms):
     """Adds default permissions to the index."""

@@ -1,10 +1,10 @@
 # servermaps.py: Maps out connected IRC servers.
 
-from pylinkirc import utils, world
-from pylinkirc.log import log
-from pylinkirc.coremods import permissions
-
 import collections
+
+from pylinkirc import utils, world
+from pylinkirc.coremods import permissions
+from pylinkirc.log import log
 
 DEFAULT_PERMISSIONS = {"$ircop": ['servermaps.localmap']}
 

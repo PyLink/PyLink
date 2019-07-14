@@ -10,12 +10,13 @@ try:
 except ImportError:
     raise ImportError("PyLink requires PyYAML to function; please install it and try again.")
 
-import sys
-import os.path
 import logging
+import os.path
+import sys
 from collections import defaultdict
 
 from . import world
+
 
 class ConfigurationError(RuntimeError):
     """Error when config conditions aren't met."""

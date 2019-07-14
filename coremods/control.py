@@ -1,15 +1,17 @@
 """
 control.py - Implements SHUTDOWN and REHASH functionality.
 """
-import signal
-import os
-import threading
-import sys
 import atexit
+import os
+import signal
+import sys
+import threading
 
-from pylinkirc import world, utils, conf  # Do not import classes, it'll import loop
-from pylinkirc.log import log, _make_file_logger, _stop_file_loggers, _get_console_log_level
-from . import permissions, login
+from pylinkirc import conf, utils, world  # Do not import classes, it'll import loop
+from pylinkirc.log import _get_console_log_level, _make_file_logger, _stop_file_loggers, log
+
+from . import login, permissions
+
 
 def remove_network(ircobj):
     """Removes a network object from the pool."""

@@ -10,7 +10,7 @@ import logging
 import logging.handlers
 import os
 
-from . import world, conf
+from . import conf, world
 
 # Stores a list of active file loggers.
 fileloggers = []
@@ -153,4 +153,3 @@ class PyLinkChannelLogger(logging.Handler):
                     return
                 else:
                     self.called = False
-

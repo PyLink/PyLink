@@ -3,7 +3,9 @@ Test cases for utils.py
 """
 
 import unittest
+
 from pylinkirc import utils
+
 
 class UtilsTestCase(unittest.TestCase):
 

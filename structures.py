@@ -7,14 +7,14 @@ This module contains custom data structures that may be useful in various situat
 import collections
 import collections.abc
 import json
-import pickle
 import os
+import pickle
+import string
 import threading
 from copy import copy, deepcopy
-import string
 
-from .log import log
 from . import conf
+from .log import log
 
 _BLACKLISTED_COPY_TYPES = []
 

@@ -1,12 +1,13 @@
 """
 stats.py: Simple statistics for PyLink IRC Services.
 """
-import time
 import datetime
+import time
 
-from pylinkirc import utils, world, conf
-from pylinkirc.log import log
+from pylinkirc import conf, utils, world
 from pylinkirc.coremods import permissions
+from pylinkirc.log import log
+
 
 def timediff(before, now):
     """
