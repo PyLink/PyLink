@@ -1,6 +1,7 @@
 # relay_clientbot.py: Clientbot extensions for Relay
 import string
 import time
+import shlex
 
 from pylinkirc import utils, conf, world
 from pylinkirc.log import log
@@ -225,11 +226,12 @@ utils.add_hook(cb_relay_core, 'RELAY_RAW_MODE')
 
 @utils.add_cmd
 def rpm(irc, source, args):
-    """<target> <text>
+    """<target nick/UID> <text>
 
-    Sends PMs to users over the relay, if Clientbot PMs are enabled.
+    Sends PMs to users over Relay, if Clientbot PMs are enabled.
+    If the target nick has spaces in it, you may quote the nick as "nick".
     """
-
+    args = shlex.split(' '.join(args))  # HACK: use shlex.split so that quotes are preserved
     try:
         target = args[0]
         text = ' '.join(args[1:])
@@ -252,15 +254,21 @@ def rpm(irc, source, args):
                   'administratively disabled.')
         return
 
-    uid = irc.nick_to_uid(target)
-    if not uid:
+    if target in irc.users:
+        uids = [target]
+    else:
+        uids = irc.nick_to_uid(target, multi=True, filterfunc=lambda u: relay.is_relay_client(irc, u))
+
+    if not uids:
         irc.error('Unknown user %s.' % target)
         return
-    elif not relay.is_relay_client(irc, uid):
-        irc.error('%s is not a relay user.' % target)
+    elif len(uids) > 1:
+        targets = ['\x02%s\x02: %s @ %s' % (uid, irc.get_hostmask(uid), irc.users[uid].remote[0]) for uid in uids]
+        irc.error('Please select the target you want to PM: %s' % (', '.join(targets)))
         return
     else:
         assert not irc.is_internal_client(source), "rpm is not allowed from PyLink bots"
+
         # Send the message through relay by faking a hook for its handler.
-        relay.handle_messages(irc, source, 'RELAY_CLIENTBOT_PRIVMSG', {'target': uid, 'text': text})
+        relay.handle_messages(irc, source, 'RELAY_CLIENTBOT_PRIVMSG', {'target': uids[0], 'text': text})
         irc.reply('Message sent.')
