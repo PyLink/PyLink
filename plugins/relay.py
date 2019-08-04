@@ -2453,7 +2453,7 @@ def link(irc, source, args):
     remotenet = args.remotenet
 
     if not irc.is_channel(localchan):
-        irc.error('Invalid channel %r.' % c)
+        irc.error('Invalid channel %r.' % localchan)
         return
 
     if remotenet == irc.name:
