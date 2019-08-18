@@ -30,7 +30,7 @@ conf = {'bot':
                 },
         'logging':
                 {
-                    'stdout': 'INFO'
+                    'console': 'INFO'
                 },
         'servers':
                 # Wildcard defaultdict! This means that
