@@ -511,7 +511,8 @@ class NgIRCdProtocol(IRCS2SProtocol):
         if recvpass != self.serverdata['recvpass']:
             raise ProtocolError("RECVPASS from uplink does not match configuration!")
 
-        assert 'IRC+' in args[1], "Linking to non-ngIRCd server using this protocol module is not supported"
+        if 'IRC+' not in args[1]:
+            raise ProtocolError("Linking to non-ngIRCd server using this protocol module is not supported")
 
     def handle_ping(self, source, command, args):
         """
