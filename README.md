@@ -114,6 +114,7 @@ Support for these IRCds exist, but are not tested as frequently and thoroughly. 
 * [ngIRCd](https://ngircd.barton.de/) (24+) - module `ngircd`
     - For GLINEs to propagate, the `AllowRemoteOper` option must be enabled in ngIRCd.
     - `+` (modeless) channels are not supported, and should be disabled for PyLink to function correctly.
+    - For use with Relay, the `CloakHostModeX` setting will work fine but `CloakHost` and `CloakUserToNick` are *not* supported.
 * [snircd](https://development.quakenet.org/) (1.3.x+) - module `p10`
     - Outbound host changing (i.e. for the `changehost` plugin) is not supported on P10 variants other than Nefarious.
 
