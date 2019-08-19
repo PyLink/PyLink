@@ -227,6 +227,147 @@ class BaseProtocolTest(unittest.TestCase):
         check('100', '100')    # already a UID
         check('Test', 'Test')  # non-existent
 
+    def test_get_UID(self):
+        u = self._make_user('you', uid='100')
+        check = lambda inp, expected: self.assertEqual(self.p._get_UID(inp), expected)
+
+        check('you', '100')    # nick to UID
+        check('YOu', '100')
+        check('100', '100')    # already a UID
+        check('Test', 'Test')  # non-existent
+
     # TODO: _squit wrapper
 
-    # TODO: parse_modes and later
+    def test_parse_modes_channel_rfc(self):
+        # These are basic tests that only use RFC 1459 defined modes.
+        # IRCds supporting more complex modes can define new test cases if needed.
+        u = self._make_user('testuser', uid='100')
+
+        c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
+
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+m']),
+            [('+m', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+l', '3']),
+            [('+l', '3')]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+ntl', '59']),
+            [('+n', None), ('+t', None), ('+l', '59')]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+k-n', 'test']),
+            [('+k', 'test'), ('-n', None)]
+        )
+
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+o', '102']),  # unknown UID
+            []
+        )
+
+        c.users.add(u)
+        u.channels.add(c)
+
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+o', '100']),
+            [('+o', '100')]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+vip', '100']),
+            [('+v', '100'), ('+i', None), ('+p', None)]
+        )
+
+    def test_parse_modes_channel_rfc(self):
+        # These are basic tests that only use RFC 1459 defined modes.
+        # IRCds supporting more complex modes can define new test cases if needed.
+        c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
+
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+m']),   # add modes
+            [('+m', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['-tn']),  # remove modes
+            [('-t', None), ('-n', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#TESTRUNS', ['-tn']),  # different case target
+            [('-t', None), ('-n', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+l', '3']),  # modes w/ arguments
+            [('+l', '3')]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+nlt', '59']),  # combination
+            [('+n', None), ('+l', '59'), ('+t', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+k-n', 'test']),  # swapping +/-
+            [('+k', 'test'), ('-n', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['n-s']),  # sloppy syntax
+            [('+n', None), ('-s', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+bmi', '*!test@example.com']),
+            [('+b', '*!test@example.com'), ('+m', None), ('+i', None)]
+        )
+
+    def test_parse_modes_prefixmodes_rfc(self):
+
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+ov', '102', '101']),  # unknown UIDs are ignored
+            []
+        )
+
+        c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
+        u = self._make_user('test100', uid='100')
+        c.users.add(u)
+        u.channels.add(c)
+
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+o', '100']),
+            [('+o', '100')]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+vip', '100']),
+            [('+v', '100'), ('+i', None), ('+p', None)]
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['-o+bn', '100', '*!test@example.com']),
+            [('-o', '100'), ('+b', '*!test@example.com'), ('+n', None)]
+        )
+        self.assertEqual(
+            # 2nd user missing
+            self.p.parse_modes('#testruns', ['+oovv', '100', '102', '100', '102']),
+            [('+o', '100'), ('+v', '100')]
+        )
+
+        u2 = self._make_user('test102', uid='102')
+        c.users.add(u2)
+        u2.channels.add(c)
+
+        self.assertEqual(
+            # two users interleaved
+            self.p.parse_modes('#testruns', ['+oovv', '100', '102', '100', '102']),
+            [('+o', '100'), ('+o', '102'), ('+v', '100'), ('+v', '102')]
+        )
+
+    def test_parse_modes_user_rfc(self):
+        u = self._make_user('testuser', uid='100')
+
+        self.assertEqual(
+            self.p.parse_modes('100', ['+i-w+x']),
+            [('+i', None), ('-w', None), ('+x', None)]
+        )
+        self.assertEqual(
+            # Sloppy syntax, but OK
+            self.p.parse_modes('100', ['wx']),
+            [('+w', None), ('+x', None)]
+        )
+
+    # TODO: parse/apply_modes on mode +k
