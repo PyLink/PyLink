@@ -1007,11 +1007,15 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         Takes a list of parsed IRC modes, and applies them onto the given target mode list.
         """
         modelist = set(old_modelist)
+        mapping = collections.defaultdict(set)
 
         if is_channel:
             supported_modes = self.cmodes
         else:
             supported_modes = self.umodes
+
+        for modepair in modelist:  # Make a mapping of mode chars to values
+            mapping[modepair[0]].add(modepair[1])
 
         for mode in changedmodes:
             # Chop off the +/- part that parse_modes gives; it's meaningless for a mode list.
@@ -1040,29 +1044,31 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                               'it\'s a prefix mode.', self.name, str(mode))
                     continue
 
-            if mode[0][0] != '-':
+            if mode[0][0] != '-':  # Adding a mode; assume add if no explicit +/- is given
                 log.debug('(%s) Adding mode %r on %s', self.name, real_mode, modelist)
-                # We're adding a mode
-                existing = [m for m in modelist if m[0] == real_mode[0] and m[1] != real_mode[1]]
-                if existing and real_mode[1] and real_mode[0] not in supported_modes['*A']:
+                existing = mapping.get(real_mode[0])
+                if existing and real_mode[0] not in supported_modes['*A']:
                     # The mode we're setting takes a parameter, but is not a list mode (like +beI).
                     # Therefore, only one version of it can exist at a time, and we must remove
                     # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
                     # for example, someone sets mode "+l 30" on a channel already set "+l 25".
                     log.debug('(%s) Old modes for mode %r exist in %s, removing them: %s',
                               self.name, real_mode, modelist, str(existing))
-                    [modelist.discard(oldmode) for oldmode in existing]
+                    for oldvalue in existing:
+                        modelist.discard((real_mode[0], oldvalue))
+
                 modelist.add(real_mode)
-            else:
+            else:  # Removing a mode
                 log.debug('(%s) Removing mode %r from %s', self.name, real_mode, modelist)
-                # We're removing a mode
+
                 if real_mode[1] is None:
                     # We're removing a mode that only takes arguments when setting.
                     # Remove all mode entries that use the same letter as the one
                     # we're unsetting.
-                    for oldmode in modelist.copy():
-                        if oldmode[0] == real_mode[0]:
-                            modelist.discard(oldmode)
+                    existing = mapping.get(real_mode[0])
+                    if existing:
+                        for oldvalue in existing:
+                            modelist.discard((real_mode[0], oldvalue))
                 else:
                     modelist.discard(real_mode)
         log.debug('(%s) Final modelist: %s', self.name, modelist)

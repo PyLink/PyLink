@@ -462,6 +462,7 @@ class BaseProtocolTest(unittest.TestCase):
         self.assertEqual(c.modes, {('s', None), ('k', '12345')})
 
     # TODO: fix last case!
+    # TODO: test +b-b combinations et al.
     @unittest.skip("Case mismatch not working yet")
     def test_apply_modes_channel_typeA(self):
         c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
