@@ -2196,7 +2196,7 @@ class Channel(TSObject, structures.CamelCaseToSnakeCase, structures.CopyWrapper)
     def is_voice_plus(self, uid):
         """Returns whether the given user is voice or above in the channel."""
         # If the user has any prefix mode, it has to be voice or greater.
-        return bool(self.getPrefixModes(uid))
+        return bool(self.get_prefix_modes(uid))
 
     def is_halfop_plus(self, uid):
         """Returns whether the given user is halfop or above in the channel."""
