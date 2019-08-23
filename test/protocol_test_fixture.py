@@ -509,7 +509,7 @@ class BaseProtocolTest(unittest.TestCase):
         self.p.apply_modes('#Magic', [('+b', '*!*@example.net'), ('-b', '*!*@example.net')])
         self.assertEqual(c.modes, set(), "Ban should have been removed (same case)")
 
-        self.p.apply_modes('#Magic', [('+b', '*!*@example.net'), ('+i', None), ('-b', '*!*@Example.net')])
+        self.p.apply_modes('#Magic', [('+b', '*!*@example.net'), ('-b', '*!*@Example.net')])
         self.assertEqual(c.modes, set(), "Ban should have been removed (different case)")
 
         u = self._make_user('nick', uid='user')
@@ -572,7 +572,7 @@ class BaseProtocolTest(unittest.TestCase):
         self.assertEqual(u.modes, {('i', None), ('w', None)})
 
     # TODO: test type coersion if channel or mode targets are ints
-
+    # TODO: check the output of parse_modes() here too
     def test_parse_apply_channel_key(self):
         # Test /mode #channel -k * => /mode #channel -k PASSWORD  coersion in parse_modes()
         # Note: strangely enough, the coersion is actually in parse_modes() as a special case

@@ -1054,10 +1054,12 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                     # for example, someone sets mode "+l 30" on a channel already set "+l 25".
                     log.debug('(%s) Old modes for mode %r exist in %s, removing them: %s',
                               self.name, real_mode, modelist, str(existing))
-                    for oldvalue in existing:
+                    while existing:
+                        oldvalue = existing.pop()
                         modelist.discard((real_mode[0], oldvalue))
 
                 modelist.add(real_mode)
+                mapping[real_mode[0]].add(real_mode[1])
             else:  # Removing a mode
                 log.debug('(%s) Removing mode %r from %s', self.name, real_mode, modelist)
 
@@ -1067,7 +1069,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 # If no args were needed on removal, remove all modes with that letter
                 # If an arg was given, remove all modes matching the arg (IRC case insensitive)
                 if existing is not None:
-                    for oldvalue in existing:
+                    while existing:
+                        oldvalue = existing.pop()
                         if arg is None or self.to_lower(arg) == self.to_lower(oldvalue):
                             modelist.discard((real_mode[0], oldvalue))
         log.debug('(%s) Final modelist: %s', self.name, modelist)
