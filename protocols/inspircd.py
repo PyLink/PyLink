@@ -22,7 +22,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.protocol_caps |= {'slash-in-nicks', 'slash-in-hosts'}
+        self.protocol_caps |= {'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
         # Set our case mapping (rfc1459 maps "\" and "|" together, for example).
         self.casemapping = 'rfc1459'
