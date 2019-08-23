@@ -1,5 +1,5 @@
 """
-inspircd.py: InspIRCd 2.0, 3.0 protocol module for PyLink.
+inspircd.py: InspIRCd 2.0, 3.x protocol module for PyLink.
 """
 
 import threading
