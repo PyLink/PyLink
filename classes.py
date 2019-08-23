@@ -1061,16 +1061,15 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             else:  # Removing a mode
                 log.debug('(%s) Removing mode %r from %s', self.name, real_mode, modelist)
 
-                if real_mode[1] is None:
-                    # We're removing a mode that only takes arguments when setting.
-                    # Remove all mode entries that use the same letter as the one
-                    # we're unsetting.
-                    existing = mapping.get(real_mode[0])
-                    if existing:
-                        for oldvalue in existing:
+                existing = mapping.get(real_mode[0])
+                arg = real_mode[1]
+                # When removing a mode: check all existing modes with the same character
+                # If no args were needed on removal, remove all modes with that letter
+                # If an arg was given, remove all modes matching the arg (IRC case insensitive)
+                if existing is not None:
+                    for oldvalue in existing:
+                        if arg is None or self.to_lower(arg) == self.to_lower(oldvalue):
                             modelist.discard((real_mode[0], oldvalue))
-                else:
-                    modelist.discard(real_mode)
         log.debug('(%s) Final modelist: %s', self.name, modelist)
         return modelist
 
