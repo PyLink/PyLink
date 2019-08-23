@@ -454,6 +454,11 @@ servers:
         # and earlier.
         #ircd: charybdis
 
+        # Determines whether PyLink servers should be marked hidden in /links and /map.
+        # This only takes effect if the 'flatten_links' option in the IRCd is enabled.
+        # Defaults to false if not set.
+        #hidden: false
+
     # Sample Clientbot configuration, if you want to connect PyLink as a bot to relay somewhere
     # (or do other bot things).
     magicnet:

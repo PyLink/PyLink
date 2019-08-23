@@ -91,6 +91,19 @@ class TS6Protocol(TS6BaseProtocol):
 
         return u
 
+    def spawn_server(self, name, sid=None, uplink=None, desc=None):
+        """
+        Spawns a server off a PyLink server. desc (server description)
+        defaults to the one in the config. uplink defaults to the main PyLink
+        server, and sid (the server ID) is automatically generated if not
+        given.
+        """
+        desc = desc or self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
+        if self.serverdata.get('hidden', False):
+            desc = '(H) ' + desc
+
+        return super().spawn_server(name, sid=sid, uplink=uplink, desc=desc)
+
     def join(self, client, channel):
         """Joins a PyLink client to a channel."""
         # JOIN:
@@ -398,8 +411,10 @@ class TS6Protocol(TS6BaseProtocol):
         # KLN: supports remote KLINEs
         f('CAPAB :QS ENCAP EX CHW IE KNOCK SAVE SERVICES TB EUID RSFNC EOPMOD SAVETS_100 KLN')
 
-        f('SERVER %s 0 :%s' % (self.serverdata["hostname"],
-                               self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']))
+        sdesc = self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
+        if self.serverdata.get('hidden', False):
+            sdesc = '(H) ' + sdesc
+        f('SERVER %s 0 :%s' % (self.serverdata["hostname"], sdesc))
 
         # Finally, end all the initialization with a PING - that's Charybdis'
         # way of saying end-of-burst :)
