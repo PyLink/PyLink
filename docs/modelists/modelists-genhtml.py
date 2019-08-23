@@ -31,12 +31,12 @@ def _format(articlename, text):
                 text, note = text.split(' ', 1)
             except ValueError:
                 if text.endswith('*'):
-                    text = '<td class="tablecell-yes2">%s</td>' % text
+                    text = '<td class="tablecell-special">%s</td>' % text
                 else:
                     text = '<td class="tablecell-yes">%s</td>' % text
             else:
                 text = '%s<br><span class="note">%s</span>' % (text, note)
-                text = '<td class="tablecell-special">%s</td>' % text
+                text = '<td class="tablecell-yes2">%s</td>' % text
     else:
         text = '<td class="tablecell-na note">n/a</td>'
     return text
@@ -95,7 +95,7 @@ td:first-child, th[scope="row"] {
 }
 
 .tablecell-planned, .tablecell-yes2 {
-    background-color: #92E8DF
+    background-color: #B1FCDE
 }
 
 .tablecell-partial {
@@ -106,17 +106,6 @@ td:first-child, th[scope="row"] {
     background-color: #DCB1FC
 }
 
-.tablecell-caveats {
-    background-color: #F0C884
-}
-
-.tablecell-caveats2 {
-    background-color: #ED9A80
-}
-
-.tablecell-no-padding {
-    padding: initial;
-}
 </style>
 
 </head>
