@@ -542,7 +542,6 @@ class UnrealProtocol(TS6BaseProtocol):
                 for namedmode, modechar in cmodes.items():
                     if modechar in supported_cmodes:
                         self.cmodes[namedmode] = modechar
-                self.cmodes['*B'] += 'f'  # Add +f to the list too, dunno why it isn't there.
 
         # Add in the supported prefix modes.
         self.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
