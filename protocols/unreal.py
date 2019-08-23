@@ -379,10 +379,24 @@ class UnrealProtocol(TS6BaseProtocol):
         self._send_with_prefix(self.sid, 'EOS')
 
         # Extban definitions
-        self.extbans_acting = {'quiet': '~q:', 'ban_nonick': '~n:', 'ban_nojoins': '~j:',
-                               'filter': '~T:block:', 'filter_censor': '~T:censor:'}
-        self.extbans_matching = {'ban_account': '~a:', 'ban_inchannel': '~c:', 'ban_opertype': '~O:',
-                                 'ban_realname': '~r:', 'ban_account_legacy': '~R:', 'ban_certfp': '~S:'}
+        self.extbans_acting = {'quiet': '~q:',
+                               'ban_nonick': '~n:',
+                               'ban_nojoins': '~j:',
+                               'filter': '~T:block:',
+                               'filter_censor': '~T:censor:',
+                               'msgbypass_external': '~m:external:',
+                               'msgbypass_censor': '~m:censor:',
+                               'msgbypass_moderated': '~m:moderated:',
+                               # These two sort of map to InspIRCd +e S: and +e T:
+                               'ban_stripcolor': '~m:color:',
+                               'ban_nonotice': '~m:notice:',
+                               'timedban_unreal': '~t:'}
+        self.extbans_matching = {'ban_account': '~a:',
+                                 'ban_inchannel': '~c:',
+                                 'ban_opertype': '~O:',
+                                 'ban_realname': '~r:',
+                                 'ban_account_legacy': '~R:',
+                                 'ban_certfp': '~S:'}
 
     def handle_eos(self, numeric, command, args):
         """EOS is used to denote end of burst."""
