@@ -370,4 +370,184 @@ class BaseProtocolTest(unittest.TestCase):
             [('+w', None), ('+x', None)]
         )
 
-    # TODO: parse/apply_modes on mode +k
+    def test_apply_modes_channel_simple(self):
+        c = self.p.channels['#'] = Channel(self.p, name='#')
+
+        self.p.apply_modes('#', [('+m', None)])
+        self.assertEqual(c.modes, {('m', None)})
+
+        self.p.apply_modes('#', [('-m', None)])
+        self.assertFalse(c.modes)  # assert is empty
+
+    def test_apply_modes_channel_add_remove(self):
+        c = self.p.channels['#'] = Channel(self.p, name='#')
+
+        self.p.apply_modes('#', [('+i', None)])
+        self.assertEqual(c.modes, {('i', None)})
+
+        self.p.apply_modes('#', [('+n', None), ('-i', None)])
+        self.assertEqual(c.modes, {('n', None)})
+
+    def test_apply_modes_channel_remove_nonexistent(self):
+        c = self.p.channels['#abc'] = Channel(self.p, name='#abc')
+        self.p.apply_modes('#abc', [('+t', None)])
+        self.assertEqual(c.modes, {('t', None)})
+
+        self.p.apply_modes('#abc', [('-n', None), ('-i', None)])
+        self.assertEqual(c.modes, {('t', None)})
+
+    def test_apply_modes_channel_typeC(self):
+        c = self.p.channels['#abc'] = Channel(self.p, name='#abc')
+        self.p.apply_modes('#abc', [('+t', None), ('+l', '30')])
+        self.assertEqual(c.modes, {('t', None), ('l', '30')})
+
+        self.p.apply_modes('#abc', [('+l', '55')])
+        self.assertEqual(c.modes, {('t', None), ('l', '55')})
+
+        self.p.apply_modes('#abc', [('-l', None)])
+        self.assertEqual(c.modes, {('t', None)})
+
+    def test_apply_modes_channel_typeB(self):
+        c = self.p.channels['#pylink'] = Channel(self.p, name='#pylink')
+        self.p.apply_modes('#pylink', [('+k', 'password123'), ('+s', None)])
+        self.assertEqual(c.modes, {('s', None), ('k', 'password123')})
+
+        self.p.apply_modes('#pylink', [('+k', 'qwerty')])
+        self.assertEqual(c.modes, {('s', None), ('k', 'qwerty')})
+
+        self.p.apply_modes('#pylink', [('-k', 'abcdef')])
+        # Trying to remove with wrong key is a no-op
+        self.assertEqual(c.modes, {('s', None), ('k', 'qwerty')})
+
+        self.p.apply_modes('#pylink', [('-k', 'qwerty')])
+        self.assertEqual(c.modes, {('s', None)})
+
+        self.p.apply_modes('#pylink', [('+k', '12345')])
+        self.assertEqual(c.modes, {('s', None), ('k', '12345')})
+
+    def test_apply_modes_channel_typeA(self):
+        c = self.p.channels['#pylink'] = Channel(self.p, name='#pylink')
+        self.p.apply_modes('#pylink', [('+k', 'password123'), ('+s', None)])
+        self.assertEqual(c.modes, {('s', None), ('k', 'password123')})
+
+        self.p.apply_modes('#pylink', [('+k', 'qwerty')])
+        self.assertEqual(c.modes, {('s', None), ('k', 'qwerty')})
+
+        self.p.apply_modes('#pylink', [('-k', 'abcdef')])
+        # Trying to remove with wrong key is a no-op
+        self.assertEqual(c.modes, {('s', None), ('k', 'qwerty')})
+
+        self.p.apply_modes('#pylink', [('-k', 'qwerty')])
+        self.assertEqual(c.modes, {('s', None)})
+
+        self.p.apply_modes('#pylink', [('+k', '12345')])
+        self.assertEqual(c.modes, {('s', None), ('k', '12345')})
+
+    def test_apply_modes_channel_typeA(self):
+        c = self.p.channels['#pylink'] = Channel(self.p, name='#pylink')
+        self.p.apply_modes('#pylink', [('+k', 'password123'), ('+s', None)])
+        self.assertEqual(c.modes, {('s', None), ('k', 'password123')})
+
+        self.p.apply_modes('#pylink', [('+k', 'qwerty')])
+        self.assertEqual(c.modes, {('s', None), ('k', 'qwerty')})
+
+        self.p.apply_modes('#pylink', [('-k', 'abcdef')])
+        # Trying to remove with wrong key is a no-op
+        self.assertEqual(c.modes, {('s', None), ('k', 'qwerty')})
+
+        self.p.apply_modes('#pylink', [('-k', 'qwerty')])
+        self.assertEqual(c.modes, {('s', None)})
+
+        self.p.apply_modes('#pylink', [('+k', '12345')])
+        self.assertEqual(c.modes, {('s', None), ('k', '12345')})
+
+    # TODO: fix last case!
+    @unittest.skip("Case mismatch not working yet")
+    def test_apply_modes_channel_typeA(self):
+        c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
+        self.p.apply_modes('#Magic', [('+b', '*!*@test.host'), ('+b', '*!*@best.host')])
+        self.assertEqual(c.modes, {('b', '*!*@test.host'), ('b', '*!*@best.host')})
+
+        # This should be a no-op
+        self.p.apply_modes('#Magic', [('-b', '*!*non-existent')])
+        self.assertEqual(c.modes, {('b', '*!*@test.host'), ('b', '*!*@best.host')})
+
+        # Simple removal
+        self.p.apply_modes('#Magic', [('-b', '*!*@test.host')])
+        self.assertEqual(c.modes, {('b', '*!*@best.host')})
+
+        # Removal but different case than original
+        self.p.apply_modes('#Magic', [('-b', '*!*@BEST.HOST')])
+        self.assertFalse(c.modes)
+
+    def test_apply_modes_channel_prefixmodes(self):
+        # Make some users
+        c = self.p.channels['#staff'] = Channel(self.p, name='#staff')
+        u1 = self._make_user('user100', uid='100')
+        u2 = self._make_user('user101', uid='101')
+        c.users.add(u1.uid)
+        u1.channels.add(c)
+        c.users.add(u2.uid)
+        u2.channels.add(c)
+
+        # Set modes
+        self.p.apply_modes('#staff', [('+o', '100'), ('+v', '101'), ('+t', None)])
+        self.assertEqual(c.modes, {('t', None)})
+
+        # State checks, lots of them... TODO: move this into Channel class tests
+        self.assertTrue(c.is_op('100'))
+        self.assertTrue(c.is_op_plus('100'))
+        self.assertFalse(c.is_halfop('100'))
+        self.assertTrue(c.is_halfop_plus('100'))
+        self.assertFalse(c.is_voice('100'))
+        self.assertTrue(c.is_voice_plus('100'))
+        self.assertEqual(c.get_prefix_modes('100'), ['op'])
+
+        self.assertTrue(c.is_voice('101'))
+        self.assertTrue(c.is_voice_plus('101'))
+        self.assertFalse(c.is_halfop('101'))
+        self.assertFalse(c.is_halfop_plus('101'))
+        self.assertFalse(c.is_op('101'))
+        self.assertFalse(c.is_op_plus('101'))
+        self.assertEqual(c.get_prefix_modes('101'), ['voice'])
+
+        self.assertFalse(c.prefixmodes['owner'])
+        self.assertFalse(c.prefixmodes['admin'])
+        self.assertEqual(c.prefixmodes['op'], {'100'})
+        self.assertFalse(c.prefixmodes['halfop'])
+        self.assertEqual(c.prefixmodes['voice'], {'101'})
+
+
+        self.p.apply_modes('#staff', [('-o', '100')])
+        self.assertEqual(c.modes, {('t', None)})
+        self.assertFalse(c.get_prefix_modes('100'))
+        self.assertEqual(c.get_prefix_modes('101'), ['voice'])
+
+    def test_apply_modes_user(self):
+        u = self._make_user('nick', uid='user')
+        self.p.apply_modes('user', [('+o', None), ('+w', None)])
+        self.assertEqual(u.modes, {('o', None), ('w', None)})
+        self.p.apply_modes('user', [('-o', None), ('+i', None)])
+        self.assertEqual(u.modes, {('i', None), ('w', None)})
+
+    # TODO: test type coersion if channel or mode targets are ints
+
+    def test_parse_apply_channel_key(self):
+        # Test /mode #channel -k * => /mode #channel -k PASSWORD  coersion in parse_modes()
+        c = self.p.channels['#pylink'] = Channel(self.p, name='#pylink')
+
+        modes = self.p.parse_modes('#pylink', ['+ntk', 'aBcDeF'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'aBcDeF')})
+
+        modes = self.p.parse_modes('#pylink', ['-k', 'aBcDeF'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None), ('t', None)})
+
+        modes = self.p.parse_modes('#pylink', ['+k', 'AbCdEfG'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'AbCdEfG')})
+
+        modes = self.p.parse_modes('#pylink', ['-kt', '*'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None)})
