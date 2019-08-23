@@ -318,13 +318,11 @@ class BaseProtocolTest(unittest.TestCase):
         )
 
     def test_parse_modes_prefixmodes_rfc(self):
-
+        c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
         self.assertEqual(
             self.p.parse_modes('#testruns', ['+ov', '102', '101']),  # unknown UIDs are ignored
             []
         )
-
-        c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
         u = self._make_user('test100', uid='100')
         c.users.add(u)
         u.channels.add(c)
@@ -355,6 +353,34 @@ class BaseProtocolTest(unittest.TestCase):
             # two users interleaved
             self.p.parse_modes('#testruns', ['+oovv', '100', '102', '100', '102']),
             [('+o', '100'), ('+o', '102'), ('+v', '100'), ('+v', '102')]
+        )
+
+        self.assertEqual(
+            # Mode cycle
+            self.p.parse_modes('#testruns', ['+o-o', '100', '100']),
+            [('+o', '100'), ('-o', '100')]
+        )
+
+    def test_parse_modes_channel_ban_complex(self):
+        c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
+        self.assertEqual(
+            # add first ban, but don't remove second because it doesn't exist
+            self.p.parse_modes('#testruns', ['+b-b', '*!*@test1', '*!*@test2']),
+            [('+b', '*!*@test1')],
+            "First ban should have been added, and second ignored"
+        )
+        self.p.apply_modes('#testruns', [('+b', '*!*@test1')])
+        self.assertEqual(
+            # remove first ban because it matches case
+            self.p.parse_modes('#testruns', ['-b', '*!*@test1']),
+            [('-b', '*!*@test1')],
+            "First ban should have been removed (same case)"
+        )
+        self.assertEqual(
+            # remove first ban despite different case
+            self.p.parse_modes('#testruns', ['-b', '*!*@TEST1']),
+            [('-b', '*!*@test1')],
+            "First ban should have been removed (different case)"
         )
 
     def test_parse_modes_user_rfc(self):
@@ -461,8 +487,6 @@ class BaseProtocolTest(unittest.TestCase):
         self.p.apply_modes('#pylink', [('+k', '12345')])
         self.assertEqual(c.modes, {('s', None), ('k', '12345')})
 
-    # TODO: fix last case!
-    # TODO: test +b-b combinations et al.
     def test_apply_modes_channel_typeA(self):
         c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
         self.p.apply_modes('#Magic', [('+b', '*!*@test.host'), ('+b', '*!*@best.host')])
@@ -480,6 +504,24 @@ class BaseProtocolTest(unittest.TestCase):
         self.p.apply_modes('#Magic', [('-b', '*!*@BEST.HOST')])
         self.assertFalse(c.modes, "Ban on *!*@best.host should be removed (different case)")
 
+    def test_apply_modes_channel_mode_cycle(self):
+        c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
+        self.p.apply_modes('#Magic', [('+b', '*!*@example.net'), ('-b', '*!*@example.net')])
+        self.assertEqual(c.modes, set(), "Ban should have been removed (same case)")
+
+        self.p.apply_modes('#Magic', [('+b', '*!*@example.net'), ('+i', None), ('-b', '*!*@Example.net')])
+        self.assertEqual(c.modes, set(), "Ban should have been removed (different case)")
+
+        u = self._make_user('nick', uid='user')
+        c.users.add(u.uid)
+        u.channels.add(c)
+
+        self.p.apply_modes('#Magic', [('+o', 'user'), ('-o', 'user')])
+        self.assertEqual(c.modes, set(), "No prefixmodes should have been set")
+        self.assertFalse(c.is_op('user'))
+        self.assertFalse(c.get_prefix_modes('user'))
+
+    # TODO: test cycling +o/-o in one mode
     def test_apply_modes_channel_prefixmodes(self):
         # Make some users
         c = self.p.channels['#staff'] = Channel(self.p, name='#staff')
@@ -540,7 +582,7 @@ class BaseProtocolTest(unittest.TestCase):
         self.p.apply_modes('#pylink', modes)
         self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'foobar')}, "Key should have been added")
 
-        modes = self.p.parse_modes('#pylink', ['+ntk', 'aBcDeF'])
+        modes = self.p.parse_modes('#pylink', ['+k', 'aBcDeF'])
         self.p.apply_modes('#pylink', modes)
         self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'aBcDeF')}, "Key should have been changed")
 
