@@ -1156,8 +1156,8 @@ def get_supported_cmodes(irc, remoteirc, channel, modes):
                     # First, we expand extbans from the local IRCd into a named mode and argument pair. Then, we
                     # can figure out how to relay it.
                     for extban_name, extban_prefix in irc.extbans_acting.items():
-                        # Acting extbans are only supported with +b (e.g. +b m:n!u@h)
-                        if name == 'ban' and arg.startswith(extban_prefix):
+                        # Acting extbans are generally only supported with +b and +e
+                        if name in {'ban', 'banexception'} and arg.startswith(extban_prefix):
                             orig_supported_char, old_arg = supported_char, arg
 
                             if extban_name in remoteirc.cmodes:
