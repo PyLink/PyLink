@@ -463,23 +463,22 @@ class BaseProtocolTest(unittest.TestCase):
 
     # TODO: fix last case!
     # TODO: test +b-b combinations et al.
-    @unittest.skip("Case mismatch not working yet")
     def test_apply_modes_channel_typeA(self):
         c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
         self.p.apply_modes('#Magic', [('+b', '*!*@test.host'), ('+b', '*!*@best.host')])
-        self.assertEqual(c.modes, {('b', '*!*@test.host'), ('b', '*!*@best.host')})
+        self.assertEqual(c.modes, {('b', '*!*@test.host'), ('b', '*!*@best.host')}, "Bans should be added")
 
         # This should be a no-op
         self.p.apply_modes('#Magic', [('-b', '*!*non-existent')])
-        self.assertEqual(c.modes, {('b', '*!*@test.host'), ('b', '*!*@best.host')})
+        self.assertEqual(c.modes, {('b', '*!*@test.host'), ('b', '*!*@best.host')}, "Trying to unset non-existent ban should be no-op")
 
         # Simple removal
         self.p.apply_modes('#Magic', [('-b', '*!*@test.host')])
-        self.assertEqual(c.modes, {('b', '*!*@best.host')})
+        self.assertEqual(c.modes, {('b', '*!*@best.host')}, "Ban on *!*@test.host be removed (same case as original)")
 
         # Removal but different case than original
         self.p.apply_modes('#Magic', [('-b', '*!*@BEST.HOST')])
-        self.assertFalse(c.modes)
+        self.assertFalse(c.modes, "Ban on *!*@best.host should be removed (different case)")
 
     def test_apply_modes_channel_prefixmodes(self):
         # Make some users
@@ -518,7 +517,6 @@ class BaseProtocolTest(unittest.TestCase):
         self.assertFalse(c.prefixmodes['halfop'])
         self.assertEqual(c.prefixmodes['voice'], {'101'})
 
-
         self.p.apply_modes('#staff', [('-o', '100')])
         self.assertEqual(c.modes, {('t', None)})
         self.assertFalse(c.get_prefix_modes('100'))
@@ -535,20 +533,44 @@ class BaseProtocolTest(unittest.TestCase):
 
     def test_parse_apply_channel_key(self):
         # Test /mode #channel -k * => /mode #channel -k PASSWORD  coersion in parse_modes()
+        # Note: strangely enough, the coersion is actually in parse_modes() as a special case
         c = self.p.channels['#pylink'] = Channel(self.p, name='#pylink')
+
+        modes = self.p.parse_modes('#pylink', ['+ntk', 'foobar'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'foobar')}, "Key should have been added")
 
         modes = self.p.parse_modes('#pylink', ['+ntk', 'aBcDeF'])
         self.p.apply_modes('#pylink', modes)
-        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'aBcDeF')})
+        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'aBcDeF')}, "Key should have been changed")
 
+        # Mismatched: should be no-op
+        modes = self.p.parse_modes('#pylink', ['-k', '1111111'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'aBcDeF')}, "Key should not have been changed")
+
+        # Matching key: should remove key
         modes = self.p.parse_modes('#pylink', ['-k', 'aBcDeF'])
         self.p.apply_modes('#pylink', modes)
-        self.assertEqual(c.modes, {('n', None), ('t', None)})
+        self.assertEqual(c.modes, {('n', None), ('t', None)}, "Key should have been removed (same as original)")
 
         modes = self.p.parse_modes('#pylink', ['+k', 'AbCdEfG'])
         self.p.apply_modes('#pylink', modes)
-        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'AbCdEfG')})
+        self.assertEqual(c.modes, {('n', None), ('t', None), ('k', 'AbCdEfG')}, "Key should have been readded")
 
+        # * as key: should remove key (Charybdis TS6, ngIRCd)
         modes = self.p.parse_modes('#pylink', ['-kt', '*'])
         self.p.apply_modes('#pylink', modes)
-        self.assertEqual(c.modes, {('n', None)})
+        self.assertEqual(c.modes, {('n', None)}, "Key should have been removed (-k *)")
+
+        modes = self.p.parse_modes('#pylink', ['+k', 'AbCdEfG'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None), ('k', 'AbCdEfG')}, "Key should have been readded")
+
+        # Mismatched case - treat this as remove
+        # Some IRCds allow this (Unreal, P10), others do not (InspIRCd). If
+        # the IRCd let this message through we should probably remove it anyways.
+        # Note: Charybdis and ngIRCd do -k * removal instead so this case will never happen there
+        modes = self.p.parse_modes('#pylink', ['-k', 'abcdefg'])
+        self.p.apply_modes('#pylink', modes)
+        self.assertEqual(c.modes, {('n', None)}, "Key should have been removed (-k with different case)")
