@@ -16,7 +16,7 @@ ban_noctcp,C:,,,
 ban_nojoins,,,,~j:
 ban_nokicks,Q:,,,
 ban_nonick,N:,~n:,,~n:
-ban_nonotice,T:,,,
+ban_nonotice,T:,,,~m:notice: (+e only)
 ban_not_account,,,$~a:,
 ban_not_banshare,,,$~j:,
 ban_not_extgecos,,,$~x:,
@@ -29,7 +29,12 @@ ban_opertype,O:,,,~O:
 ban_partmsgs,p:,,,
 ban_realname,r:,~r:,$r:,~r:
 ban_server,s:,,$s:,
-ban_stripcolor,S:,,,
+ban_stripcolor,S:,,,~m:color: (+e only)
+ban_unregistered,,,$~a,
 ban_unregistered_mark,,~M:,,
 ban_unregistered_matching,U:,,,
+msgbypass_external,,,,~m:external:
+msgbypass_censor,,,,~m:censor:
+msgbypass_moderated,,,,~m:moderated:
 quiet,m:,~q:,(via cmode +q),~q:
+timedban_unreal,,,,~t:
