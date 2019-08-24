@@ -390,6 +390,45 @@ class BaseProtocolTest(unittest.TestCase):
             "Second ban should have been removed (different case)"
         )
 
+    def test_parse_mode_channel_prefixmode_has_nick(self):
+        c = self.p.channels['#'] = Channel(self.p, name='#')
+        u = self._make_user('mynick', uid='myuid')
+        c.users.add(u)
+        u.channels.add(c)
+
+        self.assertEqual(
+            self.p.parse_modes('#', ['+o', 'myuid']),
+            [('+o', 'myuid')],
+            "+o on UID should be registered"
+        )
+        self.assertEqual(
+            self.p.parse_modes('#', ['+o', 'mynick']),
+            [('+o', 'myuid')],
+            "+o on nick should be registered"
+        )
+        self.assertEqual(
+            self.p.parse_modes('#', ['+o', 'MyUiD']),
+            [],
+            "+o on wrong case UID should be ignored"
+        )
+        self.assertEqual(
+            self.p.parse_modes('#', ['+o', 'MyNick']),
+            [('+o', 'myuid')],
+            "+o on different case nick should be registered"
+        )
+
+        self.assertEqual(
+            self.p.parse_modes('#', ['-o', 'myuid']),
+            [('-o', 'myuid')],
+            "-o on UID should be registered"
+        )
+        self.assertEqual(
+            self.p.parse_modes('#', ['-o', 'mynick']),
+            [('-o', 'myuid')],
+            "-o on nick should be registered"
+        )
+
+
     def test_parse_modes_user_rfc(self):
         u = self._make_user('testuser', uid='100')
 
