@@ -31,7 +31,7 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
         # Remove conf key checks for those not needed for Clientbot.
         self.conf_keys -= {'recvpass', 'sendpass', 'sid', 'sidrange', 'hostname'}
 
-    def _get_UID(self, nick, ident=None, host=None, spawn_new=True):
+    def _get_UID(self, nick, ident=None, host=None, spawn_new=False):
         """
         Fetches the UID for the given nick, creating one if it does not already exist and spawn_new is True.
 
@@ -477,7 +477,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
                 except ValueError:
                     ident = host = None  # Set ident and host as null for now.
                     nick = sender  # Treat the sender prefix we received as a nick.
-                idsource = self._get_UID(nick, ident, host)
+                idsource = self._get_UID(nick, ident, host, spawn_new=True)
 
         if idsource in self.users:
             # Handle IRCv3.2 account-tag.
@@ -719,7 +719,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
 
             # Get the PUID for the given nick. If one doesn't exist, spawn
             # a new virtual user.
-            idsource = self._get_UID(nick, ident=ident, host=host)
+            idsource = self._get_UID(nick, ident=ident, host=host, spawn_new=True)
 
             # Queue these virtual users to be joined if they're not already in the channel,
             # or we're waiting for a kick acknowledgment for them.
