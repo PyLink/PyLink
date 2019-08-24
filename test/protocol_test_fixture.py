@@ -382,6 +382,13 @@ class BaseProtocolTest(unittest.TestCase):
             [('-b', '*!*@test1')],
             "First ban should have been removed (different case)"
         )
+        self.p.apply_modes('#testruns', [('+b', '*!*@Test2')])
+        self.assertEqual(
+            # remove second ban despite different case
+            self.p.parse_modes('#testruns', ['-b', '*!*@test2']),
+            [('-b', '*!*@Test2')],
+            "Second ban should have been removed (different case)"
+        )
 
     def test_parse_modes_user_rfc(self):
         u = self._make_user('testuser', uid='100')

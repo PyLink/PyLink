@@ -906,6 +906,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         args = args[1:]
 
         existing = set(existing)
+        existing_casemap = {}
+        for modepair in existing:
+            arg = modepair[1]
+            if arg is not None:
+                existing_casemap[(modepair[0], self.to_lower(arg))] = modepair
+            else:
+                existing_casemap[modepair] = modepair
 
         res = []
         for mode in modestring:
@@ -947,10 +954,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
                             log.debug('(%s) parse_modes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, existing)
 
-                            if (mode, arg) not in existing:
-                                # Ignore attempts to unset bans that don't exist.
+                            arg = self.to_lower(arg)
+                            casefolded_modepair = existing_casemap.get((mode, arg))  # Case fold arguments as needed
+                            if casefolded_modepair not in existing:
+                                # Ignore attempts to unset parameter modes that don't exist.
                                 log.debug("(%s) parse_modes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
                                 continue
+                            arg = casefolded_modepair[1]
 
                     elif prefix == '+' and mode in supported_modes['*C']:
                         # Only has parameter when setting.
