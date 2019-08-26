@@ -1157,12 +1157,18 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             possible_modes['*A'] += ''.join(self.prefixmodes)
             for name, userlist in c.prefixmodes.items():
                 try:
-                    oldmodes.update([(self.cmodes[name], u) for u in userlist])
+                    # Add prefix modes to the list of old modes
+                    oldmodes |= {(self.cmodes[name], u) for u in userlist}
                 except KeyError:
                     continue
         else:
-            oldmodes = self.users[target].modes
+            oldmodes = set(self.users[target].modes)
             possible_modes = self.umodes
+
+        oldmodes_mapping = dict(oldmodes)
+        oldmodes_lower = {(modepair[0], self.to_lower(modepair[1]) if modepair[1] else modepair[1])
+                          for modepair in oldmodes}
+
         newmodes = []
         log.debug('(%s) reverse_modes: old/current mode list for %s is: %s', self.name,
                    target, oldmodes)
@@ -1177,24 +1183,29 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 # We need to look at the current mode list to reset modes that take arguments
                 # For example, trying to bounce +l 30 on a channel that had +l 50 set should
                 # give "+l 50" and not "-l".
-                oldarg = [m for m in oldmodes if m[0] == mchar]
+                oldarg = oldmodes_mapping.get(mchar)
+
                 if oldarg:  # Old mode argument for this mode existed, use that.
-                    oldarg = oldarg[0]
-                    mpair = ('+%s' % oldarg[0], oldarg[1])
+                    mpair = ('+%s' % mchar, oldarg)
+
                 else:  # Not found, flip the mode then.
+
                     # Mode takes no arguments when unsetting.
                     if mchar in possible_modes['*C'] and char[0] != '-':
                         arg = None
                     mpair = (self._flip(char), arg)
             else:
                 mpair = (self._flip(char), arg)
+
+            if arg is not None:
+                arg = self.to_lower(arg)
             if char[0] != '-' and (mchar, arg) in oldmodes:
                 # Mode is already set.
                 log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since we're "
                           "setting a mode that's already set.", self.name, char, arg, mpair)
                 continue
             elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
-                # We're unsetting a prefix mode that was never set - don't set it in response!
+                # We're unsetting a list or prefix mode that was never set - don't set it in response!
                 # TS6 IRCds lacks server-side verification for this and can cause annoying mode floods.
                 log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
                           "wasn't previously set.", self.name, char, arg, mpair)

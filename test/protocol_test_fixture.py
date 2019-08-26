@@ -681,11 +681,10 @@ class BaseProtocolTest(unittest.TestCase):
         c.modes = {('t', None), ('n', None), ('l', '50')}
 
         out = self.p.reverse_modes('#foobar', [('+l', '100')])
-
         self.assertEqual(out, [('+l', '50')], "Setting +l should reset original mode")
 
         out = self.p.reverse_modes('#foobar', [('-l', None)])
-        self.assertEqual(out, [('+l', '50')], "Setting +l should reset original mode")
+        self.assertEqual(out, [('+l', '50')], "Unsetting +l should reset original mode")
 
         out = self.p.reverse_modes('#foobar', [('+l', '50')])
         self.assertEqual(out, [], "Setting +l with original value is no-op")
@@ -700,7 +699,7 @@ class BaseProtocolTest(unittest.TestCase):
         u = self._make_user('nick', uid='user')
         u.channels.add(c)
         c.users.add(u)
-        c.prefixmodes['op'].add(u)
+        c.prefixmodes['op'].add(u.uid)
 
         out = self.p.reverse_modes('#foobar', '-o user')
         self.assertEqual(out, '+o user')
