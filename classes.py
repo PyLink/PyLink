@@ -1148,6 +1148,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         # If the query is a string, we have to parse it first.
         if origstring:
             modes = self.parse_modes(target, modes.split(" "))
+
         # Get the current mode list first.
         if self.is_channel(target):
             c = oldobj or self._channels[target]
@@ -1207,6 +1208,11 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
                 # We're unsetting a list or prefix mode that was never set - don't set it in response!
                 # TS6 IRCds lacks server-side verification for this and can cause annoying mode floods.
+                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
+                          "wasn't previously set.", self.name, char, arg, mpair)
+                continue
+            elif char[0] == '-' and mchar not in oldmodes_mapping:
+                # Check the same for regular modes that previously didn't exist
                 log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
                           "wasn't previously set.", self.name, char, arg, mpair)
                 continue
