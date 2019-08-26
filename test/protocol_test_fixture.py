@@ -390,6 +390,29 @@ class BaseProtocolTest(unittest.TestCase):
             "Second ban should have been removed (different case)"
         )
 
+    def test_parse_modes_channel_ban_cycle(self):
+        c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+b-b', '*!*@example.com', '*!*@example.com']),
+            [('+b', '*!*@example.com'), ('-b', '*!*@example.com')],
+            "Cycling a ban +b-b should remove it"
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['-b+b', '*!*@example.com', '*!*@example.com']),
+            [('+b', '*!*@example.com')],
+            "Cycling a ban -b+b should add it"
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+b-b', '*!*@example.com', '*!*@Example.com']),
+            [('+b', '*!*@example.com'), ('-b', '*!*@example.com')],
+            "Cycling a ban +b-b should remove it (different case)"
+        )
+        self.assertEqual(
+            self.p.parse_modes('#testruns', ['+b-b', '*!*@Example.com', '*!*@example.com']),
+            [('+b', '*!*@Example.com'), ('-b', '*!*@Example.com')],
+            "Cycling a ban +b-b should remove it (different case)"
+        )
+
     def test_parse_mode_channel_prefixmode_has_nick(self):
         c = self.p.channels['#'] = Channel(self.p, name='#')
         u = self._make_user('mynick', uid='myuid')

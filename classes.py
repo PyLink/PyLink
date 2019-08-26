@@ -952,13 +952,13 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                                     arg = oldarg
                                     log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
 
-                            log.debug('(%s) parse_modes: checking if +%s %s is in old modes list: %s', self.name, mode, arg, existing)
+                            log.debug('(%s) parse_modes: checking if +%s %s is in old modes list: %s; existing_casemap=%s', self.name, mode, arg, existing, existing_casemap)
 
                             arg = self.to_lower(arg)
                             casefolded_modepair = existing_casemap.get((mode, arg))  # Case fold arguments as needed
                             if casefolded_modepair not in existing:
                                 # Ignore attempts to unset parameter modes that don't exist.
-                                log.debug("(%s) parse_modes(): ignoring removal of non-existent list mode +%s %s", self.name, mode, arg)
+                                log.debug("(%s) parse_modes: ignoring removal of non-existent list mode +%s %s; casefolded_modepair=%s", self.name, mode, arg, casefolded_modepair)
                                 continue
                             arg = casefolded_modepair[1]
 
@@ -975,9 +975,16 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 newmode = (prefix + mode, arg)
                 res.append(newmode)
 
-                # Tentatively apply the new mode to the "existing" mode list.
+                # Tentatively apply the new mode to the "existing" mode list. This is so queries
+                # like +b-b *!*@example.com *!*@example.com behave correctly
+                # (we can't rely on the original mode list to check whether a mode currently exists)
                 existing = self._apply_modes(existing, [newmode], is_channel=is_channel)
 
+                lowered_mode = (newmode[0][-1], self.to_lower(newmode[1]) if newmode[1] else newmode[1])
+                if prefix == '+' and lowered_mode not in existing_casemap:
+                    existing_casemap[lowered_mode] = (mode, arg)
+                elif prefix == '-' and lowered_mode in existing_casemap:
+                    del existing_casemap[lowered_mode]
         return res
 
     def parse_modes(self, target, args, ignore_missing_args=False):
