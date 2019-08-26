@@ -1140,8 +1140,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             "+mi-lk test => "-mi+lk test"
             "mi-k test => "-mi+k test"
             [('+m', None), ('+r', None), ('+l', '3'), ('-o', 'person')
-             => {('-m', None), ('-r', None), ('-l', None), ('+o', 'person')})
-            {('s', None), ('+o', 'whoever') => {('-s', None), ('-o', 'whoever')})
+             => [('-m', None), ('-r', None), ('-l', None), ('+o', 'person')}]
+            {('s', None), ('+o', 'whoever') => [('-s', None), ('-o', 'whoever')}]
         """
         origstring = isinstance(modes, str)
 
@@ -1206,7 +1206,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             # If the original query is a string, send it back as a string.
             return self.join_modes(newmodes)
         else:
-            return set(newmodes)
+            return newmodes
 
     @staticmethod
     def join_modes(modes, sort=False):
