@@ -786,4 +786,25 @@ class BaseProtocolTest(unittest.TestCase):
         out = self.p.reverse_modes('#weirdstuff', '-k+k aaaaaaaaaaaa aaaaaaaaaaaa')
         self.assertEqual(out, '+k NO-PLEASE')
 
+    def test_reverse_modes_cycle_prefixmodes(self):
+        # All of these cases are ugly, sometimes unsetting modes that don't exist...
+        c = self.p.channels['#weirdstuff'] = Channel(self.p, name='#weirdstuff')
+        u = self._make_user('nick', uid='user')
+        u.channels.add(c)
+        c.users.add(u)
+
+        # user not already opped
+        out = self.p.reverse_modes('#weirdstuff', '+o-o user user')
+        self.assertEqual(out, '-o user')
+        out = self.p.reverse_modes('#weirdstuff', '-o+o user user')
+        self.assertEqual(out, '-o user')
+
+        c.prefixmodes['op'].add(u.uid)
+
+        # user was opped
+        out = self.p.reverse_modes('#weirdstuff', '+o-o user user')
+        self.assertEqual(out, '+o user')
+        out = self.p.reverse_modes('#weirdstuff', '-o+o user user')
+        self.assertEqual(out, '+o user')
+
     # TODO: test type coersion if channel or mode targets are ints
