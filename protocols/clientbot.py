@@ -44,7 +44,7 @@ class ClientbotBaseProtocol(PyLinkNetworkCoreWithUtils):
             # If this sender doesn't already exist, spawn a new client.
             idsource = self.spawn_client(nick, ident or 'unknown', host or 'unknown',
                                          server=self.uplink, realname=FALLBACK_REALNAME).uid
-        return idsource
+        return idsource or nick  # Return input if missing per upstream spec
 
     def away(self, source, text):
         """STUB: sets away messages for internal clients."""

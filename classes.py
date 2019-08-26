@@ -929,7 +929,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                         log.debug('Mode %s: This mode is a prefix mode.', mode)
                         arg = args.pop(0)
                         # Convert nicks to UIDs implicitly
-                        arg = self._get_UID(arg) or arg
+                        arg = self._get_UID(arg)
                         if arg not in self.users:  # Target doesn't exist, skip it.
                             log.debug('(%s) Skipping setting mode "%s %s"; the '
                                       'target doesn\'t seem to exist!', self.name,
