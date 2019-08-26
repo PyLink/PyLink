@@ -897,4 +897,17 @@ class BaseProtocolTest(unittest.TestCase):
             # Check that no users are missing
             self.assertIn('user%s' % num, all_args)
 
+    def test_get_hostmask(self):
+        u = self._make_user('lorem', 'testUID', ident='ipsum', host='sit.amet')
+        self.assertEqual(self.p.get_hostmask(u.uid), 'lorem!ipsum@sit.amet')
+
+    def test_get_friendly_name(self):
+        u = self._make_user('lorem', 'testUID', ident='ipsum', host='sit.amet')
+        s = self.p.servers['mySID'] = Server(self.p, None, 'irc.example.org')
+        c = self.p._channels['#abc'] = Channel('#abc')
+
+        self.assertEqual(self.p.get_friendly_name(u.uid), 'lorem')
+        self.assertEqual(self.p.get_friendly_name('#abc'), '#abc')
+        self.assertEqual(self.p.get_friendly_name('mySID'), 'irc.example.org')
+
     # TODO: test type coersion if channel or mode targets are ints
