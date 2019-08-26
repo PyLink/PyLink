@@ -1223,6 +1223,10 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
                           "wasn't previously set.", self.name, char, arg, mpair)
                 continue
+            elif mpair in newmodes:
+                # Check the same for regular modes that previously didn't exist
+                log.debug("(%s) reverse_modes: skipping duplicate reverse mode %s", self.name,  mpair)
+                continue
             newmodes.append(mpair)
 
         log.debug('(%s) reverse_modes: new modes: %s', self.name, newmodes)

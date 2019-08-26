@@ -761,4 +761,29 @@ class BaseProtocolTest(unittest.TestCase):
         out = self.p.reverse_modes('#weirdstuff', '-b+b *!*@* *!*@*')  # -+ cycle existing ban
         self.assertEqual(out, '-b *!*@*')  # Ugly but OK
 
+    def test_reverse_modes_cycle_arguments(self):
+        # All of these cases are ugly, sometimes unsetting modes that don't exist...
+        c = self.p.channels['#weirdstuff'] = Channel(self.p, name='#weirdstuff')
+
+        out = self.p.reverse_modes('#weirdstuff', '+l-l 30')
+        self.assertEqual(out, '-l')
+        out = self.p.reverse_modes('#weirdstuff', '-l+l 30')
+        self.assertEqual(out, '-l')
+
+        out = self.p.reverse_modes('#weirdstuff', '+k-k aaaaaaaaaaaa aaaaaaaaaaaa')
+        self.assertEqual(out, '-k aaaaaaaaaaaa')
+        out = self.p.reverse_modes('#weirdstuff', '-k+k aaaaaaaaaaaa aaaaaaaaaaaa')
+        self.assertEqual(out, '-k aaaaaaaaaaaa')
+
+        c.modes = {('l', '555'), ('k', 'NO-PLEASE')}
+        out = self.p.reverse_modes('#weirdstuff', '+l-l 30')
+        self.assertEqual(out, '+l 555')
+        out = self.p.reverse_modes('#weirdstuff', '-l+l 30')
+        self.assertEqual(out, '+l 555')
+
+        out = self.p.reverse_modes('#weirdstuff', '+k-k aaaaaaaaaaaa aaaaaaaaaaaa')
+        self.assertEqual(out, '+k NO-PLEASE')
+        out = self.p.reverse_modes('#weirdstuff', '-k+k aaaaaaaaaaaa aaaaaaaaaaaa')
+        self.assertEqual(out, '+k NO-PLEASE')
+
     # TODO: test type coersion if channel or mode targets are ints
