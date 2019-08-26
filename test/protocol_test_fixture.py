@@ -284,6 +284,8 @@ class BaseProtocolTest(unittest.TestCase):
         # IRCds supporting more complex modes can define new test cases if needed.
         c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
 
+        # Note: base case is not defined and raises AssertionError
+
         self.assertEqual(
             self.p.parse_modes('#testruns', ['+m']),   # add modes
             [('+m', None)]
@@ -494,6 +496,9 @@ class BaseProtocolTest(unittest.TestCase):
         self.p.apply_modes('#', [('+m', None)])
         self.assertEqual(c.modes, {('m', None)})
 
+        self.p.apply_modes('#', [])  # No-op
+        self.assertEqual(c.modes, {('m', None)})
+
         self.p.apply_modes('#', [('-m', None)])
         self.assertFalse(c.modes)  # assert is empty
 
@@ -637,9 +642,16 @@ class BaseProtocolTest(unittest.TestCase):
         c.modes = {('m', None), ('n', None)}
 
         # This function supports both strings and mode lists
+
+        # Base cases
+        for inp in {'', '+', '-'}:
+            self.assertEqual(self.p.reverse_modes('#foobar', inp), '+')
+        out = self.p.reverse_modes('#foobar', [])
+        self.assertEqual(out, [])
+
+        # One simple
         out = self.p.reverse_modes('#foobar', '+t')
         self.assertEqual(out, '-t')
-
         out = self.p.reverse_modes('#foobar', [('+t', None)])
         self.assertEqual(out, [('-t', None)])
 
@@ -806,5 +818,25 @@ class BaseProtocolTest(unittest.TestCase):
         self.assertEqual(out, '+o user')
         out = self.p.reverse_modes('#weirdstuff', '-o+o user user')
         self.assertEqual(out, '+o user')
+
+    def test_join_modes(self):
+        # join_modes operates independently of state; the input just has to be valid modepairs
+        check = lambda inp, expected, sort=False: self.assertEqual(self.p.join_modes(inp, sort=sort), expected)
+
+        check([], '+')  # base case
+
+        check([('+b', '*!*@test')], '+b *!*@test')
+        check([('-S', None)], '-S')
+        check([('+n', None), ('+t', None)], '+nt')
+        check([('+t', None), ('+n', None)], '+tn')
+        check([('+t', None), ('+n', None)], '+nt', sort=True)
+
+        check([('-n', None), ('-s', None)], '-ns')
+
+        check([('+q', '*'), ('-q', '*')], '+q-q * *')
+        check([('+l', '5'), ('-n', None), ('+R', None)], '+l-n+R 5')
+
+        # Sloppy syntax: assume leading mode is + if not otherwise stated
+        check([('o', '100AAAAAC'), ('m', None), ('-v', '100AAAAAC')], '+om-v 100AAAAAC 100AAAAAC')
 
     # TODO: test type coersion if channel or mode targets are ints
