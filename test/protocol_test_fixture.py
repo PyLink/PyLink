@@ -4,9 +4,11 @@ A test fixture for PyLink protocol modules.
 import time
 import unittest
 import collections
+import itertools
 from unittest.mock import patch
 
 from pylinkirc import conf, world
+from pylinkirc.log import log
 from pylinkirc.classes import User, Server, Channel
 
 class DummySocket():
@@ -838,5 +840,61 @@ class BaseProtocolTest(unittest.TestCase):
 
         # Sloppy syntax: assume leading mode is + if not otherwise stated
         check([('o', '100AAAAAC'), ('m', None), ('-v', '100AAAAAC')], '+om-v 100AAAAAC 100AAAAAC')
+
+    def test_wrap_modes_small(self):
+        # wrap_modes is also state independent; it only calls join_modes
+
+        N_USERS = 5
+        modes = [('+m', None)] + [('-b', 'user%s!*@example.org' % num) for num in range(N_USERS)]
+        wr = self.p.wrap_modes(modes, 200)
+        log.debug('wrap_modes input: %s', modes)
+        log.debug('wrap_modes output: %s', wr)
+
+        self.assertEqual(len(wr), 1)  # no split should have occurred
+        self.assertEqual(wr[0], self.p.join_modes(modes))
+
+    def test_wrap_modes_split_length_limit(self):
+        # wrap_modes is also state independent; it only calls join_modes
+        N_USERS = 50
+
+        modes = [('+o', 'user%s' % num) for num in range(N_USERS)]
+        wr = self.p.wrap_modes(modes, 120)
+        log.debug('wrap_modes input: %s', modes)
+        log.debug('wrap_modes output: %s', wr)
+
+        self.assertTrue(len(wr) > 1)  # we should have induced a split
+
+        for s in wr:
+            # Check that each split item starts with the right mode char
+            self.assertTrue(s.startswith('+oooo'))
+
+        all_args = itertools.chain.from_iterable(s.split() for s in wr)
+        for num in range(N_USERS):
+            # Check that no users are missing
+            self.assertIn('user%s' % num, all_args)
+
+    def test_wrap_modes_split_max_modes(self):
+        # wrap_modes is also state independent; it only calls join_modes
+        N_USERS = 50
+        N_MAX_PER_MSG = 8
+
+        modes = [('+v', 'user%s' % num) for num in range(N_USERS)]
+        wr = self.p.wrap_modes(modes, 200, N_MAX_PER_MSG)
+        log.debug('wrap_modes input: %s', modes)
+        log.debug('wrap_modes output: %s', wr)
+
+        self.assertTrue(len(wr) > 1)  # we should have induced a split
+
+        splits = [s.split() for s in wr]
+        for s in splits:
+            # Check that each message sets <= N_MAX_PER_MSG modes
+            self.assertTrue(len(s[0]) <= (N_MAX_PER_MSG + 1))  # add 1 to account for leading +
+            self.assertTrue(s[0].startswith('+'))
+            self.assertTrue(s[0].endswith('v'))
+
+        all_args = itertools.chain.from_iterable(splits)
+        for num in range(N_USERS):
+            # Check that no users are missing
+            self.assertIn('user%s' % num, all_args)
 
     # TODO: test type coersion if channel or mode targets are ints
