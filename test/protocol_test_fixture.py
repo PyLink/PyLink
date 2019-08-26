@@ -609,4 +609,106 @@ class BaseProtocolTest(unittest.TestCase):
         self.p.apply_modes('user', [('-o', None), ('+i', None)])
         self.assertEqual(u.modes, {('i', None), ('w', None)})
 
+    def test_reverse_modes_simple(self):
+        c = self.p.channels['#foobar'] = Channel(self.p, name='#foobar')
+        c.modes = {('m', None), ('n', None)}
+
+        # This function supports both strings and mode lists
+        out = self.p.reverse_modes('#foobar', '+t')
+        self.assertEqual(out, '-t')
+
+        out = self.p.reverse_modes('#foobar', [('+t', None)])
+        self.assertEqual(out, [('-t', None)])
+
+        out = self.p.reverse_modes('#foobar', '+m')
+        self.assertEqual(out, '+', 'Calling reverse_modes() on an already set mode is a no-op')
+
+        out = self.p.reverse_modes('#foobar', [('+m', None)])
+        self.assertEqual(out, [], 'Calling reverse_modes() on an already set mode is a no-op')
+
+        out = self.p.reverse_modes('#foobar', [('-i', None)])
+        self.assertEqual(out, [], 'Calling reverse_modes() on non-existent mode is a no-op')
+
+    def test_reverse_modes_multi(self):
+        c = self.p.channels['#foobar'] = Channel(self.p, name='#foobar')
+        c.modes = {('t', None), ('n', None)}
+
+        # reverse_modes should ignore modes that were already set
+        out = self.p.reverse_modes('#foobar', '+nt')
+        self.assertEqual(out, '+')
+
+        out = self.p.reverse_modes('#foobar', [('+m', None), ('+i', None)])
+        self.assertEqual(out, [('-m', None), ('-i', None)])
+
+        out = self.p.reverse_modes('#foobar', '+mint')
+        self.assertEqual(out, '-mi')  # Ignore +nt since it already exists
+
+        out = self.p.reverse_modes('#foobar', '+m-t')
+        self.assertEqual(out, '-m+t')
+
+        out = self.p.reverse_modes('#foobar', '+mn-t')
+        self.assertEqual(out, '-m+t')
+
+        out = self.p.reverse_modes('#foobar', [('+m', None), ('+n', None), ('-t', None)])
+        self.assertEqual(out, [('-m', None), ('+t', None)])
+
+    def test_reverse_modes_bans(self):
+        c = self.p.channels['#foobar'] = Channel(self.p, name='#foobar')
+        c.modes = {('t', None), ('n', None), ('b', '*!*@example.com')}
+
+        out = self.p.reverse_modes('#foobar', [('+b', '*!*@test')])
+        self.assertEqual(out, [('-b', '*!*@test')], "non-existent ban should be removed")
+        out = self.p.reverse_modes('#foobar', '+b *!*@example.com')
+        self.assertEqual(out, '+', "+b existing ban should be no-op")
+
+        out = self.p.reverse_modes('#foobar', '+b *!*@Example.com')
+        self.assertEqual(out, '+', "Should ignore attempt to change case of ban mode")
+
+        out = self.p.reverse_modes('#foobar', '-b *!*@example.com')
+        self.assertEqual(out, '+b *!*@example.com', "-b existing ban should reset it")
+
+        out = self.p.reverse_modes('#foobar', '-b *!*@Example.com')
+        self.assertEqual(out, '+b *!*@example.com', "-b existing ban should reset it using original case")
+
+        out = self.p.reverse_modes('#foobar', '-b *!*@*')
+        self.assertEqual(out, '+', "Removing non-existent ban is no-op")
+
+        out = self.p.reverse_modes('#foobar', '+bbbm 1 2 3')
+        self.assertEqual(out, '-bbbm 1 2 3')
+
+    def test_reverse_modes_limit(self):
+        c = self.p.channels['#foobar'] = Channel(self.p, name='#foobar')
+        c.modes = {('t', None), ('n', None), ('l', '50')}
+
+        out = self.p.reverse_modes('#foobar', [('+l', '100')])
+
+        self.assertEqual(out, [('+l', '50')], "Setting +l should reset original mode")
+
+        out = self.p.reverse_modes('#foobar', [('-l', None)])
+        self.assertEqual(out, [('+l', '50')], "Setting +l should reset original mode")
+
+        out = self.p.reverse_modes('#foobar', [('+l', '50')])
+        self.assertEqual(out, [], "Setting +l with original value is no-op")
+
+        c.modes.clear()
+        out = self.p.reverse_modes('#foobar', [('+l', '111'), ('+m', None)])
+        self.assertEqual(out, [('-l', None), ('-m', None)], "Setting +l on channel without it should remove")
+
+    def test_reverse_modes_prefixmodes(self):
+        c = self.p.channels['#foobar'] = Channel(self.p, name='#foobar')
+        c.modes = {('t', None), ('n', None)}
+        u = self._make_user('nick', uid='user')
+        u.channels.add(c)
+        c.users.add(u)
+        c.prefixmodes['op'].add(u)
+
+        out = self.p.reverse_modes('#foobar', '-o user')
+        self.assertEqual(out, '+o user')
+        out = self.p.reverse_modes('#foobar', '+o user')
+        self.assertEqual(out, '+')
+        out = self.p.reverse_modes('#foobar', '+ov user user')
+        self.assertEqual(out, '-v user')  # ignore +o
+        out = self.p.reverse_modes('#foobar', '-ovt user user')
+        self.assertEqual(out, '+ot user')  # ignore -v
+
     # TODO: test type coersion if channel or mode targets are ints
