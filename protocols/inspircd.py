@@ -829,7 +829,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._send_with_prefix(target, 'IDLE %s %s 0' % (source, start_time))
 
     def handle_ftopic(self, source, command, args):
-        """Handles incoming FTOPIC (sets topic on burst)."""
+        """Handles incoming topic changes."""
         # insp2 (only used for server senders):
         # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
 
@@ -837,9 +837,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
         # <- :3IN FTOPIC #qwerty 1556828864 1556844505 GL!gl@midnight-umk.of4.0.127.IP :1234abcd
         # <- :3INAAAAAA FTOPIC #qwerty 1556828864 1556844248 :topic text
         #           chan creation time ^          ^ topic set time (the one we want)
+
+        # <- :00A SVSTOPIC #channel 1538402416 SomeUser :test
         channel = args[0]
 
-        if self.proto_ver >= 1205:
+        if self.proto_ver >= 1205 and command == 'FTOPIC':
             ts = args[2]
             if source in self.users:
                 setter = source
@@ -855,7 +857,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._channels[channel].topicset = True
         return {'channel': channel, 'setter': setter, 'ts': ts, 'text': topic}
 
-    # SVSTOPIC is used by InspIRCd module m_topiclock - its arguments are the same as FTOPIC
+    # SVSTOPIC is used by InspIRCd module m_topiclock - its arguments are the same as insp2 FTOPIC
     handle_svstopic = handle_ftopic
 
     def handle_opertype(self, target, command, args):
