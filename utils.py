@@ -93,6 +93,8 @@ def split_hostmask(mask):
     """
     nick, identhost = mask.split('!', 1)
     ident, host = identhost.split('@', 1)
+    if not all({nick, ident, host}):
+        raise ValueError("Invalid user@host %r" % mask)
     return [nick, ident, host]
 splitHostmask = split_hostmask
 
