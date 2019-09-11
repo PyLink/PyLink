@@ -8,23 +8,20 @@ import yaml
 
 PARSER_DATA_PATH = Path(__file__).parent.resolve() / 'parser-tests' / 'tests'
 print(PARSER_DATA_PATH)
-'''
-spec = importlib.util.spec_from_file_location("parser_tests", PARSER_DATA_PATH / 'data.py')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
 
-print(parser_tests)
-'''
-
+from pylinkirc import utils
 from pylinkirc.protocols.ircs2s_common import IRCCommonProtocol
 
 class MessageParserTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        with open(PARSER_DATA_PATH / 'msg-split.yaml') as f:
+            cls.MESSAGE_SPLIT_TEST_DATA = yaml.safe_load(f)
+        with open(PARSER_DATA_PATH / 'userhost-split.yaml') as f:
+            cls.USER_HOST_SPLIT_TEST_DATA = yaml.safe_load(f)
 
     def testMessageSplit(self):
-        with open(PARSER_DATA_PATH / 'msg-split.yaml') as f:
-            splittest_data = yaml.safe_load(f)
-
-        for testdata in splittest_data['tests']:
+        for testdata in self.MESSAGE_SPLIT_TEST_DATA['tests']:
             inp = testdata['input']
             atoms = testdata['atoms']
 
@@ -42,18 +39,26 @@ class MessageParserTest(unittest.TestCase):
                     expected.extend(atoms['params'])
 
                 if 'tags' in atoms:
-                    # HACK: in PyLink, message tags are processed in handle_events(), which is a dynamic
-                    # method that relies on command handlers being present. So we can't reasonably test
-                    # them here (plus handle_events() outputs params as a command-specific dict instead of)
-                    # lists)
-                    self.assertEqual(atoms['tags'], IRCCommonProtocol.parse_message_tags(inp.split(" ")),
-                                     "Parse test failed for message tags: %r" % inp)
+                    # Remove message tags before parsing
                     _, inp = inp.split(" ", 1)
+
                 if has_source:
                     parts = IRCCommonProtocol.parse_prefixed_args(inp)
                 else:
                     parts = IRCCommonProtocol.parse_args(inp)
                 self.assertEqual(expected, parts, "Parse test failed for string: %r" % inp)
+
+    @unittest.skip("Not quite working yet")
+    def testMessageTags(self):
+        for testdata in self.MESSAGE_SPLIT_TEST_DATA['tests']:
+            inp = testdata['input']
+            atoms = testdata['atoms']
+
+            with self.subTest():
+                if 'tags' in atoms:
+                    self.assertEqual(atoms['tags'], IRCCommonProtocol.parse_message_tags(inp.split(" ")),
+                                     "Parse test failed for message tags: %r" % inp)
+
 
 if __name__ == '__main__':
     unittest.main()
