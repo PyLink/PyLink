@@ -2000,6 +2000,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
     def parse_irc_command(self, line):
         """Sends a command to the protocol module."""
         log.debug("(%s) <- %s", self.name, line)
+        if not line:
+            log.warning("(%s) Got empty line %r from IRC?", self.name, line)
+            return
+
         try:
             hook_args = self.handle_events(line)
         except Exception:
