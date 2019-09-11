@@ -59,6 +59,19 @@ class MessageParserTest(unittest.TestCase):
                     self.assertEqual(atoms['tags'], IRCCommonProtocol.parse_message_tags(inp.split(" ")),
                                      "Parse test failed for message tags: %r" % inp)
 
+    def testUserHostSplit(self):
+        for test in self.USER_HOST_SPLIT_TEST_DATA['tests']:
+            inp = test['source']
+            atoms = test['atoms']
+
+            with self.subTest():
+                if 'nick' not in atoms or 'user' not in atoms or 'host' not in atoms:
+                    # Trying to parse a hostmask with missing atoms is an error in split_hostmask()
+                    with self.assertRaises(ValueError):
+                        utils.split_hostmask(inp)
+                else:
+                    expected = [atoms['nick'], atoms['user'], atoms['host']]
+                    self.assertEqual(expected, utils.split_hostmask(inp))
 
 if __name__ == '__main__':
     unittest.main()
