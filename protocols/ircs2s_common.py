@@ -95,7 +95,8 @@ class IRCCommonProtocol(IRCNetwork):
                 joined_arg = ' '.join(args[idx:])[1:]  # Cut off the leading : as well
                 real_args.append(joined_arg)
                 break
-            real_args.append(arg)
+            elif arg.strip():  # Skip empty args that aren't part of the multi-word arg
+                real_args.append(arg)
 
         return real_args
 
