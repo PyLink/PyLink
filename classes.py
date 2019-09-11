@@ -774,16 +774,16 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
         """
         return str(obj).startswith('#')
 
-    @staticmethod
-    def _isASCII(s):
-        """Returns whether the given string only contains non-whitespace ASCII characters."""
-        chars = string.ascii_letters + string.digits + string.punctuation
-        return all(char in chars for char in str(s))
 
+    # Modified from https://stackoverflow.com/a/106223 (RFC 1123):
+    # - Allow hostnames that end in '.'
+    # - Require at least one '.' in the hostname
+    _HOSTNAME_RE = re.compile(r'^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+'
+                              r'([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])*$')
     @classmethod
-    def is_server_name(cls, s):
+    def is_server_name(cls, text):
         """Returns whether the string given is a valid server name."""
-        return cls._isASCII(s) and '.' in s and not s.startswith('.')
+        return bool(cls._HOSTNAME_RE.match(text))
 
     _HOSTMASK_RE = re.compile(r'^\S+!\S+@\S+$')
     @classmethod

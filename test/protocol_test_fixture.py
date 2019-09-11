@@ -178,15 +178,6 @@ class BaseProtocolTest(unittest.TestCase):
         assertF('&channel')  # we don't support these yet
         assertF('lorem ipsum')
 
-    def test_is_ascii(self):
-        assertT = lambda inp: self.assertTrue(self.p._isASCII(inp))
-        assertF = lambda inp: self.assertFalse(self.p._isASCII(inp))
-
-        assertT('iotgjw@sy9!4py645ujg990rEYghiwaK0r4{SEFIre')
-        assertT('touche')
-        assertF('touché')
-        assertF('测试1')
-
     def test_is_server_name(self):
         self.assertTrue(self.p.is_server_name('test.local'))
         self.assertTrue(self.p.is_server_name('IRC.example.com'))
