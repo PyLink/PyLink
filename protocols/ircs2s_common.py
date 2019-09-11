@@ -137,7 +137,8 @@ class IRCCommonProtocol(IRCNetwork):
         prefixsearch = re.search(r'\(([A-Za-z]+)\)(.*)', args)
         return dict(zip(prefixsearch.group(1), prefixsearch.group(2)))
 
-    def parse_message_tags(self, data):
+    @classmethod
+    def parse_message_tags(cls, data):
         """
         Parses IRCv3.2 message tags from a message, as described at http://ircv3.net/specs/core/message-tags-3.2.html
 
@@ -155,8 +156,7 @@ class IRCCommonProtocol(IRCNetwork):
                 tag = tag.replace(r'\:', ';')
                 tagdata[idx] = tag
 
-            results = self.parse_isupport(tagdata, fallback=None)
-            log.debug('(%s) parsed message tags %s', self.name, results)
+            results = cls.parse_isupport(tagdata, fallback=None)
             return results
         return {}
 
