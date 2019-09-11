@@ -23,6 +23,8 @@ class MessageParserTest(unittest.TestCase):
             cls.USER_HOST_SPLIT_TEST_DATA = yaml.safe_load(f)
         with open(PARSER_DATA_PATH / 'mask-match.yaml') as f:
             cls.MASK_MATCH_TEST_DATA = yaml.safe_load(f)
+        with open(PARSER_DATA_PATH / 'validate-hostname.yaml') as f:
+            cls.VALIDATE_HOSTNAME_TEST_DATA = yaml.safe_load(f)
 
     def testMessageSplit(self):
         for testdata in self.MESSAGE_SPLIT_TEST_DATA['tests']:
@@ -91,6 +93,15 @@ class MessageParserTest(unittest.TestCase):
             for fail in test['fails']:
                 with self.subTest():
                     self.assertFalse(utils.match_text(mask, fail))
+
+    def testValidateHostname(self):
+        for test in self.VALIDATE_HOSTNAME_TEST_DATA['tests']:
+            with self.subTest():
+                self.assertEqual(test['valid'], IRCCommonProtocol.is_server_name(test['host']),
+                                 "Failed test for %r; should be %s" % (test['host'], test['valid']))
+
+
+    # N.B. skipping msg-join tests because PyLink doesn't think about messages that way
 
 if __name__ == '__main__':
     unittest.main()
