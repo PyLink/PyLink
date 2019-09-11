@@ -46,7 +46,8 @@ class MessageParserTest(unittest.TestCase):
                     # method that relies on command handlers being present. So we can't reasonably test
                     # them here (plus handle_events() outputs params as a command-specific dict instead of)
                     # lists)
-                    self.assertEqual(atoms['tags'], IRCCommonProtocol.parse_message_tags(inp.split(" ")))
+                    self.assertEqual(atoms['tags'], IRCCommonProtocol.parse_message_tags(inp.split(" ")),
+                                     "Parse test failed for message tags: %r" % inp)
                     _, inp = inp.split(" ", 1)
                 if has_source:
                     parts = IRCCommonProtocol.parse_prefixed_args(inp)

@@ -150,14 +150,18 @@ class IRCCommonProtocol(IRCNetwork):
         if data[0].startswith('@'):
             tagdata = data[0].lstrip('@').split(';')
             for idx, tag in enumerate(tagdata):
-                tag = tag.replace(r'\s', ' ')
-                tag = tag.replace(r'\\', '\\')
-                tag = tag.replace(r'\r', '\r')
-                tag = tag.replace(r'\n', '\n')
-                tag = tag.replace(r'\:', ';')
+                tag = tag.replace('\\s', ' ')
+                tag = tag.replace('\\r', '\r')
+                tag = tag.replace('\\n', '\n')
+                tag = tag.replace('\\:', ';')
+
+                # We want to drop lone \'s but keep \\ as \ ...
+                tag = tag.replace('\\\\', '\x00')
+                tag = tag.replace('\\', '')
+                tag = tag.replace('\x00', '\\')
                 tagdata[idx] = tag
 
-            results = cls.parse_isupport(tagdata, fallback=None)
+            results = cls.parse_isupport(tagdata, fallback='')
             return results
         return {}
 
