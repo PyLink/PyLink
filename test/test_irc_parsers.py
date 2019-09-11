@@ -1,5 +1,7 @@
 """
-Tests for IRC parsers.
+Runs IRC parser tests from ircdocs/parser-tests.
+
+This test suite runs static code only.
 """
 from pathlib import Path
 import unittest
@@ -19,6 +21,8 @@ class MessageParserTest(unittest.TestCase):
             cls.MESSAGE_SPLIT_TEST_DATA = yaml.safe_load(f)
         with open(PARSER_DATA_PATH / 'userhost-split.yaml') as f:
             cls.USER_HOST_SPLIT_TEST_DATA = yaml.safe_load(f)
+        with open(PARSER_DATA_PATH / 'mask-match.yaml') as f:
+            cls.MASK_MATCH_TEST_DATA = yaml.safe_load(f)
 
     def testMessageSplit(self):
         for testdata in self.MESSAGE_SPLIT_TEST_DATA['tests']:
@@ -72,6 +76,21 @@ class MessageParserTest(unittest.TestCase):
                 else:
                     expected = [atoms['nick'], atoms['user'], atoms['host']]
                     self.assertEqual(expected, utils.split_hostmask(inp))
+
+    def testHostMatch(self):
+        for test in self.MASK_MATCH_TEST_DATA['tests']:
+            mask = test['mask']
+
+            # N.B.: utils.match_text() does Unicode case-insensitive match by default,
+            # which might not be the right thing to do on IRC.
+            # But irc.to_lower() isn't a static function so we're not testing it here...
+            for match in test['matches']:
+                with self.subTest():
+                    self.assertTrue(utils.match_text(mask, match))
+
+            for fail in test['fails']:
+                with self.subTest():
+                    self.assertFalse(utils.match_text(mask, fail))
 
 if __name__ == '__main__':
     unittest.main()
