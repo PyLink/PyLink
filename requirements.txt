@@ -1,0 +1,6 @@
+setuptools
+ircmatch
+pyyaml
+passlib
+psutil
+expiringdict
