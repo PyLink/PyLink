@@ -1,15 +1,14 @@
 FROM python:3-alpine
 
-RUN apk add linux-headers build-base
-
-RUN mkdir /pylink
 WORKDIR /pylink
 COPY . /pylink
 
-RUN pip3 install -r requirements.txt
-RUN python3 setup.py install
-RUN apk del linux-headers build-base
+RUN \
+  apk add --no-cache --virtual .fetch-deps linux-headers build-base \
+  && pip3 install --no-cache-dir -r requirements.txt \
+  && python3 setup.py install \
+  && apk del .fetch-deps
 
 WORKDIR /
-
-ENTRYPOINT pylink
+RUN rm -r pylink
+CMD pylink
