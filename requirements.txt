@@ -1,4 +1,5 @@
 cachetools
 passlib
+psutil
 pyyaml
 setuptools
