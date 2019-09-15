@@ -3,9 +3,12 @@ FROM python:3-alpine
 COPY . /pylink
 
 RUN \
-  cd /pylink \
+  apk add --no-cache --virtual .fetch-deps linux-headers build-base \
+  && cd /pylink \
   && pip3 install --no-cache-dir -r requirements.txt \
   && python3 setup.py install \
-  && rm -r /pylink
+  && cd / \
+  && rm -r /pylink \
+  && apk del .fetch-deps
 
 CMD pylink
