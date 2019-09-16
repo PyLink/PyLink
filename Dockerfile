@@ -9,6 +9,9 @@ RUN \
   && python3 setup.py install \
   && cd / \
   && rm -r /pylink \
-  && apk del .fetch-deps
+  && apk del .fetch-deps \
+  && adduser -D -H pylink
+
+USER pylink
 
 CMD pylink
