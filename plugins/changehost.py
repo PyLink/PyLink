@@ -10,7 +10,7 @@ from pylinkirc.log import log
 # Characters allowed in a hostname.
 allowed_chars = string.ascii_letters + '-./:' + string.digits
 
-def _changehost(irc, target, args):
+def _changehost(irc, target):
     changehost_conf = conf.conf.get("changehost")
 
     if target not in irc.users:
@@ -36,7 +36,7 @@ def _changehost(irc, target, args):
                     "Changehost will not function correctly!", irc.name)
         return
 
-    args = args.copy()
+    args = irc.users[target].get_fields()
 
     # $host is explicitly forbidden by default because it can cause recursive
     # loops when IP or real host masks are used to match a target. vHost
@@ -84,8 +84,7 @@ def handle_uid(irc, sender, command, args):
     """
 
     target = args['uid']
-    _changehost(irc, target, args)
-
+    _changehost(irc, target)
 utils.add_hook(handle_uid, 'UID')
 
 def handle_chghost(irc, sender, command, args):
@@ -111,8 +110,7 @@ def handle_chghost(irc, sender, command, args):
 
             userobj = irc.users.get(target)
             if userobj:
-                _changehost(irc, target, userobj.get_fields())
-
+                _changehost(irc, target)
 utils.add_hook(handle_chghost, 'CHGHOST')
 
 @utils.add_cmd
@@ -131,7 +129,7 @@ def applyhosts(irc, sender, args):
         irc.error("Unknown network '%s'." % network)
         return
 
-    for user, userdata in network.users.copy().items():
-        _changehost(network, user, userdata.__dict__)
+    for user in network.users.copy():
+        _changehost(network, user)
 
     irc.reply("Done.")
