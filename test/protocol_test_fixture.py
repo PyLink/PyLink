@@ -220,17 +220,22 @@ class BaseProtocolTest(unittest.TestCase):
         check('100', '100')    # already a UID
         check('Test', 'Test')  # non-existent
 
-    def test_get_UID(self):
-        u = self._make_user('you', uid='100')
-        check = lambda inp, expected: self.assertEqual(self.p._get_UID(inp), expected)
+    def test_get_hostmask(self):
+        u = self._make_user('lorem', 'testUID', ident='ipsum', host='sit.amet')
+        self.assertEqual(self.p.get_hostmask(u.uid), 'lorem!ipsum@sit.amet')
 
-        check('you', '100')    # nick to UID
-        check('YOu', '100')
-        check('100', '100')    # already a UID
-        check('Test', 'Test')  # non-existent
+    def test_get_friendly_name(self):
+        u = self._make_user('lorem', 'testUID', ident='ipsum', host='sit.amet')
+        s = self.p.servers['mySID'] = Server(self.p, None, 'irc.example.org')
+        c = self.p._channels['#abc'] = Channel('#abc')
+
+        self.assertEqual(self.p.get_friendly_name(u.uid), 'lorem')
+        self.assertEqual(self.p.get_friendly_name('#abc'), '#abc')
+        self.assertEqual(self.p.get_friendly_name('mySID'), 'irc.example.org')
 
     # TODO: _squit wrapper
 
+    ### MODE HANDLING
     def test_parse_modes_channel_rfc(self):
         # These are basic tests that only use RFC 1459 defined modes.
         # IRCds supporting more complex modes can define new test cases if needed.
@@ -580,7 +585,6 @@ class BaseProtocolTest(unittest.TestCase):
         self.assertFalse(c.is_op('user'))
         self.assertFalse(c.get_prefix_modes('user'))
 
-    # TODO: test cycling +o/-o in one mode
     def test_apply_modes_channel_prefixmodes(self):
         # Make some users
         c = self.p.channels['#staff'] = Channel(self.p, name='#staff')
@@ -887,18 +891,5 @@ class BaseProtocolTest(unittest.TestCase):
         for num in range(N_USERS):
             # Check that no users are missing
             self.assertIn('user%s' % num, all_args)
-
-    def test_get_hostmask(self):
-        u = self._make_user('lorem', 'testUID', ident='ipsum', host='sit.amet')
-        self.assertEqual(self.p.get_hostmask(u.uid), 'lorem!ipsum@sit.amet')
-
-    def test_get_friendly_name(self):
-        u = self._make_user('lorem', 'testUID', ident='ipsum', host='sit.amet')
-        s = self.p.servers['mySID'] = Server(self.p, None, 'irc.example.org')
-        c = self.p._channels['#abc'] = Channel('#abc')
-
-        self.assertEqual(self.p.get_friendly_name(u.uid), 'lorem')
-        self.assertEqual(self.p.get_friendly_name('#abc'), '#abc')
-        self.assertEqual(self.p.get_friendly_name('mySID'), 'irc.example.org')
 
     # TODO: test type coersion if channel or mode targets are ints
