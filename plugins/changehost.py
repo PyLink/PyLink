@@ -113,6 +113,13 @@ def handle_chghost(irc, sender, command, args):
                 _changehost(irc, target)
 utils.add_hook(handle_chghost, 'CHGHOST')
 
+def handle_svslogin(irc, sender, command, args):
+    """
+    Handles services account changes for changehost.
+    """
+    _changehost(irc, sender)
+utils.add_hook(handle_svslogin, 'CLIENT_SERVICES_LOGIN')
+
 @utils.add_cmd
 def applyhosts(irc, sender, args):
     """[<network>]
