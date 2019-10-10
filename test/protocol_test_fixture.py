@@ -235,6 +235,29 @@ class BaseProtocolTest(unittest.TestCase):
 
     # TODO: _squit wrapper
 
+    ### MISC UTILS
+    def test_get_service_option(self):
+        f = self.p.get_service_option
+        self.assertEqual(f('myserv', 'myopt'), None)  # No value anywhere
+        self.assertEqual(f('myserv', 'myopt', default=0), 0)
+
+        # Define global option
+        with patch.dict(conf.conf, {'myserv': {'youropt': True, 'myopt': 1234}}):
+            self.assertEqual(f('myserv', 'myopt'), 1234)  # Read global option
+
+            # Both global and local options exist
+            with patch.dict(self.p.serverdata, {'myserv_myopt': 2345}):
+                self.assertEqual(f('myserv', 'myopt'), 2345)  # Read local option
+                self.assertEqual(f('myserv', 'myopt', global_option='youropt'), 2345)
+
+            # Custom global_option setting
+            self.assertEqual(f('myserv', 'abcdef', global_option='youropt'), True)
+
+        # Define local option
+        with patch.dict(self.p.serverdata, {'myserv_myopt': 998877}):
+            self.assertEqual(f('myserv', 'myopt'), 998877)  # Read local option
+            self.assertEqual(f('myserv', 'myopt', default='unused'), 998877)
+
     ### MODE HANDLING
     def test_parse_modes_channel_rfc(self):
         # These are basic tests that only use RFC 1459 defined modes.
