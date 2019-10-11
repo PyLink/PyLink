@@ -14,9 +14,9 @@ a:
 
 ### Custom Clientbot Styles
 
-Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::<event name>`. As of 2.0-beta1, you can also set this per-network by defining options in the form `servers::<network name>::relay_clientbot_styles::<event names>` (Note: defining Clientbot styles locally will override the global `clientbot_styles` block and cause all values under it to be ignored for that network).
+Custom Clientbot styles can be applied for any of Clientbot's supported events, by defining keys in the format `relay::clientbot_styles::<event name>`. As of PyLink 2.1, you can also override options per network by defining them in the form `servers::<network name>::relay_clientbot_styles::<event names>`
 
-See below for a list of supported events and their default values (as of 2.0-beta1).
+See below for a list of supported events and their default values (as of PyLink 2.1).
 
 A common use case for this feature is to turn off or adjust colors/formatting; this is explicitly documented [below](#disabling-colorscontrol-codes).
 
