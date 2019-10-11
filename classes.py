@@ -544,6 +544,22 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
 
         return default
 
+    def get_service_options(self, servicename: str, option: str, itertype: type, global_option=None):
+        """
+        Returns a merged copy of the requested service bot option. This includes:
+
+        1) If present, the value of the config option servers::<NETNAME>::<SERVICENAME>_<OPTION> (netopt)
+        2) If present, the value of the config option <SERVICENAME>::<GLOBAL_OPTION>, where
+           <GLOBAL_OPTION> is either the 'global_option' keyword value or <OPTION> (globalopt)
+
+        For itertype, the following types are allowed:
+            - list: items are combined as globalopt + netopt
+            - dict: items are combined as {**globalopt, **netopt}
+        """
+        netopt = self.serverdata.get('%s_%s' % (servicename, option)) or itertype()
+        globalopt = conf.conf.get(servicename, {}).get(global_option or option) or itertype()
+        return utils.merge_iterables(globalopt, netopt)
+
     def has_cap(self, capab):
         """
         Returns whether this protocol module instance has the requested capability.

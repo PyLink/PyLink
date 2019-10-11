@@ -254,5 +254,22 @@ class UtilsTestCase(unittest.TestCase):
         self.assertFalse(f('*9*', '14', lambda s: s.zfill(13)))
         self.assertTrue(f('*chin*', 'machine', str.upper))
 
+    def test_merge_iterables(self):
+        f = utils.merge_iterables
+        self.assertEqual(f([], []), [])
+        self.assertEqual(f({}, {}), {})
+        self.assertEqual(f(set(), set()), set())
+
+        self.assertEqual(f([1,2], [4,5,6]), [1,2,4,5,6])
+        self.assertEqual(f({'a': 'b'}, {'c': 'd', 'e': 'f'}),
+                         {'a': 'b', 'c': 'd', 'e': 'f'})
+        self.assertEqual(f({0,1,2}, {1,3,5}),
+                         {0,1,2,3,5})
+
+        with self.assertRaises(ValueError):
+            f([1,2,3], {'a': 'b'})  # mismatched type
+        with self.assertRaises(ValueError):
+            f([], set())  # mismatched type
+
 if __name__ == '__main__':
     unittest.main()

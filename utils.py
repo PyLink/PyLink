@@ -851,3 +851,21 @@ def match_text(glob, text, filterfunc=str.lower):
         text = filterfunc(text)
 
     return re.match(_glob2re(glob), text)
+
+def merge_iterables(A, B):
+    """
+    Merges the values in two iterables. A and B must be of the same type, and one of the following:
+
+    - list: items are combined as A + B
+    - set:  items are combined as A | B
+    - dict: items are combined as {**A, **B}
+    """
+    if type(A) != type(B):
+        raise ValueError("inputs must be the same type")
+
+    if isinstance(A, list):
+        return A + B
+    elif isinstance(A, set):
+        return A | B
+    elif isinstance(A, dict):
+        return {**A, **B}

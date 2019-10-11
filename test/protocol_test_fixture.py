@@ -258,6 +258,49 @@ class BaseProtocolTest(unittest.TestCase):
             self.assertEqual(f('myserv', 'myopt'), 998877)  # Read local option
             self.assertEqual(f('myserv', 'myopt', default='unused'), 998877)
 
+    def test_get_service_options_list(self):
+        f = self.p.get_service_options
+        self.assertEqual(f('myserv', 'items', list), [])  # No value anywhere
+
+        # Define global option
+        with patch.dict(conf.conf, {'myserv': {'items': [1, 10, 100], 'empty': []}}):
+            self.assertEqual(f('myserv', 'items', list), [1, 10, 100])  # Global value only
+            self.assertEqual(f('myserv', 'empty', list), [])
+
+            # Both global and local options exist
+            with patch.dict(self.p.serverdata, {'myserv_items': [2, 4, 6, 8], 'empty': []}):
+                self.assertEqual(f('myserv', 'items', list), [1, 10, 100, 2, 4, 6, 8])
+                # Custom global_option setting
+                self.assertEqual(f('myserv', 'items', list, global_option='nonexistent'), [2, 4, 6, 8])
+                self.assertEqual(f('myserv', 'empty', list), [])
+
+        # Define local option
+        with patch.dict(self.p.serverdata, {'myserv_items': [1, 0, 0, 3]}):
+            self.assertEqual(f('myserv', 'items', list), [1, 0, 0, 3])  # Read local option
+
+    def test_get_service_options_dict(self):
+        f = self.p.get_service_options
+        self.assertEqual(f('chanman', 'items', dict), {})  # No value anywhere
+
+        # This is just mildly relevant test data, it's not actually used anywhere.
+        globalopt = {'o': '@', 'v': '+', 'a': '!', 'h': '%'}
+        localopt  = {'a': '&', 'q': '~'}
+        # Define global option
+        with patch.dict(conf.conf, {'chanman': {'prefixes': globalopt, 'empty': {}}}):
+            self.assertEqual(f('chanman', 'prefixes', dict), globalopt)  # Global value only
+            self.assertEqual(f('chanman', 'empty', dict), {})
+
+            # Both global and local options exist
+            with patch.dict(self.p.serverdata, {'chanman_prefixes': localopt, 'empty': {}}):
+                self.assertEqual(f('chanman', 'prefixes', dict), {**globalopt, **localopt})
+
+                self.assertEqual(f('chanman', 'items', dict), {})  # No value anywhere
+                self.assertEqual(f('chanman', 'empty', dict), {})
+
+        # Define local option
+        with patch.dict(self.p.serverdata, {'chanman_prefixes': localopt}):
+            self.assertEqual(f('chanman', 'prefixes', dict), localopt)  # Read local option
+
     ### MODE HANDLING
     def test_parse_modes_channel_rfc(self):
         # These are basic tests that only use RFC 1459 defined modes.
@@ -436,7 +479,7 @@ class BaseProtocolTest(unittest.TestCase):
             "Cycling a ban +b-b should remove it (different case)"
         )
 
-    def test_parse_mode_channel_prefixmode_has_nick(self):
+    def test_parse_modes_channel_prefixmode_has_nick(self):
         c = self.p.channels['#'] = Channel(self.p, name='#')
         u = self._make_user('mynick', uid='myuid')
         c.users.add(u)
