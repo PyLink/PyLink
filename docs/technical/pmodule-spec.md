@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.1-alpha2 (2019-06-23).***
+***Last updated for 2.1-alpha2 (2019-10-10).***
 
 Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
@@ -137,6 +137,7 @@ As of writing, the following protocol capabilities (case-sensitive) are implemen
 - `can-track-servers` - determines whether servers are accurately tracked (for `servermaps` and other statistics)
 - `freeform-nicks` - if set, nicknames for PyLink's virtual clients are not subject to validity and nick collision checks. This implies the `slash-in-nicks` capability.
     - Note: PyLink already allows incoming nicks to be freeform, provided they are encoded correctly and don't cause parsing conflicts (i.e. containing reserved chars on IRC)
+- `has-irc-modes` - whether IRC style modes are supported
 - `has-statusmsg` - whether STATUSMSG messages (e.g. `@#channel`) are supported
 - `has-ts` - determines whether channel and user timestamps are tracked (and not spoofed)
 - `slash-in-hosts` - determines whether `/` is allowed in hostnames
@@ -261,6 +262,8 @@ In short, protocol modules have some very important jobs. If any of these aren't
 7) Declare the correct set of protocol module capabilities to prevent confusing PyLink's plugins.
 
 ## Changes to this document
+* 2019-10-10 (2.1-alpha2)
+   - Added protocol capability: `has-irc-modes`
 * 2019-06-23 (2.1-alpha2)
    - Added new protocol capabilities: `virtual-server` and `freeform-nicks`
 * 2018-07-11 (2.0.0)

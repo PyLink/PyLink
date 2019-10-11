@@ -61,6 +61,7 @@ class IRCCommonProtocol(IRCNetwork):
 
         self._caps = {}
         self._use_builtin_005_handling = False  # Disabled by default for greater security
+        self.protocol_caps |= {'has-irc-modes'}
 
     def post_connect(self):
         self._caps.clear()
@@ -281,8 +282,8 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.protocol_caps = {'can-spawn-clients', 'has-ts', 'can-host-relay',
-                              'can-track-servers'}
+        self.protocol_caps |= {'can-spawn-clients', 'has-ts', 'can-host-relay',
+                               'can-track-servers'}
 
         # Alias
         self.handle_squit = self._squit
