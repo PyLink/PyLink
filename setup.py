@@ -30,14 +30,8 @@ with open('__init__.py', 'w') as f:
     f.write('real_version = %r\n' % real_version)
 
 try:
-    if sys.version_info >= (3, 5):
-        with open('README.md') as f:
-            long_description = f.read()
-    else:
-        # Work around "TypeError: a bytes-like object is required, not 'str'" errors on Python 3.4
-        # when the README has Unicode characters (error in distutils.util.rfc822_escape)
-        import codecs
-        long_description = codecs.open('README.md', encoding='utf-8').read()
+    with open('README.md') as f:
+        long_description = f.read()
 except OSError:
     print('WARNING: Failed to read readme, skipping writing long_description')
     long_description = None
