@@ -94,10 +94,14 @@ def _check_automode_access(irc, uid, channel, command):
 
 def match(irc, channel, uids=None):
     """
-    Automode matcher engine.
+    Set modes on matching users. If uids is not given, check all users in the channel and give
+    them modes as needed.
     """
     dbentry = db.get(irc.name+channel)
-    if dbentry is None:
+    if not irc.has_cap('has-irc-modes'):
+        log.debug('(%s) automode: skipping match() because IRC modes are not supported on this protocol', irc.name)
+        return
+    elif dbentry is None:
         return
 
     modebot_uid = modebot.uids.get(irc.name)
@@ -162,8 +166,7 @@ utils.add_hook(handle_services_login, 'PYLINK_RELAY_SERVICES_LOGIN')
 
 def _get_channel_pair(irc, source, chanpair, perm=None):
     """
-    Fetches the network and channel given a channel pair,
-    also optionally checking the caller's permissions.
+    Fetches the network and channel given a channel pair, also optionally checking the caller's permissions.
     """
     log.debug('(%s) Looking up chanpair %s', irc.name, chanpair)
     try:
@@ -172,9 +175,6 @@ def _get_channel_pair(irc, source, chanpair, perm=None):
         raise ValueError("Invalid channel pair %r" % chanpair)
     channel = '#' + channel
     channel = irc.to_lower(channel)
-
-    if not irc.is_channel(channel):
-        raise ValueError("Invalid channel name %s." % channel)
 
     if network:
         ircobj = world.networkobjects.get(network)
@@ -211,6 +211,9 @@ def setacc(irc, source, args):
 
     \x02SETACC #staffchan $channel:#mainchan:op o
     """
+    if not irc.has_cap('has-irc-modes'):
+        error(irc, "IRC style modes are not supported on this protocol.")
+        return
 
     try:
         chanpair, mask, modes = args
