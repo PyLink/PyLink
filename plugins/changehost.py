@@ -27,13 +27,11 @@ def _changehost(irc, target):
         # We're not enabled on the network, break.
         return
 
-    match_ip = changehost_conf.get('match_ip', False)
-    match_realhosts = changehost_conf.get('match_realhosts', False)
+    match_ip = irc.get_service_option('changehost', 'match_ip', default=False)
+    match_realhosts = irc.get_service_option('changehost', 'match_realhosts', default=False)
 
-    changehost_hosts = changehost_conf.get('hosts')
+    changehost_hosts = irc.get_service_options('changehost', 'hosts', dict)
     if not changehost_hosts:
-        log.warning("(%s) No hosts were defined in changehost::hosts; "
-                    "Changehost will not function correctly!", irc.name)
         return
 
     args = irc.users[target].get_fields()
@@ -102,7 +100,7 @@ def handle_chghost(irc, sender, command, args):
             log.debug('(%s) Enforce for network is on, re-checking host for target %s/%s',
                       irc.name, target, irc.get_friendly_name(target))
 
-            for ex in changehost_conf.get("enforce_exceptions", []):
+            for ex in irc.get_service_options("changehost", "enforce_exceptions", list):
                 if irc.match_host(ex, target):
                     log.debug('(%s) Skipping host change for target %s; they are exempted by mask %s',
                               irc.name, target, ex)

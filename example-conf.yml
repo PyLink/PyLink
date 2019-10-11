@@ -697,12 +697,15 @@ changehost:
 
     # Sets the masks that Changehost enforcement should ignore: these can be users with certain
     # hosts, exttargets, etc.
+    # Since PyLink 2.1, you can also add to this list on a per-network basis by adding options under
+    # "servers::<server name>::changehost_enforce_exceptions".
     enforce_exceptions:
         - "*!*@yournet/staff/*"
         #- "$account"
 
     # Determines whether Changehost rules should also match the host portion of a mask by IP and
-    # real hosts. These default to false.
+    # real hosts. These default to false. You can override these on a per-network basis by setting
+    # "servers::<server name>::changehost_match_ip" or "servers::<server name>::changehost_match_realhosts".
     #match_ip: false
     #match_realhosts: false
 
@@ -711,18 +714,16 @@ changehost:
     # text defined. The following substitutions are available here:
     # $uid, $ts (time of connection), $nick, $realhost, $ident, and $ip.
     # Invalid characters in hosts are replaced with a "-".
-    # Also, make sure you quote each entry so the YAML parser treats them as
-    # raw strings.
+    # Also, make sure you quote each entry so the YAML parser treats them as raw strings.
+    # Since PyLink 2.1, you can also add to this list on a per-network basis by adding options under
+    # "servers::<server name>::changehost_hosts".
     hosts:
-
-        # Here are some examples. Note that to keep your users' details
-        # private, you should probably refrain from using $ip or $realhost,
-        # in these hostmasks, unless cloaking is already disabled.
+        # Here are some examples. Note that to keep your users' details private, you should probably refrain
+        # from using $ip or $realhost, in these hostmasks, unless cloaking is already disabled.
         "*!yourname@*.yournet.com": "$nick.opers.yournet.com"
         "*!*@localhost": "some-server.hostname"
 
-        # Freenode-style masks are possible with this (though without the
-        # hashing)
+        # Freenode-style masks are possible with this (though without the hashing)
         "*!*@bnc-server.yournet.com": "yournet/bnc-users/$ident"
         "*!*@ircip?.mibbit.com": "$ident.$realhost"
         "WebchatUser*!*@*": "webchat/users/$ident"
