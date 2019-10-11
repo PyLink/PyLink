@@ -19,11 +19,7 @@ def _changehost(irc, target):
         log.debug('(%s) Skipping changehost on internal client %s', irc.name, target)
         return
 
-    if not changehost_conf:
-        log.warning("(%s) Missing 'changehost:' configuration block; "
-                    "Changehost will not function correctly!", irc.name)
-        return
-    elif irc.name not in changehost_conf.get('enabled_nets'):
+    if irc.name not in changehost_conf.get('enabled_nets') and not irc.serverdata.get('changehost_enable'):
         # We're not enabled on the network, break.
         return
 
@@ -89,14 +85,12 @@ def handle_chghost(irc, sender, command, args):
     """
     Handles incoming CHGHOST requests for optional host-change enforcement.
     """
-    changehost_conf = conf.conf.get("changehost")
-    if not changehost_conf:
-        return
+    changehost_conf = conf.conf.get("changehost", {})
 
     target = args['target']
 
     if (not irc.is_internal_client(sender)) and (not irc.is_internal_server(sender)):
-        if irc.name in changehost_conf.get('enforced_nets', []):
+        if irc.name in changehost_conf.get('enforced_nets', []) or irc.serverdata.get('changehost_enforce'):
             log.debug('(%s) Enforce for network is on, re-checking host for target %s/%s',
                       irc.name, target, irc.get_friendly_name(target))
 

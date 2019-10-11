@@ -685,13 +685,17 @@ changehost:
     # Sets the networks where Changehost should be enabled. Please note: changehost does NOT support
     # arbitrarily cloaking clients introduced by PyLink (e.g. relay clients), as doing so would make
     # ban matching impossible. In these cases, it is the remote admin's job to turn on cloaking on
-    # their IRCd!
+    # their IRCd.
+    # You can also add to this list of enabled networks by setting "servers::<server name>::changehost_enable"
+    # to true.
     enabled_nets:
         - inspnet
         - ts6net
 
     # Sets the networks where Changehost hosts should be enforced: that is, any attempts
     # by the user or other services to overwrite a host will be reverted.
+    # You can also add to this list of enabled networks by setting "servers::<server name>::changehost_enforce"
+    # to true.
     #enforced_nets:
     #    - inspnet
 
@@ -709,9 +713,8 @@ changehost:
     #match_ip: false
     #match_realhosts: false
 
-    # This sets the hostmasks that Changehost should look for. Whenever someone
-    # with a matching nick!user@host connects, their host will be set to the
-    # text defined. The following substitutions are available here:
+    # This sets the hostmasks that Changehost should look for. Whenever someone with a matching nick!user@host
+    # connects, their host will be set to the text defined. The following substitutions are available here:
     # $uid, $ts (time of connection), $nick, $realhost, $ident, and $ip.
     # Invalid characters in hosts are replaced with a "-".
     # Also, make sure you quote each entry so the YAML parser treats them as raw strings.
