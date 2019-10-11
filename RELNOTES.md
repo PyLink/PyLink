@@ -1,3 +1,19 @@
+# PyLink 2.0.3 (2019-10-11)
+
+Changes since 2.0.2:
+
+#### Feature changes
+- Switch to more secure password hashing defaults, using pbkdf2-sha256 as the default hash method
+- Introduce a `login::cryptcontext_settings` option to further tweak passlib settings if desired
+
+#### Bug fixes
+- **SECURITY**: Only allow the defined `login:user` to take all permissions when legacy accounts are enabled
+- clientbot: fix /names handling on networks with colours in hostnames
+- clientbot: fix crash when MODES is defined in ISUPPORT but given no value (affects connections to Oragono)
+- changehost: only send a host change if new host != original
+- relay: fix inconsistent handling of the hideoper setting. [issue#629](https://github.com/jlu5/PyLink/issues/629)
+- unreal: work around a potential race when sending kills on join
+
 # PyLink 2.0.2 (2019-03-31)
 
 Changes since 2.0.1:
