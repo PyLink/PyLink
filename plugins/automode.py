@@ -3,6 +3,7 @@ automode.py - Provide simple channel ACL management by giving prefix modes to us
 hostmasks or exttargets.
 """
 import collections
+import string
 
 from pylinkirc import conf, structures, utils, world
 from pylinkirc.coremods import permissions
@@ -97,6 +98,8 @@ def match(irc, channel, uids=None):
     Set modes on matching users. If uids is not given, check all users in the channel and give
     them modes as needed.
     """
+    if isinstance(channel, int) or str(channel).startswith(tuple(string.digits)):
+        channel = '#' + str(channel)  # Mangle channels on networks where they're stored as an ID
     dbentry = db.get(irc.name+channel)
     if not irc.has_cap('has-irc-modes'):
         log.debug('(%s) automode: skipping match() because IRC modes are not supported on this protocol', irc.name)
@@ -169,6 +172,10 @@ def _get_channel_pair(irc, source, chanpair, perm=None):
     Fetches the network and channel given a channel pair, also optionally checking the caller's permissions.
     """
     log.debug('(%s) Looking up chanpair %s', irc.name, chanpair)
+
+    if '#' not in chanpair and chanpair.startswith(tuple(string.digits)):
+        chanpair = '#' + chanpair  # Mangle channels on networks where they're stored by ID
+
     try:
         network, channel = chanpair.split('#', 1)
     except ValueError:
