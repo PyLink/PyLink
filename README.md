@@ -1,11 +1,8 @@
 # PyLink IRC Services
 
-[webchatlink]: https://webchat.overdrivenetworks.com/?channels=PyLink
-
 [![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000)](https://pypi.python.org/pypi/pylinkirc/)
 [![PyPI supported Python versions](https://img.shields.io/pypi/pyversions/pylinkirc.svg?maxAge=2592000)](https://www.python.org/downloads/)
-[![PyPi license](https://img.shields.io/pypi/l/pylinkirc.svg?maxAge=2592000)](LICENSE.MPL2)
-[![Live chat](https://img.shields.io/badge/IRC-live%20chat%20%C2%BB-green.svg)][webchatlink]
+[![PyPI license](https://img.shields.io/pypi/l/pylinkirc.svg?maxAge=2592000)](LICENSE.MPL2)
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
@@ -26,7 +23,7 @@ PyLink and any bundled software are licensed under the Mozilla Public License, v
 
 Please report any bugs you find to the [issue tracker](https://github.com/jlu5/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
-You can also find support via our IRC channel at `#PyLink @ irc.overdrivenetworks.com `([webchat][webchatlink]). Ask your questions and be patient for a response.
+You can also find support via our IRC channel at `#PyLink @ irc.overdrivenetworks.com`. Ask your questions and be patient for a response.
 
 ## Installation
 
