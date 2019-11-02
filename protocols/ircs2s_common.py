@@ -61,7 +61,7 @@ class IRCCommonProtocol(IRCNetwork):
 
         self._caps = {}
         self._use_builtin_005_handling = False  # Disabled by default for greater security
-        self.protocol_caps |= {'has-irc-modes'}
+        self.protocol_caps |= {'has-irc-modes', 'can-manage-bot-channels'}
 
     def post_connect(self):
         self._caps.clear()

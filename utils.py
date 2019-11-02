@@ -399,7 +399,7 @@ class ServiceBot():
         chanlist = namespace.setdefault(irc.name, structures.IRCCaseInsensitiveSet(irc))
         chanlist.add(channel)
 
-        if try_join:
+        if try_join and irc.has_cap('can-manage-bot-channels'):
             self.join(irc, [channel])
 
     def remove_persistent_channel(self, irc, namespace, channel, try_part=True, part_reason=''):
@@ -408,7 +408,7 @@ class ServiceBot():
         """
         chanlist = self.dynamic_channels[namespace][irc.name].remove(channel)
 
-        if try_part and irc.connected.is_set():
+        if try_part and irc.connected.is_set() and irc.has_cap('can-manage-bot-channels'):
             self.part(irc, [channel], reason=part_reason)
 
     def get_persistent_channels(self, irc, namespace=None):

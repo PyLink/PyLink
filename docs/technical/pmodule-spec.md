@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.1-alpha2 (2019-10-10).***
+***Last updated for 2.1-alpha2 (2019-11-02).***
 
 Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
@@ -133,6 +133,7 @@ As of writing, the following protocol capabilities (case-sensitive) are implemen
 
 ### Supported protocol capabilities
 - `can-host-relay` - whether servers using this protocol can host a relay channel (for sanity reasons, this should be off for anything that's not IRC S2S)
+- `can-manage-bot-channels` - whether PyLink can manage which channels the bot itself is in. This is off for platforms such as Discord.
 - `can-spawn-clients` - determines whether any spawned clients are real or virtual (mainly for `services_support`).
 - `can-track-servers` - determines whether servers are accurately tracked (for `servermaps` and other statistics)
 - `freeform-nicks` - if set, nicknames for PyLink's virtual clients are not subject to validity and nick collision checks. This implies the `slash-in-nicks` capability.
@@ -262,6 +263,8 @@ In short, protocol modules have some very important jobs. If any of these aren't
 7) Declare the correct set of protocol module capabilities to prevent confusing PyLink's plugins.
 
 ## Changes to this document
+* 2019-11-02 (2.1-alpha2)
+   - Added protocol capability: `can-manage-bot-channels`
 * 2019-10-10 (2.1-alpha2)
    - Added protocol capability: `has-irc-modes`
 * 2019-06-23 (2.1-alpha2)
