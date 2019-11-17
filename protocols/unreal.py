@@ -20,6 +20,55 @@ class UnrealProtocol(TS6BaseProtocol):
     # https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
     # also help. (but why BUFSIZE-*80*?) -GL
     S2S_BUFSIZE = 427
+    _KNOWN_CMODES = {'ban': 'b',
+              'banexception': 'e',
+              'blockcolor': 'c',
+              'censor': 'G',
+              'delayjoin': 'D',
+              'flood_unreal': 'f',
+              'invex': 'I',
+              'inviteonly': 'i',
+              'issecure': 'Z',
+              'key': 'k',
+              'limit': 'l',
+              'moderated': 'm',
+              'noctcp': 'C',
+              'noextmsg': 'n',
+              'noinvite': 'V',
+              'nokick': 'Q',
+              'noknock': 'K',
+              'nonick': 'N',
+              'nonotice': 'T',
+              'op': 'o',
+              'operonly': 'O',
+              'permanent': 'P',
+              'private': 'p',
+              'registered': 'r',
+              'regmoderated': 'M',
+              'regonly': 'R',
+              'secret': 's',
+              'sslonly': 'z',
+              'stripcolor': 'S',
+              'topiclock': 't',
+              'voice': 'v'}
+    _KNOWN_UMODES = {'bot': 'B',
+              'cloak': 'x',
+              'deaf': 'd',
+              'filter': 'G',
+              'hidechans': 'p',
+              'hideidle': 'I',
+              'hideoper': 'H',
+              'invisible': 'i',
+              'noctcp': 'T',
+              'protected': 'q',
+              'regdeaf': 'R',
+              'registered': 'r',
+              'servprotect': 'S',
+              'showwhois': 'W',
+              'snomask': 's',
+              'ssl': 'z',
+              'vhost': 't',
+              'wallops': 'w'}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,7 +77,7 @@ class UnrealProtocol(TS6BaseProtocol):
         self.casemapping = 'ascii'
 
         # Unreal protocol version
-        self.proto_ver = 4200
+        self.proto_ver = 4203
         self.min_proto_ver = 4000
 
         self.hook_map = {'UMODE2': 'MODE', 'SVSKILL': 'KILL', 'SVSMODE': 'MODE',
@@ -341,15 +390,6 @@ class UnrealProtocol(TS6BaseProtocol):
         # Track usages of legacy (Unreal 3.2) nicks.
         self.legacy_uidgen = PUIDGenerator('U32user')
 
-        self.umodes.update({'deaf': 'd', 'invisible': 'i', 'hidechans': 'p',
-                                'protected': 'q', 'registered': 'r',
-                                'snomask': 's', 'vhost': 't', 'wallops': 'w',
-                                'bot': 'B', 'cloak': 'x', 'ssl': 'z',
-                                'filter': 'G', 'hideoper': 'H', 'hideidle': 'I',
-                                'regdeaf': 'R', 'servprotect': 'S',
-                                'noctcp': 'T', 'showwhois': 'W',
-                                '*A': '', '*B': '', '*C': '', '*D': 'dipqrstwBxzGHIRSTW'})
-
         f = self.send
         host = self.serverdata["hostname"]
 
@@ -510,6 +550,10 @@ class UnrealProtocol(TS6BaseProtocol):
                                     "(Unreal 4.x), got %s)" % (self.min_proto_ver, protover))
             self.servers[numeric] = Server(self, None, sname, desc=sdesc)
 
+            # Prior to 4203, Unreal did not send PROTOCTL USERMODES (see handle_protoctl() )
+            if protover < 4203:
+                self.umodes.update(self._KNOWN_UMODES)
+                self.umodes['*D'] = ''.join(self._KNOWN_UMODES.values())
         else:
             # Legacy (non-SID) servers can still be introduced using the SERVER command.
             # <- :services.int SERVER a.bc 2 :(H) [GL] a
@@ -517,21 +561,19 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_protoctl(self, numeric, command, args):
         """Handles protocol negotiation."""
-
-        cmodes = {'noknock': 'K', 'limit': 'l', 'registered': 'r', 'flood_unreal': 'f',
-                  'censor': 'G', 'noextmsg': 'n', 'invex': 'I', 'permanent': 'P',
-                  'sslonly': 'z', 'operonly': 'O', 'moderated': 'm', 'blockcolor': 'c',
-                  'regmoderated': 'M', 'noctcp': 'C', 'secret': 's', 'ban': 'b',
-                  'nokick': 'Q', 'private': 'p', 'stripcolor': 'S', 'key': 'k',
-                  'op': 'o', 'voice': 'v', 'regonly': 'R', 'noinvite': 'V',
-                  'banexception': 'e', 'nonick': 'N', 'issecure': 'Z', 'topiclock': 't',
-                  'nonotice': 'T', 'delayjoin': 'D', 'inviteonly': 'i'}
-
         # Make a list of all our capability names.
         self.caps += [arg.split('=')[0] for arg in args]
 
+        # Unreal 4.0.x:
         # <- PROTOCTL NOQUIT NICKv2 SJOIN SJOIN2 UMODE2 VL SJ3 TKLEXT TKLEXT2 NICKIP ESVID
         # <- PROTOCTL CHANMODES=beI,k,l,psmntirzMQNRTOVKDdGPZSCc NICKCHARS= SID=001 MLOCK TS=1441314501 EXTSWHOIS
+        # Unreal 4.2.x:
+        # <- PROTOCTL NOQUIT NICKv2 SJOIN SJOIN2 UMODE2 VL SJ3 TKLEXT TKLEXT2 NICKIP ESVID SJSBY
+        # <- PROTOCTL CHANMODES=beI,kLf,l,psmntirzMQNRTOVKDdGPZSCc USERMODES=iowrsxzdHtIDZRqpWGTSB BOOTED=1574014839 PREFIX=(qaohv)~&@%+ NICKCHARS= SID=001 MLOCK TS=1574020869 EXTSWHOIS
+        # Unreal 5.0.0-rc1:
+        # <- PROTOCTL NOQUIT NICKv2 SJOIN SJOIN2 UMODE2 VL SJ3 TKLEXT TKLEXT2 NICKIP ESVID SJSBY MTAGS
+        # <- PROTOCTL CHANMODES=beI,kLf,lH,psmntirzMQNRTOVKDdGPZSCc USERMODES=iowrsxzdHtIDZRqpWGTSB BOOTED=1574020755 PREFIX=(qaohv)~&@%+ SID=001 MLOCK TS=1574020823 EXTSWHOIS
+        # <- PROTOCTL NICKCHARS= CHANNELCHARS=utf8
         for cap in args:
             if cap.startswith('SID'):
                 self.uplink = cap.split('=', 1)[1]
@@ -539,13 +581,18 @@ class UnrealProtocol(TS6BaseProtocol):
                 # Parse all the supported channel modes.
                 supported_cmodes = cap.split('=', 1)[1]
                 self.cmodes['*A'], self.cmodes['*B'], self.cmodes['*C'], self.cmodes['*D'] = supported_cmodes.split(',')
-                for namedmode, modechar in cmodes.items():
+                for namedmode, modechar in self._KNOWN_CMODES.items():
                     if modechar in supported_cmodes:
                         self.cmodes[namedmode] = modechar
+            elif cap.startswith('USERMODES'):  # Only for protover >= 4203
+                self.umodes['*D'] = supported_umodes = cap.split('=', 1)[1]
+                for namedmode, modechar in self._KNOWN_UMODES.items():
+                    if modechar in supported_umodes:
+                        self.umodes[namedmode] = modechar
 
         # Add in the supported prefix modes.
         self.cmodes.update({'halfop': 'h', 'admin': 'a', 'owner': 'q',
-                                'op': 'o', 'voice': 'v'})
+                            'op': 'o', 'voice': 'v'})
 
     def handle_join(self, numeric, command, args):
         """Handles the UnrealIRCd JOIN command."""
