@@ -661,12 +661,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_ping(self, source, command, args):
         """Handles incoming PING commands, so we don't time out."""
+        # InspIRCd 2:
         # <- :70M PING 70M 0AL
         # -> :0AL PONG 0AL 70M
+
+        # InspIRCd 3:
+        # <- :3IN PING 808
+        # -> :808 PONG 3IN
         if len(args) >= 2:
             self._send_with_prefix(args[1], 'PONG %s %s' % (args[1], source), queue=False)
         else:
-            self._send_with_prefix(self.sid, 'PONG %s' % source, queue=False)
+            self._send_with_prefix(args[0], 'PONG %s' % source, queue=False)
 
     def handle_fjoin(self, servernumeric, command, args):
         """Handles incoming FJOIN commands (InspIRCd equivalent of JOIN/SJOIN)."""
