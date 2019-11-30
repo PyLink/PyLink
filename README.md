@@ -75,16 +75,14 @@ These IRCds (in alphabetical order) are frequently tested and well supported. If
 
 * [charybdis](https://github.com/charybdis-ircd/charybdis) (3.5+) - module `ts6`
     - For KLINE support to work, a `shared{}` block should be added for PyLink on all servers.
-* [InspIRCd](http://www.inspircd.org/) 2.0, 3.x [BETA] - module `inspircd`
-    - Both InspIRCd 2.0 and 3.x are supported by this module.
+* [InspIRCd](http://www.inspircd.org/) 2.0 - 3.x - module `inspircd`
       Set the `target_version` option to `insp3` to target InspIRCd 3.x, or `insp20` to target InspIRCd 2.0 (currently the default).
     - For vHost setting to work, `m_chghost.so` must be loaded. For ident and realname changing support, `m_chgident.so` and `m_chgname.so` must be loaded respectively.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
 * [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `p10`
     - Note: Both account cloaks (user and oper) and hashed IP cloaks are optionally supported (`HOST_HIDING_STYLE` settings 0 to 3). Make sure you configure PyLink to match your IRCd settings.
-* [UnrealIRCd](https://www.unrealircd.org/) 4.x (4.0.12+) - module `unreal`
-    - UnrealIRCd 4.x before version 4.0.12 suffers from [bug #4890](https://bugs.unrealircd.org/view.php?id=4890) which causes hostname desyncs on servers not directly linked to PyLink (e.g. `pylink<->serverA<->serverB` creates desynced hostnames on server B). This problem is fixed by upgrading your IRCds.
-    - Linking to UnrealIRCd 3.2 servers is only possible when using an UnrealIRCd 4.x server as a hub, with topology such as `pylink<->unreal4<->unreal3.2`. We nevertheless encourage you to upgrade so all your IRCds are running the same version.
+* [UnrealIRCd](https://www.unrealircd.org/) 4.2.x - 5.0.x - module `unreal`
+    - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
 
 ### Extended support
 
