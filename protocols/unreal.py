@@ -415,7 +415,7 @@ class UnrealProtocol(TS6BaseProtocol):
         f('PROTOCTL SJOIN SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.serverdata["hostname"], self.sid))
         sdesc = self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.sid, sdesc))
-        f('NETINFO 1 %s %s * 0 0 0 :%s' % (self.start_ts, self.proto_ver, self.serverdata.get("netname", self.name)))
+
         self._send_with_prefix(self.sid, 'EOS')
 
         # Extban definitions
