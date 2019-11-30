@@ -42,7 +42,7 @@ class CopyWrapper():
     def __deepcopy__(self, memo):
         """Returns a deep copy of the channel object."""
         newobj = copy(self)
-        log.debug('CopyWrapper: _BLACKLISTED_COPY_TYPES = %s', _BLACKLISTED_COPY_TYPES)
+        #log.debug('CopyWrapper: _BLACKLISTED_COPY_TYPES = %s', _BLACKLISTED_COPY_TYPES)
         for attr, val in self.__dict__.items():
             # We can't pickle IRCNetwork, so just return a reference of it.
             if not isinstance(val, tuple(_BLACKLISTED_COPY_TYPES)):
@@ -64,7 +64,6 @@ class CaseInsensitiveFixedSet(collections.abc.Set, CopyWrapper):
 
     def __init__(self, *, data=None):
         if data is not None:
-            assert isinstance(data, set)
             self._data = data
         else:
             self._data = set()
@@ -75,6 +74,11 @@ class CaseInsensitiveFixedSet(collections.abc.Set, CopyWrapper):
         if isinstance(key, str):
             return key.lower()
         return key
+
+    @classmethod
+    def _from_iterable(cls, it):
+        """Returns a new iterable instance given the data in 'it'."""
+        return cls(data=it)
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self._data)
@@ -97,7 +101,6 @@ class CaseInsensitiveDict(collections.abc.MutableMapping, CaseInsensitiveFixedSe
     """
     def __init__(self, *, data=None):
         if data is not None:
-            assert isinstance(data, dict)
             self._data = data
         else:
             self._data = {}
@@ -127,6 +130,10 @@ class IRCCaseInsensitiveDict(CaseInsensitiveDict):
             return self._irc.to_lower(key)
         return key
 
+    def _from_iterable(self, it):
+        """Returns a new iterable instance given the data in 'it'."""
+        return self.__class__(self._irc, data=it)
+
     def __copy__(self):
         return self.__class__(self._irc, data=self._data.copy())
 
@@ -154,6 +161,10 @@ class IRCCaseInsensitiveSet(CaseInsensitiveSet):
         if isinstance(key, str):
             return self._irc.to_lower(key)
         return key
+
+    def _from_iterable(self, it):
+        """Returns a new iterable instance given the data in 'it'."""
+        return self.__class__(self._irc, data=it)
 
     def __copy__(self):
         return self.__class__(self._irc, data=self._data.copy())
