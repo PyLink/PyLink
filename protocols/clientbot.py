@@ -398,6 +398,13 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
             for channel in self.pseudoclient.channels:
                 self._send_who(channel)
 
+            # Join persistent channels if always_autorejoin is enabled and there are any we're not in
+            if self.serverdata.get('always_autorejoin') and self.has_cap('can-manage-bot-channels'):
+                for channel in world.services['pylink'].get_persistent_channels(self):
+                    if channel not in self.pseudoclient.channels:
+                        log.info('(%s) Attempting to rejoin %s', self.name, channel)
+                        self.join(self.pseudoclient.uid, channel)
+
     def part(self, source, channel, reason=''):
         """STUB: Parts a user from a channel."""
         self._channels[channel].remove_user(source)
