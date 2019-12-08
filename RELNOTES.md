@@ -1,4 +1,38 @@
-# PyLink 2.1-alpha2 (*UNRELEASED*)
+# PyLink 2.1-beta1 (2019-12-08)
+
+### Feature changes
+- **Declare support for UnrealIRCd 5.0.0-rc2+**. Since the S2S protocol has not changed significantly, no protocol changes are needed for this to work.
+  - UnrealIRCd 5.0.0-rc1 suffers from a [message routing bug](https://bugs.unrealircd.org/view.php?id=5469) and is not supported.
+- clientbot: added an option to continuously rejoin channels the bot is not in. [issue#647](https://github.com/jlu5/PyLink/issues/647)
+- changehost: added support for network-specific options. [issue#611](https://github.com/jlu5/PyLink/issues/611)
+- changehost: listen for services account changes - this allows for consistent account based hostmasks for SASL gateways, etc.
+- relay_clientbot: `rpm` now deals with duplicate nicks and nicks including spaces (e.g. on Discord)
+- Relay now merges together network specific `clientbot_styles` options with global settings, instead of ignoring the latter if the network specific options are set. [issue#642](https://github.com/jlu5/PyLink/issues/642)
+- ts6: add support for hiding PyLink servers (`(H)` in server description)
+- commands: various improvements to the `showuser` command
+
+### Bug fixes
+- More fixes for InspIRCd 3 support:
+  - Fix crash on receiving SVSTOPIC on InspIRCd 3
+  - Fix incorrect handling of PING to PyLink subservers - this caused harmless but confusing "high latency" warnings
+- inspircd: revert change disallowing `_` in hosts; this has been enabled by default for quite some time
+- Fixed various edge cases in mode handling (+b-b ban cycles, casefolding mode arguments, etc.)
+- automode: add better handling for protocols where setting IRC modes isn't possible
+- automode: disable on networks where IRC modes aren't supported. [issue#638](https://github.com/jlu5/PyLink/issues/638)
+
+### Internal improvements
+- Added test cases for shared protocol code (mode parsers, state checks, etc.)
+- Added more IRC parsing tests based off [ircdocs/parser-tests](https://github.com/ircdocs/parser-tests)
+- Add `get_service_options` method to merge together global & local network options. [issue#642](https://github.com/jlu5/PyLink/issues/642)
+- Enhancements to UnrealIRCd protocol module:
+  - unreal: read supported user modes on link when available (UnrealIRCd 4.2.3 and later)
+  - unreal: stop sending NETINFO on link; this suppresses protocol version/network name mismatch warnings
+  - unreal: declare support for msgbypass and timedban extbans
+- Added new protocol capabilities: `has-irc-modes`, `can-manage-bot-channels`
+- relay: handle acting extbans for ban exceptions `+e`, which is supported by InspIRCd and UnrealIRCd
+
+
+# PyLink 2.1-alpha2 (2019-07-14)
 
 **PyLink now requires Python 3.5 or later!**
 
