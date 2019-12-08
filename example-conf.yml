@@ -118,9 +118,8 @@ login:
             #hosts: ["*!*@localhost", "*!*@trusted.isp"]
 
     # For ADVANCED users: adjusts settings for PyLink's default passlib CryptContext.
-    # As of PyLink 2.1, the default is to use pbkdf2_sha256 for new hashes, while also allowing verifying
-    # sha512_crypt for compatibility with PyLink < 2.1.
-
+    # As of PyLink 2.0.3, the default is to use pbkdf2_sha256 for new hashes, while also allowing verifying
+    # sha512_crypt for compatibility with PyLink < 2.0.3.
     # This is configured as a dict of settings, which will be passed into the CryptContext constructor.
     # See https://passlib.readthedocs.io/en/stable/lib/passlib.context.html for a list of valid options.
     # Changes to this setting require a rehash to apply.

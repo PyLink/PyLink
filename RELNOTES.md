@@ -68,6 +68,39 @@ This release focuses on internal improvements to better integrate with [pylink-d
 - SQUIT hooks now track a list of affected servers (SIDs) in the `affected_servers` field
 - relay: minor optimizations
 
+# PyLink 2.0.3 (2019-10-11)
+
+Changes since 2.0.2:
+
+#### Feature changes
+- Switch to more secure password hashing defaults, using pbkdf2-sha256 as the default hash method
+- Introduce a `login::cryptcontext_settings` option to further tweak passlib settings if desired
+
+#### Bug fixes
+- **SECURITY**: Only allow the defined `login:user` to take all permissions when legacy accounts are enabled
+- clientbot: fix /names handling on networks with colours in hostnames
+- clientbot: fix crash when MODES is defined in ISUPPORT but given no value (affects connections to Oragono)
+- changehost: only send a host change if new host != original
+- relay: fix inconsistent handling of the hideoper setting. [issue#629](https://github.com/jlu5/PyLink/issues/629)
+- unreal: work around a potential race when sending kills on join
+
+# PyLink 2.0.2 (2019-03-31)
+
+Changes since 2.0.1:
+
+#### Feature changes
+- Antispam now supports filtering away Unicode lookalike characters when processing text
+- Allow disabling dynamic channels via a new "join_empty_channels" option
+- relay: add an explicit `forcetag` command, since IRC kills are now relayed between networks
+
+#### Bug fixes
+- launcher: fix crash when --no-pid is set
+- relay: fix DB corruption when editing modedelta modes
+- automode: fix sending joins to the wrong network when editing remote channels
+
+#### Internal improvements
+- relay: minor optimizations and cleanup
+- Disable throttling on S2S links by default, since it usually isn't necessary there
 
 # PyLink 2.0.1 (2018-10-06)
 
