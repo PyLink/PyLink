@@ -263,9 +263,9 @@ In short, protocol modules have some very important jobs. If any of these aren't
 7) Declare the correct set of protocol module capabilities to prevent confusing PyLink's plugins.
 
 ## Changes to this document
-* 2019-11-02 (2.1-alpha2)
+* 2019-11-02 (2.1-beta1)
    - Added protocol capability: `can-manage-bot-channels`
-* 2019-10-10 (2.1-alpha2)
+* 2019-10-10 (2.1-beta1)
    - Added protocol capability: `has-irc-modes`
 * 2019-06-23 (2.1-alpha2)
    - Added new protocol capabilities: `virtual-server` and `freeform-nicks`
