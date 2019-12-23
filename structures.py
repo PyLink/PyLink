@@ -46,7 +46,7 @@ class CopyWrapper():
         for attr, val in self.__dict__.items():
             # We can't pickle IRCNetwork, so just return a reference of it.
             if not isinstance(val, tuple(_BLACKLISTED_COPY_TYPES)):
-                log.debug('CopyWrapper: copying attr %r', attr)
+                #log.debug('CopyWrapper: copying attr %r', attr)
                 setattr(newobj, attr, deepcopy(val))
 
         memo[id(self)] = newobj
