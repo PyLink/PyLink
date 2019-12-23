@@ -1781,7 +1781,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # ssl-should-verify defined
             context.check_hostname = self.serverdata.get('ssl_validate_hostname',
                 self.has_cap("ssl-should-verify") or
-                utils.get_hostname_type(self.serverdata['ip']) is 0)
+                utils.get_hostname_type(self.serverdata['ip']) == 0)
 
         return context
 
