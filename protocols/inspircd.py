@@ -24,7 +24,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
         self.protocol_caps |= {'slash-in-nicks', 'slash-in-hosts', 'underscore-in-hosts'}
 
-        # Set our case mapping (rfc1459 maps "\" and "|" together, for example).
+        # This is only the default value - on InspIRCd 3 it will be negotiated on connect in CAPAB CAPABILITIES
         self.casemapping = 'rfc1459'
 
         # Raw commands sent from servers vary from protocol to protocol. Here, we map
@@ -622,13 +622,17 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
             # First, turn the arguments into a dict
             caps = self.parse_isupport(args[-1])
-            log.debug("(%s) capabilities list: %s", self.name, caps)
+            log.debug("(%s) handle_capab: capabilities list is %s", self.name, caps)
 
             # Store the max nick and channel lengths
             if 'NICKMAX' in caps:
                 self.maxnicklen = int(caps['NICKMAX'])
             if 'CHANMAX' in caps:
                 self.maxchanlen = int(caps['CHANMAX'])
+            # Casemapping - this is only sent in InspIRCd 3.x
+            if 'CASEMAPPING' in caps:
+                self.casemapping = caps['CASEMAPPING']
+                log.debug('(%s) handle_capab: updated casemapping to %s', self.name, self.casemapping)
 
             # InspIRCd 2 only: mode & prefix definitions are sent as CAPAB CAPABILITIES CHANMODES/USERMODES/PREFIX
             if self.proto_ver < 1205:
@@ -642,7 +646,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     # Separate the prefixes field (e.g. "(Yqaohv)!~&@%+") into a
                     # dict mapping mode characters to mode prefixes.
                     self.prefixmodes = self.parse_isupport_prefixes(caps['PREFIX'])
-                    log.debug('(%s) self.prefixmodes set to %r', self.name,
+                    log.debug('(%s) handle_capab: self.prefixmodes set to %r', self.name,
                               self.prefixmodes)
 
         elif args[0] == 'MODSUPPORT':
