@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 sudo: false
 
 language: python
@@ -6,6 +6,7 @@ python:
   - '3.5'
   - '3.6'
   - '3.7'
+  - '3.8'
 
 install: python3 setup.py install
 script:
