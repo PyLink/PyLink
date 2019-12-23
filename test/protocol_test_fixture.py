@@ -575,6 +575,13 @@ class BaseProtocolTest(unittest.TestCase):
         self.p.apply_modes('#', [('+n', None), ('-i', None)])
         self.assertEqual(c.modes, {('n', None)})
 
+        c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
+        self.p.apply_modes('#Magic', [('+m', None), ('+n', None), ('+i', None)])
+        self.assertEqual(c.modes, {('m', None), ('n', None), ('i', None)}, "Modes should be added")
+
+        self.p.apply_modes('#Magic', [('-i', None), ('-n', None)])
+        self.assertEqual(c.modes, {('m', None)}, "Modes should be removed")
+
     def test_apply_modes_channel_remove_nonexistent(self):
         c = self.p.channels['#abc'] = Channel(self.p, name='#abc')
         self.p.apply_modes('#abc', [('+t', None)])
@@ -633,6 +640,15 @@ class BaseProtocolTest(unittest.TestCase):
         # Removal but different case than original
         self.p.apply_modes('#Magic', [('-b', '*!*@BEST.HOST')])
         self.assertFalse(c.modes, "Ban on *!*@best.host should be removed (different case)")
+
+    def test_apply_modes_channel_ban_multiple(self):
+        c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
+        self.p.apply_modes('#Magic', [('+b', '*!*@test.host'), ('+b', '*!*@best.host'), ('+b', '*!*@guest.host')])
+        self.assertEqual(c.modes, {('b', '*!*@test.host'), ('b', '*!*@best.host'), ('b', '*!*@guest.host')},
+                         "Bans should be added")
+
+        self.p.apply_modes('#Magic', [('-b', '*!*@best.host'), ('-b', '*!*@guest.host'), ('-b', '*!*@test.host')])
+        self.assertEqual(c.modes, set(), "Bans should be removed")
 
     def test_apply_modes_channel_mode_cycle(self):
         c = self.p.channels['#Magic'] = Channel(self.p, name='#Magic')
