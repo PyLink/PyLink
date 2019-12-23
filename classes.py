@@ -901,6 +901,14 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 'uplink': uplink, 'nicks': affected_nicks, 'serverdata': serverdata,
                 'channeldata': old_channels, 'affected_servers': affected_servers}
 
+    @staticmethod
+    def _log_debug_modes(*args, **kwargs):
+        """
+        Log debug info related to mode parsing if enabled.
+        """
+        if conf.conf['pylink'].get('log_mode_parsers'):
+            log.debug(*args, **kwargs)
+
     def _parse_modes(self, args, existing, supported_modes, is_channel=False, prefixmodes=None,
                      ignore_missing_args=False):
         """
@@ -938,22 +946,22 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 if not prefix:
                     prefix = '+'
                 arg = None
-                log.debug('Current mode: %s%s; args left: %s', prefix, mode, args)
+                self._log_debug_modes('Current mode: %s%s; args left: %s', prefix, mode, args)
                 try:
                     if prefixmodes and mode in self.prefixmodes:
                         # We're setting a prefix mode on someone (e.g. +o user1)
-                        log.debug('Mode %s: This mode is a prefix mode.', mode)
+                        self._log_debug_modes('Mode %s: This mode is a prefix mode.', mode)
                         arg = args.pop(0)
                         # Convert nicks to UIDs implicitly
                         arg = self._get_UID(arg)
                         if arg not in self.users:  # Target doesn't exist, skip it.
-                            log.debug('(%s) Skipping setting mode "%s %s"; the '
-                                      'target doesn\'t seem to exist!', self.name,
-                                      mode, arg)
+                            self._log_debug_modes('(%s) Skipping setting mode "%s %s"; the '
+                                                  'target doesn\'t seem to exist!', self.name,
+                                                  mode, arg)
                             continue
                     elif mode in (supported_modes['*A'] + supported_modes['*B']):
                         # Must have parameter.
-                        log.debug('Mode %s: This mode must have parameter.', mode)
+                        self._log_debug_modes('Mode %s: This mode must have parameter.', mode)
                         arg = args.pop(0)
                         if prefix == '-':
                             if mode in supported_modes['*B'] and arg == '*':
@@ -966,24 +974,24 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                                 if oldarg:
                                     # Set the arg to the old one on the channel.
                                     arg = oldarg
-                                    log.debug("Mode %s: coersing argument of '*' to %r.", mode, arg)
+                                    self._log_debug_modes("Mode %s: coersing argument of '*' to %r.", mode, arg)
 
-                            log.debug('(%s) parse_modes: checking if +%s %s is in old modes list: %s; existing_casemap=%s', self.name, mode, arg, existing, existing_casemap)
+                            self._log_debug_modes('(%s) parse_modes: checking if +%s %s is in old modes list: %s; existing_casemap=%s', self.name, mode, arg, existing, existing_casemap)
 
                             arg = self.to_lower(arg)
                             casefolded_modepair = existing_casemap.get((mode, arg))  # Case fold arguments as needed
                             if casefolded_modepair not in existing:
                                 # Ignore attempts to unset parameter modes that don't exist.
-                                log.debug("(%s) parse_modes: ignoring removal of non-existent list mode +%s %s; casefolded_modepair=%s", self.name, mode, arg, casefolded_modepair)
+                                self._log_debug_modes("(%s) parse_modes: ignoring removal of non-existent list mode +%s %s; casefolded_modepair=%s", self.name, mode, arg, casefolded_modepair)
                                 continue
                             arg = casefolded_modepair[1]
 
                     elif prefix == '+' and mode in supported_modes['*C']:
                         # Only has parameter when setting.
-                        log.debug('Mode %s: Only has parameter when setting.', mode)
+                        self._log_debug_modes('Mode %s: Only has parameter when setting.', mode)
                         arg = args.pop(0)
                 except IndexError:
-                    logfunc = log.debug if ignore_missing_args else log.warning
+                    logfunc = self._log_debug_modes if ignore_missing_args else log.warning
                     logfunc('(%s) Error while parsing mode %r: mode requires an '
                             'argument but none was found. (modestring: %r)',
                             self.name, mode, modestring)
@@ -1015,17 +1023,17 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
 
         is_channel = self.is_channel(target)
         if not is_channel:
-            log.debug('(%s) Using self.umodes for this query: %s', self.name, self.umodes)
+            self._log_debug_modes('(%s) Using self.umodes for this query: %s', self.name, self.umodes)
 
             if target not in self.users:
-                log.debug('(%s) Possible desync! Mode target %s is not in the users index.', self.name, target)
+                self._log_debug_modes('(%s) Possible desync! Mode target %s is not in the users index.', self.name, target)
                 return []  # Return an empty mode list
 
             supported_modes = self.umodes
             oldmodes = self.users[target].modes
             prefixmodes = None
         else:
-            log.debug('(%s) Using self.cmodes for this query: %s', self.name, self.cmodes)
+            self._log_debug_modes('(%s) Using self.cmodes for this query: %s', self.name, self.cmodes)
 
             supported_modes = self.cmodes
             oldmodes = self._channels[target].modes
@@ -1073,19 +1081,19 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 if real_mode[0] in self.prefixmodes:
                     # Don't add prefix modes to Channel.modes; they belong in the
                     # prefixmodes mapping handled above.
-                    log.debug('(%s) Not adding mode %s to Channel.modes because '
-                              'it\'s a prefix mode.', self.name, str(mode))
+                    self._log_debug_modes('(%s) Not adding mode %s to Channel.modes because '
+                                          'it\'s a prefix mode.', self.name, str(mode))
                     continue
 
             if mode[0][0] != '-':  # Adding a mode; assume add if no explicit +/- is given
-                log.debug('(%s) Adding mode %r on %s', self.name, real_mode, modelist)
+                self._log_debug_modes('(%s) Adding mode %r on %s', self.name, real_mode, modelist)
                 existing = mapping.get(real_mode[0])
                 if existing and real_mode[0] not in supported_modes['*A']:
                     # The mode we're setting takes a parameter, but is not a list mode (like +beI).
                     # Therefore, only one version of it can exist at a time, and we must remove
                     # any old modepairs using the same letter. Otherwise, we'll get duplicates when,
                     # for example, someone sets mode "+l 30" on a channel already set "+l 25".
-                    log.debug('(%s) Old modes for mode %r exist in %s, removing them: %s',
+                    self._log_debug_modes('(%s) Old modes for mode %r exist in %s, removing them: %s',
                               self.name, real_mode, modelist, str(existing))
                     while existing:
                         oldvalue = existing.pop()
@@ -1094,7 +1102,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 modelist.add(real_mode)
                 mapping[real_mode[0]].add(real_mode[1])
             else:  # Removing a mode
-                log.debug('(%s) Removing mode %r from %s', self.name, real_mode, modelist)
+                self._log_debug_modes('(%s) Removing mode %r from %s', self.name, real_mode, modelist)
 
                 existing = mapping.get(real_mode[0])
                 arg = real_mode[1]
@@ -1106,7 +1114,7 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                         oldvalue = existing.pop()
                         if arg is None or self.to_lower(arg) == self.to_lower(oldvalue):
                             modelist.discard((real_mode[0], oldvalue))
-        log.debug('(%s) Final modelist: %s', self.name, modelist)
+        self._log_debug_modes('(%s) Final modelist: %s', self.name, modelist)
         return modelist
 
     def apply_modes(self, target, changedmodes):
@@ -1194,8 +1202,8 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                           for modepair in oldmodes}
 
         newmodes = []
-        log.debug('(%s) reverse_modes: old/current mode list for %s is: %s', self.name,
-                   target, oldmodes)
+        self._log_debug_modes('(%s) reverse_modes: old/current mode list for %s is: %s', self.name,
+                              target, oldmodes)
         for char, arg in modes:
             # Mode types:
             # A = Mode that adds or removes a nick or address to a list. Always has a parameter.
@@ -1225,27 +1233,27 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
                 arg = self.to_lower(arg)
             if char[0] != '-' and (mchar, arg) in oldmodes:
                 # Mode is already set.
-                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since we're "
-                          "setting a mode that's already set.", self.name, char, arg, mpair)
+                self._log_debug_modes("(%s) reverse_modes: skipping reversing '%s %s' with %s since we're "
+                                      "setting a mode that's already set.", self.name, char, arg, mpair)
                 continue
             elif char[0] == '-' and (mchar, arg) not in oldmodes and mchar in possible_modes['*A']:
                 # We're unsetting a list or prefix mode that was never set - don't set it in response!
                 # TS6 IRCds lacks server-side verification for this and can cause annoying mode floods.
-                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
-                          "wasn't previously set.", self.name, char, arg, mpair)
+                self._log_debug_modes("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
+                                      "wasn't previously set.", self.name, char, arg, mpair)
                 continue
             elif char[0] == '-' and mchar not in oldmodes_mapping:
                 # Check the same for regular modes that previously didn't exist
-                log.debug("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
-                          "wasn't previously set.", self.name, char, arg, mpair)
+                self._log_debug_modes("(%s) reverse_modes: skipping reversing '%s %s' with %s since it "
+                                      "wasn't previously set.", self.name, char, arg, mpair)
                 continue
             elif mpair in newmodes:
                 # Check the same for regular modes that previously didn't exist
-                log.debug("(%s) reverse_modes: skipping duplicate reverse mode %s", self.name,  mpair)
+                self._log_debug_modes("(%s) reverse_modes: skipping duplicate reverse mode %s", self.name,  mpair)
                 continue
             newmodes.append(mpair)
 
-        log.debug('(%s) reverse_modes: new modes: %s', self.name, newmodes)
+        self._log_debug_modes('(%s) reverse_modes: new modes: %s', self.name, newmodes)
         if origstring:
             # If the original query is a string, send it back as a string.
             return self.join_modes(newmodes)
@@ -1348,23 +1356,23 @@ class PyLinkNetworkCoreWithUtils(PyLinkNetworkCore):
             if (next_length + total_length) <= limit and ((not max_modes_per_msg) or len(queued_modes) < max_modes_per_msg):
                 # We can fit this mode in the next message; add it.
                 total_length += next_length
-                log.debug('wrap_modes: Adding mode %s to queued modes', str(next_mode))
+                cls._log_debug_modes('wrap_modes: Adding mode %s to queued modes', str(next_mode))
                 queued_modes.append(next_mode)
-                log.debug('wrap_modes: queued modes: %s', queued_modes)
+                cls._log_debug_modes('wrap_modes: queued modes: %s', queued_modes)
             else:
                 # Otherwise, create a new message by joining the previous queued modes into a message.
                 # Then, create a new message with our current mode.
                 strings.append(cls.join_modes(queued_modes))
                 queued_modes.clear()
 
-                log.debug('wrap_modes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
+                cls._log_debug_modes('wrap_modes: cleared queue (length %s) and now adding %s', limit, str(next_mode))
                 queued_modes.append(next_mode)
                 total_length = next_length
         else:
             # Everything fit in one line, so just use that.
             strings.append(cls.join_modes(queued_modes))
 
-        log.debug('wrap_modes: returning %s for %s', strings, orig_modes)
+        cls._log_debug_modes('wrap_modes: returning %s for %s', strings, orig_modes)
         return strings
 
     def get_hostmask(self, user, realhost=False, ip=False):
