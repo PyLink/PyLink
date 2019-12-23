@@ -491,8 +491,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         Handles the CAPAB command, used for capability negotiation with our
         uplink.
         """
-        # 6 CAPAB commands are usually sent on connect: CAPAB START, MODULES,
-        # MODSUPPORT, CHANMODES, USERMODES, and CAPABILITIES.
+        # 5 CAPAB subcommands are usually sent on connect (excluding START and END):
+        #   CAPAB MODULES, MODSUPPORT, CHANMODES, USERMODES, and CAPABILITIES
         # We check just about everything except MODULES
 
         if args[0] == 'START':
@@ -503,6 +503,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
             # <- CAPAB START 1205
             self.remote_proto_ver = protocol_version = int(args[1])
 
+            log.debug("(%s) handle_capab: got remote protocol version %s", self.name, protocol_version)
             if protocol_version < self.proto_ver:
                 raise ProtocolError("Remote protocol version is too old! "
                                     "At least %s is needed. (got %s)" %
@@ -512,11 +513,11 @@ class InspIRCdProtocol(TS6BaseProtocol):
                             "and should not be relied upon for anything important.",
                             self.name)
             elif protocol_version >= 1205 > self.proto_ver:
-                log.info("(%s) PyLink 2.1 introduces native support for InspIRCd 3.0. "
-                         "You can enable this by setting the 'target_version' option in your "
-                         "InspIRCd server block to 'insp3'.", self.name)
-                log.info("(%s) Falling back to InspIRCd 2.0 (compatibility) mode.", self.name)
-            log.debug("(%s) inspircd: got remote protocol version %s", self.name, protocol_version)
+                log.warning("(%s) PyLink 2.1 introduces native support for InspIRCd 3. "
+                            "You should enable this by setting the 'target_version' option in your "
+                            "InspIRCd server block to 'insp3'. Otherwise, some features will not "
+                            "work correctly!", self.name)
+                log.warning("(%s) Falling back to InspIRCd 2.0 (compatibility) mode.", self.name)
 
             if self.proto_ver >= 1205:
                 # Clear mode lists, they will be negotiated during burst
