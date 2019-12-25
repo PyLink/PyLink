@@ -45,7 +45,7 @@ def account(irc, host, uid):
     slogin = irc.to_lower(str(userobj.services_account))
 
     # Split the given exttarget host into parts, so we know how many to look for.
-    groups = list(map(irc.to_lower, host.split(':')))
+    groups = host.split(':')
     log.debug('(%s) exttargets.account: groups to match: %s', irc.name, groups)
 
     if len(groups) == 1:
@@ -53,12 +53,12 @@ def account(irc, host, uid):
         return bool(slogin)
     elif len(groups) == 2:
         # Second scenario. Return True if the user's account matches the one given.
-        return slogin == groups[1] and homenet == irc.name
+        return slogin == irc.to_lower(groups[1]) and homenet == irc.name
     else:
         # Third or fourth scenario. If there are more than 3 groups, the rest are ignored.
         # In other words: Return True if the user is logged in, the query matches either '*' or the
         # user's login, and the user is connected on the network requested.
-        return slogin and (groups[1] in ('*', slogin)) and (homenet == groups[2])
+        return slogin and (irc.to_lower(groups[1]) in ('*', slogin)) and (homenet == groups[2])
 
 @bind
 def ircop(irc, host, uid):
