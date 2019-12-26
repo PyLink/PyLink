@@ -77,8 +77,8 @@ def ircop(irc, host, uid):
         # 1st scenario.
         return irc.is_oper(uid)
     else:
-        # 2nd scenario. Use match_host (ircmatch) to match the opertype glob to the opertype.
-        return irc.match_host(groups[1], irc.users[uid].opertype)
+        # 2nd scenario. Match the opertype glob to the opertype.
+        return irc.match_text(groups[1], irc.users[uid].opertype)
 
 @bind
 def server(irc, host, uid):
@@ -97,7 +97,7 @@ def server(irc, host, uid):
         sid = irc.get_server(uid)
         query = groups[1]
         # Return True if the SID matches the query or the server's name glob matches it.
-        return sid == query or irc.match_host(query, irc.get_friendly_name(sid))
+        return sid == query or irc.match_text(query, irc.get_friendly_name(sid))
     # $server alone is invalid. Don't match anything.
     return False
 
@@ -206,7 +206,7 @@ def realname(irc, host, uid):
     """
     groups = host.split(':')
     if len(groups) >= 2:
-        return irc.match_host(groups[1], irc.users[uid].realname)
+        return irc.match_text(groups[1], irc.users[uid].realname)
 
 @bind
 def service(irc, host, uid):
@@ -223,5 +223,5 @@ def service(irc, host, uid):
     groups = host.split(':')
 
     if len(groups) >= 2:
-        return irc.match_host(groups[1], irc.users[uid].service)
+        return irc.match_text(groups[1], irc.users[uid].service)
     return True  # It *is* a service bot because of the check at the top.
