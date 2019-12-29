@@ -59,15 +59,31 @@ class NgIRCdProtocol(IRCS2SProtocol):
         self._caps.clear()
 
         self.cmodes.update({
-            'banexception': 'e', 'invex': 'I', 'regmoderated': 'M', 'nonick': 'N',
-            'operonly': 'O', 'permanent': 'P', 'nokick': 'Q', 'registered': 'r',
-            'regonly': 'R', 'noinvite': 'V', 'sslonly': 'z'
+            'banexception': 'e',
+            'invex': 'I',
+            'noinvite': 'V',
+            'nokick': 'Q',
+            'nonick': 'N',
+            'operonly': 'O',
+            'permanent': 'P',
+            'registered': 'r',
+            'regmoderated': 'M',
+            'regonly': 'R',
+            'sslonly': 'z'
         })
 
         self.umodes.update({
-            'away': 'a', 'deaf': 'b', 'bot': 'B', 'sno_clientconnections': 'c',
-            'deaf_commonchan': 'C', 'floodexempt': 'f', 'hidechans': 'I',
-            'servprotect': 'q', 'restricted': 'r', 'registered': 'R', 'cloak': 'x'
+            'away': 'a',
+            'bot': 'B',
+            'cloak': 'x',
+            'deaf_commonchan': 'C',
+            'floodexempt': 'F',
+            'hidechans': 'I',
+            'privdeaf': 'b',
+            'registered': 'R',
+            'restricted': 'r',
+            'servprotect': 'q',
+            'sno_clientconnections': 'c'
         })
 
     def spawn_client(self, nick, ident='null', host='null', realhost=None, modes=set(),

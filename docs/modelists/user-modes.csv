@@ -10,11 +10,11 @@ cloak_fakehost,,,,,,f,,,,,,
 cloak_hashedhost,,,,,,C,,,,,,
 cloak_hashedip,,,,,,c,,,,,,
 cloak_sethost,,,,,,h,h,,,,,
-deaf,,D,d,b,d,d,d,D,D,D,D,d
+deaf,,D,d,,d,d,d,D,D,D,D,d
 deaf_commonchan,,G,c,C,,q,,,,,,
 debug,,d,,,,,,,,,,
 filter,,,,,,,,,,,,G
-floodexempt,,,,f,,,,,,,,
+floodexempt,,,,F,,,,,,,,
 helpop,,,h,,,,,,,,,
 hidechans,,p,I,I,,n,n,,,I,,p (usermodes/privacy)
 hideidle,,q,,,,I,I,,,,,I
@@ -28,7 +28,7 @@ noinvite,,,,,,,,,,V,,
 oper,o,o,o,o,o,o,o,o,o,o,o,o
 operwall,,,,,,,,z,z,z,z,
 override,,,,,,X,X,p,p,p,,
-privdeaf,,,,,,D,,,,,,D (usermodes/privdeaf)
+privdeaf,,,,b,,D,,,,,,D (usermodes/privdeaf)
 protected,,,,,,,,,,,,q (usermodes/nokick)
 regdeaf,,R,R,,,R,R,R,R,R,,R (usermodes/regonlymsg)
 registered,,r,r,R,r,r,r,,,,,r
