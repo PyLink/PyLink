@@ -1,68 +1,68 @@
 Channel Mode / IRCd,rfc1459,hybrid,inspircd/insp20,inspircd/insp3,ngircd,p10/ircu,p10/nefarious,p10/snircd,ts6/charybdis,ts6/chatircd,ts6/elemental,ts6/ratbox,unreal
-admin,,,"a (m_customprefix, m_chanprotect)",a (m_customprefix),a,,,,,a (when enabled),a (when enabled),,a
+admin,,,"a (m_customprefix, m_chanprotect)",a (customprefix),a,,,,,a (when enabled),a (when enabled),,a
 adminonly,,,,,,,a,,A (ext/chm_adminonly),A (ext/chm_adminonly),A (ext/chm_adminonly.so),,
-allowinvite,,,A (m_allowinvite),A (m_allowinvite),,,,,g,g,g,,
-auditorium,,,u (m_auditorium),u (m_auditorium),,,,,,,,,
-autoop,,,w (m_autoop),w (m_autoop),,,,,,,,,
+allowinvite,,,A (m_allowinvite),A (allowinvite),,,,,g,g,g,,
+auditorium,,,u (m_auditorium),u (auditorium),,,,,,,,,
+autoop,,,w (m_autoop),w (autoop),,,,,,,,,
 ban,b,b,b,b,b,b,b,b,b,b,b,b,b
-banexception,,e,e (m_banexception),e (m_banexception),e,,e,,e,e,e,e,e
-blockcaps,,,B (m_blockcaps),"B (m_anticaps, m_blockcaps)",,,,,,,G (ext/chm_nocaps.so),,
-blockcolor,,c,c (m_blockcolor),c (m_blockcolor),,c,c,c,,,,,c (chanmodes/nocolor)
-blockhighlight,,,V (contrib/m_blockhighlight),V (contrib/m_blockhighlight),,,,,,,,,
-censor,,,G (m_censor),G (m_censor),,,,,,,,,G (chanmodes/censor)
-delayjoin,,,D (m_delayjoin),D (m_delayjoin),,D,D,D,,,,,D (chanmodes/delayjoin)
-delaymsg,,,d (m_delaymsg),d (m_delaymsg),,,,,,,,,
-exemptchanops,,,X (m_exemptchanops),X (m_exemptchanops),,,,,,,,,
-filter,,,g (m_filter),g (m_filter),,,,,,,,,(via extban ~T:block:)
-flood,,,f (m_messageflood),f (m_messageflood),,,,,,,,,
+banexception,,e,e (m_banexception),e (banexception),e,,e,,e,e,e,e,e
+blockcaps,,,B (m_blockcaps),"B (anticaps, blockcaps)",,,,,,,G (ext/chm_nocaps.so),,
+blockcolor,,c,c (m_blockcolor),c (blockcolor),,c,c,c,,,,,c (chanmodes/nocolor)
+blockhighlight,,,V (contrib/m_blockhighlight),V (contrib/blockhighlight),,,,,,,,,
+censor,,,G (m_censor),G (censor),,,,,,,,,G (chanmodes/censor)
+delayjoin,,,D (m_delayjoin),D (delayjoin),,D,D,D,,,,,D (chanmodes/delayjoin)
+delaymsg,,,d (m_delaymsg),d (delaymsg),,,,,,,,,
+exemptchanops,,,X (m_exemptchanops),X (exemptchanops),,,,,,,,,
+filter,,,g (m_filter),g (filter),,,,,,,,,(via extban ~T:block:)
+flood,,,f (m_messageflood),f (messageflood),,,,,,,,,
 flood_unreal,,,,,,,,,,,,,f (chanmodes/floodprot)
 freetarget,,,,,,,,,F,F,F,,
 had_delayjoin,,,,,,d,d,d,,,,,
-halfop,,h,"h (m_customprefix, m_halfop)",h (m_customprefix),h,,,,,h (when enabled),h (when enabled),,h
+halfop,,h,"h (m_customprefix, m_halfop)",h (customprefix),h,,,,,h (when enabled),h (when enabled),,h
 hiddenbans,,,,,,,,,,,u,,
 hidequits,,,,,,,Q,u,,,,,
-history,,,H (m_chanhistory),H (m_chanhistory),,,,,,,,,
-invex,,I,I (m_inviteexception),I (m_inviteexception),I,,,,I,I,I,I,I
+history,,,H (m_chanhistory),H (chanhistory),,,,,,,,,
+invex,,I,I (m_inviteexception),I (inviteexception),I,,,,I,I,I,I,I
 inviteonly,i,i,i,i,i,i,i,i,i,i,i,i,i
 issecure,,,,,,,,,,,,,Z (chanmodes/issecure)
-joinflood,,,j (m_joinflood),j (m_joinflood),,,,,j,j,j,,
+joinflood,,,j (m_joinflood),j (joinflood),,,,,j,j,j,,
 key,k,k,k,k,k,k,k,k,k,k,k,k,k
 kicknorejoin,,,,,,,,,,,J,,
-kicknorejoin_insp,,,J (m_kicknorejoin),J (m_kicknorejoin),,,,,,,,,
+kicknorejoin_insp,,,J (m_kicknorejoin),J (kicknorejoin),,,,,,,,,
 largebanlist,,,,,,,,,L,L,L,,
 limit,l,l,l,l,l,l,l,l,l,l,l,l,l
 moderated,m,m,m,m,m,m,m,m,m,m,m,m,m
 netadminonly,,,,,,,,,,N (ext/chm_netadminonly),,,
-nickflood,,,F (m_nickflood),F (m_nickflood),,,,,,,,,
+nickflood,,,F (m_nickflood),F (nickflood),,,,,,,,,
 noamsg,,,,,,,T,T,,,,,
-noctcp,,C,C (m_noctcp),C (m_noctcp),,C,C,C,C,C,C,,C (chanmodes/noctcp)
+noctcp,,C,C (m_noctcp),C (noctcp),,C,C,C,C,C,C,,C (chanmodes/noctcp)
 noextmsg,n,n,n,n,n,n,n,n,n,n,n,n,n
 noforwards,,,,,,,,,Q,Q,Q,,
 noinvite,,,,,V,,,,,,,,V (chanmodes/noinvite)
-nokick,,,Q (m_nokicks),Q (m_nokicks),Q,,,,,,E,,Q (chanmodes/nokick)
-noknock,,p*,K (m_knock),K (m_knock),,,,,p*,p*,p*,p*,K (chanmodes/noknock)
-nonick,,,N (m_nonicks),N (m_nonicks),N,,,,,,d,,N (chanmodes/nonickchange)
-nonotice,,,T (m_nonotice),T (m_nonotice),,,N,N,T (ext/chm_nonotice),T (ext/chm_nonotice),T,,T (chanmodes/nonotice)
-official-join,,,Y (m_ojoin),Y (m_ojoin),,,,,,,,,
+nokick,,,Q (m_nokicks),Q (nokicks),Q,,,,,,E,,Q (chanmodes/nokick)
+noknock,,p*,K (m_knock),K (knock),,,,,p*,p*,p*,p*,K (chanmodes/noknock)
+nonick,,,N (m_nonicks),N (nonicks),N,,,,,,d,,N (chanmodes/nonickchange)
+nonotice,,,T (m_nonotice),T (nonotice),,,N,N,T (ext/chm_nonotice),T (ext/chm_nonotice),T,,T (chanmodes/nonotice)
+official-join,,,Y (m_ojoin),Y (ojoin),,,,,,,,,
 op,o,o,o,o,o,o,o,o,o,o,o,o,o
-operonly,,O,O (m_operchans),O (m_operchans),O,,O,,O (ext/chm_operonly),O (ext/chm_operonly),O (ext/chm_operonly.so),,O (chanmodes/operonly)
+operonly,,O,O (m_operchans),O (operchans),O,,O,,O (ext/chm_operonly),O (ext/chm_operonly),O (ext/chm_operonly.so),,O (chanmodes/operonly)
 oplevel_apass,,,,,,A,A,A,,,,,
 oplevel_upass,,,,,,U,U,U,,,,,
 opmoderated,,,U (contrib/m_opmoderated),,,,,,z,z,z,,
-owner,,,"q (m_customprefix, m_chanprotect)",q (m_customprefix),q,,,,,y (when enabled),y (when enabled),,q
+owner,,,"q (m_customprefix, m_chanprotect)",q (customprefix),q,,,,,y (when enabled),y (when enabled),,q
 paranoia,,p*,,,,,,,,,,,
-permanent,,,P (m_permchannels),P (m_permchannels),P,,z,,P,P,P,,P (chanmodes/permanent)
+permanent,,,P (m_permchannels),P (permchannels),P,,z,,P,P,P,,P (chanmodes/permanent)
 private,p,p*,p,p,p,p,p,p,p*,p*,p*,p*,p
 quiet,,,(via extban m:),(via extban m:),,,(via extban ~q:),,q,q,q,,(via extban ~q:)
-redirect,,,L (m_redirect),L (m_redirect),,,L,,f,f,f,,L (chanmodes/link)
-registered,,r,r (m_services_account),r (m_services_account),r,R,R,R,,,,,r
-regmoderated,,M,M (m_services_account),M (m_services_account),M,,M,M,,,,,M (chanmodes/regonlyspeak)
-regonly,,R,R (m_services_account),R (m_services_account),R,r,r,r,r,r,r,r,R (chanmodes/regonly)
+redirect,,,L (m_redirect),L (redirect),,,L,,f,f,f,,L (chanmodes/link)
+registered,,r,r (m_services_account),r (services_account),r,R,R,R,,,,,r
+regmoderated,,M,M (m_services_account),M (services_account),M,,M,M,,,,,M (chanmodes/regonlyspeak)
+regonly,,R,R (m_services_account),R (services_account),R,r,r,r,r,r,r,r,R (chanmodes/regonly)
 repeat,,,,,,,,,,,K (ext/chm_norepeat.c),,
-repeat_insp,,,,E (m_repeat),,,,,,,,,
+repeat_insp,,,,E (repeat),,,,,,,,,
 secret,s,s,s,s,s,s,s,s,s,s,s,s,s
-sslonly,,S,z (m_sslmodes),z (m_sslmodes),z,,,,S (ext/chm_sslonly),S (ext/chm_sslonly),S (ext/chm_sslonly.c),S,z (chanmodes/secureonly)
-stripcolor,,,S (m_stripcolor),S (m_stripcolor),,,S,,c,c,c,,S (chanmodes/stripcolor)
+sslonly,,S,z (m_sslmodes),z (sslmodes),z,,,,S (ext/chm_sslonly),S (ext/chm_sslonly),S (ext/chm_sslonly.c),S,z (chanmodes/secureonly)
+stripcolor,,,S (m_stripcolor),S (stripcolor),,,S,,c,c,c,,S (chanmodes/stripcolor)
 topiclock,t,t,t,t,t,t,t,t,t,t,t,t,t
 voice,v,v,v,v,v,v,v,v,v,v,v,v,v
 ,,,,,,,,,,,,,
