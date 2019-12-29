@@ -36,7 +36,7 @@ netadminonly,,,,,,,,,,N (ext/chm_netadminonly),,,
 nickflood,,,F (m_nickflood),F (m_nickflood),,,,,,,,,
 noamsg,,,,,,,T,T,,,,,
 noctcp,,C,C (m_noctcp),C (m_noctcp),,C,C,C,C,C,C,,C (chanmodes/noctcp)
-noextmsg,n,n,n,n,n,,n,,n,n,n,n,n
+noextmsg,n,n,n,n,n,n,n,n,n,n,n,n,n
 noforwards,,,,,,,,,Q,Q,Q,,
 noinvite,,,,,V,,,,,,,,V (chanmodes/noinvite)
 nokick,,,Q (m_nokicks),Q (m_nokicks),Q,,,,,,E,,Q (chanmodes/nokick)

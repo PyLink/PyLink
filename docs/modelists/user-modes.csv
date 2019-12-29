@@ -46,9 +46,9 @@ sno_remoteclientconnections,,F,,,,,,,,,,
 sno_serverconnects,,e,,,,,,,,,x,
 sno_skill,,k,,,,,,,,,k,
 sno_stats,,y,,,,,,,,,y,
-snomask,s,s,s,s,,s,,s,s,s,s,s
+snomask,s,s,s,s,s,s,s,s,s,s,s,s
 ssl,,S,,,,z,,,,,,z
 stripcolor,,,S,,,,,,,,,
 vhost,,,,,,,,,,,,t
-wallops,w,w,w,w,,w,,w,w,w,w,w
+wallops,w,w,w,w,w,w,w,w,w,w,w,w
 webirc,,W,,,,,,,,,,
