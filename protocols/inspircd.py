@@ -596,6 +596,9 @@ class InspIRCdProtocol(TS6BaseProtocol):
                 if name == 'reginvite':  # Reginvite? That's an odd name.
                     name = 'regonly'
 
+                if name == 'antiredirect':  # User mode +L
+                    name = 'noforward'
+
                 if name == 'founder':  # Channel mode +q
                     # Founder, owner; same thing. m_customprefix allows you to name it anything you like,
                     # but PyLink uses the latter in its definitions
