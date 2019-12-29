@@ -375,7 +375,7 @@ class TS6Protocol(TS6BaseProtocol):
             self.cmodes.update(chatircd_cmodes)
             self.cmodes['*D'] += ''.join(chatircd_cmodes.values())
 
-            chatircd_umodes = {'netadmin': 'n', 'bot': 'B', 'callerid_sslonly': 't'}
+            chatircd_umodes = {'netadmin': 'n', 'bot': 'B', 'sslonlymsg': 't'}
             self.umodes.update(chatircd_umodes)
             self.umodes['*D'] += ''.join(chatircd_umodes.values())
 

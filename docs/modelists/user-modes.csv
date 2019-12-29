@@ -3,7 +3,6 @@ admin,,a,,,,a,,a,a,a,a,
 away,,,,a,,,,,,,,
 bot,,,B (botmode),B,,B,,,B,B,,B (usermodes/bot)
 callerid,,g,g (callerid),,,,,g,g,g,g,
-callerid_sslonly,,,,,,,,,t,,,
 censor,,,,,,,,,,,,G (usermodes/censor)
 cloak,,x,x (cloaking),x,x,x,x,x,x,x,,x
 cloak_fakehost,,,,,,f,,,,,,
@@ -49,7 +48,7 @@ sno_skill,,k,,,,,,,,,k,
 sno_stats,,y,,,,,,,,,y,
 snomask,s,s,s,s,s,s,s,s,s,s,s,s
 ssl,,S,,,,z,,,,,,z
-sslonlymsg,,,,,,,,,,,,Z (usermodes/secureonlymsg)
+sslonlymsg,,,,,,,,,t,,,Z (usermodes/secureonlymsg)
 stripcolor,,,S (stripcolor),,,,,,,,,
 vhost,,,,,,,,,,,,t
 wallops,w,w,w,w,w,w,w,w,w,w,w,w
