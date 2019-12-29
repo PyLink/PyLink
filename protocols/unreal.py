@@ -52,6 +52,7 @@ class UnrealProtocol(TS6BaseProtocol):
               'topiclock': 't',
               'voice': 'v'}
     _KNOWN_UMODES = {'bot': 'B',
+              'censor': 'G',
               'cloak': 'x',
               'deaf': 'd',
               'filter': 'G',
@@ -63,6 +64,7 @@ class UnrealProtocol(TS6BaseProtocol):
               'protected': 'q',
               'regdeaf': 'R',
               'registered': 'r',
+              'sslonlymsg': 'Z',
               'servprotect': 'S',
               'showwhois': 'W',
               'snomask': 's',

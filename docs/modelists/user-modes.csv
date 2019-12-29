@@ -1,9 +1,10 @@
 User Mode / IRCd,RFC 1459,hybrid,inspircd,ngircd,p10/ircu,p10/nefarious,p10/snircd,ts6/charybdis,ts6/chatircd,ts6/elemental,ts6/ratbox,unreal
 admin,,a,,,,a,,a,a,a,a,
 away,,,,a,,,,,,,,
-bot,,,B,B,,B,,,B,B,,B
+bot,,,B,B,,B,,,B,B,,B (usermodes/bot)
 callerid,,g,g,,,,,g,g,g,g,
 callerid_sslonly,,,,,,,,,t,,,
+censor,,,,,,,,,,,,G (usermodes/censor)
 cloak,,x,x,x,x,x,x,x,x,x,,x
 cloak_fakehost,,,,,,f,,,,,,
 cloak_hashedhost,,,,,,C,,,,,,
@@ -15,25 +16,25 @@ debug,,d,,,,,,,,,,
 filter,,,,,,,,,,,,G
 floodexempt,,,,f,,,,,,,,
 helpop,,,h,,,,,,,,,
-hidechans,,p,I,I,,n,n,,,I,,p
+hidechans,,p,I,I,,n,n,,,I,,p (usermodes/privacy)
 hideidle,,q,,,,I,I,,,,,I
 hideoper,,H,H,,,H,,,,,,H
 invisible,i,i,i,i,i,i,i,i,i,i,i,i
 locops,,l,,,O,O,O,l,l,l,l,
 netadmin,,,,,,,,,N,,,
-noctcp,,,,,,,,,,C,,T
+noctcp,,,,,,,,,,C,,T (usermodes/noctcp)
 noforward,,,,,,L,,Q,Q,Q,,
 noinvite,,,,,,,,,,V,,
 oper,o,o,o,o,o,o,o,o,o,o,o,o
 operwall,,,,,,,,z,z,z,z,
 override,,,,,,X,X,p,p,p,,
-privdeaf,,,,,,D,,,,,,
-protected,,,,,,,,,,,,q
-regdeaf,,R,R,,,R,R,R,R,R,,R
+privdeaf,,,,,,D,,,,,,D (usermodes/privdeaf)
+protected,,,,,,,,,,,,q (usermodes/nokick)
+regdeaf,,R,R,,,R,R,R,R,R,,R (usermodes/regonlymsg)
 registered,,r,r,R,r,r,r,,,,,r
 restricted,,,,r,,,,,,,,
-servprotect,,,k,q,k,k,k,S,S,S,S,S
-showwhois,,,W,,,W,,,,,,W
+servprotect,,,k,q,k,k,k,S,S,S,S,S (usermodes/servicebot)
+showwhois,,,W,,,W,,,,,,W (usermodes/showwhois)
 sno_badclientconnections,,u,,,,,,,,,u,
 sno_botfloods,,b,,,,,,,,,b,
 sno_clientconnections,,c,,c,,,,,,,c,
@@ -48,6 +49,7 @@ sno_skill,,k,,,,,,,,,k,
 sno_stats,,y,,,,,,,,,y,
 snomask,s,s,s,s,s,s,s,s,s,s,s,s
 ssl,,S,,,,z,,,,,,z
+sslonlymsg,,,,,,,,,,,,Z (usermodes/secureonlymsg)
 stripcolor,,,S,,,,,,,,,
 vhost,,,,,,,,,,,,t
 wallops,w,w,w,w,w,w,w,w,w,w,w,w
