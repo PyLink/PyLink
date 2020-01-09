@@ -34,10 +34,10 @@ The concept of relay channels in PyLink is greatly inspired by Janus, though wit
 Then, to list all available channels:
 - `/msg PyLink linked`
 
-To create a channel:
+To create a channel on Relay:
 - `/msg PyLink create #channelname`
 
-To link to a channel already created on a different network:
+To link to a channel already created on a different network (network names are case sensitive!):
 - `/msg PyLink link othernet #channelname`
 
 You can also link remote channels to take a different name on your network. (This is the third argument to the LINK command)
@@ -48,6 +48,9 @@ To remove a relay channel that you've created:
 
 To delink a channel linked to another network:
 - `/msg PyLink delink #localchannelname`
+
+To delink one of *your* channels from another network:
+- `/msg PyLink delink #yourchannelname <name-of-other-network>`
 
 Then, to list all available channels:
 - `/msg PyLink linked`
