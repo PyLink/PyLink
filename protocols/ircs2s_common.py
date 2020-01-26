@@ -522,8 +522,8 @@ class IRCS2SProtocol(IRCCommonProtocol):
             # Get the reason, which is enclosed in brackets.
             killmsg = ' '.join(args[1].split(" ")[1:])[1:-1]
             if not killmsg:
-                log.warning('(%s) Failed to extract kill reason: %r', irc.name, args)
-                killmsg = '<No reason given>'
+                log.warning('(%s) Failed to extract kill reason: %r', self.name, args)
+                killmsg = args[1]
         else:
             # We already have a preformatted kill, so just pass it on as is.
             # XXX: this does create a convoluted kill string if we want to forward kills
