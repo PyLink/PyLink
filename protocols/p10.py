@@ -1275,11 +1275,12 @@ class P10Protocol(IRCS2SProtocol):
 
             # Any other subcommands listed at https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L354
             # shouldn't apply to us.
-
             if args[1] in ('R', 'M'):
                 accountname = args[2]
             elif args[1] == 'U':
                 accountname = ''  # logout
+            else:
+                return
 
         else:
             # ircu or nefarious with F:EXTENDED_ACCOUNTS = FALSE
