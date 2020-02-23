@@ -263,7 +263,6 @@ servers:
         # https://docs.python.org/3/library/codecs.html#standard-encodings
         # Changing this setting requires a disconnect and reconnect of the corresponding network
         # to apply.
-        # This setting is EXPERIMENTAL as of PyLink 1.2.x.
         #encoding: utf-8
 
         # Sets the ping frequency in seconds (i.e. how long we should wait between sending pings to
