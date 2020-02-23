@@ -1,3 +1,61 @@
+# PyLink 3.0-rc1 (2020-02-22)
+
+PyLink 3.0 brings PyLink up to date with the latest IRCds (InspIRCd 3, UnrealIRCd 5), and introduces Discord integration via the [pylink-discord](https://github.com/PyLink/pylink-discord) contrib module. It also improves support for Unicode nicks in Relay and Clientbot.
+
+## Major changes since PyLink 2.0.x
+
+- **Added support for InspIRCd 3 and UnrealIRCd 5.x**:
+  - To enable InspIRCd 3 link mode (highly recommended) on InspIRCd 3 networks, set the `target_version: insp3` option in the relevant network's `server` block.
+  - For UnrealIRCd 5 support, no changes in PyLink are necessary.
+- **Updated list of required dependencies: added cachetools, removed ircmatch and expiringdict**
+- Relay: added an optional dependency on unidecode, to translate Unicode nicks to ASCII on networks not supporting it.
+  - Also, nick normalization is now skipped on protocols where it is not necessary (Clientbot, Discord)
+- Relay now tracks kill/mode/topic clashes and will stop relaying when it detects such a conflict ([issue#23](https://github.com/jlu5/PyLink/issues/23))
+- Changehost now supports network-specific configuration ([issue#611](https://github.com/jlu5/PyLink/issues/611)) and listening for services account changes - this allows for consistent account based hostmasks for SASL gateways, etc.
+- Clientbot: added an option to continuously rejoin channels the bot is not in. [issue#647](https://github.com/jlu5/PyLink/issues/647)
+- Antispam: added optional quit/part message filtering ([issue#617](https://github.com/jlu5/PyLink/issues/617))
+
+### API changes
+- **API Break:** Channel, Server, and User keys may now be type `int` - previously, they were always strings.
+- **API Break:** PyLink now supports having multiple UIDs mapping to the same nick, as this is common on platforms like Discord.
+  - `nick_to_uid()` has been reworked to optionally return multiple nicks when `multi=True`
+  - Using `nick_to_uid()` without this option will raise a warning if duplicate nicks are present, and may be deprecated in the future.
+- Added `utils.match_text()`, a general (regex-based) glob matcher to replace `ircmatch` calls ([issue#636](https://github.com/jlu5/PyLink/issues/636)).
+- Editing hook payloads is now officially supported in plugin hook handlers ([issue#452](https://github.com/jlu5/PyLink/issues/452))
+- Added new protocol module capabilities:
+  - `can-manage-bot-channels`
+  - `freeform-nicks`
+  - `has-irc-modes`
+  - `virtual-server`
+- SQUIT hooks now track a list of affected servers (SIDs) in the `affected_servers` field
+
+This branch was previously known as PyLink 2.1. For more detailed changes between 3.0-rc1 and individual 2.1 snapshots, see their separate changelogs below.
+
+
+## Changes since PyLink 2.1-beta1
+
+### Feature changes
+- Added a Dockerfile for PyLink, thanks to @jameswritescode. Official images will be available on Docker Hub before the final 2.1 release.
+- unreal: declare support for usermodes +G (censor) and +Z (secureonlymsg)
+- The `version` command now prints the Python interpreter version to assist with debugging
+
+### Bug fixes
+- Fix desync when removing multiple ban modes in one MODE command (regression from 2.1-beta1)
+- p10: properly ignore ACCOUNT subcommands other than R, M, and U
+- Fix extraneous lowercasing of the network name in the `$account` exttarget, causing per-network matches to fail if the network name had capital letters
+- inspircd: negotiate casemapping setting on link for InspIRCd 3. [issue#654](https://github.com/jlu5/PyLink/issues/654)
+- ircs2s_common: fix crash when failing to extract KILL reason
+
+### Documentation changes
+- `relay-quickstart`: describe delinking another network from channels owned by the caller's network
+- Refreshed mode list documentation
+
+### Internal improvements
+- Debug logs for mode parsers and other miscellaneous internals are now less noisy
+- inspircd: warn when using InspIRCd 2 compat mode on an InspIRCd 3 uplink - some commands like KICK are not translated correctly in this mode
+- classes: fix `SyntaxWarning: "is" with a literal` on Python 3.8
+
+
 # PyLink 2.1-beta1 (2019-12-08)
 
 ### Feature changes
