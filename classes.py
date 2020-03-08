@@ -227,7 +227,6 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
             self.serverdata = conf.conf['servers'][netname]
 
         self.protoname = self.__class__.__module__.split('.')[-1]  # Remove leading pylinkirc.protocols.
-        self.proto = self.irc = self  # Backwards compat
 
         # Protocol stuff
         self.casemapping = 'rfc1459'
