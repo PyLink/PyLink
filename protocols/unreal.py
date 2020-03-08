@@ -1,5 +1,5 @@
 """
-unreal.py: UnrealIRCd 4.x protocol module for PyLink.
+unreal.py: UnrealIRCd 4.x-5.x protocol module for PyLink.
 """
 
 import codecs
