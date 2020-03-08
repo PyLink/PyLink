@@ -1279,6 +1279,10 @@ class P10Protocol(IRCS2SProtocol):
                 accountname = args[2]
             elif args[1] == 'U':
                 accountname = ''  # logout
+            elif len(args[1]) > 1:
+                log.warning('(%s) Got subcommand %r for %s in ACCOUNT message, is use_extended_accounts set correctly?',
+                            self.name, args[1], target)
+                return
             else:
                 return
 
