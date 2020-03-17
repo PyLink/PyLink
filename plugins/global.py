@@ -28,7 +28,8 @@ def g(irc, source, args):
     netcount = 0
     chancount = 0
     for netname, ircd in world.networkobjects.items():
-        if ircd.connected.is_set():  # Only attempt to send to connected networks
+        # Skip networks that aren't ready and dummy networks which don't have .pseudoclient set
+        if ircd.connected.is_set() and ircd.pseudoclient:
             netcount += 1
             for channel in ircd.pseudoclient.channels:
 
