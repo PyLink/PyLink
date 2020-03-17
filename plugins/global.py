@@ -37,7 +37,7 @@ def g(irc, source, args):
 
                 skip = False
                 for exempt in local_exempt_channels:
-                    if irc.match_text(exempt, channel):
+                    if ircd.match_text(exempt, channel):
                         log.debug('global: Skipping channel %s%s for exempt %r', netname, channel, exempt)
                         skip = True
                         break
