@@ -654,13 +654,13 @@ logging:
         # PyLink directory, with a filename based on the current instance name
         # and the target name: instancename-targetname.log
 
-        # When running with ./pylink, this will create log/pylink-errors.log
-        # When running with ./pylink someconf.yml, this will create log/someconf-errors.log
+        # When running with "pylink", this will create log/pylink-errors.log
+        # When running with "pylink someconf.yml", this will create log/someconf-errors.log
         "errors":
             loglevel: ERROR
 
-        # Ditto above. When running with ./pylink, it will use log/pylink-commands.log
-        # When running with ./pylink someconf.yml, this will create log/someconf-commands.log
+        # Ditto above. When running with "pylink", it will use log/pylink-commands.log
+        # When running with "pylink someconf.yml", this will create log/someconf-commands.log
         "commands":
             loglevel: INFO
 
