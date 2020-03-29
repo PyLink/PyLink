@@ -754,9 +754,9 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         # Send JOIN hook payloads only for users that we know the ident@host of already.
         # This is mostly used to resync kicked Clientbot users that can't actually be kicked
         # after a delay.
-        if names and hasattr(self.irc.channels[channel], '_clientbot_initial_who_received'):
+        if names and hasattr(self.channels[channel], '_clientbot_initial_who_received'):
             log.debug('(%s) handle_353: sending JOIN hook because /WHO was already received for %s',
-                      self.irc.name, channel)
+                      self.name, channel)
             return {'channel': channel, 'users': names, 'modes': self._channels[channel].modes,
                     'parse_as': "JOIN"}
 
