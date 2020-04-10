@@ -1,8 +1,9 @@
 # PyLink IRC Services
 
 [![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000)](https://pypi.python.org/pypi/pylinkirc/)
-[![PyPI supported Python versions](https://img.shields.io/pypi/pyversions/pylinkirc.svg?maxAge=2592000)](https://www.python.org/downloads/)
-[![PyPI license](https://img.shields.io/pypi/l/pylinkirc.svg?maxAge=2592000)](LICENSE.MPL2)
+[![Docker image version](https://img.shields.io/docker/v/jlu5/pylink/latest?label=docker)](https://hub.docker.com/r/jlu5/pylink)
+![Latest Git version](https://img.shields.io/github/v/tag/jlu5/pylink?include_prereleases&label=git)
+[![Supported Python versions](https://img.shields.io/badge/python-3.5%20and%20later-05e)](https://www.python.org/downloads/)
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
@@ -10,7 +11,7 @@ PyLink is an extensible, plugin-based IRC services framework written in Python. 
 
 2) a versatile framework for developing IRC services.
 
-PyLink and any bundled software are licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The corresponding documentation in the [docs/](docs/) folder is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
+PyLink is licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The [corresponding documentation](docs/) is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
 
 ## Support the project
 
@@ -57,7 +58,24 @@ If you are a developer and want to help make PyLink more portable, patches are w
     * Note: `--user` is a *literal* string; *do not* replace it with your username.
     *  **Whenever you switch branches or update PyLink's sources via `git pull`, you will need to re-run this command for changes to apply!**
 
+### Installing via Docker
+
+As of PyLink 3.0 there is a Docker image available on Docker Hub: [jlu5/pylink](https://hub.docker.com/r/jlu5/pylink)
+
+It supports the following tags:
+
+- Rolling tags: **`latest`** (latest stable/RC release), **`latest-beta`** (latest beta snapshot)
+- Pinned to a major branch: e.g. **`3`** (latest 3.x stable release), **`3-beta`** (latest 3.x beta snapshot)
+- Pinned to a specific version: e.g. **`3.0.0`**
+
+To use this image you should mount your configuration/DB folder into `/pylink`. **Make sure this directory is writable by UID 10000.**
+
+```bash
+$ docker run -v $HOME/pylink:/pylink jlu5/pylink
+```
+
 ### Installing via PyPI (stable branch only)
+
 1) Make sure you're running the right pip command: on most distros, pip for Python 3 uses the command `pip3`.
 
 2) Run `pip3 install pylinkirc` to download and install PyLink. pip will automatically resolve dependencies.
