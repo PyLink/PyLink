@@ -513,7 +513,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
                             "and should not be relied upon for anything important.",
                             self.name)
             elif protocol_version >= 1205 > self.proto_ver:
-                log.warning("(%s) PyLink 2.1 introduces native support for InspIRCd 3. "
+                log.warning("(%s) PyLink 3.0 introduces native support for InspIRCd 3. "
                             "You should enable this by setting the 'target_version' option in your "
                             "InspIRCd server block to 'insp3'. Otherwise, some features will not "
                             "work correctly!", self.name)

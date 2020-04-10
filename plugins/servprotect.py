@@ -8,7 +8,7 @@ from pylinkirc.log import log
 try:
     from cachetools import TTLCache
 except ImportError:
-    log.warning('servprotect: expiringdict support is deprecated as of PyLink 2.1; consider installing cachetools instead')
+    log.warning('servprotect: expiringdict support is deprecated as of PyLink 3.0; consider installing cachetools instead')
     from expiringdict import ExpiringDict as TTLCache
 
 # check for definitions

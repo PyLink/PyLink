@@ -16,7 +16,7 @@ RELAY_UNLOADED_MSG = "Relay plugin unloaded."
 try:
     import cachetools
 except ImportError as e:
-    raise ImportError("PyLink Relay requires cachetools as of PyLink 2.1: https://pypi.org/project/cachetools/") from e
+    raise ImportError("PyLink Relay requires cachetools as of PyLink 3.0: https://pypi.org/project/cachetools/") from e
 
 try:
     import unidecode
