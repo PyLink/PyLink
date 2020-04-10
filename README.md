@@ -1,9 +1,9 @@
 # PyLink IRC Services
 
+[![Latest stable release](https://img.shields.io/github/v/tag/jlu5/pylink?label=stable&color=1a1)](https://github.com/jlu5/PyLink/tree/master)
 [![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000)](https://pypi.python.org/pypi/pylinkirc/)
 [![Docker image version](https://img.shields.io/docker/v/jlu5/pylink/latest?label=docker)](https://hub.docker.com/r/jlu5/pylink)
-![Latest Git version](https://img.shields.io/github/v/tag/jlu5/pylink?include_prereleases&label=git)
-[![Supported Python versions](https://img.shields.io/badge/python-3.5%20and%20later-05e)](https://www.python.org/downloads/)
+[![Supported Python versions](https://img.shields.io/badge/python-3.5%20and%20later-50e)](https://www.python.org/downloads/)
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
@@ -17,7 +17,7 @@ PyLink is licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2]
 
 I maintain PyLink and other IRC projects in my spare time - as such, donations are welcome and appreciated.
 
-[![Donate via PayPal](https://img.shields.io/badge/donate-paypal-50CAF2.svg)](https://www.paypal.me/jlucode)
+[![Donate via PayPal](https://img.shields.io/badge/donate-paypal-4AD.svg)](https://www.paypal.me/jlucode)
 
 ## Obtaining support
 
