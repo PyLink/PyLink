@@ -1,3 +1,13 @@
+# PyLink 3.0.0 (2020-04-11)
+
+Changes since 3.0-rc1:
+
+- Added new install instructions via Docker
+- global: fix type-safety errors when connected to pylink-discord
+- Various code cleanup
+
+For a broader summary of changes since 2.0.x, consult the below release notes for PyLink 3.0-rc1.
+
 # PyLink 3.0-rc1 (2020-02-22)
 
 PyLink 3.0 brings PyLink up to date with the latest IRCds (InspIRCd 3, UnrealIRCd 5), and introduces Discord integration via the [pylink-discord](https://github.com/PyLink/pylink-discord) contrib module. It also improves support for Unicode nicks in Relay and Clientbot.
