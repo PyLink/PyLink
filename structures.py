@@ -201,7 +201,12 @@ class DataStore:
     Generic database class. Plugins should use a subclass of this such as JSONDataStore or
     PickleDataStore.
     """
-    def __init__(self, name, filename, save_frequency=None, default_db=None):
+    def __init__(self, name, filename, save_frequency=None, default_db=None, data_dir=None):
+        if data_dir is None:
+            data_dir = conf.conf['pylink'].get('data_dir', '')
+
+        filename = os.path.join(data_dir, filename)
+
         self.name = name
         self.filename = filename
         self.tmp_filename = filename + '.tmp'
