@@ -25,7 +25,8 @@ def _main():
 
     # Write and check for an existing PID file unless specifically told not to.
     if not args.no_pid:
-        pidfile = '%s.pid' % conf.confname
+        pid_dir = conf.conf['pylink'].get('pid_dir', '')
+        pidfile = os.path.join(pid_dir, '%s.pid' % conf.confname)
         pid_exists = False
         pid = None
         if os.path.exists(pidfile):

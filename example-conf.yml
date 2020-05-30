@@ -90,6 +90,10 @@ pylink:
     # PyLink is run from. Defaults to the current directory.
     #data_dir: ""
 
+    # Determines where the PID file is written. The path can be relative to the directory PyLink is
+    # run from. Defaults to the current directory.
+    #pid_dir: ""
+
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
     # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
