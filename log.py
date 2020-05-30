@@ -15,9 +15,6 @@ from . import conf, world
 # Stores a list of active file loggers.
 fileloggers = []
 
-logdir = os.path.join(os.getcwd(), 'log')
-os.makedirs(logdir, exist_ok=True)
-
 # TODO: perhaps make this format configurable?
 _format = '%(asctime)s [%(levelname)s] %(message)s'
 logformatter = logging.Formatter(_format)
@@ -47,11 +44,19 @@ def _make_file_logger(filename, level=None):
     """
     Initializes a file logging target with the given filename and level.
     """
+    logconf = conf.conf.get('logging', {})
+
+    logdir = logconf.get('log_dir')
+    if logdir is None:
+        logdir = os.path.join(os.getcwd(), 'log')
+
+    os.makedirs(logdir, exist_ok=True)
+
     # Use log names specific to the current instance, to prevent multiple
     # PyLink instances from overwriting each others' log files.
     target = os.path.join(logdir, '%s-%s.log' % (conf.confname, filename))
 
-    logrotconf = conf.conf.get('logging', {}).get('filerotation', {})
+    logrotconf = logconf.get('filerotation', {})
 
     # Max amount of bytes per file, before rotation is done. Defaults to 20 MiB.
     maxbytes = logrotconf.get('max_bytes', 20971520)

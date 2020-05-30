@@ -649,10 +649,14 @@ logging:
             "#services":
                 loglevel: INFO
 
+    # The directory where the log files are written. The path can be relative to the directory
+    # PyLink is run from. Defaults to "log/".
+    #log_dir: "log"
+
     files:
-        # Logs to file targets. These will be placed in the log/ folder in the
-        # PyLink directory, with a filename based on the current instance name
-        # and the target name: instancename-targetname.log
+        # Logs to file targets. These will be placed in the folder specified by log_dir with a
+        # filename based on the current instance name and the target name:
+        # instancename-targetname.log
 
         # When running with "pylink", this will create log/pylink-errors.log
         # When running with "pylink someconf.yml", this will create log/someconf-errors.log
