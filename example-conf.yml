@@ -86,6 +86,14 @@ pylink:
     # This defaults to False if not set.
     #join_empty_channels: false
 
+    # Determines where the plugins write their databases. The path can be relative to the directory
+    # PyLink is run from. Defaults to the current directory.
+    #data_dir: ""
+
+    # Determines where the PID file is written. The path can be relative to the directory PyLink is
+    # run from. Defaults to the current directory.
+    #pid_dir: ""
+
 login:
     # NOTE: for users migrating from PyLink < 1.1, the old login:user/login:password settings
     # have been deprecated. We strongly recommend migrating to the new "accounts:" block below, as
@@ -649,10 +657,14 @@ logging:
             "#services":
                 loglevel: INFO
 
+    # The directory where the log files are written. The path can be relative to the directory
+    # PyLink is run from. Defaults to "log/".
+    #log_dir: "log"
+
     files:
-        # Logs to file targets. These will be placed in the log/ folder in the
-        # PyLink directory, with a filename based on the current instance name
-        # and the target name: instancename-targetname.log
+        # Logs to file targets. These will be placed in the folder specified by log_dir with a
+        # filename based on the current instance name and the target name:
+        # instancename-targetname.log
 
         # When running with "pylink", this will create log/pylink-errors.log
         # When running with "pylink someconf.yml", this will create log/someconf-errors.log
