@@ -10,6 +10,8 @@ from pylinkirc import conf, utils
 from pylinkirc.classes import IRCNetwork, ProtocolError
 from pylinkirc.log import log
 
+__all__ = ['IncrementalUIDGenerator', 'IRCCommonProtocol', 'IRCS2SProtocol']
+
 
 class IncrementalUIDGenerator():
     """

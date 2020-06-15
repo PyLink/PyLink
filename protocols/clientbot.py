@@ -7,10 +7,11 @@ clientbot.py: Clientbot (regular IRC bot) protocol module for PyLink.
 # works on most networks though!
 
 import base64
+import string
 import threading
 import time
 
-from pylinkirc import conf, utils
+from pylinkirc import conf, utils, world
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *

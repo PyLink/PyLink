@@ -9,8 +9,7 @@ import re
 import threading
 import time
 
-import pylinkirc
-from pylinkirc import *
+from pylinkirc import utils, world
 from pylinkirc.coremods import permissions
 from pylinkirc.log import log
 

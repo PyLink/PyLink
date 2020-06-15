@@ -10,6 +10,8 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
 
+__all__ = ['TS6BaseProtocol']
+
 
 class TS6SIDGenerator():
     """
