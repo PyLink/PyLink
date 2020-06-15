@@ -2,7 +2,6 @@
 permissions.py - Permissions Abstraction for PyLink IRC Services.
 """
 
-import threading
 from collections import defaultdict
 
 from pylinkirc import conf, utils

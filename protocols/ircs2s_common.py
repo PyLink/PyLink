@@ -4,9 +4,8 @@ ircs2s_common.py: Common base protocol class with functions shared by TS6 and P1
 
 import re
 import time
-from collections import defaultdict
 
-from pylinkirc import conf, utils
+from pylinkirc import conf
 from pylinkirc.classes import IRCNetwork, ProtocolError
 from pylinkirc.log import log
 

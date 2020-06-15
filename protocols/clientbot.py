@@ -11,7 +11,7 @@ import string
 import threading
 import time
 
-from pylinkirc import conf, utils, world
+from pylinkirc import utils, world
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *

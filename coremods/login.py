@@ -2,7 +2,7 @@
 login.py - Implement core login abstraction.
 """
 
-from pylinkirc import conf, utils, world
+from pylinkirc import conf, utils
 from pylinkirc.log import log
 
 # PyLink's global password context

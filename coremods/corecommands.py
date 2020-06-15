@@ -3,13 +3,12 @@ corecommands.py - Implements core PyLink commands.
 """
 
 import gc
-import importlib
 import sys
 
-from pylinkirc import conf, utils, world
+from pylinkirc import utils, world
 from pylinkirc.log import log
 
-from . import control, login, permissions
+from . import control, permissions
 
 # Essential, core commands go here so that the "commands" plugin with less-important,
 # but still generic functions can be reloaded.
