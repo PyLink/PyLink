@@ -4,7 +4,6 @@ with things.
 """
 from pylinkirc import utils
 from pylinkirc.coremods import permissions
-from pylinkirc.log import log
 
 
 @utils.add_cmd

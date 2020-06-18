@@ -5,10 +5,12 @@ ts6_common.py: Common base protocol class with functions shared by the UnrealIRC
 import string
 import time
 
-from pylinkirc import conf, structures, utils
+from pylinkirc import conf, structures
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
+
+__all__ = ['TS6BaseProtocol']
 
 
 class TS6SIDGenerator():

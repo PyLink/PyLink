@@ -22,8 +22,12 @@ import threading
 import time
 
 from . import __version__, conf, selectdriver, structures, utils, world
-from .log import *
+from .log import log, PyLinkChannelLogger
 from .utils import ProtocolError  # Compatibility with PyLink 1.x
+
+__all__ = ['ChannelState', 'User', 'UserMapping', 'PyLinkNetworkCore',
+           'PyLinkNetworkCoreWithUtils', 'IRCNetwork', 'Server', 'Channel',
+           'PUIDGenerator']
 
 QUEUE_FULL = queue.Full
 

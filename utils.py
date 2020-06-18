@@ -20,6 +20,15 @@ from pylinkirc import plugins, protocols
 from . import conf, structures, world
 from .log import log
 
+__all__ = ['PLUGIN_PREFIX', 'PROTOCOL_PREFIX', 'NORMALIZEWHITESPACE_RE',
+           'NotAuthorizedError', 'InvalidArgumentsError', 'ProtocolError',
+           'add_cmd', 'add_hook', 'expand_path', 'split_hostmask',
+           'ServiceBot', 'register_service', 'unregister_service',
+           'wrap_arguments', 'IRCParser', 'strip_irc_formatting',
+           'remove_range', 'get_hostname_type', 'parse_duration', 'match_text',
+           'merge_iterables']
+
+
 PLUGIN_PREFIX = plugins.__name__ + '.'
 PROTOCOL_PREFIX = protocols.__name__ + '.'
 NORMALIZEWHITESPACE_RE = re.compile(r'\s+')

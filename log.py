@@ -12,6 +12,8 @@ import os
 
 from . import conf, world
 
+__all__ = ['log']
+
 # Stores a list of active file loggers.
 fileloggers = []
 

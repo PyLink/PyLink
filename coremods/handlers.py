@@ -6,6 +6,8 @@ import time
 from pylinkirc import conf, utils
 from pylinkirc.log import log
 
+__all__ = []
+
 
 def handle_whois(irc, source, command, args):
     """Handle WHOIS queries."""

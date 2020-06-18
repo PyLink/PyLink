@@ -15,6 +15,8 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
 
+__all__ = ['NgIRCdProtocol']
+
 
 class NgIRCdProtocol(IRCS2SProtocol):
     def __init__(self, irc):

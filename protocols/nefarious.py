@@ -3,7 +3,9 @@ nefarious.py: Migration stub to the new P10 protocol module.
 """
 
 from pylinkirc.log import log
-from pylinkirc.protocols.p10 import *
+from pylinkirc.protocols.p10 import P10Protocol
+
+__all__ = ['NefariousProtocol']
 
 
 class NefariousProtocol(P10Protocol):

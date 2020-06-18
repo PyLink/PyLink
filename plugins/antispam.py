@@ -1,6 +1,6 @@
 # antispam.py: Basic services-side spamfilters for IRC
 
-from pylinkirc import conf, utils, world
+from pylinkirc import conf, utils
 from pylinkirc.log import log
 
 mydesc = ("Provides anti-spam functionality.")

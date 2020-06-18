@@ -3,6 +3,7 @@ p10.py: P10 protocol module for PyLink, supporting Nefarious IRCu and others.
 """
 
 import base64
+import socket
 import struct
 import time
 from ipaddress import ip_address
@@ -11,6 +12,8 @@ from pylinkirc import conf, structures, utils
 from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
+
+__all__ = ['P10Protocol']
 
 
 class P10UIDGenerator(IncrementalUIDGenerator):
