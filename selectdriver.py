@@ -9,6 +9,9 @@ import threading
 from pylinkirc import world
 from pylinkirc.log import log
 
+__all__ = ['register', 'unregister', 'start']
+
+
 SELECT_TIMEOUT = 0.5
 
 selector = selectors.DefaultSelector()

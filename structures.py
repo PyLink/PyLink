@@ -16,6 +16,13 @@ from copy import copy, deepcopy
 from . import conf
 from .log import log
 
+__all__ = ['KeyedDefaultdict', 'CopyWrapper', 'CaseInsensitiveFixedSet',
+          'CaseInsensitiveDict', 'IRCCaseInsensitiveDict',
+          'CaseInsensitiveSet', 'IRCCaseInsensitiveSet',
+          'CamelCaseToSnakeCase', 'DataStore', 'JSONDataStore',
+          'PickleDataStore']
+
+
 _BLACKLISTED_COPY_TYPES = []
 
 class KeyedDefaultdict(collections.defaultdict):

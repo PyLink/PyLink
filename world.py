@@ -6,6 +6,10 @@ import threading
 import time
 from collections import defaultdict, deque
 
+__all__ = ['testing', 'hooks', 'networkobjects', 'plugins', 'services',
+           'exttarget_handlers', 'started', 'start_ts', 'shutting_down',
+           'source', 'fallback_hostname', 'daemon']
+
 # This indicates whether we're running in tests mode. What it actually does
 # though is control whether IRC connections should be threaded or not.
 testing = False

@@ -17,6 +17,9 @@ from collections import defaultdict
 
 from . import world
 
+__all__ = ['ConfigurationError', 'conf', 'confname', 'validate', 'load_conf',
+           'get_database_name']
+
 
 class ConfigurationError(RuntimeError):
     """Error when config conditions aren't met."""
