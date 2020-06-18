@@ -7,7 +7,7 @@ import time
 from pylinkirc import conf
 from pylinkirc.classes import *
 from pylinkirc.log import log
-from pylinkirc.protocols.ts6 import *
+from pylinkirc.protocols.ts6 import TS6Protocol
 
 __all__ = ['HybridProtocol']
 

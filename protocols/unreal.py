@@ -10,7 +10,7 @@ import time
 from pylinkirc import conf, utils
 from pylinkirc.classes import *
 from pylinkirc.log import log
-from pylinkirc.protocols.ts6_common import *
+from pylinkirc.protocols.ts6_common import TS6BaseProtocol
 
 __all__ = ['UnrealProtocol']
 
