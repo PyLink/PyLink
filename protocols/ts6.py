@@ -746,7 +746,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_realhost(self, uid, command, args):
         """Handles real host propagation."""
-        log.debug('(%s) Got REALHOST %s for %s', args[0], uid)
+        log.debug('(%s) Got REALHOST %s for %s', self.name, args[0], uid)
         self.users[uid].realhost = args[0]
 
     def handle_login(self, uid, command, args):
