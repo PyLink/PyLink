@@ -431,7 +431,7 @@ class TS6Protocol(TS6BaseProtocol):
 
         if args[0] != self.serverdata['recvpass']:
             # Check if recvpass is correct
-            raise ProtocolError('Recvpass from uplink server %s does not match configuration!' % servername)
+            raise ProtocolError('Recvpass from uplink server %r does not match configuration!' % numeric)
 
         if args[1] != 'TS' and args[2] != '6':
             raise ProtocolError("Remote protocol version is too old! Is this even TS6?")
