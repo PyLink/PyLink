@@ -23,7 +23,7 @@ class TS6Protocol(TS6BaseProtocol):
                                                              else 'charybdis')
         self._ircd = self._ircd.lower()
         if self._ircd not in self.SUPPORTED_IRCDS:
-            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, target_ircd)
+            log.warning("(%s) Unsupported IRCd %r; falling back to 'charybdis' instead", self.name, self._ircd)
             self._ircd = 'charybdis'
 
         self._can_chghost = False
