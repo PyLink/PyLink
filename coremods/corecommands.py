@@ -10,6 +10,8 @@ from pylinkirc.log import log
 
 from . import control, permissions
 
+__all__ = []
+
 # Essential, core commands go here so that the "commands" plugin with less-important,
 # but still generic functions can be reloaded.
 

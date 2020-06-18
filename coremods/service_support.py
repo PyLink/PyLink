@@ -5,6 +5,8 @@ service_support.py - Implements handlers for the PyLink ServiceBot API.
 from pylinkirc import conf, utils, world
 from pylinkirc.log import log
 
+__all__ = []
+
 
 def spawn_service(irc, source, command, args):
     """Handles new service bot introductions."""

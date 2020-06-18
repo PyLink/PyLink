@@ -5,6 +5,8 @@ exttargets.py - Implements extended targets like $account:xyz, $oper, etc.
 from pylinkirc import world
 from pylinkirc.log import log
 
+__all__ = []
+
 
 def bind(func):
     """

@@ -7,6 +7,9 @@ from collections import defaultdict
 from pylinkirc import conf, utils
 from pylinkirc.log import log
 
+__all__ = ['default_permissions', 'add_default_permissions',
+           'remove_default_permissions', 'check_permissions']
+
 # Global variables: these store mappings of hostmasks/exttargets to lists of permissions each target has.
 default_permissions = defaultdict(set)
 

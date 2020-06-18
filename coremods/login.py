@@ -5,6 +5,9 @@ login.py - Implement core login abstraction.
 from pylinkirc import conf, utils
 from pylinkirc.log import log
 
+__all__ = ['pwd_context', 'check_login', 'verify_hash']
+
+
 # PyLink's global password context
 pwd_context = None
 

@@ -11,6 +11,8 @@ from pylinkirc.log import _get_console_log_level, _make_file_logger, _stop_file_
 
 from . import login
 
+__all__ = ['remove_network', 'shutdown', 'rehash']
+
 
 def remove_network(ircobj):
     """Removes a network object from the pool."""
