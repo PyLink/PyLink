@@ -32,7 +32,7 @@ class KeyedDefaultdict(collections.defaultdict):
     def __missing__(self, key):
         if self.default_factory is None:
             # If there is no default factory, just let defaultdict handle it
-            super().__missing__(self, key)
+            super().__missing__(key)
         else:
             value = self[key] = self.default_factory(key)
             return value
