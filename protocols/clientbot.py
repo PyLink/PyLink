@@ -16,6 +16,8 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ircs2s_common import *
 
+__all__ = ['ClientbotBaseProtocol', 'ClientbotWrapperProtocol']
+
 FALLBACK_REALNAME = 'PyLink Relay Mirror Client'
 
 # IRCv3 capabilities to request when available

@@ -10,6 +10,8 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
+__all__ = ['InspIRCdProtocol']
+
 
 class InspIRCdProtocol(TS6BaseProtocol):
 

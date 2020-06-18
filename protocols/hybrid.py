@@ -9,6 +9,8 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6 import *
 
+__all__ = ['HybridProtocol']
+
 
 # This protocol module inherits from the TS6 protocol.
 class HybridProtocol(TS6Protocol):

@@ -12,6 +12,9 @@ from pylinkirc.classes import *
 from pylinkirc.log import log
 from pylinkirc.protocols.ts6_common import *
 
+__all__ = ['UnrealProtocol']
+
+
 SJOIN_PREFIXES = {'q': '*', 'a': '~', 'o': '@', 'h': '%', 'v': '+', 'b': '&', 'e': '"', 'I': "'"}
 
 class UnrealProtocol(TS6BaseProtocol):
