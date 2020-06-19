@@ -1157,7 +1157,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         channel = args[1]
         target = args[2]
         if channel not in self.channels:
-            log.warning('(%s) got ban mode +%s %s on unknown channel %s?', self.name, banmode, target)
+            log.warning('(%s) got ban mode +%s %s on unknown channel %s?', self.name, banmode, target, channel)
         else:
             # Just apply the mode; we send out a mode hook only when the corresponding ban list has finished sending.
             self.apply_modes(channel, [('+%s' % banmode, target)])
