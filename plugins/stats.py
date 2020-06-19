@@ -115,11 +115,9 @@ def handle_stats(irc, source, command, args):
         for accountname, accountdata in conf.conf['login'].get('accounts', {}).items():
             networks = accountdata.get('networks', [])
             if irc.name in networks or not networks:
-                _num(243, "O %s * %s :%s" % (
-                     ' '.join(accountdata.get('hosts', ['*@*'])),
-                     accountname,
-                     'needoper' if accountdata.get('require_oper') else '')
-                 )
+                hosts = ' '.join(accountdata.get('hosts', ['*@*']))
+                needoper = 'needoper' if accountdata.get('require_oper') else ''
+                _num(243, "O %s * %s :%s" % (hosts, accountname, needoper))
 
     elif stats_type == 'u':
         # 242/RPL_STATSUPTIME: ":Server Up <days> days <hours>:<minutes>:<seconds>"
