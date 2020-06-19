@@ -284,7 +284,7 @@ class PyLinkNetworkCore(structures.CamelCaseToSnakeCase):
                     level = chandata.get('loglevel')
                 else:
                     log.warning('(%s) Got invalid channel logging pair %r: %r; are your indentation '
-                                'and block commenting consistent?', self.name, filename, config)
+                                'and block commenting consistent?', self.name, channel, chandata)
 
                 handler = PyLinkChannelLogger(self, channel, level=level)
                 self.loghandlers.append(handler)
