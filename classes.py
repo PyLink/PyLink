@@ -1723,7 +1723,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         self._queue = None
         self._ping_timer = None
         self._socket = None
-        self._selector_key = None
         self._buffer = bytearray()
         self._reconnect_thread = None
         self._queue_thread = None
@@ -1908,7 +1907,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             # Make sure future reads never block, since select doesn't always guarantee this.
             self._socket.setblocking(False)
 
-            self._selector_key = selectdriver.register(self)
+            selectdriver.register(self)
 
             if self.ssl:
                 self._verify_ssl()
