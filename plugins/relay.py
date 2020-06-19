@@ -2061,7 +2061,7 @@ def handle_kill(irc, numeric, command, args):
 
                         # Then, forward to the home network.
                         hsender = get_relay_server_sid(origirc, irc, spawn_if_missing=False) or \
-                                  homeirc.sid
+                                  origirc.sid
                         log.debug('(%s) relay.handle_kill: forwarding kill to %s/%s@%s as '
                                   'kick on %s', irc.name, realuser[1], target_nick,
                                   realuser[0], homechan)
