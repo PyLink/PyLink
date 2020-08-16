@@ -1515,6 +1515,9 @@ def handle_messages(irc, numeric, command, args):
         log.debug('(%s) relay.handle_messages: dropping PM from server %s to %s',
                   irc.name, numeric, target)
         return
+    elif not irc.has_cap('can-spawn-clients') and not world.plugins.get('relay_clientbot'):
+        # For consistency, only read messages from clientbot networks if relay_clientbot is loaded
+        return
 
     relay = get_relay(irc, target)
     remoteusers = relayusers[(irc.name, numeric)]
