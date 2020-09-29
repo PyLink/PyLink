@@ -2077,7 +2077,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
     def _send(self, data):
         """Sends raw text to the uplink server."""
-        if self._aborted.is_set():
+        if self._aborted.is_set() or self._socket is None:
             log.debug("(%s) Not sending message %r since the connection is dead", self.name, data)
             return
 
