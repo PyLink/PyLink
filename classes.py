@@ -2091,11 +2091,22 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
         log.debug("(%s) -> %s", self.name, data)
 
-        try:
-            self._socket.send(encoded_data)
-        except:
-            log.exception("(%s) Failed to send message %r; aborting!", self.name, data)
-            self.disconnect()
+        while True:
+            try:
+                self._socket.send(encoded_data)
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                # The send attempt failed, wait a little bit.
+                # I would prefer using a blocking socket and MSG_DONTWAIT in recv()'s flags
+                # but SSLSocket doesn't support that...
+                throttle_time = self.serverdata.get('throttle_time', 0)
+                if self._aborted.wait(throttle_time):
+                    break
+                continue
+            except:
+                log.exception("(%s) Failed to send message %r; aborting!", self.name, data)
+                self.disconnect()
+            else:
+                break
 
     def send(self, data, queue=True):
         """send() wrapper with optional queueing support."""
