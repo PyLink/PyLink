@@ -211,6 +211,9 @@ class HybridProtocol(TS6Protocol):
         # Call the OPERED UP hook if +o is being added to the mode list.
         self._check_oper_status_change(uid, parsedmodes)
 
+        # Track SSL/TLS status
+        self.users[uid].ssl = ('+S', None) in parsedmodes
+
         # Set the account name if present
         if account:
             self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])

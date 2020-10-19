@@ -935,6 +935,7 @@ class P10Protocol(IRCS2SProtocol):
                       ident, host, realname, realhost, ip)
 
             uobj = self.users[uid] = User(self, nick, ts, uid, source, ident, host, realname, realhost, ip)
+            uobj.ssl = False
             self.servers[source].users.add(uid)
 
             # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L708
@@ -951,6 +952,9 @@ class P10Protocol(IRCS2SProtocol):
                         # Parse account registrations, sent as usermode "+r accountname:TS"
                         accountname = modepair[1].split(':', 1)[0]
                         self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
+
+                    elif modepair[0][-1] == self.umodes.get('ssl'):  # track SSL status where available
+                        uobj.ssl = True
 
                 # Call the OPERED UP hook if +o is being added to the mode list.
                 self._check_oper_status_change(uid, parsedmodes)

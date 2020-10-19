@@ -112,6 +112,9 @@ class User(TSObject):
         # Stores service bot name if applicable
         self.service = None
 
+        # Whether the user is using SSL/TLS (None = unknown)
+        self.ssl = None
+
     @property
     def nick(self):
         return self._nick

@@ -507,6 +507,9 @@ class UnrealProtocol(TS6BaseProtocol):
         if ('+r', None) in parsedmodes and accountname.isdigit():
             accountname = nick
 
+        # Track SSL/TLS status
+        self.users[uid].ssl = ('+z', None) in parsedmodes
+
         if not accountname.isdigit():
             self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
 
