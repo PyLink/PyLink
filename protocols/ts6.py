@@ -317,19 +317,19 @@ class TS6Protocol(TS6BaseProtocol):
                 'quiet': 'q', 'redirect': 'f', 'freetarget': 'F',
                 'joinflood': 'j', 'largebanlist': 'L', 'permanent': 'P',
                 'noforwards': 'Q', 'stripcolor': 'c', 'allowinvite':
-                'g', 'opmoderated': 'z', 'noctcp': 'C', 'ssl': 'Z',
+                'g', 'opmoderated': 'z', 'noctcp': 'C',
                 # charybdis modes provided by extensions
                 'operonly': 'O', 'adminonly': 'A', 'sslonly': 'S',
                 'nonotice': 'T',
-                '*A': 'beIq', '*B': 'k', '*C': 'lfj', '*D': 'mnprstFLPQcgzCZOAST'
+                '*A': 'beIq', '*B': 'k', '*C': 'lfj', '*D': 'mnprstFLPQcgzCOAST'
             })
             self.umodes.update({
                 'deaf': 'D', 'servprotect': 'S', 'admin': 'a',
                 'invisible': 'i', 'oper': 'o', 'wallops': 'w',
                 'snomask': 's', 'noforward': 'Q', 'regdeaf': 'R',
                 'callerid': 'g', 'operwall': 'z', 'locops': 'l',
-                'cloak': 'x', 'override': 'p',
-                '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxp'
+                'cloak': 'x', 'override': 'p', 'ssl': 'Z',
+                '*A': '', '*B': '', '*C': '', '*D': 'DSaiowsQRgzlxpZ'
             })
 
             # Charybdis extbans
