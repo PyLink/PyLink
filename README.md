@@ -1,5 +1,7 @@
 # PyLink IRC Services
 
+## PyLink is LOOKING FOR NEW MAINTAINERS: Please see my [latest dev update](https://jlu5.com/blog/the-trouble-with-pylink) for more context.
+
 [![Latest stable release](https://img.shields.io/github/v/tag/jlu5/pylink?label=stable&color=1a1)](https://github.com/jlu5/PyLink/tree/master)
 [![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000)](https://pypi.python.org/pypi/pylinkirc/)
 [![Docker image version](https://img.shields.io/docker/v/jlu5/pylink/latest?label=docker)](https://hub.docker.com/r/jlu5/pylink)
@@ -7,19 +9,13 @@
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
-1) a replacement for the Janus relay daemon.
+1) a transparent server-side relayer between IRC networks.
 
 2) a versatile framework for developing IRC services.
 
 PyLink is licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2](LICENSE.MPL2)). The [corresponding documentation](docs/) is licensed under the Creative Attribution-ShareAlike 4.0 International License. ([LICENSE.CC-BY-SA-4.0](LICENSE.CC-BY-SA-4.0))
 
-## Support the project
-
-I maintain PyLink and other IRC projects in my spare time - as such, donations are welcome and appreciated.
-
-[![Donate via PayPal](https://img.shields.io/badge/donate-paypal-4AD.svg)](https://www.paypal.me/jlucode)
-
-## Obtaining support
+## Getting help
 
 **First, MAKE SURE you've read the [FAQ](docs/faq.md)!**
 
@@ -27,7 +23,7 @@ I maintain PyLink and other IRC projects in my spare time - as such, donations a
 
 Please report any bugs you find to the [issue tracker](https://github.com/jlu5/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
-You can also find support via our IRC channel at `#PyLink @ irc.overdrivenetworks.com`. Ask your questions and be patient for a response.
+There is also an IRC channel available: `#pylink @ chat.freenode.net`
 
 ## Installation
 
