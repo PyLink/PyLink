@@ -2105,6 +2105,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             except:
                 log.exception("(%s) Failed to send message %r; aborting!", self.name, data)
                 self.disconnect()
+                return
             else:
                 break
 
