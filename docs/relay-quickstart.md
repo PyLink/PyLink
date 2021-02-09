@@ -36,6 +36,7 @@ Then, to list all available channels:
 
 To create a channel on Relay:
 - `/msg PyLink create #channelname`
+- Note: **you can only create channels on full IRCd links - this will NOT work with Clientbot.**
 
 To link to a channel already created on a different network (network names are case sensitive!):
 - `/msg PyLink link othernet #channelname`
