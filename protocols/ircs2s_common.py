@@ -687,7 +687,11 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- ABAAB Q :Killed (GL_ (bangbang))
         userdata = self._remove_client(numeric)
         if userdata:
-            return {'text': args[0], 'userdata': userdata}
+            try:
+                reason = args[0]
+            except IndexError:
+                reason = ''
+            return {'text': reason, 'userdata': userdata}
 
     def handle_stats(self, numeric, command, args):
         """Handles the IRC STATS command."""
