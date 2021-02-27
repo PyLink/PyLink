@@ -2368,11 +2368,11 @@ def destroy(irc, source, args):
 
     Removes the given channel from the PyLink Relay, delinking all networks linked to it. If the home network is given and you are logged in as admin, this can also remove relay channels from other networks."""
     try:  # Two args were given: first one is network name, second is channel.
-        channel = irc.to_lower(args[1])
+        channel = args[1]
         network = args[0]
     except IndexError:
         try:  # One argument was given; assume it's just the channel.
-            channel = irc.to_lower(args[0])
+            channel = args[0]
             network = irc.name
         except IndexError:
             irc.error("Not enough arguments. Needs 1-2: channel, network (optional).")
@@ -2389,7 +2389,11 @@ def destroy(irc, source, args):
     else:
         permissions.check_permissions(irc, source, ['relay.destroy.remote'])
 
-    entry = (network, channel)
+    # Allow deleting old channels if the local network's casemapping ever changes
+    if (network, channel) in db:
+        entry = (network, channel)
+    else:
+        entry = (network, irc.to_lower(channel))
     if entry in db:
         stop_relay(entry)
         del db[entry]
