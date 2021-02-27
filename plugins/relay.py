@@ -2450,8 +2450,12 @@ def link(irc, source, args):
 
     args = link_parser.parse_args(args)
 
-    # Normalize channel case
-    channel = irc.to_lower(str(args.channel))
+    # Normalize channel case. For the target channel it's possible for the local and remote casemappings
+    # to differ - if we find the unnormalized channel name in the list, we should just use that.
+    # This mainly affects channels with e.g. | in them.
+    channel_orig = str(args.channel)
+    channel_norm = irc.to_lower(channel_orig)
+
     localchan = irc.to_lower(str(args.localchannel or args.channel))
     remotenet = args.remotenet
 
@@ -2495,58 +2499,61 @@ def link(irc, source, args):
         irc.error('Channel %r is already part of a relay.' % localchan)
         return
 
-    try:
-        entry = db[(remotenet, channel)]
-    except KeyError:
+    if (remotenet, channel_orig) in db:
+        channel = channel_orig
+    elif (remotenet, channel_norm) in db:
+        channel = channel_norm
+    else:
         irc.error('No such relay %r exists.' % args.channel)
         return
-    else:
-        whitelist_mode = entry.get('use_whitelist', False)
-        if ((not whitelist_mode) and irc.name in entry['blocked_nets']) or \
-                (whitelist_mode and irc.name not in entry.get('allowed_nets', set())):
-            irc.error('Access denied (target channel is not open to links).')
-            log.warning('(%s) relay: Blocking link request %s%s -> %s%s from %s due to LINKACL (whitelist_mode=%s)',
-                        irc.name, irc.name, localchan, remotenet, channel,
-                        irc.get_hostmask(source), whitelist_mode)
+    entry = db[(remotenet, channel)]
+
+    whitelist_mode = entry.get('use_whitelist', False)
+    if ((not whitelist_mode) and irc.name in entry['blocked_nets']) or \
+            (whitelist_mode and irc.name not in entry.get('allowed_nets', set())):
+        irc.error('Access denied (target channel is not open to links).')
+        log.warning('(%s) relay: Blocking link request %s%s -> %s%s from %s due to LINKACL (whitelist_mode=%s)',
+                    irc.name, irc.name, localchan, remotenet, channel,
+                    irc.get_hostmask(source), whitelist_mode)
+        return
+    for link in entry['links']:
+        if link[0] == irc.name:
+            irc.error("Remote channel '%s%s' is already linked here "
+                      "as %r." % (remotenet, args.channel, link[1]))
             return
-        for link in entry['links']:
-            if link[0] == irc.name:
-                irc.error("Remote channel '%s%s' is already linked here "
-                          "as %r." % (remotenet, args.channel, link[1]))
-                return
 
-        if args.force_ts:
-            permissions.check_permissions(irc, source, ['relay.link.force_ts', 'relay.link.force'])
-            log.info("(%s) relay: Forcing link %s%s -> %s%s", irc.name, irc.name, localchan, remotenet,
-                     args.channel)
-        else:
-            if not world.networkobjects[remotenet].connected.is_set():
-                log.debug('(%s) relay: Blocking link request %s%s -> %s%s because the target '
-                          'network is down', irc.name, irc.name, localchan, remotenet, args.channel)
-                irc.error("The target network %s is not connected; refusing to link (you may be "
-                          "able to override this with the --force option)." % remotenet)
-                return
+    if args.force_ts:
+        permissions.check_permissions(irc, source, ['relay.link.force_ts', 'relay.link.force'])
+        log.info("(%s) relay: Forcing link %s%s -> %s%s", irc.name, irc.name, localchan, remotenet,
+                 args.channel)
+    else:
+        if not world.networkobjects[remotenet].connected.is_set():
+            log.debug('(%s) relay: Blocking link request %s%s -> %s%s because the target '
+                      'network is down', irc.name, irc.name, localchan, remotenet, args.channel)
+            irc.error("The target network %s is not connected; refusing to link (you may be "
+                      "able to override this with the --force option)." % remotenet)
+            return
 
-            our_ts = irc.channels[localchan].ts
-            if channel not in world.networkobjects[remotenet].channels:
-                irc.error("Unknown target channel %r." % channel)
-                return
+        our_ts = irc.channels[localchan].ts
+        if channel not in world.networkobjects[remotenet].channels:
+            irc.error("Unknown target channel %r." % channel)
+            return
 
-            their_ts = world.networkobjects[remotenet].channels[channel].ts
-            if (our_ts < their_ts) and irc.has_cap('has-ts'):
-                log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
-                          irc.name, localchan, remotenet, channel, our_ts, their_ts)
-                irc.error("The channel creation date (TS) on %s (%s) is lower than the target "
-                          "channel's (%s); refusing to link. You should clear the local channel %s first "
-                          "before linking, or use a different local channel (you may be able to "
-                          "override this with the --force option)." % (localchan, our_ts, their_ts, localchan))
-                return
+        their_ts = world.networkobjects[remotenet].channels[channel].ts
+        if (our_ts < their_ts) and irc.has_cap('has-ts'):
+            log.debug('(%s) relay: Blocking link request %s%s -> %s%s due to bad TS (%s < %s)', irc.name,
+                      irc.name, localchan, remotenet, channel, our_ts, their_ts)
+            irc.error("The channel creation date (TS) on %s (%s) is lower than the target "
+                      "channel's (%s); refusing to link. You should clear the local channel %s first "
+                      "before linking, or use a different local channel (you may be able to "
+                      "override this with the --force option)." % (localchan, our_ts, their_ts, localchan))
+            return
 
-        entry['links'].add((irc.name, localchan))
-        log.info('(%s) relay: Channel %s linked to %s%s by %s.', irc.name,
-                 localchan, remotenet, args.channel, irc.get_hostmask(source))
-        initialize_channel(irc, localchan)
-        irc.reply('Done.')
+    entry['links'].add((irc.name, localchan))
+    log.info('(%s) relay: Channel %s linked to %s%s by %s.', irc.name,
+             localchan, remotenet, args.channel, irc.get_hostmask(source))
+    initialize_channel(irc, localchan)
+    irc.reply('Done.')
 link = utils.add_cmd(link, featured=True)
 
 def delink(irc, source, args):
