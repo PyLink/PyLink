@@ -23,12 +23,12 @@ PyLink is licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2]
 
 Please report any bugs you find to the [issue tracker](https://github.com/jlu5/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
 
-There is also an IRC channel available: `#pylink @ chat.freenode.net`
+There is also an IRC channel available: `#pylink @ irc.libera.chat`
 
 ## Installation
 
 ### Pre-requisites
-* CPython 3.5 or above (other intepreters are untested and unsupported)
+* CPython 3.5 or above (other interpreters are untested and unsupported)
 * A Unix-like operating system: PyLink is actively developed on Linux only, so we cannot guarantee that things will work properly on other systems.
 
 If you are a developer and want to help make PyLink more portable, patches are welcome.
