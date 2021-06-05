@@ -27,7 +27,7 @@ from .utils import ProtocolError  # Compatibility with PyLink 1.x
 
 __all__ = ['ChannelState', 'User', 'UserMapping', 'PyLinkNetworkCore',
            'PyLinkNetworkCoreWithUtils', 'IRCNetwork', 'Server', 'Channel',
-           'PUIDGenerator']
+           'PUIDGenerator', 'ProtocolError']
 
 QUEUE_FULL = queue.Full
 
