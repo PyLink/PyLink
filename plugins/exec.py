@@ -6,13 +6,16 @@ import pprint
 # easier to access through eval and exec.
 import threading
 
-from pylinkirc import utils, world
+from pylinkirc import utils, world, conf
 from pylinkirc.coremods import permissions
 from pylinkirc.log import log
 
 exec_locals_dict = {}
 PPRINT_MAX_LINES = 20
 PPRINT_WIDTH = 200
+
+if not conf.conf['pylink'].get("debug_enabled", False):
+    raise RuntimeError("pylink::debug_enabled must be enabled to load this plugin")
 
 def _exec(irc, source, args, locals_dict=None):
     """<code>
