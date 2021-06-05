@@ -407,6 +407,10 @@ def spawn_relay_user(irc, remoteirc, user, times_tagged=0, reuse_sid=None):
     # Truncate idents at 10 characters, because TS6 won't like them otherwise!
     ident = ident[:10]
 
+    # HACK: hybrid will reject idents that start with a "-". why???
+    if remoteirc.protoname == 'hybrid' and ident.startswith('-'):
+        ident = 'r' + ident
+
     # Normalize hostnames
     host = normalize_host(remoteirc, userobj.host)
     realname = userobj.realname
