@@ -417,7 +417,8 @@ class UnrealProtocol(TS6BaseProtocol):
         #       not work for any UnrealIRCd 3.2 users.
         # ESVID - Supports account names in services stamps instead of just the signon time.
         #         AFAIK this doesn't actually affect services' behaviour?
-        f('PROTOCTL SJOIN SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID' % (self.serverdata["hostname"], self.sid))
+        # EXTSWHOIS - support multiple SWHOIS lines (purely informational for us)
+        f('PROTOCTL SJOIN SJ3 NOQUIT NICKv2 VL UMODE2 PROTOCTL NICKIP EAUTH=%s SID=%s VHP ESVID EXTSWHOIS' % (self.serverdata["hostname"], self.sid))
         sdesc = self.serverdata.get('serverdesc') or conf.conf['pylink']['serverdesc']
         f('SERVER %s 1 U%s-h6e-%s :%s' % (host, self.proto_ver, self.sid, sdesc))
 
