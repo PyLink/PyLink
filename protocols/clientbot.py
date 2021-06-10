@@ -698,7 +698,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         """
         Handles 353 / RPL_NAMREPLY.
         """
-        # <- :charybdis.midnight.vpn 353 ice = #test :ice @GL
+        # <- :charybdis.midnight.vpn 353 ice = #test :ice @jlu5
 
         # Mark "@"-type channels as secret automatically, per RFC2812.
         channel = args[2]
@@ -779,10 +779,10 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         """
         # parameter count:               0   1     2       3         4                      5   6  7(-1)
         # <- :charybdis.midnight.vpn 352 ice #test ~pylink 127.0.0.1 charybdis.midnight.vpn ice H+ :0 PyLink
-        # <- :charybdis.midnight.vpn 352 ice #test ~gl 127.0.0.1 charybdis.midnight.vpn GL H*@ :0 realname
+        # <- :charybdis.midnight.vpn 352 ice #test ~jlu5 127.0.0.1 charybdis.midnight.vpn jlu5 H*@ :0 realname
         # with WHO %cuhsnfar (WHOX) - note, hopcount and realname are separate!
         #                                0   1     2   3         4                      5  6  7   8(-1)
-        # <- :charybdis.midnight.vpn 354 ice #test ~gl localhost charybdis.midnight.vpn GL H*@ GL :realname
+        # <- :charybdis.midnight.vpn 354 ice #test ~jlu5 localhost charybdis.midnight.vpn jlu5 H*@ jlu5 :realname
         channel = args[1]
         ident = args[2]
         host = args[3]
@@ -907,9 +907,9 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         Handles incoming JOINs, as well as JOIN acknowledgements for us.
         """
         # Classic format:
-        # <- :GL|!~GL@127.0.0.1 JOIN #whatever
+        # <- :jlu5|!~jlu5@127.0.0.1 JOIN #whatever
         # With extended-join:
-        # <- :GL|!~GL@127.0.0.1 JOIN #whatever accountname :realname
+        # <- :jlu5|!~jlu5@127.0.0.1 JOIN #whatever accountname :realname
         channel = args[0]
         self._channels[channel].users.add(source)
         self.users[source].channels.add(channel)
@@ -940,7 +940,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         """
         Handles incoming KICKs.
         """
-        # <- :GL!~gl@127.0.0.1 KICK #whatever GL| :xd
+        # <- :jlu5!~jlu5@127.0.0.1 KICK #whatever jlu5| :xd
         channel = args[0]
         target = self._get_UID(args[1], spawn_new=False)
 
@@ -975,7 +975,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
 
     def handle_mode(self, source, command, args):
         """Handles MODE changes."""
-        # <- :GL!~gl@127.0.0.1 MODE #dev +v ice
+        # <- :jlu5!~jlu5@127.0.0.1 MODE #dev +v ice
         # <- :ice MODE ice :+Zi
         target = args[0]
         if self.is_channel(target):
@@ -1000,8 +1000,8 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
     def handle_324(self, source, command, args):
         """Handles MODE announcements via RPL_CHANNELMODEIS (i.e. the response to /mode #channel)"""
         # -> MODE #test
-        # <- :midnight.vpn 324 GL #test +nt
-        # <- :midnight.vpn 329 GL #test 1491773459
+        # <- :midnight.vpn 324 jlu5 #test +nt
+        # <- :midnight.vpn 329 jlu5 #test 1491773459
         channel = args[1]
         modes = args[2:]
         log.debug('(%s) Got RPL_CHANNELMODEIS (324) modes %s for %s', self.name, modes, channel)
@@ -1037,7 +1037,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
 
     def handle_nick(self, source, command, args):
         """Handles NICK changes."""
-        # <- :GL|!~GL@127.0.0.1 NICK :GL_
+        # <- :jlu5|!~jlu5@127.0.0.1 NICK :jlu5_
         newnick = args[0]
 
         if not self.connected.is_set():
@@ -1060,7 +1060,7 @@ class ClientbotWrapperProtocol(ClientbotBaseProtocol, IRCCommonProtocol):
         """
         Handles incoming PARTs.
         """
-        # <- :GL|!~GL@127.0.0.1 PART #whatever
+        # <- :jlu5|!~jlu5@127.0.0.1 PART #whatever
         channels = args[0].split(',')
         try:
             reason = args[1]

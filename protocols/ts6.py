@@ -575,7 +575,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_euid(self, numeric, command, args):
         """Handles incoming EUID commands (user introduction)."""
-        # <- :42X EUID GL 1 1437505322 +ailoswz ~gl 127.0.0.1 127.0.0.1 42XAAAAAB * * :realname
+        # <- :42X EUID jlu5 1 1437505322 +ailoswz ~jlu5 127.0.0.1 127.0.0.1 42XAAAAAB * * :realname
         nick = args[0]
         self._check_nick_collision(nick)
         ts, modes, ident, host, ip, uid, realhost, accountname, realname = args[2:11]
@@ -644,7 +644,7 @@ class TS6Protocol(TS6BaseProtocol):
 
             return
 
-        # <- :services.int SERVER a.bc 2 :(H) [GL] a
+        # <- :services.int SERVER a.bc 2 :(H) [jlu5] a
         return super().handle_server(numeric, command, args)
 
     def handle_tmode(self, numeric, command, args):
@@ -662,7 +662,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_tb(self, numeric, command, args):
         """Handles incoming topic burst (TB) commands."""
-        # <- :42X TB #chat 1467427448 GL!~gl@127.0.0.1 :test
+        # <- :42X TB #chat 1467427448 jlu5!~jlu5@127.0.0.1 :test
         channel = args[0]
         ts = args[1]
         setter = args[2]
@@ -673,7 +673,7 @@ class TS6Protocol(TS6BaseProtocol):
 
     def handle_etb(self, numeric, command, args):
         """Handles extended topic burst (ETB)."""
-        # <- :00AAAAAAC ETB 0 #test 1470021157 GL :test | abcd
+        # <- :00AAAAAAC ETB 0 #test 1470021157 jlu5 :test | abcd
         # Same as TB, with extra TS and extensions arguments.
         channel = args[1]
         ts = args[2]
@@ -710,7 +710,7 @@ class TS6Protocol(TS6BaseProtocol):
         the administrator that certain extensions should be loaded for the best
         compatibility.
         """
-        # <- :charybdis.midnight.vpn 472 GL|devel O :is an unknown mode char to me
+        # <- :charybdis.midnight.vpn 472 jlu5|devel O :is an unknown mode char to me
         badmode = args[1]
         reason = args[-1]
         setter = args[0]
@@ -727,7 +727,7 @@ class TS6Protocol(TS6BaseProtocol):
         """
         Handles SU, which is used for setting login information.
         """
-        # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+        # <- :00A ENCAP * SU 42XAAAAAC :jlu5
         # <- :00A ENCAP * SU 42XAAAAAC
         try:
             account = args[1]  # Account name is being set

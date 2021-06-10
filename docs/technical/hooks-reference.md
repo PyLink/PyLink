@@ -19,11 +19,11 @@ The command `:42XAAAAAB PRIVMSG #dev :test` would result in the following raw ho
 
 - `['42XAAAAAB', 'PRIVMSG', {'target': '#dev', 'text': 'test', 'ts': 1451174041}]`
 
-On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:GL SETHOST blah` would return the raw hook data of this (with the nick converted into UID automatically by the protocol module):
+On UnrealIRCd, because SETHOST is mapped to CHGHOST, `:jlu5 SETHOST blah` would return the raw hook data of this (with the nick converted into UID automatically by the protocol module):
 
 - `['001ZJZW01', 'CHGHOST', {'ts': 1451174512, 'target': '001ZJZW01', 'newhost': 'blah'}]`
 
-Some hooks, like MODE, are more complex and can include the entire state of a channel. This will be further described later. `:GL MODE #chat +o PyLink-devel` is converted into (pretty-printed for readability):
+Some hooks, like MODE, are more complex and can include the entire state of a channel. This will be further described later. `:jlu5 MODE #chat +o PyLink-devel` is converted into (pretty-printed for readability):
 
 ```
 ['001ZJZW01',

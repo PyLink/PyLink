@@ -117,7 +117,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
         # Grab our server token; this is used instead of server name to denote where the client is.
         server_token = server.rsplit('@')[-1]
-        # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
+        # <- :ngircd.midnight.local NICK jlu5 1 ~jlu5 localhost 1 +io :realname
         self._send_with_prefix(server, 'NICK %s %s %s %s %s %s :%s' % (nick, self.servers[server].hopcount,
                                ident, host, server_token, self.join_modes(modes), realname))
         return userobj
@@ -285,7 +285,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         """
         Sets a server ban.
         """
-        # <- :GL GLINE *!*@bad.user 3d :test
+        # <- :jlu5 GLINE *!*@bad.user 3d :test
         assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
         self._send_with_prefix(source, 'GLINE *!%s@%s %s :%s' % (user, host, duration, reason))
 
@@ -380,8 +380,8 @@ class NgIRCdProtocol(IRCS2SProtocol):
     def handle_join(self, source, command, args):
         # RFC 2813 is odd to say the least... https://tools.ietf.org/html/rfc2813#section-4.2.1
         # Basically, we expect messages of the forms:
-        # <- :GL JOIN #test\x07o
-        # <- :GL JOIN #moretest
+        # <- :jlu5 JOIN #test\x07o
+        # <- :jlu5 JOIN #moretest
         for chanpair in args[0].split(','):
             # Normalize channel case.
             try:
@@ -426,7 +426,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
 
     def handle_metadata(self, source, command, args):
         """Handles various user metadata for ngIRCd (cloaked host, account name, etc.)"""
-        # <- :ngircd.midnight.local METADATA GL cloakhost :hidden-3a2a739e.ngircd.midnight.local
+        # <- :ngircd.midnight.local METADATA jlu5 cloakhost :hidden-3a2a739e.ngircd.midnight.local
         target = self._get_UID(args[0])
 
         if target not in self.users:
@@ -461,7 +461,7 @@ class NgIRCdProtocol(IRCS2SProtocol):
         """
         if len(args) >= 2:
             # User introduction:
-            # <- :ngircd.midnight.local NICK GL 1 ~gl localhost 1 +io :realname
+            # <- :ngircd.midnight.local NICK jlu5 1 ~jlu5 localhost 1 +io :realname
             nick = args[0]
             assert source in self.servers, "Server %r tried to introduce nick %r but isn't in the servers index?" % (source, nick)
             self._check_nick_collision(nick)
@@ -488,13 +488,13 @@ class NgIRCdProtocol(IRCS2SProtocol):
                     'parse_as': 'UID', 'ip': '0.0.0.0'}
         else:
             # Nick changes:
-            # <- :GL NICK :GL_
+            # <- :jlu5 NICK :jlu5_
             oldnick = self.users[source].nick
             newnick = self.users[source].nick = args[0]
             return {'newnick': newnick, 'oldnick': oldnick}
 
     def handle_njoin(self, source, command, args):
-        # <- :ngircd.midnight.local NJOIN #test :tester,@%GL
+        # <- :ngircd.midnight.local NJOIN #test :tester,@%jlu5
 
         channel = args[0]
         chandata = self._channels[channel].deepcopy()

@@ -21,7 +21,7 @@ class UnrealProtocol(TS6BaseProtocol):
     # I'm not sure what the real limit is, but the text posted at
     # https://github.com/jlu5/PyLink/issues/378 suggests 427 characters.
     # https://github.com/unrealircd/unrealircd/blob/4cad9cb/src/modules/m_server.c#L1260 may
-    # also help. (but why BUFSIZE-*80*?) -GL
+    # also help. (but why BUFSIZE-*80*?) -jlu5
     S2S_BUFSIZE = 427
     _KNOWN_CMODES = {'ban': 'b',
               'banexception': 'e',
@@ -149,7 +149,7 @@ class UnrealProtocol(TS6BaseProtocol):
             # Now, strip the trailing \n and decode into a string again.
             encoded_ip = encoded_ip.strip().decode()
 
-        # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
+        # <- :001 UID jlu5 0 1441306929 jlu5 localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
         self._send_with_prefix(server, "UID {nick} {hopcount} {ts} {ident} {realhost} {uid} 0 {modes} "
                                "{host} * {ip} :{realname}".format(ts=ts, host=host,
                                nick=nick, ident=ident, uid=uid,
@@ -259,7 +259,7 @@ class UnrealProtocol(TS6BaseProtocol):
         Sends mode changes from a PyLink client/server. The mode list should be
         a list of (mode, arg) tuples, i.e. the format of utils.parse_modes() output.
         """
-        # <- :unreal.midnight.vpn MODE #test +ntCo GL 1444361345
+        # <- :unreal.midnight.vpn MODE #test +ntCo jlu5 1444361345
 
         if (not self.is_internal_client(numeric)) and \
                 (not self.is_internal_server(numeric)):
@@ -379,7 +379,7 @@ class UnrealProtocol(TS6BaseProtocol):
         """Sends a KNOCK from a PyLink client."""
         # KNOCKs in UnrealIRCd are actually just specially formatted NOTICEs,
         # sent to all ops in a channel.
-        # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by GL|!gl@hidden-1C620195 (test)
+        # <- :unreal.midnight.vpn NOTICE @#test :[Knock] by jlu5|!jlu5@hidden-1C620195 (test)
         assert self.is_channel(target), "Can only knock on channels!"
         sender = self.get_server(numeric)
         s = '[Knock] by %s (%s)' % (self.get_hostmask(numeric), text)
@@ -451,8 +451,8 @@ class UnrealProtocol(TS6BaseProtocol):
         return {}
 
     def handle_uid(self, numeric, command, args):
-        # <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
-        # <- :001 UID GL| 0 1441389007 gl 10.120.0.6 001ZO8F03 0 +iwx * 391A9CB9.26A16454.D9847B69.IP CngABg== :realname
+        # <- :001 UID jlu5 0 1441306929 jlu5 localhost 0018S7901 0 +iowx * midnight-1C620195 fwAAAQ== :realname
+        # <- :001 UID jlu5| 0 1441389007 jlu5 10.120.0.6 001ZO8F03 0 +iwx * 391A9CB9.26A16454.D9847B69.IP CngABg== :realname
         # arguments: nick, hopcount?, ts, ident, real-host, UID, services account (0 if none), modes,
         #            displayed host, cloaked (+x) host, base64-encoded IP, and realname
         nick = args[0]
@@ -539,7 +539,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
             sdesc = args[-1].split(" ", 1)
             # Get our protocol version. I really don't know why the version and the server
-            # description aren't two arguments instead of one... -GLolol
+            # description aren't two arguments instead of one... -jlu5
             vline = sdesc[0].split('-', 1)
             sdesc = " ".join(sdesc[1:])
 
@@ -561,7 +561,7 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.umodes['*D'] = ''.join(self._KNOWN_UMODES.values())
         else:
             # Legacy (non-SID) servers can still be introduced using the SERVER command.
-            # <- :services.int SERVER a.bc 2 :(H) [GL] a
+            # <- :services.int SERVER a.bc 2 :(H) [jlu5] a
             return super().handle_server(numeric, command, args)
 
     def handle_protoctl(self, numeric, command, args):
@@ -601,7 +601,7 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_join(self, numeric, command, args):
         """Handles the UnrealIRCd JOIN command."""
-        # <- :GL JOIN #pylink,#test
+        # <- :jlu5 JOIN #pylink,#test
         if args[0] == '0':
             # /join 0; part the user from all channels
             oldchans = self.users[numeric].channels.copy()
@@ -715,9 +715,9 @@ class UnrealProtocol(TS6BaseProtocol):
             #   <- NICK Global 3 1456843578 services novernet.com services.novernet.com 0 +ioS * :Global Noticer
             #   & nick hopcount timestamp username hostname server service-identifier-token :realname
             #   With NICKIP and VHP enabled:
-            #   <- NICK GL32 2 1470699865 gl localhost unreal32.midnight.vpn GL +iowx hidden-1C620195 AAAAAAAAAAAAAAAAAAAAAQ== :realname
+            #   <- NICK legacy32 2 1470699865 jlu5 localhost unreal32.midnight.vpn jlu5 +iowx hidden-1C620195 AAAAAAAAAAAAAAAAAAAAAQ== :realname
             # to this:
-            #   <- :001 UID GL 0 1441306929 gl localhost 0018S7901 0 +iowx * hidden-1C620195 fwAAAQ== :realname
+            #   <- :001 UID jlu5 0 1441306929 jlu5 localhost 0018S7901 0 +iowx * hidden-1C620195 fwAAAQ== :realname
             log.debug('(%s) got legacy NICK args: %s', self.name, ' '.join(args))
 
             new_args = args[:]  # Clone the old args list
@@ -739,15 +739,15 @@ class UnrealProtocol(TS6BaseProtocol):
             return self.handle_uid(servername, 'UID_LEGACY', new_args)
         else:
             # Normal NICK change, just let ts6_common handle it.
-            # :70MAAAAAA NICK GL-devel 1434744242
+            # :70MAAAAAA NICK jlu5-devel 1434744242
             return super().handle_nick(numeric, command, args)
 
     def handle_mode(self, numeric, command, args):
         # <- :unreal.midnight.vpn MODE #test +bb test!*@* *!*@bad.net
-        # <- :unreal.midnight.vpn MODE #test +q GL 1444361345
-        # <- :unreal.midnight.vpn MODE #test +ntCo GL 1444361345
-        # <- :unreal.midnight.vpn MODE #test +mntClfo 5 [10t]:5  GL 1444361345
-        # <- :GL MODE #services +v GL
+        # <- :unreal.midnight.vpn MODE #test +q jlu5 1444361345
+        # <- :unreal.midnight.vpn MODE #test +ntCo jlu5 1444361345
+        # <- :unreal.midnight.vpn MODE #test +mntClfo 5 [10t]:5  jlu5 1444361345
+        # <- :jlu5 MODE #services +v jlu5
 
         # This seems pretty relatively inconsistent - why do some commands have a TS at the end while others don't?
         # Answer: the first syntax (MODE sent by SERVER) is used for channel bursts - according to Unreal 3.2 docs,
@@ -836,30 +836,30 @@ class UnrealProtocol(TS6BaseProtocol):
         # which is supported by atheme and Anope 2.x).
 
         # Logging in (with account info, atheme):
-        # <- :NickServ SVS2MODE GL +rd GL
+        # <- :NickServ SVS2MODE jlu5 +rd jlu5
 
         # Logging in (without account info, anope 2.0?):
         # <- :NickServ SVS2MODE 001WCO6YK +r
 
         # Logging in (without account info, anope 1.8):
         # Note: ignore the timestamp.
-        # <- :services.abc.net SVS2MODE GLolol +rd 1470696723
+        # <- :services.abc.net SVS2MODE jlu5 +rd 1470696723
 
         # Logging out (atheme):
-        # <- :NickServ SVS2MODE GL -r+d 0
+        # <- :NickServ SVS2MODE jlu5 -r+d 0
 
         # Logging out (anope 1.8):
-        # <- :services.abc.net SVS2MODE GLolol -r+d 1
+        # <- :services.abc.net SVS2MODE jlu5 -r+d 1
 
         # Logging out (anope 2.0):
         # <- :NickServ SVS2MODE 009EWLA03 -r
 
         # Logging in to account from a different nick (atheme):
         # Note: no +r is being set.
-        # <- :NickServ SVS2MODE somenick +d GL
+        # <- :NickServ SVS2MODE somenick +d jlu5
 
         # Logging in to account from a different nick (anope):
-        # <- :NickServ SVS2MODE 001SALZ01 +d GL
+        # <- :NickServ SVS2MODE 001SALZ01 +d jlu5
         # <- :NickServ SVS2MODE 001SALZ01 +r
 
         target = self._get_UID(args[0])
@@ -917,13 +917,13 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_umode2(self, source, command, args):
         """Handles UMODE2, used to set user modes on oneself."""
-        # <- :GL UMODE2 +W
+        # <- :jlu5 UMODE2 +W
         target = self._get_UID(source)
         return self._handle_umode(target, self.parse_modes(target, args))
 
     def handle_topic(self, numeric, command, args):
         """Handles the TOPIC command."""
-        # <- GL TOPIC #services GL 1444699395 :weeee
+        # <- jlu5 TOPIC #services jlu5 1444699395 :weeee
         # <- TOPIC #services devel.relay 1452399682 :test
         channel = args[0]
         topic = args[-1]
@@ -962,14 +962,14 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_chgident(self, numeric, command, args):
         """Handles CHGIDENT, used for denoting ident changes."""
-        # <- :GL CHGIDENT GL test
+        # <- :jlu5 CHGIDENT jlu5 test
         target = self._get_UID(args[0])
         self.users[target].ident = newident = args[1]
         return {'target': target, 'newident': newident}
 
     def handle_chghost(self, numeric, command, args):
         """Handles CHGHOST, used for denoting hostname changes."""
-        # <- :GL CHGHOST GL some.host
+        # <- :jlu5 CHGHOST jlu5 some.host
         target = self._get_UID(args[0])
         self.users[target].host = newhost = args[1]
 
@@ -981,14 +981,14 @@ class UnrealProtocol(TS6BaseProtocol):
 
     def handle_chgname(self, numeric, command, args):
         """Handles CHGNAME, used for denoting real name/gecos changes."""
-        # <- :GL CHGNAME GL :afdsafasf
+        # <- :jlu5 CHGNAME jlu5 :afdsafasf
         target = self._get_UID(args[0])
         self.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
 
     def handle_tsctl(self, source, command, args):
         """Handles /TSCTL alltime requests."""
-        # <- :GL TSCTL alltime
+        # <- :jlu5 TSCTL alltime
 
         if args[0] == 'alltime':
             self._send_with_prefix(self.sid, 'NOTICE %s :*** Server=%s time()=%d' % (source, self.hostname(), time.time()))

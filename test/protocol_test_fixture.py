@@ -137,7 +137,7 @@ class BaseProtocolTest(unittest.TestCase):
         assertT('{RACKETman}')
         assertT('bar|tender')
         assertT('\\bar|bender\\')
-        assertT('GL|ovd')
+        assertT('jlu5|ovd')
         assertT('B')
         assertT('`')
         assertT('Hello123')
@@ -156,7 +156,7 @@ class BaseProtocolTest(unittest.TestCase):
         assertF('-test')
         assertF('#lounge')
         assertF('\\bar/bender\\')
-        assertF('GL/ovd') # Technically not valid, but some IRCds don't care ;)
+        assertF('jlu5/ovd') # Technically not valid, but some IRCds don't care ;)
         assertF('100AAAAAC') # TS6 UID
 
         self.assertFalse(self.p.is_nick('longnicklongnicklongnicklongnicklongnicklongnick', nicklen=20))

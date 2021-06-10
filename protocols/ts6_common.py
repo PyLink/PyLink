@@ -218,7 +218,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
     def handle_nick(self, numeric, command, args):
         """Handles incoming NICK changes."""
-        # <- :70MAAAAAA NICK GL-devel 1434744242
+        # <- :70MAAAAAA NICK jlu5-devel 1434744242
         oldnick = self.users[numeric].nick
         newnick = self.users[numeric].nick = args[0]
 
@@ -249,7 +249,7 @@ class TS6BaseProtocol(IRCS2SProtocol):
 
     def handle_server(self, numeric, command, args):
         """Handles the SERVER command, used for introducing older (TS5) servers."""
-        # <- :services.int SERVER a.bc 2 :(H) [GL] test jupe
+        # <- :services.int SERVER a.bc 2 :(H) [jlu5] test jupe
         servername = args[0].lower()
         sdesc = args[-1]
         self.servers[servername] = Server(self, numeric, servername, desc=sdesc)
@@ -272,5 +272,5 @@ class TS6BaseProtocol(IRCS2SProtocol):
         # This is rewritten to SVSNICK with args ['902AAAAAB', 'Guest53593', '1468299404']
 
         # UnrealIRCd:
-        # <- :services.midnight.vpn SVSNICK GL Guest87795 1468303726
+        # <- :services.midnight.vpn SVSNICK jlu5 Guest87795 1468303726
         return {'target': self._get_UID(args[0]), 'newnick': args[1]}

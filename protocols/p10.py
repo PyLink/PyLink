@@ -198,7 +198,7 @@ class P10Protocol(IRCS2SProtocol):
     @staticmethod
     def decode_p10_ip(ip):
         """Decodes a P10 IP."""
-        # Many thanks to Jobe @ evilnet for the code on what to do here. :) -GL
+        # Many thanks to Jobe @ evilnet for the code on what to do here. :) -jlu5
 
         if len(ip) == 6:  # IPv4
             # Pad the characters with two \x00's (represented in P10 B64 as AA)
@@ -406,7 +406,7 @@ class P10Protocol(IRCS2SProtocol):
 
     def kill(self, numeric, target, reason):
         """Sends a kill from a PyLink client/server."""
-        # <- ABAAA D AyAAA :nefarious.midnight.vpn!GL (test)
+        # <- ABAAA D AyAAA :nefarious.midnight.vpn!jlu5 (test)
 
         if (not self.is_internal_client(numeric)) and \
                 (not self.is_internal_server(numeric)):
@@ -463,7 +463,7 @@ class P10Protocol(IRCS2SProtocol):
 
     def mode(self, numeric, target, modes, ts=None):
         """Sends mode changes from a PyLink client/server."""
-        # <- ABAAA M GL -w
+        # <- ABAAA M jlu5 -w
         # <- ABAAA M #test +v ABAAB 1460747615
 
         if (not self.is_internal_client(numeric)) and \
@@ -494,7 +494,7 @@ class P10Protocol(IRCS2SProtocol):
             real_target = target
         else:
             assert target in self.users, "Unknown mode target %s" % target
-            # P10 uses nicks in user MODE targets, NOT UIDs. ~GL
+            # P10 uses nicks in user MODE targets, NOT UIDs. ~jlu5
             real_target = self.users[target].nick
 
         self.apply_modes(target, modes)
@@ -510,7 +510,7 @@ class P10Protocol(IRCS2SProtocol):
 
     def nick(self, numeric, newnick):
         """Changes the nick of a PyLink client."""
-        # <- ABAAA N GL_ 1460753763
+        # <- ABAAA N jlu5_ 1460753763
         if not self.is_internal_client(numeric):
             raise LookupError('No such PyLink client exists.')
 
@@ -523,7 +523,7 @@ class P10Protocol(IRCS2SProtocol):
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client. This is used for WHOIS
         replies."""
-        # <- AB 311 AyAAA GL ~gl nefarious.midnight.vpn * :realname
+        # <- AB 311 AyAAA jlu5 ~jlu5 nefarious.midnight.vpn * :realname
         self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
 
     def part(self, client, channel, reason=None):
@@ -558,7 +558,7 @@ class P10Protocol(IRCS2SProtocol):
         assert not (user == host == '*'), "Refusing to set ridiculous ban on *@*"
 
         # https://github.com/evilnet/nefarious2/blob/master/doc/p10.txt#L535
-        # <- ABAAA GL * +test@test.host 30 1500300185 1500300215 :haha, you're banned now!!!!1
+        # <- ABAAA jlu5 * +test@test.host 30 1500300185 1500300215 :haha, you're banned now!!!!1
         currtime = int(time.time())
 
         if duration == 0 or duration > GLINE_MAX_EXPIRE:
@@ -747,7 +747,7 @@ class P10Protocol(IRCS2SProtocol):
 
     def topic(self, source, target, text):
         """Sends a TOPIC change from a PyLink client or server."""
-        # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
+        # <- ABAAA T #test jlu5!~jlu5@nefarious.midnight.vpn 1460852591 1460855795 :blah
         # First timestamp is channel creation time, second is current time,
         if (not self.is_internal_client(source)) and (not self.is_internal_server(source)):
             raise LookupError('No such PyLink client/server exists.')
@@ -829,7 +829,7 @@ class P10Protocol(IRCS2SProtocol):
         # 4 <link TS>
         # 5 <protocol>
         # 6 <numeric of new server><max client numeric>
-        # 7 <flags> <-- Mark ourselves as a service with IPv6 support (+s & +6) -GLolol
+        # 7 <flags> <-- Mark ourselves as a service with IPv6 support (+s & +6) -jlu5
         # -1 <description of new server>
 
         name = self.serverdata["hostname"]
@@ -918,7 +918,7 @@ class P10Protocol(IRCS2SProtocol):
     def handle_nick(self, source, command, args):
         """Handles the NICK command, used for user introductions and nick changes."""
         if len(args) > 2:
-            # <- AB N GL 1 1460673049 ~gl nefarious.midnight.vpn +iw B]AAAB ABAAA :realname
+            # <- AB N jlu5 1 1460673049 ~jlu5 nefarious.midnight.vpn +iw B]AAAB ABAAA :realname
 
             nick = args[0]
             self._check_nick_collision(nick)
@@ -960,7 +960,7 @@ class P10Protocol(IRCS2SProtocol):
             return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip, 'parse_as': 'UID'}
 
         else:
-            # <- ABAAA N GL_ 1460753763
+            # <- ABAAA N jlu5_ 1460753763
             oldnick = self.users[source].nick
             newnick = self.users[source].nick = args[0]
 
@@ -1040,7 +1040,7 @@ class P10Protocol(IRCS2SProtocol):
         # -> X3 Z Channels.CollectiveIRC.Net 1460745823.89510 0 1460745823.089840
         # Arguments of a PONG: our server hostname, the original TS of PING,
         #                      difference between PING and PONG in seconds, the current TS.
-        # Why is this the way it is? I don't know... -GL
+        # Why is this the way it is? I don't know... -jlu5
 
         target = args[1]
         sid = self._get_SID(target)
@@ -1216,7 +1216,7 @@ class P10Protocol(IRCS2SProtocol):
 
     def handle_topic(self, source, command, args):
         """Handles TOPIC changes."""
-        # <- ABAAA T #test GL!~gl@nefarious.midnight.vpn 1460852591 1460855795 :blah
+        # <- ABAAA T #test jlu5!~jlu5@nefarious.midnight.vpn 1460852591 1460855795 :blah
         channel = args[0]
         topic = args[-1]
 
@@ -1269,7 +1269,7 @@ class P10Protocol(IRCS2SProtocol):
         target = args[0]
 
         if self.serverdata.get('use_extended_accounts'):
-            # Registration: <- AA AC ABAAA R GL 1459019072
+            # Registration: <- AA AC ABAAA R jlu5 1459019072
             # Logout: <- AA AC ABAAA U
 
             # 1 <target user numeric>

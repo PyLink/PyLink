@@ -236,7 +236,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
 
     # Track how many times the given nick has been tagged. If this is 0, no tag is used.
     # If this is 1, a /network tag is added. Otherwise, keep adding one character to the
-    # separator: GLolol -> GLolol/net1 -> GLolol//net1 -> ...
+    # separator: jlu5 -> jlu5/net1 -> jlu5//net1 -> ...
     if times_tagged >= 1:
         suffix = "%s%s%s" % (separator[0]*times_tagged, separator[1:], netname)
         allowedlength -= len(suffix)
@@ -1355,7 +1355,7 @@ def handle_join(irc, numeric, command, args):
         modes = []
         for user in users:
             # XXX: Find the diff of the new and old mode lists of the channel. Not pretty, but I'd
-            # rather not change the 'users' format of SJOIN just for this. -GL
+            # rather not change the 'users' format of SJOIN just for this. -jlu5
             try:
                 oldmodes = set(chandata.get_prefix_modes(user))
             except KeyError:
@@ -2859,7 +2859,7 @@ def modedelta(irc, source, args):
     Mode names are defined using PyLink named modes, and not IRC mode characters: you can find a
     list of channel named modes and the characters they map to on different IRCds at:
 
-    https://raw.githack.com/GLolol/PyLink/devel/docs/modelists/channel-modes.html
+    https://raw.githack.com/jlu5/PyLink/devel/docs/modelists/channel-modes.html
 
     Examples of setting modes:
 

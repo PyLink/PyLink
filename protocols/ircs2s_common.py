@@ -343,7 +343,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
 
         if command == 'ENCAP':
             # Special case for TS6 encapsulated commands (ENCAP), in forms like this:
-            # <- :00A ENCAP * SU 42XAAAAAC :GLolol
+            # <- :00A ENCAP * SU 42XAAAAAC :jlu5
             command = args[1]
             args = args[2:]
             log.debug("(%s) Rewriting incoming ENCAP to command %s (args: %s)", self.name, command, args)
@@ -507,7 +507,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
             return
 
         # TS6-style kills look something like this:
-        # <- :GL KILL 38QAAAAAA :hidden-1C620195!GL (test)
+        # <- :jlu5 KILL 38QAAAAAA :hidden-1C620195!jlu5 (test)
         # What we actually want is to format a pretty kill message, in the form
         # "Killed (killername (reason))".
 
@@ -530,9 +530,9 @@ class IRCS2SProtocol(IRCCommonProtocol):
             # XXX: this does create a convoluted kill string if we want to forward kills
             # over relay.
             # InspIRCd:
-            # <- :1MLAAAAA1 KILL 0ALAAAAAC :Killed (GL (test))
+            # <- :1MLAAAAA1 KILL 0ALAAAAAC :Killed (jlu5 (test))
             # ngIRCd:
-            # <- :GL KILL PyLink-devel :KILLed by GL: ?
+            # <- :jlu5 KILL PyLink-devel :KILLed by jlu5: ?
             killmsg = args[1]
 
         return {'target': killed, 'text': killmsg, 'userdata': userdata}
@@ -574,7 +574,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # <- :70MAAAAAA MODE 70MAAAAAA -i+xc
 
         # P10:
-        # <- ABAAA M GL -w
+        # <- ABAAA M jlu5 -w
         # <- ABAAA M #test +v ABAAB 1460747615
         # <- ABAAA OM #test +h ABAAA
         target = self._get_UID(args[0])
@@ -684,7 +684,7 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # TS6:
         # <- :1SRAAGB4T QUIT :Quit: quit message goes here
         # P10:
-        # <- ABAAB Q :Killed (GL_ (bangbang))
+        # <- ABAAB Q :Killed (jlu5_ (bangbang))
         userdata = self._remove_client(numeric)
         if userdata:
             try:

@@ -762,7 +762,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     def handle_uid(self, numeric, command, args):
         """Handles incoming UID commands (user introduction)."""
-        # :70M UID 70MAAAAAB 1429934638 GL 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP gl 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
+        # :70M UID 70MAAAAAB 1429934638 jlu5 0::1 hidden-7j810p.9mdf.lrek.0000.0000.IP jlu5 0::1 1429934638 +Wioswx +ACGKNOQXacfgklnoqvx :realname
         uid, ts, nick, realhost, host, ident, ip = args[0:7]
 
         ts = int(ts)
@@ -846,10 +846,10 @@ class InspIRCdProtocol(TS6BaseProtocol):
     def handle_ftopic(self, source, command, args):
         """Handles incoming topic changes."""
         # insp2 (only used for server senders):
-        # <- :70M FTOPIC #channel 1434510754 GLo|o|!GLolol@escape.the.dreamland.ca :Some channel topic
+        # <- :70M FTOPIC #channel 1434510754 jlu5!jlu5@escape.the.dreamland.ca :Some channel topic
 
         # insp3 (used for server AND user senders):
-        # <- :3IN FTOPIC #qwerty 1556828864 1556844505 GL!gl@midnight-umk.of4.0.127.IP :1234abcd
+        # <- :3IN FTOPIC #qwerty 1556828864 1556844505 jlu5!jlu5@midnight-umk.of4.0.127.IP :1234abcd
         # <- :3INAAAAAA FTOPIC #qwerty 1556828864 1556844248 :topic text
         #           chan creation time ^          ^ topic set time (the one we want)
 

@@ -207,7 +207,7 @@ Modes are stored not stored as strings, but lists of mode pairs in order to ease
 
 - `self.parse_modes('#chat', ['+ol invalidnick'])`:
     - `[]`
-- `self.parse_modes('#chat', ['+o GLolol'])`:
+- `self.parse_modes('#chat', ['+o jlu5'])`:
     - `[('+o', '001ZJZW01')]`
 
 Afterwords, a parsed mode list can be applied to channel name or UID using `self.apply_modes(target, parsed_modelist)`.
@@ -217,16 +217,16 @@ Afterwords, a parsed mode list can be applied to channel name or UID using `self
 Internally, modes are stored in `Channel` and `User` objects as sets, **with the `+` prefixing each mode character omitted**. These sets are accessed via the `modes` attribute:
 
 ```
-<+GLolol> PyLink-devel, eval irc.users[source].modes
+<+jlu5> PyLink-devel, eval irc.users[source].modes
 <@PyLink-devel> {('i', None), ('x', None), ('w', None), ('o', None)}
-<+GLolol> PyLink-devel, eval irc.channels['#chat'].modes
+<+jlu5> PyLink-devel, eval irc.channels['#chat'].modes
 <@PyLink-devel> {('n', None), ('t', None)}
 ```
 
 **Exception**: the owner, admin, op, halfop, and voice channel prefix modes are stored separately as a dict of sets in `Channel.prefixmodes`:
 
 ```
-<@GLolol> PyLink-devel, eval irc.channels['#chat'].prefixmodes
+<@jlu5> PyLink-devel, eval irc.channels['#chat'].prefixmodes
 <+PyLink-devel> {'op': set(), 'halfop': set(), 'voice': {'38QAAAAAA'}, 'owner': set(), 'admin': set()}
 ```
 

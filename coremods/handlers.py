@@ -20,7 +20,7 @@ def handle_whois(irc, source, command, args):
     server = irc.get_server(target)
 
     if user is None:  # User doesn't exist
-        # <- :42X 401 7PYAAAAAB GL- :No such nick/channel
+        # <- :42X 401 7PYAAAAAB jlu5- :No such nick/channel
         nick = target
         f(401, source, "%s :No such nick/channel" % nick)
     else:
@@ -86,7 +86,7 @@ def handle_whois(irc, source, command, args):
                 n = 'n' if opertype[0].lower() in 'aeiou' else ''
 
                 # Remove the "(on $network)" bit in relay oper types if the target network is the
-                # same - this prevents duplicate text such as "GL/ovd is a Network Administrator
+                # same - this prevents duplicate text such as "jlu5/ovd is a Network Administrator
                 # (on OVERdrive-IRC) on OVERdrive-IRC" from showing.
                 # XXX: does this post-processing really belong here?
                 opertype = opertype.replace(' (on %s)' % irc.get_full_network_name(), '')
@@ -109,7 +109,7 @@ def handle_whois(irc, source, command, args):
             # Show botmode info in WHOIS.
             f(335, source, "%s :is a bot" % nick)
 
-        # :charybdis.midnight.vpn 317 GL GL 1946 1499867833 :seconds idle, signon time
+        # :charybdis.midnight.vpn 317 jlu5 jlu5 1946 1499867833 :seconds idle, signon time
         if irc.get_service_bot(target) and conf.conf['pylink'].get('whois_show_startup_time', True):
             f(317, source, "%s 0 %s :seconds idle (placeholder), signon time" % (nick, irc.start_ts))
 

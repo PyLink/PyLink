@@ -131,8 +131,8 @@ class HybridProtocol(TS6Protocol):
         """Updates the ident, host, or realname of a PyLink client."""
         # https://github.com/ircd-hybrid/ircd-hybrid/blob/58323b8/modules/m_svsmode.c#L40-L103
         # parv[0] = command
-        # parv[1] = nickname <-- UID works too -GLolol
-        # parv[2] = TS <-- Of the user, not the current time. -GLolol
+        # parv[1] = nickname <-- UID works too -jlu5
+        # parv[2] = TS <-- Of the user, not the current time. -jlu5
         # parv[3] = mode
         # parv[4] = optional argument (services account, vhost)
         field = field.upper()
@@ -142,7 +142,7 @@ class HybridProtocol(TS6Protocol):
         if field == 'HOST':
             self.users[target].host = text
             # On Hybrid, it appears that host changing is actually just forcing umode
-            # "+x <hostname>" on the target. -GLolol
+            # "+x <hostname>" on the target. -jlu5
             self._send_with_prefix(self.sid, 'SVSMODE %s %s +x %s' % (target, ts, text))
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
@@ -255,7 +255,7 @@ class HybridProtocol(TS6Protocol):
                 # Login sequence (tested with Anope 2.0.4-git):
                 # A mode change +d accountname is used to propagate logins,
                 # before setting umode +r on the target.
-                # <- :5ANAAAAAG SVSMODE 5HYAAAAAA 1460175209 +d GL
+                # <- :5ANAAAAAG SVSMODE 5HYAAAAAA 1460175209 +d jlu5
                 # <- :5ANAAAAAG SVSMODE 5HYAAAAAA 1460175209 +r
 
                 # Logout sequence:
