@@ -310,19 +310,18 @@ class IRCS2SProtocol(IRCCommonProtocol):
         args = self.parse_args(data)
 
         sender = args[0]
-        sender = sender.lstrip(':')
+        if sender.startswith(':'):
+            sender = sender[1:]
 
-        # If the sender isn't in numeric format, try to convert it automatically.
-        sender_sid = self._get_SID(sender)
-        sender_uid = self._get_UID(sender)
+            # If the sender isn't in numeric format, try to convert it automatically.
+            sender_sid = self._get_SID(sender)
+            sender_uid = self._get_UID(sender)
 
-        if sender_sid in self.servers:
-            # Sender is a server (converting from name to SID gave a valid result).
-            sender = sender_sid
-        elif sender_uid in self.users:
-            # Sender is a user (converting from name to UID gave a valid result).
-            sender = sender_uid
-        elif not (args[0].startswith(':')):
+            if sender_sid in self.servers:
+                sender = sender_sid
+            elif sender_uid in self.users:
+                sender = sender_uid
+        else:
             # No sender prefix; treat as coming from uplink IRCd.
             sender = self.uplink
             args.insert(0, sender)
