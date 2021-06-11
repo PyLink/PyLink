@@ -1857,13 +1857,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         ip = self.serverdata["ip"]
         port = self.serverdata["port"]
         try:
-            # Set the socket type (IPv6 or IPv4), auto detecting it if not specified.
-            isipv6 = self.serverdata.get("ipv6", utils.get_hostname_type(ip) == 2)
-
-            if (not isipv6) and 'bindhost' in self.serverdata:
-                # Also try detecting the socket type from the bindhost if specified.
-                isipv6 = utils.get_hostname_type(self.serverdata['bindhost']) == 2
-
             # Resolve hostnames if it's not an IP address already.
             old_ip = ip
             ip = socket.getaddrinfo(ip, port)[0][-1][0]
@@ -1891,7 +1884,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             log.info("Connecting to network %r on %s:%s", self.name, ip, port)
 
             self._socket.settimeout(self.pingfreq)
-
 
             # Start the actual connection
             self._socket.connect((ip, port))
