@@ -1864,10 +1864,6 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
                 # Also try detecting the socket type from the bindhost if specified.
                 isipv6 = utils.get_hostname_type(self.serverdata['bindhost']) == 2
 
-            # Set the socket bind if applicable.
-            if 'bindhost' in self.serverdata:
-                self._socket.bind((self.serverdata['bindhost'], 0))
-
             # Resolve hostnames if it's not an IP address already.
             old_ip = ip
             ip = socket.getaddrinfo(ip, port)[0][-1][0]
@@ -1877,6 +1873,10 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
 
             # Creat the socket.
             self._socket = socket.socket(stype)
+
+            # Set the socket bind if applicable.
+            if 'bindhost' in self.serverdata:
+                self._socket.bind((self.serverdata['bindhost'], 0))
 
             # Enable SSL if set to do so.
             self.ssl = self.serverdata.get('ssl')
