@@ -1869,7 +1869,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
             ip = socket.getaddrinfo(ip, port)[0][-1][0]
             log.debug('(%s) Resolving address %s to %s', self.name, old_ip, ip)
 
-            stype = socket.AF_INET if ipaddress.ip_address(ip) == 4 else socket.AF_INET6
+            stype = socket.AF_INET if ipaddress.ip_address(ip).version == 4 else socket.AF_INET6
 
             # Creat the socket.
             self._socket = socket.socket(stype)
