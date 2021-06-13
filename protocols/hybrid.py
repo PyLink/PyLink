@@ -212,13 +212,13 @@ class HybridProtocol(TS6Protocol):
         self._check_oper_status_change(uid, parsedmodes)
 
         # Track SSL/TLS status
-        self.users[uid].ssl = ('+S', None) in parsedmodes
+        has_ssl = self.users[uid].ssl = ('+S', None) in parsedmodes
 
         # Set the account name if present
         if account:
             self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': account}])
 
-        return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip}
+        return {'uid': uid, 'ts': ts, 'nick': nick, 'realname': realname, 'host': host, 'ident': ident, 'ip': ip, 'secure': has_ssl}
 
     def handle_tburst(self, numeric, command, args):
         """Handles incoming topic burst (TBURST) commands."""

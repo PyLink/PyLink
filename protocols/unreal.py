@@ -509,7 +509,7 @@ class UnrealProtocol(TS6BaseProtocol):
             accountname = nick
 
         # Track SSL/TLS status
-        self.users[uid].ssl = ('+z', None) in parsedmodes
+        has_ssl = self.users[uid].ssl = ('+z', None) in parsedmodes
 
         if not accountname.isdigit():
             self.call_hooks([uid, 'CLIENT_SERVICES_LOGIN', {'text': accountname}])
@@ -517,7 +517,7 @@ class UnrealProtocol(TS6BaseProtocol):
         # parse_as is used here to prevent legacy user introduction from being confused
         # with a nick change.
         return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host,
-                'ident': ident, 'ip': ip, 'parse_as': 'UID'}
+                'ident': ident, 'ip': ip, 'parse_as': 'UID', 'secure': has_ssl}
 
     def handle_pass(self, numeric, command, args):
         # <- PASS :abcdefg

@@ -1,6 +1,6 @@
 # PyLink hooks reference
 
-***Last updated for 2.1-alpha2 (2019-07-01).***
+***Last updated for 3.1-dev (2021-06-13).***
 
 In PyLink, protocol modules communicate with plugins through a system of hooks. This has the benefit of being IRCd-independent, allowing most plugins to function regardless of the IRCd being used.
 Each hook payload is formatted as a Python `list`, with three arguments: `numeric`, `command`, and `args`.
@@ -100,9 +100,10 @@ The following hooks represent regular IRC commands sent between servers.
     - `oldtopic` denotes the original topic, and `text` indicates the new one being set.
     - `setter` is the raw sender field given to us by the IRCd; it may be a `nick!user@host`, a UID, a SID, a server name, or a nick. This is not processed at the protocol level.
 
-- **UID**: `{'uid': 'UID1', 'ts': 1234567891, 'nick': 'supercoder', 'realhost': 'localhost', 'host': 'admin.testnet.local', 'ident': ident, 'ip': '127.0.0.1'}`
+- **UID**: `{'uid': 'UID1', 'ts': 1234567891, 'nick': 'supercoder', 'realhost': 'localhost', 'host': 'admin.testnet.local', 'ident': ident, 'ip': '127.0.0.1', 'secure': True}`
     - This command is used to introduce users; the sender of the message should be the server bursting or announcing the connection.
     - `ts` refers to the user's signon time.
+    - `secure` is a ternary value (True/False/None) that determines whether the user is connected over a secure connection (SSL/TLS). This value is only available on some IRCds: currently UnrealIRCd, P10, Charybdis TS6, and Hybrid; on other servers this will be `None`.
 
 ### Extra commands (where supported)
 
@@ -163,15 +164,17 @@ At this time, commands that are handled by protocol modules without returning an
 
 ## Changes
 
+* 2021-06-13 (3.1-dev)
+    - Added the `secure` field to `UID` hooks.
 * 2019-07-01 (2.1-alpha2)
-   - KILL and QUIT hooks now always include a non-empty `userdata` key. Now, if a QUIT message for a killed user is received before the corresponding KILL (or vice versa), only the first message received will have the corresponding hook payload broadcasted.
+    - KILL and QUIT hooks now always include a non-empty `userdata` key. Now, if a QUIT message for a killed user is received before the corresponding KILL (or vice versa), only the first message received will have the corresponding hook payload broadcasted.
 * 2018-12-27 (2.1-dev)
-   - Add the `affected_servers` argument to SQUIT hooks.
+    - Add the `affected_servers` argument to SQUIT hooks.
 * 2018-07-11 (2.0.0)
-   - Version bump for 2.0 stable release; no meaningful content changes.
+    - Version bump for 2.0 stable release; no meaningful content changes.
 * 2018-01-13 (2.0-alpha2)
-   - Replace `IrcChannel`, `IrcUser`, and `IrcServer` with their new class names (`classes.Channel`, `classes.User`, and `classes.Server`)
-   - Replace `irc.fullVersion()` with `irc.version()`
-   - Various minor wording tweaks.
+    - Replace `IrcChannel`, `IrcUser`, and `IrcServer` with their new class names (`classes.Channel`, `classes.User`, and `classes.Server`)
+    - Replace `irc.fullVersion()` with `irc.version()`
+    - Various minor wording tweaks.
 * 2017-02-24 (1.2-dev)
-   - The `was_successful` key was added to PYLINK_DISCONNECT.
+    - The `was_successful` key was added to PYLINK_DISCONNECT.

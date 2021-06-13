@@ -607,9 +607,9 @@ class TS6Protocol(TS6BaseProtocol):
 
         # charybdis and derivatives have a usermode (+Z) to mark SSL connections
         # ratbox doesn't appear to have this
-        self.users[uid].ssl = ('+%s' % self.umodes.get('ssl'), None) in parsedmodes
+        has_ssl = self.users[uid].ssl = ('+%s' % self.umodes.get('ssl'), None) in parsedmodes
 
-        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
+        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip, 'secure': has_ssl}
 
     def handle_uid(self, numeric, command, args):
         """Handles legacy user introductions (UID)."""

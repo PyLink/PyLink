@@ -777,7 +777,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
         self._check_oper_status_change(uid, parsedmodes)
 
         self.servers[numeric].users.add(uid)
-        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip}
+        # InspIRCd sends SSL status in the metadata command, so the info is not known at this point
+        return {'uid': uid, 'ts': ts, 'nick': nick, 'realhost': realhost, 'host': host, 'ident': ident, 'ip': ip, 'secure': None}
 
     def handle_server(self, source, command, args):
         """Handles incoming SERVER commands (introduction of servers)."""
