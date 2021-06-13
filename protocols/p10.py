@@ -815,6 +815,16 @@ class P10Protocol(IRCS2SProtocol):
 
     ### HANDLERS
 
+    def handle_events(self, data):
+        """
+        Events handler for the P10 protocol. This is mostly the same as RFC1459, with extra handling
+        for the fact that P10 does not send source numerics prefixed with a ":".
+        """
+        # After the initial PASS & SERVER message, every following message should be prefixed
+        if self.uplink and not data.startswith(":"):
+            data = ':' + data
+        return super().handle_events(data)
+
     def post_connect(self):
         """Initializes a connection to a server."""
         ts = self.start_ts
