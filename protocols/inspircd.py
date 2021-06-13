@@ -986,6 +986,8 @@ class InspIRCdProtocol(TS6BaseProtocol):
                     self._modsupport.add(module[1:])
                 else:
                     log.warning('(%s) Got unknown METADATA modules string: %r', self.name, args[-1])
+        elif args[1] == 'ssl_cert' and uid in self.users:
+            self.users[uid].ssl = True
 
     def handle_version(self, numeric, command, args):
         """
