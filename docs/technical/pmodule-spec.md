@@ -38,8 +38,9 @@ This class offers the most flexibility because the protocol module can choose ho
 ### `protocols.ircs2s_common.IRCS2SProtocol`
 `IRCS2SProtocol` is the most complete base server class, including a generic `handle_events()` supporting most IRC S2S message styles (i.e. prefix-less messages, protocols with and without UIDs). It also defines some incoming and outgoing command functions that hardly vary between protocols: `invite()`, `kick()`, `message()`, `notice()`, `numeric()`, `part()`, `quit()`, `squit()`, and `topic()` as of PyLink 2.0. This list is subject to change in future releases.
 
-### For non-IRC protocols: `classes.PyLinkNetworkCoreWithUtils`
-Although no such transports have been implemented yet, PyLink leaves some level of abstraction for non-IRC protocols (e.g. Discord, Telegram, Slack, ...) by providing generic classes that only include state checking and utility functions.
+### `classes.PyLinkNetworkCoreWithUtils`
+
+`PyLinkNetworkCoreWithUtils` contains various state checking and IRC-related utility functions. Originally this abstraction was intended to support non-IRC protocols (Discord, Telegram, Slack, ...), but I (jlu5) no longer support this as a development focus. The main reason being is that in order to keep track of IRC server state correctly, PyLink makes a lot of assumptions specific to IRC (e.g. explicit join/part, mode formats, etc.). Trying to reconcile this with other platforms is a large undertaking and ideally requires a different, more generic protocol specification. (In PyLink 2.x there was a [Discord module](https://github.com/PyLink/pylink-discord) that is no longer supported - see https://jlu5.com/blog/the-trouble-with-pylink for a more in depth explanation as to why.)
 
 Subclassing one of the `PyLinkNetworkCore*` classes means that a protocol module only needs to define one method of entry: `connect()`, and must set up its own message handling stack. Protocol configuration validation checks and autoconnect must also be reimplemented. IRC-style utility functions (i.e. `PyLinkNetworkCoreWithUtils` methods) should also be reimplemented / overridden when applicable.
 
@@ -267,6 +268,7 @@ In short, protocol modules have some very important jobs. If any of these aren't
 ## Changes to this document
 * 2021-06-15 (3.1-dev)
    - Added `oper_notice()` function to send notices to opers (GLOBOPS / OPERWALL on most IRCds)
+   - Update notes about non-IRC protocols and PyLinkNetworkCoreWithUtils
 * 2019-11-02 (2.1-beta1)
    - Added protocol capability: `can-manage-bot-channels`
 * 2019-10-10 (2.1-beta1)
