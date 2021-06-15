@@ -1,6 +1,6 @@
 # PyLink Protocol Module Specification
 
-***Last updated for 2.1-alpha2 (2019-11-02).***
+***Last updated for 3.1-dev (2021-06-15).***
 
 Starting with PyLink 2.x, a *protocol module* is any module containing a class derived from `PyLinkNetworkCore` (e.g. `InspIRCdProtocol`), along with a global `Class` attribute set equal to it (e.g. `Class = InspIRCdProtocol`). These modules do everything from managing connections to providing plugins with an API to send and receive data. New protocol modules may be implemented based off any of the classes in the following inheritance tree, with each containing a different amount of abstraction.
 
@@ -81,6 +81,8 @@ Unless otherwise noted, the camel-case variants of command functions (e.g. "`spa
 - **`mode`**`(self, source, target, modes, ts=None)` - Sends modes from a PyLink client/server. `modes` takes a set of `([+/-]mode char, mode arg)` tuples.
 
 - **`nick`**`(self, source, newnick)` - Changes the nick of a PyLink client.
+
+- **`oper_notice`**`(self, source, target)` - Sends a notice to all operators on the network.
 
 - **`notice`**`(self, source, target, text)` - Sends a NOTICE from a PyLink client or server.
 
@@ -263,6 +265,8 @@ In short, protocol modules have some very important jobs. If any of these aren't
 7) Declare the correct set of protocol module capabilities to prevent confusing PyLink's plugins.
 
 ## Changes to this document
+* 2021-06-15 (3.1-dev)
+   - Added `oper_notice()` function to send notices to opers (GLOBOPS / OPERWALL on most IRCds)
 * 2019-11-02 (2.1-beta1)
    - Added protocol capability: `can-manage-bot-channels`
 * 2019-10-10 (2.1-beta1)

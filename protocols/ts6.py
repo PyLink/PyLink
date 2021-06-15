@@ -117,6 +117,15 @@ class TS6Protocol(TS6BaseProtocol):
         self._channels[channel].users.add(client)
         self.users[client].channels.add(channel)
 
+    def oper_notice(self, source, text):
+        """
+        Send a message to all opers.
+        """
+        if self.is_internal_server(source):
+            # Charybdis TS6 only allows OPERWALL from users
+            source = self.pseudoclient.uid
+        self._send_with_prefix(source, 'OPERWALL :%s' % text)
+
     def sjoin(self, server, channel, users, ts=None, modes=set()):
         """Sends an SJOIN for a group of users to a channel.
 

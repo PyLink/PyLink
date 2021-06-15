@@ -526,6 +526,12 @@ class P10Protocol(IRCS2SProtocol):
         # <- AB 311 AyAAA jlu5 ~jlu5 nefarious.midnight.vpn * :realname
         self._send_with_prefix(source, '%s %s %s' % (numeric, target, text))
 
+    def oper_notice(self, source, text):
+        """
+        Send a message to all opers.
+        """
+        self._send_with_prefix(source, 'WA :%s' % text)
+
     def part(self, client, channel, reason=None):
         """Sends a part from a PyLink client."""
 

@@ -312,6 +312,12 @@ class UnrealProtocol(TS6BaseProtocol):
             joinedmodes = self.join_modes(modes)
             self._send_with_prefix(target, 'UMODE2 %s' % joinedmodes)
 
+    def oper_notice(self, source, text):
+        """
+        Send a message to all opers.
+        """
+        self._send_with_prefix(source, 'GLOBOPS :%s' % text)
+
     def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
         """
         Sets a server ban.

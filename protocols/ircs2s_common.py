@@ -385,6 +385,12 @@ class IRCS2SProtocol(IRCCommonProtocol):
         # handle_part() does that just fine.
         self.handle_part(target, 'KICK', [channel])
 
+    def oper_notice(self, source, text):
+        """
+        Send a message to all opers.
+        """
+        self._send_with_prefix(source, 'WALLOPS :%s' % text)
+
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client. This is used for WHOIS replies."""
         # Mangle the target for IRCds that require it.

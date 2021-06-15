@@ -147,6 +147,12 @@ class HybridProtocol(TS6Protocol):
         else:
             raise NotImplementedError("Changing field %r of a client is unsupported by this protocol." % field)
 
+    def oper_notice(self, source, text):
+        """
+        Send a message to all opers.
+        """
+        self._send_with_prefix(source, 'GLOBOPS :%s' % text)
+
     def set_server_ban(self, source, duration, user='*', host='*', reason='User banned'):
         """
         Sets a server ban.

@@ -334,6 +334,12 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
                 self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
+    def oper_notice(self, source, text):
+        """
+        Send a message to all opers.
+        """
+        # <- :70M SNONOTICE G :From jlu5: aaaaaa
+        self._send_with_prefix(self.sid, 'SNONOTICE G :From %s: %s' % (self.get_friendly_name(source), text))
 
     def numeric(self, source, numeric, target, text):
         """Sends raw numerics from a server to a remote client."""
