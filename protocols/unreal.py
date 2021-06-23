@@ -970,17 +970,32 @@ class UnrealProtocol(TS6BaseProtocol):
         self.users[numeric].realname = newgecos = args[0]
         return {'target': numeric, 'newgecos': newgecos}
 
-    def handle_chgident(self, numeric, command, args):
+    def handle_chgident(self, source, command, args):
         """Handles CHGIDENT, used for denoting ident changes."""
         # <- :jlu5 CHGIDENT jlu5 test
         target = self._get_UID(args[0])
+
+        # Bounce attempts to change fields of protected PyLink clients
+        if self.is_internal_client(target):
+            log.warning("(%s) Bouncing attempt from %s to change ident of PyLink client %s",
+                        self.name, self.get_friendly_name(source), self.get_friendly_name(target))
+            self.update_client(target, 'IDENT', self.users[target].ident)
+            return
+
         self.users[target].ident = newident = args[1]
         return {'target': target, 'newident': newident}
 
-    def handle_chghost(self, numeric, command, args):
+    def handle_chghost(self, source, command, args):
         """Handles CHGHOST, used for denoting hostname changes."""
         # <- :jlu5 CHGHOST jlu5 some.host
         target = self._get_UID(args[0])
+        # Bounce attempts to change fields of protected PyLink clients
+        if self.is_internal_client(target):
+            log.warning("(%s) Bouncing attempt from %s to change host of PyLink client %s",
+                        self.name, self.get_friendly_name(source), self.get_friendly_name(target))
+            self.update_client(target, 'HOST', self.users[target].host)
+            return
+
         self.users[target].host = newhost = args[1]
 
         # When SETHOST or CHGHOST is used, modes +xt are implicitly set on the
@@ -989,10 +1004,17 @@ class UnrealProtocol(TS6BaseProtocol):
 
         return {'target': target, 'newhost': newhost}
 
-    def handle_chgname(self, numeric, command, args):
+    def handle_chgname(self, source, command, args):
         """Handles CHGNAME, used for denoting real name/gecos changes."""
         # <- :jlu5 CHGNAME jlu5 :afdsafasf
         target = self._get_UID(args[0])
+        # Bounce attempts to change fields of protected PyLink clients
+        if self.is_internal_client(target):
+            log.warning("(%s) Bouncing attempt from %s to change gecos of PyLink client %s",
+                        self.name, self.get_friendly_name(source), self.get_friendly_name(target))
+            self.update_client(target, 'REALNAME', self.users[target].realname)
+            return
+
         self.users[target].realname = newgecos = args[1]
         return {'target': target, 'newgecos': newgecos}
 
