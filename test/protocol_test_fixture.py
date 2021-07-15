@@ -29,7 +29,7 @@ class DummySocket():
             return None
     '''
 
-    def recv(bufsize, *args):
+    def recv(self, bufsize, *args):
         raise NotImplementedError
 
     def send(self, data):
@@ -343,7 +343,7 @@ class BaseProtocolTest(unittest.TestCase):
             [('+v', '100'), ('+i', None), ('+p', None)]
         )
 
-    def test_parse_modes_channel_rfc(self):
+    def test_parse_modes_channel_rfc2(self):
         # These are basic tests that only use RFC 1459 defined modes.
         # IRCds supporting more complex modes can define new test cases if needed.
         c = self.p.channels['#testruns'] = Channel(self.p, name='#testruns')
