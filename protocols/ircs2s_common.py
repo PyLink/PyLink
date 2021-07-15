@@ -9,49 +9,34 @@ from pylinkirc import conf
 from pylinkirc.classes import IRCNetwork, ProtocolError
 from pylinkirc.log import log
 
-__all__ = ['IncrementalUIDGenerator', 'IRCCommonProtocol', 'IRCS2SProtocol']
+__all__ = ['UIDGenerator', 'IRCCommonProtocol', 'IRCS2SProtocol']
 
-
-class IncrementalUIDGenerator():
+class UIDGenerator():
     """
-    Incremental UID Generator module, adapted from InspIRCd source:
-    https://github.com/inspircd/inspircd/blob/f449c6b296ab/src/server.cpp#L85-L156
+    Generate UIDs for IRC S2S.
     """
 
-    def __init__(self, sid):
-        if not (hasattr(self, 'allowedchars') and hasattr(self, 'length')):
-             raise RuntimeError("Allowed characters list not defined. Subclass "
-                                "%s by defining self.allowedchars and self.length "
-                                "and then calling super().__init__()." % self.__class__.__name__)
-        self.uidchars = [self.allowedchars[0]]*self.length
-        self.sid = str(sid)
-
-    def increment(self, pos=None):
-        """
-        Increments the UID generator to the next available UID.
-        """
-        # Position starts at 1 less than the UID length.
-        if pos is None:
-            pos = self.length - 1
-
-        # If we're at the last character in the list of allowed ones, reset
-        # and increment the next level above.
-        if self.uidchars[pos] == self.allowedchars[-1]:
-            self.uidchars[pos] = self.allowedchars[0]
-            self.increment(pos-1)
-        else:
-            # Find what position in the allowed characters list we're currently
-            # on, and add one.
-            idx = self.allowedchars.find(self.uidchars[pos])
-            self.uidchars[pos] = self.allowedchars[idx+1]
+    def __init__(self, uidchars, length, sid):
+        self.uidchars = uidchars  # corpus of characters to choose from
+        self.length = length  # desired length of uid part, padded with uidchars[0]
+        self.sid = str(sid)  #  server id (prefixed to every result)
+        self.counter = 0
 
     def next_uid(self):
         """
         Returns the next unused UID for the server.
         """
-        uid = self.sid + ''.join(self.uidchars)
-        self.increment()
-        return uid
+        uid = ''
+        num = self.counter
+        if num >= (len(self.uidchars) ** self.length):
+            raise RuntimeError("UID overflowed")
+        while num > 0:
+            num, index = divmod(num, len(self.uidchars))
+            uid = self.uidchars[index] + uid
+
+        self.counter += 1
+        uid = uid.rjust(self.length, self.uidchars[0])
+        return self.sid + uid
 
 class IRCCommonProtocol(IRCNetwork):
 

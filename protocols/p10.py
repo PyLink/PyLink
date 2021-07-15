@@ -4,6 +4,7 @@ p10.py: P10 protocol module for PyLink, supporting Nefarious IRCu and others.
 
 import base64
 import socket
+import string
 import struct
 import time
 from ipaddress import ip_address
@@ -16,13 +17,13 @@ from pylinkirc.protocols.ircs2s_common import *
 __all__ = ['P10Protocol']
 
 
-class P10UIDGenerator(IncrementalUIDGenerator):
-     """Implements an incremental P10 UID Generator."""
+class P10UIDGenerator(UIDGenerator):
+    """Implements a P10 UID Generator."""
 
-     def __init__(self, sid):
-         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]'
-         self.length = 3
-         super().__init__(sid)
+    def __init__(self, sid):
+        uidchars = string.ascii_uppercase + string.ascii_lowercase + string.digits + '[]'
+        length = 3
+        super().__init__(uidchars, length, sid)
 
 def p10b64encode(num, length=2):
     """

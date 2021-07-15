@@ -87,18 +87,16 @@ class TS6SIDGenerator():
         sid = ''.join(self.output)
         return sid
 
-class TS6UIDGenerator(IncrementalUIDGenerator):
+class TS6UIDGenerator(UIDGenerator):
      """Implements an incremental TS6 UID Generator."""
 
      def __init__(self, sid):
-         # Define the options for IncrementalUIDGenerator, and then
-         # initialize its functions.
          # TS6 UIDs are 6 characters in length (9 including the SID).
          # They go from ABCDEFGHIJKLMNOPQRSTUVWXYZ -> 0123456789 -> wrap around:
          # e.g. AAAAAA, AAAAAB ..., AAAAA8, AAAAA9, AAAABA, etc.
-         self.allowedchars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456879'
-         self.length = 6
-         super().__init__(sid)
+         uidchars = string.ascii_uppercase + string.digits
+         length = 6
+         super().__init__(uidchars, length, sid)
 
 class TS6BaseProtocol(IRCS2SProtocol):
     def __init__(self, *args, **kwargs):
