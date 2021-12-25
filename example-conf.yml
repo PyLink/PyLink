@@ -204,12 +204,9 @@ servers:
 
         # InspIRCd specific option: sets the target InspIRCd protocol version.
         # Valid values include:
-        #  "insp20" - InspIRCd 2.0.x (1202) [DEFAULT†]
-        #  "insp3"  - InspIRCd 3.x   (1205)
-        #target_version: insp20
+        #  "insp3"  - InspIRCd 3.x   (1205) [DEFAULT]
+        #  "insp20" - InspIRCd 2.0.x (1202) [legacy, deprecated]
         #target_version: insp3
-        # † InspIRCd 2.0 servers can link to InspIRCd 3.0 via built-in link compatibility, but some
-        #   new features may not work correctly.
 
         # Sets the max nick length for the network. It is important that this is set correctly, or
         # PyLink might introduce a nick that is too long and cause netsplits!

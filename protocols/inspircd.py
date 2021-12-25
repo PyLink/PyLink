@@ -17,7 +17,7 @@ class InspIRCdProtocol(TS6BaseProtocol):
 
     S2S_BUFSIZE = 0  # InspIRCd allows infinitely long S2S messages, so set bufsize to infinite
     SUPPORTED_IRCDS = ['insp20', 'insp3']
-    DEFAULT_IRCD = SUPPORTED_IRCDS[0]
+    DEFAULT_IRCD = SUPPORTED_IRCDS[1]
 
     MAX_PROTO_VER = 1205  # anything above this warns (not officially supported)
 
