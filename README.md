@@ -21,7 +21,7 @@ PyLink is licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2]
 
 **When upgrading between major versions, remember to read the [release notes](RELNOTES.md) for any breaking changes!**
 
-Please report any bugs you find to the [issue tracker](https://github.com/jlu5/PyLink/issues). Pull requests are open if you'd like to contribute, though new stuff generally goes to the **devel** branch.
+Please report any bugs you find to the [issue tracker](https://github.com/jlu5/PyLink/issues). Pull requests are likewise welcome.
 
 There is also an IRC channel available: `#pylink @ irc.libera.chat`
 
@@ -45,12 +45,9 @@ If you are a developer and want to help make PyLink more portable, patches are w
     * *For extended PID file tracking (i.e. removing stale PID files after a crash)*: psutil (`pip3 install psutil`)
 
 2) Clone the repository: `git clone https://github.com/jlu5/PyLink && cd PyLink`
+    - Previously there was a *devel* branch for testing versions of PyLink - this practice has since been discontinued.
 
-3) Pick your branch.
-    * By default you'll be on the **master** branch, which contains the latest stable code. This branch is recommended for production networks that don't require new features or intensive bug fixes as they are developed.
-    * The **devel** branch is where active development goes, and it can be accessed by running `git checkout devel` in your Git tree.
-
-4) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
+3) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
     * Note: `--user` is a *literal* string; *do not* replace it with your username.
     *  **Whenever you switch branches or update PyLink's sources via `git pull`, you will need to re-run this command for changes to apply!**
 
