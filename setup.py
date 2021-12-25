@@ -4,8 +4,8 @@ import subprocess
 import sys
 from codecs import open
 
-if sys.version_info < (3, 4):
-    raise RuntimeError("PyLink requires Python 3.4 or higher.")
+if sys.version_info < (3, 7):
+    raise RuntimeError("PyLink requires Python 3.7 or higher.")
 
 try:
     from setuptools import setup, find_packages
@@ -30,14 +30,8 @@ with open('__init__.py', 'w') as f:
     f.write('real_version = %r\n' % real_version)
 
 try:
-    if sys.version_info >= (3, 5):
-        with open('README.md') as f:
-            long_description = f.read()
-    else:
-        # Work around "TypeError: a bytes-like object is required, not 'str'" errors on Python 3.4
-        # when the README has Unicode characters (error in distutils.util.rfc822_escape)
-        import codecs
-        long_description = codecs.open('README.md', encoding='utf-8').read()
+    with open('README.md') as f:
+        long_description = f.read()
 except OSError:
     print('WARNING: Failed to read readme, skipping writing long_description')
     long_description = None
@@ -76,10 +70,10 @@ setup(
         'Natural Language :: English',
 
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
 
     keywords='IRC services relay',

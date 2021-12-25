@@ -28,7 +28,7 @@ There is also an IRC channel available: `#pylink @ irc.libera.chat`
 ## Installation
 
 ### Pre-requisites
-* CPython 3.5 or above (other interpreters are untested and unsupported)
+* Python 3.7 or above - prefer the newest Python 3.x when available
 * A Unix-like operating system: PyLink is actively developed on Linux only, so we cannot guarantee that things will work properly on other systems.
 
 If you are a developer and want to help make PyLink more portable, patches are welcome.

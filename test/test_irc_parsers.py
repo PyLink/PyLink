@@ -4,7 +4,6 @@ Runs IRC parser tests from ircdocs/parser-tests.
 This test suite runs static code only.
 """
 from pathlib import Path
-import sys
 import unittest
 
 import yaml
@@ -18,20 +17,13 @@ from pylinkirc.protocols.ircs2s_common import IRCCommonProtocol
 class MessageParserTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-
-        if sys.version_info >= (3, 6):
-            _open = open
-        else:
-            def _open(f):  # Coerse pathlib paths to str for py3.5 compat
-                return open(str(f))
-
-        with _open(PARSER_DATA_PATH / 'msg-split.yaml') as f:
+        with open(PARSER_DATA_PATH / 'msg-split.yaml') as f:
             cls.MESSAGE_SPLIT_TEST_DATA = yaml.safe_load(f)
-        with _open(PARSER_DATA_PATH / 'userhost-split.yaml') as f:
+        with open(PARSER_DATA_PATH / 'userhost-split.yaml') as f:
             cls.USER_HOST_SPLIT_TEST_DATA = yaml.safe_load(f)
-        with _open(PARSER_DATA_PATH / 'mask-match.yaml') as f:
+        with open(PARSER_DATA_PATH / 'mask-match.yaml') as f:
             cls.MASK_MATCH_TEST_DATA = yaml.safe_load(f)
-        with _open(PARSER_DATA_PATH / 'validate-hostname.yaml') as f:
+        with open(PARSER_DATA_PATH / 'validate-hostname.yaml') as f:
             cls.VALIDATE_HOSTNAME_TEST_DATA = yaml.safe_load(f)
 
     def testMessageSplit(self):
