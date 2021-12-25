@@ -305,13 +305,6 @@ servers:
         ip: ::1
         port: 8067
 
-        # Determines whether IPv6 should be used for this connection. Should the ip:
-        # above be a hostname instead of an IP, this will also affect whether A records
-        # (IPv4) or AAAA records (IPv6) will be used in resolving it.
-        # As of PyLink 2.0-beta1, you can leave this unset for direct connections to IP addresses;
-        # the address type will be automatically detected.
-        #ipv6: yes
-
         # Received and sent passwords. For passwordless links using SSL fingerprints, simply set
         # these two fields to "*" and enable SSL with a cert and key file.
         recvpass: "coffee"
@@ -345,9 +338,13 @@ servers:
         port: 45454
 
         # When the IP field is set to a hostname, the "ipv6" option determines whether IPv4 or IPv6
-        # addresses should be used when resolving it. You can leave this field blank and use an
-        # explicit bindhost instead, which will let the the address type be automatically detected.
-        #ipv6: false
+        # addresses should be used when resolving it.
+        # As of PyLink 3.1, this defaults to null, falling back to the system's default preferences
+        # if not set (e.g. /etc/gai.conf on Linux). Previous versions default to making IPv4 connections only.
+        # This option is overridden by "bindhost" if it is also provided.
+        #ipv6: null
+
+        # Specifies the IP to make outgoing connections from, for multi-homed hosts.
         #bindhost: 1111:2222:3333:4444
 
         # Note: if you are actually using dynamic DNS for an IRC link, consider enabling

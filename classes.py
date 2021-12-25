@@ -1857,29 +1857,33 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         """
         self._pre_connect()
 
-        ip = self.serverdata["ip"]
+        remote = self.serverdata["ip"]
         port = self.serverdata["port"]
         try:
-            # Set the socket type (IPv6 or IPv4), auto detecting it if not specified.
-            isipv6 = self.serverdata.get("ipv6", utils.get_hostname_type(ip) == 2)
+            if 'bindhost' in self.serverdata:
+                # Try detecting the socket type from the bindhost if specified.
+                force_ipv6 = utils.get_hostname_type(self.serverdata['bindhost']) == 2
+            else:
+                force_ipv6 = self.serverdata.get("ipv6")  # ternary value (None = use system default)
 
-            if (not isipv6) and 'bindhost' in self.serverdata:
-                # Also try detecting the socket type from the bindhost if specified.
-                isipv6 = utils.get_hostname_type(self.serverdata['bindhost']) == 2
+            if force_ipv6 is True:
+                dns_stype = socket.AF_INET6
+            elif force_ipv6 is False:
+                dns_stype = socket.AF_INET
+            else:
+                dns_stype = socket.AF_UNSPEC
 
-            stype = socket.AF_INET6 if isipv6 else socket.AF_INET
+            dns_result = socket.getaddrinfo(remote, port, family=dns_stype)[0]
+            ip = dns_result[-1][0]
 
-            # Creat the socket.
-            self._socket = socket.socket(stype)
+            log.debug('(%s) Resolving address %s to %s (force_ipv6=%s)', self.name, remote, ip, force_ipv6)
+
+            # Create the actual socket.
+            self._socket = socket.socket(dns_result[0])
 
             # Set the socket bind if applicable.
             if 'bindhost' in self.serverdata:
                 self._socket.bind((self.serverdata['bindhost'], 0))
-
-            # Resolve hostnames if it's not an IP address already.
-            old_ip = ip
-            ip = socket.getaddrinfo(ip, port, stype)[0][-1][0]
-            log.debug('(%s) Resolving address %s to %s', self.name, old_ip, ip)
 
             # Enable SSL if set to do so.
             self.ssl = self.serverdata.get('ssl')
