@@ -381,6 +381,16 @@ class UnrealProtocol(TS6BaseProtocol):
                 self.call_hooks([self.sid, 'CHGNAME',
                                    {'target': target, 'newgecos': text}])
 
+    def kill(self, source, target, reason):
+        """Sends a kill from a PyLink client or server."""
+
+        if (not self.is_internal_client(source)) and \
+                (not self.is_internal_server(source)):
+            raise LookupError('No such PyLink client/server exists.')
+
+        self._send_with_prefix(source, 'KILL %s :%s' % (target, reason))
+        self._remove_client(target)
+
     def knock(self, numeric, target, text):
         """Sends a KNOCK from a PyLink client."""
         # KNOCKs in UnrealIRCd are actually just specially formatted NOTICEs,
