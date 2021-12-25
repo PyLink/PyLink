@@ -4,7 +4,7 @@ raw.py: Provides a 'raw' command for sending raw text to IRC.
 from pylinkirc import utils
 from pylinkirc.coremods import permissions
 from pylinkirc.log import log
-
+from pylinkirc import conf
 
 @utils.add_cmd
 def raw(irc, source, args):
@@ -18,8 +18,9 @@ def raw(irc, source, args):
     if irc.protoname == 'clientbot':
         # exec.raw is included for backwards compatibility with PyLink 1.x
         perms = ['raw.raw', 'exec.raw']
-    else:
-        perms = ['raw.raw.unsupported_network']
+    elif not conf.conf['pylink'].get("raw_enabled", False):
+        raise RuntimeError("Raw commands are not supported on this protocol")
+
     permissions.check_permissions(irc, source, perms)
 
     args = ' '.join(args)

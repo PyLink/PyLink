@@ -15,7 +15,9 @@ PPRINT_MAX_LINES = 20
 PPRINT_WIDTH = 200
 
 if not conf.conf['pylink'].get("debug_enabled", False):
-    raise RuntimeError("pylink::debug_enabled must be enabled to load this plugin")
+    raise RuntimeError("pylink::debug_enabled must be enabled to load this plugin. "
+                       "This should ONLY be used in test environments for debugging and development, "
+                       "as anyone with access to this plugin's commands can run arbitrary code as the PyLink user!")
 
 def _exec(irc, source, args, locals_dict=None):
     """<code>
