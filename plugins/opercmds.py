@@ -406,14 +406,7 @@ def kill(irc, source, args):
 
     userdata = irc.users.get(targetu)
 
-    # Deliver a more complete kill reason if our target is a non-PyLink client.
-    # We skip this for PyLink clients so that relayed kills don't get
-    # "Killed (abc (...))" tacked on both here and by the receiving IRCd.
-    if not irc.is_internal_client(targetu):
-        reason = "Killed (%s (Requested by %s: %s))" % (
-                 irc.get_friendly_name(sender),
-                 irc.get_friendly_name(source),
-                 reason)
+    reason = "Requested by %s: %s" % (irc.get_friendly_name(source), reason)
 
     irc.kill(sender, targetu, reason)
 
