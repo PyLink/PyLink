@@ -828,7 +828,7 @@ def relay_joins(irc, channel, users, ts, targetirc=None, **kwargs):
     """
 
     log.debug('(%s) relay.relay_joins: called on %r with users %r, targetirc=%s', irc.name, channel,
-              ['%s/%s' % (user, irc.get_friendly_name(user)) for user in users], targetirc)
+              users, targetirc)
 
     if ts < 750000:
         current_ts = int(time.time())
