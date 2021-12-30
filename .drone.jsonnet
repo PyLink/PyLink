@@ -44,7 +44,31 @@ local build_docker(py_version) = {
       }
     }
   ],
-  "depends_on": ["test-" + py_version],
+  "trigger": {
+    "event": [
+      "push"
+    ],
+    "branch": ["release"],
+  },
+  "depends_on": ["test-" + py_version]
+};
+
+local deploy_pypi(py_version) = {
+  "kind": "pipeline",
+  "type": "docker",
+  "name": "deploy_pypi",
+  "steps": [
+    {
+      "name": "pypi_publish",
+      "image": "plugins/pypi",
+      "settings": {
+        "username": "__token__",
+        "password": {
+            "from_secret": "pypi_token"
+        }
+      }
+    }
+  ],
   "trigger": {
     "event": [
       "tag"
@@ -52,10 +76,12 @@ local build_docker(py_version) = {
     "ref": {
       "exclude": [
         "refs/tags/*alpha*",
+        "refs/tags/*beta*",
         "refs/tags/*dev*"
       ]
     }
-  }
+  },
+  "depends_on": ["test-" + py_version]
 };
 
 [
@@ -63,5 +89,6 @@ local build_docker(py_version) = {
     test("3.8"),
     test("3.9"),
     test("3.10"),
+    deploy_pypi("3.10"),
     build_docker("3.10"),
 ]

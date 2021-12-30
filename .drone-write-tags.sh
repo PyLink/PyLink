@@ -4,8 +4,8 @@
 VERSION="$1"
 
 if test -z "$VERSION"; then
-    echo "Usage: $0 <version>"
-    exit 1
+    echo "Reading version from VERSION file" >&2
+    VERSION=$(<VERSION)
 fi
 
 if [[ "$VERSION" == *"alpha"* || "$VERSION" == *"dev"* ]]; then
