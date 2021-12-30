@@ -1,3 +1,32 @@
+# PyLink 3.1-beta1 (2021-12-28)
+
+### Feature changes
+
+- **PyLink now requires Python >= 3.7**
+- **protocols/inspircd now defaults to InspIRCd 3.x mode** (`target_version=insp3`)
+- **Default to system IPv4/IPv6 preference when resolving hostnames.** For existing users, this means that PyLink will most likely **default to IPv6** when resolving hostnames if your server supports it!
+  - You can override this by setting `ipv6: false` in your server config block or using an explicit `bindhost`. Connections made to IPs directly are not affected.
+- **[SECURITY]** exec and raw plugins are now locked behind config options, to disable running arbitrary code by admins
+- Implement path configuration for PyLink data files (#659)
+
+### Bug fixes
+
+- Various fixes as detected by pylint, thanks to **@Celelibi** for reporting
+- ircs2s_common: fix parsing clash if the sender's nick matches an IRC command (e.g. on UnrealIRCd)
+- ircs2s_common: gracefully handle QUIT messages without a reason (seen on Anope / InspIRCd)
+- Properly handle EAGAIN in non-blocking sockets
+- relay: fix "channel not found" errors on LINK when the remote casemapping differs. This mainly affects channels with "|" and other RFC1459 special cases in their name
+- unreal: bounce attempts to CHGIDENT/HOST/NAME services clients
+- unreal: fix formatting of outgoing `/kill` (#671)
+- opercmds: remove double "Killed by" prefixes in the `kill` command
+
+### Internal improvements
+
+- Added best-effort tracking of user SSL/TLS status (#169)
+- Add support for oper notices (GLOBOPS/OPERWALL) (#511)
+- relay: better ident sanitizing for IRCd-Hybrid
+- Refactored UID generators to be more concise
+
 # PyLink 3.0.0 (2020-04-11)
 
 Changes since 3.0-rc1:
