@@ -16,6 +16,8 @@ fi
 
 major_version="$(printf '%s' "$VERSION" | cut -d . -f 1)"
 
+# Date based tag
+printf '%s' "$VERSION-$(date +%Y%m%d),"
 # Program version
 printf '%s' "$VERSION,"
 
