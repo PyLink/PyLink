@@ -12,16 +12,12 @@ def raw(irc, source, args):
 
     Sends raw text to the IRC server.
 
-    This command is not officially supported on non-Clientbot networks, where it
-    requires a separate permission."""
-
-    if irc.protoname == 'clientbot':
-        # exec.raw is included for backwards compatibility with PyLink 1.x
-        perms = ['raw.raw', 'exec.raw']
-    elif not conf.conf['pylink'].get("raw_enabled", False):
+    Use with caution - This command is only officially supported on Clientbot networks."""
+    if not conf.conf['pylink'].get("raw_enabled", False):
         raise RuntimeError("Raw commands are not supported on this protocol")
 
-    permissions.check_permissions(irc, source, perms)
+    # exec.raw is included for backwards compatibility with PyLink 1.x
+    permissions.check_permissions(irc, source, ['raw.raw', 'exec.raw'])
 
     args = ' '.join(args)
     if not args.strip():
