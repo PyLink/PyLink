@@ -5,7 +5,7 @@
 [![Latest stable release](https://img.shields.io/github/v/tag/jlu5/pylink?label=stable&color=1a1)](https://github.com/jlu5/PyLink/tree/master)
 [![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000)](https://pypi.python.org/pypi/pylinkirc/)
 [![Docker image version](https://img.shields.io/docker/v/jlu5/pylink/latest?label=docker)](https://hub.docker.com/r/jlu5/pylink)
-[![Supported Python versions](https://img.shields.io/badge/python-3.5%20and%20later-50e)](https://www.python.org/downloads/)
+[![Supported Python versions](https://img.shields.io/badge/python-3.7%20and%20later-50e)](https://www.python.org/downloads/)
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
@@ -88,7 +88,7 @@ $ docker run -v $HOME/pylink:/pylink jlu5/pylink
 These IRCds (in alphabetical order) are frequently tested and well supported. If any issues occur, please file a bug on the issue tracker.
 
 * [InspIRCd](http://www.inspircd.org/) (2.0 - 3.x) - module `inspircd`
-    - Set the `target_version` option to `insp3` to target InspIRCd 3.x, or `insp20` to target InspIRCd 2.0 (currently the default).
+    - Set the `target_version` option to `insp3` to target InspIRCd 3.x (default), or `insp20` to target InspIRCd 2.0 (legacy).
     - For vHost setting to work, `m_chghost.so` must be loaded. For ident and realname changing support, `m_chgident.so` and `m_chgname.so` must be loaded respectively.
     - Supported channel, user, and prefix modes are negotiated on connect, but hotloading modules that change these is not supported. After changing module configuration, it is recommended to SQUIT PyLink to force a protocol renegotiation.
 * [Nefarious IRCu](https://github.com/evilnet/nefarious2) (2.0.0+) - module `p10`
