@@ -129,7 +129,7 @@ def die(irc=None):
     except KeyError:
         log.debug('relay.die: failed to clear persistent channels:', exc_info=True)
 
-IRC_ASCII_ALLOWED_CHARS = string.digits + string.ascii_letters + '/^|\\-_[]{}`'
+IRC_ASCII_ALLOWED_CHARS = string.digits + string.ascii_letters + '^|\\-_[]{}`'
 FALLBACK_SEPARATOR = '|'
 FALLBACK_CHARACTER = '-'
 
@@ -215,7 +215,7 @@ def normalize_nick(irc, netname, nick, times_tagged=0, uid=''):
     # Loop over every character in the nick, making sure that it only contains valid
     # characters.
     if not is_unicode_capable:
-        nick = _sanitize(nick)
+        nick = _sanitize(nick, extrachars='/')
     else:
         # UnrealIRCd 4's forbidden nick chars, from
         # https://github.com/unrealircd/unrealircd/blob/02d69e7d8/src/modules/charsys.c#L152-L163
