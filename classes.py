@@ -1796,6 +1796,7 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         Initializes SSL/TLS for this network.
         """
         log.info('(%s) Using TLS/SSL for this connection...', self.name)
+        cafile = self.serverdata.get('ssl_cafile')
         certfile = self.serverdata.get('ssl_certfile')
         keyfile = self.serverdata.get('ssl_keyfile')
 
@@ -1804,10 +1805,11 @@ class IRCNetwork(PyLinkNetworkCoreWithUtils):
         # Cert and key files are optional, load them if specified.
         if certfile and keyfile:
             try:
+                cafile != None and context.load_verify_locations(cafile)
                 context.load_cert_chain(certfile, keyfile)
             except OSError:
                  log.exception('(%s) Caught OSError trying to initialize the SSL connection; '
-                               'are "ssl_certfile" and "ssl_keyfile" set correctly?',
+                               'are "ssl_certfile", "ssl_keyfile", and "ssl_cafile" set correctly?',
                                self.name)
                  raise
 
