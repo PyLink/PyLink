@@ -1,3 +1,18 @@
+# PyLink 3.1.0 (2023-01-03)
+
+This will be my (**@jlu5**'s) last release.
+
+Changes since 3.1-beta1:
+
+### Feature changes
+
+- Allow loading a custom CA certificate via a ssl_cafile option (#677). Thanks to **@paigeadelethompson** for contributing
+
+### Bug fixes
+
+- relay: strip slashes (/) from idents
+- raw: fix permission check logic
+
 # PyLink 3.1-beta1 (2021-12-30)
 
 ### Feature changes

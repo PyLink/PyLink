@@ -1,11 +1,13 @@
 # PyLink IRC Services
 
-## PyLink is LOOKING FOR NEW MAINTAINERS: Please see my [latest dev update](https://jlu5.com/blog/the-trouble-with-pylink) for more context.
+## END OF LIFE NOTICE: This project is no longer maintained. So long and thanks for all the fish.
 
-[![Latest stable release](https://img.shields.io/github/v/tag/jlu5/pylink?label=stable&color=1a1)](https://github.com/jlu5/PyLink/tree/master)
+<!--
+[![Latest stable release](https://img.shields.io/github/v/tag/jlu5/pylink?label=stable&color=1a1)](https://github.com/PyLink/PyLink/tree/master)
 [![PyPI version](https://img.shields.io/pypi/v/pylinkirc.svg?maxAge=2592000)](https://pypi.python.org/pypi/pylinkirc/)
 [![Docker image version](https://img.shields.io/docker/v/jlu5/pylink/latest?label=docker)](https://hub.docker.com/r/jlu5/pylink)
 [![Supported Python versions](https://img.shields.io/badge/python-3.7%20and%20later-50e)](https://www.python.org/downloads/)
+-->
 
 PyLink is an extensible, plugin-based IRC services framework written in Python. It aims to be:
 
@@ -21,9 +23,7 @@ PyLink is licensed under the Mozilla Public License, version 2.0 ([LICENSE.MPL2]
 
 **When upgrading between major versions, remember to read the [release notes](RELNOTES.md) for any breaking changes!**
 
-Please report any bugs you find to the [issue tracker](https://github.com/jlu5/PyLink/issues). Pull requests are likewise welcome.
-
-There is also an IRC channel available: `#pylink @ irc.libera.chat`
+Please report any bugs you find to the [issue tracker](https://github.com/PyLink/PyLink/issues). Pull requests are likewise welcome.
 
 ## Installation
 
@@ -44,7 +44,7 @@ If you are a developer and want to help make PyLink more portable, patches are w
     * *For Unicode support in Relay*: unidecode (`pip3 install Unidecode`)
     * *For extended PID file tracking (i.e. removing stale PID files after a crash)*: psutil (`pip3 install psutil`)
 
-2) Clone the repository: `git clone https://github.com/jlu5/PyLink && cd PyLink`
+2) Clone the repository: `git clone https://github.com/PyLink/PyLink && cd PyLink`
     - Previously there was a *devel* branch for testing versions of PyLink - this practice has since been discontinued.
 
 3) Install PyLink using `python3 setup.py install` (global install) or `python3 setup.py install --user` (local install)
@@ -73,7 +73,7 @@ $ docker run -v $HOME/pylink:/pylink jlu5/pylink
 
 2) Run `pip3 install pylinkirc` to download and install PyLink. pip will automatically resolve dependencies.
 
-3) Download or copy https://github.com/jlu5/PyLink/blob/master/example-conf.yml for an example configuration.
+3) Download or copy https://github.com/PyLink/PyLink/blob/master/example-conf.yml for an example configuration.
 
 ## Configuration
 
@@ -138,4 +138,4 @@ PyLink supports connecting to IRCds as a relay bot and forwarding users back as 
 
 For Relay to work properly with Clientbot, be sure to load the `relay_clientbot` plugin in conjunction with `relay`.
 
-Note: **Clientbot links can only be used as a leaf for Relay links - they CANNOT be used to host channels!** This means that Relay does not support having all your networks be Clientbot - in those cases you are better off using a classic relayer bot, like [RelayNext for Limnoria](https://github.com/jlu5/SupyPlugins/tree/master/RelayNext).
+Note: **Clientbot links can only be used as a leaf for Relay links - they CANNOT be used to host channels!** This means that Relay does not support having all your networks be Clientbot - in those cases you are better off using a classic relay bot, like [RelayNext for Limnoria](https://github.com/jlu5/SupyPlugins/tree/master/RelayNext).
